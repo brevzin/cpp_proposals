@@ -17,6 +17,8 @@ Since [@P2286R4], several major changes:
 * Removed the `d` specifier for delimiters. This paper offers no direct support for changing delimiter
 * Removed the extra APIs (`retargeted_format_context` and `end_sentry`)
 * Added clearer description of why `range_formatter` is desired and what its [exposed API is](#interface-of-the-proposed-solution).
+* Updated [escaping behavior](#escaping-behavior) description.
+* Added wording.
 
 Since [@P2286R3], several major changes:
 
@@ -334,7 +336,7 @@ or
 ```
 :::
 
-While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges. This makes it obvious what the actual elements of the range and tuple are even when the string/char contains characters like comma or space. Python, Rust, and `fmt` all do this. Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well.
+While `char` and `string` are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges. This makes it obvious what the actual elements of the range and tuple are even when the string/char contains characters like comma or space. Python, Rust, and `fmt` all do this. Rust escapes internal strings, so prints as `('y', "with\n\"quotes\"")` (the Rust implementation of `Debug` for `str` can be found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2129-2151) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#417-432)). Following discussion of this paper and this design, Victor Zverovich implemented in this `fmt` as well.
 
 Escaping is the most desirable default behavior, and the specific escaping behavior is described [here](#escaping-behavior).
 
@@ -632,15 +634,99 @@ For `tuple` of size other than 2, this will throw an exception (since you cannot
 
 ### Escaping Behavior
 
-Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence:
+There is some established practice for how to escape strings, for instance in Python and Rust, which seems like a really good idea to follow.
+
+#### Python
+
+In Python, the choice of characters to escape and the new algorithm for `repr` is described in [@PEP-3138]:
+
+::: quote
+Characters that should be escaped are defined in the Unicode character database as:
+
+* Cc (Other, Control)
+* Cf (Other, Format)
+* Cs (Other, Surrogate)
+* Co (Other, Private Use)
+* Cn (Other, Not Assigned)
+* Zl (Separator, Line), refers to LINE SEPARATOR (`'\u2028'`{.x}).
+* Zp (Separator, Paragraph), refers to PARAGRAPH SEPARATOR (`'\u2029'`{.x}).
+* Zs (Separator, Space) other than ASCII space (`'\x20'`{.x}). Characters in this category should be escaped to avoid ambiguity.
+
+The algorithm to build `repr()` strings should be changed to:
+
+* Convert CR, LF, TAB and `'\'` to `'\r'`, `'\n'`, `'\t'`, `'\\'`.
+* Convert non-printable ASCII characters (0x00-0x1f, 0x7f) to `'\xXX'`{.x}.
+* Convert leading surrogate pair characters without trailing character (0xd800-0xdbff, but not followed by 0xdc00-0xdfff) to `'\uXXXX'`{.x}.
+* Convert non-printable characters ([... see above ...]) to `'xXX'`{.x}, `'\uXXXX'`{.x} or `'\U00xxxxxx'`{.x}.
+* Backslash-escape quote characters (apostrophe, 0x27) and add a quote character at the beginning and the end.
+:::
+
+#### Rust
+
+Rust doesn't have (to my knowledge) such a formal description of which characters need to be escaped, I'm not sure if there's a Rust-equivalent of a PEP that I could link to. Rust's implementation gives a standard library function `is_printable` which is actually generated from a [Python file](https://github.com/rust-lang/rust/blob/256721ee519f6ff15dc5c1cfaf3ebf9af75efa4a/library/core/src/unicode/printable.py) which contains the following relevant logic:
+
+::: bq
+```python
+def get_escaped(codepoints):
+    for c in codepoints:
+        if (c.class_ or "Cn") in "Cc Cf Cs Co Cn Zl Zp Zs".split() and c.value != ord(' '):
+            yield c.value
+```
+:::
+
+Which is the exact same logic as Python: those eight classes, with the exception of ASCII space, are escaped. Looking at the actual Rust [implementation code](https://doc.rust-lang.org/src/core/unicode/printable.rs.html) is a little bit more involved, but that's only because it's optimized for values and no longer based on actual structural elements from Unicode. Rust's actual algorithm for using this `is_printable` function can be found in the `impl Debug for str` found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2129-2151) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#417-432):
+
+::: bq
+```rust
+pub(crate) fn escape_debug_ext(self, args: EscapeDebugExtArgs) -> EscapeDebug {
+    let init_state = match self {
+        '\t' => EscapeDefaultState::Backslash('t'),
+        '\r' => EscapeDefaultState::Backslash('r'),
+        '\n' => EscapeDefaultState::Backslash('n'),
+        '\\' => EscapeDefaultState::Backslash(self),
+        '"' if args.escape_double_quote => EscapeDefaultState::Backslash(self),
+        '\'' if args.escape_single_quote => EscapeDefaultState::Backslash(self),
+        _ if args.escape_grapheme_extended && self.is_grapheme_extended() => {
+            EscapeDefaultState::Unicode(self.escape_unicode())
+        }
+        _ if is_printable(self) => EscapeDefaultState::Char(self),
+        _ => EscapeDefaultState::Unicode(self.escape_unicode()),
+    };
+    EscapeDebug(EscapeDefault { state: init_state })
+}
+```
+:::
+
+The grapheme-extended logic exists in Rust but not in Python, the rest is the same. [`char::escape_unicode`](https://doc.rust-lang.org/std/primitive.char.html#method.escape_unicode) will:
+
+::: quote
+This will escape characters with the Rust syntax of the form `\u{NNNNNN}` where `NNNNNN` is a hexadecimal representation.
+:::
+
+which, for example:
+
+::: bq
+```rust
+for c in '❤'.escape_unicode() {
+    print!("{}", c);
+}
+println!();
+```
+:::
+
+will print `"\u{2764}"`{.x}. Though note that `println!("{:?}", "❤");`{.rust} will just print that heart (quoted) because that heart is printable.
+
+#### Proposed for C++
+
+Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence (Note that all the backslashes are escaped here as well):
 
 * If a UCS scalar value is one of `'\t'`, `'\r'`, `'\n'`, `'\\'` or `'"'`, it is replaced with `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
-* Otherwise, if a UCS scalar value has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the UCS scalar value without leading zeros.
+* Otherwise, if a UCS scalar value has a Unicode property Separator (Z) or Other (C) other than space, it is replaced with its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the UCS scalar value without leading zeros.
 * Otherwise, if a UCS scalar value has a Unicode property Grapheme_Extend and there are no UCS scalar values preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.
 * Otherwise, a code unit that is not a part of a valid UCS scalar value is replaced with a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"` as proposed by [@P2290R2], where _simple-hexadecimal-digit-sequence_ is a hexadecimal representation of the code unit without leading zeros.
 * Otherwise, a UCS scalar value is copied as is.
 
-The same applies to wide strings with `'...'` and `"..."` replaced with `L'...'` and `L"..."` respectively.
+The same applies to wide strings with `'...'`{.x} and `"..."`{.x} replaced with `L'...'` and `L"..."` respectively.
 
 For non-Unicode encodings an implementation-defined equivalent of Unicode properties is used.
 
@@ -654,7 +740,7 @@ std::cout << std::format("{:?}", std::string("h\tllo"));
 // Output: "h\tllo"
 
 std::cout << std::format("{:?}", std::string("\0 \n \t \x02 \x1b", 9));
-// Output: "\{0} \n \t \x{2} \x{1b}"
+// Output: "\u{0} \n \t \u{2} \u{1b}"
 
 std::cout << std::format("{:?}, {:?}, {:?}", " \" ' ", '"', '\'');
 // Output: " \" ' ", '"', '\''
@@ -671,10 +757,6 @@ auto s = std::format("{:?}", "Привет, 🕴️!"); // assuming a Unicode en
 ```
 :::
 
-Notes:
-
-* SG16 requested using the escape sequence format proposed by [@P2290R2], `{fmt}` uses a non-braced escape format (same as Python).
-* Grapheme_Extend part is not implemented in `{fmt}` yet.
 
 ## Implementation Challenges
 
@@ -1011,7 +1093,7 @@ struct range_formatter {
 };
 
 template <input_range R> requires formattable<range_reference_t<R>>
-struct formatter<R> : range_formatter<range_reference_t<R>>
+struct formatter<R> : range_formatter<remove_cvref_t<range_reference_t<R>>>
 { };
 ```
 :::
@@ -1144,7 +1226,7 @@ struct format_join_view {
 template <typename V>
 struct std::formatter<format_join_view<V>>
 {
-    std::range_formatter<std::ranges::range_reference_t<V>> underlying;
+    std::range_formatter<std::remove_cvref_t<std::ranges::range_reference_t<V>>> underlying;
 
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) {
@@ -1714,6 +1796,10 @@ template <class FormatContext>
 :::
 :::
 
+### Additional formatting support for characters and strings
+
+TODO
+
 ### Formatter for `vector<bool>::reference`
 
 Add to [vector.syn]{.sref}
@@ -1787,22 +1873,6 @@ Thanks to Victor Zverovich for `{fmt}`, explanation of Unicode, and numerous des
 
 ---
 references:
-    - id: P2286R2
-      citation-label: P2286R2
-      title: "Formatting Ranges"
-      author:
-        - family: Barry Revzin
-      issued:
-        - year: 2021
-      URL: https://wg21.link/p2286r2
-    - id: P2418R0
-      citation-label: P2418R0
-      title: "Add support for `std::generator`-like types to `std::format`"
-      author:
-        - family: Victor Zverovich
-      issued:
-        - year: 2021
-      URL: https://wg21.link/p2418r0
     - id: fmt-impl
       citation-label: fmt-impl
       title: "Implementation for range formatting on top of `{fmt}`"
@@ -1811,4 +1881,12 @@ references:
       issued:
         - year: 2021
       URL: https://godbolt.org/z/fPs1Wxf8E
+    - id: PEP-3138
+      citation-label: PEP-3138
+      title: "PEP 3138 -- String representation in Python 3000"
+      author:
+        - family: Atsuo Ishimoto
+      issued:
+        - year: 2008
+      URL: https://www.python.org/dev/peps/pep-3138/
 ---

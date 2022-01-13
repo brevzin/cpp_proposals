@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-12" />
+  <meta name="dcterms.date" content="2022-01-13" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-12</td>
+    <td>2022-01-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -586,7 +586,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#range-specifiers"><span class="toc-section-number">3.3.7.2</span> Range specifiers<span></span></a></li>
 <li><a href="#pair-and-tuple-specifiers"><span class="toc-section-number">3.3.7.3</span> Pair and Tuple Specifiers<span></span></a></li>
 </ul></li>
-<li><a href="#escaping-behavior"><span class="toc-section-number">3.3.8</span> Escaping Behavior<span></span></a></li>
+<li><a href="#escaping-behavior"><span class="toc-section-number">3.3.8</span> Escaping Behavior<span></span></a>
+<ul>
+<li><a href="#python"><span class="toc-section-number">3.3.8.1</span> Python<span></span></a></li>
+<li><a href="#rust"><span class="toc-section-number">3.3.8.2</span> Rust<span></span></a></li>
+<li><a href="#proposed-for-c"><span class="toc-section-number">3.3.8.3</span> Proposed for C++<span></span></a></li>
+</ul></li>
 </ul></li>
 <li><a href="#implementation-challenges"><span class="toc-section-number">3.4</span> Implementation Challenges<span></span></a>
 <ul>
@@ -612,7 +617,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#formatting-for-specific-ranges-all-the-container-adaptors"><span class="toc-section-number">4.1.2.2</span> Formatting for specific ranges: all the container adaptors<span></span></a></li>
 </ul></li>
 <li><a href="#formatting-for-pair-and-tuple"><span class="toc-section-number">4.1.3</span> Formatting for <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code><span></span></a></li>
-<li><a href="#formatter-for-vectorboolreference"><span class="toc-section-number">4.1.4</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><span></span></a></li>
+<li><a href="#additional-formatting-support-for-characters-and-strings"><span class="toc-section-number">4.1.4</span> Additional formatting support for characters and strings<span></span></a></li>
+<li><a href="#formatter-for-vectorboolreference"><span class="toc-section-number">4.1.5</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#acknowledgments"><span class="toc-section-number">5</span> Acknowledgments<span></span></a></li>
@@ -625,6 +631,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Removed the <code class="sourceCode cpp">d</code> specifier for delimiters. This paper offers no direct support for changing delimiter</li>
 <li>Removed the extra APIs (<code class="sourceCode cpp">retargeted_format_context</code> and <code class="sourceCode cpp">end_sentry</code>)</li>
 <li>Added clearer description of why <code class="sourceCode cpp">range_formatter</code> is desired and what its <a href="#interface-of-the-proposed-solution">exposed API is</a>.</li>
+<li>Updated <a href="#escaping-behavior">escaping behavior</a> description.</li>
+<li>Added wording.</li>
 </ul>
 <p>Since <span class="citation" data-cites="P2286R3">[<a href="#ref-P2286R3" role="doc-biblioref">P2286R3</a>]</span>, several major changes:</p>
 <ul>
@@ -840,7 +848,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1"></a>(&#39;y&#39;, &quot;with\n\&quot;quotes\&quot;&quot;)</span></code></pre></div>
 </blockquote>
-<p>While <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges. This makes it obvious what the actual elements of the range and tuple are even when the string/char contains characters like comma or space. Python, Rust, and <code class="sourceCode cpp">fmt</code> all do this. Rust escapes internal strings, so prints as <code class="sourceCode cpp"><span class="op">(</span><span class="ch">&#39;y&#39;</span>, <span class="st">&quot;with</span><span class="sc">\n\&quot;</span><span class="st">quotes</span><span class="sc">\&quot;</span><span class="st">&quot;</span><span class="op">)</span></code> (the Rust implementation of <code class="sourceCode cpp">Debug</code> for <code class="sourceCode cpp">str</code> can be found <a href="https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2073-2095">here</a> which is implemented in terms of <a href="https://doc.rust-lang.org/src/core/char/methods.rs.html#405-419"><code class="sourceCode cpp">escape_debug_ext</code></a>). Following discussion of this paper and this design, Victor Zverovich implemented in this <code class="sourceCode cpp">fmt</code> as well.</p>
+<p>While <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> are typically printed unquoted, it is quite common to print them quoted when contained in tuples and ranges. This makes it obvious what the actual elements of the range and tuple are even when the string/char contains characters like comma or space. Python, Rust, and <code class="sourceCode cpp">fmt</code> all do this. Rust escapes internal strings, so prints as <code class="sourceCode cpp"><span class="op">(</span><span class="ch">&#39;y&#39;</span>, <span class="st">&quot;with</span><span class="sc">\n\&quot;</span><span class="st">quotes</span><span class="sc">\&quot;</span><span class="st">&quot;</span><span class="op">)</span></code> (the Rust implementation of <code class="sourceCode cpp">Debug</code> for <code class="sourceCode cpp">str</code> can be found <a href="https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2129-2151">here</a> which is implemented in terms of <a href="https://doc.rust-lang.org/src/core/char/methods.rs.html#417-432"><code class="sourceCode cpp">escape_debug_ext</code></a>). Following discussion of this paper and this design, Victor Zverovich implemented in this <code class="sourceCode cpp">fmt</code> as well.</p>
 <p>Escaping is the most desirable default behavior, and the specific escaping behavior is described <a href="#escaping-behavior">here</a>.</p>
 <p>Also, <code class="sourceCode cpp">std<span class="op">::</span>string</code> isn’t the only string-like type: if we decide to print strings quoted, how do users opt in to this behavior for their own string-like types? And <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp">string</code> aren’t the only types that may desire to have some kind of <em>debug</em> format and some kind of regular format, how to differentiate those?</p>
 <p>Moreover, it’s all well and good to have the default formatting option for a range or tuple of strings to be printing those strings escaped. But what if users want to print a range of strings <em>unescaped</em>? I’ll get back to this.</p>
@@ -1463,15 +1471,79 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <h3 data-number="3.3.8" id="escaping-behavior"><span class="header-section-number">3.3.8</span> Escaping Behavior<a href="#escaping-behavior" class="self-link"></a></h3>
-<p>Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence:</p>
+<p>There is some established practice for how to escape strings, for instance in Python and Rust, which seems like a really good idea to follow.</p>
+<h4 data-number="3.3.8.1" id="python"><span class="header-section-number">3.3.8.1</span> Python<a href="#python" class="self-link"></a></h4>
+<p>In Python, the choice of characters to escape and the new algorithm for <code class="sourceCode cpp">repr</code> is described in <span class="citation" data-cites="PEP-3138">[<a href="#ref-PEP-3138" role="doc-biblioref">PEP-3138</a>]</span>:</p>
+<div class="quote">
+<p>Characters that should be escaped are defined in the Unicode character database as:</p>
+<ul>
+<li>Cc (Other, Control)</li>
+<li>Cf (Other, Format)</li>
+<li>Cs (Other, Surrogate)</li>
+<li>Co (Other, Private Use)</li>
+<li>Cn (Other, Not Assigned)</li>
+<li>Zl (Separator, Line), refers to LINE SEPARATOR (<code class="x">&#39;\u2028&#39;</code>).</li>
+<li>Zp (Separator, Paragraph), refers to PARAGRAPH SEPARATOR (<code class="x">&#39;\u2029&#39;</code>).</li>
+<li>Zs (Separator, Space) other than ASCII space (<code class="x">&#39;\x20&#39;</code>). Characters in this category should be escaped to avoid ambiguity.</li>
+</ul>
+<p>The algorithm to build <code class="sourceCode cpp">repr<span class="op">()</span></code> strings should be changed to:</p>
+<ul>
+<li>Convert CR, LF, TAB and <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\&#39;</span></code> to <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\r</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\\</span><span class="ch">&#39;</span></code>.</li>
+<li>Convert non-printable ASCII characters (0x00-0x1f, 0x7f) to <code class="x">&#39;\xXX&#39;</code>.</li>
+<li>Convert leading surrogate pair characters without trailing character (0xd800-0xdbff, but not followed by 0xdc00-0xdfff) to <code class="x">&#39;\uXXXX&#39;</code>.</li>
+<li>Convert non-printable characters ([… see above …]) to <code class="x">&#39;xXX&#39;</code>, <code class="x">&#39;\uXXXX&#39;</code> or <code class="x">&#39;\U00xxxxxx&#39;</code>.</li>
+<li>Backslash-escape quote characters (apostrophe, 0x27) and add a quote character at the beginning and the end.</li>
+</ul>
+</div>
+<h4 data-number="3.3.8.2" id="rust"><span class="header-section-number">3.3.8.2</span> Rust<a href="#rust" class="self-link"></a></h4>
+<p>Rust doesn’t have (to my knowledge) such a formal description of which characters need to be escaped, I’m not sure if there’s a Rust-equivalent of a PEP that I could link to. Rust’s implementation gives a standard library function <code class="sourceCode cpp">is_printable</code> which is actually generated from a <a href="https://github.com/rust-lang/rust/blob/256721ee519f6ff15dc5c1cfaf3ebf9af75efa4a/library/core/src/unicode/printable.py">Python file</a> which contains the following relevant logic:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">def</span> get_escaped(codepoints):</span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="cf">for</span> c <span class="kw">in</span> codepoints:</span>
+<span id="cb7-3"><a href="#cb7-3"></a>        <span class="cf">if</span> (c.class_ <span class="kw">or</span> <span class="st">&quot;Cn&quot;</span>) <span class="kw">in</span> <span class="st">&quot;Cc Cf Cs Co Cn Zl Zp Zs&quot;</span>.split() <span class="kw">and</span> c.value <span class="op">!=</span> <span class="bu">ord</span>(<span class="st">&#39; &#39;</span>):</span>
+<span id="cb7-4"><a href="#cb7-4"></a>            <span class="cf">yield</span> c.value</span></code></pre></div>
+</blockquote>
+<p>Which is the exact same logic as Python: those eight classes, with the exception of ASCII space, are escaped. Looking at the actual Rust <a href="https://doc.rust-lang.org/src/core/unicode/printable.rs.html">implementation code</a> is a little bit more involved, but that’s only because it’s optimized for values and no longer based on actual structural elements from Unicode. Rust’s actual algorithm for using this <code class="sourceCode cpp">is_printable</code> function can be found in the <code class="sourceCode cpp">impl Debug <span class="cf">for</span> str</code> found <a href="https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2129-2151">here</a> which is implemented in terms of <a href="https://doc.rust-lang.org/src/core/char/methods.rs.html#417-432"><code class="sourceCode cpp">escape_debug_ext</code></a>:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> escape_debug_ext(<span class="kw">self</span><span class="op">,</span> args<span class="op">:</span> EscapeDebugExtArgs) <span class="op">-&gt;</span> EscapeDebug <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="kw">let</span> init_state <span class="op">=</span> <span class="kw">match</span> <span class="kw">self</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>        <span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span> <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Backslash(<span class="ch">&#39;t&#39;</span>)<span class="op">,</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>        <span class="ch">&#39;</span><span class="sc">\r</span><span class="ch">&#39;</span> <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Backslash(<span class="ch">&#39;r&#39;</span>)<span class="op">,</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>        <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span> <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Backslash(<span class="ch">&#39;n&#39;</span>)<span class="op">,</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>        <span class="ch">&#39;</span><span class="sc">\\</span><span class="ch">&#39;</span> <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Backslash(<span class="kw">self</span>)<span class="op">,</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>        <span class="ch">&#39;&quot;&#39;</span> <span class="kw">if</span> args<span class="op">.</span>escape_double_quote <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Backslash(<span class="kw">self</span>)<span class="op">,</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>        <span class="ch">&#39;</span><span class="sc">\&#39;</span><span class="ch">&#39;</span> <span class="kw">if</span> args<span class="op">.</span>escape_single_quote <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Backslash(<span class="kw">self</span>)<span class="op">,</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a>        _ <span class="kw">if</span> args<span class="op">.</span>escape_grapheme_extended <span class="op">&amp;&amp;</span> <span class="kw">self</span><span class="op">.</span>is_grapheme_extended() <span class="op">=&gt;</span> <span class="op">{</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>            <span class="pp">EscapeDefaultState::</span>Unicode(<span class="kw">self</span><span class="op">.</span>escape_unicode())</span>
+<span id="cb8-11"><a href="#cb8-11"></a>        <span class="op">}</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a>        _ <span class="kw">if</span> is_printable(<span class="kw">self</span>) <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Char(<span class="kw">self</span>)<span class="op">,</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a>        _ <span class="op">=&gt;</span> <span class="pp">EscapeDefaultState::</span>Unicode(<span class="kw">self</span><span class="op">.</span>escape_unicode())<span class="op">,</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a>    <span class="op">};</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a>    EscapeDebug(EscapeDefault <span class="op">{</span> state<span class="op">:</span> init_state <span class="op">}</span>)</span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The grapheme-extended logic exists in Rust but not in Python, the rest is the same. <a href="https://doc.rust-lang.org/std/primitive.char.html#method.escape_unicode"><code class="sourceCode cpp"><span class="dt">char</span><span class="op">::</span>escape_unicode</code></a> will:</p>
+<div class="quote">
+<p>This will escape characters with the Rust syntax of the form <code class="sourceCode cpp">\u<span class="op">{</span>NNNNNN<span class="op">}</span></code> where <code class="sourceCode cpp">NNNNNN</code> is a hexadecimal representation.</p>
+</div>
+<p>which, for example:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">for</span> c <span class="kw">in</span> <span class="ch">&#39;❤&#39;</span><span class="op">.</span>escape_unicode() <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="pp">print!</span>(<span class="st">&quot;{}&quot;</span><span class="op">,</span> c)<span class="op">;</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="op">}</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="pp">println!</span>()<span class="op">;</span></span></code></pre></div>
+</blockquote>
+<p>will print <code class="x">&quot;\u{2764}&quot;</code>. Though note that <code class="sourceCode rust"><span class="pp">println!</span>(<span class="st">&quot;{:?}&quot;</span><span class="op">,</span> <span class="st">&quot;❤&quot;</span>)<span class="op">;</span></code> will just print that heart (quoted) because that heart is printable.</p>
+<h4 data-number="3.3.8.3" id="proposed-for-c"><span class="header-section-number">3.3.8.3</span> Proposed for C++<a href="#proposed-for-c" class="self-link"></a></h4>
+<p>Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence (Note that all the backslashes are escaped here as well):</p>
 <ul>
 <li>If a UCS scalar value is one of <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\r</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\\</span><span class="ch">&#39;</span></code> or <code class="sourceCode cpp"><span class="ch">&#39;&quot;&#39;</span></code>, it is replaced with <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">t&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">r&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">n&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\\</span><span class="st">&quot;</span></code> and <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\&quot;</span><span class="st">&quot;</span></code> respectively.</li>
-<li>Otherwise, if a UCS scalar value has a Unicode property Separator (Z) or Other (C), it is replaced with its universal character name escape sequence in the form <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">u{<em>simple-hexadecimal-digit-sequence</em>}&quot;</span></code> as proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, where <em>simple-hexadecimal-digit-sequence</em> is a hexadecimal representation of the UCS scalar value without leading zeros.</li>
+<li>Otherwise, if a UCS scalar value has a Unicode property Separator (Z) or Other (C) other than space, it is replaced with its universal character name escape sequence in the form <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">u{<em>simple-hexadecimal-digit-sequence</em>}&quot;</span></code> as proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, where <em>simple-hexadecimal-digit-sequence</em> is a hexadecimal representation of the UCS scalar value without leading zeros.</li>
 <li>Otherwise, if a UCS scalar value has a Unicode property Grapheme_Extend and there are no UCS scalar values preceding it in the string without this property, it is replaced with its universal character name escape sequence as above.</li>
 <li>Otherwise, a code unit that is not a part of a valid UCS scalar value is replaced with a hexadecimal escape sequence in the form <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">x{<em>simple-hexadecimal-digit-sequence</em>}&quot;</span></code> as proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, where <em>simple-hexadecimal-digit-sequence</em> is a hexadecimal representation of the code unit without leading zeros.</li>
 <li>Otherwise, a UCS scalar value is copied as is.</li>
 </ul>
-<p>The same applies to wide strings with <code class="sourceCode cpp"><span class="ch">&#39;.</span><span class="er">..</span><span class="ch">&#39;</span></code> and <code class="sourceCode cpp"><span class="st">&quot;...&quot;</span></code> replaced with <code class="sourceCode cpp"><span class="ch">L&#39;.</span><span class="er">..</span><span class="ch">&#39;</span></code> and <code class="sourceCode cpp"><span class="st">L&quot;...&quot;</span></code> respectively.</p>
+<p>The same applies to wide strings with <code class="x">&#39;...&#39;</code> and <code class="x">&quot;...&quot;</code> replaced with <code class="sourceCode cpp"><span class="ch">L&#39;.</span><span class="er">..</span><span class="ch">&#39;</span></code> and <code class="sourceCode cpp"><span class="st">L&quot;...&quot;</span></code> respectively.</p>
 <p>For non-Unicode encodings an implementation-defined equivalent of Unicode properties is used.</p>
 <p>Escape rules for characters are similar except that <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\&#39;</span><span class="ch">&#39;</span></code> is escaped instead of <code class="sourceCode cpp"><span class="ch">&#39;&quot;&#39;</span></code> and <code class="sourceCode cpp"><span class="ch">&#39;&quot;&#39;</span></code> is not escaped.</p>
 <p>Examples:</p>
@@ -1480,7 +1552,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb23-2"><a href="#cb23-2"></a><span class="co">// Output: &quot;h\tllo&quot;</span></span>
 <span id="cb23-3"><a href="#cb23-3"></a></span>
 <span id="cb23-4"><a href="#cb23-4"></a>std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:?}&quot;</span>, std<span class="op">::</span>string<span class="op">(</span><span class="st">&quot;</span><span class="sc">\0</span><span class="st"> </span><span class="sc">\n</span><span class="st"> </span><span class="sc">\t</span><span class="st"> </span><span class="sc">\x02</span><span class="st"> </span><span class="sc">\x1b</span><span class="st">&quot;</span>, <span class="dv">9</span><span class="op">))</span>;</span>
-<span id="cb23-5"><a href="#cb23-5"></a><span class="co">// Output: &quot;\{0} \n \t \x{2} \x{1b}&quot;</span></span>
+<span id="cb23-5"><a href="#cb23-5"></a><span class="co">// Output: &quot;\u{0} \n \t \u{2} \u{1b}&quot;</span></span>
 <span id="cb23-6"><a href="#cb23-6"></a></span>
 <span id="cb23-7"><a href="#cb23-7"></a>std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:?}, {:?}, {:?}&quot;</span>, <span class="st">&quot; </span><span class="sc">\&quot;</span><span class="st"> &#39; &quot;</span>, <span class="ch">&#39;&quot;&#39;</span>, <span class="ch">&#39;</span><span class="sc">\&#39;</span><span class="ch">&#39;</span><span class="op">)</span>;</span>
 <span id="cb23-8"><a href="#cb23-8"></a><span class="co">// Output: &quot; \&quot; &#39; &quot;, &#39;&quot;&#39;, &#39;\&#39;&#39;</span></span>
@@ -1495,11 +1567,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb23-17"><a href="#cb23-17"></a><span class="kw">auto</span> s <span class="op">=</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:?}&quot;</span>, <span class="st">&quot;Привет, 🕴️!&quot;</span><span class="op">)</span>; <span class="co">// assuming a Unicode encoding</span></span>
 <span id="cb23-18"><a href="#cb23-18"></a><span class="co">// s == &quot;\&quot;Привет, 🕴️!\&quot;&quot;</span></span></code></pre></div>
 </blockquote>
-<p>Notes:</p>
-<ul>
-<li>SG16 requested using the escape sequence format proposed by <span class="citation" data-cites="P2290R2">[<a href="#ref-P2290R2" role="doc-biblioref">P2290R2</a>]</span>, <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> uses a non-braced escape format (same as Python).</li>
-<li>Grapheme_Extend part is not implemented in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> yet.</li>
-</ul>
 <h2 data-number="3.4" id="implementation-challenges"><span class="header-section-number">3.4</span> Implementation Challenges<a href="#implementation-challenges" class="self-link"></a></h2>
 <p>I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily share the implementation <span class="citation" data-cites="fmt-impl">[<a href="#ref-fmt-impl" role="doc-biblioref">fmt-impl</a>]</span>, as such I could not implement <code class="sourceCode cpp"><span class="op">?</span></code> support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.</p>
 <h3 data-number="3.4.1" id="wrapping-basic_format_context-is-not-generally-possible"><span class="header-section-number">3.4.1</span> Wrapping <code class="sourceCode cpp">basic_format_context</code> is not generally possible<a href="#wrapping-basic_format_context-is-not-generally-possible" class="self-link"></a></h3>
@@ -1784,7 +1851,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb32-9"><a href="#cb32-9"></a><span class="op">}</span>;</span>
 <span id="cb32-10"><a href="#cb32-10"></a></span>
 <span id="cb32-11"><a href="#cb32-11"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span> <span class="kw">requires</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
-<span id="cb32-12"><a href="#cb32-12"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">:</span> range_formatter<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb32-12"><a href="#cb32-12"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">:</span> range_formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;&gt;</span></span>
 <span id="cb32-13"><a href="#cb32-13"></a><span class="op">{</span> <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p><code class="sourceCode cpp">range_formatter</code> allows reducing unnecessary template instantiations. Any range of <code class="sourceCode cpp"><span class="dt">int</span></code> is going to <code class="sourceCode cpp">parse</code> its specifiers the same way, there’s no need to re-instantiate that code n times. Such a type will also help users to write their own formatters, since they can have a member <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> to handle any range of <code class="sourceCode cpp"><span class="dt">int</span></code> (or <code class="sourceCode cpp"><span class="dt">int</span><span class="op">&amp;</span></code> or <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span></code>) rather than having to have a specific <code class="sourceCode cpp">formatter<span class="op">&lt;</span>my_special_range<span class="op">&gt;</span></code>.</p>
@@ -1863,13 +1930,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p>A more involved version of a format-joiner which takes a delimiter and a callback that gets invoked on each element. fmt does not provide such a mechanism, though the Rust itertools library does:</p></li>
 </ol>
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">let</span> matrix <span class="op">=</span> [[<span class="dv">1</span><span class="op">.,</span> <span class="dv">2</span><span class="op">.,</span> <span class="dv">3</span><span class="op">.</span>]<span class="op">,</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>              [<span class="dv">4</span><span class="op">.,</span> <span class="dv">5</span><span class="op">.,</span> <span class="dv">6</span><span class="op">.</span>]]<span class="op">;</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">let</span> matrix_formatter <span class="op">=</span> matrix<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> <span class="op">|</span>row<span class="op">,</span> f<span class="op">|</span> <span class="op">{</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a>                                f(<span class="op">&amp;</span>row<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;, &quot;</span><span class="op">,</span> <span class="op">|</span>elt<span class="op">,</span> g<span class="op">|</span> g(<span class="op">&amp;</span>elt)))</span>
-<span id="cb7-5"><a href="#cb7-5"></a>                              <span class="op">}</span>)<span class="op">;</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="pp">assert_eq!</span>(<span class="pp">format!</span>(<span class="st">&quot;{}&quot;</span><span class="op">,</span> matrix_formatter)<span class="op">,</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>           <span class="st">&quot;1, 2, 3</span><span class="sc">\n</span><span class="st">4, 5, 6&quot;</span>)<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">let</span> matrix <span class="op">=</span> [[<span class="dv">1</span><span class="op">.,</span> <span class="dv">2</span><span class="op">.,</span> <span class="dv">3</span><span class="op">.</span>]<span class="op">,</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>              [<span class="dv">4</span><span class="op">.,</span> <span class="dv">5</span><span class="op">.,</span> <span class="dv">6</span><span class="op">.</span>]]<span class="op">;</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="kw">let</span> matrix_formatter <span class="op">=</span> matrix<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> <span class="op">|</span>row<span class="op">,</span> f<span class="op">|</span> <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>                                f(<span class="op">&amp;</span>row<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;, &quot;</span><span class="op">,</span> <span class="op">|</span>elt<span class="op">,</span> g<span class="op">|</span> g(<span class="op">&amp;</span>elt)))</span>
+<span id="cb10-5"><a href="#cb10-5"></a>                              <span class="op">}</span>)<span class="op">;</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="pp">assert_eq!</span>(<span class="pp">format!</span>(<span class="st">&quot;{}&quot;</span><span class="op">,</span> matrix_formatter)<span class="op">,</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>           <span class="st">&quot;1, 2, 3</span><span class="sc">\n</span><span class="st">4, 5, 6&quot;</span>)<span class="op">;</span></span></code></pre></div>
 </blockquote>
 <p>The paper provides the tools to implement to implement (2) and (3), but does not directly propose either.</p>
 <p>For example, here is an implementation of <code class="sourceCode cpp">format_join<span class="op">(</span>r, delim<span class="op">)</span></code>:</p>
@@ -1885,7 +1952,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb37-9"><a href="#cb37-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> V<span class="op">&gt;</span></span>
 <span id="cb37-10"><a href="#cb37-10"></a><span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>format_join_view<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></span>
 <span id="cb37-11"><a href="#cb37-11"></a><span class="op">{</span></span>
-<span id="cb37-12"><a href="#cb37-12"></a>    std<span class="op">::</span>range_formatter<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> underlying;</span>
+<span id="cb37-12"><a href="#cb37-12"></a>    std<span class="op">::</span>range_formatter<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;&gt;</span> underlying;</span>
 <span id="cb37-13"><a href="#cb37-13"></a></span>
 <span id="cb37-14"><a href="#cb37-14"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> ParseContext<span class="op">&gt;</span></span>
 <span id="cb37-15"><a href="#cb37-15"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
@@ -2369,7 +2436,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">11</a></span> <em>Returns</em>: an iterator past the end of the output range.</p>
 </div>
 </blockquote>
-<h3 data-number="4.1.4" id="formatter-for-vectorboolreference"><span class="header-section-number">4.1.4</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h3>
+<h3 data-number="4.1.4" id="additional-formatting-support-for-characters-and-strings"><span class="header-section-number">4.1.4</span> Additional formatting support for characters and strings<a href="#additional-formatting-support-for-characters-and-strings" class="self-link"></a></h3>
+<p>TODO</p>
+<h3 data-number="4.1.5" id="formatter-for-vectorboolreference"><span class="header-section-number">4.1.5</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h3>
 <p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
 <blockquote>
 <div>
@@ -2455,7 +2524,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <a href="https://wg21.link/p2286r1">https://wg21.link/p2286r1</a></p>
 </div>
 <div id="ref-P2286R2">
-<p>[P2286R2] Barry Revzin. 2021. Formatting Ranges. <br />
+<p>[P2286R2] Barry Revzin. 2021-08-16. Formatting Ranges. <br />
 <a href="https://wg21.link/p2286r2">https://wg21.link/p2286r2</a></p>
 </div>
 <div id="ref-P2286R3">
@@ -2475,12 +2544,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <a href="https://wg21.link/p2321r2">https://wg21.link/p2321r2</a></p>
 </div>
 <div id="ref-P2418R0">
-<p>[P2418R0] Victor Zverovich. 2021. Add support for <code class="sourceCode cpp">std<span class="op">::</span>generator</code>-like types to <code class="sourceCode cpp">std<span class="op">::</span>format</code>. <br />
+<p>[P2418R0] Victor Zverovich. 2021-08-08. Add support for std::generator-like types to std::format. <br />
 <a href="https://wg21.link/p2418r0">https://wg21.link/p2418r0</a></p>
 </div>
 <div id="ref-P2418R2">
 <p>[P2418R2] Victor Zverovich. 2021-09-24. Add support for std::generator-like types to std::format. <br />
 <a href="https://wg21.link/p2418r2">https://wg21.link/p2418r2</a></p>
+</div>
+<div id="ref-PEP-3138">
+<p>[PEP-3138] Atsuo Ishimoto. 2008. PEP 3138 – String representation in Python 3000. <br />
+<a href="https://www.python.org/dev/peps/pep-3138/">https://www.python.org/dev/peps/pep-3138/</a></p>
 </div>
 </div>
 </div>
