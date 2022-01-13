@@ -1640,67 +1640,113 @@ template <class FormatContext>
 
 ### Formatting for `pair` and `tuple`
 
-Add to [utility.syn]{.sref}:
+And a new clause [format.tuple]:
 
 ::: bq
-```diff
+::: addu
+[1]{.pnum} For each of `pair` and `tuple`, the library provides the following formatter specialization where `$tuple-type$` is the name of the template:
+
+```
 namespace std {
-  // ...
+template <class charT, formattable<charT>... Ts>
+  class formatter<$tuple-type$<Ts...>, charT> {
+    tuple<formatter<Ts, charT>...> $underlying_$;                             // exposition only
+    basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
+    basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("(");  // exposition only
+    basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>(")"); // exposition only
 
-  // [pairs], class template pair
-  template<class T1, class T2>
-    struct pair;
+  public:
+    void set_separator(basic_string_view<charT> sep);
+    void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
 
-+ template<class charT, formattable<charT> T1, formattable<charT> T2>
-+   struct formatter<pair<T1, T2>, charT>
-+     : tuple_formatter<tuple<remove_cvref_t<T1>, remove_cvref_t<T2>>, charT>
-+   { };
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
 
-  // ...
+    template <class U, class FormatContext>
+        requires same_as<remove_const_t<U>, $tuple-type$<Ts...>>
+      typename FormatContext::iterator
+        format(U& elems, FormatContext& ctx) const;
+  };
 }
+```
+
+[#]{.pnum} The `parse` member functions of these formatters interpret the format specification as a `$tuple-format-spec$` according to the following syntax:
+
+```
+$tuple-format-spec$:
+    $tuple-fill-and-align$@~opt~@ $width$@~opt~@ $tuple-no-bracket$@~opt~@ $tuple-type$@~opt~@
+
+$tuple-fill-and-align$:
+    $tuple-fill$@~opt~@ $align$
+
+$tuple-fill$:
+    any character other than { or } or :
+
+$tuple-no-bracket$:
+    n
+
+$tuple-type$:
+    m
+```
+
+[#]{.pnum} The `$tuple-fill-and-align$` is interpreted the same way as a `$tuple-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
+
+[#]{.pnum} The `$tuple-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
+
+[#]{.pnum} The `$range-type$` specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
+
+|Option|Requirements|Meaning|
+|-|-|-|
+|`m`|`sizeof...(Ts) == 2` |Indicates that the open and close bracket should be `""` and the separator should be `": "`.|
+
+```
+void set_separator(basic_string_view<charT> sep);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
+
+```
+void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+```
+
+[#]{.pnum} *Effects*: Equivalent to
+
+::: bq
+```
+$open-bracket_$ = open;
+$close-bracket_$ = close;
 ```
 :::
 
-Add to [tuple.syn]{.sref}
-
-::: bq
-```diff
-#include <compare>              // see [compare.syn]
-
-namespace std {
-  // [tuple.tuple], class template tuple
-  template<class... Types>
-    class tuple;
-
-+ template<class charT, formattable<charT>... Types>
-+   struct formatter<tuple<Types...>, charT>
-+     : tuple_formatter<tuple<remove_cvref_t<Types>...>, charT>
-+   { };
-
-  // ...
-}
 ```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Parses the format specifier as a `$tuple-format-spec$` and stores the parsed specifiers in `*this`.
+For each element `$e$` in `$underlying_$`, if `$e$.set_debug_format()` is a valid expression, calls `$e$.set_debug_format()`.
+
+[#]{.pnum} *Returns*: an iterator past the end of the `$tuple-format-spec$`.
+
+```
+template <class U, class FormatContext>
+    requires same_as<remove_const_t<U>, $tuple-type$<Ts...>>
+  typename FormatContext::iterator
+    format(U& elems, FormatContext& ctx) const;
+```
+
+[#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$tuple-format-spec$`:
+
+* [#.#]{.pnum} `$open-bracket_$`
+* [#.#]{.pnum} for each index `I` from `0` up to `sizeof...(Ts)`, exclusive:
+  * [#.#.#]{.pnum} if `I != 0`, `$separator_$`
+  * [#.#.#]{.pnum} the result of writing `std::get<I>(elems)` via `std::get<I>($underlying_$)`
+* [#.#]{.pnum} `$close-bracket_$`
+
+[#]{.pnum} *Returns*: an iterator past the end of the output range.
 :::
-
-Add to [format.syn]{.sref}:
-
-::: bq
-```diff
-namespace std {
-  // ...
-
-  // [format.formatter], formatter
-  template<class T, class charT = char> struct formatter;
-
-+ // [format.tuple], tuple formatter
-+ template<class Tuple, class charT = char>
-+   struct tuple_formatter;
-
-+ template <class charT, formattable<charT>... Ts>
-+   struct tuple_formatter<tuple<Ts...>, charT>;
-  // ...
-}
-```
 :::
 
 ### Formatter for `vector<bool>::reference`
