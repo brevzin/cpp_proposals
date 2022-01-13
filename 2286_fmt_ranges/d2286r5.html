@@ -590,7 +590,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#python"><span class="toc-section-number">3.3.8.1</span> Python<span></span></a></li>
 <li><a href="#rust"><span class="toc-section-number">3.3.8.2</span> Rust<span></span></a></li>
-<li><a href="#proposed-for-c"><span class="toc-section-number">3.3.8.3</span> Proposed for C++<span></span></a></li>
+<li><a href="#golang"><span class="toc-section-number">3.3.8.3</span> Golang<span></span></a></li>
+<li><a href="#proposed-for-c"><span class="toc-section-number">3.3.8.4</span> Proposed for C++<span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#implementation-challenges"><span class="toc-section-number">3.4</span> Implementation Challenges<span></span></a>
@@ -1534,7 +1535,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-4"><a href="#cb9-4"></a><span class="pp">println!</span>()<span class="op">;</span></span></code></pre></div>
 </blockquote>
 <p>will print <code class="x">&quot;\u{2764}&quot;</code>. Though note that <code class="sourceCode rust"><span class="pp">println!</span>(<span class="st">&quot;{:?}&quot;</span><span class="op">,</span> <span class="st">&quot;❤&quot;</span>)<span class="op">;</span></code> will just print that heart (quoted) because that heart is printable.</p>
-<h4 data-number="3.3.8.3" id="proposed-for-c"><span class="header-section-number">3.3.8.3</span> Proposed for C++<a href="#proposed-for-c" class="self-link"></a></h4>
+<h4 data-number="3.3.8.3" id="golang"><span class="header-section-number">3.3.8.3</span> Golang<a href="#golang" class="self-link"></a></h4>
+<p><code class="sourceCode cpp">golang</code>’s unicode package provides an <code class="sourceCode cpp">isPrint</code> function defined <a href="https://pkg.go.dev/unicode#IsPrint">as follows</a>:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">func</span> IsPrint(r <span class="dt">rune</span>) <span class="dt">bool</span></span></code></pre></div>
+<p><code class="sourceCode cpp">IsPrint</code> reports whether the rune is defined as printable by Go. Such characters include letters, marks, numbers, punctuation, symbols, and the ASCII space character, from categories L, M, N, P, S and the ASCII space character. This categorization is the same as IsGraphic except that the only spacing character is ASCII space, <code class="x">U+0020</code>.</p>
+</blockquote>
+<p>In this case, Go is adding categories L, M, N, P, S, and ASCII space… whereas Rust and Python are removing categories Z and C but keeping ASCII space. These two sets are equivalent: the full set of Unicode category classes is L, M, N, P, S, Z, C. Hence, Go’s logic is also the same as Rust and Python.</p>
+<h4 data-number="3.3.8.4" id="proposed-for-c"><span class="header-section-number">3.3.8.4</span> Proposed for C++<a href="#proposed-for-c" class="self-link"></a></h4>
 <p>Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence (Note that all the backslashes are escaped here as well):</p>
 <ul>
 <li>If a UCS scalar value is one of <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\r</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span></code>, <code class="sourceCode cpp"><span class="ch">&#39;</span><span class="sc">\\</span><span class="ch">&#39;</span></code> or <code class="sourceCode cpp"><span class="ch">&#39;&quot;&#39;</span></code>, it is replaced with <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">t&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">r&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\</span><span class="st">n&quot;</span></code>, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\\</span><span class="st">&quot;</span></code> and <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\\\&quot;</span><span class="st">&quot;</span></code> respectively.</li>
@@ -1930,13 +1938,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><p>A more involved version of a format-joiner which takes a delimiter and a callback that gets invoked on each element. fmt does not provide such a mechanism, though the Rust itertools library does:</p></li>
 </ol>
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">let</span> matrix <span class="op">=</span> [[<span class="dv">1</span><span class="op">.,</span> <span class="dv">2</span><span class="op">.,</span> <span class="dv">3</span><span class="op">.</span>]<span class="op">,</span></span>
-<span id="cb10-2"><a href="#cb10-2"></a>              [<span class="dv">4</span><span class="op">.,</span> <span class="dv">5</span><span class="op">.,</span> <span class="dv">6</span><span class="op">.</span>]]<span class="op">;</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="kw">let</span> matrix_formatter <span class="op">=</span> matrix<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> <span class="op">|</span>row<span class="op">,</span> f<span class="op">|</span> <span class="op">{</span></span>
-<span id="cb10-4"><a href="#cb10-4"></a>                                f(<span class="op">&amp;</span>row<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;, &quot;</span><span class="op">,</span> <span class="op">|</span>elt<span class="op">,</span> g<span class="op">|</span> g(<span class="op">&amp;</span>elt)))</span>
-<span id="cb10-5"><a href="#cb10-5"></a>                              <span class="op">}</span>)<span class="op">;</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a><span class="pp">assert_eq!</span>(<span class="pp">format!</span>(<span class="st">&quot;{}&quot;</span><span class="op">,</span> matrix_formatter)<span class="op">,</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a>           <span class="st">&quot;1, 2, 3</span><span class="sc">\n</span><span class="st">4, 5, 6&quot;</span>)<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">let</span> matrix <span class="op">=</span> [[<span class="dv">1</span><span class="op">.,</span> <span class="dv">2</span><span class="op">.,</span> <span class="dv">3</span><span class="op">.</span>]<span class="op">,</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>              [<span class="dv">4</span><span class="op">.,</span> <span class="dv">5</span><span class="op">.,</span> <span class="dv">6</span><span class="op">.</span>]]<span class="op">;</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="kw">let</span> matrix_formatter <span class="op">=</span> matrix<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> <span class="op">|</span>row<span class="op">,</span> f<span class="op">|</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>                                f(<span class="op">&amp;</span>row<span class="op">.</span>iter()<span class="op">.</span>format_with(<span class="st">&quot;, &quot;</span><span class="op">,</span> <span class="op">|</span>elt<span class="op">,</span> g<span class="op">|</span> g(<span class="op">&amp;</span>elt)))</span>
+<span id="cb11-5"><a href="#cb11-5"></a>                              <span class="op">}</span>)<span class="op">;</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="pp">assert_eq!</span>(<span class="pp">format!</span>(<span class="st">&quot;{}&quot;</span><span class="op">,</span> matrix_formatter)<span class="op">,</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a>           <span class="st">&quot;1, 2, 3</span><span class="sc">\n</span><span class="st">4, 5, 6&quot;</span>)<span class="op">;</span></span></code></pre></div>
 </blockquote>
 <p>The paper provides the tools to implement to implement (2) and (3), but does not directly propose either.</p>
 <p>For example, here is an implementation of <code class="sourceCode cpp">format_join<span class="op">(</span>r, delim<span class="op">)</span></code>:</p>

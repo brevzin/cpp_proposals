@@ -716,6 +716,20 @@ println!();
 
 will print `"\u{2764}"`{.x}. Though note that `println!("{:?}", "❤");`{.rust} will just print that heart (quoted) because that heart is printable.
 
+#### Golang
+
+`golang`'s unicode package provides an `isPrint` function defined [as follows](https://pkg.go.dev/unicode#IsPrint):
+
+::: bq
+```go
+func IsPrint(r rune) bool
+```
+
+`IsPrint` reports whether the rune is defined as printable by Go. Such characters include letters, marks, numbers, punctuation, symbols, and the ASCII space character, from categories L, M, N, P, S and the ASCII space character. This categorization is the same as IsGraphic except that the only spacing character is ASCII space, `U+0020`{.x}.
+:::
+
+In this case, Go is adding categories L, M, N, P, S, and ASCII space... whereas Rust and Python are removing categories Z and C but keeping ASCII space. These two sets are equivalent: the full set of Unicode category classes is L, M, N, P, S, Z, C. Hence, Go's logic is also the same as Rust and Python.
+
 #### Proposed for C++
 
 Escaping of a string in a Unicode encoding is done by translating each UCS scalar value, or a code unit if it is not a part of a valid UCS scalar value, in sequence (Note that all the backslashes are escaped here as well):
