@@ -1781,6 +1781,10 @@ template <class FormatContext>
 :::
 :::
 
+# Acknowledgments
+
+Thanks to Victor Zverovich for `{fmt}`, explanation of Unicode, and numerous design discussions. Thanks to Peter Dimov for design feedback. Thanks to Tim Song for invaluable help on the design and wording.
+
 ---
 references:
     - id: P2286R2
