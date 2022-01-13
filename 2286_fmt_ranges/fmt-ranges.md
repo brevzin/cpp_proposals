@@ -272,19 +272,16 @@ This paper suggests the following:
 ::: bq
 ```cpp
 template<class T, class charT>
-concept $formattable-impl$ =
-    semiregular<formatter<T, charT>> &&
-    requires (formatter<T, charT> f,
-              const formatter<T, charT> cf,
+concept formattable =
+    semiregular<formatter<remove_cvref_t<T>, charT>> &&
+    requires (formatter<remove_cvref_t<T>, charT> f,
+              const formatter<remove_cvref_t<T>, charT> cf,
               T t,
               basic_format_context<$fmt-iter-for$<charT>, charT> fc,
               basic_format_parse_context<charT> pc) {
         { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
         { cf.format(t, fc) } -> same_as<$fmt-iter-for$<charT>>;
     };
-
-template<class T, class charT>
-concept formattable = $formattable-impl$<remove_cvref_t<T>, charT>;
 ```
 :::
 
@@ -294,7 +291,7 @@ The broad shape of this concept is just taking the Formatter requirements and tu
 * We don't specify what the iterator type is of `format_context` or `wformat_context`, the expectation is that formatters accept any iterator. As such, it is unspecified in the concept _which_ iterator will be checked - simply that it is _some_ `output_iterator<charT const&>`. Implementations could use `format_context::iterator` and `wformat_context::iterator`, or they could have a bespoke minimal iterator dedicated for concept checking.
 * `cf.format(t, fc)` is called on a `const` `formatter` (see [@LWG3636])
 * `cf.format(t, fc)` is called specifically on `T`, not a `const T`. Even if the typical formatter specialization will take its object as `const T&`. This is to handle cases like ranges that are not `const`-iterable.
-* `formattable<T const, char>` could be `true` even if you can't actually format a `T const`. I'm not sure that this will be a significant issue in practice.
+* `formattable<T, char>` and `formattable<T const, char>` could be different, which is important in order to probably know when a range or a `tuple` can be `formattable`.
 
 ## What representation?
 
@@ -773,20 +770,17 @@ This can be worked around (I just need to know what the type of the buffer needs
 
 ::: bq
 ```cpp
-template <class T>
-concept $formattable-impl$ =
-    std::semiregular<fmt::formatter<T>> &&
-    requires (fmt::formatter<T> f,
-              const T t,
-              fmt::basic_format_context<char*, char> fc,
-              fmt::basic_format_parse_context<char> pc)
-    {
-        { f.parse(pc) } -> std::same_as<fmt::basic_format_parse_context<char>::iterator>;
-        { f.format(t, fc) } -> std::same_as<char*>;
+template<class T, class charT>
+concept formattable =
+    semiregular<formatter<remove_cvref_t<T>, charT>> &&
+    requires (formatter<remove_cvref_t<T>, charT> f,
+              const formatter<remove_cvref_t<T>, charT> cf,
+              T t,
+              basic_format_context<$fmt-iter-for$<charT>, charT> fc,
+              basic_format_parse_context<charT> pc) {
+        { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
+        { cf.format(t, fc) } -> same_as<$fmt-iter-for$<charT>>;
     };
-
-template <class T>
-concept formattable = $formattable-impl$<std::remove_cvref_t<T>>;
 ```
 :::
 
@@ -1283,9 +1277,9 @@ The standard library will provide the following utilities:
 * A `formattable` concept.
 * A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range). This will additionally have a few public member functions to facilitate users build custom range formatters, as detailed [here](#interface-of-the-proposed-solution):
 
-* `set_separator(string_view)`
-* `set_brackets(string_view, string_view)`
-* `underlying()`
+  * `set_separator(string_view)`
+  * `set_brackets(string_view, string_view)`
+  * `underlying()`
 
 The standard library should add specializations of `formatter` for:
 
@@ -1339,21 +1333,18 @@ Add a clause [format.formattable] under [format.formatter]{.sref} and likely aft
 [1]{.pnum} Let `$fmt-iter-for$<charT>` be an implementation-defined type that models `output_iterator<const charT&>` ([iterator.concept.output]).
 ```
 template<class T, class charT>
-concept $formattable-impl$ =
-    semiregular<formatter<T, charT>> &&
-    requires (formatter<T, charT> f,
-              const formatter<T, charT> cf,
+concept formattable =
+    semiregular<formatter<remove_cvref_t<T>, charT>> &&
+    requires (formatter<remove_cvref_t<T>, charT> f,
+              const formatter<remove_cvref_t<T>, charT> cf,
               T t,
               basic_format_context<$fmt-iter-for$<charT>, charT> fc,
               basic_format_parse_context<charT> pc) {
         { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
         { cf.format(t, fc) } -> same_as<$fmt-iter-for$<charT>>;
     };
-
-template<class T, class charT>
-concept formattable = $formattable-impl$<remove_cvref_t<T>, charT>;
 ```
-[2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<T, charT>` meets the *Formatter* requirements ([formatter.requirements]).
+[2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<remove_cvref_t<T>, charT>` meets the *BasicFormatter* requirements ([formatter.requirements]) and, if `remove_reference_t<T>` is `const`-qualified, the *Formatter* requirements.
 :::
 :::
 

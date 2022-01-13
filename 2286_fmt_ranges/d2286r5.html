@@ -800,26 +800,23 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This paper suggests the following:</p>
 <blockquote>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> charT<span class="op">&gt;</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">concept</span> <em>formattable-impl</em> <span class="op">=</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>    semiregular<span class="op">&lt;</span>formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>    <span class="kw">requires</span> <span class="op">(</span>formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span> f,</span>
-<span id="cb14-5"><a href="#cb14-5"></a>              <span class="kw">const</span> formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span> cf,</span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">concept</span> formattable <span class="op">=</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>    semiregular<span class="op">&lt;</span>formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="kw">requires</span> <span class="op">(</span>formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span> f,</span>
+<span id="cb14-5"><a href="#cb14-5"></a>              <span class="kw">const</span> formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span> cf,</span>
 <span id="cb14-6"><a href="#cb14-6"></a>              T t,</span>
 <span id="cb14-7"><a href="#cb14-7"></a>              basic_format_context<span class="op">&lt;</span><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;</span>, charT<span class="op">&gt;</span> fc,</span>
 <span id="cb14-8"><a href="#cb14-8"></a>              basic_format_parse_context<span class="op">&lt;</span>charT<span class="op">&gt;</span> pc<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb14-9"><a href="#cb14-9"></a>        <span class="op">{</span> f<span class="op">.</span>parse<span class="op">(</span>pc<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>basic_format_parse_context<span class="op">&lt;</span>charT<span class="op">&gt;::</span>iterator<span class="op">&gt;</span>;</span>
 <span id="cb14-10"><a href="#cb14-10"></a>        <span class="op">{</span> cf<span class="op">.</span>format<span class="op">(</span>t, fc<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;&gt;</span>;</span>
-<span id="cb14-11"><a href="#cb14-11"></a>    <span class="op">}</span>;</span>
-<span id="cb14-12"><a href="#cb14-12"></a></span>
-<span id="cb14-13"><a href="#cb14-13"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> charT<span class="op">&gt;</span></span>
-<span id="cb14-14"><a href="#cb14-14"></a><span class="kw">concept</span> formattable <span class="op">=</span> <em>formattable-impl</em><span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span></code></pre></div>
+<span id="cb14-11"><a href="#cb14-11"></a>    <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>The broad shape of this concept is just taking the Formatter requirements and turning them into code. There are a few important things to note though:</p>
 <ul>
 <li>We don’t specify what the iterator type is of <code class="sourceCode cpp">format_context</code> or <code class="sourceCode cpp">wformat_context</code>, the expectation is that formatters accept any iterator. As such, it is unspecified in the concept <em>which</em> iterator will be checked - simply that it is <em>some</em> <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span>charT <span class="kw">const</span><span class="op">&amp;&gt;</span></code>. Implementations could use <code class="sourceCode cpp">format_context<span class="op">::</span>iterator</code> and <code class="sourceCode cpp">wformat_context<span class="op">::</span>iterator</code>, or they could have a bespoke minimal iterator dedicated for concept checking.</li>
 <li><code class="sourceCode cpp">cf<span class="op">.</span>format<span class="op">(</span>t, fc<span class="op">)</span></code> is called on a <code class="sourceCode cpp"><span class="kw">const</span></code> <code class="sourceCode cpp">formatter</code> (see <span class="citation" data-cites="LWG3636">[<a href="#ref-LWG3636" role="doc-biblioref">LWG3636</a>]</span>)</li>
 <li><code class="sourceCode cpp">cf<span class="op">.</span>format<span class="op">(</span>t, fc<span class="op">)</span></code> is called specifically on <code class="sourceCode cpp">T</code>, not a <code class="sourceCode cpp"><span class="kw">const</span> T</code>. Even if the typical formatter specialization will take its object as <code class="sourceCode cpp"><span class="kw">const</span> T<span class="op">&amp;</span></code>. This is to handle cases like ranges that are not <code class="sourceCode cpp"><span class="kw">const</span></code>-iterable.</li>
-<li><code class="sourceCode cpp">formattable<span class="op">&lt;</span>T <span class="kw">const</span>, <span class="dt">char</span><span class="op">&gt;</span></code> could be <code class="sourceCode cpp"><span class="kw">true</span></code> even if you can’t actually format a <code class="sourceCode cpp">T <span class="kw">const</span></code>. I’m not sure that this will be a significant issue in practice.</li>
+<li><code class="sourceCode cpp">formattable<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">formattable<span class="op">&lt;</span>T <span class="kw">const</span>, <span class="dt">char</span><span class="op">&gt;</span></code> could be different, which is important in order to probably know when a range or a <code class="sourceCode cpp">tuple</code> can be <code class="sourceCode cpp">formattable</code>.</li>
 </ul>
 <h2 data-number="3.3" id="what-representation"><span class="header-section-number">3.3</span> What representation?<a href="#what-representation" class="self-link"></a></h2>
 <p>There are several questions to ask about what the representation should be for printing. I’ll go through each kind in turn.</p>
@@ -1585,20 +1582,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The latter fails because there the initial output iterator type is <code class="sourceCode cpp">std<span class="op">::</span>back_insert_iterator<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span></code>. This is a different iterator type from <code class="sourceCode cpp">fmt<span class="op">::</span>appender</code>, so we get a mismatch in the types of the <code class="sourceCode cpp">basic_format_args</code> specializations, and cannot compile the construction of <code class="sourceCode cpp">bctx</code>.</p>
 <p>This can be worked around (I just need to know what the type of the buffer needs to be, in the usual case it’s <code class="sourceCode cpp">fmt<span class="op">::</span>memory_buffer</code> and here it becomes <code class="sourceCode cpp">std<span class="op">::</span>string</code>, that’s fine), but it means we really need to nail down what the requirements of the <code class="sourceCode cpp">formatter</code> API are. One of the things we need to do in this paper is provide a <code class="sourceCode cpp">formattable</code> concept. From a previous revision of that paper, dropping the <code class="sourceCode cpp"><span class="dt">char</span></code> parameter for simplicity, that looks like:</p>
 <blockquote>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">concept</span> <em>formattable-impl</em> <span class="op">=</span></span>
-<span id="cb27-3"><a href="#cb27-3"></a>    std<span class="op">::</span>semiregular<span class="op">&lt;</span>fmt<span class="op">::</span>formatter<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
-<span id="cb27-4"><a href="#cb27-4"></a>    <span class="kw">requires</span> <span class="op">(</span>fmt<span class="op">::</span>formatter<span class="op">&lt;</span>T<span class="op">&gt;</span> f,</span>
-<span id="cb27-5"><a href="#cb27-5"></a>              <span class="kw">const</span> T t,</span>
-<span id="cb27-6"><a href="#cb27-6"></a>              fmt<span class="op">::</span>basic_format_context<span class="op">&lt;</span><span class="dt">char</span><span class="op">*</span>, <span class="dt">char</span><span class="op">&gt;</span> fc,</span>
-<span id="cb27-7"><a href="#cb27-7"></a>              fmt<span class="op">::</span>basic_format_parse_context<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> pc<span class="op">)</span></span>
-<span id="cb27-8"><a href="#cb27-8"></a>    <span class="op">{</span></span>
-<span id="cb27-9"><a href="#cb27-9"></a>        <span class="op">{</span> f<span class="op">.</span>parse<span class="op">(</span>pc<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>fmt<span class="op">::</span>basic_format_parse_context<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;::</span>iterator<span class="op">&gt;</span>;</span>
-<span id="cb27-10"><a href="#cb27-10"></a>        <span class="op">{</span> f<span class="op">.</span>format<span class="op">(</span>t, fc<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> std<span class="op">::</span>same_as<span class="op">&lt;</span><span class="dt">char</span><span class="op">*&gt;</span>;</span>
-<span id="cb27-11"><a href="#cb27-11"></a>    <span class="op">}</span>;</span>
-<span id="cb27-12"><a href="#cb27-12"></a></span>
-<span id="cb27-13"><a href="#cb27-13"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb27-14"><a href="#cb27-14"></a><span class="kw">concept</span> formattable <span class="op">=</span> <em>formattable-impl</em><span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> charT<span class="op">&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">concept</span> formattable <span class="op">=</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a>    semiregular<span class="op">&lt;</span>formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb27-4"><a href="#cb27-4"></a>    <span class="kw">requires</span> <span class="op">(</span>formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span> f,</span>
+<span id="cb27-5"><a href="#cb27-5"></a>              <span class="kw">const</span> formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span> cf,</span>
+<span id="cb27-6"><a href="#cb27-6"></a>              T t,</span>
+<span id="cb27-7"><a href="#cb27-7"></a>              basic_format_context<span class="op">&lt;</span><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;</span>, charT<span class="op">&gt;</span> fc,</span>
+<span id="cb27-8"><a href="#cb27-8"></a>              basic_format_parse_context<span class="op">&lt;</span>charT<span class="op">&gt;</span> pc<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-9"><a href="#cb27-9"></a>        <span class="op">{</span> f<span class="op">.</span>parse<span class="op">(</span>pc<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>basic_format_parse_context<span class="op">&lt;</span>charT<span class="op">&gt;::</span>iterator<span class="op">&gt;</span>;</span>
+<span id="cb27-10"><a href="#cb27-10"></a>        <span class="op">{</span> cf<span class="op">.</span>format<span class="op">(</span>t, fc<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;&gt;</span>;</span>
+<span id="cb27-11"><a href="#cb27-11"></a>    <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>Note that based on the resolution of <span class="citation" data-cites="LWG3636">[<a href="#ref-LWG3636" role="doc-biblioref">LWG3636</a>]</span>, the call to <code class="sourceCode cpp">format</code> may be on a <code class="sourceCode cpp"><span class="kw">const</span> fmt<span class="op">::</span>formatter<span class="op">&lt;</span>T<span class="op">&gt;</span></code> instead.</p>
 <p>I use <code class="sourceCode cpp"><span class="dt">char</span><span class="op">*</span></code> as the output iterator, but my <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> cannot support <code class="sourceCode cpp"><span class="dt">char</span><span class="op">*</span></code> as an output iterator type at all. Do <code class="sourceCode cpp">formatter</code> specializations need to support any output iterator type? If so, how can we implement fill/align/pad support in <code class="sourceCode cpp">range_formatter</code>?</p>
@@ -1989,10 +1983,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The standard library will provide the following utilities:</p>
 <ul>
 <li><p>A <code class="sourceCode cpp">formattable</code> concept.</p></li>
-<li><p>A <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> a range whose <code class="sourceCode cpp">reference</code> is similar to <code class="sourceCode cpp">V</code>. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range). This will additionally have a few public member functions to facilitate users build custom range formatters, as detailed <a href="#interface-of-the-proposed-solution">here</a>:</p></li>
-<li><p><code class="sourceCode cpp">set_separator<span class="op">(</span>string_view<span class="op">)</span></code></p></li>
-<li><p><code class="sourceCode cpp">set_brackets<span class="op">(</span>string_view, string_view<span class="op">)</span></code></p></li>
-<li><p><code class="sourceCode cpp">underlying<span class="op">()</span></code></p></li>
+<li><p>A <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> that uses a <code class="sourceCode cpp">formatter<span class="op">&lt;</span>V<span class="op">&gt;</span></code> to <code class="sourceCode cpp">parse</code> and <code class="sourceCode cpp">format</code> a range whose <code class="sourceCode cpp">reference</code> is similar to <code class="sourceCode cpp">V</code>. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range). This will additionally have a few public member functions to facilitate users build custom range formatters, as detailed <a href="#interface-of-the-proposed-solution">here</a>:</p>
+<ul>
+<li><code class="sourceCode cpp">set_separator<span class="op">(</span>string_view<span class="op">)</span></code></li>
+<li><code class="sourceCode cpp">set_brackets<span class="op">(</span>string_view, string_view<span class="op">)</span></code></li>
+<li><code class="sourceCode cpp">underlying<span class="op">()</span></code></li>
+</ul></li>
 </ul>
 <p>The standard library should add specializations of <code class="sourceCode cpp">formatter</code> for:</p>
 <ul>
@@ -2037,20 +2033,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> Let <code class="sourceCode cpp"><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;</span></code> be an implementation-defined type that models <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">&amp;&gt;</span></code> ([iterator.concept.output]).</p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>template&lt;class T, class charT&gt;</span>
-<span id="cb43-2"><a href="#cb43-2"></a>concept <em>formattable-impl</em> =</span>
-<span id="cb43-3"><a href="#cb43-3"></a>    semiregular&lt;formatter&lt;T, charT&gt;&gt; &amp;&amp;</span>
-<span id="cb43-4"><a href="#cb43-4"></a>    requires (formatter&lt;T, charT&gt; f,</span>
-<span id="cb43-5"><a href="#cb43-5"></a>              const formatter&lt;T, charT&gt; cf,</span>
+<span id="cb43-2"><a href="#cb43-2"></a>concept formattable =</span>
+<span id="cb43-3"><a href="#cb43-3"></a>    semiregular&lt;formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt;&gt; &amp;&amp;</span>
+<span id="cb43-4"><a href="#cb43-4"></a>    requires (formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt; f,</span>
+<span id="cb43-5"><a href="#cb43-5"></a>              const formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt; cf,</span>
 <span id="cb43-6"><a href="#cb43-6"></a>              T t,</span>
 <span id="cb43-7"><a href="#cb43-7"></a>              basic_format_context&lt;<em>fmt-iter-for</em>&lt;charT&gt;, charT&gt; fc,</span>
 <span id="cb43-8"><a href="#cb43-8"></a>              basic_format_parse_context&lt;charT&gt; pc) {</span>
 <span id="cb43-9"><a href="#cb43-9"></a>        { f.parse(pc) } -&gt; same_as&lt;basic_format_parse_context&lt;charT&gt;::iterator&gt;;</span>
 <span id="cb43-10"><a href="#cb43-10"></a>        { cf.format(t, fc) } -&gt; same_as&lt;<em>fmt-iter-for</em>&lt;charT&gt;&gt;;</span>
-<span id="cb43-11"><a href="#cb43-11"></a>    };</span>
-<span id="cb43-12"><a href="#cb43-12"></a></span>
-<span id="cb43-13"><a href="#cb43-13"></a>template&lt;class T, class charT&gt;</span>
-<span id="cb43-14"><a href="#cb43-14"></a>concept formattable = <em>formattable-impl</em>&lt;remove_cvref_t&lt;T&gt;, charT&gt;;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> A type <code class="sourceCode cpp">T</code> and a character type <code class="sourceCode cpp">charT</code> model <code class="sourceCode cpp">formattable</code> if <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code> meets the <em>Formatter</em> requirements ([formatter.requirements]).</p>
+<span id="cb43-11"><a href="#cb43-11"></a>    };</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> A type <code class="sourceCode cpp">T</code> and a character type <code class="sourceCode cpp">charT</code> model <code class="sourceCode cpp">formattable</code> if <code class="sourceCode cpp">formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span></code> meets the <em>BasicFormatter</em> requirements ([formatter.requirements]) and, if <code class="sourceCode cpp">remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">const</span></code>-qualified, the <em>Formatter</em> requirements.</p>
 </div>
 </blockquote>
 <h3 data-number="4.1.2" id="formatting-for-ranges"><span class="header-section-number">4.1.2</span> Formatting for ranges<a href="#formatting-for-ranges" class="self-link"></a></h3>
