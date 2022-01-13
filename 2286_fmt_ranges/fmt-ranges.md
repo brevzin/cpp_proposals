@@ -1086,31 +1086,14 @@ struct formatter<set<Key, Compare, Allocator>>
 ```
 :::
 
-Similarly, the proposed API for pair and tuple formatting is:
+However, this is only the case for ranges (where the user might actually need to implement formatting for their own range) and is not the case for pair and tuple. This is because the `pair` and `tuple` formatters aren't constrained on `tuple_like`. We don't even have such a concept. Those formatters are specific to `pair` and `tuple`. If we ever do add a `tuple_like` concept, at that point we can add a `tuple_formatter`.
+
+The proposed API for pair and tuple formatting is (substituting `pair` and `tuple` in for `$TEMPLATE$`):
 
 ::: bq
 ```cpp
-template <class charT, formattable<charT> T, formattable<charT> U>
-struct formatter<pair<T, U>, charT>
-    : tuple_formatter<tuple<remove_cvref_t<T>, remove_cvref_t<U>>, charT>
-{ };
-
 template <class charT, formattable<charT>... Ts>
-struct formatter<tuple<Ts...>, charT>
-    : tuple_formatter<tuple<remove_cvref_t<Ts>...>, charT>
-{ };
-```
-:::
-
-with the public-facing API of `tuple_formatter` being:
-
-::: bq
-```cpp
-template <class Tuple, class charT = char>
-struct tuple_formatter;
-
-template <class charT, formattable<charT>... Ts>
-struct tuple_formatter<tuple<Ts...>, charT>
+struct formatter<$TEMPLATE$<Ts...>, charT>
 {
     void set_separator(basic_string_view<charT>);
     void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
@@ -1118,19 +1101,15 @@ struct tuple_formatter<tuple<Ts...>, charT>
     template <typename ParseContext>
     constexpr auto parse(ParseContext&) -> ParseContext::iterator;
 
-    template <typename U, typename FormatContext>
-        requires $see below$
-    auto format(U&, FormatContext&) const -> FormatContext::iterator;
+    template <typename FormatContext>
+    auto format($see below$& elems, FormatContext&) const -> FormatContext::iterator;
 };
 ```
 :::
 
-Same structure (except no `underlying()` since I'm not sure you need it) as before, for the same reasoning. The one thing to note here is that the formatter for, e.g., `pair<int, string>` inherits from `tuple_formatter<tuple<int, string>>`. The reason for this is that it allows the grouping of parameters nicely - otherwise the spelling would have to be `tuple_formatter<char, int, string>`, which looks exceedingly weird.
+The complexity here is that we want to ensure that `elems` is a `const $TEMPLATE$<Ts...>` if that is formattable, but non-`const` if it has to be.
 
-The constraints on `U` for `format` are:
-
-* `tuple_size<U>::value == sizeof...(Ts)`
-*  for each `i`, `same_as<remove_cvref_t<tuple_element_t<i, U>>, T@~i~@>`
+Otherwise, it's a similar structure (except no `underlying()` since I'm not sure you need it).
 
 ## What additional functionality?
 
@@ -1302,22 +1281,17 @@ This lets me format `Optional<string>("hello")` as `Some("hello")`{.x} by defaul
 The standard library will provide the following utilities:
 
 * A `formattable` concept.
-* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty/static delimiter/dynamic delimiter) and on the underlying element (which will be applied to every element in the range). `range_formatter`
-* A `tuple_formatter<tuple<Ts...>>` that uses a `formatter<T>` for each `T` in `Ts...` to `parse` and `format` either a `pair`, `tuple`, or `array` with appropriate elements. This can accept a specifier on the tuple-like (align/pad/width as well as map/static delimiter/dynamic delimiter), but will not accept any specifier the underlying elements.
-
-`range_formatter` and `tuple_formatter` will additionally have a bunch of public member functions to facilitate users building custom range and tuple formatters, as detailed [here](#interface-of-the-proposed-solution):
+* A `range_formatter<V>` that uses a `formatter<V>` to `parse` and `format` a range whose `reference` is similar to `V`. This can accept a specifier on the range (align/pad/width as well as string/map/debug/empty) and on the underlying element (which will be applied to every element in the range). This will additionally have a few public member functions to facilitate users build custom range formatters, as detailed [here](#interface-of-the-proposed-solution):
 
 * `set_separator(string_view)`
 * `set_brackets(string_view, string_view)`
-* `underlying()` (`range_formatter` only)
+* `underlying()`
 
 The standard library should add specializations of `formatter` for:
 
 * any type `R` that is an `input_range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
-* `pair<T, U>` if `T` and `U` are `formattable`, which inherits from `tuple_formatter<tuple<remove_cvref_t<T>, remove_cvref_t<U>>>`
-* `tuple<Ts...>` if all of `Ts...` are `formattable`, which inherits from `tuple_formatter<tuple<remove_cvref_t<Ts>...>>`
-
-Note that the `pair` and `tuple` formatters both inherit from `tuple_formatter<tuple<Ts...>>`. This is to keep the pattern of defaulting the `charT` parameter as the second parameter, which otherwise would have to be flipped and look exceedingly awkward.
+* `pair<T, U>` if `T` and `U` are `formattable` (additionally with `set_separator` and `set_brackets`)
+* `tuple<Ts...>` if all of `Ts...` are `formattable` (additionally with `set_separator` and `set_brackets`)
 
 Additionally, the standard library should provide the following more specific specializations of `formatter`:
 
@@ -1650,7 +1624,7 @@ And a new clause [format.tuple]:
 namespace std {
 template <class charT, formattable<charT>... Ts>
   class formatter<$tuple-type$<Ts...>, charT> {
-    tuple<formatter<Ts, charT>...> $underlying_$;                             // exposition only
+    tuple<formatter<remove_cvref_t<Ts>, charT>...> $underlying_$;             // exposition only
     basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
     basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("(");  // exposition only
     basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>(")"); // exposition only
@@ -1663,10 +1637,9 @@ template <class charT, formattable<charT>... Ts>
       constexpr typename ParseContext::iterator
         parse(ParseContext& ctx);
 
-    template <class U, class FormatContext>
-        requires same_as<remove_const_t<U>, $tuple-type$<Ts...>>
+    template <class FormatContext>
       typename FormatContext::iterator
-        format(U& elems, FormatContext& ctx) const;
+        format($see below$& elems, FormatContext& ctx) const;
   };
 }
 ```
@@ -1675,7 +1648,7 @@ template <class charT, formattable<charT>... Ts>
 
 ```
 $tuple-format-spec$:
-    $tuple-fill-and-align$@~opt~@ $width$@~opt~@ $tuple-no-bracket$@~opt~@ $tuple-type$@~opt~@
+    $tuple-fill-and-align$@~opt~@ $width$@~opt~@ $tuple-type$@~opt~@
 
 $tuple-fill-and-align$:
     $tuple-fill$@~opt~@ $align$
@@ -1683,26 +1656,27 @@ $tuple-fill-and-align$:
 $tuple-fill$:
     any character other than { or } or :
 
-$tuple-no-bracket$:
-    n
-
 $tuple-type$:
     m
+    n
 ```
 
 [#]{.pnum} The `$tuple-fill-and-align$` is interpreted the same way as a `$tuple-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
 
-[#]{.pnum} The `$tuple-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
+[#]{.pnum} The `$tuple-no-bracket$` specifier causes the `pair` or `tuple` to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
 
-[#]{.pnum} The `$range-type$` specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
+[#]{.pnum} The `$tuple-type$` specifier changes the way a `pair` or `tuple` is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
 
 |Option|Requirements|Meaning|
 |-|-|-|
 |`m`|`sizeof...(Ts) == 2` |Indicates that the open and close bracket should be `""` and the separator should be `": "`.|
+|`n`|None|Indicates that the open and close bracket should be `""`.|
 
 ```
 void set_separator(basic_string_view<charT> sep);
 ```
+
+If the `$tuple-type$` is `m`, then there shall be no `$tuple-no-bracket` specifier.
 
 [#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
@@ -1731,18 +1705,19 @@ For each element `$e$` in `$underlying_$`, if `$e$.set_debug_format()` is a vali
 [#]{.pnum} *Returns*: an iterator past the end of the `$tuple-format-spec$`.
 
 ```
-template <class U, class FormatContext>
-    requires same_as<remove_const_t<U>, $tuple-type$<Ts...>>
+template <class FormatContext>
   typename FormatContext::iterator
-    format(U& elems, FormatContext& ctx) const;
+    format($see below$& elems, FormatContext& ctx) const;
 ```
+
+[#]{.pnum} Let `$const-formattable$(I)` be `true` if `get<I>($underlying_$).format(declval<const remove_cvref_t<Ts@~I~@>&>(), ctx)` is well-formed, otherwise `false`. Let `U` be `const $tuple-type$<Ts...>` if `$const-formattable$(I)` is `true` for each `I` in `[0, sizeof...(Ts))`, otherwise `$tuple-type$<Ts...>`. The type of `elems` is `U`.
 
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$tuple-format-spec$`:
 
 * [#.#]{.pnum} `$open-bracket_$`
 * [#.#]{.pnum} for each index `I` from `0` up to `sizeof...(Ts)`, exclusive:
   * [#.#.#]{.pnum} if `I != 0`, `$separator_$`
-  * [#.#.#]{.pnum} the result of writing `std::get<I>(elems)` via `std::get<I>($underlying_$)`
+  * [#.#.#]{.pnum} the result of writing `get<I>(elems)` via `get<I>($underlying_$)`
 * [#.#]{.pnum} `$close-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
