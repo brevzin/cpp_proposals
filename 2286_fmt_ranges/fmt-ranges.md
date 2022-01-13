@@ -1697,9 +1697,9 @@ template <class FormatContext>
     format($see below$& elems, FormatContext& ctx) const;
 ```
 
-[#]{.pnum} Let `$const-formattable$(U)` be `true` if `formatter<U, charT>().format(declval<const U&>(), ctx)` is well-formed, otherwise `false`. The type of `elems` is:
+[#]{.pnum} The type of `elems` is:
 
-* [#.#]{.pnum} If `$const-formattable$(remove_cvref_t<T>)` is `true` for each `T` in `Ts...`, `const $tuple-type$<Ts...>&`.
+* [#.#]{.pnum} If `(formattable<const Ts, charT> && ...)` is `true`, `const $tuple-type$<Ts...>&`.
 * [#.#]{.pnum} Otherwise `$tuple-type$<Ts...>&`.
 
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$tuple-format-spec$`:
