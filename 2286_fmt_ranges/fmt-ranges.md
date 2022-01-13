@@ -1444,7 +1444,7 @@ $range-underlying-spec$:
 
 [#]{.pnum} For `range_formatter<T, charT>`, the `$format-spec$` in a `$range-underlying-spec$`, if any, is interpreted by `formatter<T, charT>`.
 
-[#]{.pnum} The `$range-fill-and-align$` is interpreted the same way as a `$fill-and-align$` ([format.string.std]). The production `$width$` is described in [format.string].
+[#]{.pnum} The `$range-fill-and-align$` is interpreted the same way as a `$fill-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
 
 [#]{.pnum} The `$range-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
 
