@@ -1676,8 +1676,6 @@ $tuple-type$:
 void set_separator(basic_string_view<charT> sep);
 ```
 
-If the `$tuple-type$` is `m`, then there shall be no `$tuple-no-bracket` specifier.
-
 [#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
 ```
