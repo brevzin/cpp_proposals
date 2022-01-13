@@ -1046,11 +1046,9 @@ Where the public-facing API of `range_formatter` is:
 template <class T, class charT = char>
     requires formattable<T, charT>
 struct range_formatter {
-    void set_debug_format();
-    void set_map_format() requires (tuple_size<T>::value == 2);
     void set_separator(basic_string_view<charT>);
-    void set_string_format() requires same_as<T, charT>;
     void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
+    auto underlying() -> formatter<T, charT>&;
 
     template <typename ParseContext>
     constexpr auto parse(ParseContext&) -> ParseContext::iterator;
@@ -1071,7 +1069,9 @@ struct formatter<map<Key, T, Compare, Allocator>>
     : range_formatter<pair<Key const, T>>
 {
     formatter() {
-        this->set_map_format();
+        this->set_brackets("{", "}");
+        this->underlying().set_brackets({}, {});
+        this->underlying().set_separator(": ");
     }
 };
 
@@ -1112,8 +1112,6 @@ struct tuple_formatter;
 template <class charT, formattable<charT>... Ts>
 struct tuple_formatter<tuple<Ts...>, charT>
 {
-    void set_debug_format();
-    void set_map_format() requires (tuple_size<T>::value == 2);
     void set_separator(basic_string_view<charT>);
     void set_brackets(basic_string_view<charT>, basic_string_view<charT>);
 
@@ -1127,7 +1125,7 @@ struct tuple_formatter<tuple<Ts...>, charT>
 ```
 :::
 
-Same structure (except no `set_string_format`) as before, for the same reasoning. The one thing to note here is that the formatter for, e.g., `pair<int, string>` inherits from `tuple_formatter<tuple<int, string>>`. The reason for this is that it allows the grouping of parameters nicely - otherwise the spelling would have to be `tuple_formatter<char, int, string>`, which looks exceedingly weird.
+Same structure (except no `underlying()` since I'm not sure you need it) as before, for the same reasoning. The one thing to note here is that the formatter for, e.g., `pair<int, string>` inherits from `tuple_formatter<tuple<int, string>>`. The reason for this is that it allows the grouping of parameters nicely - otherwise the spelling would have to be `tuple_formatter<char, int, string>`, which looks exceedingly weird.
 
 The constraints on `U` for `format` are:
 
@@ -1309,11 +1307,9 @@ The standard library will provide the following utilities:
 
 `range_formatter` and `tuple_formatter` will additionally have a bunch of public member functions to facilitate users building custom range and tuple formatters, as detailed [here](#interface-of-the-proposed-solution):
 
-* `set_debug_format()`
-* `set_map_format()`
 * `set_separator(string_view)`
 * `set_brackets(string_view, string_view)`
-* `set_string_format()` (`range_formatter` only)
+* `underlying()` (`range_formatter` only)
 
 The standard library should add specializations of `formatter` for:
 
@@ -1328,6 +1324,7 @@ Additionally, the standard library should provide the following more specific sp
 * `vector<bool, Alloc>::reference` (which formats as a `bool`)
 * all the associative maps (`map`, `multimap`, `unordered_map`, `unordered_multimap`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{k: v, k: v}` instead of `[(k, v), (k, v)]`
 * all the associative sets (`sets`, `multiset`, `unordered_set`, `unordered_multiset`) if their respective key/value types are `formattable`. This accepts the same set of specifiers as any other range, except by _default_ it will format as `{v1, v2}` instead of `[v1, v2]`
+* `queue`, `stack`, and `priority_queue`, which defer to their underlying representations.
 
 Formatting for `string`, `string_view`, `const char*`, and `char` (and all the `wchar_t` equivalents) will gain a `?` specifier as well as a `set_debug_format()` member function, which causes these types to be printed as [escaped and quoted](#escaping-behavior) if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
 
@@ -1532,6 +1529,108 @@ template <ranges::input_range R, class FormatContext>
   * [#.#.#]{.pnum} `$close-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
+:::
+:::
+
+#### Formatting for specific ranges
+
+Add to the synopsis of `map`/`multimap` in [associative.map.syn]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <initializer_list>     // see [initializer.list.syn]
+
+namespace std {
+  // [map], class template map
+  template<class Key, class T, class Compare = less<Key>,
+           class Allocator = allocator<pair<const Key, T>>>
+    class map;
+
++ // [map.format], map formatter
++ template<class charT, formattable<charT> Key, formattable<charT> T,
++          class Compare, class Allocator>
++ class formatter<map<Key, T, Compare, Allocator>, charT>;
+
+  // ...
+
+  // [multimap], class template multimap
+  template<class Key, class T, class Compare = less<Key>,
+           class Allocator = allocator<pair<const Key, T>>>
+    class multimap;
+
++ // [multimap.format], multimap formatter
++ template<class charT, formattable<charT> Key, formattable<charT> T,
++          class Compare, class Allocator>
++ class formatter<multimap<Key, T, Compare, Allocator>, charT>;
+
+  // ...
+}
+```
+:::
+
+Add to the synopsis of `set`/`multiset` in [associative.set.syn]{.sref}:
+
+::: bq
+```diff
+#include <compare>              // see [compare.syn]
+#include <initializer_list>     // see [initializer.list.syn]
+
+namespace std {
+  // [set], class template set
+  template<class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
+    class set;
+
+  // ...
+
++ // [set.format], set formatter
++ template<class charT, formattable<charT> Key
++          class Compare, class Allocator>
++ class formatter<set<Key, Compare, Allocator>, charT>;
+
+
+  // [multiset], class template multiset
+  template<class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
+    class multiset;
+
++ // [multiset.format], multiset formatter
++ template<class charT, formattable<charT> Key
++          class Compare, class Allocator>
++ class formatter<multiset<Key, Compare, Allocator>, charT>;
+
+  // ...
+}
+```
+:::
+
+Add a new clause [map.format], map formatter
+
+::: bq
+::: addu
+```
+namespace std {
+  template<class charT, formattable<charT> Key, formattable<charT> T,
+           class Compare, class Allocator>
+  class formatter<map<Key, T, Compare, Allocator>, charT>
+      : public range_formatter<pair<const Key, T>>
+  {
+  public:
+    formatter();
+  };
+}
+```
+
+```
+formatter();
+```
+
+[1]{.pnum} *Effects*: Equivalent to:
+
+```
+this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
+this->underlying().set_brackets({}, {});
+this->underlying().set_separator($STATICALLY-WIDEN$<charT>(": "));
+```
 :::
 :::
 
