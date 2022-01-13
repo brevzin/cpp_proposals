@@ -1422,7 +1422,13 @@ And a new clause [format.range]:
 
 ```
 $range-format-spec$:
-    $fill-and-align$@~opt~@ $width$@~opt~@ $range-no-bracket$@~opt~@ $range-type$@~opt~@ $range-underlying-spec$@~opt~@
+    $range-fill-and-align$@~opt~@ $width$@~opt~@ $range-no-bracket$@~opt~@ $range-type$@~opt~@ $range-underlying-spec$@~opt~@
+
+$range-fill-and-align$:
+    $range-fill$@~opt~@ $align$
+
+$range-fill$:
+    any character other than { or } or :
 
 $range-no-bracket$:
     n
@@ -1438,7 +1444,7 @@ $range-underlying-spec$:
 
 [#]{.pnum} For `range_formatter<T, charT>`, the `$format-spec$` in a `$range-underlying-spec$`, if any, is interpreted by `formatter<T, charT>`.
 
-[#]{.pnum} The `$fill$` in a `$fill-and-align$` in a `$range-format-spec$`, if any, shall not be `:`.
+[#]{.pnum} The `$range-fill-and-align$` is interpreted the same way as a `$fill-and-align$` ([format.string.std]). The production `$width$` is described in [format.string].
 
 [#]{.pnum} The `$range-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
 
@@ -1506,7 +1512,7 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. Unless the `$range-type$` is either `s` or `?s`, if `$underlying_$.set_debug_format()` is a valid expression, calls `$underlying_$.set_debug_format()`.
+[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. Unless the `$range-type$` is either `s` or `?s`, if `$underlying_$.set_debug_format()` is a valid expression and there is no `$range-underlying-spec$`, calls `$underlying_$.set_debug_format()`.
 
 [#]{.pnum} *Returns*: an iterator past the end of the `$range-format-spec$`.
 
@@ -1532,87 +1538,18 @@ template <ranges::input_range R, class FormatContext>
 :::
 :::
 
-#### Formatting for specific ranges
+#### Formatting for specific ranges: all the maps and sets
 
-Add to the synopsis of `map`/`multimap` in [associative.map.syn]{.sref}:
-
-::: bq
-```diff
-#include <compare>              // see [compare.syn]
-#include <initializer_list>     // see [initializer.list.syn]
-
-namespace std {
-  // [map], class template map
-  template<class Key, class T, class Compare = less<Key>,
-           class Allocator = allocator<pair<const Key, T>>>
-    class map;
-
-+ // [map.format], map formatter
-+ template<class charT, formattable<charT> Key, formattable<charT> T,
-+          class Compare, class Allocator>
-+ class formatter<map<Key, T, Compare, Allocator>, charT>;
-
-  // ...
-
-  // [multimap], class template multimap
-  template<class Key, class T, class Compare = less<Key>,
-           class Allocator = allocator<pair<const Key, T>>>
-    class multimap;
-
-+ // [multimap.format], multimap formatter
-+ template<class charT, formattable<charT> Key, formattable<charT> T,
-+          class Compare, class Allocator>
-+ class formatter<multimap<Key, T, Compare, Allocator>, charT>;
-
-  // ...
-}
-```
-:::
-
-Add to the synopsis of `set`/`multiset` in [associative.set.syn]{.sref}:
-
-::: bq
-```diff
-#include <compare>              // see [compare.syn]
-#include <initializer_list>     // see [initializer.list.syn]
-
-namespace std {
-  // [set], class template set
-  template<class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
-    class set;
-
-  // ...
-
-+ // [set.format], set formatter
-+ template<class charT, formattable<charT> Key
-+          class Compare, class Allocator>
-+ class formatter<set<Key, Compare, Allocator>, charT>;
-
-
-  // [multiset], class template multiset
-  template<class Key, class Compare = less<Key>, class Allocator = allocator<Key>>
-    class multiset;
-
-+ // [multiset.format], multiset formatter
-+ template<class charT, formattable<charT> Key
-+          class Compare, class Allocator>
-+ class formatter<multiset<Key, Compare, Allocator>, charT>;
-
-  // ...
-}
-```
-:::
-
-Add a new clause [map.format], map formatter
+Add a clause (maybe after [unord]{.sref} and before [container.adaptors]{.sref}) [assoc.format] Associative Formatting:
 
 ::: bq
 ::: addu
+[1]{.pnum} For each of `map`, `multimap`, `unordered_map`, and `unordered_multimap`, the library provides the following formatter specialization where `$map-type$` is the name of the template:
+
 ```
 namespace std {
-  template<class charT, formattable<charT> Key, formattable<charT> T,
-           class Compare, class Allocator>
-  class formatter<map<Key, T, Compare, Allocator>, charT>
-      : public range_formatter<pair<const Key, T>>
+  template <class charT, formattable<charT> Key, formattable<charT> T, class... U>
+  class formatter<$map-type$<Key, T, U...>, charT> : public range_formatter<pair<const Key, T>>
   {
   public:
     formatter();
@@ -1624,13 +1561,80 @@ namespace std {
 formatter();
 ```
 
-[1]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 
 ```
 this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
 this->underlying().set_brackets({}, {});
 this->underlying().set_separator($STATICALLY-WIDEN$<charT>(": "));
 ```
+
+[#]{.pnum} For each of `set`, `multiset`, `unordered_set`, and `unordered_multiset`, the library provides the following formatter specialization where `$set-type$` is the name of the template:
+
+```
+namespace std {
+  template <class charT, formattable<charT> Key, class... U>
+  class formatter<$set-type$<Key, U...>, charT> : public range_formatter<Key, charT>
+  {
+  public:
+    formatter();
+  };
+}
+```
+
+```
+formatter();
+```
+
+[#]{.pnum} *Effects*: Equivalent to:
+
+```
+this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
+```
+:::
+:::
+
+#### Formatting for specific ranges: all the container adaptors
+
+At the end of [container.adaptors]{.sref}, add a clause [container.adaptors.format]:
+
+::: bq
+::: addu
+[1]{.pnum} For each of `queue`, `priority_queue`, and `stack`, the library provides the following formatter specialization where `$adaptor-type$` is the name of the template:
+
+```
+namespace std {
+  template <class charT, class T, formattable<charT> Container, class... U>
+  class formatter<$adaptor-type$<T, Container, U...>, charT>
+  {
+    formatter<Container, charT> $underlying_$; // exposition only
+  public:
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format(const $adaptor-type$<T, Container, U...>& r, FormatContext& ctx) const;
+  };
+}
+```
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.parse(ctx);`
+
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format(const $adaptor-type$<T, Container, U...>& r, FormatContext& ctx) const;
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(r.c, ctx);`
 :::
 :::
 
