@@ -1663,8 +1663,6 @@ $tuple-type$:
 
 [#]{.pnum} The `$tuple-fill-and-align$` is interpreted the same way as a `$tuple-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
 
-[#]{.pnum} The `$tuple-no-bracket$` specifier causes the `pair` or `tuple` to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
-
 [#]{.pnum} The `$tuple-type$` specifier changes the way a `pair` or `tuple` is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
 
 |Option|Requirements|Meaning|
@@ -1708,7 +1706,10 @@ template <class FormatContext>
     format($see below$& elems, FormatContext& ctx) const;
 ```
 
-[#]{.pnum} Let `$const-formattable$(I)` be `true` if `get<I>($underlying_$).format(declval<const remove_cvref_t<Ts@~I~@>&>(), ctx)` is well-formed, otherwise `false`. Let `U` be `const $tuple-type$<Ts...>` if `$const-formattable$(I)` is `true` for each `I` in `[0, sizeof...(Ts))`, otherwise `$tuple-type$<Ts...>`. The type of `elems` is `U`.
+[#]{.pnum} Let `$const-formattable$(U)` be `true` if `formatter<U, charT>().format(declval<const U&>(), ctx)` is well-formed, otherwise `false`. The type of `elems` is:
+
+* [#.#]{.pnum} If `$const-formattable$(remove_cvref_t<T>)` is `true` for each `T` in `Ts...`, `const $tuple-type$<Ts...>&`.
+* [#.#]{.pnum} Otherwise `$tuple-type$<Ts...>&`.
 
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$tuple-format-spec$`:
 
