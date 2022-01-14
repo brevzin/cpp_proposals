@@ -774,319 +774,9 @@ auto s = std::format("{:?}", "Привет, 🕴️!"); // assuming a Unicode en
 
 ## Implementation Challenges
 
-I implemented the range and pair/tuple portions of this proposal on top of libfmt. I chose to do it on top so that I can easily share the implementation [@fmt-impl], as such I could not implement `?` support for strings and char, though that is not a very interesting part of this proposal (at least as far as implementability is concerned). There were two big issues that I ran into that are worth covering.
+The previous revision of this paper ([@P2286R4]) had a long section about the implementation challenges of this section, which existed to motivate the addition of two additional APIs to the standard: `retargeted_format_context` and `end_sentry`. However, since those APIs have been removed from the proposal (possibly to be included in a future, different paper), it doesn't make sense to have a long section about it in this particular paper.
 
-### Wrapping `basic_format_context` is not generally possible
-
-In order to be able to provide an arbitrary type's specifiers to format a range, you have to have a `formatter<V>` for the underlying type and use that specific `formatter` in order to `parse` the format specifier and then `format` into the given context. If that's all you're doing, this isn't that big a deal, and I showed a simplified implementation of `range_formatter<V>` [earlier](#the-debug-specifier).
-
-However, if you additionally want to support fill/pad/align, then the game changes. You can't format into the provided context - you have to format into _something else_ first and then do the adjustments later. Adding padding support ends up doing something more like this:
-
-::: cmptable
-### No padding
-```cpp
-template <typename R, typename FormatContext>
-constexpr auto format(R&& r, FormatContext& ctx) {
-    auto out = ctx.out();
-    *out++ = '[';
-    auto first = std::ranges::begin(r);
-    auto last = std::ranges::end(r);
-    if (first != last) {
-        ctx.advance_to(std::move(out));
-        out = underlying.format(*first, ctx);
-        for (++first; first != last; ++first) {
-            *out++ = ',';
-            *out++ = ' ';
-            ctx.advance_to(std::move(out));
-            out = underlying.format(*first, ctx);
-        }
-    }
-    *out++ = ']';
-    return out;
-}
-```
-
-### With padding
-```cpp
-template <typename R, typename FormatContext>
-constexpr auto format(R&& r, FormatContext& ctx) {
-    // fmt has a dynamically growing buffer: memory_buffer
-    // and a type-erased iterator into it: appender
-    fmt::memory_buffer buf;
-    fmt::basic_format_context<fmt::appender, char>
-      bctx(fmt::appender(buf), ctx.args(), ctx.locale());
-
-    auto out = bctx.out();
-    *out++ = '[';
-    auto first = std::ranges::begin(r);
-    auto last = std::ranges::end(r);
-    if (first != last) {
-        bctx.advance_to(std::move(out));
-        out = underlying.format(*first, bctx);
-        for (++first; first != last; ++first) {
-            *out++ = ',';
-            *out++ = ' ';
-            bctx.advance_to(std::move(out));
-            out = underlying.format(*first, bctx);
-        }
-    }
-    *out++ = ']';
-
-    // at this point, we formatted our range into buf, so
-    // now we need to format buf into the *real* context,
-    // ctx.out(), with fill/pad/align. That part isn't
-    // interesting for our purposes here
-    return $write-padded-aligned$(ctx.out(), buf);
-}
-```
-:::
-
-It's mostly the same - we format into `bctx` instead of `ctx` and then `write` into `ctx` later using the `specs` that we already parsed. The code seems straightforward enough, except...
-
-First, we don't even expose a way to construct `basic_format_context` so can't do this at all (there's no specified constructor for it in [format.context]{.sref}). Nor do we expose a way of constructing an iterator type for formatting into some buffer. And if we could construct these things, the real problem hits when we try to construct this new context. We need some kind of `fmt::basic_format_context<???, char>`, and we need to write into some kind of dynamic buffer, so `fmt::appender` is the appropriate choice for iterator. But the issue here is that `fmt::basic_format_context<Out, CharT>` has a member `fmt::basic_format_args<basic_format_context>` - the underlying arguments are templates _on the context_. We can't just... change the `basic_format_args` to have a different context, this is a fairly fundamental attachment in the design.
-
-The _only_ type for the output iterator that I can support in this implementation is precisely `fmt::appender`.
-
-This seems like it'd be _extremely_ limiting.
-
-Except it turns out that `{fmt}` uses exactly this iterator in a whole lot of places. `fmt::print`, `fmt::format`, `fmt::format_to`, `fmt::format_to_n`, `fmt::vformat`, etc., all only use this one iterator type. This is because of [@P2216R3]'s efforts to reduce code bloat by type erasing the output iterator.
-
-However, there is one part of `{fmt}` that uses a different iterator type, which the above implementation fails on:
-
-::: bq
-```cpp
-fmt::format("{:::d}", vector{vector{'a'}, vector{'b', 'c'}});              // ok: [[97], [98, 99]]
-fmt::format(FMT_COMPILE("{:::d}"), vector{vector{'a'}, vector{'b', 'c'}}); // ill-formed
-```
-:::
-
-The latter fails because there the initial output iterator type is `std::back_insert_iterator<std::string>`. This is a different iterator type from `fmt::appender`, so we get a mismatch in the types of the `basic_format_args` specializations, and cannot compile the construction of `bctx`.
-
-This can be worked around (I just need to know what the type of the buffer needs to be, in the usual case it's `fmt::memory_buffer` and here it becomes `std::string`, that's fine), but it means we really need to nail down what the requirements of the `formatter` API are. One of the things we need to do in this paper is provide a `formattable` concept. From a previous revision of that paper, dropping the `char` parameter for simplicity, that looks like:
-
-::: bq
-```cpp
-template<class T, class charT>
-concept formattable =
-    semiregular<formatter<remove_cvref_t<T>, charT>> &&
-    requires (formatter<remove_cvref_t<T>, charT> f,
-              const formatter<remove_cvref_t<T>, charT> cf,
-              T t,
-              basic_format_context<$fmt-iter-for$<charT>, charT> fc,
-              basic_format_parse_context<charT> pc) {
-        { f.parse(pc) } -> same_as<basic_format_parse_context<charT>::iterator>;
-        { cf.format(t, fc) } -> same_as<$fmt-iter-for$<charT>>;
-    };
-```
-:::
-
-Note that based on the resolution of [@LWG3636], the call to `format` may be on a `const fmt::formatter<T>` instead.
-
-I use `char*` as the output iterator, but my `range_formatter<V>` cannot support `char*` as an output iterator type at all. Do `formatter` specializations need to support any output iterator type? If so, how can we implement fill/align/pad support in `range_formatter`?
-
-The simplest approach would be to state that there actually is only one output iterator type that need be support per character type. But this would prohibit the approach `{fmt}` uses to process the format string at compile time, as well as any potential future optimizations. This just seems like a non-starter.
-
-A different approach would be to introduce a new API that allows the implementation to produce a new context for us. That approach could look like this:
-
-::: bq
-```cpp
-template <typename V, typename FormatContext>
-constexpr auto format(V&& value, FormatContext& ctx) -> typename FormatContext::iterator
-{
-    // ctx here is a basic_format_context<OutIt, CharT>, for some output iterator
-    // and some character type
-
-    // can use a vector<CharT>, basic_string<CharT>, or some custom buffer like
-    // fmt::buffer, user's choice
-    vector<CharT> buf;
-
-    // The job of the retargeted_format_context class template is to produce
-    // a new specialization of basic_format_context for the provided iterator
-    // that simply does The Right Thing (TM).
-    // We do not need bctx here to be specifically (w)format_context, just some
-    // specialization of basic_format_context that is definitely going to write
-    // into buf (regardless of buf's type).
-    retargeted_format_context rctx(ctx, std::back_inserter(buf));
-    auto& bctx = rctx.context();
-
-    // format into bctx...
-}
-```
-:::
-
-There is one fundamental limitation here that is sort of inherent in the design. If the user-defined types want to reference some other argument (i.e. something like dynamic width or dynamic precision) but want that other argument to _also_ be a user-defined type (rather than just an integer or `string_view`/`char const*`), they basically cannot. Thta's not an option. User-defined types are type erased as `handle` (see [format.arg]{.sref}), and `handle` can only be formatted with a `(w)format_parse_context` - which only the implementation would have access to.
-
-However, if we ignore user-defined types entirely, it is straightforward to convert all the other `format_arg`s from one context to another, since we know everything about all of those types and they are all cheap to copy.
-
-The implementation approach I used is as follows:
-
-::: bq
-```cpp
-// effectively a tagged version of fmt::appender, solely for
-// specializing on top of
-template <typename Old>
-struct custom_appender : appender {
-    using appender::appender;
-};
-
-// specialization of basic_format_args for use with custom_appender
-// This ended up being easier than specializing basic_format_context.
-// This specialization is only used in the context of retargeted_format_context.
-//
-// Note that here we hold a reference to the original basic_format_args: we don't
-// have to make a copy, and we only produce a new basic_format_arg if actually
-// requiried by the formatting. This means we don't have to pay for anything that
-// we don't use
-template <typename Old>
-struct basic_format_args<basic_format_context<custom_appender<Old>, char>> {
-    using old_args = basic_format_args<basic_format_context<Old, char>>;
-    using new_context = basic_format_context<custom_appender<Old>, char>;
-    using format_arg = basic_format_arg<new_context>;
-    using size_type = int;
-
-    old_args const& orig_args;
-
-    basic_format_args(old_args const& orig)
-        : orig_args(orig)
-    { }
-
-    constexpr auto get(int id) const -> format_arg {
-        return visit_format_arg([]<typename T>(T const& arg) -> format_arg {
-            // User-defined types or out-of-range arguments can't produce any
-            // valid format_arg, so we return no format_arg
-            if constexpr (std::same_as<T, typename old_args::format_arg::handle>
-                        or std::same_as<T, monostate>) {
-                return format_arg();
-            } else {
-                // ... but for all the other types, this is a cheap copy
-                // T is bool, char, some integral type, some floating point
-                // type, char const*, string_view, or void const*
-                return detail::make_arg<new_context>(arg);
-            }
-        }, orig_args.get(id));
-    }
-
-    // These next two functions are {fmt}-specific, since std:: doesn't
-    // have argument names. But if it did, as you can see, these calls are
-    // pretty straightforward
-    constexpr auto get(fmt::string_view name) const -> format_arg {
-        int id = orig_args.get_id(name);
-        return id >= 0 ? get(id) : format_arg();
-    }
-
-    constexpr auto get_id(fmt::string_view name) const -> int {
-        return orig_args.get_id(name);
-    }
-};
-
-// In the case where we do need to retarget, we build a new context using
-// custom_appender<Context::iterator>, which will use the specialization of
-// basic_format_args defined above (no new basic_format_args are created)
-template <typename Context, typename OutputIt>
-struct retargeted_format_context {
-    detail::iterator_buffer<OutputIt, char> buffer;
-
-    using iterator = custom_appender<typename Context::iterator>;
-    using new_context = basic_format_context<iterator, char>;
-    new_context erased_ctx;
-
-    retargeted_format_context(Context& ctx, OutputIt it)
-        : buffer(it)
-        , erased_ctx(iterator(buffer),
-                        basic_format_args<new_context>(ctx.args()),
-                        ctx.locale())
-    { }
-
-    auto context() -> new_context& {
-        return erased_ctx;
-    }
-
-    // in fmt, this iterator is buffered, so we need to flush it
-    void flush() {
-        (void)buffer.out();
-    }
-};
-
-// In the "happy" case (i.e. we're just using fmt::print), we don't need to do
-// any of this, the args are already the correct type so copying them is fine.
-// All we need to do is create a new context
-template <typename CharT, typename OutputIt>
-struct retargeted_format_context<basic_format_context<OutputIt, CharT>, OutputIt>
-{
-    basic_format_context<OutputIt, CharT> ctx;
-
-    retargeted_format_context(basic_format_context<OutputIt, CharT>& ctx, OutputIt it)
-        : ctx(it, ctx.args(), ctx.locale())
-    { }
-
-    auto context() -> basic_format_context<OutputIt, CharT>& { return ctx; }
-
-    void flush() { }
-};
-```
-:::
-
-You can see this in the implementation I shared [@fmt-impl], on lines 65-140.
-
-We don't strictly need to provide `retargeted_format_context` just to format ranges (the implementation would do something like this internally). But if users want to be able to solve this problem (e.g. fill/pad/align for a user-defined type where all you have is `formatter<T>` for unknown `T`) for any of their own types, they'll need to do something like this as well, so this functionality should be provided to let them do that.
-
-### Manipulating `basic_format_parse_context` to search for sentinels
-
-Even though this paper is no longer proposing complex `pair` and `tuple` support, it's still useful to discuss one of the examples that could have been supported:
-
-::: bq
-```cpp
-fmt::format("{:|#x|*^10}", std::pair(42, "hello"s));
-```
-:::
-
-In order for this to work, the `formatter<int>` object needs to be passed a context that just contains the string `"#x"` and the `formatter<string>` object needs to be passed a context that just contains the string `"*^10"` (or possibly `"*^10}"`). This is because `formatter<T>::parse` must consume the whole context. That's the API.
-
-But `basic_format_parse_context` does not provide a way for you to take a slice of it, and we can't just construct a new object because of the dynamic argument counting support. Not just _any_ context, but _specifically that one_.
-
-Tim's suggested design for how to even do specifiers for `pair` also came with a suggested implementation: use a `sentry`-like type that temporarily modifies the context and restores it later. The use of this type looks like this:
-
-::: bq
-```cpp
-auto const delim = *begin++;
-ctx.advance_to(begin);
-tuple_for_each_index(underlying, [&](auto I, auto& f){
-    auto next_delim = std::find(ctx.begin(), end, delim);
-    if constexpr (I + 1 < sizeof...(Ts)) {
-        if (next_delim == end) {
-            throw fmt::format_error("ran out of specifiers");
-        }
-    }
-
-    end_sentry _(ctx, next_delim);
-    auto i = f.parse(ctx);
-    if (i != next_delim && *i != '}') {
-        throw fmt::format_error("this is broken");
-    }
-
-    if (next_delim != end) {
-        ++i;
-    }
-    ctx.advance_to(i);
-});
-```
-:::
-
-This ensures that each element of the `pair`/`tuple` only sees its part of the whole parse string, which is the only part that it knows what to do anything with.
-
-Without something like this in the library, it'd be impossible to do this sort of complex specifier parsing. You could support ranges (there, we only have one underlying element, so it parses to the end), but not pair or tuple. We _could_ say that since pair and tuple are library types, the library should just Make This Work, but there are surely other examples of wanting to do this sort of thing and it doesn't feel right to not allow users to do it too.
-
-As with `retargeted_format_context`, if we adopted the `pair`/`tuple` specifiers design, we wouldn't have to expose something like this in the standard library. The implementation would need to do it internally and it could do whatever it needs to do to get it done. But it's still useful functionality to be able to export to users. And especially if we're not going to adopt arbitrary pair/tuple specifiers, I think it's important to give users the tools to experiment with them.
-
-This design space is, thankfully, slightly easier than the previous problem: this is basically what you have to do. Not much choice, I don't think.
-
-### Parsing of alignment, padding, and width
-
-The first two issues in this section are serious implementation issues that require design changes to `<format>`. This one doesn't *require* changes, and this paper won't propose changes, but it's worth pointing out nevertheless. Alignment, padding, and width are the most common and fairly universal specifiers. But we don't provide a public API to actually parse them.
-
-When implementing this in `fmt`, I just took advantage of `fmt`'s implementation details to make this a lot easier for myself: a type (`dynamic_format_specs<char>`) that holds all the specifier results, a function that understands those to let you write a padded/aligned string (`write`), and several parsing functions that are well designed to do the right thing if you have a unique set of specifiers you wish to parse (the appropriately-named `parse_align` and `parse_width`).
-
-These don't have to be standardized, as nothing in these functions is something that a user couldn't write on their own. And this paper is big enough already, so it, again, won't propose anything in this space. But it's worth considering for the future.
+For those curious, the previous text can be found [here](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2286r4.html#implementation-challenges).
 
 ## How to support those views which are not `const`-iterable?
 
@@ -1394,8 +1084,6 @@ Formatting for `string`, `string_view`, `const char*`, and `char` (and all the `
 
 ## Wording
 
-This wording is very much incomplete, in the interests of time to try to get this paper in C++23.
-
 The wording here is grouped by functionality added rather than linearly going through the standard text.
 
 ### Concept `formattable`
@@ -1441,6 +1129,130 @@ concept formattable =
     };
 ```
 [2]{.pnum} A type `T` and a character type `charT` model `formattable` if `formatter<remove_cvref_t<T>, charT>` meets the *BasicFormatter* requirements ([formatter.requirements]) and, if `remove_reference_t<T>` is `const`-qualified, the *Formatter* requirements.
+:::
+:::
+
+### Additional formatting support for characters and strings
+
+Change [format.string.std]{.sref} to add `?` as a valid type:
+
+::: bq
+The syntax of format specifications is as follows:
+
+```
+$type$: one of
+  a A b B c d e E f F g G o p s x X @[?]{.addu}@
+```
+:::
+
+Add `?` to the strings table in [format.string.std]{.sref}/17 (Table 64):
+
+::: bq
+[17]{.pnum} The available string presentation types are specified in Table 64.
+
+|Type|Meaning|
+|-|-|
+|none, `s`|Copies the string to the output.|
+|[?]{.addu}|[Copies the escaped string ([format.string.escaped]) to the output.]{.addu}|
+:::
+
+Add `?` to the `charT` table in [format.string.std]{.sref}/20 (Table 66):
+
+::: bq
+[20]{.pnum} The available `charT` presentation types are specified in Table 66.
+
+|Type|Meaning|
+|-|-|
+|none, `c`|Copies the character to the output.|
+|`b`,`B`,`d`,`o`,`x`,`X`|As specified in Table 65.|
+|[?]{.addu}|[Copies the escaped character ([format.string.escaped]) to the output.]{.addu}|
+:::
+
+Add `set_debug_format()` to the character and string specializations in [format.formatter.spec]{.sref}:
+
+::: bq
+[1]{.pnum} The functions defined in [format.functions] use specializations of the class template `formatter` to format individual arguments.
+
+[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of `formatter` is either enabled or disabled, as described below. [A _debug-enabled_ specialization of `formatter` additionally provides a public, non-static member function `set_debug_format()` which will cause these formatters to interpret the format specification as if its `$type$` were `?`.]{.addu} Each header that declares the template `formatter` provides the following enabled specializations:
+
+* [2.#]{.pnum} The [debug-enabled]{.addu} specializations
+
+  ```cpp
+  template<> struct formatter<char, char>;
+  template<> struct formatter<char, wchar_t>;
+  template<> struct formatter<wchar_t, wchar_t>;
+  ```
+
+* [2.#]{.pnum} For each `charT`, the [debug-enabled]{.addu} string type specializations
+
+  ```cpp
+  template<> struct formatter<charT*, charT>;
+  template<> struct formatter<const charT*, charT>;
+  template<size_t N> struct formatter<const charT[N], charT>;
+  template<class traits, class Allocator>
+    struct formatter<basic_string<charT, traits, Allocator>, charT>;
+  template<class traits>
+    struct formatter<basic_string_view<charT, traits>, charT>;
+  ```
+
+* [2.#]{.pnum} For each `charT`, for each *cv*-unqualified arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`, a specialization
+
+  ```cpp
+  template<> struct formatter<ArithmeticT, charT>;
+  ```
+
+* [2.#]{.pnum} For each `charT`, the pointer type specializations
+
+  ```cpp
+  template<> struct formatter<nullptr_t, charT>;
+  template<> struct formatter<void*, charT>;
+  template<> struct formatter<const void*, charT>;
+  ```
+:::
+
+Add a new clause [format.string.escaped] "Formatting escaped characters and strings" which will discuss what it means to do escaping.
+
+::: bq
+::: addu
+[1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
+
+[2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of values:
+
+* [2.#]{.pnum} A `"` character
+
+* [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit if it is not a part of a valid UCS scalar value:
+
+  * [2.#]{.pnum} If the UCS scalar value is one of `\t`, `\r`, `\n`, `\\` or `"`, then the sequence `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
+
+  * [2.#]{.pnum} Otherwise, if the UCS scalar value
+
+    * [2.#.#]{.pnum} has a value other than space (U+0020 SPACE) and has a Unicode property Separator (`Z`) or Other (`C`), or
+    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend` and there are no UCS scalar values preceding it in `$S$` without this property
+
+    then its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros.
+
+  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros.
+
+  * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
+
+* [2.#]{.pnum} Finally, another `"` character.
+
+[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with `'` instead of `"` and the UCS scalar value `'` is escaped as `"\\\'"` while the UCS scalar value `"` is left unchanged.
+
+[4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
+
+[*Example*:
+```
+string s0 = format("[{}]", "h\tllo");           // s0 has value: [h    llo]
+string s1 = format("[{:?}]", "h\tllo");         // s1 has value: ["h\tllo"]
+string s2 = format("[{:?}]", "Привет, 🕴️!");    // s2 has value: ["Привет, 🕴️!"]
+string s3 = format("[{:?}] [{:?}]", '\'', '"'); // s3 has value: ['\'', '"']
+string s4 = format("[{:?}]", string("\0 \n \t \x02 \x1b", 9));
+                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]
+string s5 = format("[{:?}]", "\xc3\x28");       // invalid UTF-8
+                                                // s5 has value: ["\x{c3}\x{28}"]
+```
+*-end example*]
 :::
 :::
 
@@ -1807,130 +1619,6 @@ template <class FormatContext>
 * [#.#]{.pnum} `$close-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
-:::
-:::
-
-### Additional formatting support for characters and strings
-
-Change [format.string.std]{.sref} to add `?` as a valid type:
-
-::: bq
-The syntax of format specifications is as follows:
-
-```
-$type$: one of
-  a A b B c d e E f F g G o p s x X @[?]{.addu}@
-```
-:::
-
-Add `?` to the strings table in [format.string.std]{.sref}/17 (Table 64):
-
-::: bq
-[17]{.pnum} The available string presentation types are specified in Table 64.
-
-|Type|Meaning|
-|-|-|
-|none, `s`|Copies the string to the output.|
-|[?]{.addu}|[Copies the escaped string ([format.string.escaped]) to the output.]{.addu}|
-:::
-
-Add `?` to the `charT` table in [format.string.std]{.sref}/20 (Table 66):
-
-::: bq
-[20]{.pnum} The available `charT` presentation types are specified in Table 66.
-
-|Type|Meaning|
-|-|-|
-|none, `c`|Copies the character to the output.|
-|`b`,`B`,`d`,`o`,`x`,`X`|As specified in Table 65.|
-|[?]{.addu}|[Copies the escaped character ([format.string.escaped]) to the output.]{.addu}|
-:::
-
-Add `set_debug_format()` to the character and string specializations in [format.formatter.spec]{.sref}:
-
-::: bq
-[1]{.pnum} The functions defined in [format.functions] use specializations of the class template `formatter` to format individual arguments.
-
-[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of `formatter` is either enabled or disabled, as described below. [A _debug-enabled_ specialization of `formatter` additionally provides a public, non-static member function `set_debug_format()` which will cause these formatters to interpret the format specification as if its `$type$` were `?`.]{.addu} Each header that declares the template `formatter` provides the following enabled specializations:
-
-* [2.#]{.pnum} The [debug-enabled]{.addu} specializations
-
-  ```cpp
-  template<> struct formatter<char, char>;
-  template<> struct formatter<char, wchar_t>;
-  template<> struct formatter<wchar_t, wchar_t>;
-  ```
-
-* [2.#]{.pnum} For each `charT`, the [debug-enabled]{.addu} string type specializations
-
-  ```cpp
-  template<> struct formatter<charT*, charT>;
-  template<> struct formatter<const charT*, charT>;
-  template<size_t N> struct formatter<const charT[N], charT>;
-  template<class traits, class Allocator>
-    struct formatter<basic_string<charT, traits, Allocator>, charT>;
-  template<class traits>
-    struct formatter<basic_string_view<charT, traits>, charT>;
-  ```
-
-* [2.#]{.pnum} For each `charT`, for each *cv*-unqualified arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`, a specialization
-
-  ```cpp
-  template<> struct formatter<ArithmeticT, charT>;
-  ```
-
-* [2.#]{.pnum} For each `charT`, the pointer type specializations
-
-  ```cpp
-  template<> struct formatter<nullptr_t, charT>;
-  template<> struct formatter<void*, charT>;
-  template<> struct formatter<const void*, charT>;
-  ```
-:::
-
-Add a new clause [format.string.escaped] "Formatting escaped characters and strings" which will discuss what it means to do escaping.
-
-::: bq
-::: addu
-[1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
-
-[2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of values:
-
-* [2.#]{.pnum} A `"` character
-
-* [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit if it is not a part of a valid UCS scalar value:
-
-  * [2.#]{.pnum} If the UCS scalar value is one of `\t`, `\r`, `\n`, `\\` or `"`, then the sequence `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
-
-  * [2.#]{.pnum} Otherwise, if the UCS scalar value
-
-    * [2.#.#]{.pnum} has a value other than space (U+0020 SPACE) and has a Unicode property Separator (`Z`) or Other (`C`), or
-    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend` and there are no UCS scalar values preceding it in `$S$` without this property
-
-    then its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros.
-
-  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros.
-
-  * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
-
-* [2.#]{.pnum} Finally, another `"` character.
-
-[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with `'` instead of `"` and the UCS scalar value `'` is escaped as `"\\\'"` while the UCS scalar value `"` is left unchanged.
-
-[4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
-
-[*Example*:
-```
-string s0 = format("[{}]", "h\tllo");           // s0 has value: [h    llo]
-string s1 = format("[{:?}]", "h\tllo");         // s1 has value: ["h\tllo"]
-string s2 = format("[{:?}]", "Привет, 🕴️!");    // s2 has value: ["Привет, 🕴️!"]
-string s3 = format("[{:?}] [{:?}]", '\'', '"'); // s3 has value: ['\'', '"']
-string s4 = format("[{:?}]", string("\0 \n \t \x02 \x1b", 9));
-                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]
-string s5 = format("[{:?}]", "\xc3\x28");       // invalid UTF-8
-                                                // s5 has value: ["\x{c3}\x{28}"]
-```
-*-end example*]
 :::
 :::
 
