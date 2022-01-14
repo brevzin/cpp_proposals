@@ -1,6 +1,6 @@
 ---
 title: "Relaxing some `constexpr` restrictions"
-document: P2448R0
+document: D2448R1
 date: today
 audience: CWG
 author:
@@ -15,6 +15,8 @@ There are two rules about `constexpr` programming that make code ill-formed or i
 
 # Revision History
 
+Since [@P2448R0], took the wording one step further and additionally made implicitly defined special member functions `constexpr`, and thus dropping the need for constexpr-compatible.
+
 A draft of the first revision of this paper was discussed in an [EWG telecon](https://wiki.edg.com/bin/view/Wg21telecons2021/EWG-2021-10-13), where the following poll was taken:
 
 ::: bq
@@ -26,6 +28,16 @@ send P2448 to electronic polling, targeting CWG for C++23.
 :::
 
 This first published revision thus targets CWG.
+
+TODO, we have wording like in [class.default.ctor] that does stuff like:
+
+> If that user-written default constructor would satisfy the requirements of a constexpr constructor ([dcl.constexpr]), the implicitly-defined default constructor is constexpr.
+
+Change it to:
+
+> The implicitly-defined default constructor is constexpr.
+
+Just... always make the implicitly-defined stuff `constexpr`. Also just remove constexpr-compatable? It's not even useful?
 
 # Maybe Not Now, But Soon
 
@@ -194,6 +206,19 @@ Are all of these functions okay? I would argue that they *should* all be okay, b
 
 I want `Wrapper` to be entirely `constexpr` where feasible. Some of those functions may not be `constexpr` for all types, and that's fine. Some of these functions may not be able to be `constexpr` in C++N but may be later, and I don't want to have to go back and either annotate against this (which I don't think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations.
 
+# Getting rid of constexpr-compatible
+
+With the wording suggested in the first revision of this paper [@P2448R0], functions (even defaulted special member functions) could be declared `constexpr` without this leading to either a diagnostic or leading to a program being ill-formed, no diagnostic required.
+
+During the CWG telecon discussing that paper, it was brought up that we can go further. For instance, [class.default.ctor]{.sref} currently contains this:
+
+::: quote
+The implicitly-defined default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no _ctor-initializer_ ([class.base.init]) and an empty _compound-statement_. If that user-written default constructor would be ill-formed, the program is ill-formed.
+If that user-written default constructor would satisfy the requirements of a constexpr constructor ([dcl.constexpr]), the implicitly-defined default constructor is `constexpr`.
+:::
+
+
+
 # Proposal
 
 Strike [dcl.constexpr]{.sref}/6 and the example following it, in its entirety, along with the second sentence in /7:
@@ -230,7 +255,7 @@ struct D : B {
 Strike part of [dcl.fct.def.default]{.sref}/3 and fix the example (which is already wrong at the moment, since default-initializing an `int` during constant evaluation is ok):
 
 ::: bq
-[3]{.pnum} An explicitly-defaulted function that is not defined as deleted may be declared `constexpr` or `consteval` [only if it is constexpr-compatible ([special], [class.compare.default])]{.rm}.
+[3]{.pnum} [An explicitly-defaulted function that is not defined as deleted may be declared `constexpr` or `consteval` only if it is constexpr-compatible ([special], [class.compare.default])]{.rm}.
 A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.
 
 [4]{.pnum} [*Example 1*:
