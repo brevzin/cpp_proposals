@@ -1894,7 +1894,43 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 ::: addu
 [1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
 
-[2]{.pnum} Draw the rest of the owl.
+[2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of values:
+
+* [2.#]{.pnum} A `"` character
+
+* [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit if it is not a part of a valid UCS scalar value:
+
+  * [2.#]{.pnum} If the UCS scalar value is one of `\t`, `\r`, `\n`, `\\` or `"`, then the sequence `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
+
+  * [2.#]{.pnum} Otherwise, if the UCS scalar value
+
+    * [2.#.#]{.pnum} has a value other than space (U+0020 SPACE) and has a Unicode property Separator (`Z`) or Other (`C`), or
+    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend` and there are no UCS scalar values preceding it in `$S$` without this property
+
+    then its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros.
+
+  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros.
+
+  * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
+
+* [2.#]{.pnum} Finally, another `"` character.
+
+[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with `'` instead of `"` and the UCS scalar value `'` is escaped as `"\\\'"` while the UCS scalar value `"` is left unchanged.
+
+[4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
+
+[*Example*:
+```
+string s0 = format("[{}]", "h\tllo");           // s0 has value: [h    llo]
+string s1 = format("[{:?}]", "h\tllo");         // s1 has value: ["h\tllo"]
+string s2 = format("[{:?}]", "Привет, 🕴️!");    // s2 has value: ["Привет, 🕴️!"]
+string s3 = format("[{:?}] [{:?}]", '\'', '"'); // s3 has value: ['\'', '"']
+string s4 = format("[{:?}]", string("\0 \n \t \x02 \x1b", 9));
+                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]
+string s5 = format("[{:?}]", "\xc3\x28");       // invalid UTF-8
+                                                // s5 has value: ["\x{c3}\x{28}"]
+```
+*-end example*]
 :::
 :::
 
