@@ -1812,7 +1812,81 @@ template <class FormatContext>
 
 ### Additional formatting support for characters and strings
 
-TODO
+Change [format.string.std]{.sref} to add `?` as a valid type:
+
+::: bq
+The syntax of format specifications is as follows:
+
+```
+$type$: one of
+  a A b B c d e E f F g G o p s x X @[?]{.addu}@
+```
+:::
+
+Add `?` to the strings table in [format.string.std]{.sref}/17 (Table 64):
+
+::: bq
+[17]{.pnum} The available string presentation types are specified in Table 64.
+
+|Type|Meaning|
+|-|-|
+|none, `s`|Copies the string to the output.|
+|[?]{.addu}|[Copies the escaped string ([format.string.escaped]) to the output.]{.addu}|
+:::
+
+Add `?` to the `charT` table in [format.string.std]{.sref}/20 (Table 66):
+
+::: bq
+[20]{.pnum} The available `charT` presentation types are specified in Table 66.
+
+|Type|Meaning|
+|-|-|
+|none, `c`|Copies the character to the output.|
+|`b`,`B`,`d`,`o`,`x`,`X`|As specified in Table 65.|
+|[?]{.addu}|[Copies the escaped character ([format.string.escaped]) to the output.]{.addu}|
+:::
+
+Add `set_debug_format()` to the character and string specializations in [format.formatter.spec]{.sref}:
+
+::: bq
+[1]{.pnum} The functions defined in [format.functions] use specializations of the class template `formatter` to format individual arguments.
+
+[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of `formatter` is either enabled or disabled, as described below. [A _debug-enabled_ specialization of `formatter` additionally provides a public, non-static member function `set_debug_format()` which will cause these formatters to interpret the format specification as if its `$type$` were `?`.]{.addu} Each header that declares the template `formatter` provides the following enabled specializations:
+
+* [2.#]{.pnum} The [debug-enabled]{.addu} specializations
+
+  ```cpp
+  template<> struct formatter<char, char>;
+  template<> struct formatter<char, wchar_t>;
+  template<> struct formatter<wchar_t, wchar_t>;
+  ```
+
+* [2.#]{.pnum} For each `charT`, the [debug-enabled]{.addu} string type specializations
+
+  ```cpp
+  template<> struct formatter<charT*, charT>;
+  template<> struct formatter<const charT*, charT>;
+  template<size_t N> struct formatter<const charT[N], charT>;
+  template<class traits, class Allocator>
+    struct formatter<basic_string<charT, traits, Allocator>, charT>;
+  template<class traits>
+    struct formatter<basic_string_view<charT, traits>, charT>;
+  ```
+
+* [2.#]{.pnum} For each `charT`, for each *cv*-unqualified arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`, a specialization
+
+  ```cpp
+  template<> struct formatter<ArithmeticT, charT>;
+  ```
+
+* [2.#]{.pnum} For each `charT`, the pointer type specializations
+
+  ```cpp
+  template<> struct formatter<nullptr_t, charT>;
+  template<> struct formatter<void*, charT>;
+  template<> struct formatter<const void*, charT>;
+  ```
+:::
 
 ### Formatter for `vector<bool>::reference`
 

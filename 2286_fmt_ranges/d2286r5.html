@@ -2445,54 +2445,140 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h3 data-number="4.1.4" id="additional-formatting-support-for-characters-and-strings"><span class="header-section-number">4.1.4</span> Additional formatting support for characters and strings<a href="#additional-formatting-support-for-characters-and-strings" class="self-link"></a></h3>
-<p>TODO</p>
+<p>Change <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span> to add <code class="sourceCode cpp"><span class="op">?</span></code> as a valid type:</p>
+<blockquote>
+<p>The syntax of format specifications is as follows:</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb68-1"><a href="#cb68-1"></a><em>type</em>: one of</span>
+<span id="cb68-2"><a href="#cb68-2"></a>  a A b B c d e E f F g G o p s x X <span class="addu">?</span></span></code></pre></div>
+</blockquote>
+<p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the strings table in <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/17 (Table 64):</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">17</a></span> The available string presentation types are specified in Table 64.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Type</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Meaning</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>none, <code class="sourceCode cpp">s</code></td>
+<td>Copies the string to the output.</td>
+</tr>
+<tr class="even">
+<td><span class="addu">?</span></td>
+<td><span class="addu">Copies the escaped string ([format.string.escaped]) to the output.</span></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the <code class="sourceCode cpp">charT</code> table in <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/20 (Table 66):</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">20</a></span> The available <code class="sourceCode cpp">charT</code> presentation types are specified in Table 66.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Type</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Meaning</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>none, <code class="sourceCode cpp">c</code></td>
+<td>Copies the character to the output.</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">b</code>,<code class="sourceCode cpp">B</code>,<code class="sourceCode cpp">d</code>,<code class="sourceCode cpp">o</code>,<code class="sourceCode cpp">x</code>,<code class="sourceCode cpp">X</code></td>
+<td>As specified in Table 65.</td>
+</tr>
+<tr class="odd">
+<td><span class="addu">?</span></td>
+<td><span class="addu">Copies the escaped character ([format.string.escaped]) to the output.</span></td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<p>Add <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> to the character and string specializations in <span>20.20.6.2 <a href="https://wg21.link/format.formatter.spec">[format.formatter.spec]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">1</a></span> The functions defined in [format.functions] use specializations of the class template <code class="sourceCode cpp">formatter</code> to format individual arguments.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">2</a></span> Let <code class="sourceCode cpp">charT</code> be either <code class="sourceCode cpp"><span class="dt">char</span></code> or <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>. Each specialization of <code class="sourceCode cpp">formatter</code> is either enabled or disabled, as described below. <span class="addu">A <em>debug-enabled</em> specialization of <code class="sourceCode cpp">formatter</code> additionally provides a public, non-static member function <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> which will cause these formatters to interpret the format specification as if its <code class="sourceCode cpp"><em>type</em></code> were <code class="sourceCode cpp"><span class="op">?</span></code>.</span> Each header that declares the template <code class="sourceCode cpp">formatter</code> provides the following enabled specializations:</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(2.1)</a></span> The <span class="addu">debug-enabled</span> specializations</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">char</span><span class="op">&gt;</span>;</span>
+<span id="cb69-2"><a href="#cb69-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span>;</span>
+<span id="cb69-3"><a href="#cb69-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">wchar_t</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span>;</span></code></pre></div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(2.2)</a></span> For each <code class="sourceCode cpp">charT</code>, the <span class="addu">debug-enabled</span> string type specializations</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>charT<span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb70-2"><a href="#cb70-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb70-3"><a href="#cb70-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">size_t</span> N<span class="op">&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">[</span>N<span class="op">]</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb70-4"><a href="#cb70-4"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits, <span class="kw">class</span> Allocator<span class="op">&gt;</span></span>
+<span id="cb70-5"><a href="#cb70-5"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string<span class="op">&lt;</span>charT, traits, Allocator<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb70-6"><a href="#cb70-6"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits<span class="op">&gt;</span></span>
+<span id="cb70-7"><a href="#cb70-7"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string_view<span class="op">&lt;</span>charT, traits<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(2.3)</a></span> For each <code class="sourceCode cpp">charT</code>, for each <em>cv</em>-unqualified arithmetic type <code class="sourceCode cpp">ArithmeticT</code> other than <code class="sourceCode cpp"><span class="dt">char</span></code>, <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>, <code class="sourceCode cpp"><span class="dt">char8_t</span></code>, <code class="sourceCode cpp"><span class="dt">char16_t</span></code>, or <code class="sourceCode cpp"><span class="dt">char32_t</span></code>, a specialization</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>ArithmeticT, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">(2.4)</a></span> For each <code class="sourceCode cpp">charT</code>, the pointer type specializations</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>nullptr_t, charT<span class="op">&gt;</span>;</span>
+<span id="cb72-2"><a href="#cb72-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb72-3"><a href="#cb72-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+</ul>
+</blockquote>
 <h3 data-number="4.1.5" id="formatter-for-vectorboolreference"><span class="header-section-number">4.1.5</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h3>
 <p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb68"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb68-1"><a href="#cb68-1"></a>namespace std {</span>
-<span id="cb68-2"><a href="#cb68-2"></a>  // [vector], class template vector</span>
-<span id="cb68-3"><a href="#cb68-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
-<span id="cb68-4"><a href="#cb68-4"></a></span>
-<span id="cb68-5"><a href="#cb68-5"></a>  // ...</span>
-<span id="cb68-6"><a href="#cb68-6"></a></span>
-<span id="cb68-7"><a href="#cb68-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
-<span id="cb68-8"><a href="#cb68-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
-<span id="cb68-9"><a href="#cb68-9"></a></span>
-<span id="cb68-10"><a href="#cb68-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb68-11"><a href="#cb68-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
-<span id="cb68-12"><a href="#cb68-12"></a></span>
-<span id="cb68-13"><a href="#cb68-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
-<span id="cb68-14"><a href="#cb68-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb73-1"><a href="#cb73-1"></a>namespace std {</span>
+<span id="cb73-2"><a href="#cb73-2"></a>  // [vector], class template vector</span>
+<span id="cb73-3"><a href="#cb73-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
+<span id="cb73-4"><a href="#cb73-4"></a></span>
+<span id="cb73-5"><a href="#cb73-5"></a>  // ...</span>
+<span id="cb73-6"><a href="#cb73-6"></a></span>
+<span id="cb73-7"><a href="#cb73-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
+<span id="cb73-8"><a href="#cb73-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
+<span id="cb73-9"><a href="#cb73-9"></a></span>
+<span id="cb73-10"><a href="#cb73-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb73-11"><a href="#cb73-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
+<span id="cb73-12"><a href="#cb73-12"></a></span>
+<span id="cb73-13"><a href="#cb73-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
+<span id="cb73-14"><a href="#cb73-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to [vector.bool] at the end:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb69"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb69-1"><a href="#cb69-1"></a>template&lt;class R&gt;</span>
-<span id="cb69-2"><a href="#cb69-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb70-1"><a href="#cb70-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
-<span id="cb70-2"><a href="#cb70-2"></a>  class formatter&lt;T, charT&gt; {</span>
-<span id="cb70-3"><a href="#cb70-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
-<span id="cb70-4"><a href="#cb70-4"></a></span>
-<span id="cb70-5"><a href="#cb70-5"></a>  public:</span>
-<span id="cb70-6"><a href="#cb70-6"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb70-7"><a href="#cb70-7"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb70-8"><a href="#cb70-8"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb70-9"><a href="#cb70-9"></a></span>
-<span id="cb70-10"><a href="#cb70-10"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb70-11"><a href="#cb70-11"></a>      typename FormatContext::iterator</span>
-<span id="cb70-12"><a href="#cb70-12"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
-<span id="cb70-13"><a href="#cb70-13"></a>  };</span></code></pre></div>
-<div class="sourceCode" id="cb71"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb71-1"><a href="#cb71-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb71-2"><a href="#cb71-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb71-3"><a href="#cb71-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb72-2"><a href="#cb72-2"></a>  typename FormatContext::iterator</span>
-<span id="cb72-3"><a href="#cb72-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb74-1"><a href="#cb74-1"></a>template&lt;class R&gt;</span>
+<span id="cb74-2"><a href="#cb74-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
+<div class="sourceCode" id="cb75"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb75-1"><a href="#cb75-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
+<span id="cb75-2"><a href="#cb75-2"></a>  class formatter&lt;T, charT&gt; {</span>
+<span id="cb75-3"><a href="#cb75-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
+<span id="cb75-4"><a href="#cb75-4"></a></span>
+<span id="cb75-5"><a href="#cb75-5"></a>  public:</span>
+<span id="cb75-6"><a href="#cb75-6"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb75-7"><a href="#cb75-7"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb75-8"><a href="#cb75-8"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb75-9"><a href="#cb75-9"></a></span>
+<span id="cb75-10"><a href="#cb75-10"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb75-11"><a href="#cb75-11"></a>      typename FormatContext::iterator</span>
+<span id="cb75-12"><a href="#cb75-12"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
+<span id="cb75-13"><a href="#cb75-13"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb76-1"><a href="#cb76-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb76-2"><a href="#cb76-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb76-3"><a href="#cb76-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb77-1"><a href="#cb77-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb77-2"><a href="#cb77-2"></a>  typename FormatContext::iterator</span>
+<span id="cb77-3"><a href="#cb77-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
