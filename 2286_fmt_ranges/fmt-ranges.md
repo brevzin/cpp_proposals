@@ -1122,11 +1122,12 @@ Additionally, the standard library should provide the following more specific sp
 
 Formatting for `string`, `string_view`, `const char*`, and `char` (and all the `wchar_t` equivalents) will gain a `?` specifier as well as a `set_debug_format()` member function, which causes these types to be printed as [escaped and quoted](#escaping-behavior) if provided. Ranges and tuples will, by default, print their elements as escaped and quoted, unless the user provides a specifier for the element.
 
-## Wording
+# Wording
 
 The wording here is grouped by functionality added rather than linearly going through the standard text.
 
-### Concept `formattable`
+## Concept `formattable`
+
 First, we need to define a user-facing concept. We need this because we need to constrain `formatter` specializations on whether the underlying elements of the `pair`/`tuple`/range are formattable, and users would need to do the same kind of thing for their types. This is tricky since formatting involves so many different types, so this concept will never be perfect, so instead we're trying to be good enough.
 
 Change [format.syn]{.sref}:
@@ -1172,7 +1173,7 @@ concept formattable =
 :::
 :::
 
-### Additional formatting support for characters and strings
+## Additional formatting support for characters and strings
 
 Change [format.string.std]{.sref} to add `?` as a valid type:
 
@@ -1304,7 +1305,7 @@ string s5 = format("[{:?}]", "\xc3\x28");       // invalid UTF-8
 :::
 :::
 
-### Formatting for ranges
+## Formatting for ranges
 
 Add to [format.syn]{.sref}:
 
@@ -1459,7 +1460,7 @@ template <ranges::input_range R, class FormatContext>
 :::
 :::
 
-#### Formatting for specific ranges: all the maps and sets
+### Formatting for specific ranges: all the maps and sets
 
 Add a clause (maybe after [unord]{.sref} and before [container.adaptors]{.sref}) [assoc.format] Associative Formatting:
 
@@ -1515,7 +1516,7 @@ this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"
 :::
 :::
 
-#### Formatting for specific ranges: all the container adaptors
+### Formatting for specific ranges: all the container adaptors
 
 At the end of [container.adaptors]{.sref}, add a clause [container.adaptors.format]:
 
@@ -1559,7 +1560,7 @@ template <class FormatContext>
 :::
 :::
 
-### Formatting for `pair` and `tuple`
+## Formatting for `pair` and `tuple`
 
 And a new clause [format.tuple]:
 
@@ -1670,7 +1671,7 @@ template <class FormatContext>
 :::
 :::
 
-### Formatter for `vector<bool>::reference`
+## Formatter for `vector<bool>::reference`
 
 Add to [vector.syn]{.sref}
 
