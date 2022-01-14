@@ -18,6 +18,7 @@ Since [@P2286R4], several major changes:
 * Removed the extra APIs (`retargeted_format_context` and `end_sentry`), and the motivation for their existence.
 * Added clearer description of why `range_formatter` is desired and what its [exposed API is](#interface-of-the-proposed-solution).
 * Updated [escaping behavior](#escaping-behavior) description with how some other languages do this.
+* Added section on [container adaptors](#what-about-container-adaptors).
 * Added wording.
 
 Since [@P2286R3], several major changes:
@@ -674,7 +675,7 @@ def get_escaped(codepoints):
 ```
 :::
 
-Which is the exact same logic as Python: those eight classes, with the exception of ASCII space, are escaped. Looking at the actual Rust [implementation code](https://doc.rust-lang.org/src/core/unicode/printable.rs.html) is a little bit more involved, but that's only because it's optimized for values and no longer based on actual structural elements from Unicode. Rust's actual algorithm for using this `is_printable` function can be found in the `impl Debug for str` found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2129-2151) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#417-432):
+Which is the exact same logic as Python: those eight classes, with the exception of ASCII space, are escaped. Looking at the actual Rust [implementation code](https://doc.rust-lang.org/src/core/unicode/printable.rs.html) is a little bit more involved, but that's only because it's optimized for values and no longer based on actual structural elements from Unicode. Rust's actual algorithm for using this `is_printable` function can be found in the `impl Debug for str` found [here](https://doc.rust-lang.org/src/core/fmt/mod.rs.html#2129-2151) which is implemented in terms of [`escape_debug_ext`](https://doc.rust-lang.org/src/core/char/methods.rs.html#417-432) (for clarity, in the context of printing a debug string, `args.escape_grapheme_extended` is `true`, `args.escape_single_quote` is `false`, and `args.escape_double_quote` is `true`. For a debug character, the latter two are flipped):
 
 ::: bq
 ```rust
