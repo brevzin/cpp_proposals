@@ -14,10 +14,10 @@ toc-depth: 4
 
 Since [@P2286R4], several major changes:
 
-* Removed the `d` specifier for delimiters. This paper offers no direct support for changing delimiter
-* Removed the extra APIs (`retargeted_format_context` and `end_sentry`)
+* Removed the `d` specifier for delimiters. This paper offers no direct support for changing delimiters (which this paper also in the wording refers to as separators).
+* Removed the extra APIs (`retargeted_format_context` and `end_sentry`), and the motivation for their existence.
 * Added clearer description of why `range_formatter` is desired and what its [exposed API is](#interface-of-the-proposed-solution).
-* Updated [escaping behavior](#escaping-behavior) description.
+* Updated [escaping behavior](#escaping-behavior) description with how some other languages do this.
 * Added wording.
 
 Since [@P2286R3], several major changes:
@@ -882,14 +882,14 @@ struct formatter<$TEMPLATE$<Ts...>, charT>
     constexpr auto parse(ParseContext&) -> ParseContext::iterator;
 
     template <typename FormatContext>
-    auto format($see below$& elems, FormatContext&) const -> FormatContext::iterator;
+    auto format($POSSIBLY-CONST$& elems, FormatContext&) const -> FormatContext::iterator;
 };
 ```
 :::
 
-The complexity here is that we want to ensure that `elems` is a `const $TEMPLATE$<Ts...>` if that is formattable, but non-`const` if it has to be.
+The type `$POSSIBLY-CONST$` is `$TEMPLATE$<Ts...> const` when that type is formattable (i.e. all of `Ts const...` are formattable) and `$TEMPLATE$<Ts...>` otherwise, in an effort to reduce unnecessary template instantiations.
 
-Otherwise, it's a similar structure (except no `underlying()` since I'm not sure you need it).
+Otherwise, it's a similar structure to `range_formatter` for similar reasons (except no `underlying()` since I'm not sure you need it).
 
 ## What additional functionality?
 
@@ -967,6 +967,45 @@ For most ranges, the `value_type` is `remove_cvref_t<reference>`, so there’s n
 `vector<bool>` is one of the very few ranges in which the two types are truly quite different. So it doesn’t offer much in the way of a good example here, since `bool` is cheaply constructible from `vector<bool>::reference`. Though it’s also very cheap to provide a formatter specialization for `vector<bool>::reference`.
 
 Rather than having the library provide a default fallback that lifts all the `reference` types to `value_type`s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for `vector<bool>::reference`. This type is actually defined as `vector<bool, Alloc>::reference`, so the wording for this aspect will be a little awkward (we'll need to provide a type trait `$is-vector-bool-reference$<R>`, etc., but this is a problem for the wording and the implementation to deal with).
+
+## What about container adaptors?
+
+The standard library has three container adaptors: `queue`, `priority_queue`, and `stack`. None of these are actually ranges, none of them defines a `begin()` or an `end()` or any kind of iterator. But they do all adapt a range, which is a specified protected member. It is still useful, especially for debugging purposes, to be able to simply print what's in your `stack`.
+
+Note that we don't have to _specifically_ add support for this, as users can always work around it themselves:
+
+::: bq
+```cpp
+struct hack : std::stack<int> {
+    using std::stack<int>::c;
+};
+
+int main() {
+    std::stack<int> s;
+    s.push(1);
+    s.push(2);
+    std::print("{}\n", s.*&hack::c);
+}
+```
+:::
+
+That's valid, probably the best way to solve this problem, yet also not the kind of thing we want to encourage people to do. This paper thus proposes that `queue`, `priority_queue`, and `stack` are formattable as their underlying container type.
+
+This does lead to one quirk, which is `priority_queue`. If we simply defer to the underlying container's formatting, then we get behavior like this:
+
+::: bq
+```cpp
+int main() {
+    std::priority_queue<int> s;
+    for (int i = 0; i < 10; ++i) {
+        s.push(i);
+    }
+    std::print("{}\n", s); // prints [9, 8, 5, 6, 7, 1, 4, 0, 3, 2]
+}
+```
+:::
+
+That is not the order of elements in the `s`, at least not the way we typically think of things. `s.top()` is `9`, but the rest of the elements are not in this order. But also... that's fine. This is still a useful representation for formatting (this is exactly the underlying representation), they are free to either access `s.&hack::c` and figure out how to print it in "the right order" or write their own `priority_queue` with its own custom formatting.
 
 ## Examples with user-defined types
 

@@ -600,7 +600,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#what-additional-functionality"><span class="toc-section-number">3.7</span> What additional functionality?<span></span></a></li>
 <li><a href="#format-or-stdcout"><span class="toc-section-number">3.8</span> <code class="sourceCode cpp">format</code> or <code class="sourceCode cpp">std<span class="op">::</span>cout</code>?<span></span></a></li>
 <li><a href="#what-about-vectorbool"><span class="toc-section-number">3.9</span> What about <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code>?<span></span></a></li>
-<li><a href="#examples-with-user-defined-types"><span class="toc-section-number">3.10</span> Examples with user-defined types<span></span></a></li>
+<li><a href="#what-about-container-adaptors"><span class="toc-section-number">3.10</span> What about container adaptors?<span></span></a></li>
+<li><a href="#examples-with-user-defined-types"><span class="toc-section-number">3.11</span> Examples with user-defined types<span></span></a></li>
 </ul></li>
 <li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
 <ul>
@@ -624,10 +625,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>Since <span class="citation" data-cites="P2286R4">[<a href="#ref-P2286R4" role="doc-biblioref">P2286R4</a>]</span>, several major changes:</p>
 <ul>
-<li>Removed the <code class="sourceCode cpp">d</code> specifier for delimiters. This paper offers no direct support for changing delimiter</li>
-<li>Removed the extra APIs (<code class="sourceCode cpp">retargeted_format_context</code> and <code class="sourceCode cpp">end_sentry</code>)</li>
+<li>Removed the <code class="sourceCode cpp">d</code> specifier for delimiters. This paper offers no direct support for changing delimiters (which this paper also in the wording refers to as separators).</li>
+<li>Removed the extra APIs (<code class="sourceCode cpp">retargeted_format_context</code> and <code class="sourceCode cpp">end_sentry</code>), and the motivation for their existence.</li>
 <li>Added clearer description of why <code class="sourceCode cpp">range_formatter</code> is desired and what its <a href="#interface-of-the-proposed-solution">exposed API is</a>.</li>
-<li>Updated <a href="#escaping-behavior">escaping behavior</a> description.</li>
+<li>Updated <a href="#escaping-behavior">escaping behavior</a> description with how some other languages do this.</li>
 <li>Added wording.</li>
 </ul>
 <p>Since <span class="citation" data-cites="P2286R3">[<a href="#ref-P2286R3" role="doc-biblioref">P2286R3</a>]</span>, several major changes:</p>
@@ -1654,11 +1655,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb28-8"><a href="#cb28-8"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;)</span> <span class="op">-&gt;</span> ParseContext<span class="op">::</span>iterator;</span>
 <span id="cb28-9"><a href="#cb28-9"></a></span>
 <span id="cb28-10"><a href="#cb28-10"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb28-11"><a href="#cb28-11"></a>    <span class="kw">auto</span> format<span class="op">(</span><em>see below</em><span class="op">&amp;</span> elems, FormatContext<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> FormatContext<span class="op">::</span>iterator;</span>
+<span id="cb28-11"><a href="#cb28-11"></a>    <span class="kw">auto</span> format<span class="op">(</span><em>POSSIBLY-CONST</em><span class="op">&amp;</span> elems, FormatContext<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> FormatContext<span class="op">::</span>iterator;</span>
 <span id="cb28-12"><a href="#cb28-12"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>The complexity here is that we want to ensure that <code class="sourceCode cpp">elems</code> is a <code class="sourceCode cpp"><span class="kw">const</span> <em>TEMPLATE</em><span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> if that is formattable, but non-<code class="sourceCode cpp"><span class="kw">const</span></code> if it has to be.</p>
-<p>Otherwise, it’s a similar structure (except no <code class="sourceCode cpp">underlying<span class="op">()</span></code> since I’m not sure you need it).</p>
+<p>The type <code class="sourceCode cpp"><em>POSSIBLY-CONST</em></code> is <code class="sourceCode cpp"><em>TEMPLATE</em><span class="op">&lt;</span>Ts<span class="op">...&gt;</span> <span class="kw">const</span></code> when that type is formattable (i.e. all of <code class="sourceCode cpp">Ts <span class="kw">const</span><span class="op">...</span></code> are formattable) and <code class="sourceCode cpp"><em>TEMPLATE</em><span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code> otherwise, in an effort to reduce unnecessary template instantiations.</p>
+<p>Otherwise, it’s a similar structure to <code class="sourceCode cpp">range_formatter</code> for similar reasons (except no <code class="sourceCode cpp">underlying<span class="op">()</span></code> since I’m not sure you need it).</p>
 <h2 data-number="3.7" id="what-additional-functionality"><span class="header-section-number">3.7</span> What additional functionality?<a href="#what-additional-functionality" class="self-link"></a></h2>
 <p>There’s three layers of potential functionality:</p>
 <ol type="1">
@@ -1717,71 +1718,98 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>For most ranges, the <code class="sourceCode cpp">value_type</code> is <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>reference<span class="op">&gt;</span></code>, so there’s no distinction here between the two options. And even for <code class="sourceCode cpp">zip</code> <span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, there’s still not much distinction since it just wraps this question in tuple since again for most ranges the types will be something like <code class="sourceCode cpp">tuple<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> vs <code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">&amp;</span>, U <span class="kw">const</span><span class="op">&amp;&gt;</span></code>, so again there isn’t much distinction.</p>
 <p><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code> is one of the very few ranges in which the two types are truly quite different. So it doesn’t offer much in the way of a good example here, since <code class="sourceCode cpp"><span class="dt">bool</span></code> is cheaply constructible from <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code>. Though it’s also very cheap to provide a formatter specialization for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code>.</p>
 <p>Rather than having the library provide a default fallback that lifts all the <code class="sourceCode cpp">reference</code> types to <code class="sourceCode cpp">value_type</code>s, which may be arbitrarily expensive for unknown ranges, this paper proposes a format specialization for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code>. This type is actually defined as <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code>, so the wording for this aspect will be a little awkward (we’ll need to provide a type trait <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>R<span class="op">&gt;</span></code>, etc., but this is a problem for the wording and the implementation to deal with).</p>
-<h2 data-number="3.10" id="examples-with-user-defined-types"><span class="header-section-number">3.10</span> Examples with user-defined types<a href="#examples-with-user-defined-types" class="self-link"></a></h2>
+<h2 data-number="3.10" id="what-about-container-adaptors"><span class="header-section-number">3.10</span> What about container adaptors?<a href="#what-about-container-adaptors" class="self-link"></a></h2>
+<p>The standard library has three container adaptors: <code class="sourceCode cpp">queue</code>, <code class="sourceCode cpp">priority_queue</code>, and <code class="sourceCode cpp">stack</code>. None of these are actually ranges, none of them defines a <code class="sourceCode cpp">begin<span class="op">()</span></code> or an <code class="sourceCode cpp">end<span class="op">()</span></code> or any kind of iterator. But they do all adapt a range, which is a specified protected member. It is still useful, especially for debugging purposes, to be able to simply print what’s in your <code class="sourceCode cpp">stack</code>.</p>
+<p>Note that we don’t have to <em>specifically</em> add support for this, as users can always work around it themselves:</p>
+<blockquote>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">struct</span> hack <span class="op">:</span> std<span class="op">::</span>stack<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a>    <span class="kw">using</span> std<span class="op">::</span>stack<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;::</span>c;</span>
+<span id="cb30-3"><a href="#cb30-3"></a><span class="op">}</span>;</span>
+<span id="cb30-4"><a href="#cb30-4"></a></span>
+<span id="cb30-5"><a href="#cb30-5"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>    std<span class="op">::</span>stack<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> s;</span>
+<span id="cb30-7"><a href="#cb30-7"></a>    s<span class="op">.</span>push<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb30-8"><a href="#cb30-8"></a>    s<span class="op">.</span>push<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb30-9"><a href="#cb30-9"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, s<span class="op">.*&amp;</span>hack<span class="op">::</span>c<span class="op">)</span>;</span>
+<span id="cb30-10"><a href="#cb30-10"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That’s valid, probably the best way to solve this problem, yet also not the kind of thing we want to encourage people to do. This paper thus proposes that <code class="sourceCode cpp">queue</code>, <code class="sourceCode cpp">priority_queue</code>, and <code class="sourceCode cpp">stack</code> are formattable as their underlying container type.</p>
+<p>This does lead to one quirk, which is <code class="sourceCode cpp">priority_queue</code>. If we simply defer to the underlying container’s formatting, then we get behavior like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a>    std<span class="op">::</span>priority_queue<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> s;</span>
+<span id="cb31-3"><a href="#cb31-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> <span class="dv">10</span>; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-4"><a href="#cb31-4"></a>        s<span class="op">.</span>push<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb31-5"><a href="#cb31-5"></a>    <span class="op">}</span></span>
+<span id="cb31-6"><a href="#cb31-6"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}</span><span class="sc">\n</span><span class="st">&quot;</span>, s<span class="op">)</span>; <span class="co">// prints [9, 8, 5, 6, 7, 1, 4, 0, 3, 2]</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That is not the order of elements in the <code class="sourceCode cpp">s</code>, at least not the way we typically think of things. <code class="sourceCode cpp">s<span class="op">.</span>top<span class="op">()</span></code> is <code class="sourceCode cpp"><span class="dv">9</span></code>, but the rest of the elements are not in this order. But also… that’s fine. This is still a useful representation for formatting (this is exactly the underlying representation), they are free to either access <code class="sourceCode cpp">s<span class="op">.&amp;</span>hack<span class="op">::</span>c</code> and figure out how to print it in “the right order” or write their own <code class="sourceCode cpp">priority_queue</code> with its own custom formatting.</p>
+<h2 data-number="3.11" id="examples-with-user-defined-types"><span class="header-section-number">3.11</span> Examples with user-defined types<a href="#examples-with-user-defined-types" class="self-link"></a></h2>
 <p>Let’s say a user has a type like:</p>
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">struct</span> Foo <span class="op">{</span></span>
-<span id="cb30-2"><a href="#cb30-2"></a>    <span class="dt">int</span> bar;</span>
-<span id="cb30-3"><a href="#cb30-3"></a>    std<span class="op">::</span>string baz;</span>
-<span id="cb30-4"><a href="#cb30-4"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">struct</span> Foo <span class="op">{</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a>    <span class="dt">int</span> bar;</span>
+<span id="cb32-3"><a href="#cb32-3"></a>    std<span class="op">::</span>string baz;</span>
+<span id="cb32-4"><a href="#cb32-4"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>And want to format <code class="sourceCode cpp">Foo<span class="op">{.</span>bar<span class="op">=</span><span class="dv">10</span>, <span class="op">.</span>baz<span class="op">=</span><span class="st">&quot;Hello World&quot;</span><span class="op">}</span></code> as the string <code class="sourceCode cpp">Foo<span class="op">(</span>bar<span class="op">=</span><span class="dv">10</span>, baz<span class="op">=</span><span class="st">&quot;Hello World&quot;</span><span class="op">)</span></code>. They can do so this way:</p>
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Foo, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb31-3"><a href="#cb31-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb31-4"><a href="#cb31-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>Foo <span class="kw">const</span><span class="op">&amp;</span> f, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
-<span id="cb31-5"><a href="#cb31-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Foo(bar={}, baz={:?})&quot;</span>, f<span class="op">.</span>bar, f<span class="op">.</span>baz<span class="op">)</span>;</span>
-<span id="cb31-6"><a href="#cb31-6"></a>    <span class="op">}</span></span>
-<span id="cb31-7"><a href="#cb31-7"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Foo, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb33-3"><a href="#cb33-3"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb33-4"><a href="#cb33-4"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>Foo <span class="kw">const</span><span class="op">&amp;</span> f, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb33-5"><a href="#cb33-5"></a>        <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Foo(bar={}, baz={:?})&quot;</span>, f<span class="op">.</span>bar, f<span class="op">.</span>baz<span class="op">)</span>;</span>
+<span id="cb33-6"><a href="#cb33-6"></a>    <span class="op">}</span></span>
+<span id="cb33-7"><a href="#cb33-7"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>How about wrappers?</p>
 <p>Let’s say you have your own implementation of <code class="sourceCode cpp">Optional</code>, that you want to format the same way that Rust does: so that a disengaged one formats as <code class="sourceCode cpp">None</code> and an engaged one formats as <code class="sourceCode cpp">Some<span class="op">(??)</span></code>. We can start by:</p>
 <blockquote>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb32-3"><a href="#cb32-3"></a>    <span class="co">// we&#39;ll skip parse for now</span></span>
-<span id="cb32-4"><a href="#cb32-4"></a></span>
-<span id="cb32-5"><a href="#cb32-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb32-6"><a href="#cb32-6"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-7"><a href="#cb32-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-8"><a href="#cb32-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
-<span id="cb32-9"><a href="#cb32-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb32-10"><a href="#cb32-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
-<span id="cb32-11"><a href="#cb32-11"></a>        <span class="op">}</span></span>
-<span id="cb32-12"><a href="#cb32-12"></a>    <span class="op">}</span></span>
-<span id="cb32-13"><a href="#cb32-13"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb34-3"><a href="#cb34-3"></a>    <span class="co">// we&#39;ll skip parse for now</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a></span>
+<span id="cb34-5"><a href="#cb34-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb34-6"><a href="#cb34-6"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-7"><a href="#cb34-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-8"><a href="#cb34-8"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
+<span id="cb34-9"><a href="#cb34-9"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb34-10"><a href="#cb34-10"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some({})&quot;</span>, <span class="op">*</span>opt<span class="op">)</span>;</span>
+<span id="cb34-11"><a href="#cb34-11"></a>        <span class="op">}</span></span>
+<span id="cb34-12"><a href="#cb34-12"></a>    <span class="op">}</span></span>
+<span id="cb34-13"><a href="#cb34-13"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>If we had an <code class="sourceCode cpp">Optional<span class="op">&lt;</span>string<span class="op">&gt;(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code>, this would format as <code class="sourceCode cpp">Some<span class="op">(</span>hello<span class="op">)</span></code>. Which may be fine. But what if we wanted to format it as <code class="sourceCode cpp">Some<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code> instead? That is, take advantage of the quoting rules described earlier. What do you write instead of <code class="sourceCode cpp"><span class="op">*</span>opt</code> to format <code class="sourceCode cpp">string</code>s (or <code class="sourceCode cpp"><span class="dt">char</span></code>s or user-defined string-like types) as quoted in this context?</p>
 <p>We can both add support for quoting/escaping and also arbitrary specifiers at the same time:</p>
 <blockquote>
-<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
-<span id="cb33-2"><a href="#cb33-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb33-3"><a href="#cb33-3"></a>    formatter<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span> underlying;</span>
-<span id="cb33-4"><a href="#cb33-4"></a></span>
-<span id="cb33-5"><a href="#cb33-5"></a>    formatter<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb33-6"><a href="#cb33-6"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> underlying<span class="op">.</span>set_debug_format<span class="op">()</span>; <span class="op">})</span> <span class="op">{</span></span>
-<span id="cb33-7"><a href="#cb33-7"></a>            underlying<span class="op">.</span>set_debug_format<span class="op">()</span>;</span>
-<span id="cb33-8"><a href="#cb33-8"></a>        <span class="op">}</span></span>
-<span id="cb33-9"><a href="#cb33-9"></a>    <span class="op">}</span></span>
-<span id="cb33-10"><a href="#cb33-10"></a></span>
-<span id="cb33-11"><a href="#cb33-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span>typenaem ParseContext<span class="op">&gt;</span></span>
-<span id="cb33-12"><a href="#cb33-12"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-13"><a href="#cb33-13"></a>        <span class="cf">return</span> underlying<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</span>
-<span id="cb33-14"><a href="#cb33-14"></a>    <span class="op">}</span></span>
-<span id="cb33-15"><a href="#cb33-15"></a></span>
-<span id="cb33-16"><a href="#cb33-16"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
-<span id="cb33-17"><a href="#cb33-17"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-18"><a href="#cb33-18"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-19"><a href="#cb33-19"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
-<span id="cb33-20"><a href="#cb33-20"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb33-21"><a href="#cb33-21"></a>            ctx<span class="op">.</span>advance_to<span class="op">(</span>format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some(&quot;</span><span class="op">))</span>;</span>
-<span id="cb33-22"><a href="#cb33-22"></a>            <span class="kw">auto</span> out <span class="op">=</span> underlying<span class="op">.</span>format<span class="op">(*</span>opt, ctx<span class="op">)</span>;</span>
-<span id="cb33-23"><a href="#cb33-23"></a>            <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;)&#39;</span>;</span>
-<span id="cb33-24"><a href="#cb33-24"></a>            <span class="cf">return</span> out;</span>
-<span id="cb33-25"><a href="#cb33-25"></a>        <span class="op">}</span></span>
-<span id="cb33-26"><a href="#cb33-26"></a>    <span class="op">}</span></span>
-<span id="cb33-27"><a href="#cb33-27"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="kw">template</span> <span class="op">&lt;</span>formattable<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> T<span class="op">&gt;</span></span>
+<span id="cb35-2"><a href="#cb35-2"></a><span class="kw">struct</span> formatter<span class="op">&lt;</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span>, <span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb35-3"><a href="#cb35-3"></a>    formatter<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span> underlying;</span>
+<span id="cb35-4"><a href="#cb35-4"></a></span>
+<span id="cb35-5"><a href="#cb35-5"></a>    formatter<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb35-6"><a href="#cb35-6"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> underlying<span class="op">.</span>set_debug_format<span class="op">()</span>; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb35-7"><a href="#cb35-7"></a>            underlying<span class="op">.</span>set_debug_format<span class="op">()</span>;</span>
+<span id="cb35-8"><a href="#cb35-8"></a>        <span class="op">}</span></span>
+<span id="cb35-9"><a href="#cb35-9"></a>    <span class="op">}</span></span>
+<span id="cb35-10"><a href="#cb35-10"></a></span>
+<span id="cb35-11"><a href="#cb35-11"></a>    <span class="kw">template</span> <span class="op">&lt;</span>typenaem ParseContext<span class="op">&gt;</span></span>
+<span id="cb35-12"><a href="#cb35-12"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span>ParseContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-13"><a href="#cb35-13"></a>        <span class="cf">return</span> underlying<span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</span>
+<span id="cb35-14"><a href="#cb35-14"></a>    <span class="op">}</span></span>
+<span id="cb35-15"><a href="#cb35-15"></a></span>
+<span id="cb35-16"><a href="#cb35-16"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
+<span id="cb35-17"><a href="#cb35-17"></a>    <span class="kw">auto</span> format<span class="op">(</span>Optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> opt, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-18"><a href="#cb35-18"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> opt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-19"><a href="#cb35-19"></a>            <span class="cf">return</span> format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;None&quot;</span><span class="op">)</span>;</span>
+<span id="cb35-20"><a href="#cb35-20"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb35-21"><a href="#cb35-21"></a>            ctx<span class="op">.</span>advance_to<span class="op">(</span>format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;Some(&quot;</span><span class="op">))</span>;</span>
+<span id="cb35-22"><a href="#cb35-22"></a>            <span class="kw">auto</span> out <span class="op">=</span> underlying<span class="op">.</span>format<span class="op">(*</span>opt, ctx<span class="op">)</span>;</span>
+<span id="cb35-23"><a href="#cb35-23"></a>            <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;)&#39;</span>;</span>
+<span id="cb35-24"><a href="#cb35-24"></a>            <span class="cf">return</span> out;</span>
+<span id="cb35-25"><a href="#cb35-25"></a>        <span class="op">}</span></span>
+<span id="cb35-26"><a href="#cb35-26"></a>    <span class="op">}</span></span>
+<span id="cb35-27"><a href="#cb35-27"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>This lets me format <code class="sourceCode cpp">Optional<span class="op">&lt;</span>string<span class="op">&gt;(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span></code> as <code class="x">Some(&quot;hello&quot;)</code> by default, or format <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span></code> as <code class="x">Some(0x2a)</code> if I provide the specifier string <code class="sourceCode cpp"><span class="st">&quot;{:#x}&quot;</span></code>.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
@@ -1816,37 +1844,37 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb34"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb34-1"><a href="#cb34-1"></a>namespace std {</span>
-<span id="cb34-2"><a href="#cb34-2"></a>  // ...</span>
-<span id="cb34-3"><a href="#cb34-3"></a>  // [format.formatter], formatter</span>
-<span id="cb34-4"><a href="#cb34-4"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
-<span id="cb34-5"><a href="#cb34-5"></a></span>
-<span id="cb34-6"><a href="#cb34-6"></a>  // [format.parse.ctx], class template basic_format_parse_context</span>
-<span id="cb34-7"><a href="#cb34-7"></a>  template&lt;class charT&gt; class basic_format_parse_context;</span>
-<span id="cb34-8"><a href="#cb34-8"></a>  using format_parse_context = basic_format_parse_context&lt;char&gt;;</span>
-<span id="cb34-9"><a href="#cb34-9"></a>  using wformat_parse_context = basic_format_parse_context&lt;wchar_t&gt;;</span>
-<span id="cb34-10"><a href="#cb34-10"></a><span class="va">+ // [format.formattable], formattable</span></span>
-<span id="cb34-11"><a href="#cb34-11"></a><span class="va">+ template&lt;class T, class charT&gt;</span></span>
-<span id="cb34-12"><a href="#cb34-12"></a><span class="va">+   concept formattable = <em>see below</em>;</span></span>
-<span id="cb34-13"><a href="#cb34-13"></a>  // ...</span>
-<span id="cb34-14"><a href="#cb34-14"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb36-1"><a href="#cb36-1"></a>namespace std {</span>
+<span id="cb36-2"><a href="#cb36-2"></a>  // ...</span>
+<span id="cb36-3"><a href="#cb36-3"></a>  // [format.formatter], formatter</span>
+<span id="cb36-4"><a href="#cb36-4"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
+<span id="cb36-5"><a href="#cb36-5"></a></span>
+<span id="cb36-6"><a href="#cb36-6"></a>  // [format.parse.ctx], class template basic_format_parse_context</span>
+<span id="cb36-7"><a href="#cb36-7"></a>  template&lt;class charT&gt; class basic_format_parse_context;</span>
+<span id="cb36-8"><a href="#cb36-8"></a>  using format_parse_context = basic_format_parse_context&lt;char&gt;;</span>
+<span id="cb36-9"><a href="#cb36-9"></a>  using wformat_parse_context = basic_format_parse_context&lt;wchar_t&gt;;</span>
+<span id="cb36-10"><a href="#cb36-10"></a><span class="va">+ // [format.formattable], formattable</span></span>
+<span id="cb36-11"><a href="#cb36-11"></a><span class="va">+ template&lt;class T, class charT&gt;</span></span>
+<span id="cb36-12"><a href="#cb36-12"></a><span class="va">+   concept formattable = <em>see below</em>;</span></span>
+<span id="cb36-13"><a href="#cb36-13"></a>  // ...</span>
+<span id="cb36-14"><a href="#cb36-14"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a clause [format.formattable] under <span>20.20.6 <a href="https://wg21.link/format.formatter">[format.formatter]</a></span> and likely after <span>20.20.6.1 <a href="https://wg21.link/formatter.requirements">[formatter.requirements]</a></span>:</p>
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> Let <code class="sourceCode cpp"><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;</span></code> be an implementation-defined type that models <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">&amp;&gt;</span></code> ([iterator.concept.output]).</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb35-1"><a href="#cb35-1"></a>template&lt;class T, class charT&gt;</span>
-<span id="cb35-2"><a href="#cb35-2"></a>concept formattable =</span>
-<span id="cb35-3"><a href="#cb35-3"></a>    semiregular&lt;formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt;&gt; &amp;&amp;</span>
-<span id="cb35-4"><a href="#cb35-4"></a>    requires (formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt; f,</span>
-<span id="cb35-5"><a href="#cb35-5"></a>              const formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt; cf,</span>
-<span id="cb35-6"><a href="#cb35-6"></a>              T t,</span>
-<span id="cb35-7"><a href="#cb35-7"></a>              basic_format_context&lt;<em>fmt-iter-for</em>&lt;charT&gt;, charT&gt; fc,</span>
-<span id="cb35-8"><a href="#cb35-8"></a>              basic_format_parse_context&lt;charT&gt; pc) {</span>
-<span id="cb35-9"><a href="#cb35-9"></a>        { f.parse(pc) } -&gt; same_as&lt;basic_format_parse_context&lt;charT&gt;::iterator&gt;;</span>
-<span id="cb35-10"><a href="#cb35-10"></a>        { cf.format(t, fc) } -&gt; same_as&lt;<em>fmt-iter-for</em>&lt;charT&gt;&gt;;</span>
-<span id="cb35-11"><a href="#cb35-11"></a>    };</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1"></a>template&lt;class T, class charT&gt;</span>
+<span id="cb37-2"><a href="#cb37-2"></a>concept formattable =</span>
+<span id="cb37-3"><a href="#cb37-3"></a>    semiregular&lt;formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt;&gt; &amp;&amp;</span>
+<span id="cb37-4"><a href="#cb37-4"></a>    requires (formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt; f,</span>
+<span id="cb37-5"><a href="#cb37-5"></a>              const formatter&lt;remove_cvref_t&lt;T&gt;, charT&gt; cf,</span>
+<span id="cb37-6"><a href="#cb37-6"></a>              T t,</span>
+<span id="cb37-7"><a href="#cb37-7"></a>              basic_format_context&lt;<em>fmt-iter-for</em>&lt;charT&gt;, charT&gt; fc,</span>
+<span id="cb37-8"><a href="#cb37-8"></a>              basic_format_parse_context&lt;charT&gt; pc) {</span>
+<span id="cb37-9"><a href="#cb37-9"></a>        { f.parse(pc) } -&gt; same_as&lt;basic_format_parse_context&lt;charT&gt;::iterator&gt;;</span>
+<span id="cb37-10"><a href="#cb37-10"></a>        { cf.format(t, fc) } -&gt; same_as&lt;<em>fmt-iter-for</em>&lt;charT&gt;&gt;;</span>
+<span id="cb37-11"><a href="#cb37-11"></a>    };</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> A type <code class="sourceCode cpp">T</code> and a character type <code class="sourceCode cpp">charT</code> model <code class="sourceCode cpp">formattable</code> if <code class="sourceCode cpp">formatter<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, charT<span class="op">&gt;</span></code> meets the <em>BasicFormatter</em> requirements ([formatter.requirements]) and, if <code class="sourceCode cpp">remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">const</span></code>-qualified, the <em>Formatter</em> requirements.</p>
 </div>
 </blockquote>
@@ -1854,8 +1882,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span> to add <code class="sourceCode cpp"><span class="op">?</span></code> as a valid type:</p>
 <blockquote>
 <p>The syntax of format specifications is as follows:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb36-1"><a href="#cb36-1"></a><em>type</em>: one of</span>
-<span id="cb36-2"><a href="#cb36-2"></a>  a A b B c d e E f F g G o p s x X <span class="addu">?</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb38-1"><a href="#cb38-1"></a><em>type</em>: one of</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  a A b B c d e E f F g G o p s x X <span class="addu">?</span></span></code></pre></div>
 </blockquote>
 <p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the strings table in <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/17 (Table 64):</p>
 <blockquote>
@@ -1919,23 +1947,23 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span> Let <code class="sourceCode cpp">charT</code> be either <code class="sourceCode cpp"><span class="dt">char</span></code> or <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>. Each specialization of <code class="sourceCode cpp">formatter</code> is either enabled or disabled, as described below. <span class="addu">A <em>debug-enabled</em> specialization of <code class="sourceCode cpp">formatter</code> additionally provides a public, non-static member function <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> which will cause these formatters to interpret the format specification as if its <code class="sourceCode cpp"><em>type</em></code> were <code class="sourceCode cpp"><span class="op">?</span></code>.</span> Each header that declares the template <code class="sourceCode cpp">formatter</code> provides the following enabled specializations:</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.1)</a></span> The <span class="addu">debug-enabled</span> specializations</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">char</span><span class="op">&gt;</span>;</span>
-<span id="cb37-2"><a href="#cb37-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span>;</span>
-<span id="cb37-3"><a href="#cb37-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">wchar_t</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span>;</span></code></pre></div></li>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">char</span><span class="op">&gt;</span>;</span>
+<span id="cb39-2"><a href="#cb39-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span>;</span>
+<span id="cb39-3"><a href="#cb39-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">wchar_t</span>, <span class="dt">wchar_t</span><span class="op">&gt;</span>;</span></code></pre></div></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.2)</a></span> For each <code class="sourceCode cpp">charT</code>, the <span class="addu">debug-enabled</span> string type specializations</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>charT<span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
-<span id="cb38-2"><a href="#cb38-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
-<span id="cb38-3"><a href="#cb38-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">size_t</span> N<span class="op">&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">[</span>N<span class="op">]</span>, charT<span class="op">&gt;</span>;</span>
-<span id="cb38-4"><a href="#cb38-4"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits, <span class="kw">class</span> Allocator<span class="op">&gt;</span></span>
-<span id="cb38-5"><a href="#cb38-5"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string<span class="op">&lt;</span>charT, traits, Allocator<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span>
-<span id="cb38-6"><a href="#cb38-6"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits<span class="op">&gt;</span></span>
-<span id="cb38-7"><a href="#cb38-7"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string_view<span class="op">&lt;</span>charT, traits<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>charT<span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb40-2"><a href="#cb40-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb40-3"><a href="#cb40-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">size_t</span> N<span class="op">&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">[</span>N<span class="op">]</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb40-4"><a href="#cb40-4"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits, <span class="kw">class</span> Allocator<span class="op">&gt;</span></span>
+<span id="cb40-5"><a href="#cb40-5"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string<span class="op">&lt;</span>charT, traits, Allocator<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb40-6"><a href="#cb40-6"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits<span class="op">&gt;</span></span>
+<span id="cb40-7"><a href="#cb40-7"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string_view<span class="op">&lt;</span>charT, traits<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.3)</a></span> For each <code class="sourceCode cpp">charT</code>, for each <em>cv</em>-unqualified arithmetic type <code class="sourceCode cpp">ArithmeticT</code> other than <code class="sourceCode cpp"><span class="dt">char</span></code>, <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>, <code class="sourceCode cpp"><span class="dt">char8_t</span></code>, <code class="sourceCode cpp"><span class="dt">char16_t</span></code>, or <code class="sourceCode cpp"><span class="dt">char32_t</span></code>, a specialization</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>ArithmeticT, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>ArithmeticT, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.4)</a></span> For each <code class="sourceCode cpp">charT</code>, the pointer type specializations</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>nullptr_t, charT<span class="op">&gt;</span>;</span>
-<span id="cb40-2"><a href="#cb40-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
-<span id="cb40-3"><a href="#cb40-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>nullptr_t, charT<span class="op">&gt;</span>;</span>
+<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb42-3"><a href="#cb42-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
 </ul>
 </blockquote>
 <p>Add a new clause [format.string.escaped] “Formatting escaped characters and strings” which will discuss what it means to do escaping.</p>
@@ -1998,14 +2026,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span> The escaped character representation of a character, <code class="sourceCode cpp"><em>C</em></code>, in a Unicode encoding is equivalent to the escaped string representation a string of <code class="sourceCode cpp"><em>C</em></code>, except that the result starts and ends with U+0027 APOSTROPHE (<code class="sourceCode cpp"><span class="ch">&#39;</span></code>) instead of U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) and the UCS scalar value U+0027 APOSTROPHE is escaped as <code class="sourceCode cpp">\<span class="ch">&#39;</span></code> while the UCS scalar value U+0022 QUOTATION MARK is left unchanged.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span> The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.</p>
 <p>[<em>Example</em>:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb41-1"><a href="#cb41-1"></a>string s0 = format(&quot;[{}]&quot;, &quot;h\tllo&quot;);           // s0 has value: [h    llo]</span>
-<span id="cb41-2"><a href="#cb41-2"></a>string s1 = format(&quot;[{:?}]&quot;, &quot;h\tllo&quot;);         // s1 has value: [&quot;h\tllo&quot;]</span>
-<span id="cb41-3"><a href="#cb41-3"></a>string s2 = format(&quot;[{:?}]&quot;, &quot;Привет, 🕴️!&quot;);    // s2 has value: [&quot;Привет, 🕴️!&quot;]</span>
-<span id="cb41-4"><a href="#cb41-4"></a>string s3 = format(&quot;[{:?}] [{:?}]&quot;, &#39;\&#39;&#39;, &#39;&quot;&#39;); // s3 has value: [&#39;\&#39;&#39;, &#39;&quot;&#39;]</span>
-<span id="cb41-5"><a href="#cb41-5"></a>string s4 = format(&quot;[{:?}]&quot;, string(&quot;\0 \n \t \x02 \x1b&quot;, 9));</span>
-<span id="cb41-6"><a href="#cb41-6"></a>                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]</span>
-<span id="cb41-7"><a href="#cb41-7"></a>string s5 = format(&quot;[{:?}]&quot;, &quot;\xc3\x28&quot;);       // invalid UTF-8</span>
-<span id="cb41-8"><a href="#cb41-8"></a>                                                // s5 has value: [&quot;\x{c3}\x{28}&quot;]</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>string s0 = format(&quot;[{}]&quot;, &quot;h\tllo&quot;);           // s0 has value: [h    llo]</span>
+<span id="cb43-2"><a href="#cb43-2"></a>string s1 = format(&quot;[{:?}]&quot;, &quot;h\tllo&quot;);         // s1 has value: [&quot;h\tllo&quot;]</span>
+<span id="cb43-3"><a href="#cb43-3"></a>string s2 = format(&quot;[{:?}]&quot;, &quot;Привет, 🕴️!&quot;);    // s2 has value: [&quot;Привет, 🕴️!&quot;]</span>
+<span id="cb43-4"><a href="#cb43-4"></a>string s3 = format(&quot;[{:?}] [{:?}]&quot;, &#39;\&#39;&#39;, &#39;&quot;&#39;); // s3 has value: [&#39;\&#39;&#39;, &#39;&quot;&#39;]</span>
+<span id="cb43-5"><a href="#cb43-5"></a>string s4 = format(&quot;[{:?}]&quot;, string(&quot;\0 \n \t \x02 \x1b&quot;, 9));</span>
+<span id="cb43-6"><a href="#cb43-6"></a>                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]</span>
+<span id="cb43-7"><a href="#cb43-7"></a>string s5 = format(&quot;[{:?}]&quot;, &quot;\xc3\x28&quot;);       // invalid UTF-8</span>
+<span id="cb43-8"><a href="#cb43-8"></a>                                                // s5 has value: [&quot;\x{c3}\x{28}&quot;]</span></code></pre></div>
 <p><em>-end example</em>]</p>
 </div>
 </blockquote>
@@ -2013,26 +2041,26 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Add to <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb42"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb42-1"><a href="#cb42-1"></a>namespace std {</span>
-<span id="cb42-2"><a href="#cb42-2"></a>  // ...</span>
-<span id="cb42-3"><a href="#cb42-3"></a></span>
-<span id="cb42-4"><a href="#cb42-4"></a>  // [format.formatter], formatter</span>
-<span id="cb42-5"><a href="#cb42-5"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
-<span id="cb42-6"><a href="#cb42-6"></a></span>
-<span id="cb42-7"><a href="#cb42-7"></a><span class="va">+ // [format.range], range formatter</span></span>
-<span id="cb42-8"><a href="#cb42-8"></a><span class="va">+ template&lt;class T, class charT = char&gt;</span></span>
-<span id="cb42-9"><a href="#cb42-9"></a><span class="va">+     requires formattable&lt;T, charT&gt;</span></span>
-<span id="cb42-10"><a href="#cb42-10"></a><span class="va">+   class range_formatter;</span></span>
-<span id="cb42-11"><a href="#cb42-11"></a><span class="va">+</span></span>
-<span id="cb42-12"><a href="#cb42-12"></a><span class="va">+ template&lt;ranges::input_range R, class charT&gt;</span></span>
-<span id="cb42-13"><a href="#cb42-13"></a><span class="va">+         requires (not same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span></span>
-<span id="cb42-14"><a href="#cb42-14"></a><span class="va">+           &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
-<span id="cb42-15"><a href="#cb42-15"></a><span class="va">+   struct formatter&lt;R, charT&gt;</span></span>
-<span id="cb42-16"><a href="#cb42-16"></a><span class="va">+     : range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, charT&gt;</span></span>
-<span id="cb42-17"><a href="#cb42-17"></a><span class="va">+   { };</span></span>
-<span id="cb42-18"><a href="#cb42-18"></a></span>
-<span id="cb42-19"><a href="#cb42-19"></a>  // ...</span>
-<span id="cb42-20"><a href="#cb42-20"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb44-1"><a href="#cb44-1"></a>namespace std {</span>
+<span id="cb44-2"><a href="#cb44-2"></a>  // ...</span>
+<span id="cb44-3"><a href="#cb44-3"></a></span>
+<span id="cb44-4"><a href="#cb44-4"></a>  // [format.formatter], formatter</span>
+<span id="cb44-5"><a href="#cb44-5"></a>  template&lt;class T, class charT = char&gt; struct formatter;</span>
+<span id="cb44-6"><a href="#cb44-6"></a></span>
+<span id="cb44-7"><a href="#cb44-7"></a><span class="va">+ // [format.range], range formatter</span></span>
+<span id="cb44-8"><a href="#cb44-8"></a><span class="va">+ template&lt;class T, class charT = char&gt;</span></span>
+<span id="cb44-9"><a href="#cb44-9"></a><span class="va">+     requires formattable&lt;T, charT&gt;</span></span>
+<span id="cb44-10"><a href="#cb44-10"></a><span class="va">+   class range_formatter;</span></span>
+<span id="cb44-11"><a href="#cb44-11"></a><span class="va">+</span></span>
+<span id="cb44-12"><a href="#cb44-12"></a><span class="va">+ template&lt;ranges::input_range R, class charT&gt;</span></span>
+<span id="cb44-13"><a href="#cb44-13"></a><span class="va">+         requires (not same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span></span>
+<span id="cb44-14"><a href="#cb44-14"></a><span class="va">+           &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
+<span id="cb44-15"><a href="#cb44-15"></a><span class="va">+   struct formatter&lt;R, charT&gt;</span></span>
+<span id="cb44-16"><a href="#cb44-16"></a><span class="va">+     : range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, charT&gt;</span></span>
+<span id="cb44-17"><a href="#cb44-17"></a><span class="va">+   { };</span></span>
+<span id="cb44-18"><a href="#cb44-18"></a></span>
+<span id="cb44-19"><a href="#cb44-19"></a>  // ...</span>
+<span id="cb44-20"><a href="#cb44-20"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>And a new clause [format.range]:</p>
@@ -2040,25 +2068,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">1</a></span> The class template <code class="sourceCode cpp">range_formatter</code> is a convenient utility for implementing <code class="sourceCode cpp">formatter</code> specializations for range types.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">2</a></span> <code class="sourceCode cpp">range_formatter</code> interprets <code class="sourceCode cpp"><em>format-spec</em></code> as a <code class="sourceCode cpp"><em>range-format-spec</em></code>. The syntax of format specifications is as follows:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a><em>range-format-spec</em>:</span>
-<span id="cb43-2"><a href="#cb43-2"></a>    <em>range-fill-and-align</em><sub>opt</sub> <em>width</em><sub>opt</sub> <em>range-no-bracket</em><sub>opt</sub> <em>range-type</em><sub>opt</sub> <em>range-underlying-spec</em><sub>opt</sub></span>
-<span id="cb43-3"><a href="#cb43-3"></a></span>
-<span id="cb43-4"><a href="#cb43-4"></a><em>range-fill-and-align</em>:</span>
-<span id="cb43-5"><a href="#cb43-5"></a>    <em>range-fill</em><sub>opt</sub> <em>align</em></span>
-<span id="cb43-6"><a href="#cb43-6"></a></span>
-<span id="cb43-7"><a href="#cb43-7"></a><em>range-fill</em>:</span>
-<span id="cb43-8"><a href="#cb43-8"></a>    any character other than { or } or :</span>
-<span id="cb43-9"><a href="#cb43-9"></a></span>
-<span id="cb43-10"><a href="#cb43-10"></a><em>range-no-bracket</em>:</span>
-<span id="cb43-11"><a href="#cb43-11"></a>    n</span>
-<span id="cb43-12"><a href="#cb43-12"></a></span>
-<span id="cb43-13"><a href="#cb43-13"></a><em>range-type</em>:</span>
-<span id="cb43-14"><a href="#cb43-14"></a>    m</span>
-<span id="cb43-15"><a href="#cb43-15"></a>    s</span>
-<span id="cb43-16"><a href="#cb43-16"></a>    ?s</span>
-<span id="cb43-17"><a href="#cb43-17"></a></span>
-<span id="cb43-18"><a href="#cb43-18"></a><em>range-underlying-spec</em>:</span>
-<span id="cb43-19"><a href="#cb43-19"></a>    : <em>format-spec</em></span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb45-1"><a href="#cb45-1"></a><em>range-format-spec</em>:</span>
+<span id="cb45-2"><a href="#cb45-2"></a>    <em>range-fill-and-align</em><sub>opt</sub> <em>width</em><sub>opt</sub> <em>range-no-bracket</em><sub>opt</sub> <em>range-type</em><sub>opt</sub> <em>range-underlying-spec</em><sub>opt</sub></span>
+<span id="cb45-3"><a href="#cb45-3"></a></span>
+<span id="cb45-4"><a href="#cb45-4"></a><em>range-fill-and-align</em>:</span>
+<span id="cb45-5"><a href="#cb45-5"></a>    <em>range-fill</em><sub>opt</sub> <em>align</em></span>
+<span id="cb45-6"><a href="#cb45-6"></a></span>
+<span id="cb45-7"><a href="#cb45-7"></a><em>range-fill</em>:</span>
+<span id="cb45-8"><a href="#cb45-8"></a>    any character other than { or } or :</span>
+<span id="cb45-9"><a href="#cb45-9"></a></span>
+<span id="cb45-10"><a href="#cb45-10"></a><em>range-no-bracket</em>:</span>
+<span id="cb45-11"><a href="#cb45-11"></a>    n</span>
+<span id="cb45-12"><a href="#cb45-12"></a></span>
+<span id="cb45-13"><a href="#cb45-13"></a><em>range-type</em>:</span>
+<span id="cb45-14"><a href="#cb45-14"></a>    m</span>
+<span id="cb45-15"><a href="#cb45-15"></a>    s</span>
+<span id="cb45-16"><a href="#cb45-16"></a>    ?s</span>
+<span id="cb45-17"><a href="#cb45-17"></a></span>
+<span id="cb45-18"><a href="#cb45-18"></a><em>range-underlying-spec</em>:</span>
+<span id="cb45-19"><a href="#cb45-19"></a>    : <em>format-spec</em></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">3</a></span> For <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code>, the <code class="sourceCode cpp"><em>format-spec</em></code> in a <code class="sourceCode cpp"><em>range-underlying-spec</em></code>, if any, is interpreted by <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">4</a></span> The <code class="sourceCode cpp"><em>range-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>fill-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">5</a></span> The <code class="sourceCode cpp"><em>range-no-bracket</em></code> specifier causes the range to be formatted without the open and close brackets. [<em>Note</em>: this is equivalent to invoking <code class="sourceCode cpp">set_brackets<span class="op">({}</span>, <span class="op">{})</span></code> <em>- end note</em> ]</p>
@@ -2101,49 +2129,49 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>If the <code class="sourceCode cpp"><em>range-type</em></code> is <code class="sourceCode cpp">s</code> or <code class="sourceCode cpp"><span class="op">?</span>s</code>, then there shall be no <code class="sourceCode cpp"><em>range-no-bracket</em></code> specifier and no <code class="sourceCode cpp"><em>range-underlying-spec</em></code>.</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb44-1"><a href="#cb44-1"></a>namespace std {</span>
-<span id="cb44-2"><a href="#cb44-2"></a>  template&lt;class T, class charT = char&gt;</span>
-<span id="cb44-3"><a href="#cb44-3"></a>    requires formattable&lt;T, charT&gt;</span>
-<span id="cb44-4"><a href="#cb44-4"></a>  class range_formatter {</span>
-<span id="cb44-5"><a href="#cb44-5"></a>    formatter&lt;T, charT&gt; <em>underlying_</em>;                                        // exposition only</span>
-<span id="cb44-6"><a href="#cb44-6"></a>    basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);    // exposition only</span>
-<span id="cb44-7"><a href="#cb44-7"></a>    basic_string_view&lt;charT&gt; <em>open-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;[&quot;);  // exposition only</span>
-<span id="cb44-8"><a href="#cb44-8"></a>    basic_string_view&lt;charT&gt; <em>close-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;]&quot;); // exposition only</span>
-<span id="cb44-9"><a href="#cb44-9"></a></span>
-<span id="cb44-10"><a href="#cb44-10"></a>  public:</span>
-<span id="cb44-11"><a href="#cb44-11"></a>    range_formatter() = default;</span>
-<span id="cb44-12"><a href="#cb44-12"></a></span>
-<span id="cb44-13"><a href="#cb44-13"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
-<span id="cb44-14"><a href="#cb44-14"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
-<span id="cb44-15"><a href="#cb44-15"></a>    formatter&lt;T, charT&gt;&amp; underlying() { return <em>underlying_</em>; }</span>
-<span id="cb44-16"><a href="#cb44-16"></a></span>
-<span id="cb44-17"><a href="#cb44-17"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb44-18"><a href="#cb44-18"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb44-19"><a href="#cb44-19"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb44-20"><a href="#cb44-20"></a></span>
-<span id="cb44-21"><a href="#cb44-21"></a>    template &lt;ranges::input_range R, class FormatContext&gt;</span>
-<span id="cb44-22"><a href="#cb44-22"></a>        requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
-<span id="cb44-23"><a href="#cb44-23"></a>      typename FormatContext::iterator</span>
-<span id="cb44-24"><a href="#cb44-24"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
-<span id="cb44-25"><a href="#cb44-25"></a>  };</span>
-<span id="cb44-26"><a href="#cb44-26"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb45"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb45-1"><a href="#cb45-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb46-1"><a href="#cb46-1"></a>namespace std {</span>
+<span id="cb46-2"><a href="#cb46-2"></a>  template&lt;class T, class charT = char&gt;</span>
+<span id="cb46-3"><a href="#cb46-3"></a>    requires formattable&lt;T, charT&gt;</span>
+<span id="cb46-4"><a href="#cb46-4"></a>  class range_formatter {</span>
+<span id="cb46-5"><a href="#cb46-5"></a>    formatter&lt;T, charT&gt; <em>underlying_</em>;                                        // exposition only</span>
+<span id="cb46-6"><a href="#cb46-6"></a>    basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);    // exposition only</span>
+<span id="cb46-7"><a href="#cb46-7"></a>    basic_string_view&lt;charT&gt; <em>open-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;[&quot;);  // exposition only</span>
+<span id="cb46-8"><a href="#cb46-8"></a>    basic_string_view&lt;charT&gt; <em>close-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;]&quot;); // exposition only</span>
+<span id="cb46-9"><a href="#cb46-9"></a></span>
+<span id="cb46-10"><a href="#cb46-10"></a>  public:</span>
+<span id="cb46-11"><a href="#cb46-11"></a>    range_formatter() = default;</span>
+<span id="cb46-12"><a href="#cb46-12"></a></span>
+<span id="cb46-13"><a href="#cb46-13"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
+<span id="cb46-14"><a href="#cb46-14"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
+<span id="cb46-15"><a href="#cb46-15"></a>    formatter&lt;T, charT&gt;&amp; underlying() { return <em>underlying_</em>; }</span>
+<span id="cb46-16"><a href="#cb46-16"></a></span>
+<span id="cb46-17"><a href="#cb46-17"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb46-18"><a href="#cb46-18"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb46-19"><a href="#cb46-19"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb46-20"><a href="#cb46-20"></a></span>
+<span id="cb46-21"><a href="#cb46-21"></a>    template &lt;ranges::input_range R, class FormatContext&gt;</span>
+<span id="cb46-22"><a href="#cb46-22"></a>        requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
+<span id="cb46-23"><a href="#cb46-23"></a>      typename FormatContext::iterator</span>
+<span id="cb46-24"><a href="#cb46-24"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
+<span id="cb46-25"><a href="#cb46-25"></a>  };</span>
+<span id="cb46-26"><a href="#cb46-26"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">7</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb46-1"><a href="#cb46-1"></a>void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1"></a>void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">8</a></span> <em>Effects</em>: Equivalent to</p>
 <blockquote>
-<div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a><em>open-bracket_</em> = open;</span>
-<span id="cb47-2"><a href="#cb47-2"></a><em>close-bracket_</em> = close;</span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb49-1"><a href="#cb49-1"></a><em>open-bracket_</em> = open;</span>
+<span id="cb49-2"><a href="#cb49-2"></a><em>close-bracket_</em> = close;</span></code></pre></div>
 </blockquote>
-<div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb48-2"><a href="#cb48-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb48-3"><a href="#cb48-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb50-1"><a href="#cb50-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb50-2"><a href="#cb50-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb50-3"><a href="#cb50-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">9</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>range-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. Unless the <code class="sourceCode cpp"><em>range-type</em></code> is either <code class="sourceCode cpp">s</code> or <code class="sourceCode cpp"><span class="op">?</span>s</code>, if <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression and there is no <code class="sourceCode cpp"><em>range-underlying-spec</em></code>, calls <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">10</a></span> <em>Returns</em>: an iterator past the end of the <code class="sourceCode cpp"><em>range-format-spec</em></code>.</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb49-1"><a href="#cb49-1"></a>template &lt;ranges::input_range R, class FormatContext&gt;</span>
-<span id="cb49-2"><a href="#cb49-2"></a>    requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
-<span id="cb49-3"><a href="#cb49-3"></a>  typename FormatContext::iterator</span>
-<span id="cb49-4"><a href="#cb49-4"></a>    format(R&amp;&amp; r, FormatContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb51-1"><a href="#cb51-1"></a>template &lt;ranges::input_range R, class FormatContext&gt;</span>
+<span id="cb51-2"><a href="#cb51-2"></a>    requires same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
+<span id="cb51-3"><a href="#cb51-3"></a>  typename FormatContext::iterator</span>
+<span id="cb51-4"><a href="#cb51-4"></a>    format(R&amp;&amp; r, FormatContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">11</a></span> <em>Effects</em>: Writes the following into <code class="sourceCode cpp">ctx<span class="op">.</span>out<span class="op">()</span></code>, adjusted according to the <code class="sourceCode cpp"><em>range-format-spec</em></code>:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(11.1)</a></span> If the <code class="sourceCode cpp"><em>range-type</em></code> was <code class="sourceCode cpp">s</code>, then as if by formatting <code class="sourceCode cpp">basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span></code>.</li>
@@ -2167,31 +2195,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">1</a></span> For each of <code class="sourceCode cpp">map</code>, <code class="sourceCode cpp">multimap</code>, <code class="sourceCode cpp">unordered_map</code>, and <code class="sourceCode cpp">unordered_multimap</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>map-type</em></code> is the name of the template:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb50-1"><a href="#cb50-1"></a>namespace std {</span>
-<span id="cb50-2"><a href="#cb50-2"></a>  template &lt;class charT, formattable&lt;charT&gt; Key, formattable&lt;charT&gt; T, class... U&gt;</span>
-<span id="cb50-3"><a href="#cb50-3"></a>  class formatter&lt;<em>map-type</em>&lt;Key, T, U...&gt;, charT&gt; : public range_formatter&lt;pair&lt;const Key, T&gt;&gt;</span>
-<span id="cb50-4"><a href="#cb50-4"></a>  {</span>
-<span id="cb50-5"><a href="#cb50-5"></a>  public:</span>
-<span id="cb50-6"><a href="#cb50-6"></a>    formatter();</span>
-<span id="cb50-7"><a href="#cb50-7"></a>  };</span>
-<span id="cb50-8"><a href="#cb50-8"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb51"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb51-1"><a href="#cb51-1"></a>formatter();</span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb52-1"><a href="#cb52-1"></a>namespace std {</span>
+<span id="cb52-2"><a href="#cb52-2"></a>  template &lt;class charT, formattable&lt;charT&gt; Key, formattable&lt;charT&gt; T, class... U&gt;</span>
+<span id="cb52-3"><a href="#cb52-3"></a>  class formatter&lt;<em>map-type</em>&lt;Key, T, U...&gt;, charT&gt; : public range_formatter&lt;pair&lt;const Key, T&gt;&gt;</span>
+<span id="cb52-4"><a href="#cb52-4"></a>  {</span>
+<span id="cb52-5"><a href="#cb52-5"></a>  public:</span>
+<span id="cb52-6"><a href="#cb52-6"></a>    formatter();</span>
+<span id="cb52-7"><a href="#cb52-7"></a>  };</span>
+<span id="cb52-8"><a href="#cb52-8"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb53-1"><a href="#cb53-1"></a>formatter();</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">2</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb52-1"><a href="#cb52-1"></a>this-&gt;set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span>
-<span id="cb52-2"><a href="#cb52-2"></a>this-&gt;underlying().set_brackets({}, {});</span>
-<span id="cb52-3"><a href="#cb52-3"></a>this-&gt;underlying().set_separator(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;: &quot;));</span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb54-1"><a href="#cb54-1"></a>this-&gt;set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span>
+<span id="cb54-2"><a href="#cb54-2"></a>this-&gt;underlying().set_brackets({}, {});</span>
+<span id="cb54-3"><a href="#cb54-3"></a>this-&gt;underlying().set_separator(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;: &quot;));</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">3</a></span> For each of <code class="sourceCode cpp">set</code>, <code class="sourceCode cpp">multiset</code>, <code class="sourceCode cpp">unordered_set</code>, and <code class="sourceCode cpp">unordered_multiset</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>set-type</em></code> is the name of the template:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb53-1"><a href="#cb53-1"></a>namespace std {</span>
-<span id="cb53-2"><a href="#cb53-2"></a>  template &lt;class charT, formattable&lt;charT&gt; Key, class... U&gt;</span>
-<span id="cb53-3"><a href="#cb53-3"></a>  class formatter&lt;<em>set-type</em>&lt;Key, U...&gt;, charT&gt; : public range_formatter&lt;Key, charT&gt;</span>
-<span id="cb53-4"><a href="#cb53-4"></a>  {</span>
-<span id="cb53-5"><a href="#cb53-5"></a>  public:</span>
-<span id="cb53-6"><a href="#cb53-6"></a>    formatter();</span>
-<span id="cb53-7"><a href="#cb53-7"></a>  };</span>
-<span id="cb53-8"><a href="#cb53-8"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb54"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb54-1"><a href="#cb54-1"></a>formatter();</span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb55-1"><a href="#cb55-1"></a>namespace std {</span>
+<span id="cb55-2"><a href="#cb55-2"></a>  template &lt;class charT, formattable&lt;charT&gt; Key, class... U&gt;</span>
+<span id="cb55-3"><a href="#cb55-3"></a>  class formatter&lt;<em>set-type</em>&lt;Key, U...&gt;, charT&gt; : public range_formatter&lt;Key, charT&gt;</span>
+<span id="cb55-4"><a href="#cb55-4"></a>  {</span>
+<span id="cb55-5"><a href="#cb55-5"></a>  public:</span>
+<span id="cb55-6"><a href="#cb55-6"></a>    formatter();</span>
+<span id="cb55-7"><a href="#cb55-7"></a>  };</span>
+<span id="cb55-8"><a href="#cb55-8"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb56-1"><a href="#cb56-1"></a>formatter();</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">4</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb55-1"><a href="#cb55-1"></a>this-&gt;set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb57-1"><a href="#cb57-1"></a>this-&gt;set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span></code></pre></div>
 </div>
 </blockquote>
 <h4 data-number="4.1.3.2" id="formatting-for-specific-ranges-all-the-container-adaptors"><span class="header-section-number">4.1.3.2</span> Formatting for specific ranges: all the container adaptors<a href="#formatting-for-specific-ranges-all-the-container-adaptors" class="self-link"></a></h4>
@@ -2199,28 +2227,28 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">1</a></span> For each of <code class="sourceCode cpp">queue</code>, <code class="sourceCode cpp">priority_queue</code>, and <code class="sourceCode cpp">stack</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>adaptor-type</em></code> is the name of the template:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb56-1"><a href="#cb56-1"></a>namespace std {</span>
-<span id="cb56-2"><a href="#cb56-2"></a>  template &lt;class charT, class T, formattable&lt;charT&gt; Container, class... U&gt;</span>
-<span id="cb56-3"><a href="#cb56-3"></a>  class formatter&lt;<em>adaptor-type</em>&lt;T, Container, U...&gt;, charT&gt;</span>
-<span id="cb56-4"><a href="#cb56-4"></a>  {</span>
-<span id="cb56-5"><a href="#cb56-5"></a>    formatter&lt;Container, charT&gt; <em>underlying_</em>; // exposition only</span>
-<span id="cb56-6"><a href="#cb56-6"></a>  public:</span>
-<span id="cb56-7"><a href="#cb56-7"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb56-8"><a href="#cb56-8"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb56-9"><a href="#cb56-9"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb56-10"><a href="#cb56-10"></a></span>
-<span id="cb56-11"><a href="#cb56-11"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb56-12"><a href="#cb56-12"></a>      typename FormatContext::iterator</span>
-<span id="cb56-13"><a href="#cb56-13"></a>        format(const <em>adaptor-type</em>&lt;T, Container, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span>
-<span id="cb56-14"><a href="#cb56-14"></a>  };</span>
-<span id="cb56-15"><a href="#cb56-15"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb57"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb57-1"><a href="#cb57-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb57-2"><a href="#cb57-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb57-3"><a href="#cb57-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb58-1"><a href="#cb58-1"></a>namespace std {</span>
+<span id="cb58-2"><a href="#cb58-2"></a>  template &lt;class charT, class T, formattable&lt;charT&gt; Container, class... U&gt;</span>
+<span id="cb58-3"><a href="#cb58-3"></a>  class formatter&lt;<em>adaptor-type</em>&lt;T, Container, U...&gt;, charT&gt;</span>
+<span id="cb58-4"><a href="#cb58-4"></a>  {</span>
+<span id="cb58-5"><a href="#cb58-5"></a>    formatter&lt;Container, charT&gt; <em>underlying_</em>; // exposition only</span>
+<span id="cb58-6"><a href="#cb58-6"></a>  public:</span>
+<span id="cb58-7"><a href="#cb58-7"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb58-8"><a href="#cb58-8"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb58-9"><a href="#cb58-9"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb58-10"><a href="#cb58-10"></a></span>
+<span id="cb58-11"><a href="#cb58-11"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb58-12"><a href="#cb58-12"></a>      typename FormatContext::iterator</span>
+<span id="cb58-13"><a href="#cb58-13"></a>        format(const <em>adaptor-type</em>&lt;T, Container, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span>
+<span id="cb58-14"><a href="#cb58-14"></a>  };</span>
+<span id="cb58-15"><a href="#cb58-15"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb59-1"><a href="#cb59-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb59-2"><a href="#cb59-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb59-3"><a href="#cb59-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">2</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb58-1"><a href="#cb58-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb58-2"><a href="#cb58-2"></a>  typename FormatContext::iterator</span>
-<span id="cb58-3"><a href="#cb58-3"></a>    format(const <em>adaptor-type</em>&lt;T, Container, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb60-1"><a href="#cb60-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb60-2"><a href="#cb60-2"></a>  typename FormatContext::iterator</span>
+<span id="cb60-3"><a href="#cb60-3"></a>    format(const <em>adaptor-type</em>&lt;T, Container, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r<span class="op">.</span>c, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
@@ -2229,40 +2257,40 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">1</a></span> For each of <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>tuple-type</em></code> is the name of the template:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb59-1"><a href="#cb59-1"></a>namespace std {</span>
-<span id="cb59-2"><a href="#cb59-2"></a>template &lt;class charT, formattable&lt;charT&gt;... Ts&gt;</span>
-<span id="cb59-3"><a href="#cb59-3"></a>  class formatter&lt;<em>tuple-type</em>&lt;Ts...&gt;, charT&gt; {</span>
-<span id="cb59-4"><a href="#cb59-4"></a>    tuple&lt;formatter&lt;remove_cvref_t&lt;Ts&gt;, charT&gt;...&gt; <em>underlying_</em>;             // exposition only</span>
-<span id="cb59-5"><a href="#cb59-5"></a>    basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);    // exposition only</span>
-<span id="cb59-6"><a href="#cb59-6"></a>    basic_string_view&lt;charT&gt; <em>open-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;(&quot;);  // exposition only</span>
-<span id="cb59-7"><a href="#cb59-7"></a>    basic_string_view&lt;charT&gt; <em>close-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;)&quot;); // exposition only</span>
-<span id="cb59-8"><a href="#cb59-8"></a></span>
-<span id="cb59-9"><a href="#cb59-9"></a>  public:</span>
-<span id="cb59-10"><a href="#cb59-10"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
-<span id="cb59-11"><a href="#cb59-11"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
-<span id="cb59-12"><a href="#cb59-12"></a></span>
-<span id="cb59-13"><a href="#cb59-13"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb59-14"><a href="#cb59-14"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb59-15"><a href="#cb59-15"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb59-16"><a href="#cb59-16"></a></span>
-<span id="cb59-17"><a href="#cb59-17"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb59-18"><a href="#cb59-18"></a>      typename FormatContext::iterator</span>
-<span id="cb59-19"><a href="#cb59-19"></a>        format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span>
-<span id="cb59-20"><a href="#cb59-20"></a>  };</span>
-<span id="cb59-21"><a href="#cb59-21"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb61-1"><a href="#cb61-1"></a>namespace std {</span>
+<span id="cb61-2"><a href="#cb61-2"></a>template &lt;class charT, formattable&lt;charT&gt;... Ts&gt;</span>
+<span id="cb61-3"><a href="#cb61-3"></a>  class formatter&lt;<em>tuple-type</em>&lt;Ts...&gt;, charT&gt; {</span>
+<span id="cb61-4"><a href="#cb61-4"></a>    tuple&lt;formatter&lt;remove_cvref_t&lt;Ts&gt;, charT&gt;...&gt; <em>underlying_</em>;             // exposition only</span>
+<span id="cb61-5"><a href="#cb61-5"></a>    basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);    // exposition only</span>
+<span id="cb61-6"><a href="#cb61-6"></a>    basic_string_view&lt;charT&gt; <em>open-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;(&quot;);  // exposition only</span>
+<span id="cb61-7"><a href="#cb61-7"></a>    basic_string_view&lt;charT&gt; <em>close-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;)&quot;); // exposition only</span>
+<span id="cb61-8"><a href="#cb61-8"></a></span>
+<span id="cb61-9"><a href="#cb61-9"></a>  public:</span>
+<span id="cb61-10"><a href="#cb61-10"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
+<span id="cb61-11"><a href="#cb61-11"></a>    void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span>
+<span id="cb61-12"><a href="#cb61-12"></a></span>
+<span id="cb61-13"><a href="#cb61-13"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb61-14"><a href="#cb61-14"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb61-15"><a href="#cb61-15"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb61-16"><a href="#cb61-16"></a></span>
+<span id="cb61-17"><a href="#cb61-17"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb61-18"><a href="#cb61-18"></a>      typename FormatContext::iterator</span>
+<span id="cb61-19"><a href="#cb61-19"></a>        format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span>
+<span id="cb61-20"><a href="#cb61-20"></a>  };</span>
+<span id="cb61-21"><a href="#cb61-21"></a>}</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">2</a></span> The <code class="sourceCode cpp">parse</code> member functions of these formatters interpret the format specification as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> according to the following syntax:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb60-1"><a href="#cb60-1"></a><em>tuple-format-spec</em>:</span>
-<span id="cb60-2"><a href="#cb60-2"></a>    <em>tuple-fill-and-align</em><sub>opt</sub> <em>width</em><sub>opt</sub> <em>tuple-type</em><sub>opt</sub></span>
-<span id="cb60-3"><a href="#cb60-3"></a></span>
-<span id="cb60-4"><a href="#cb60-4"></a><em>tuple-fill-and-align</em>:</span>
-<span id="cb60-5"><a href="#cb60-5"></a>    <em>tuple-fill</em><sub>opt</sub> <em>align</em></span>
-<span id="cb60-6"><a href="#cb60-6"></a></span>
-<span id="cb60-7"><a href="#cb60-7"></a><em>tuple-fill</em>:</span>
-<span id="cb60-8"><a href="#cb60-8"></a>    any character other than { or } or :</span>
-<span id="cb60-9"><a href="#cb60-9"></a></span>
-<span id="cb60-10"><a href="#cb60-10"></a><em>tuple-type</em>:</span>
-<span id="cb60-11"><a href="#cb60-11"></a>    m</span>
-<span id="cb60-12"><a href="#cb60-12"></a>    n</span></code></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a><em>tuple-format-spec</em>:</span>
+<span id="cb62-2"><a href="#cb62-2"></a>    <em>tuple-fill-and-align</em><sub>opt</sub> <em>width</em><sub>opt</sub> <em>tuple-type</em><sub>opt</sub></span>
+<span id="cb62-3"><a href="#cb62-3"></a></span>
+<span id="cb62-4"><a href="#cb62-4"></a><em>tuple-fill-and-align</em>:</span>
+<span id="cb62-5"><a href="#cb62-5"></a>    <em>tuple-fill</em><sub>opt</sub> <em>align</em></span>
+<span id="cb62-6"><a href="#cb62-6"></a></span>
+<span id="cb62-7"><a href="#cb62-7"></a><em>tuple-fill</em>:</span>
+<span id="cb62-8"><a href="#cb62-8"></a>    any character other than { or } or :</span>
+<span id="cb62-9"><a href="#cb62-9"></a></span>
+<span id="cb62-10"><a href="#cb62-10"></a><em>tuple-type</em>:</span>
+<span id="cb62-11"><a href="#cb62-11"></a>    m</span>
+<span id="cb62-12"><a href="#cb62-12"></a>    n</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">3</a></span> The <code class="sourceCode cpp"><em>tuple-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>tuple-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">4</a></span> The <code class="sourceCode cpp"><em>tuple-type</em></code> specifier changes the way a <code class="sourceCode cpp">pair</code> or <code class="sourceCode cpp">tuple</code> is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.</p>
 <table>
@@ -2297,22 +2325,22 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb61"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb61-1"><a href="#cb61-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">5</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>void set_brackets(basic_string_view&lt;charT&gt; open, basic_string_view&lt;charT&gt; close);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">6</a></span> <em>Effects</em>: Equivalent to</p>
 <blockquote>
-<div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a><em>open-bracket_</em> = open;</span>
-<span id="cb63-2"><a href="#cb63-2"></a><em>close-bracket_</em> = close;</span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb65-1"><a href="#cb65-1"></a><em>open-bracket_</em> = open;</span>
+<span id="cb65-2"><a href="#cb65-2"></a><em>close-bracket_</em> = close;</span></code></pre></div>
 </blockquote>
-<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb64-2"><a href="#cb64-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb64-3"><a href="#cb64-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb66-1"><a href="#cb66-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb66-2"><a href="#cb66-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb66-3"><a href="#cb66-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">7</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. For each element <code class="sourceCode cpp"><em>e</em></code> in <code class="sourceCode cpp"><em>underlying_</em></code>, if <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression, calls <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">8</a></span> <em>Returns</em>: an iterator past the end of the <code class="sourceCode cpp"><em>tuple-format-spec</em></code>.</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb65-1"><a href="#cb65-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb65-2"><a href="#cb65-2"></a>  typename FormatContext::iterator</span>
-<span id="cb65-3"><a href="#cb65-3"></a>    format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb67-1"><a href="#cb67-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb67-2"><a href="#cb67-2"></a>  typename FormatContext::iterator</span>
+<span id="cb67-3"><a href="#cb67-3"></a>    format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">9</a></span> The type of <code class="sourceCode cpp">elems</code> is:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">(9.1)</a></span> If <code class="sourceCode cpp"><span class="op">(</span>formattable<span class="op">&lt;</span><span class="kw">const</span> Ts, charT<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> <em>tuple-type</em><span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span></code>.</li>
@@ -2335,48 +2363,48 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb66"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb66-1"><a href="#cb66-1"></a>namespace std {</span>
-<span id="cb66-2"><a href="#cb66-2"></a>  // [vector], class template vector</span>
-<span id="cb66-3"><a href="#cb66-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
-<span id="cb66-4"><a href="#cb66-4"></a></span>
-<span id="cb66-5"><a href="#cb66-5"></a>  // ...</span>
-<span id="cb66-6"><a href="#cb66-6"></a></span>
-<span id="cb66-7"><a href="#cb66-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
-<span id="cb66-8"><a href="#cb66-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
-<span id="cb66-9"><a href="#cb66-9"></a></span>
-<span id="cb66-10"><a href="#cb66-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb66-11"><a href="#cb66-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
-<span id="cb66-12"><a href="#cb66-12"></a></span>
-<span id="cb66-13"><a href="#cb66-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
-<span id="cb66-14"><a href="#cb66-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb68-1"><a href="#cb68-1"></a>namespace std {</span>
+<span id="cb68-2"><a href="#cb68-2"></a>  // [vector], class template vector</span>
+<span id="cb68-3"><a href="#cb68-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
+<span id="cb68-4"><a href="#cb68-4"></a></span>
+<span id="cb68-5"><a href="#cb68-5"></a>  // ...</span>
+<span id="cb68-6"><a href="#cb68-6"></a></span>
+<span id="cb68-7"><a href="#cb68-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
+<span id="cb68-8"><a href="#cb68-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
+<span id="cb68-9"><a href="#cb68-9"></a></span>
+<span id="cb68-10"><a href="#cb68-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb68-11"><a href="#cb68-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
+<span id="cb68-12"><a href="#cb68-12"></a></span>
+<span id="cb68-13"><a href="#cb68-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
+<span id="cb68-14"><a href="#cb68-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to [vector.bool] at the end:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb67"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb67-1"><a href="#cb67-1"></a>template&lt;class R&gt;</span>
-<span id="cb67-2"><a href="#cb67-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb69-1"><a href="#cb69-1"></a>template&lt;class R&gt;</span>
+<span id="cb69-2"><a href="#cb69-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb68-1"><a href="#cb68-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
-<span id="cb68-2"><a href="#cb68-2"></a>  class formatter&lt;T, charT&gt; {</span>
-<span id="cb68-3"><a href="#cb68-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
-<span id="cb68-4"><a href="#cb68-4"></a></span>
-<span id="cb68-5"><a href="#cb68-5"></a>  public:</span>
-<span id="cb68-6"><a href="#cb68-6"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb68-7"><a href="#cb68-7"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb68-8"><a href="#cb68-8"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb68-9"><a href="#cb68-9"></a></span>
-<span id="cb68-10"><a href="#cb68-10"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb68-11"><a href="#cb68-11"></a>      typename FormatContext::iterator</span>
-<span id="cb68-12"><a href="#cb68-12"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
-<span id="cb68-13"><a href="#cb68-13"></a>  };</span></code></pre></div>
-<div class="sourceCode" id="cb69"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb69-1"><a href="#cb69-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb69-2"><a href="#cb69-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb69-3"><a href="#cb69-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb70-1"><a href="#cb70-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
+<span id="cb70-2"><a href="#cb70-2"></a>  class formatter&lt;T, charT&gt; {</span>
+<span id="cb70-3"><a href="#cb70-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
+<span id="cb70-4"><a href="#cb70-4"></a></span>
+<span id="cb70-5"><a href="#cb70-5"></a>  public:</span>
+<span id="cb70-6"><a href="#cb70-6"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb70-7"><a href="#cb70-7"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb70-8"><a href="#cb70-8"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb70-9"><a href="#cb70-9"></a></span>
+<span id="cb70-10"><a href="#cb70-10"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb70-11"><a href="#cb70-11"></a>      typename FormatContext::iterator</span>
+<span id="cb70-12"><a href="#cb70-12"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
+<span id="cb70-13"><a href="#cb70-13"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb71-1"><a href="#cb71-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb71-2"><a href="#cb71-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb71-3"><a href="#cb71-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb70-1"><a href="#cb70-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb70-2"><a href="#cb70-2"></a>  typename FormatContext::iterator</span>
-<span id="cb70-3"><a href="#cb70-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb72-2"><a href="#cb72-2"></a>  typename FormatContext::iterator</span>
+<span id="cb72-3"><a href="#cb72-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
