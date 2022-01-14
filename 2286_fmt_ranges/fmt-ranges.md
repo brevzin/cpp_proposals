@@ -1218,26 +1218,34 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
 [2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of values:
 
-* [2.#]{.pnum} A `"` character
+* [2.#]{.pnum} A U+0022 QUOTATION MARK (`"`) character
 
 * [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit if it is not a part of a valid UCS scalar value:
 
-  * [2.#]{.pnum} If the UCS scalar value is one of `\t`, `\r`, `\n`, `\\` or `"`, then the sequence `"\\t"`, `"\\r"`, `"\\n"`, `"\\\\"` and `"\\\""` respectively.
+  * [2.#]{.pnum} If the UCS scalar value is in the table below, then its corresponding two-character escape sequence:
+
+  |UCS scalar value|escape sequence|
+  |-|-|
+  |U+0009 CHARACTER TABULATION|`\t`|
+  |U+000A LINE FEED|`\n`|
+  |U+000D CARRIAGE RETURN|`\r`|
+  |U+0022 QUOTATION MARK|`\"`|
+  |U+005C REVERSE SOLIDUS|`\\`|
 
   * [2.#]{.pnum} Otherwise, if the UCS scalar value
 
     * [2.#.#]{.pnum} has a value other than space (U+0020 SPACE) and has a Unicode property Separator (`Z`) or Other (`C`), or
     * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend` and there are no UCS scalar values preceding it in `$S$` without this property
 
-    then its universal character name escape sequence in the form `"\\u{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros.
+    then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros and with lower-case `$hexadecimal-digit$`s.
 
-  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `"\\x{$simple-hexadecimal-digit-sequence$}"`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros.
+  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros and with lower-case `$hexadecimal-digit$`s.
 
   * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
 
-* [2.#]{.pnum} Finally, another `"` character.
+* [2.#]{.pnum} Finally, another U+0022 QUOTATION MARK (`"`) character.
 
-[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with `'` instead of `"` and the UCS scalar value `'` is escaped as `"\\\'"` while the UCS scalar value `"` is left unchanged.
+[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`) and the UCS scalar value U+0027 APOSTROPHE is escaped as `\'` while the UCS scalar value U+0022 QUOTATION MARK is left unchanged.
 
 [4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
 
