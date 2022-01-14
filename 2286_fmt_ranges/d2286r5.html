@@ -2532,6 +2532,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb72-3"><a href="#cb72-3"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
 </ul>
 </blockquote>
+<p>Add a new clause [format.string.escaped] “Formatting escaped characters and strings” which will discuss what it means to do escaping.</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">1</a></span> A character or string can be formatted as <em>escaped</em> to make it more suitable for debugging or for logging.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">2</a></span> Draw the rest of the owl.</p>
+</div>
+</blockquote>
 <h3 data-number="4.1.5" id="formatter-for-vectorboolreference"><span class="header-section-number">4.1.5</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h3>
 <p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
 <blockquote>
@@ -2557,7 +2564,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <div class="sourceCode" id="cb74"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb74-1"><a href="#cb74-1"></a>template&lt;class R&gt;</span>
 <span id="cb74-2"><a href="#cb74-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
 <div class="sourceCode" id="cb75"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb75-1"><a href="#cb75-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
 <span id="cb75-2"><a href="#cb75-2"></a>  class formatter&lt;T, charT&gt; {</span>
 <span id="cb75-3"><a href="#cb75-3"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
@@ -2574,11 +2581,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb76"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb76-1"><a href="#cb76-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb76-2"><a href="#cb76-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb76-3"><a href="#cb76-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb77"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb77-1"><a href="#cb77-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb77-2"><a href="#cb77-2"></a>  typename FormatContext::iterator</span>
 <span id="cb77-3"><a href="#cb77-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>

@@ -1888,6 +1888,16 @@ Add `set_debug_format()` to the character and string specializations in [format.
   ```
 :::
 
+Add a new clause [format.string.escaped] "Formatting escaped characters and strings" which will discuss what it means to do escaping.
+
+::: bq
+::: addu
+[1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
+
+[2]{.pnum} Draw the rest of the owl.
+:::
+:::
+
 ### Formatter for `vector<bool>::reference`
 
 Add to [vector.syn]{.sref}
