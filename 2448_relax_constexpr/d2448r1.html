@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-13" />
+  <meta name="dcterms.date" content="2022-01-14" />
   <title>Relaxing some constexpr restrictions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-13</td>
+    <td>2022-01-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -568,13 +568,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#maybe-not-now-but-soon"><span class="toc-section-number">3</span> Maybe Not Now, But Soon<span></span></a></li>
 <li><a href="#sometimes-maybe-sometimes-always"><span class="toc-section-number">4</span> Sometimes Maybe, Sometimes Always<span></span></a></li>
 <li><a href="#onwards-to-constexpr-classes"><span class="toc-section-number">5</span> Onwards to constexpr classes<span></span></a></li>
-<li><a href="#proposal"><span class="toc-section-number">6</span> Proposal<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
+<li><a href="#getting-rid-of-constexpr-compatible"><span class="toc-section-number">6</span> Getting rid of constexpr-compatible<span></span></a>
+<ul>
+<li><a href="#going-deeper"><span class="toc-section-number">6.1</span> Going deeper<span></span></a></li>
+<li><a href="#going-deeper-1"><span class="toc-section-number">6.2</span> Going Deeper<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">7</span> Proposal<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">8</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">1</span> Abstract<a href="#abstract" class="self-link"></a></h1>
 <p>There are two rules about <code class="sourceCode cpp"><span class="kw">constexpr</span></code> programming that make code ill-formed or ill-formed (no diagnostic required) when functions or function templates are marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code> that might never evaluate to a constant expression. But… so what if they don’t? The goal of this paper is to stop diagnosing problems that don’t exist.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">2</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2448R0">[<a href="#ref-P2448R0" role="doc-biblioref">P2448R0</a>]</span>, CWG telecon pointed out that there were several other rules that could be striken in the same theme. Updated wording.</p>
 <p>A draft of the first revision of this paper was discussed in an <a href="https://wiki.edg.com/bin/view/Wg21telecons2021/EWG-2021-10-13">EWG telecon</a>, where the following poll was taken:</p>
 <blockquote>
 <p>send P2448 to electronic polling, targeting CWG for C++23.</p>
@@ -722,65 +728,195 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Are all of these functions okay? I would argue that they <em>should</em> all be okay, but per the wording they’re currently not.</p>
 <p>I want <code class="sourceCode cpp">Wrapper</code> to be entirely <code class="sourceCode cpp"><span class="kw">constexpr</span></code> where feasible. Some of those functions may not be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> for all types, and that’s fine. Some of these functions may not be able to be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> in C++N but may be later, and I don’t want to have to go back and either annotate against this (which I don’t think P2350 even allows room for) or stop using this feature and go back to manually marking and even more annotations.</p>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">6</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>Strike <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6 and the example following it, in its entirety, along with the second sentence in /7:</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="getting-rid-of-constexpr-compatible"><span class="header-section-number">6</span> Getting rid of constexpr-compatible<a href="#getting-rid-of-constexpr-compatible" class="self-link"></a></h1>
+<p>With the wording suggested in the first revision of this paper <span class="citation" data-cites="P2448R0">[<a href="#ref-P2448R0" role="doc-biblioref">P2448R0</a>]</span>, functions (even defaulted special member functions) could be declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> without this leading to either a diagnostic or leading to a program being ill-formed, no diagnostic required.</p>
+<p>During the CWG telecon discussing that paper, it was brought up that we can go further. For instance, we have a term <em>constexpr-compatible</em>. Currently used by <span>9.5.2 <a href="https://wg21.link/dcl.fct.def.default">[dcl.fct.def.default]</a></span>/3:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">3</a></span> An explicitly-defaulted function that is not defined as deleted may be declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> only if it is constexpr-compatible ([special], [class.compare.default]). A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.</p>
+</blockquote>
+<p>Where special member functions are considered constexpr-compatible when:</p>
+<ul>
+<li><p>Comparisons (<span>11.10.1 <a href="https://wg21.link/class.compare.default">[class.compare.default]</a></span>/4):</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">4</a></span> A defaulted comparison function is constexpr-compatible if it satisfies the requirements for a constexpr function ([dcl.constexpr]) and no overload resolution performed when determining whether to delete the function results in a usable candidate that is a non-constexpr function.</p>
+</blockquote></li>
+<li><p>Special members (<span>11.4.4 <a href="https://wg21.link/special">[special]</a></span>/8):</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">8</a></span> A defaulted special member function is constexpr-compatible if the corresponding implicitly-declared special member function would be a constexpr function.</p>
+</blockquote></li>
+</ul>
+<p>The special member case depends on the kind of special member function:</p>
+<ul>
+<li>default/copy/move constructor: satisfy the requirements of a constexpr constructor (every constructor selected for each base and member is constexpr, no virtual base classes)</li>
+<li>copy/move assignment: class is literal, every assignment selected for each base and member is constexpr</li>
+<li>destructor: satisfies the requirements for constexpr destructor (every destructor selected for each base and member is constexpr, no virtual bases)</li>
+</ul>
+<p>It would be, within the spirit of this paper, to significantly reduce these restrictions as follows. First, we can remove the restrictions on constexpr constructors and destructors(from <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/4 and /5):</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">6</a></span> For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> The definition of a constexpr constructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirements:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(4.1)</a></span> for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(4.2)</a></span> for a delegating constructor, the target constructor shall be a constexpr constructor.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">5</a></span> The definition of a constexpr destructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirement:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(5.1)</a></span> for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.</li>
+</ul>
+
+</div>
+</blockquote>
+<p>After this, if we allow a constexpr copy/move assignment even for non-literal classes, then we can basically make all defaulted functions constexpr except for constructors and destructors for types that have virtual base classes. This also means that we can remove the term <em>constexpr-compatible</em> since we would no longer need to use it anywhere. That’s a nice chunk of specification improvement, removing rules that nobody really needs.</p>
+<h2 data-number="6.1" id="going-deeper"><span class="header-section-number">6.1</span> Going deeper<a href="#going-deeper" class="self-link"></a></h2>
+<p>We could go one step further and drop further uses of literal type in <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/3:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">3</a></span> The definition of a constexpr function shall satisfy the following requirements:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.1)</a></span> <span class="rm" style="color: #bf0303"><del>its return type (if any) shall be a literal type;</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.2)</a></span> <span class="rm" style="color: #bf0303"><del>each of its parameter types shall be a literal type;</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.3)</a></span> it shall not be a coroutine;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.4)</a></span> if the function is a constructor or destructor, its class shall not have any virtual base classes.</li>
+</ul>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">4</a></span> The definition of a constexpr constructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirements:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(4.1)</a></span> for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(4.2)</a></span> for a delegating constructor, the target constructor shall be a constexpr constructor.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">5</a></span> The definition of a constexpr destructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirement:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(5.1)</a></span> for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.</li>
+</ul>
+
+</div>
+</blockquote>
+<p>The first two sub-bullets are also very much in the spirit of this paper. A type could be not literal yet in C++N but could become literal in C++N+1, it would be nice if we could simply mark such functions <code class="sourceCode cpp"><span class="kw">constexpr</span></code> regardless (as I’ve already noted the desire to do for copy/move assignment in the previous section).</p>
+<h2 data-number="6.2" id="going-deeper-1"><span class="header-section-number">6.2</span> Going Deeper<a href="#going-deeper-1" class="self-link"></a></h2>
+<p>Once we eliminate those two bullets, we only have two rules for the requirements of a constexpr function: not a coroutine, and not a constuctor/destructor of a class that has virtual base classes. I’m not entirely sure why we need the latter rule either, but it could also be moved elsewhere – that is, the problem isn’t <em>declaring</em> a constexpr constructor for a class with a virtual base, the problem is trying to <em>initialize</em> such a type during constant evaluation. Similar to how we removed the restriction on <code class="sourceCode cpp"><span class="cf">try</span></code>/<code class="sourceCode cpp"><span class="cf">catch</span></code> while still disallowing throwing.</p>
+<p>This would actually allow further specification cleanup, since now we could just say that all implicit constructors are <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. But it’s a much bigger step and I’m not sure that we should take it at this time.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">7</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>Strike two bullets from <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/3, as well as paragraphs /4, /5, /6, their examples, and part of 7:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">3</a></span> The definition of a constexpr function shall satisfy the following requirements:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(3.1)</a></span> <span class="rm" style="color: #bf0303"><del>its return type (if any) shall be a literal type;</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(3.2)</a></span> <span class="rm" style="color: #bf0303"><del>each of its parameter types shall be a literal type;</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(3.3)</a></span> it shall not be a coroutine;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(3.4)</a></span> if the function is a constructor or destructor, its class shall not have any virtual base classes.</li>
+</ul>
+<p>[<em>Example 2:</em></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>// ...</span></code></pre></div>
+<p><em>-end example</em>]</p>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">4</a></span> The definition of a constexpr constructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirements:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(4.1)</a></span> for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(4.2)</a></span> for a delegating constructor, the target constructor shall be a constexpr constructor.</li>
+</ul>
+<p>[<em>Example 3</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>struct Length {</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  constexpr explicit Length(int i = 0) : val(i) { }</span>
+<span id="cb10-3"><a href="#cb10-3"></a>private:</span>
+<span id="cb10-4"><a href="#cb10-4"></a>  int val;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>};</span></code></pre></div>
+<p><em>— end example</em>]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">5</a></span> The definition of a constexpr destructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirement:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(5.1)</a></span> for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">6</a></span> For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
 <p>[<em>Example 4</em>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>constexpr int f(bool b)</span>
-<span id="cb9-2"><a href="#cb9-2"></a>  { return b ? throw 0 : 0; }           // OK</span>
-<span id="cb9-3"><a href="#cb9-3"></a>constexpr int f() { return f(true); }   // ill-formed, no diagnostic required</span>
-<span id="cb9-4"><a href="#cb9-4"></a></span>
-<span id="cb9-5"><a href="#cb9-5"></a>struct B {</span>
-<span id="cb9-6"><a href="#cb9-6"></a>  constexpr B(int x) : i(0) { }         // x is unused</span>
-<span id="cb9-7"><a href="#cb9-7"></a>  int i;</span>
-<span id="cb9-8"><a href="#cb9-8"></a>};</span>
-<span id="cb9-9"><a href="#cb9-9"></a></span>
-<span id="cb9-10"><a href="#cb9-10"></a>int global;</span>
-<span id="cb9-11"><a href="#cb9-11"></a></span>
-<span id="cb9-12"><a href="#cb9-12"></a>struct D : B {</span>
-<span id="cb9-13"><a href="#cb9-13"></a>  constexpr D() : B(global) { }         // ill-formed, no diagnostic required</span>
-<span id="cb9-14"><a href="#cb9-14"></a>                                        // lvalue-to-rvalue conversion on non-constant global</span>
-<span id="cb9-15"><a href="#cb9-15"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>constexpr int f(bool b)</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  { return b ? throw 0 : 0; }           // OK</span>
+<span id="cb11-3"><a href="#cb11-3"></a>constexpr int f() { return f(true); }   // ill-formed, no diagnostic required</span>
+<span id="cb11-4"><a href="#cb11-4"></a></span>
+<span id="cb11-5"><a href="#cb11-5"></a>struct B {</span>
+<span id="cb11-6"><a href="#cb11-6"></a>  constexpr B(int x) : i(0) { }         // x is unused</span>
+<span id="cb11-7"><a href="#cb11-7"></a>  int i;</span>
+<span id="cb11-8"><a href="#cb11-8"></a>};</span>
+<span id="cb11-9"><a href="#cb11-9"></a></span>
+<span id="cb11-10"><a href="#cb11-10"></a>int global;</span>
+<span id="cb11-11"><a href="#cb11-11"></a></span>
+<span id="cb11-12"><a href="#cb11-12"></a>struct D : B {</span>
+<span id="cb11-13"><a href="#cb11-13"></a>  constexpr D() : B(global) { }         // ill-formed, no diagnostic required</span>
+<span id="cb11-14"><a href="#cb11-14"></a>                                        // lvalue-to-rvalue conversion on non-constant global</span>
+<span id="cb11-15"><a href="#cb11-15"></a>};</span></code></pre></div>
 <ul>
 <li><em>end example</em>]</li>
 </ul>
 
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression. <span class="rm" style="color: #bf0303"><del>If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</del></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">7</a></span> If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression. <span class="rm" style="color: #bf0303"><del>If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</del></span></p>
 </blockquote>
-<p>Strike part of <span>9.5.2 <a href="https://wg21.link/dcl.fct.def.default">[dcl.fct.def.default]</a></span>/3 and fix the example (which is already wrong at the moment, since default-initializing an <code class="sourceCode cpp"><span class="dt">int</span></code> during constant evaluation is ok):</p>
+<p>Adjust <span>9.5.2 <a href="https://wg21.link/dcl.fct.def.default">[dcl.fct.def.default]</a></span>/3 and fix the example (which is already wrong at the moment, since default-initializing an <code class="sourceCode cpp"><span class="dt">int</span></code> during constant evaluation is ok):</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> <span class="rm" style="color: #bf0303"><del>An explicitly-defaulted function that is not defined as deleted may be declared <span><code class="sourceCode default">constexpr</code></span> or <span><code class="sourceCode default">consteval</code></span> only if it is constexpr-compatible ([special], [class.compare.default])</del></span>. A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> [<em>Example 1</em>:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">3</a></span> <span class="rm" style="color: #bf0303"><del>An explicitly-defaulted function that is not defined as deleted may be declared <span><code class="sourceCode default">constexpr</code></span> or <span><code class="sourceCode default">consteval</code></span> only if it is constexpr-compatible ([special], [class.compare.default])</del></span>. A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it <span class="rm" style="color: #bf0303"><del>is constexpr-compatible</del></span> <span class="addu">satisfies the requirements for a constexpr function</span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">4</a></span> [<em>Example 1</em>:</p>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  struct S {</span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="st">-   constexpr S() = default;              // error: implicit S() is not constexpr</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a>    S(int a = 0) = default;               // error: default argument</span>
-<span id="cb10-4"><a href="#cb10-4"></a>    void operator=(const S&amp;) = default;   // error: non-matching return type</span>
-<span id="cb10-5"><a href="#cb10-5"></a>    ~S() noexcept(false) = default;       // OK, despite mismatched exception specification</span>
-<span id="cb10-6"><a href="#cb10-6"></a>  private:</span>
-<span id="cb10-7"><a href="#cb10-7"></a>    int i;</span>
-<span id="cb10-8"><a href="#cb10-8"></a>    S(S&amp;);                                // OK: private copy constructor</span>
-<span id="cb10-9"><a href="#cb10-9"></a>  };</span>
-<span id="cb10-10"><a href="#cb10-10"></a>  S::S(S&amp;) = default;                     // OK: defines copy constructor</span>
-<span id="cb10-11"><a href="#cb10-11"></a></span>
-<span id="cb10-12"><a href="#cb10-12"></a>  struct T {</span>
-<span id="cb10-13"><a href="#cb10-13"></a>    T();</span>
-<span id="cb10-14"><a href="#cb10-14"></a>    T(T &amp;&amp;) noexcept(false);</span>
-<span id="cb10-15"><a href="#cb10-15"></a>  };</span>
-<span id="cb10-16"><a href="#cb10-16"></a>  struct U {</span>
-<span id="cb10-17"><a href="#cb10-17"></a>    T t;</span>
-<span id="cb10-18"><a href="#cb10-18"></a>    U();</span>
-<span id="cb10-19"><a href="#cb10-19"></a>    U(U &amp;&amp;) noexcept = default;</span>
-<span id="cb10-20"><a href="#cb10-20"></a>  };</span>
-<span id="cb10-21"><a href="#cb10-21"></a>  U u1;</span>
-<span id="cb10-22"><a href="#cb10-22"></a>  U u2 = static_cast&lt;U&amp;&amp;&gt;(u1);            // OK, calls std​::​terminate if T​::​T(T&amp;&amp;) throws</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>  struct S {</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="st">-   constexpr S() = default;              // error: implicit S() is not constexpr</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>    S(int a = 0) = default;               // error: default argument</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    void operator=(const S&amp;) = default;   // error: non-matching return type</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    ~S() noexcept(false) = default;       // OK, despite mismatched exception specification</span>
+<span id="cb12-6"><a href="#cb12-6"></a>  private:</span>
+<span id="cb12-7"><a href="#cb12-7"></a>    int i;</span>
+<span id="cb12-8"><a href="#cb12-8"></a>    S(S&amp;);                                // OK: private copy constructor</span>
+<span id="cb12-9"><a href="#cb12-9"></a>  };</span>
+<span id="cb12-10"><a href="#cb12-10"></a>  S::S(S&amp;) = default;                     // OK: defines copy constructor</span>
+<span id="cb12-11"><a href="#cb12-11"></a></span>
+<span id="cb12-12"><a href="#cb12-12"></a>  struct T {</span>
+<span id="cb12-13"><a href="#cb12-13"></a>    T();</span>
+<span id="cb12-14"><a href="#cb12-14"></a>    T(T &amp;&amp;) noexcept(false);</span>
+<span id="cb12-15"><a href="#cb12-15"></a>  };</span>
+<span id="cb12-16"><a href="#cb12-16"></a>  struct U {</span>
+<span id="cb12-17"><a href="#cb12-17"></a>    T t;</span>
+<span id="cb12-18"><a href="#cb12-18"></a>    U();</span>
+<span id="cb12-19"><a href="#cb12-19"></a>    U(U &amp;&amp;) noexcept = default;</span>
+<span id="cb12-20"><a href="#cb12-20"></a>  };</span>
+<span id="cb12-21"><a href="#cb12-21"></a>  U u1;</span>
+<span id="cb12-22"><a href="#cb12-22"></a>  U u2 = static_cast&lt;U&amp;&amp;&gt;(u1);            // OK, calls std​::​terminate if T​::​T(T&amp;&amp;) throws</span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
-<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
+<p>Strike use of constexpr-compatible in <span>11.4.4 <a href="https://wg21.link/special">[special]</a></span>/8:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">8</a></span> A defaulted special member function is <em>constexpr-compatible</em> if the corresponding implicitly-declared special member function would be a constexpr function.</p>
+</div>
+</blockquote>
+<p>Mark assignment as being constexpr in <span>11.4.6 <a href="https://wg21.link/class.copy.assign">[class.copy.assign]</a></span>/10:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">10</a></span> A copy/move assignment operator for a class <code class="sourceCode cpp">X</code> that is defaulted and not defined as deleted is <em>implicitly defined</em> when it is odr-used ([term.odr.use]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined copy/move assignment operator is <code class="sourceCode cpp"><span class="kw">constexpr</span></code><span class="addu">.</span> <span class="rm" style="color: #bf0303"><del>if</del></span></p>
+<div class="rm" style="color: #bf0303">
+
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(10.1)</a></span> X is a literal type, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(10.2)</a></span> the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(10.3)</a></span> for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.</li>
+</ul>
+
+</div>
+</blockquote>
+<p>Remove this no-longer-necessary rule in <span>11.4.7 <a href="https://wg21.link/class.dtor">[class.dtor]</a></span>/9 (the requirements for constexpr destructor are now just the requirements for constexpr function, which is now covered by the [dcl.fct.def.default] rule):</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">9</a></span> A defaulted destructor is a constexpr destructor if it satisfies the requirements for a constexpr destructor ([dcl.constexpr]).</p>
+</div>
+</blockquote>
+<p>Strike use of constexpr-compatible in <span>11.10.1 <a href="https://wg21.link/class.compare.default">[class.compare.default]</a></span>/4:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">4</a></span> A defaulted comparison function is <em>constexpr-compatible</em> if it satisfies the requirements for a constexpr function ([dcl.constexpr]) and no overload resolution performed when determining whether to delete the function results in a usable candidate that is a non-constexpr function.</p>
+<p>[<em>Note 1</em>: This includes the overload resolutions performed:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(4.1)</a></span> for an <code class="sourceCode default">operator&lt;=&gt;</code> whose return type is not <code class="sourceCode default">auto</code>, when determining whether a synthesized three-way comparison is defined,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(4.2)</a></span> for an <code class="sourceCode default">operator&lt;=&gt;</code> whose return type is <code class="sourceCode default">auto</code> or for an <code class="sourceCode default">operator==</code>, for a comparison between an element of the expanded list of subobjects and itself, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(4.3)</a></span> for a secondary comparison operator <code class="sourceCode default">@</code>, for the expression <code class="sourceCode default">x @ y</code>.</li>
+</ul>
+<p>— <em>end note</em>]</p>
+</div>
+</blockquote>
+<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P2231R1">
 <p>[P2231R1] Barry Revzin. 2021-02-12. Add further constexpr support for optional/variant. <br />
@@ -789,6 +925,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P2350R1">
 <p>[P2350R1] Andreas Fertig. 2021-07-15. constexpr class. <br />
 <a href="https://wg21.link/p2350r1">https://wg21.link/p2350r1</a></p>
+</div>
+<div id="ref-P2448R0">
+<p>[P2448R0] Barry Revzin. 2021-10-14. Relaxing some constexpr restrictions. <br />
+<a href="https://wg21.link/p2448r0">https://wg21.link/p2448r0</a></p>
 </div>
 </div>
 </div>

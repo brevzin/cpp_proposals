@@ -15,7 +15,7 @@ There are two rules about `constexpr` programming that make code ill-formed or i
 
 # Revision History
 
-Since [@P2448R0], took the wording one step further and additionally made implicitly defined special member functions `constexpr`, and thus dropping the need for constexpr-compatible.
+Since [@P2448R0], CWG telecon pointed out that there were several other rules that could be striken in the same theme. Updated wording.
 
 A draft of the first revision of this paper was discussed in an [EWG telecon](https://wiki.edg.com/bin/view/Wg21telecons2021/EWG-2021-10-13), where the following poll was taken:
 
@@ -28,16 +28,6 @@ send P2448 to electronic polling, targeting CWG for C++23.
 :::
 
 This first published revision thus targets CWG.
-
-TODO, we have wording like in [class.default.ctor] that does stuff like:
-
-> If that user-written default constructor would satisfy the requirements of a constexpr constructor ([dcl.constexpr]), the implicitly-defined default constructor is constexpr.
-
-Change it to:
-
-> The implicitly-defined default constructor is constexpr.
-
-Just... always make the implicitly-defined stuff `constexpr`. Also just remove constexpr-compatable? It's not even useful?
 
 # Maybe Not Now, But Soon
 
@@ -210,21 +200,119 @@ I want `Wrapper` to be entirely `constexpr` where feasible. Some of those functi
 
 With the wording suggested in the first revision of this paper [@P2448R0], functions (even defaulted special member functions) could be declared `constexpr` without this leading to either a diagnostic or leading to a program being ill-formed, no diagnostic required.
 
-During the CWG telecon discussing that paper, it was brought up that we can go further. For instance, [class.default.ctor]{.sref} currently contains this:
+During the CWG telecon discussing that paper, it was brought up that we can go further. For instance, we have a term _constexpr-compatible_. Currently used by [dcl.fct.def.default]{.sref}/3:
 
-::: quote
-The implicitly-defined default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no _ctor-initializer_ ([class.base.init]) and an empty _compound-statement_. If that user-written default constructor would be ill-formed, the program is ill-formed.
-If that user-written default constructor would satisfy the requirements of a constexpr constructor ([dcl.constexpr]), the implicitly-defined default constructor is `constexpr`.
+::: bq
+[3]{.pnum} An explicitly-defaulted function that is not defined as deleted may be declared `constexpr` or `consteval` only if it is constexpr-compatible ([special], [class.compare.default]). A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.
 :::
 
+Where special member functions are considered constexpr-compatible when:
 
+* Comparisons ([class.compare.default]{.sref}/4):
 
-# Proposal
+  ::: bq
+  [4]{.pnum} A defaulted comparison function is constexpr-compatible if it satisfies the requirements for a constexpr function ([dcl.constexpr]) and no overload resolution performed when determining whether to delete the function results in a usable candidate that is a non-constexpr function.
+  :::
 
-Strike [dcl.constexpr]{.sref}/6 and the example following it, in its entirety, along with the second sentence in /7:
+* Special members ([special]{.sref}/8):
+
+  ::: bq
+  [8]{.pnum} A defaulted special member function is constexpr-compatible if the corresponding implicitly-declared special member function would be a constexpr function.
+  :::
+
+The special member case depends on the kind of special member function:
+
+* default/copy/move constructor: satisfy the requirements of a constexpr constructor (every constructor selected for each base and member is constexpr, no virtual base classes)
+* copy/move assignment: class is literal, every assignment selected for each base and member is constexpr
+* destructor: satisfies the requirements for constexpr destructor (every destructor selected for each base and member is constexpr, no virtual bases)
+
+It would be, within the spirit of this paper, to significantly reduce these restrictions as follows. First, we can remove the restrictions on constexpr constructors and destructors(from [dcl.constexpr]{.sref}/4 and /5):
 
 ::: bq
 ::: rm
+[4]{.pnum} The definition of a constexpr constructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirements:
+
+* [4.1]{.pnum} for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;
+* [4.2]{.pnum} for a delegating constructor, the target constructor shall be a constexpr constructor.
+
+[5]{.pnum} The definition of a constexpr destructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirement:
+
+* [5.1]{.pnum} for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.
+:::
+:::
+
+After this, if we allow a constexpr copy/move assignment even for non-literal classes, then we can basically make all defaulted functions constexpr except for constructors and destructors for types that have virtual base classes. This also means that we can remove the term _constexpr-compatible_ since we would no longer need to use it anywhere. That's a nice chunk of specification improvement, removing rules that nobody really needs.
+
+## Going deeper
+
+We could go one step further and drop further uses of literal type in [dcl.constexpr]{.sref}/3:
+
+::: bq
+[3]{.pnum} The definition of a constexpr function shall satisfy the following requirements:
+
+* [3.1]{.pnum} [its return type (if any) shall be a literal type;]{.rm}
+* [3.2]{.pnum} [each of its parameter types shall be a literal type;]{.rm}
+* [3.3]{.pnum} it shall not be a coroutine;
+* [3.4]{.pnum} if the function is a constructor or destructor, its class shall not have any virtual base classes.
+
+::: rm
+[4]{.pnum} The definition of a constexpr constructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirements:
+
+* [4.1]{.pnum} for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;
+* [4.2]{.pnum} for a delegating constructor, the target constructor shall be a constexpr constructor.
+
+[5]{.pnum} The definition of a constexpr destructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirement:
+
+* [5.1]{.pnum} for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.
+:::
+:::
+
+The first two sub-bullets are also very much in the spirit of this paper. A type could be not literal yet in C++N but could become literal in C++N+1, it would be nice if we could simply mark such functions `constexpr` regardless (as I've already noted the desire to do for copy/move assignment in the previous section).
+
+## Going Deeper
+
+Once we eliminate those two bullets, we only have two rules for the requirements of a constexpr function: not a coroutine, and not a constuctor/destructor of a class that has virtual base classes. I'm not entirely sure why we need the latter rule either, but it could also be moved elsewhere -- that is, the problem isn't _declaring_ a constexpr constructor for a class with a virtual base, the problem is trying to _initialize_ such a type during constant evaluation. Similar to how we removed the restriction on `try`/`catch` while still disallowing throwing.
+
+This would actually allow further specification cleanup, since now we could just say that all implicit constructors are `constexpr`. But it's a much bigger step and I'm not sure that we should take it at this time.
+
+# Proposal
+
+Strike two bullets from [dcl.constexpr]{.sref}/3, as well as paragraphs /4, /5, /6, their examples, and part of 7:
+
+::: bq
+[3]{.pnum} The definition of a constexpr function shall satisfy the following requirements:
+
+* [3.1]{.pnum} [its return type (if any) shall be a literal type;]{.rm}
+* [3.2]{.pnum} [each of its parameter types shall be a literal type;]{.rm}
+* [3.3]{.pnum} it shall not be a coroutine;
+* [3.4]{.pnum} if the function is a constructor or destructor, its class shall not have any virtual base classes.
+
+[*Example 2:*
+```
+// ...
+```
+*-end example*]
+
+::: rm
+[4]{.pnum} The definition of a constexpr constructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirements:
+
+* [4.1]{.pnum} for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;
+* [4.2]{.pnum} for a delegating constructor, the target constructor shall be a constexpr constructor.
+
+[*Example 3*:
+```
+struct Length {
+  constexpr explicit Length(int i = 0) : val(i) { }
+private:
+  int val;
+};
+```
+*— end example*]
+
+[5]{.pnum} The definition of a constexpr destructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirement:
+
+* [5.1]{.pnum} for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.
+
 [6]{.pnum} For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.
 
 [*Example 4*:
@@ -252,11 +340,11 @@ struct D : B {
 [If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.]{.rm}
 :::
 
-Strike part of [dcl.fct.def.default]{.sref}/3 and fix the example (which is already wrong at the moment, since default-initializing an `int` during constant evaluation is ok):
+Adjust [dcl.fct.def.default]{.sref}/3 and fix the example (which is already wrong at the moment, since default-initializing an `int` during constant evaluation is ok):
 
 ::: bq
 [3]{.pnum} [An explicitly-defaulted function that is not defined as deleted may be declared `constexpr` or `consteval` only if it is constexpr-compatible ([special], [class.compare.default])]{.rm}.
-A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it is constexpr-compatible.
+A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it [is constexpr-compatible]{.rm} [satisfies the requirements for a constexpr function]{.addu}.
 
 [4]{.pnum} [*Example 1*:
 ```diff
@@ -284,4 +372,49 @@ A function explicitly defaulted on its first declaration is implicitly inline ([
   U u2 = static_cast<U&&>(u1);            // OK, calls std​::​terminate if T​::​T(T&&) throws
 ```
 — *end example*]
+:::
+
+Strike use of constexpr-compatible in [special]{.sref}/8:
+
+::: bq
+::: rm
+[8]{.pnum} A defaulted special member function is _constexpr-compatible_ if the corresponding implicitly-declared special member function would be a constexpr function.
+:::
+:::
+
+Mark assignment as being constexpr in [class.copy.assign]{.sref}/10:
+
+::: bq
+[10]{.pnum} A copy/move assignment operator for a class `X` that is defaulted and not defined as deleted is _implicitly defined_ when it is odr-used ([term.odr.use]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration.
+The implicitly-defined copy/move assignment operator is `constexpr`[.]{.addu} [if]{.rm}
+
+::: rm
+* [#.#]{.pnum} X is a literal type, and
+* [#.#]{.pnum} the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and
+* [#.#]{.pnum} for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.
+:::
+:::
+
+Remove this no-longer-necessary rule in [class.dtor]{.sref}/9 (the requirements for constexpr destructor are now just the requirements for constexpr function, which is now covered by the [dcl.fct.def.default] rule):
+
+::: bq
+::: rm
+[9]{.pnum} A defaulted destructor is a constexpr destructor if it satisfies the requirements for a constexpr destructor ([dcl.constexpr]).
+:::
+:::
+
+Strike use of constexpr-compatible in [class.compare.default]{.sref}/4:
+
+::: bq
+::: rm
+[4]{.pnum} A defaulted comparison function is _constexpr-compatible_ if it satisfies the requirements for a constexpr function ([dcl.constexpr]) and no overload resolution performed when determining whether to delete the function results in a usable candidate that is a non-constexpr function.
+
+[*Note 1*: This includes the overload resolutions performed:
+
+  * [4.1]{.pnum} for an `operator<=>` whose return type is not `auto`, when determining whether a synthesized three-way comparison is defined,
+  * [4.2]{.pnum} for an `operator<=>` whose return type is `auto` or for an `operator==`, for a comparison between an element of the expanded list of subobjects and itself, or
+  * [4.3]{.pnum} for a secondary comparison operator `@`, for the expression `x @ y`.
+
+— *end note*]
+:::
 :::
