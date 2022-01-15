@@ -941,7 +941,7 @@ struct std::formatter<format_join_view<V>>
     template <typename R, typename FormatContext>
     auto format(R&& r, FormatContext& ctx) const {
         underlying.set_separator(r.delim);
-        return underling.format(r, ctx);
+        return underlying.format(r, ctx);
     }
 };
 
@@ -1276,7 +1276,7 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
   * [2.#]{.pnum} Otherwise, if the UCS scalar value
 
     * [2.#.#]{.pnum} is not U+0020 SPACE and has the Unicode property `General_Category=Separator` (`Z`) or `General_Category=Other` (`C`), or
-    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend=Yes` and there are no UCS scalar values preceding it in `$S$` without this property
+    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend=Yes`
 
     then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the UCS scalar value using lower-case `$hexadecimal-digit$`s.
 
@@ -1344,16 +1344,13 @@ And a new clause [format.range]:
 
 ```
 $range-format-spec$:
-    $range-fill-and-align$@~opt~@ $width$@~opt~@ $range-no-bracket$@~opt~@ $range-type$@~opt~@ $range-underlying-spec$@~opt~@
+    $range-fill-and-align$@~opt~@ $width$@~opt~@ n@~opt~@ $range-type$@~opt~@ $range-underlying-spec$@~opt~@
 
 $range-fill-and-align$:
     $range-fill$@~opt~@ $align$
 
 $range-fill$:
     any character other than { or } or :
-
-$range-no-bracket$:
-    n
 
 $range-type$:
     m
@@ -1368,17 +1365,17 @@ $range-underlying-spec$:
 
 [#]{.pnum} The `$range-fill-and-align$` is interpreted the same way as a `$fill-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
 
-[#]{.pnum} The `$range-no-bracket$` specifier causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
+[#]{.pnum} The `n` option causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
 
 [#]{.pnum} The `$range-type$` specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
 
 |Option|Requirements|Meaning|
 |-|-|-|
-|`m`|`T` shall be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `$range-no-bracket$` specifier is also provided, both the open and close brackets are still empty. *-end note*]|
+|`m`|`T` shall be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `n` option is also provided, both the open and close brackets are still empty. *-end note*]|
 |`s`|`T` shall be `charT`|Indicates that the range should be formatted as a `string`.|
 |`?s`|`T` shall be `charT`|Indicates that the range should be formatted as an escaped `string` ([format.string.escaped]).|
 
-If the `$range-type$` is `s` or `?s`, then there shall be no `$range-no-bracket$` specifier and no `$range-underlying-spec$`.
+If the `$range-type$` is `s` or `?s`, then there shall be no `n` option and no `$range-underlying-spec$`.
 
 ```
 namespace std {
@@ -1471,9 +1468,8 @@ Add a clause (maybe after [unord]{.sref} and before [container.adaptors]{.sref})
 ```
 namespace std {
   template <class charT, formattable<charT> Key, formattable<charT> T, class... U>
-  class formatter<$map-type$<Key, T, U...>, charT> : public range_formatter<pair<const Key, T>>
+  struct formatter<$map-type$<Key, T, U...>, charT> : range_formatter<pair<const Key, T>>
   {
-  public:
     formatter();
   };
 }
@@ -1496,9 +1492,8 @@ this->underlying().set_separator($STATICALLY-WIDEN$<charT>(": "));
 ```
 namespace std {
   template <class charT, formattable<charT> Key, class... U>
-  class formatter<$set-type$<Key, U...>, charT> : public range_formatter<Key, charT>
+  struct formatter<$set-type$<Key, U...>, charT> : range_formatter<Key, charT>
   {
-  public:
     formatter();
   };
 }
@@ -1527,9 +1522,11 @@ At the end of [container.adaptors]{.sref}, add a clause [container.adaptors.form
 ```
 namespace std {
   template <class charT, class T, formattable<charT> Container, class... U>
-  class formatter<$adaptor-type$<T, Container, U...>, charT>
+  struct formatter<$adaptor-type$<T, Container, U...>, charT>
   {
+  private:
     formatter<Container, charT> $underlying_$; // exposition only
+
   public:
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1571,7 +1568,8 @@ And a new clause [format.tuple]:
 ```
 namespace std {
 template <class charT, formattable<charT>... Ts>
-  class formatter<$tuple-type$<Ts...>, charT> {
+  struct formatter<$tuple-type$<Ts...>, charT> {
+  private:
     tuple<formatter<remove_cvref_t<Ts>, charT>...> $underlying_$;             // exposition only
     basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
     basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("(");  // exposition only
@@ -1706,7 +1704,8 @@ template<class R>
 
 ```
 template<class T, class charT> requires @*is-vector-bool-reference*@<T>
-  class formatter<T, charT> {
+  struct formatter<T, charT> {
+  private:
     formatter<bool, charT> @*fmt*@;     // exposition only
 
   public:
