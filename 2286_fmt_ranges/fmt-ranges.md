@@ -1278,9 +1278,9 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
     * [2.#.#]{.pnum} is not U+0020 SPACE and has the Unicode property `General_Category=Separator` (`Z`) or `General_Category=Other` (`C`), or
     * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend=Yes` and there are no UCS scalar values preceding it in `$S$` without this property
 
-    then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros and with lower-case `$hexadecimal-digit$`s. [*Note*: the UCS scalar value U+0000 NUL is escaped as the five-character sequence `\u{0}`. *-end note*]
+    then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the UCS scalar value using lower-case `$hexadecimal-digit$`s.
 
-  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros and with lower-case `$hexadecimal-digit$`s.
+  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the code unit using lower-case `$hexadecimal-digit$`s.
 
   * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
 
