@@ -243,7 +243,7 @@ It would be, within the spirit of this paper, to significantly reduce these rest
 
 After this, if we allow a constexpr copy/move assignment even for non-literal classes, then we can basically make all defaulted functions constexpr except for constructors and destructors for types that have virtual base classes. This also means that we can remove the term _constexpr-compatible_ since we would no longer need to use it anywhere. That's a nice chunk of specification improvement, removing rules that nobody really needs.
 
-## Going deeper
+## Going Deeper
 
 We could go one step further and drop further uses of literal type in [dcl.constexpr]{.sref}/3:
 
