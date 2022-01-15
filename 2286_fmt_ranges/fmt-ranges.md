@@ -1300,6 +1300,7 @@ string s4 = format("[{:?}]", string("\0 \n \t \x02 \x1b", 9));
                                                        // s4 has value [\u{0} \n \t \u{2} \u{1b}]
 string s5 = format("[{:?}]", "\xc3\x28");              // invalid UTF-8
                                                        // s5 has value: ["\x{c3}\x{28}"]
+string s6 = format("[{:?}]", "🤷🏻‍♂️");                    // s6 has value: ["🤷🏻\u{200d}♂\u{fe0f}"]
 ```
 *-end example*]
 :::
