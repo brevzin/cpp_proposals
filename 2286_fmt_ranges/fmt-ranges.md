@@ -1276,7 +1276,7 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
   * [2.#]{.pnum} Otherwise, if the UCS scalar value
 
     * [2.#.#]{.pnum} is not U+0020 SPACE and has the Unicode property `General_Category=Separator` (`Z`) or `General_Category=Other` (`C`), or
-    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend=Yes`
+    * [2.#.#]{.pnum} has the Unicode property `Grapheme_Extend=Yes`
 
     then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the UCS scalar value using lower-case `$hexadecimal-digit$`s.
 
