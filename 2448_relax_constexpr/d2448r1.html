@@ -777,18 +777,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.3)</a></span> it shall not be a coroutine;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.4)</a></span> if the function is a constructor or destructor, its class shall not have any virtual base classes.</li>
 </ul>
-<div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">4</a></span> The definition of a constexpr constructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirements:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(4.1)</a></span> for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(4.2)</a></span> for a delegating constructor, the target constructor shall be a constexpr constructor.</li>
-</ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">5</a></span> The definition of a constexpr destructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirement:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(5.1)</a></span> for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.</li>
-</ul>
-
-</div>
 </blockquote>
 <p>The first two sub-bullets are also very much in the spirit of this paper. A type could be not literal yet in C++N but could become literal in C++N+1, it would be nice if we could simply mark such functions <code class="sourceCode cpp"><span class="kw">constexpr</span></code> regardless (as I’ve already noted the desire to do for copy/move assignment in the previous section).</p>
 <h2 data-number="6.2" id="going-deeper-1"><span class="header-section-number">6.2</span> Going Deeper<a href="#going-deeper-1" class="self-link"></a></h2>
@@ -797,21 +785,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">7</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Strike two bullets from <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/3, as well as paragraphs /4, /5, /6, their examples, and part of 7:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">3</a></span> The definition of a constexpr function shall satisfy the following requirements:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">3</a></span> The definition of a constexpr function shall satisfy the following requirements:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(3.1)</a></span> <span class="rm" style="color: #bf0303"><del>its return type (if any) shall be a literal type;</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(3.2)</a></span> <span class="rm" style="color: #bf0303"><del>each of its parameter types shall be a literal type;</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(3.3)</a></span> it shall not be a coroutine;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(3.4)</a></span> if the function is a constructor or destructor, its class shall not have any virtual base classes.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.1)</a></span> <span class="rm" style="color: #bf0303"><del>its return type (if any) shall be a literal type;</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.2)</a></span> <span class="rm" style="color: #bf0303"><del>each of its parameter types shall be a literal type;</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(3.3)</a></span> it shall not be a coroutine;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(3.4)</a></span> if the function is a constructor or destructor, its class shall not have any virtual base classes.</li>
 </ul>
 <p>[<em>Example 2:</em></p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>// ...</span></code></pre></div>
 <p><em>-end example</em>]</p>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">4</a></span> The definition of a constexpr constructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirements:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">4</a></span> The definition of a constexpr constructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirements:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(4.1)</a></span> for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(4.2)</a></span> for a delegating constructor, the target constructor shall be a constexpr constructor.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(4.1)</a></span> for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(4.2)</a></span> for a delegating constructor, the target constructor shall be a constexpr constructor.</li>
 </ul>
 <p>[<em>Example 3</em>:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>struct Length {</span>
@@ -820,11 +808,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-4"><a href="#cb10-4"></a>  int val;</span>
 <span id="cb10-5"><a href="#cb10-5"></a>};</span></code></pre></div>
 <p><em>— end example</em>]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">5</a></span> The definition of a constexpr destructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirement:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">5</a></span> The definition of a constexpr destructor whose <em>function-body</em> is not <code class="sourceCode default">= delete</code> shall additionally satisfy the following requirement:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(5.1)</a></span> for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(5.1)</a></span> for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">6</a></span> For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">6</a></span> For a constexpr function or constexpr constructor that is neither defaulted nor a template, if no argument values exist such that an invocation of the function or constructor could be an evaluated subexpression of a core constant expression, or, for a constructor, an evaluated subexpression of the initialization full-expression of some constant-initialized object ([basic.start.static]), the program is ill-formed, no diagnostic required.</p>
 <p>[<em>Example 4</em>:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>constexpr int f(bool b)</span>
 <span id="cb11-2"><a href="#cb11-2"></a>  { return b ? throw 0 : 0; }           // OK</span>
@@ -846,12 +834,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">7</a></span> If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression. <span class="rm" style="color: #bf0303"><del>If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</del></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">7</a></span> If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression. <span class="rm" style="color: #bf0303"><del>If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.</del></span></p>
 </blockquote>
 <p>Adjust <span>9.5.2 <a href="https://wg21.link/dcl.fct.def.default">[dcl.fct.def.default]</a></span>/3 and fix the example (which is already wrong at the moment, since default-initializing an <code class="sourceCode cpp"><span class="dt">int</span></code> during constant evaluation is ok):</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">3</a></span> <span class="rm" style="color: #bf0303"><del>An explicitly-defaulted function that is not defined as deleted may be declared <span><code class="sourceCode default">constexpr</code></span> or <span><code class="sourceCode default">consteval</code></span> only if it is constexpr-compatible ([special], [class.compare.default])</del></span>. A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it <span class="rm" style="color: #bf0303"><del>is constexpr-compatible</del></span> <span class="addu">satisfies the requirements for a constexpr function</span>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">4</a></span> [<em>Example 1</em>:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">3</a></span> <span class="rm" style="color: #bf0303"><del>An explicitly-defaulted function that is not defined as deleted may be declared <span><code class="sourceCode default">constexpr</code></span> or <span><code class="sourceCode default">consteval</code></span> only if it is constexpr-compatible ([special], [class.compare.default])</del></span>. A function explicitly defaulted on its first declaration is implicitly inline ([dcl.inline]), and is implicitly constexpr ([dcl.constexpr]) if it <span class="rm" style="color: #bf0303"><del>is constexpr-compatible</del></span> <span class="addu">satisfies the requirements for a constexpr function</span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">4</a></span> [<em>Example 1</em>:</p>
 <div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>  struct S {</span>
 <span id="cb12-2"><a href="#cb12-2"></a><span class="st">-   constexpr S() = default;              // error: implicit S() is not constexpr</span></span>
@@ -881,18 +869,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Strike use of constexpr-compatible in <span>11.4.4 <a href="https://wg21.link/special">[special]</a></span>/8:</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">8</a></span> A defaulted special member function is <em>constexpr-compatible</em> if the corresponding implicitly-declared special member function would be a constexpr function.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">8</a></span> A defaulted special member function is <em>constexpr-compatible</em> if the corresponding implicitly-declared special member function would be a constexpr function.</p>
 </div>
 </blockquote>
 <p>Mark assignment as being constexpr in <span>11.4.6 <a href="https://wg21.link/class.copy.assign">[class.copy.assign]</a></span>/10:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">10</a></span> A copy/move assignment operator for a class <code class="sourceCode cpp">X</code> that is defaulted and not defined as deleted is <em>implicitly defined</em> when it is odr-used ([term.odr.use]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined copy/move assignment operator is <code class="sourceCode cpp"><span class="kw">constexpr</span></code><span class="addu">.</span> <span class="rm" style="color: #bf0303"><del>if</del></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">10</a></span> A copy/move assignment operator for a class <code class="sourceCode cpp">X</code> that is defaulted and not defined as deleted is <em>implicitly defined</em> when it is odr-used ([term.odr.use]) (e.g., when it is selected by overload resolution to assign to an object of its class type), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration. The implicitly-defined copy/move assignment operator is <code class="sourceCode cpp"><span class="kw">constexpr</span></code><span class="addu">.</span> <span class="rm" style="color: #bf0303"><del>if</del></span></p>
 <div class="rm" style="color: #bf0303">
 
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(10.1)</a></span> X is a literal type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(10.2)</a></span> the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(10.3)</a></span> for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(10.1)</a></span> X is a literal type, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(10.2)</a></span> the assignment operator selected to copy/move each direct base class subobject is a constexpr function, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(10.3)</a></span> for each non-static data member of X that is of class type (or array thereof), the assignment operator selected to copy/move that member is a constexpr function.</li>
 </ul>
 
 </div>
@@ -900,18 +888,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Remove this no-longer-necessary rule in <span>11.4.7 <a href="https://wg21.link/class.dtor">[class.dtor]</a></span>/9 (the requirements for constexpr destructor are now just the requirements for constexpr function, which is now covered by the [dcl.fct.def.default] rule):</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">9</a></span> A defaulted destructor is a constexpr destructor if it satisfies the requirements for a constexpr destructor ([dcl.constexpr]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">9</a></span> A defaulted destructor is a constexpr destructor if it satisfies the requirements for a constexpr destructor ([dcl.constexpr]).</p>
 </div>
 </blockquote>
 <p>Strike use of constexpr-compatible in <span>11.10.1 <a href="https://wg21.link/class.compare.default">[class.compare.default]</a></span>/4:</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">4</a></span> A defaulted comparison function is <em>constexpr-compatible</em> if it satisfies the requirements for a constexpr function ([dcl.constexpr]) and no overload resolution performed when determining whether to delete the function results in a usable candidate that is a non-constexpr function.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">4</a></span> A defaulted comparison function is <em>constexpr-compatible</em> if it satisfies the requirements for a constexpr function ([dcl.constexpr]) and no overload resolution performed when determining whether to delete the function results in a usable candidate that is a non-constexpr function.</p>
 <p>[<em>Note 1</em>: This includes the overload resolutions performed:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(4.1)</a></span> for an <code class="sourceCode default">operator&lt;=&gt;</code> whose return type is not <code class="sourceCode default">auto</code>, when determining whether a synthesized three-way comparison is defined,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(4.2)</a></span> for an <code class="sourceCode default">operator&lt;=&gt;</code> whose return type is <code class="sourceCode default">auto</code> or for an <code class="sourceCode default">operator==</code>, for a comparison between an element of the expanded list of subobjects and itself, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(4.3)</a></span> for a secondary comparison operator <code class="sourceCode default">@</code>, for the expression <code class="sourceCode default">x @ y</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(4.1)</a></span> for an <code class="sourceCode default">operator&lt;=&gt;</code> whose return type is not <code class="sourceCode default">auto</code>, when determining whether a synthesized three-way comparison is defined,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(4.2)</a></span> for an <code class="sourceCode default">operator&lt;=&gt;</code> whose return type is <code class="sourceCode default">auto</code> or for an <code class="sourceCode default">operator==</code>, for a comparison between an element of the expanded list of subobjects and itself, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(4.3)</a></span> for a secondary comparison operator <code class="sourceCode default">@</code>, for the expression <code class="sourceCode default">x @ y</code>.</li>
 </ul>
 <p>— <em>end note</em>]</p>
 </div>

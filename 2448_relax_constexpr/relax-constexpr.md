@@ -254,17 +254,6 @@ We could go one step further and drop further uses of literal type in [dcl.const
 * [3.2]{.pnum} [each of its parameter types shall be a literal type;]{.rm}
 * [3.3]{.pnum} it shall not be a coroutine;
 * [3.4]{.pnum} if the function is a constructor or destructor, its class shall not have any virtual base classes.
-
-::: rm
-[4]{.pnum} The definition of a constexpr constructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirements:
-
-* [4.1]{.pnum} for a non-delegating constructor, every constructor selected to initialize non-static data members and base class subobjects shall be a constexpr constructor;
-* [4.2]{.pnum} for a delegating constructor, the target constructor shall be a constexpr constructor.
-
-[5]{.pnum} The definition of a constexpr destructor whose _function-body_ is not `= delete` shall additionally satisfy the following requirement:
-
-* [5.1]{.pnum} for every subobject of class type or (possibly multi-dimensional) array thereof, that class type shall have a constexpr destructor.
-:::
 :::
 
 The first two sub-bullets are also very much in the spirit of this paper. A type could be not literal yet in C++N but could become literal in C++N+1, it would be nice if we could simply mark such functions `constexpr` regardless (as I've already noted the desire to do for copy/move assignment in the previous section).
