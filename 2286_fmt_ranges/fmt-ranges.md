@@ -439,7 +439,7 @@ Instead of writing a bunch of examples like `print("{:?}\n", v)`, I'm just displ
 |`{}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`['H', '\t', 'l', 'l', 'o']`{.x}|
 |`{::}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`[H,     , l, l, o]`{.x}|
 |`{::c}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`[H,     , l, l, o]`{.x}|
-|`{::?c}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`['H', '\t', 'l', 'l', 'o']`{.x}|
+|`{::?}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`['H', '\t', 'l', 'l', 'o']`{.x}|
 |`{::d}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`[72, 9, 108, 108, 111]`{.x}|
 |`{::#x}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`[0x48, 0x9, 0x6c, 0x6c, 0x6f]`{.x}|
 |`{:s}`{.x}|`vector<char>{'H', '\t', 'l', 'l', 'o'}`|`H    llo`{.x}|
@@ -1257,7 +1257,7 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 ::: addu
 [1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
 
-[2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of values:
+[2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of scalar values:
 
 * [2.#]{.pnum} A U+0022 QUOTATION MARK (`"`) character
 
@@ -1275,10 +1275,10 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
   * [2.#]{.pnum} Otherwise, if the UCS scalar value
 
-    * [2.#.#]{.pnum} has a value other than space (U+0020 SPACE) and has a Unicode property Separator (`Z`) or Other (`C`), or
-    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend` and there are no UCS scalar values preceding it in `$S$` without this property
+    * [2.#.#]{.pnum} is not U+0020 SPACE and has the Unicode property `General_Category=Separator` (`Z`) or `General_Category=Other` (`C`), or
+    * [2.#.#]{.pnum} has a Unicode property `Grapheme_Extend=Yes` and there are no UCS scalar values preceding it in `$S$` without this property
 
-    then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros and with lower-case `$hexadecimal-digit$`s.
+    then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the UCS scalar value without leading zeros and with lower-case `$hexadecimal-digit$`s. [*Note*: the UCS scalar value U+0000 NUL is escaped as the five-character sequence `\u{0}`. *-end note*]
 
   * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is a hexadecimal representation of the code unit without leading zeros and with lower-case `$hexadecimal-digit$`s.
 
@@ -1286,20 +1286,20 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
 * [2.#]{.pnum} Finally, another U+0022 QUOTATION MARK (`"`) character.
 
-[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`) and the UCS scalar value U+0027 APOSTROPHE is escaped as `\'` while the UCS scalar value U+0022 QUOTATION MARK is left unchanged.
+[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`) and U+0027 APOSTROPHE is escaped as `\'` while U+0022 QUOTATION MARK is left unchanged.
 
 [4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
 
 [*Example*:
 ```
-string s0 = format("[{}]", "h\tllo");           // s0 has value: [h    llo]
-string s1 = format("[{:?}]", "h\tllo");         // s1 has value: ["h\tllo"]
-string s2 = format("[{:?}]", "Привет, 🕴️!");    // s2 has value: ["Привет, 🕴️!"]
-string s3 = format("[{:?}] [{:?}]", '\'', '"'); // s3 has value: ['\'', '"']
+string s0 = format("[{}]", "h\tllo");                  // s0 has value: [h    llo]
+string s1 = format("[{:?}]", "h\tllo");                // s1 has value: ["h\tllo"]
+string s2 = format("[{:?}]", "Спасибо, Виктор ♥!");    // s2 has value: ["Спасибо, Виктор ♥!"]
+string s3 = format("[{:?}] [{:?}]", '\'', '"');        // s3 has value: ['\'', '"']
 string s4 = format("[{:?}]", string("\0 \n \t \x02 \x1b", 9));
-                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]
-string s5 = format("[{:?}]", "\xc3\x28");       // invalid UTF-8
-                                                // s5 has value: ["\x{c3}\x{28}"]
+                                                       // s4 has value [\u{0} \n \t \u{2} \u{1b}]
+string s5 = format("[{:?}]", "\xc3\x28");              // invalid UTF-8
+                                                       // s5 has value: ["\x{c3}\x{28}"]
 ```
 *-end example*]
 :::

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-14" />
+  <meta name="dcterms.date" content="2022-01-15" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-14</td>
+    <td>2022-01-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1009,7 +1009,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <td><code class="x">[H,     , l, l, o]</code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">{::?c}</code></td>
+<td><code class="x">{::?}</code></td>
 <td><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;{</span><span class="ch">&#39;H&#39;</span>, <span class="ch">&#39;</span><span class="sc">\t</span><span class="ch">&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;l&#39;</span>, <span class="ch">&#39;o&#39;</span><span class="op">}</span></code></td>
 <td><code class="x">[&#39;H&#39;, &#39;\t&#39;, &#39;l&#39;, &#39;l&#39;, &#39;o&#39;]</code></td>
 </tr>
@@ -1969,7 +1969,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1</a></span> A character or string can be formatted as <em>escaped</em> to make it more suitable for debugging or for logging.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> The escaped string representation of a string, <code class="sourceCode cpp"><em>S</em></code>, in a Unicode encoding consists of the following sequence of values:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> The escaped string representation of a string, <code class="sourceCode cpp"><em>S</em></code>, in a Unicode encoding consists of the following sequence of scalar values:</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(2.1)</a></span> A U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) character</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(2.2)</a></span> For each UCS scalar value in <code class="sourceCode cpp"><em>S</em></code>, or a code unit if it is not a part of a valid UCS scalar value:</p>
@@ -2013,26 +2013,26 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(2.4)</a></span> Otherwise, if the UCS scalar value</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(2.4.1)</a></span> has a value other than space (U+0020 SPACE) and has a Unicode property Separator (<code class="sourceCode cpp">Z</code>) or Other (<code class="sourceCode cpp">C</code>), or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.4.2)</a></span> has a Unicode property <code class="sourceCode cpp">Grapheme_Extend</code> and there are no UCS scalar values preceding it in <code class="sourceCode cpp"><em>S</em></code> without this property</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(2.4.1)</a></span> is not U+0020 SPACE and has the Unicode property <code class="sourceCode cpp">General_Category<span class="op">=</span>Separator</code> (<code class="sourceCode cpp">Z</code>) or <code class="sourceCode cpp">General_Category<span class="op">=</span>Other</code> (<code class="sourceCode cpp">C</code>), or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.4.2)</a></span> has a Unicode property <code class="sourceCode cpp">Grapheme_Extend<span class="op">=</span>Yes</code> and there are no UCS scalar values preceding it in <code class="sourceCode cpp"><em>S</em></code> without this property</li>
 </ul>
-<p>then its universal character name escape sequence in the form <code class="sourceCode cpp">\u<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is a hexadecimal representation of the UCS scalar value without leading zeros and with lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s.</p></li>
+<p>then its universal character name escape sequence in the form <code class="sourceCode cpp">\u<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is a hexadecimal representation of the UCS scalar value without leading zeros and with lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s. [<em>Note</em>: the UCS scalar value U+0000 NUL is escaped as the five-character sequence <code class="sourceCode cpp">\u<span class="op">{</span><span class="dv">0</span><span class="op">}</span></code>. <em>-end note</em>]</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.5)</a></span> Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form <code class="sourceCode cpp">\x<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is a hexadecimal representation of the code unit without leading zeros and with lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(2.6)</a></span> Otherwise, the UCS scalar value as-is.</p></li>
 </ul></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(2.7)</a></span> Finally, another U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) character.</p></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span> The escaped character representation of a character, <code class="sourceCode cpp"><em>C</em></code>, in a Unicode encoding is equivalent to the escaped string representation a string of <code class="sourceCode cpp"><em>C</em></code>, except that the result starts and ends with U+0027 APOSTROPHE (<code class="sourceCode cpp"><span class="ch">&#39;</span></code>) instead of U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) and the UCS scalar value U+0027 APOSTROPHE is escaped as <code class="sourceCode cpp">\<span class="ch">&#39;</span></code> while the UCS scalar value U+0022 QUOTATION MARK is left unchanged.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span> The escaped character representation of a character, <code class="sourceCode cpp"><em>C</em></code>, in a Unicode encoding is equivalent to the escaped string representation a string of <code class="sourceCode cpp"><em>C</em></code>, except that the result starts and ends with U+0027 APOSTROPHE (<code class="sourceCode cpp"><span class="ch">&#39;</span></code>) instead of U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) and U+0027 APOSTROPHE is escaped as <code class="sourceCode cpp">\<span class="ch">&#39;</span></code> while U+0022 QUOTATION MARK is left unchanged.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span> The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.</p>
 <p>[<em>Example</em>:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>string s0 = format(&quot;[{}]&quot;, &quot;h\tllo&quot;);           // s0 has value: [h    llo]</span>
-<span id="cb43-2"><a href="#cb43-2"></a>string s1 = format(&quot;[{:?}]&quot;, &quot;h\tllo&quot;);         // s1 has value: [&quot;h\tllo&quot;]</span>
-<span id="cb43-3"><a href="#cb43-3"></a>string s2 = format(&quot;[{:?}]&quot;, &quot;Привет, 🕴️!&quot;);    // s2 has value: [&quot;Привет, 🕴️!&quot;]</span>
-<span id="cb43-4"><a href="#cb43-4"></a>string s3 = format(&quot;[{:?}] [{:?}]&quot;, &#39;\&#39;&#39;, &#39;&quot;&#39;); // s3 has value: [&#39;\&#39;&#39;, &#39;&quot;&#39;]</span>
+<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>string s0 = format(&quot;[{}]&quot;, &quot;h\tllo&quot;);                  // s0 has value: [h    llo]</span>
+<span id="cb43-2"><a href="#cb43-2"></a>string s1 = format(&quot;[{:?}]&quot;, &quot;h\tllo&quot;);                // s1 has value: [&quot;h\tllo&quot;]</span>
+<span id="cb43-3"><a href="#cb43-3"></a>string s2 = format(&quot;[{:?}]&quot;, &quot;Спасибо, Виктор ♥!&quot;);    // s2 has value: [&quot;Спасибо, Виктор ♥!&quot;]</span>
+<span id="cb43-4"><a href="#cb43-4"></a>string s3 = format(&quot;[{:?}] [{:?}]&quot;, &#39;\&#39;&#39;, &#39;&quot;&#39;);        // s3 has value: [&#39;\&#39;&#39;, &#39;&quot;&#39;]</span>
 <span id="cb43-5"><a href="#cb43-5"></a>string s4 = format(&quot;[{:?}]&quot;, string(&quot;\0 \n \t \x02 \x1b&quot;, 9));</span>
-<span id="cb43-6"><a href="#cb43-6"></a>                                                // s4 has value [\u{0} \n \t \u{2} \u{1b}]</span>
-<span id="cb43-7"><a href="#cb43-7"></a>string s5 = format(&quot;[{:?}]&quot;, &quot;\xc3\x28&quot;);       // invalid UTF-8</span>
-<span id="cb43-8"><a href="#cb43-8"></a>                                                // s5 has value: [&quot;\x{c3}\x{28}&quot;]</span></code></pre></div>
+<span id="cb43-6"><a href="#cb43-6"></a>                                                       // s4 has value [\u{0} \n \t \u{2} \u{1b}]</span>
+<span id="cb43-7"><a href="#cb43-7"></a>string s5 = format(&quot;[{:?}]&quot;, &quot;\xc3\x28&quot;);              // invalid UTF-8</span>
+<span id="cb43-8"><a href="#cb43-8"></a>                                                       // s5 has value: [&quot;\x{c3}\x{28}&quot;]</span></code></pre></div>
 <p><em>-end example</em>]</p>
 </div>
 </blockquote>
