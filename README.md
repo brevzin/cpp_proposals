@@ -56,6 +56,7 @@ None.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
 - [p2387r3 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r3.html).
+- [p2448r1 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r1.html).
 
 ### Pending EWG/LEWG Review
 

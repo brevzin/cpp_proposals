@@ -1,6 +1,6 @@
 ---
 title: "Relaxing some `constexpr` restrictions"
-document: D2448R1
+document: P2448R1
 date: today
 audience: CWG
 author:
