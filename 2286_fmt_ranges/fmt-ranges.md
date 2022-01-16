@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: D2286R5
+document: P2286R5
 date: today
 audience: LEWG
 author:
