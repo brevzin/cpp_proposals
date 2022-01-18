@@ -117,7 +117,7 @@ private:
 public:
   template<class T> consteval basic_format_string(const T& s);
 
-+ constexpr basic_string_view<charT> get() const { return $str$; }
++ constexpr basic_string_view<charT> get() const noexcept { return $str$; }
 };
 ```
 
