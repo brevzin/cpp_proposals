@@ -1114,7 +1114,7 @@ The standard library will provide the following utilities:
 
 The standard library should add specializations of `formatter` for:
 
-* any type `R` that is an `input_range` whose `reference` is `formattable`, which inherits from `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
+* any type `R` that is an `input_range` whose `reference` is `formattable`, which is specified using `range_formatter<remove_cvref_t<ranges::range_reference_t<R>>>`
 * `pair<T, U>` if `T` and `U` are `formattable` (additionally with `set_separator` and `set_brackets`)
 * `tuple<Ts...>` if all of `Ts...` are `formattable` (additionally with `set_separator` and `set_brackets`)
 
