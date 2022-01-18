@@ -1530,9 +1530,20 @@ Add a clause (maybe after [unord]{.sref} and before [container.adaptors]{.sref})
 ```
 namespace std {
   template <class charT, formattable<charT> Key, formattable<charT> T, class... U>
-  struct formatter<$map-type$<Key, T, U...>, charT> : range_formatter<pair<const Key, T>>
+  struct formatter<$map-type$<Key, T, U...>, charT>
   {
+  private:
+    range_formatter<pair<const Key, T>> $underlying_$; // exposition only
+  public:
     formatter();
+
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format(const $map-type$<Key, T, U...>& r, FormatContext& ctx) const;
   };
 }
 ```
@@ -1549,14 +1560,42 @@ this->underlying().set_brackets({}, {});
 this->underlying().set_separator($STATICALLY-WIDEN$<charT>(": "));
 ```
 
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.parse(ctx);`
+
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format(const $map-type$<Key, T, U...>& r, FormatContext& ctx) const;
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(r, ctx);`
+
 [#]{.pnum} For each of `set`, `multiset`, `unordered_set`, and `unordered_multiset`, the library provides the following formatter specialization where `$set-type$` is the name of the template:
 
 ```
 namespace std {
   template <class charT, formattable<charT> Key, class... U>
-  struct formatter<$set-type$<Key, U...>, charT> : range_formatter<Key, charT>
+  struct formatter<$set-type$<Key, U...>, charT>
   {
+  private:
+    range_formatter<Key, charT> $underlying_$; // exposition only
+
+  public:
     formatter();
+
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format(const $set-type$<Key, U...>& r, FormatContext& ctx) const;
   };
 }
 ```
@@ -1570,6 +1609,22 @@ formatter();
 ```
 this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
 ```
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.parse(ctx);`
+
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format(const $set-type$<Key, U...>& r, FormatContext& ctx) const;
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(r, ctx);`
 :::
 :::
 
