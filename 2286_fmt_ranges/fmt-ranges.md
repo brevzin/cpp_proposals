@@ -1511,7 +1511,7 @@ template <class FormatContext>
 
 [#]{.pnum} The type of `elems` is:
 
-* [#.#]{.pnum} If `ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>, charT>` is `true`, `const R&`.
+* [#.#]{.pnum} If `const R` models `ranges::input_range` and `formattable<ranges::range_reference_t<const R>, charT>` is `true`, `const R&`.
 * [#.#]{.pnum} Otherwise `R&`.
 
 [#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(elems, ctx);`
