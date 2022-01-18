@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R5
+document: P2286R6
 date: today
 audience: LEWG
 author:
@@ -11,6 +11,11 @@ toc-depth: 4
 ---
 
 # Revision History
+
+Since [@P2286R5], missing feature test macro and few wording changes, including:
+
+* `formatter<R, charT>` for ranges no longer specified to inherit from `range_formatter<range_reference_t<R>>`
+* the output iterator for the `formattable` concept is now unspecified rather than implementation-defined
 
 Since [@P2286R4], several major changes:
 
@@ -1155,7 +1160,7 @@ Add a clause [format.formattable] under [format.formatter]{.sref} and likely aft
 
 ::: bq
 ::: addu
-[1]{.pnum} Let `$fmt-iter-for$<charT>` be an implementation-defined type that models `output_iterator<const charT&>` ([iterator.concept.output]).
+[1]{.pnum} Let `$fmt-iter-for$<charT>` be an unspecified type that models `output_iterator<const charT&>` ([iterator.concept.output]).
 ```
 template<class T, class charT>
 concept formattable =
@@ -1318,7 +1323,7 @@ namespace std {
   // [format.formatter], formatter
   template<class T, class charT = char> struct formatter;
 
-+ // [format.range], range formatter
++ // [format.range.formatter], class template range_formatter
 + template<class T, class charT = char>
 +     requires formattable<T, charT>
 +   class range_formatter;
@@ -1326,9 +1331,7 @@ namespace std {
 + template<ranges::input_range R, class charT>
 +         requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
 +           && formattable<ranges::range_reference_t<R>, charT>
-+   struct formatter<R, charT>
-+     : range_formatter<remove_cvref_t<ranges::range_reference_t<R>>, charT>
-+   { };
++   struct formatter<R, charT>;
 
   // ...
 }
@@ -1389,8 +1392,6 @@ namespace std {
     basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
 
   public:
-    range_formatter() = default;
-
     void set_separator(basic_string_view<charT> sep);
     void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
     formatter<T, charT>& underlying() { return $underlying_$; }
@@ -1400,7 +1401,8 @@ namespace std {
         parse(ParseContext& ctx);
 
     template <ranges::input_range R, class FormatContext>
-        requires same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
+        requires formattable<ranges::range_reference_t<R>, charT>
+              && same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
       typename FormatContext::iterator
         format(R&& r, FormatContext& ctx);
   };
@@ -1438,7 +1440,8 @@ template <class ParseContext>
 
 ```
 template <ranges::input_range R, class FormatContext>
-    requires same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
+    requires formattable<ranges::range_reference_t<R>, charT>
+          && same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
   typename FormatContext::iterator
     format(R&& r, FormatContext& ctx);
 ```
@@ -1455,6 +1458,64 @@ template <ranges::input_range R, class FormatContext>
   * [#.#.#]{.pnum} `$close-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
+
+```
+namespace std {
+  template<ranges::input_range R, class charT>
+        requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
+               && formattable<ranges::range_reference_t<R>, charT>
+  struct formatter<R, charT> {
+  private:
+    range_formatter<remove_cvref_t<ranges::range_reference_t<R>>> $underlying_$; // exposition only
+
+  public:
+    void set_separator(basic_string_view<charT> sep);
+    void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+
+    template <class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template <class FormatContext>
+      typename FormatContext::iterator
+        format($see below$& elems, FormatContext& ctx) const;
+  };
+}
+```
+
+```
+void set_separator(basic_string_view<charT> sep);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_separator(sep)`;
+
+```
+void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_brackets(open, close)`;
+
+```
+template <class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.parse(ctx);`
+
+```
+template <class FormatContext>
+  typename FormatContext::iterator
+    format($see below$& elems, FormatContext& ctx) const;
+```
+
+[#]{.pnum} The type of `elems` is:
+
+* [#.#]{.pnum} If `ranges::input_range<const R> && formattable<ranges::range_reference_t<const R>, charT>` is `true`, `const R&`.
+* [#.#]{.pnum} Otherwise `R&`.
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(elems, ctx);`
+
 :::
 :::
 
@@ -1738,6 +1799,17 @@ template <class FormatContext>
 :::
 :::
 
+## Feature-test Macro
+
+Bump the feature-test macro for `__cpp_lib_format` in [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_lib_format  @[202110L]{.diffdel}@ // also in <format>
++ #define __cpp_lib_format  @[2022XXL]{.diffins}@ // also in <format>
+```
+:::
+
 # Acknowledgments
 
 Thanks to Victor Zverovich for `{fmt}`, explanation of Unicode, and numerous design discussions. Thanks to Peter Dimov for design feedback. Thanks to Tim Song for invaluable help on the design and wording.
@@ -1760,4 +1832,15 @@ references:
       issued:
         - year: 2008
       URL: https://www.python.org/dev/peps/pep-3138/
+    - id: P2286R5
+      citation-label: P2286R5
+      title: "Formatting Ranges"
+      author:
+        - family: Barry Revzin
+      issued:
+        date-parts:
+        - - 2022
+          - 01
+          - 15
+      URL: https://wg21.link/p2286r5
 ---
