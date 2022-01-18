@@ -56,8 +56,11 @@ make all of my papers.
 
 - [p1169r3 - static `operator()`](1169_static_call/p1169r3.html), with Casey Carter. Rejected in San Diego. Approved on a recent EWG telecon.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
+- [p2286r6 - Formatting Ranges](2286_fmt_ranges/p2286r6.html)
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
 - [p2448r1 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r1.html).
+- [p2508r1 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r1.html)
+
 
 ### Pending EWG/LEWG Review
 
@@ -73,7 +76,6 @@ None.
 #### Ranges
 
 - [p2214r1 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r1.html), with Conor Hoekstra and Tim Song.
-- [p2286r6 - Formatting Ranges](2286_fmt_ranges/p2286r6.html)
 - [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html)
 
 #### Concepts
@@ -87,7 +89,6 @@ None.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
 - [p2481r0 - Forwarding reference to specific type/template](2481_forward_ref/forward-ref.md).
 - [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
-- [p2508r1 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r1.html)
 
 ### Rejected
 
