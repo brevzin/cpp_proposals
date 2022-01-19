@@ -498,7 +498,7 @@ struct range_formatter {
 
     template <typename R, typename FormatContext>
         requires std::same_as<std::remove_cvref_t<std::ranges::range_reference_t<R>>, V>
-    constexpr auto format(R&& r, FormatContext& ctx) {
+    constexpr auto format(R&& r, FormatContext& ctx) const {
         auto out = ctx.out();
         *out++ = '[';
         auto first = std::ranges::begin(r);
@@ -799,7 +799,7 @@ struct range_formatter {
 
     template <input_range R, typename FormatContext>
         requires same_as<remove_cvref_t<range_reference_t<R>>, V>
-    constexpr auto format(R&&, FormatContext&);
+    constexpr auto format(R&&, FormatContext&) const;
 };
 
 template <input_range R> requires formattable<range_reference_t<R>>
@@ -1404,7 +1404,7 @@ namespace std {
         requires formattable<ranges::range_reference_t<R>, charT>
               && same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
       typename FormatContext::iterator
-        format(R&& r, FormatContext& ctx);
+        format(R&& r, FormatContext& ctx) const;
   };
 }
 ```
@@ -1443,7 +1443,7 @@ template <ranges::input_range R, class FormatContext>
     requires formattable<ranges::range_reference_t<R>, charT>
           && same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>
   typename FormatContext::iterator
-    format(R&& r, FormatContext& ctx);
+    format(R&& r, FormatContext& ctx) const;
 ```
 
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$range-format-spec$`:

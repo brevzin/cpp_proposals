@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-18" />
+  <meta name="dcterms.date" content="2022-01-19" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-18</td>
+    <td>2022-01-19</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1108,7 +1108,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb22-21"><a href="#cb22-21"></a></span>
 <span id="cb22-22"><a href="#cb22-22"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
 <span id="cb22-23"><a href="#cb22-23"></a>        <span class="kw">requires</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, V<span class="op">&gt;</span></span>
-<span id="cb22-24"><a href="#cb22-24"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-24"><a href="#cb22-24"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, FormatContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
 <span id="cb22-25"><a href="#cb22-25"></a>        <span class="kw">auto</span> out <span class="op">=</span> ctx<span class="op">.</span>out<span class="op">()</span>;</span>
 <span id="cb22-26"><a href="#cb22-26"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="ch">&#39;[&#39;</span>;</span>
 <span id="cb22-27"><a href="#cb22-27"></a>        <span class="kw">auto</span> first <span class="op">=</span> std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span>
@@ -1590,7 +1590,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb24-5"><a href="#cb24-5"></a></span>
 <span id="cb24-6"><a href="#cb24-6"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_range R, <span class="kw">typename</span> FormatContext<span class="op">&gt;</span></span>
 <span id="cb24-7"><a href="#cb24-7"></a>        <span class="kw">requires</span> same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, V<span class="op">&gt;</span></span>
-<span id="cb24-8"><a href="#cb24-8"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span>, FormatContext<span class="op">&amp;)</span>;</span>
+<span id="cb24-8"><a href="#cb24-8"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> format<span class="op">(</span>R<span class="op">&amp;&amp;</span>, FormatContext<span class="op">&amp;)</span> <span class="kw">const</span>;</span>
 <span id="cb24-9"><a href="#cb24-9"></a><span class="op">}</span>;</span>
 <span id="cb24-10"><a href="#cb24-10"></a></span>
 <span id="cb24-11"><a href="#cb24-11"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span> <span class="kw">requires</span> formattable<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
@@ -2152,7 +2152,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb46-20"><a href="#cb46-20"></a>        requires formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
 <span id="cb46-21"><a href="#cb46-21"></a>              &amp;&amp; same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
 <span id="cb46-22"><a href="#cb46-22"></a>      typename FormatContext::iterator</span>
-<span id="cb46-23"><a href="#cb46-23"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx);</span>
+<span id="cb46-23"><a href="#cb46-23"></a>        format(R&amp;&amp; r, FormatContext&amp; ctx) const;</span>
 <span id="cb46-24"><a href="#cb46-24"></a>  };</span>
 <span id="cb46-25"><a href="#cb46-25"></a>}</span></code></pre></div>
 <div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
@@ -2172,7 +2172,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb51-2"><a href="#cb51-2"></a>    requires formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
 <span id="cb51-3"><a href="#cb51-3"></a>          &amp;&amp; same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
 <span id="cb51-4"><a href="#cb51-4"></a>  typename FormatContext::iterator</span>
-<span id="cb51-5"><a href="#cb51-5"></a>    format(R&amp;&amp; r, FormatContext&amp; ctx);</span></code></pre></div>
+<span id="cb51-5"><a href="#cb51-5"></a>    format(R&amp;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">11</a></span> <em>Effects</em>: Writes the following into <code class="sourceCode cpp">ctx<span class="op">.</span>out<span class="op">()</span></code>, adjusted according to the <code class="sourceCode cpp"><em>range-format-spec</em></code>:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(11.1)</a></span> If the <code class="sourceCode cpp"><em>range-type</em></code> was <code class="sourceCode cpp">s</code>, then as if by formatting <code class="sourceCode cpp">basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span></code>.</li>
