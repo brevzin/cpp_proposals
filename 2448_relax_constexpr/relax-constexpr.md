@@ -1,6 +1,6 @@
 ---
 title: "Relaxing some `constexpr` restrictions"
-document: P2448R1
+document: P2448R2
 date: today
 audience: CWG
 author:
@@ -14,6 +14,8 @@ toc: true
 There are two rules about `constexpr` programming that make code ill-formed or ill-formed (no diagnostic required) when functions or function templates are marked `constexpr` that might never evaluate to a constant expression. But... so what if they don't? The goal of this paper is to stop diagnosing problems that don't exist.
 
 # Revision History
+
+Since [@P2448R1], updated wording.
 
 Since [@P2448R0], CWG telecon pointed out that there were several other rules that could be striken in the same theme. Updated wording.
 
@@ -327,6 +329,19 @@ struct D : B {
 
 [7]{.pnum} If the instantiated template specialization of a constexpr function template or member function of a class template would fail to satisfy the requirements for a constexpr function, that specialization is still a constexpr function, even though a call to such a function cannot appear in a constant expression.
 [If no specialization of the template would satisfy the requirements for a constexpr function when considered as a non-template function, the template is ill-formed, no diagnostic required.]{.rm}
+
+[8]{.pnum} An invocation of a constexpr function in a given context produces the same result as an invocation of an equivalent non-constexpr function in the same context in all respects except that
+
+* [8.1]{.pnum} an invocation of a constexpr function can appear in a constant expression ([expr.const]) and
+* [8.2]{.pnum} copy elision is not performed in a constant expression ([class.copy.elision]).
+
+[*Note 3*: Declaring a function constexpr can change whether an expression is a constant expression.
+This can indirectly cause calls to `std::is_constant_evaluated` within an invocation of the function to produce a different value.
+— *end note*]
+
+::: addu
+[*Note 4*: It is possible to write a constexpr function for which no invocation satisfies the requirements of a core constant expression. - *end note*]
+:::
 :::
 
 Adjust [dcl.fct.def.default]{.sref}/3 and fix the example (which is already wrong at the moment, since default-initializing an `int` during constant evaluation is ok):
@@ -371,6 +386,25 @@ Strike use of constexpr-compatible in [special]{.sref}/8:
 :::
 :::
 
+Change the rule in [class.default.ctor]{.sref}/4 (the requirements for constexpr constructor are now just the requirements for constexpr function):
+
+::: bq
+[4]{.pnum} A default constructor that is defaulted and not defined as deleted is _implicitly defined_ when it is odr-used ([term.odr.use]) to initialize an object of its class type ([intro.object]), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration.
+The implicitly-defined default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no _ctor-initializer_ ([class.base.init]) and an empty _compound-statement_.
+If that user-written default constructor would be ill-formed, the program is ill-formed.
+If that user-written default constructor would satisfy the requirements of a constexpr [constructor]{.rm} [function]{.addu} ([dcl.constexpr]), the implicitly-defined default constructor is `constexpr`.
+Before the defaulted default constructor for a class is implicitly defined, all the non-user-provided default constructors for its base classes and its non-static data members are implicitly defined.
+:::
+
+And the same in [class.copy.ctor]{.sref}/12 for copy/move constructor:
+
+::: bq
+[12]{.pnum} A copy/move constructor that is defaulted and not defined as deleted is _implicitly defined_ when it is odr-used ([term.odr.use]), when it is needed for constant evaluation ([expr.const]), or when it is explicitly defaulted after its first declaration.
+[*Note 5*: The copy/move constructor is implicitly defined even if the implementation elided its odr-use ([term.odr.use], [class.temporary]).
+— *end note*]
+If the implicitly-defined constructor would satisfy the requirements of a constexpr [constructor]{.rm} [function]{.addu} ([dcl.constexpr]), the implicitly-defined constructor is `constexpr`.
+:::
+
 Mark assignment as being constexpr in [class.copy.assign]{.sref}/10:
 
 ::: bq
@@ -384,12 +418,10 @@ The implicitly-defined copy/move assignment operator is `constexpr`[.]{.addu} [i
 :::
 :::
 
-Remove this no-longer-necessary rule in [class.dtor]{.sref}/9 (the requirements for constexpr destructor are now just the requirements for constexpr function, which is now covered by the [dcl.fct.def.default] rule):
+Change the rule in [class.dtor]{.sref}/9 (the requirements for constexpr destructor are now just the requirements for constexpr function):
 
 ::: bq
-::: rm
-[9]{.pnum} A defaulted destructor is a constexpr destructor if it satisfies the requirements for a constexpr destructor ([dcl.constexpr]).
-:::
+[9]{.pnum} A defaulted destructor is a constexpr destructor if it satisfies the requirements for a constexpr [destructor]{.rm} [function]{.addu} ([dcl.constexpr]).
 :::
 
 Strike use of constexpr-compatible in [class.compare.default]{.sref}/4:
@@ -406,4 +438,15 @@ Strike use of constexpr-compatible in [class.compare.default]{.sref}/4:
 
 — *end note*]
 :::
+:::
+
+## Feature-test Macro
+
+Update the value of `__cpp_constexpr` in [cpp.predefined]{.sref}:
+
+::: bq
+```diff
+- __cpp_constexpr @[202110L]{.diffdel}@
++ __cpp_constexpr @[2022XXL]{.diffins}@
+```
 :::
