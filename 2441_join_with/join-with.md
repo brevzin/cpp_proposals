@@ -1,6 +1,6 @@
 ---
 title: "`views::join_with`"
-document: P2441R1
+document: P2441R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2441R1], updated wording.
 
 Since [@P2441R0], added a feature-test macro.
 
@@ -143,7 +145,7 @@ namespace std::ranges {
         common_reference_with<range_rvalue_reference_t<R>, range_rvalue_reference_t<P>>;
 
   template <class R>
-    concept $bidi-common$ = bidirectional_range<R> && common_range<R>;  // exposition only
+    concept $bidirectional-common$ = bidirectional_range<R> && common_range<R>;  // exposition only
 
   template<input_range V, forward_range Pattern>
     requires view<V>
@@ -180,7 +182,7 @@ namespace std::ranges {
     }
     constexpr auto begin() const requires input_range<const V> &&
                                           forward_range<const Pattern> &&
-                                          is_reference_v<$InnerRng$> {
+                                          is_reference_v<range_reference_t<const V>> {
       return $iterator$<true>{*this, ranges::begin($base_$)};
     }
 
@@ -196,9 +198,10 @@ namespace std::ranges {
     constexpr auto end() const requires input_range<const V> &&
                                         forward_range<const Pattern> &&
                                         is_reference_v<range_reference_t<const V>> {
+      using $InnerConstRng$ = range_reference_t<const V>;
       if constexpr (forward_range<const V> &&
-                    is_reference_v<range_reference_t<const V>> && forward_range<range_reference_t<const V>> &&
-                    common_range<V> && common_range<range_reference_t<const V>>) {
+                    forward_range<$InnerConstRng$> &&
+                    common_range<const V> && common_range<$InnerConstRng$>) {
         return $iterator$<true>{*this, ranges::end($base_$)};
       } else {
         return $sentinel$<true>{*this};
@@ -243,7 +246,7 @@ namespace std::ranges {
           && view<Pattern>
           && $compatible-joinable-ranges$<range_reference_t<V>, Pattern>
   template<bool Const>
-  struct join_with_view<V, Pattern>::$iterator$ {
+  class join_with_view<V, Pattern>::$iterator$ {
     using $Parent$ = $maybe-const$<Const, join_with_view>;                // exposition only
     using $Base$ = $maybe-const$<Const, V>;                               // exposition only
     using $InnerBase$ = range_reference_t<$Base$>;                        // exposition only
@@ -259,8 +262,9 @@ namespace std::ranges {
     $OuterIter$ $outer_it_$ = $OuterIter$();                                // exposition only
     variant<$PatternIter$, $InnerIter$> $inner_it_$;                        // exposition only
 
+    constexpr $iterator$($Parent$& parent, iterator_t<$Base$> outer);       // exposition only
     constexpr auto&& $update-inner$(const $OuterIter$&);                  // exposition only
-    constexpr decltype(auto) $get-inner$(const $OuterIter$&);             // exposition only
+    constexpr auto&& $get-inner$(const $OuterIter$&);                     // exposition only
     constexpr void $satisfy$();                                         // exposition only
   public:
     using iterator_concept = $see below$;
@@ -269,7 +273,6 @@ namespace std::ranges {
     using difference_type = $see below$;
 
     $iterator$() requires default_initializable<$OuterIter$> = default;
-    constexpr $iterator$($Parent$& parent, iterator_t<$Base$> outer);
     constexpr $iterator$($iterator$<!Const> i)
         requires Const &&
                  convertible_to<iterator_t<V>, $OuterIter$> &&
@@ -286,10 +289,10 @@ namespace std::ranges {
 
     constexpr $iterator$& operator--()
         requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
-                 $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
+                 $bidirectional-common$<$InnerBase$> && $bidirectional-common$<$PatternBase$>;
     constexpr $iterator$ operator--(int)
         requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
-                 $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
+                 $bidirectional-common$<$InnerBase$> && $bidirectional-common$<$PatternBase$>;
 
     friend constexpr bool operator==(const $iterator$& x, const $iterator$& y)
         requires $ref-is-glvalue$ && equality_comparable<$OuterIter$> &&
@@ -300,13 +303,13 @@ namespace std::ranges {
       using rvalue_reference = common_reference_t<
         iter_rvalue_reference_t<$InnerIter$>,
         iter_rvalue_reference_t<$PatternIter$>>;
-      return std::visit<rvalue_reference>(ranges::iter_move, x.$inner_it_$);
+      return visit<rvalue_reference>(ranges::iter_move, x.$inner_it_$);
     }
 
     friend constexpr void iter_swap(const $iterator$& x, const $iterator$& y)
         requires indirectly_swappable<$InnerIter$, $PatternIter$>
     {
-      std::visit(ranges::iter_swap, x.$inner_it_$, y.$inner_it_$);
+      visit(ranges::iter_swap, x.$inner_it_$, y.$inner_it_$);
     }
   };
 }
@@ -314,7 +317,7 @@ namespace std::ranges {
 
 [1]{.pnum} `$iterator$::iterator_concept` is defined as follows:
 
-* [#.#]{.pnum} If `$ref-is-glvalue$` is `true`, `$Base$` models `bidirectional_range`, and `$InnerBase$` and `$PatternBase$` each model `$bidi-common$`, then `iterator_concept` denotes `bidirectional_iterator_tag`.
+* [#.#]{.pnum} If `$ref-is-glvalue$` is `true`, `$Base$` models `bidirectional_range`, and `$InnerBase$` and `$PatternBase$` each model `$bidirectional-common$`, then `iterator_concept` denotes `bidirectional_iterator_tag`.
 * [#.#]{.pnum} Otherwise, if `$ref-is-glvalue$` is `true` and `$Base$` and `$InnerBase$` each  model `forward_range`, then `iterator_concept` denotes `forward_iterator_tag`.
 * [#.#]{.pnum} Otherwise, `iterator_concept` denotes `input_iterator_tag`.
 
@@ -360,7 +363,7 @@ if constexpr ($ref-is-glvalue$) {
 :::
 
 ```cpp
-constexpr decltype(auto) $get-inner$(const $OuterIter$& x); // exposition only
+constexpr auto&& $get-inner$(const $OuterIter$& x); // exposition only
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -394,14 +397,14 @@ while (true) {
         auto&& inner = $update-inner$($outer_it_$);
         $inner_it_$.emplace<1>(ranges::begin(inner));
     } else {
-        auto&& inner = $get-inner$();
+        auto&& inner = $get-inner$($outer_it_$);
         if (std::get<1>($inner_it_$) != ranges::end(inner)) {
             break;
         }
 
         if (++$outer_it_$ == ranges::end($parent_$->$base_$)) {
             if constexpr ($ref-is-glvalue$) {
-                inner_it_ = {};
+                $inner_it_$.emplace<0>();
             }
             break;
         }
@@ -416,7 +419,7 @@ while (true) {
 ```cpp
 constexpr $iterator$($Parent$& parent, iterator_t<$Base$> outer);
 ```
-[#]{.pnum} *Effects*: Initializes `$parent_$` with `std::addressof(parent)` and `$outer_it_$` with `std::move(outer)`. Then, equivalent to:
+[#]{.pnum} *Effects*: Initializes `$parent_$` with `addressof(parent)` and `$outer_it_$` with `std::move(outer)`. Then, equivalent to:
 
 ::: bq
 ```cpp
@@ -459,7 +462,7 @@ constexpr decltype(auto) operator*() const;
 using reference = common_reference_t<
     iter_reference_t<$InnerIter$>,
     iter_reference_t<$PatternIter$>>;
-return std::visit([](auto& it) -> reference { return *it; }, $inner_it_$);
+return visit([](auto& it) -> reference { return *it; }, $inner_it_$);
 ```
 :::
 
@@ -471,7 +474,7 @@ constexpr $iterator$& operator++();
 
 ::: bq
 ```cpp
-std::visit([](auto& it){ ++it; }, $inner_it_$);
+visit([](auto& it){ ++it; }, $inner_it_$);
 $satisfy$();
 return *this;
 ```
@@ -502,7 +505,7 @@ return tmp;
 ```cpp
 constexpr $iterator$& operator--()
     requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
-             $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
+             $bidirectional-common$<$InnerBase$> && $bidirectional-common$<$PatternBase$>;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -510,20 +513,23 @@ constexpr $iterator$& operator--()
 ::: bq
 ```cpp
 if ($outer_it_$ == ranges::end($parent_$->$base_$)) {
-    $inner_it_$.emplace<1>(ranges::end(*--$outer_it_$));
+    auto&& inner = *--$outer_it_$;
+    $inner_it_$.emplace<1>(ranges::end(inner));
 }
 
 while (true) {
     if ($inner_it_$.index() == 0) {
         auto& it = std::get<0>($inner_it_$);
         if (it == ranges::begin($parent_$->$pattern_$)) {
-            $inner_it_$.emplace<1>(ranges::end(*--$outer_it_$));
+            auto&& inner = *--$outer_it_$;
+            $inner_it_$.emplace<1>(ranges::end(inner));
         } else {
             break;
         }
     } else {
         auto& it = std::get<1>($inner_it_$);
-        if (it == ranges::begin(*$outer_it_$)) {
+        auto&& inner = *$outer_it_$;
+        if (it == ranges::begin(inner)) {
             $inner_it_$.emplace<0>(ranges::end($parent_$->$pattern_$));
         } else {
             break;
@@ -531,7 +537,7 @@ while (true) {
     }
 }
 
-std::visit([](auto& it){ --it; }, $inner_it_$);
+visit([](auto& it){ --it; }, $inner_it_$);
 return *this;
 ```
 :::
@@ -540,7 +546,7 @@ return *this;
 ```cpp
 constexpr $iterator$ operator--(int)
     requires $ref-is-glvalue$ && bidirectional_range<$Base$> &&
-             $bidi-common$<$InnerBase$> && $bidi-common$<$PatternBase$>;
+             $bidirectional-common$<$InnerBase$> && $bidirectional-common$<$PatternBase$>;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -573,13 +579,14 @@ namespace std::ranges {
           && view<Pattern>
           && $compatible-joinable-ranges$<range_reference_t<V>, Pattern>
   template<bool Const>
-  struct join_with_view<V, Pattern>::$sentinel$ {
+  class join_with_view<V, Pattern>::$sentinel$ {
     using $Parent$ = $maybe-const$<Const, join_with_view>;  // exposition only
     using $Base$ = $maybe-const$<Const, V>;                 // exposition only
     sentinel_t<$Base$> $end_$ = sentinel_t<Base>();         // exposition only
 
+    constexpr explicit sentinel($Parent$& parent);        // exposition only
+  public:
     sentinel() = default;
-    constexpr explicit sentinel($Parent$& parent);
     constexpr sentinel(sentinel<!Const> s)
         requires Const && convertible_to<sentinel_t<V>, sentinel_t<$Base$>>;
 

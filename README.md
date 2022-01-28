@@ -45,12 +45,12 @@ make all of my papers.
 ### Pending Plenary
 
 - [p2387r3 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r3.html).
+- [p2441r2 - `views::join_with`](2441_join_with/p2441r2.html)
 - [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
 
 ### Pending CWG/LWG Review
 
 - [p2278r2 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r2.html).
-- [p2441r0 - `views::join_with`](2441_join_with/p2441r1.html)
 - [p2446r1 - `views::all_move`](2441_move_view/p2446r1.html)
 
 ### Pending EWG/LEWG Voting

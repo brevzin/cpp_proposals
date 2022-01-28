@@ -48,7 +48,7 @@
 - 2325 Views should not be required to be default constructible: [p2325r0](2325_views_default/p2325r0.html) [p2325r1](2325_views_default/p2325r1.html) [p2325r2](2325_views_default/p2325r2.html) [p2325r3](2325_views_default/p2325r3.html)
 - 2387 Pipe support for user-defined range adaptors: [p2387r0](2387_ranges_pipes/p2387r0.html) [p2387r1](2387_ranges_pipes/p2387r1.html) [p2387r2](2387_ranges_pipes/p2387r2.html) [p2387r3](2387_ranges_pipes/p2387r3.html)
 - 2415 What is a  <code class="sourceCode cpp">view</code> ?: [p2415r0](2415_what_view/p2415r0.html) [p2415r1](2415_what_view/p2415r1.html) [p2415r2](2415_what_view/p2415r2.html)
-- 2441 <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>: [p2441r0](2441_join_with/p2441r0.html) [p2441r1](2441_join_with/p2441r1.html)
+- 2441 <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>: [p2441r0](2441_join_with/p2441r0.html) [p2441r1](2441_join_with/p2441r1.html) [p2441r2](2441_join_with/p2441r2.html)
 - 2446 <code class="sourceCode cpp">views<span class="op">::</span>all_move</code>: [p2446r0](2446_move_view/p2446r0.html) [p2446r1](2446_move_view/p2446r1.html) [d2446r2](2446_move_view/d2446r2.html)
 - 2448 Relaxing some  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  restrictions: [p2448r0](2448_relax_constexpr/p2448r0.html) [p2448r1](2448_relax_constexpr/p2448r1.html) [p2448r2](2448_relax_constexpr/p2448r2.html)
 - 2481 Forwarding reference to specific type/template: [p2481r0](2481_forward_ref/p2481r0.html)
