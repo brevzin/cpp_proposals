@@ -59,7 +59,7 @@ make all of my papers.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 - [p2286r6 - Formatting Ranges](2286_fmt_ranges/p2286r6.html)
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
-- [p2508r1 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r1.html)
+- [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
 
 
 ### Pending EWG/LEWG Review

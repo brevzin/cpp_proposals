@@ -1,6 +1,6 @@
 ---
 title: "Expose `std::$basic-format-string$<charT, Args...>`"
-document: P2508R1
+document: P2508R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2508R1]: wording update.
 
 Since [@P2508R0]: making `$basic-format-string$` non-exposition only isn't sufficient, also actually need a way to pull out the underlying format string if we want to eventually invoke `vformat`.
 
@@ -99,6 +101,25 @@ However, it's not enough for us with other APIs. We may want to do static valida
 
 In order to do so, we need some way to pull out the underlying `string_view` from a `std::format<Args...>`. A simple getter suffices, but we do need that getter. So this paper isn't simply making names non-exposition-only, it's also adding a function.
 
+## Feature-test macro?
+
+It is definitely important to provide a feature-test macro for this, which will allow `log` above to conditionally opt in to this feature if possible:
+
+:::bq
+```cpp
+#if __cpp_lib_format >= whatever
+    template <typename... Args>
+    using my_format_string = std::format_string<std::type_identity_t<Args>...>;
+#else
+    template <typename... Args>
+    using my_format_string = std::string_view;
+#endif
+
+template <typename... Args>
+void log(my_format_string<Args...> s, Args&&... args);
+```
+:::
+
 # Wording
 
 In [format.syn]{.sref}, replace the exposition-only names `$basic-format-string$`, `$format-string$`, and `$wformat-string$` with the non-exposition-only names `basic_format_string`, `format_string`, and `wformat_string`.
@@ -132,23 +153,6 @@ template<class T> consteval basic_format_string(const T& s);
 :::
 
 ## Feature-test macro
-
-It is definitely important to provide a feature-test macro for this, which will allow `log` above to conditionally opt in to this feature if possible:
-
-:::bq
-```cpp
-#if __cpp_lib_format >= whatever
-    template <typename... Args>
-    using my_format_string = std::format_string<std::type_identity_t<Args>...>;
-#else
-    template <typename... Args>
-    using my_format_string = std::string_view;
-#endif
-
-template <typename... Args>
-void log(my_format_string<Args...> s, Args&&... args);
-```
-:::
 
 Bump the `format` feature-test macro in [version.syn]{.sref}:
 
