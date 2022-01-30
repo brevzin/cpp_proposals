@@ -25,11 +25,11 @@ make all of my papers.
 - [p1871r1 - Concept traits should be named after concepts](1871_enable_sized_range/p1871r1.html).
 - [p1946r0 - Allow defaulting comparisons by value](1946_dflt_value_comparisons/p1946r0.html).
 - [p1959r0 - Remove `std::weak_equality` and `std::strong_equality`](1959_remove_equality/p1959r0.html).
-- [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
 - [p2095r0 - Resolve lambda init-capture pack grammar (CWG2378)](2095_lambda_pack_cwg/p2095r0.html).
 
 #### DRs against C++20 (or earlier)
 
+- [p2017r1 - Conditionally borrowed ranges](2017_safe_range/p2017r1.html).
 - [p2036r3 - Change scope of lambda _trailing-return-type_](2036_lambda_scope/p2036r3.html).
 - [p2162r2 - Inheriting from `std::variant`](2162_inherit_variant/p2162r2.html).
 - [p2210r2 - Superior String Splitting](2210_string_split/p2210r2.html).
