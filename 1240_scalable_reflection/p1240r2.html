@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Scalable Reflection in C++</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Scalable Reflection in C++</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P1240R2</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>01-15-2022</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      SG7<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Wyatt Childers<br>&lt;<a href="mailto:wcc@edg.com" class="email">wcc@edg.com</a>&gt;<br>
+      Andrew Sutton<br>&lt;<a href="mailto:Andrew.sutton@beyondidentity.com" class="email">Andrew.sutton@beyondidentity.com</a>&gt;<br>
+      Faisal Vali<br>&lt;<a href="mailto:faisalv@yahoo.com" class="email">faisalv@yahoo.com</a>&gt;<br>
+      Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision history<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">2</span> Acknowledgments<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">3</span> Introduction<span></span></a>
+<ul>
+<li><a href="#a-simple-example"><span class="toc-section-number">3.1</span> A simple example<span></span></a></li>
+<li><a href="#implementation-status"><span class="toc-section-number">3.2</span> Implementation status<span></span></a></li>
+</ul></li>
+<li><a href="#reflections"><span class="toc-section-number">4</span> Reflections<span></span></a>
+<ul>
+<li><a href="#the-operator"><span class="toc-section-number">4.1</span> The <code class="sourceCode cpp"><span class="op">^</span></code> operator<span></span></a></li>
+<li><a href="#reflection-type"><span class="toc-section-number">4.2</span> Reflection type<span></span></a></li>
+<li><a href="#reflection-categories"><span class="toc-section-number">4.3</span> Reflection categories<span></span></a></li>
+<li><a href="#equality-and-equivalence"><span class="toc-section-number">4.4</span> Equality and equivalence<span></span></a></li>
+<li><a href="#a-note-about-linkage"><span class="toc-section-number">4.5</span> A Note About Linkage<span></span></a></li>
+<li><a href="#invalid-reflections"><span class="toc-section-number">4.6</span> Invalid reflections<span></span></a></li>
+<li><a href="#initialization-of-reflections"><span class="toc-section-number">4.7</span> Initialization of reflections<span></span></a></li>
+<li><a href="#conversions-on-reflections"><span class="toc-section-number">4.8</span> Conversions on reflections<span></span></a></li>
+<li><a href="#hashing-reflections"><span class="toc-section-number">4.9</span> Hashing reflections<span></span></a></li>
+</ul></li>
+<li><a href="#splicing"><span class="toc-section-number">5</span> Splicing<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision history<a href="#revision-history" class="self-link"></a></h1>
+<p><span class="citation" data-cites="P1240R0">[<a href="#ref-P1240R0" role="doc-biblioref">P1240R0</a>]</span> Initial revision introducing scalar reflection model, reifiers (now called splicers), extensive API, and many examples.</p>
+<p><span class="citation" data-cites="P1240R1">[<a href="#ref-P1240R1" role="doc-biblioref">P1240R1</a>]</span> Added <code class="sourceCode cpp">reflexpr<span class="op">(...</span> xyz<span class="op">)</span></code>. Revised reifier/splicer syntax somewhat. Report on implementations. Introduce <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code> header. Reorganized presentation slightly.</p>
+<p>R2 (this revision) Harmonized with other papers in this area, including the use of the term “splicing” instead of “reifying” and the syntax developed in <span class="citation" data-cites="P2320R0">[<a href="#ref-P2320R0" role="doc-biblioref">P2320R0</a>]</span>. Various fixes and presentation improvements.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">2</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>Many thanks to Nina Ranns and Barry Revzin for significant feedback on a draft of this paper.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">3</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>The first Reflection TS (based on <span class="citation" data-cites="N4766">[<a href="#ref-N4766" role="doc-biblioref">N4766</a>]</span>) exposes reflection information as types (to simplify integration with template metaprogramming techniques). However, SG7 agreed some time ago that the future of reflective constructs in C++ should be value-based (see also <span class="citation" data-cites="P0425R0">[<a href="#ref-P0425R0" role="doc-biblioref">P0425R0</a>]</span>). Specifically, the compile-time computations required for reflective metaprogramming should make use of constant-evaluation, which, unlike template metaprogramming, allows for ephemeral intermediate results (i.e., they don’t persist throughout the compilation process) and for mutable values. This approach was described in <span class="citation" data-cites="P0993R0">[<a href="#ref-P0993R0" role="doc-biblioref">P0993R0</a>]</span>, <em>Value-based Reflection</em>. To support that reflection design, we have passed a number of <code class="sourceCode cpp"><span class="kw">constexpr</span></code> extensions in C++20: consteval functions (<span class="citation" data-cites="P1073R3">[<a href="#ref-P1073R3" role="doc-biblioref">P1073R3</a>]</span>), <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> (<span class="citation" data-cites="P0595R2">[<a href="#ref-P0595R2" role="doc-biblioref">P0595R2</a>]</span>), and constexpr dynamic allocation (<span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span>), amongst others. We have also proposed <em>expansion statements</em> (<span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>), which are more broadly useful but especially convenient for reflective metaprogramming: That feature was approved by the evolution working group for C++20, but did not make it to a WG21 vote for lack of time completing the Core wording review. We still hope expansion statements will be added to the language in the relatively near future.</p>
+<p>That in itself still leaves plenty of design options for the reflection interface itself. What follows is an extensive document describing:</p>
+<ul>
+<li>The representation and properties of “reflections” (with argumentation for our specific design and considerations of alternatives).</li>
+<li>Mechanisms for <em>splicing</em>: Turning reflections into ordinary C++ source constructs (again, with design discussions).</li>
+<li>A brief discussion about templates and their instances.</li>
+<li>Principles to translate existing standard template metaprogramming facilities to the reflection domain.</li>
+<li>Principles to translate the Reflection TS facilities to the value-based reflection domain.</li>
+<li>Some examples to argue that proposals to add additional template metaprogramming facilities are unneeded because the underlying functionality is better handled in the reflection domain.</li>
+<li>An appendix listing the meta-functions being worked on one ongoing implementation.</li>
+</ul>
+<p>This paper doesn’t exist in a vacuum. Related topics have been separately explored in <span class="citation" data-cites="P2320R0">[<a href="#ref-P2320R0" role="doc-biblioref">P2320R0</a>]</span> (“The Syntax of Static Reflection”), <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span> (“Metaprogramming”), <span class="citation" data-cites="P2050R0">[<a href="#ref-P2050R0" role="doc-biblioref">P2050R0</a>]</span> (“Tweaks to the design of source code fragments”), <span class="citation" data-cites="P1717R0">[<a href="#ref-P1717R0" role="doc-biblioref">P1717R0</a>]</span> (“Compile-time Metaprogramming in C++”), and <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span> (“Expansion statements”). Earlier versions of this paper were more exploratory in nature; this version uses experience with implementations based on earlier versions to narrow down a first set of metaprogramming features that are primarily aimed at providing reflection facilities (with splicing and ordinary template instantiation handling generative programming). However, additional facilities (particularly, for code injection) have been explored along with this proposal and we are not confident that they can be added incrementally on top of this proposal.</p>
+<h2 data-number="3.1" id="a-simple-example"><span class="header-section-number">3.1</span> A simple example<a href="#a-simple-example" class="self-link"></a></h2>
+<p>The following function uses static reflection facilities presented in this paper to compute the string representation of an enumerator value.</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">template</span><span class="op">&lt;</span>Enum T<span class="op">&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>std<span class="op">::</span>string to_string<span class="op">(</span>T value<span class="op">)</span> <span class="op">{</span> <span class="co">// Could also be marked constexpr</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> e <span class="op">:</span> std<span class="op">::</span>meta<span class="op">::</span>members_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="cf">if</span> <span class="op">([:</span>e<span class="op">:]</span> <span class="op">==</span> value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>      <span class="cf">return</span> std<span class="op">::</span>string<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(</span>e<span class="op">))</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="op">}</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>  <span class="cf">return</span> <span class="st">&quot;&lt;unnamed&gt;&quot;</span>;</span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>In broad strokes, the function does the following:</p>
+<ol type="1">
+<li>Gets the sequence enumerators from the enumeration type <code class="sourceCode cpp">T</code>,</li>
+<li>Iterates over those enumerators, searching for the first that matches <code class="sourceCode cpp">value</code>,</li>
+<li>Returns the name of that iterator.</li>
+</ol>
+<p>Each of these operations relies on a feature included in this proposal. In particular, getting the sequence of iterators requires that we first get a queryable representation of the enumeration type <code class="sourceCode cpp">T</code>. This is done using the prefix <code class="sourceCode cpp"><span class="op">^</span></code> operator; it returns a <em>reflection</em>: a handle to an internal representation of type <code class="sourceCode cpp">T</code> maintained by the compiler. The <code class="sourceCode cpp">members_of</code> function (declared in a newly proposed standard header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code>) returns a compile-time <code class="sourceCode cpp">std<span class="op">::</span>span</code>, whose elements are the reflections of each enumerator in the enum.</p>
+<p>To iterate over the span we use an <em>expansion-statement</em> (proposed through a separate paper <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>, and previously approved by EWG but still in CWG review), spelled <code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span></code>. This isn’t true “iteration”, however. The body of the statement is repeated for each element in the <code class="sourceCode cpp">span</code> so that the loop variable (<code class="sourceCode cpp">e</code> above) is initialized to <code class="sourceCode cpp">s<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>, <code class="sourceCode cpp">s<span class="op">[</span><span class="dv">1</span><span class="op">]</span></code>, …, <code class="sourceCode cpp">s<span class="op">[</span>n <span class="op">-</span> <span class="dv">1</span><span class="op">]</span></code> in each successive repetition. The expansion variable is declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and that carries into each repeated body. In other words, each repetition is equivalent to:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info e <span class="op">=</span> s<span class="op">[</span>I<span class="op">]</span>;</span>
+<span id="cb2-3"><a href="#cb2-3"></a>  <span class="cf">if</span> <span class="op">([:</span>e<span class="op">:]</span> <span class="op">==</span> value<span class="op">)</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(</span>e<span class="op">)</span>;</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>where <code class="sourceCode cpp">I</code> counts the repetitions of the loop’s body.</p>
+<p>Within the expansion body, the <code class="sourceCode cpp"><span class="op">[:</span> refl <span class="op">:]</span></code> construct recovers the value of a reflected entity. We call this recovery process <em>splicing</em> and the constructs — like <code class="sourceCode cpp"><span class="op">[:...:]</span></code> — that enable it <em>splicers</em>. This can be compared with the parameter <code class="sourceCode cpp">value</code> to determine if they are the same. Finally, the <code class="sourceCode cpp">name_of</code> function returns a compile-time <code class="sourceCode cpp">string_view</code> for the identifier spelling of the matched enumerator. If none of the enumerators matched (possible, e.g., when bit-ORing together enumerator values), we return a string <code class="sourceCode cpp"><span class="st">&quot;&lt;unnamed&gt;&quot;</span></code> (which won’t collide with a valid identifier).</p>
+<p>This is called <em>static reflection</em> because all of the operations used to query types and enumerators are computed at compile time (i.e., statically). There is no additional runtime meta-information that must be generated with such facilities, which reinforces the zero-overhead principle that is so fundamental to C++. There is no runtime representation of the enumeration type and its enumerators. Only information that is ODR-used is present in the final program.</p>
+<h2 data-number="3.2" id="implementation-status"><span class="header-section-number">3.2</span> Implementation status<a href="#implementation-status" class="self-link"></a></h2>
+<p>Two implementations of this proposal are underway.</p>
+<p>The first and most complete is a fork of Clang by Lock3 Software (by, among others, Andrew and Wyatt, authors of this paper). It includes a large portion of the capabilities presented here, albeit not always with the exact syntax or interfaces proposed. In addition to these capabilities, Lock3’s implementation supports expansion statements and injection primitives (including “fragment” support). Lock3 is currently not maintaining this implementation, however.</p>
+<p>The second is based on the EDG front end (by Faisal and Daveed) and is less complete: It implements the reflection operator and most single splicers (but not the pack splicers; see below), and a few meta-library interfaces. It does not currently implement features in other proposals like expansion statements or injection primitives.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="reflections"><span class="header-section-number">4</span> Reflections<a href="#reflections" class="self-link"></a></h1>
+<h2 data-number="4.1" id="the-operator"><span class="header-section-number">4.1</span> The <code class="sourceCode cpp"><span class="op">^</span></code> operator<a href="#the-operator" class="self-link"></a></h2>
+<p>The first Reflection TS introduced the <code class="sourceCode cpp">reflexpr</code> operator to obtain reflection values encoded as types. Previous versions of this paper attempted to avoid repeating the considerable bikeshedding that went into selecting the <code class="sourceCode cpp">reflexpr</code> keyword by simply reusing it. Ironically, the spelling is more appropriate for the value-based reflection since the corresponding operation is indeed an “expression” (i.e., a construct that produces a value; in the TS it produces a type).</p>
+<p>However, with months of practice with implementations that used <code class="sourceCode cpp">reflexpr<span class="op">(...)</span></code> we experienced consistent feedback that that syntax is too “heavy”. So we went back to the drawing board and found that the <code class="sourceCode cpp"><span class="op">^</span></code> prefix operator — suggesting “lifting” or “raising” representation — is available . This new syntax<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> was agreed to by SG-7 during the discussion of <span class="citation" data-cites="P2320R0">[<a href="#ref-P2320R0" role="doc-biblioref">P2320R0</a>]</span>. Thus, we can write:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info reflection <span class="op">=</span> <span class="op">^</span>name_or_postfix_expr;</span></code></pre></div>
+</blockquote>
+<p>The value of <code class="sourceCode cpp">reflection</code> (i.e. the result of this <em>lifting operator</em>) is a compile-time value that <em>designates</em> some view of the indicated program element by the implementation (specifically, the compiler front end). I.e., it can be thought of as a handle to an internal structure of the compiler. In the rest of this proposal, we refer to the result of <code class="sourceCode cpp"><span class="op">^</span></code> as a <em>reflection</em> or a <em>reflection value</em>.</p>
+<p>Note that the lifting operator is the “gateway” into the reflected world, but it is not the only source of reflections (or reflection values): We will further introduce a variety of functions that derive reflections from other reflections (e.g., we’ll present a function that returns reflections for the members of a class given a reflection for that class). Whatever the source of a reflection, we say that it <em>designates</em> language concepts such as entities or value categories. As will be shown later, a reflection can <em>designate</em> multiple notions. For example, <code class="sourceCode cpp"><span class="op">^</span>f<span class="op">(</span>x<span class="op">)</span></code> designates the called function <code class="sourceCode cpp">f</code> (if indeed that is what is called) and the type and value category of the call result.</p>
+<p>The operand of <code class="sourceCode cpp"><span class="op">^</span></code> must be one of the following:</p>
+<ul>
+<li>a <em>type-id</em>, including possibly a <em>simple-type-specifier</em> that designates a <em>template-name</em></li>
+<li>a possibly qualified <em>namespace-name</em></li>
+<li>the scope-qualifier token <code class="sourceCode cpp"><span class="op">::</span></code> (designating the global namespace)</li>
+<li>a <em>postfix-expression</em><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></li>
+</ul>
+<p>In the case where the <code class="sourceCode cpp">name_or_postfix_expr</code> is an expression, it is unevaluated but <em>potentially constant evaluated</em>. That implies that given <code class="sourceCode cpp"><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</code>, the expression <code class="sourceCode cpp"><span class="op">^</span>S<span class="op">::</span>x</code> is permissible in this context. We will elaborate the available reflected semantics later in this paper. Since <code class="sourceCode cpp"><span class="op">^</span>name_or_postfix_expr</code> is an expression, <code class="sourceCode cpp"><span class="op">^(^</span>name_or_postfix_expr<span class="op">)</span></code> is also valid (generally producing a distinct reflection).</p>
+<p>In this paper, we call <em>declared entity</em> any of the following: a namespace (but not a namespace alias), a function or member function (that includes implicit special members, but not inherited constructors), a function or template parameter, a variable, a type (but not a type alias), a data member, a base class, a capture, or a template (including an alias template, but not a deduction guide template). Note that this is slightly different from the standard term entity (which, e.g., includes “values” but not “captures”<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> ). We call <em>alias</em> a namespace alias or a type alias.</p>
+<h2 data-number="4.2" id="reflection-type"><span class="header-section-number">4.2</span> Reflection type<a href="#reflection-type" class="self-link"></a></h2>
+<p>What should the type of a reflection be? We propose it to be a new scalar type<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>, distinct from all other scalar types, that supports — aside from reading, assigning, and copying — only the scalar operations of equality/inequality and contextual conversion to <code class="sourceCode cpp"><span class="dt">bool</span></code>. In addition we propose specific splicers (that transform a reflection value into a type or a name, see below) and library functions that can operate on constexpr reflections and constexpr sequences of reflections and generate new reflection-values as needed. All other operations on reflection values are then composed from these aforementioned operations. We present our rationale below for this design choice.</p>
+<p>It is tempting to organize reflection values as class type values using a hierarchy of class types that try to model the language constructs. For example, one could imagine a base class <code class="sourceCode cpp">Reflection</code>, from which we might derive a class <code class="sourceCode cpp">ReflectedDeclaration</code>, itself the base class of <code class="sourceCode cpp">ReflectedFunction</code> and <code class="sourceCode cpp">ReflectedVariable</code>.</p>
+<p>We do not believe that is the best approach for at least the following reasons:</p>
+<ul>
+<li>Although the relationship between major language concepts is relatively stable, we do occasionally make fundamental changes to our vocabulary (e.g., during the C++11 cycle we changed the definition of “variable”). Such a vocabulary change is more disruptive to a class hierarchy design than it is to certain other kinds of interfaces (we are thinking of function-based interfaces here).</li>
+<li>Class hierarchy values aren’t friendly to value-based programming because of slicing; instead, it works better with “reference” programming, which is particularly expensive for constant evaluation (because it requires address computations, which involve additional bookkeeping to check for potential undefined behavior).</li>
+<li>Class types are not easily used as nontype template arguments, particularly when we want to restrict effects to compile time (the recently added support for nontype class-type template arguments (<span class="citation" data-cites="P0732R2">[<a href="#ref-P0732R2" role="doc-biblioref">P0732R2</a>]</span> + <span class="citation" data-cites="P1907R1">[<a href="#ref-P1907R1" role="doc-biblioref">P1907R1</a>]</span>) imposes draconian limitations on class types). As it turns out, instantiating templates over reflection values is an important idiom when it comes to generative programming (e.g., through splicers or, eventually, code injection).</li>
+<li>Implementations of constant-evaluation usually handle non-pointer scalar values significantly more efficiently than class values.</li>
+</ul>
+<p>Regarding this last point, the following compile-time test:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>; k<span class="op">&lt;</span><span class="dv">10000</span>; <span class="op">++</span>k<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    i <span class="op">+=</span> k;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>  <span class="cf">return</span> i<span class="op">/</span><span class="dv">10000</span>;</span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span> N<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> sm <span class="op">=</span> S<span class="op">&lt;</span>N<span class="op">-</span><span class="dv">1</span><span class="op">&gt;::</span>sm<span class="op">+</span>f<span class="op">()</span>;</span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="op">}</span>;</span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> S<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> sm <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="op">}</span>;</span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="kw">constexpr</span> <span class="dt">int</span> r <span class="op">=</span> S<span class="op">&lt;</span><span class="dv">200</span><span class="op">&gt;::</span>sm;</span></code></pre></div>
+</blockquote>
+<p>compiles in about 0.6 seconds on a compact laptop (2016 MacBook m7), but wrapping the integers as follows:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">struct</span> Int <span class="op">{</span> <span class="dt">int</span> v; <span class="op">}</span>;</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>  Int i <span class="op">=</span> <span class="op">{</span><span class="dv">0</span><span class="op">}</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="cf">for</span> <span class="op">(</span>Int k <span class="op">=</span> <span class="op">{</span><span class="dv">0</span><span class="op">}</span>; k<span class="op">.</span>v<span class="op">&lt;</span><span class="dv">10000</span>; <span class="op">++</span>k<span class="op">.</span>v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>    i<span class="op">.</span>v <span class="op">+=</span> k<span class="op">.</span>v;</span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="op">}</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>  <span class="cf">return</span> i<span class="op">.</span>v<span class="op">/</span><span class="dv">10000</span>;</span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="op">}</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span> N<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> sm <span class="op">=</span> S<span class="op">&lt;</span>N<span class="op">-</span><span class="dv">1</span><span class="op">&gt;::</span>sm<span class="op">+</span>f<span class="op">()</span>;</span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="op">}</span>;</span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> S<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> sm <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-14"><a href="#cb5-14"></a><span class="op">}</span>;</span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="kw">constexpr</span> <span class="dt">int</span> r <span class="op">=</span> S<span class="op">&lt;</span><span class="dv">200</span><span class="op">&gt;::</span>sm;</span></code></pre></div>
+</blockquote>
+<p>doubles the compile time to 1.2 seconds. Adding a derived-class layer would further increase the time. Another increase would result from attempting to access the classes through references (as would be tempting with a class hierarchy) because address computations require some work to guard against undefined behavior.</p>
+<p>Because of these various considerations, we therefore propose that the type of a reflection is an unspecified scalar type, distinct from all other scalar types, whose definition is:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">void</span><span class="op">)</span>;</span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Namespace <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is an associated namespace of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> for the purposes of argument-dependent lookup (ADL): That makes the use of various other facilities in that namespace considerably more convenient. (In this sense, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> is similar to an enumeration type.)</p>
+<p>By requiring the type to be scalar, we avoid implementation overheads associated with the compile-time evaluation of class objects, indirection, and inheritance. By making the type unspecified but distinct, we avoid accidental conversions to other scalar types, and we gain the ability to define core language rules that deal specifically with these values. Moreover, no special header is required before using the lifting operator.</p>
+<h2 data-number="4.3" id="reflection-categories"><span class="header-section-number">4.3</span> Reflection categories<a href="#reflection-categories" class="self-link"></a></h2>
+<p>As noted earlier, reflection values behave as handles to internal structures of the compiler. To reason about the kind of semantic information one can obtain through these reflection values, we categorize the values into one or more of four groups:</p>
+<ul>
+<li>Declared-entity reflections</li>
+<li>Alias reflections</li>
+<li>Expression reflections</li>
+<li>Invalid reflections</li>
+<li>Note, declared-entity-reflections <em>only</em> designate the declared-entity; alias-reflections always designate a declared-entity in addition to providing the name of the alias; and, expression-reflections might or might not designate a declared-entity (e.g., an <em>id-expression</em> might designate a variable), but always designate properties of the expression. <em>Invalid reflections</em> will be discussed in more detail later, but they represent various kinds of failures when creating reflections using means other than the <code class="sourceCode cpp"><span class="op">^</span></code> operator.</li>
+</ul>
+<p>For the most part, reflections of names (including type-ids) designate the declared entity those names denote: variables, functions, types, namespaces, templates, etc. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="op">^</span><span class="kw">const</span> <span class="dt">int</span>            <span class="co">// Designates the type const int.</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="op">^</span>std                  <span class="co">// Designates the namespace std.</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="op">^</span>std<span class="op">::</span>pair            <span class="co">// Designates the template pair.</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="op">^</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span>  <span class="co">// Designates the specialization.</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="dt">int</span><span class="op">*</span> f<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="op">^</span><span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span><span class="dv">3</span><span class="op">))</span>       <span class="co">// Designates the type int*.</span></span></code></pre></div>
+</blockquote>
+<p>Reflections of <em>expressions</em> designate a limited set of characteristics of those expressions, including at least their type and value category. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="op">^</span><span class="dv">1</span> <span class="co">// Designates the property “prvalue of type int” (but also the constant value 1)</span></span></code></pre></div>
+</blockquote>
+<p>(Further on we will present facilities to examine and/or splice the designated notions.)</p>
+<p>If an expression also names a declared entity (via a possibly-parenthesized <em>id-expression</em>), then it also designates that entity. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="dt">int</span> x;</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="op">^(</span>x<span class="op">)</span>        <span class="co">// Designates the declared-entity &#39;x&#39; (variable) as well as the properties of</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>            <span class="co">// the expression &#39;x&#39; (type and value category, in this case).</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="op">^(</span>x<span class="op">+</span><span class="dv">1</span><span class="op">)</span>      <span class="co">// Does not designate a declared-entity but does designate the property</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>            <span class="co">// “prvalue of type int” (if ’x+1’ had been constant-valued, it would also</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>            <span class="co">// designate the value it represents).</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="op">^</span>std<span class="op">::</span>cout  <span class="co">// Designates the object named by std::cout as well as the</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>            <span class="co">// type and value category (lvalue) of the expression.</span></span></code></pre></div>
+</blockquote>
+<p>If an expression is a <em>constant expression</em> it also designates that constant value:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="op">^</span><span class="dv">0</span>                      <span class="co">// Designates the value zero and the property “prvalue of</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>                        <span class="co">// type int”. It does not capture that the expression is a</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>                        <span class="co">// is a literal or that it is usable as a null pointer value.</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="op">^</span><span class="kw">nullptr</span>                <span class="co">// Designates the null pointer value and the property “prvalue</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>                        <span class="co">// of type decltype(nullptr)”.</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="op">^</span>std<span class="op">::</span>errc<span class="op">::</span>bad_message <span class="co">// Designates the enumerator, its constant value, and the</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>                        <span class="co">// property “prvalue of type std::errc”.</span></span></code></pre></div>
+</blockquote>
+<p>If an expression represents a call at its top level, it also designates the function being called (but not, e.g., the arguments to that call):</p>
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="op">^</span>printf<span class="op">(</span>“Hello, “<span class="op">)</span>        <span class="co">// Designates printf and the property “prvalue of type int”.</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="op">^(</span>std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> “World<span class="op">!</span>”<span class="op">)</span>  <span class="co">// Designates the applicable operator&lt;&lt;</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>                          <span class="co">// and “lvalue of type std::ostream”.</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> p<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> p<span class="op">+</span><span class="dv">1</span>; <span class="op">}</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="op">^</span>f<span class="op">(</span><span class="dv">41</span><span class="op">)</span>                    <span class="co">// Designates f, the (returned) value 42, and</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>                          <span class="co">// “prvalue of type int”.</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a></span>
+<span id="cb11-10"><a href="#cb11-10"></a><span class="op">^(</span>f<span class="op">(</span><span class="dv">41</span><span class="op">)+</span><span class="dv">1</span><span class="op">)</span>                <span class="co">// Designates the (returned) value 43 and</span></span>
+<span id="cb11-11"><a href="#cb11-11"></a>                          <span class="co">// “prvalue of type int”; does not designate f</span></span>
+<span id="cb11-12"><a href="#cb11-12"></a>                          <span class="co">// because the call is not “top level”.</span></span></code></pre></div>
+</blockquote>
+<p>Now consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> <span class="kw">const</span> i <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^</span>i;</span></code></pre></div>
+</blockquote>
+<p>As mentioned before, reflections can be categorized into four groups: declared-entity, alias, expression, or invalid. In this example, the reflection value <code class="sourceCode cpp">r</code> is an “expression reflection” and thus designates both the <em>expression</em> <code class="sourceCode cpp">i</code> (i.e. you can obtain information about properties of the expression such as its lvalueness) and the <em>variable</em> <code class="sourceCode cpp">i</code>. However, sometimes it is useful to obtain a reflection that designates only the entity (and not the expression). For example, we might want to query the type of the <em>variable</em> <code class="sourceCode cpp">i</code> (<code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span></code>) instead of the type of the <em>expression</em> <code class="sourceCode cpp">i</code> (<code class="sourceCode cpp"><span class="dt">int</span></code>). It also can be useful when comparing if two reflections refer to the same entity, as we will show later. We therefore provide the special function<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> entity<span class="op">(</span>info reflection<span class="op">)-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>which when applied to r produces a reflection designating just the <em>variable</em> (i.e., a “declared-entity reflection”).</p>
+<p>More generally, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>entity</code> extracts the declared-entity from its argument by returning:</p>
+<ul>
+<li>its argument — if its argument is a declared-entity reflection or an invalid reflection,</li>
+<li>a declared-entity reflection designating an entity <code class="sourceCode cpp">E</code> — if the argument is an alias or expression reflection that also designates <code class="sourceCode cpp">E</code>, or</li>
+<li>an invalid reflection in all other cases (e.g., <code class="sourceCode cpp">entity<span class="op">(^</span><span class="dv">42</span><span class="op">)</span></code> is an invalid reflection).</li>
+</ul>
+<p>When the <code class="sourceCode cpp"><span class="op">^</span></code> operand is the name of an <em>alias</em> (type or namespace) the reflection designates the aliased entity indirectly (i.e., properties of the alias can be queried directly). For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">using</span> T0 <span class="op">=</span> <span class="dt">int</span>;</span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">using</span> T1 <span class="op">=</span> <span class="kw">const</span> T0;</span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">constexpr</span> meta<span class="op">::</span>info ref <span class="op">=</span> <span class="op">^</span>T1;</span></code></pre></div>
+</blockquote>
+<p>Here, ref designates both <code class="sourceCode cpp">T1</code> (directly) and the type <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">int</span></code> (indirectly). This allows users to work both with the alias and its meaning. However, underlying aliases are not designated: There is no way to find about <code class="sourceCode cpp">T0</code> through <code class="sourceCode cpp">ref</code>.</p>
+<p>In a more abstract sense, reflections designate semantic notions (names, types, value categories, etc.) rather than syntax (tokens that comprise an expression and the relation of those tokens to others). This principle helps guide decisions about the design of language and library support for reflection.</p>
+<p>The queryable properties of these reflections are determined by the kind of “thing” they reflect. Details are provided below.</p>
+<h2 data-number="4.4" id="equality-and-equivalence"><span class="header-section-number">4.4</span> Equality and equivalence<a href="#equality-and-equivalence" class="self-link"></a></h2>
+<p>Reflections can be compared using <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">!=</span></code> operators. Intuitively, the rule for these comparisons is that we compare the underlying declared entity, except that we cannot compare the reflections of most expressions nor can we compare invalid reflections. The exact rules are as follows…</p>
+<ol type="1">
+<li>If two reflections designate declared entities or aliases of such entities and do not designate expression properties of an expression that is not an <em>id-expression</em>, the reflections compare equal if the entities are identical and unequal if the entities are not identical (i.e., the comparison “looks through” aliases).</li>
+<li>Any reflection also (obviously) compares equal to itself and to copies of itself.</li>
+<li>An invalid reflection compares unequal to a reflection that is not invalid.</li>
+<li>A reflection that designates a declared entity or an alias of such an entity and does not designate expression properties of an expression that is not an <em>id-expression</em> (e.g., it is not the reflection of a function call) compares unequal to a reflection that either does not designate an entity or an alias of such entity, or that designates properties of an expression that is not an <em>id-expression</em>.</li>
+<li>All other cases are unspecified: That includes comparing reflections of expressions other than <em>id-expressions</em> and invalid reflections. For example:</li>
+</ol>
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">typedef</span> <span class="dt">int</span> I1;</span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">typedef</span> <span class="dt">int</span> I2;</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="kw">static_assert</span><span class="op">(^</span>I1 <span class="op">==</span> <span class="op">^</span>I2<span class="op">)</span>;        <span class="co">// Rule 1: Same underlying declared entity (int).</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="kw">static_assert</span><span class="op">(^</span>I1 <span class="op">==</span> <span class="op">^</span><span class="dt">int</span><span class="op">)</span>;       <span class="co">// Ditto.</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="dt">float</span> f <span class="op">=</span> <span class="fl">3.0</span>, e;</span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="kw">static_assert</span><span class="op">(^</span>f <span class="op">==</span> <span class="op">^(</span>f<span class="op">))</span>;        <span class="co">// Rule 1: Same underlying declared entity (f).</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a><span class="kw">static_assert</span><span class="op">(^</span>f <span class="op">==</span> <span class="op">^::</span>f<span class="op">)</span>;        <span class="co">// Ditto.</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a><span class="kw">static_assert</span><span class="op">(^</span>f <span class="op">!=</span> <span class="op">^</span>e<span class="op">)</span>;          <span class="co">// Rule 1: Different underlying declared entities.</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a><span class="kw">static_assert</span><span class="op">(^</span>I1 <span class="op">!=</span> <span class="op">^</span><span class="dt">float</span><span class="op">)</span>;     <span class="co">// Ditto.</span></span>
+<span id="cb15-11"><a href="#cb15-11"></a></span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="dt">void</span> g<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb15-13"><a href="#cb15-13"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^</span>g<span class="op">(</span><span class="dv">1</span><span class="op">)</span>, s <span class="op">=</span> r;</span>
+<span id="cb15-14"><a href="#cb15-14"></a><span class="kw">static_assert</span><span class="op">(</span>r <span class="op">==</span> s<span class="op">)</span>;            <span class="co">// Rule 2: One is a copy of the other.</span></span>
+<span id="cb15-15"><a href="#cb15-15"></a><span class="kw">static_assert</span><span class="op">(^</span>f <span class="op">!=</span> <span class="op">^</span>g<span class="op">(</span><span class="dv">1</span><span class="op">))</span>;       <span class="co">// Rule 4: f is an id-expression and g(1) is not.</span></span>
+<span id="cb15-16"><a href="#cb15-16"></a><span class="kw">static_assert</span><span class="op">(^</span>g <span class="op">!=</span> <span class="op">^</span>g<span class="op">(</span><span class="dv">1</span><span class="op">))</span>;       <span class="co">// Rule 4: One is the reflection of an id-expression</span></span>
+<span id="cb15-17"><a href="#cb15-17"></a>                                  <span class="co">// and the other is the reflection of an expression</span></span>
+<span id="cb15-18"><a href="#cb15-18"></a>                                  <span class="co">// that is not an id-expression.</span></span>
+<span id="cb15-19"><a href="#cb15-19"></a><span class="kw">static_assert</span><span class="op">(^</span>g<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">==</span> <span class="op">^</span>g<span class="op">(</span><span class="dv">1</span><span class="op">))</span>;    <span class="co">// Rule 5: May fail because g(1) is an expression</span></span>
+<span id="cb15-20"><a href="#cb15-20"></a>                                  <span class="co">// that is not an id-expression</span></span></code></pre></div>
+</blockquote>
+<p>Programmers can more precisely specify whether they intend to compare entities or computed values (if possible) using splicers (e.g., <code class="sourceCode cpp"><span class="kw">typename</span><span class="op">[:</span>r<span class="op">:]</span></code> vs. just <code class="sourceCode cpp"><span class="op">[:</span>r<span class="op">:]</span></code>) or library facilities like <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>entity</code> described above. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="dt">void</span> f<span class="op">()</span>;   <span class="co">// #1</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span><span class="op">)</span>; <span class="co">// #2</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>entity<span class="op">(^</span>f<span class="op">(</span><span class="dv">42</span><span class="op">))</span>; <span class="co">// Designates function #2.</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="kw">static_assert</span><span class="op">(</span>r <span class="op">!=</span> <span class="op">^</span>f<span class="op">(</span><span class="dv">42</span><span class="op">))</span>;                   <span class="co">// Fails.</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="kw">static_assert</span><span class="op">(</span>r <span class="op">==</span> entity<span class="op">(^</span>f<span class="op">(</span><span class="dv">0</span><span class="op">)))</span>;            <span class="co">// Always succeeds..</span></span></code></pre></div>
+</blockquote>
+<p>Note that rule 1 above also applies to namespace aliases:</p>
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">namespace</span> N <span class="op">{}</span>;</span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">namespace</span> N1 <span class="op">=</span> N;</span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="kw">namespace</span> N2 <span class="op">=</span> N;</span>
+<span id="cb17-4"><a href="#cb17-4"></a><span class="kw">static_assert</span><span class="op">(^</span>N1 <span class="op">==</span> <span class="op">^</span>N2<span class="op">)</span>;</span>
+<span id="cb17-5"><a href="#cb17-5"></a><span class="kw">static_assert</span><span class="op">(^</span>N1 <span class="op">==</span> <span class="op">^</span>N<span class="op">)</span>;</span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="kw">namespace</span> M <span class="op">{}</span>;</span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="kw">static_assert</span><span class="op">(^</span>N <span class="op">!=</span> <span class="op">^</span>M<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>For reflections obtained from operands that involve template parameters, the result depends on the template arguments used for substitution:</p>
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span> <span class="kw">struct</span> Fun <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>  <span class="kw">static_assert</span><span class="op">(^</span>T <span class="op">==</span> <span class="op">^</span>U<span class="op">)</span>;</span>
+<span id="cb18-3"><a href="#cb18-3"></a><span class="op">}</span>;</span>
+<span id="cb18-4"><a href="#cb18-4"></a>Fun<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> whee;   <span class="co">// Okay.</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>Fun<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span><span class="op">&gt;</span> oops; <span class="co">// Error: static assertion fails.</span></span></code></pre></div>
+</blockquote>
+<p>We already mentioned that it is unspecified whether reflections obtained from expressions that do not designate a declared entity compare equal. That also applies to expressions that just consist of a literal. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">static_assert</span><span class="op">(^</span><span class="dv">1</span> <span class="op">==</span> <span class="op">^</span><span class="dv">1</span><span class="op">)</span>; <span class="co">// May or may not fail.</span></span></code></pre></div>
+</blockquote>
+<p>(These rules allow us to avoid having to provide a general definition of “expression equivalence”.) Note that the properties associated with a declared entity may change over various contexts, but that does not change the reflection. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> S;</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> <span class="op">^</span>S;</span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r2 <span class="op">=</span> <span class="op">^</span>S;</span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="kw">static_assert</span><span class="op">(</span>r1 <span class="op">==</span> r2<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>However, queries against the reflection value (e.g., to obtain a list of class members) may change as a consequence of the changes in the underlying entity.</p>
+<p>An additional comparison function is proposed:</p>
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> same_reflections<span class="op">(</span>info, info<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If either <code class="sourceCode cpp">x</code> or <code class="sourceCode cpp">y</code> designate an alias (type or namespace) <code class="sourceCode cpp">same_reflections<span class="op">(</span>x, y<span class="op">)</span></code> returns <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">x</code> and <code class="sourceCode cpp">y</code> designate the same alias and <code class="sourceCode cpp"><span class="kw">false</span></code> otherwise. Otherwise (i.e., if neither <code class="sourceCode cpp">x</code> nor <code class="sourceCode cpp">y</code> designate an alias), <code class="sourceCode cpp">same_reflections<span class="op">(</span>x, y<span class="op">)</span></code> returns <code class="sourceCode cpp">x <span class="op">==</span> y</code>. In other words, <code class="sourceCode cpp">same_reflections<span class="op">(</span>x, y<span class="op">)</span></code> is like the equality operator except that it doesn’t “look through” aliases. For example, with the namespace aliases <code class="sourceCode cpp">N1</code> and <code class="sourceCode cpp">N2</code> as above:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">using</span> std<span class="op">::</span>meta<span class="op">::</span>same_reflections;</span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">static_assert</span><span class="op">(!</span>same_reflections<span class="op">(^</span>N1, <span class="op">^</span>N2<span class="op">))</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="kw">static_assert</span><span class="op">(</span>same_reflections<span class="op">(^(^</span>N1<span class="op">)</span>, <span class="op">^(^</span>N1<span class="op">)))</span>;  <span class="co">// May fail.</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="kw">static_assert</span><span class="op">(!</span>same_reflections<span class="op">(^(^</span>N1<span class="op">)</span>, <span class="op">^(^</span>N2<span class="op">)))</span>; <span class="co">// May fail.</span></span></code></pre></div>
+</blockquote>
+<p>The latter two assertions have unspecified behavior because <code class="sourceCode cpp"><span class="op">^</span>N1</code> (or <code class="sourceCode cpp"><span class="op">^</span>N2</code>) is an expression that is not an <em>id-expression</em> and (as was noted above) the equality of the reflections of such expressions is unspecified.</p>
+<p>To compare the values of reflected objects, references, functions, or types, the reflection can first be spliced (see below).</p>
+<h2 data-number="4.5" id="a-note-about-linkage"><span class="header-section-number">4.5</span> A Note About Linkage<a href="#a-note-about-linkage" class="self-link"></a></h2>
+<p>Although in most respects we propose that <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> is an ordinary scalar type, we also give it one “magical” property with respect to linkage.</p>
+<p>Before explaining this property, consider again what a reflection value represents in practice: It is a handle to internal structures the compiler builds up for the current translation unit. So for code like:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">consteval</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>  <span class="cf">return</span> <span class="op">^</span>S;</span>
+<span id="cb23-4"><a href="#cb23-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>the compiler will construct an internal representation for struct <code class="sourceCode cpp">S</code> and when it encounters <code class="sourceCode cpp"><span class="op">^</span>S</code> it will update a two-way map between the internal representation of <code class="sourceCode cpp">S</code> and a small structure underlying the std::meta::info value returned by <code class="sourceCode cpp"><span class="op">^</span>S</code>.</p>
+<p>Now consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">// Header t.hpp:</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">template</span><span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info reflection<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{}</span>;</span>
+<span id="cb24-4"><a href="#cb24-4"></a></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="co">// File t1.cpp:</span></span>
+<span id="cb24-6"><a href="#cb24-6"></a><span class="pp">#include </span><span class="im">&quot;t.hpp&quot;</span></span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="kw">enum</span> E <span class="op">{}</span>;</span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="kw">consteval</span> <span class="kw">auto</span> d<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a>  <span class="cf">return</span> <span class="op">^</span>E;</span>
+<span id="cb24-10"><a href="#cb24-10"></a><span class="op">}</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a>X<span class="op">&lt;^</span>S<span class="op">&gt;</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a>  <span class="cf">return</span> X<span class="op">&lt;^</span>S<span class="op">&gt;{}</span>;</span>
+<span id="cb24-13"><a href="#cb24-13"></a><span class="op">}</span></span>
+<span id="cb24-14"><a href="#cb24-14"></a></span>
+<span id="cb24-15"><a href="#cb24-15"></a><span class="co">// File t2.cpp:</span></span>
+<span id="cb24-16"><a href="#cb24-16"></a><span class="pp">#include </span><span class="im">&quot;t.hpp&quot;</span></span>
+<span id="cb24-17"><a href="#cb24-17"></a><span class="kw">extern</span> X<span class="op">&lt;^</span>S<span class="op">&gt;</span> g<span class="op">()</span>;</span>
+<span id="cb24-18"><a href="#cb24-18"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-19"><a href="#cb24-19"></a>  g<span class="op">()</span>;</span>
+<span id="cb24-20"><a href="#cb24-20"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The files t1.cpp and t2.cpp are compiled separately. The contexts in which the <code class="sourceCode cpp"><span class="op">^</span>S</code> construct is encountered are therefore different and it is not practical to ensure that the <em>underlying</em> values (“bits”) of the <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> results are identical. However, it is <em>very</em> desirable that the types <code class="sourceCode cpp">X<span class="op">&lt;^</span>S<span class="op">&gt;</span></code> are the same types in both translation units and that the above example not produce an ODR violation.</p>
+<p>We therefore specify “by fiat” that: * <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span></code> to or from <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> is ill-formed * accessing the byte representation of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">:</span>info</code> lvalues produces unspecified (possibly inconsistent) values * <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> values <code class="sourceCode cpp">A1</code> and <code class="sourceCode cpp">A2</code> produce equivalent template arguments if <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>same_reflections<span class="op">(</span>A1, A2<span class="op">)</span></code> produces <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<p>However, it is unspecified if the following variation of the previous example is valid:</p>
+<blockquote>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="co">// File t1.cpp:</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="kw">enum</span> E <span class="op">{}</span>;</span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="kw">consteval</span> <span class="kw">auto</span> d<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb25-4"><a href="#cb25-4"></a>  <span class="cf">return</span> <span class="op">^(^</span>E<span class="op">)</span>;</span>
+<span id="cb25-5"><a href="#cb25-5"></a><span class="op">}</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>X<span class="op">&lt;^(^</span>S<span class="op">)&gt;</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb25-7"><a href="#cb25-7"></a>  <span class="cf">return</span> X<span class="op">&lt;^(^</span>S<span class="op">)&gt;{}</span>;</span>
+<span id="cb25-8"><a href="#cb25-8"></a><span class="op">}</span></span>
+<span id="cb25-9"><a href="#cb25-9"></a></span>
+<span id="cb25-10"><a href="#cb25-10"></a><span class="co">// File t2.cpp:</span></span>
+<span id="cb25-11"><a href="#cb25-11"></a><span class="kw">extern</span> X<span class="op">&lt;^(^</span>S<span class="op">)&gt;</span> g<span class="op">()</span>;</span>
+<span id="cb25-12"><a href="#cb25-12"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb25-13"><a href="#cb25-13"></a>  g<span class="op">()</span>;</span>
+<span id="cb25-14"><a href="#cb25-14"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>because it is unspecified if two occurrences of <code class="sourceCode cpp"><span class="op">^(^</span>S<span class="op">)</span></code> are equivalent.</p>
+<p>(In practice, this means that reflection values are mangled symbolically, according to what the reflection value actually designates.)</p>
+<h2 data-number="4.6" id="invalid-reflections"><span class="header-section-number">4.6</span> Invalid reflections<a href="#invalid-reflections" class="self-link"></a></h2>
+<p>In what follows we are going to propose a large collection of standard reflection operations, some of which generate new reflection values. Sometimes, the application of some of these operations will be meaningless. E.g., consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> add_const<span class="op">(</span>info<span class="op">)-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>which is meant to take a reflection of a type and add a type qualifier on top. However, what happens with something like:</p>
+<blockquote>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> add_const<span class="op">(^</span>std<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>which suggests the meaningless operation of adding a <code class="sourceCode cpp"><span class="kw">const</span></code> qualifier to namespace <code class="sourceCode cpp">std</code>? Our answer is that an implementation will not immediately trigger an error in that case, but instead create a reflection value that represents an error. Any attempt to splice such a reflection is ill-formed (but subject to SFINAE).</p>
+<p>It is useful for user code to also be able to produce invalid reflections. To that end, we propose the following function:</p>
+<blockquote>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>  <span class="kw">consteval</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a>    <span class="kw">auto</span> invalid_reflection<span class="op">(</span>std<span class="op">::</span>string_view message,</span>
+<span id="cb28-4"><a href="#cb28-4"></a>                            std<span class="op">::</span>source_location src_loc <span class="op">=</span> std<span class="op">::</span>source_location<span class="op">::</span>current<span class="op">())</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>      <span class="op">-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>which constructs a reflection that triggers a diagnostic if it is spliced outside a SFINAE context (ideally, with the given message and source location information). Here, the functions</p>
+<p>Invalid reflections can also be used to generate compiler diagnostics during constant evaluation using the <code class="sourceCode cpp">diagnose_error</code> function. This can be a valuable debugging aid for authors of metaprogramming libraries, and when used effectively, should improve the usability of those libraries.</p>
+<blockquote>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a>  <span class="kw">consteval</span> <span class="dt">void</span> diagnose_error<span class="op">(</span>info invalid_refl<span class="op">)</span> <span class="op">{...}</span>;</span>
+<span id="cb29-3"><a href="#cb29-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This function causes the compiler to emit an error diagnostic (formally: it makes the program ill-formed if it is invoked outside a deduction/SFINAE context), hopefully with the message and location provided by the argument. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">auto</span> r <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>invalid_reflection<span class="op">(</span>“Oops<span class="op">!</span>”<span class="op">)</span>;</span>
+<span id="cb30-2"><a href="#cb30-2"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb30-3"><a href="#cb30-3"></a>  diagnose_error<span class="op">(</span>r<span class="op">)</span>; <span class="co">// Error.</span></span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That last example is ill-formed and might trigger an error like:</p>
+<blockquote>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1"></a>“Test.cpp”, line 3: error: Invalid reflection</span>
+<span id="cb31-2"><a href="#cb31-2"></a>  diagnose_error(r); // Error.</span>
+<span id="cb31-3"><a href="#cb31-3"></a>  ^</span>
+<span id="cb31-4"><a href="#cb31-4"></a></span>
+<span id="cb31-5"><a href="#cb31-5"></a>“Test.cpp”, line 1: note: Oops!</span>
+<span id="cb31-6"><a href="#cb31-6"></a>  auto r = std::meta::invalid_reflection(“Oops!”);</span>
+<span id="cb31-7"><a href="#cb31-7"></a>           ^</span></code></pre></div>
+</blockquote>
+<p>Finally, we propose a predicate:</p>
+<blockquote>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_invalid<span class="op">(</span>info<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>that can be used to, e.g., filter out invalid reflective operations. We also provide a convenience overload of this function:</p>
+<blockquote>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_invalid<span class="op">(</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb33-3"><a href="#cb33-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>which returns <code class="sourceCode cpp"><span class="kw">true</span></code> if any element of the given span is an invalid reflection. This is particularly useful because some important reflection facilities return spans of reflection values that callers are likely to want to check for invalid entries.</p>
+<h2 data-number="4.7" id="initialization-of-reflections"><span class="header-section-number">4.7</span> Initialization of reflections<a href="#initialization-of-reflections" class="self-link"></a></h2>
+<p>Objects of reflection type are zero-initialized to an invalid reflection value (with unspecified associated information).</p>
+<h2 data-number="4.8" id="conversions-on-reflections"><span class="header-section-number">4.8</span> Conversions on reflections<a href="#conversions-on-reflections" class="self-link"></a></h2>
+<p>A prvalue of reflection type can be contextually converted to a prvalue of type bool. An invalid reflection converts to false; all other reflections convert to true.</p>
+<h2 data-number="4.9" id="hashing-reflections"><span class="header-section-number">4.9</span> Hashing reflections<a href="#hashing-reflections" class="self-link"></a></h2>
+<p>We propose that the <code class="sourceCode cpp">std<span class="op">::</span>hash</code> template be specialized for <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>. We also propose that the resulting hash value be consistent across translation units.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="splicing"><span class="header-section-number">5</span> Splicing<a href="#splicing" class="self-link"></a></h1>
+<p>In the context of this paper, “splicing” refers to the process of turning a “reflection value” back into a “program source thing”. We propose a basic <em>splice</em> construct to be of the form</p>
+<blockquote>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="op">[:</span> reflection <span class="op">:]</span></span></code></pre></div>
+</blockquote>
+<p>where <code class="sourceCode cpp"><span class="op">[:</span></code> and <code class="sourceCode cpp"><span class="op">:]</span></code> are each a sequence of two tokens and reflection is a constant-expression of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>. (Prior versions of this paper discuss various alternative syntax options. The choice presented here was first proposed in <span class="citation" data-cites="P2320R0">[<a href="#ref-P2320R0" role="doc-biblioref">P2320R0</a>]</span>, which obtained strong support in SG-7.)</p>
+<p>In general, and without qualification, <code class="sourceCode cpp"><span class="op">[:</span> R <span class="op">:]</span></code> splices an expression into the program (assuming <code class="sourceCode cpp">R</code> reflects a variable, function, or a constant expression). If <code class="sourceCode cpp">R</code> reflects both a constant value and a declared entity</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-N4766">
+<p>[N4766] David Sankel. 2018-08-11. Working Draft, C++ Extensions for Reflection. <br />
+<a href="https://wg21.link/n4766">https://wg21.link/n4766</a></p>
+</div>
+<div id="ref-P0425R0">
+<p>[P0425R0] Louis Dionne. 2017-06-18. Metaprogramming by design, not by accident. <br />
+<a href="https://wg21.link/p0425r0">https://wg21.link/p0425r0</a></p>
+</div>
+<div id="ref-P0595R2">
+<p>[P0595R2] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-09. std::is_constant_evaluated. <br />
+<a href="https://wg21.link/p0595r2">https://wg21.link/p0595r2</a></p>
+</div>
+<div id="ref-P0732R2">
+<p>[P0732R2] Jeff Snyder, Louis Dionne. 2018-06-06. Class Types in Non-Type Template Parameters. <br />
+<a href="https://wg21.link/p0732r2">https://wg21.link/p0732r2</a></p>
+</div>
+<div id="ref-P0784R7">
+<p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
+<a href="https://wg21.link/p0784r7">https://wg21.link/p0784r7</a></p>
+</div>
+<div id="ref-P0993R0">
+<p>[P0993R0] Andrew Sutton, Herb Sutter. 2014-04-02. Value-based Reflection. <br />
+<a href="https://wg21.link/p0993r0">https://wg21.link/p0993r0</a></p>
+</div>
+<div id="ref-P1073R3">
+<p>[P1073R3] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-06. Immediate functions. <br />
+<a href="https://wg21.link/p1073r3">https://wg21.link/p1073r3</a></p>
+</div>
+<div id="ref-P1240R0">
+<p>[P1240R0] Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2018-10-08. Scalable Reflection in C++. <br />
+<a href="https://wg21.link/p1240r0">https://wg21.link/p1240r0</a></p>
+</div>
+<div id="ref-P1240R1">
+<p>[P1240R1] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2019-10-08. Scalable Reflection in C++. <br />
+<a href="https://wg21.link/p1240r1">https://wg21.link/p1240r1</a></p>
+</div>
+<div id="ref-P1306R1">
+<p>[P1306R1] Andrew Sutton, Sam Goodrick, Daveed Vandevoorde. 2019-01-21. Expansion statements. <br />
+<a href="https://wg21.link/p1306r1">https://wg21.link/p1306r1</a></p>
+</div>
+<div id="ref-P1717R0">
+<p>[P1717R0] Andrew Sutton, Wyatt Childers. 2019-06-17. Compile-time Metaprogramming in C++. <br />
+<a href="https://wg21.link/p1717r0">https://wg21.link/p1717r0</a></p>
+</div>
+<div id="ref-P1907R1">
+<p>[P1907R1] Jens Maurer. 2019-11-08. Inconsistencies with non-type template parameters. <br />
+<a href="https://wg21.link/p1907r1">https://wg21.link/p1907r1</a></p>
+</div>
+<div id="ref-P2050R0">
+<p>[P2050R0] Andrew Sutton, Wyatt Childers. 2020-01-13. Tweaks to the design of source code fragments. <br />
+<a href="https://wg21.link/p2050r0">https://wg21.link/p2050r0</a></p>
+</div>
+<div id="ref-P2237R0">
+<p>[P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <br />
+<a href="https://wg21.link/p2237r0">https://wg21.link/p2237r0</a></p>
+</div>
+<div id="ref-P2320R0">
+<p>[P2320R0] Andrew Sutton, Wyatt Childers, Daveed Vandevoorde. 2021-02-15. The Syntax of Static Reflection. <br />
+<a href="https://wg21.link/p2320r0">https://wg21.link/p2320r0</a></p>
+</div>
+</div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>We used to think that C++/CLI had already appropriated that syntax, but C++/CLI (and related C++ dialects) only uses the caret for handle declarations and not for handle indirections.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>Which includes any parenthesized expression.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>This paper does not currently deal with structured bindings because their exact nature in the standard is still somewhat in flux at the time of this writing. Once they’re clarified, we intend to revisit their status as a “declared entity”.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>We could define it via <code class="sourceCode cpp"><span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">void</span><span class="op">)</span>;</code><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5" role="doc-endnote"><p>We use trailing return types for standard meta functions, but that’s just a stylistic preference. The traditional return type style is just as valid.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</div>
+</div>
+</body>
+</html>
