@@ -847,6 +847,505 @@ presented here was first proposed in [@P2320R0], which obtained strong support i
 
 In general, and without qualification, `[: R :]` splices an expression into the program (assuming `R` reflects
 a variable, function, or a constant expression). If `R` reflects both a constant value and a declared entity
+(e.g., `^f()` where `f` is a `consteval` function), `[: R :]` splices the constant value. Use
+`std::meta::entity` to get the other outcome. If `R` reflects a type or template, the splice construct
+must be qualified with an appropriate `typename` or `template` keyword, except in some contexts
+where the meaning is obvious. For example:
+
+::: bq
+```cpp
+struct S { struct I { }; };
+template<int N> struct X;
+auto refl = ˆS;
+auto tmpl = ˆX;
+void f() {
+  typename[:refl:] * x;  // Okay: declares x to be a pointer to S.
+  [:refl:] * x;          // Error: attempt to multiply int by x.
+  [:refl:]::I i;         // Okay: splice as part of a nested-name-specifier.
+  typename[:refl:]{};    // Okay: default-constructs an S temporary.
+  using T = [:refl:];    // Okay: operand must be a type.
+  struct C: [:refl:] {}; // Okay: base classes are types.
+  template[:tmpl:]<0>;   // Okay: names the specialization.
+  [:tmpl:] < 0 > x;      // Error: attempt to compare X with 0.
+}
+```
+:::
+
+When a splice construct is used as a template argument, without a disambiguating `typename` or
+`template` keyword, is not *a priori* assumed to be an expression. For example:
+
+::: bq
+```cpp
+template<typename T> void f();
+template<int N> void f();
+template<meta::info Refl> void ex1() {
+  f<[:Refl:]>(); // Could resolve to either function template above.
+}
+```
+:::
+
+To “force” Refl to be spliced as a type or an expression by adding typename or enclosing the splice in
+parentheses:
+
+::: bq
+```cpp
+template<meta::info Refl> void ex2() {
+  f<typename [:Refl:]>(); // splices a type
+  f<([:Refl:])>(); // splices an expression
+}
+```
+:::
+
+Here are some additional examples illustrating various uses of the splicing constructs:
+
+::: bq
+```cpp
+typename[:^int:] i = [:^42:];     // Same as “int i = 42;”.
+constexpr int J = 42;
+[:^i:] = [:^J:];                  // Same as “i = J;”.
+[:^i:] = [:^(J+1):];              // Same as “i = 43;”.
+[:^i:] = [:^[]{ return J; }():];  // Same as “i = 42;”.
+[:^i:] = [:^[=]{ int x = i; return J; }():];
+                                  // Error: The lambda call is not a constant expression.
+                                  // (Reflections of arbitrary expressions cannot be spliced.)
+namespace N { int f; }
+void [: ^N::f :](int);            // Error: Not an expression context.
+
+struct S {
+  consteval auto ri() { return ^S::i; };
+private:
+  int i:3;                        // Bit field.
+} s;
+int i1 = s.[:s.ri():];            // Okay: Refers to S::i without needing name lookup at this point.
+```
+:::
+
+Furthermore, we propose a sequence-generating splicing construct. Let reflection_range be a
+constant range such that
+
+::: bq
+```cpp
+for (std::meta::info r : reflection_range) ...
+```
+:::
+
+would successively set `r` to a sequence of values `r1`, `r2`, `r3`, ... `rN`.
+Then
+
+::: bq
+```cpp
+... [: reflection_range :] ...
+```
+:::
+
+expands like a parameter pack, but unlike a parameter pack it might be a heterogeneous expansion in that
+some elements of the expansions might be a type, a constant expression, or a template. The prefix `...`
+token turns the subsequent splicer into a “pack-like” construct, and the trailing `...` does the expansion as
+usual.
+
+Examples:
+
+::: bq
+```cpp
+std::meta::info t_args[] = { ^int, ^42 };
+template<typename T, T> struct X {};
+X<...[:t_args:]...> x; // Same as "X<int, 42> x;".
+template<typename, typename> struct Y {};
+Y<...[:t_args:]...> y; // Error: same as "Y<int, 42> y;".
+```
+:::
+
+Some observations:
+* Empty ranges and singleton ranges expand as expected.
+* If any expansion produces an ill-formed splice, the whole construct is ill-formed but subject to
+SFINAE.
+
+Splicing a function-local alias or declared entity outside its potential scope is ill-formed. For example:
+
+::: bq
+```cpp
+consteval auto refl_int_alias() {
+  typedef int Int;
+  return ^Int;
+}
+typename[:refl_int_alias():] x; // Error: Cannot splice local alias here.
+```
+:::
+
+Similarly, a parameter obtained from a function type `F` can be spliced as an expression only within the
+potential scope of the corresponding argument of a function of the same type. For example
+(`parameters_of` will be described later on):
+
+::: bq
+```cpp
+using F = int (int, int);
+auto params = std::meta::parameters_of(^F);
+int f(int p, int) {
+  return [:params[0]:]; // Okay: Same as “return p;”
+}
+
+int g(int, char) {
+  return [:params[0]:]; // Error: params[0] comes from function type
+}                       // “int (int, int)” but this function has
+                        // type “int (int, char)”.
+```
+:::
+
+## Splicing identifiers
+
+We anticipate the later addition of an *identifier-splice* construct (currently we use the `[# str #]`{.x} syntax
+in discussions among authors). However, that construct operates, in part, at the lexical level and has
+considerably more subtleties that the authors are exploring (in part through prototype implementations).
+We therefore do not propose syntax for it here, and we expect that the corresponding functionality will be
+proposed separately later on. Unlike prior versions of this paper, this revision does not yet propose the
+addition of such a capability.
+
+## Access checking
+
+Splicers provide an alternative way to refer to declarations and therefore we must decide whether they are
+subject to access control. Access control ordinarily applies to *names*, but the `[:...:]` construct does not
+create a name and is thus not subject to access checking. For example:
+
+::: bq
+```cpp
+class C {
+  using Int = int;
+public:
+  static consteval auto r() { return ^Int; };
+} c;
+typename[:C::r():] x; // Okay: x has type int
+```
+:::
+
+If we introduce identifier splicing later on (as suggested above), those kinds of splicers would be subject
+to access checking.
+
+# Templates and reflection
+
+Reflection mostly occurs “after instantiation”. For example, in:
+
+::: bq
+```cpp
+template<typename T> void f(T p) {
+  constexpr auto r = ^T;
+}
+```
+:::
+
+the expression `^T` is always a dependent expression that doesn’t produce an actual value until `f` is
+instantiated. I.e., this does not provide a mechanism to get a handle on a reflection for the template
+parameter `T` itself. However, that doesn’t mean that we don’t propose *any* facilities to reflect templated
+entities.
+
+## Template arguments
+
+We propose a function
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto has_template_arguments(info reflection)->bool {...};
+}
+```
+:::
+
+that returns `true` if and only if the given reflection corresponds to a template specialization (in the
+standard sense: implicit specializations are included).
+
+The actual template arguments can be obtained through
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto template_arguments_of(info reflection) ->std::span<info> {...};
+}
+```
+:::
+
+Conversely, the template producing a specialization can be obtained with
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto template_of(info reflection)->info {...};
+}
+```
+:::
+
+Note that the resulting reflection value (like that for reflecting a template directly) represents that template
+as completely known at any point it is examined (including not only the primary template definition, but
+also partial and full specializations). If the given reflection is not that of a
+specialization, an invalid reflection is returned.
+
+## Template substitution
+
+We also propose a facility that is the “dual notion” of the previous functions:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto substitute(info templ, std::span<info> args) ->info { ... };
+}
+```
+:::
+
+This produces a declared-entity reflection for an instance given a reflection for a template and a span of
+reflections for specific arguments. A substitution error in the immediate context of the substitution
+produces an invalid reflection (this is akin to SFINAE). A substitution error outside that immediate
+context renders the program ill-formed. An incomplete substitution (where not all parameters are
+substituted by nondependent arguments) also produces an invalid reflection. Note, this functionality can
+also be approximated using splicers with
+
+::: bq
+```cpp
+^template[:templ:]<...[:args:]...>
+```
+:::
+
+but having both improves readability depending on the context. The substitute form has the added
+advantage of not triggering an error for failures in the immediate context of the substitution[^substitution].
+
+[^substitution]: While working with our implementations, we have noticed that it would be very convenient if the lifting operator
+would be a SFINAE context as well. E.g., instantiating `^T::X` would produce an invalid reflection when `T = int`.
+That option is still being considered.
+
+Example:
+
+::: bq
+```cpp
+using namespace std::meta;
+template<typename ... Ts> struct X {};
+template<> struct X<int, int> {};
+constexpr info type = ^X<int, int, float>;
+constexpr info templ = template_of(type);
+constexpr span<info> args = template_arguments_of(type);
+constexpr info new_type = substitute(templ, args.subspan(0, 2));
+typename[:new_type:] xii; // Type X<int, int>, which selects the specialization.
+                          // There is no mechanism to instantiate a primary template
+                          // definition that is superseded by an explicit/partial
+                          // specialization.
+```
+:::
+
+The use of substitute in that last example could instead be written as:
+
+::: bq
+```cpp
+constexpr info new_type = ^template[:templ:]<...[:args.subspan(0, 2):]...>;
+```
+:::
+
+Another example illustrates how substitutions could produce non-SFINAE errors:
+
+::: bq
+```cpp
+template<typename T> struct A {
+  T::type I;
+};
+template<typename T, T::type N> struct Y {};
+constexpr info ASpec = ^A<int>; // No instantiation yet.
+constexpr info new_type2 =
+  substitute(^Y, std::vector<info>{ ASpec, ^5});
+    // Error: Substitution of Y<A<int>, 5> requires A<int> to be instantiated
+    // outside the immediate context of the substitution.
+```
+:::
+
+## Template parameters
+
+Although applying `^` to dependent constructs doesn’t produce an actual value until
+instantiation/substitution of the enclosing templated entity, reflections of template parameters can be
+obtained from the reflection of a template:
+
+::: bq
+```cpp
+namespace std::meta {
+consteval auto parameters_of(info reflection) -> std::span<info> {...};
+}
+```
+:::
+
+Given the reflection of a template, this returns a sequence of reflections for each template parameter. Each
+of these reflections can be a type, a constant, or a template. However, not all operations applicable to
+types/constants/templates are necessarily applicable to these reflections. For example, it would not be
+possible to apply the `std::meta::substitute` operation (when available) on the reflection of
+template template parameters (but it is possible to apply the `std::meta::parameters_of` to such a
+reflection).
+
+# The standard metaprogramming library
+
+We have already described a number of “metafunctions” living in namespace `std::meta` that work
+with reflections (`entity`, `invalid_reflection`, `parameters_of`, etc.). We propose that these
+and many others make up a new section of the C++ standard library that we call “the C++ standard
+metaprogramming library” and which is made available to a program by including a new standard header
+`<meta>`.
+
+Besides the metafunctions that we have described so far, we add additional functions based on two
+sources:
+* the existing standard library’s [meta] section (described in the “General utilities” clause of the
+current working paper), and
+* the [reflect] section of the original “Reflection TS” ([@N4856]).
+
+We delve into how to “transcribe” those additional metafunctions from the original source below, but first
+a note about the API design.
+
+## Sequence and string values
+
+Many metafunctions deal with sequences (particularly, sequences of reflection values) and with string
+values (particularly, names of entities). Earlier versions of this paper used `std::vector` and
+`std::string` types for this. However, that was counting on those types being available for constant
+evaluation. [@P0784R7] *mostly* achieved that availability, but the inability to have nontransient dynamic
+allocation means that, e.g., using `std::string` would make it difficult to transfer a reflection string
+into the run-time domain.
+
+We therefore now use `std::span` and `std::string_view` types for this, since they do not require
+dynamic allocation of backing storage. Instead, the compiler will have to provide static storage for, e.g.,
+reflected strings. In practice, an implementation will want to be careful to only emit those strings in object
+code if they are actually used in the run-time domain, but that is not a particularly difficult
+implementation challenge.
+
+## Transcribing the standard library's [meta] section
+
+The standard library [meta] section (in clause [utilities]) provides a large number of utilities to examine
+and construct types. We propose that all those utilities be given a counterpart in the value-based reflection
+world, with needed declarations made available through a new standard header `<meta>`.
+
+For example, consider the type transformation trait
+
+::: bq
+```cpp
+std::make_signed<T>
+```
+:::
+
+which produces a result through its member type
+
+::: bq
+```cpp
+std::make_signed<T>::type
+```
+:::
+
+We propose to have a `std::meta` counterpart as follows:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto make_signed(info reflection)->info {...};
+}
+```
+:::
+
+This is expected to be implemented using an intrinsic in the compiler (although that is not a requirement).
+For a reflection value `r` corresponding to a type `T` such that
+
+::: bq
+```cpp
+std::make_signed<T>::type
+```
+:::
+
+is valid, using the new function as `make_signed(r)` is equivalent to:
+
+::: bq
+```cpp
+^std::make_signed<typename(r)>::type
+```
+:::
+
+(except for not actually instantiating templates in a quality implementation). For a reflection value for
+which the above transformation would not be valid (e.g., `^void`), however, the function returns an
+invalid reflection.
+
+Most templates specified in [meta.trans] can be transcribed in a similar way, but a few take additional
+nontype template parameters. Their transcription is also straightforward however. We illustrate this with
+the `std::enable_if` template whose consteval counterpart can be implemented efficiently
+without intrinsics. The already-standard template-based interface is usually implemented as follows:
+
+::: bq
+```cpp
+namespace std {
+  template<bool, typename T = void> struct enable_if {};
+  template<typename T> struct enable_if<true, T> {
+    using type = T;
+  };
+}
+```
+:::
+
+The reflection counterpart is then (including a hypothetical implementation)
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto enable_if(bool cond, info type = ^void) -> info {
+    if (cond) {
+      return type;
+    } else {
+      return invalid_reflection("enable_if condition false");
+    }
+  }
+}
+```
+:::
+
+(We encourage programmers to prefer *requires-clauses* over enable_if for constraining templates.)
+
+The type traits predicates described in [meta.unary] and [meta.rel] are just as easily mapped to the
+value-based reflection world. For example, the three templates
+
+::: bq
+```cpp
+namespace std {
+  template<typename T> struct is_union;
+  template<typename T, typename ... Args> struct is_constructible;
+  template<typename B, typename D> struct is_base_of;
+}
+```
+:::
+
+have counterparts as follows:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_union(info reflection)->bool {...};
+  consteval auto is_constructible(info reflection, std::span<info> arg_types) ->bool {...};
+  consteval auto is_base_of(info base_type, info derived_type)->bool {...};
+}
+```
+:::
+
+The other cases follow the same patterns.
+
+The three templates in [meta.unary.prop.query]:
+
+::: bq
+```cpp
+namespace std {
+  template<typename T> struct alignment_of;
+  template<typename T> struct rank;
+  template<typename T, unsigned I = 0> struct extent;
+}
+```
+:::
+
+are slightly irregular, but the corresponding functions can still be intuited:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto alignment_of(info type)->std::size_t {...};
+  consteval auto rank(info type)->int {...};
+  consteval auto extent(info type, unsigned dim = 0)->int {...};
+}
+```
+:::
+
+The helper templates in [meta.help] and [meta.logical] are not needed for value-based reflection since
+their counterparts are core language features (like the integer types and the logical operators).
+
+## Adapting the Reflection TS' [reflect] section
 
 ---
 references:
