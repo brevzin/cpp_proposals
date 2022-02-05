@@ -599,9 +599,29 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#sequence-and-string-values"><span class="toc-section-number">7.1</span> Sequence and string values<span></span></a></li>
 <li><a href="#transcribing-the-standard-librarys-meta-section"><span class="toc-section-number">7.2</span> Transcribing the standard library’s [meta] section<span></span></a></li>
-<li><a href="#adapting-the-reflection-ts-reflect-section"><span class="toc-section-number">7.3</span> Adapting the Reflection TS’ [reflect] section<span></span></a></li>
+<li><a href="#adapting-the-reflection-ts-reflect-section"><span class="toc-section-number">7.3</span> Adapting the Reflection TS’ [reflect] section<span></span></a>
+<ul>
+<li><a href="#predicates"><span class="toc-section-number">7.3.1</span> Predicates<span></span></a></li>
+<li><a href="#singular-properties"><span class="toc-section-number">7.3.2</span> Singular Properties<span></span></a></li>
+<li><a href="#plural-properties"><span class="toc-section-number">7.3.3</span> Plural properties<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">8</span> References<span></span></a></li>
+<li><a href="#anonymous-unions"><span class="toc-section-number">7.4</span> Anonymous unions<span></span></a></li>
+<li><a href="#other-facilities"><span class="toc-section-number">7.5</span> Other Facilities<span></span></a>
+<ul>
+<li><a href="#reflecting-values"><span class="toc-section-number">7.5.1</span> Reflecting values<span></span></a></li>
+</ul></li>
+</ul></li>
+<li><a href="#metaprogramming-examples"><span class="toc-section-number">8</span> Metaprogramming Examples<span></span></a>
+<ul>
+<li><a href="#hashing"><span class="toc-section-number">8.1</span> Hashing<span></span></a></li>
+<li><a href="#schema-generation"><span class="toc-section-number">8.2</span> Schema generation<span></span></a></li>
+<li><a href="#schema-generation-take-two"><span class="toc-section-number">8.3</span> Schema generation (take two)<span></span></a></li>
+<li><a href="#template-argument-list-assignment"><span class="toc-section-number">8.4</span> Template argument list assignment<span></span></a></li>
+<li><a href="#dealing-more-efficiently-with-parameter-packs"><span class="toc-section-number">8.5</span> Dealing more efficiently with parameter packs<span></span></a></li>
+<li><a href="#applying-functions-to-all-members"><span class="toc-section-number">8.6</span> Applying functions to all members<span></span></a></li>
+</ul></li>
+<li><a href="#appendix-meta-library-synopsis"><span class="toc-section-number">9</span> Appendix: Meta-library synopsis<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">10</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision history<a href="#revision-history" class="self-link"></a></h1>
@@ -1304,15 +1324,1140 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>The helper templates in [meta.help] and [meta.logical] are not needed for value-based reflection since their counterparts are core language features (like the integer types and the logical operators).</p>
 <h2 data-number="7.3" id="adapting-the-reflection-ts-reflect-section"><span class="header-section-number">7.3</span> Adapting the Reflection TS’ [reflect] section<a href="#adapting-the-reflection-ts-reflect-section" class="self-link"></a></h2>
-<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
+<p>The Reflection TS (<span class="citation" data-cites="N4818">[<a href="#ref-N4818" role="doc-biblioref">N4818</a>]</span>) introduces a large number of template metafunctions. This proposal steals many of those features and adapts them to the value-based reflection world. However, we make some changes to better align the semantics with the constraints of the language definition and the flexibility of our value-based approach.</p>
+<h3 data-number="7.3.1" id="predicates"><span class="header-section-number">7.3.1</span> Predicates<a href="#predicates" class="self-link"></a></h3>
+<p>Let’s start with the predicates (metafunctions returning a bool value). For example, <code class="sourceCode cpp">is_public</code> gets a counterpart as follows:</p>
+<blockquote>
+<div class="sourceCode" id="cb66"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb66-2"><a href="#cb66-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_public<span class="op">(</span>info base_or_mem<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb66-3"><a href="#cb66-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That function fails to evaluate to a constant if <code class="sourceCode cpp">base_or_mem</code> does not designate a base class or a class member (that constraint corresponds to the concepts requirements imposed for the class template <code class="sourceCode cpp">is_public</code> proposed in the Reflection TS). <code class="sourceCode cpp">is_protected</code>, <code class="sourceCode cpp">is_private</code>, <code class="sourceCode cpp">is_accessible</code> (which checks whether a member is accessible from the context of invocation), <code class="sourceCode cpp">is_virtual</code>, and <code class="sourceCode cpp">is_final</code> are handled in the same way. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb67"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1"></a><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
+<span id="cb67-2"><a href="#cb67-2"></a><span class="kw">constexpr</span> <span class="dt">bool</span> t <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>is_public<span class="op">(^</span>S<span class="op">::</span>x<span class="op">)</span>; <span class="co">// = true;</span></span>
+<span id="cb67-3"><a href="#cb67-3"></a><span class="kw">constexpr</span> <span class="dt">bool</span> e <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>is_public<span class="op">(^</span>S<span class="op">)</span>;    <span class="co">// Error: Not a constant because ^S is not a base or member.</span></span></code></pre></div>
+</blockquote>
+<p>The <code class="sourceCode cpp">is_unnamed</code> metafunction is transcribed similarly:</p>
+<blockquote>
+<div class="sourceCode" id="cb68"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb68-1"><a href="#cb68-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb68-2"><a href="#cb68-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_unnamed<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb68-3"><a href="#cb68-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>but this time the function only evaluates to a constant if the given reflection represents a namespace, a data member, a function, a template, a variable, a type, or an enumerator. Failing to evaluate a constant will result in an error, or a deduction failure if in a SFINAE context.</p>
+<p><code class="sourceCode cpp">is_scoped_enum</code> becomes</p>
+<blockquote>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb69-2"><a href="#cb69-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_scoped_enum<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb69-3"><a href="#cb69-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>and always evaluates to a constant.</p>
+<p>We propose to replace <code class="sourceCode cpp">is_constexpr</code> by:</p>
+<blockquote>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb70-2"><a href="#cb70-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_declared_constexpr<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb70-3"><a href="#cb70-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>which is a constant value if <code class="sourceCode cpp">entity</code> designates a variable, a function, a static data member, or a template for these. (We propose the alternative name to distinguish the entities that are declared with the <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> specifier from entities that are effectively <code class="sourceCode cpp"><span class="kw">constexpr</span></code> (e.g., a function template may be declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and its instances would produce <code class="sourceCode cpp"><span class="kw">true</span></code> values with this predicate; however, the instances may not actually be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions; conversely, lambda call operators and special member functions may be <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions without being declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code>).</p>
+<p>Immediate (<code class="sourceCode cpp"><span class="kw">consteval</span></code>) functions and function templates are also identifiable:</p>
+<blockquote>
+<div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb71-2"><a href="#cb71-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_consteval<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb71-3"><a href="#cb71-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Instead of <code class="sourceCode cpp">is_static</code> (for variables) we propose:</p>
+<blockquote>
+<div class="sourceCode" id="cb72"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb72-2"><a href="#cb72-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_static_storage_duration<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb72-3"><a href="#cb72-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>because <code class="sourceCode cpp">is_static</code> suggests a query about a storage class specifier rather than a storage duration.</p>
+<blockquote>
+<div class="sourceCode" id="cb73"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb73-2"><a href="#cb73-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_inline<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb73-3"><a href="#cb73-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>produces a constant value for reflections of variables, functions, variable/function templates, and namespaces.</p>
+<p>A number of function properties produce a constant value for reflections of functions only:</p>
+<blockquote>
+<div class="sourceCode" id="cb74"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb74-1"><a href="#cb74-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb74-2"><a href="#cb74-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_deleted<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb74-3"><a href="#cb74-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_defaulted<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb74-4"><a href="#cb74-4"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_explicit<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb74-5"><a href="#cb74-5"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_override<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb74-6"><a href="#cb74-6"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_pure_virtual<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb74-7"><a href="#cb74-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The following predicates always produce a constant value given a reflection. They produce a <code class="sourceCode cpp"><span class="kw">false</span></code> value for invalid reflections, and otherwise return <code class="sourceCode cpp"><span class="kw">true</span></code> if the predicate applies to the reflected entity:</p>
+<blockquote>
+<div class="sourceCode" id="cb75"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb75-1"><a href="#cb75-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb75-2"><a href="#cb75-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_class_member<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-3"><a href="#cb75-3"></a>    <span class="co">// Return true for class and class template members.</span></span>
+<span id="cb75-4"><a href="#cb75-4"></a>  <span class="op">...</span></span>
+<span id="cb75-5"><a href="#cb75-5"></a>  <span class="op">}</span>;</span>
+<span id="cb75-6"><a href="#cb75-6"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_local<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-7"><a href="#cb75-7"></a>    <span class="co">// Return true for local variables, local members.</span></span>
+<span id="cb75-8"><a href="#cb75-8"></a>  <span class="op">...</span></span>
+<span id="cb75-9"><a href="#cb75-9"></a>      <span class="op">}</span>;</span>
+<span id="cb75-10"><a href="#cb75-10"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_namespace<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-11"><a href="#cb75-11"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-12"><a href="#cb75-12"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_type<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-13"><a href="#cb75-13"></a>    <span class="co">// Return true for types and type aliases.</span></span>
+<span id="cb75-14"><a href="#cb75-14"></a>    <span class="op">...</span></span>
+<span id="cb75-15"><a href="#cb75-15"></a>  <span class="op">}</span>;</span>
+<span id="cb75-16"><a href="#cb75-16"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_incomplete_type<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span>;</span>
+<span id="cb75-17"><a href="#cb75-17"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_closure_type<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-18"><a href="#cb75-18"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_captures<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-19"><a href="#cb75-19"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_default_ref_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-20"><a href="#cb75-20"></a>    <span class="co">// Return true even if there is no effective capture (i.e., it’s syntactical only).</span></span>
+<span id="cb75-21"><a href="#cb75-21"></a>    <span class="op">...</span></span>
+<span id="cb75-22"><a href="#cb75-22"></a>  <span class="op">}</span>;</span>
+<span id="cb75-23"><a href="#cb75-23"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_default_copy_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-24"><a href="#cb75-24"></a>    <span class="co">// Return true even if there is no effective capture (i.e., it’s syntactical only).</span></span>
+<span id="cb75-25"><a href="#cb75-25"></a>    <span class="op">...</span></span>
+<span id="cb75-26"><a href="#cb75-26"></a>  <span class="op">}</span>;</span>
+<span id="cb75-27"><a href="#cb75-27"></a></span>
+<span id="cb75-28"><a href="#cb75-28"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_simple_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-29"><a href="#cb75-29"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_ref_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-30"><a href="#cb75-30"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_copy_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-31"><a href="#cb75-31"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_explicit_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-32"><a href="#cb75-32"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_init_capture<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-33"><a href="#cb75-33"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_function_parameter<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-34"><a href="#cb75-34"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_template_parameter<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-35"><a href="#cb75-35"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_class_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-36"><a href="#cb75-36"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_alias<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-37"><a href="#cb75-37"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_alias_template<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-38"><a href="#cb75-38"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_enumerator<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-39"><a href="#cb75-39"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_variable<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-40"><a href="#cb75-40"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_variable_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-41"><a href="#cb75-41"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_static_data_member<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-42"><a href="#cb75-42"></a>    <span class="cf">return</span> is_variable<span class="op">(</span>entity<span class="op">)</span> <span class="op">&amp;&amp;</span> is_class_member<span class="op">(</span>entity<span class="op">)</span>;</span>
+<span id="cb75-43"><a href="#cb75-43"></a>  <span class="op">}</span>;</span>
+<span id="cb75-44"><a href="#cb75-44"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_nonstatic_data_member<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-45"><a href="#cb75-45"></a>    <span class="co">// Return true for nonstatic data members, which includes bit fields.</span></span>
+<span id="cb75-46"><a href="#cb75-46"></a>    <span class="op">...</span></span>
+<span id="cb75-47"><a href="#cb75-47"></a>  <span class="op">}</span>;</span>
+<span id="cb75-48"><a href="#cb75-48"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_bit_field<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-49"><a href="#cb75-49"></a>    <span class="co">// Return true for bit fields, but also for expressions that are bit field selections.</span></span>
+<span id="cb75-50"><a href="#cb75-50"></a>    <span class="op">...</span></span>
+<span id="cb75-51"><a href="#cb75-51"></a>  <span class="op">}</span>;</span>
+<span id="cb75-52"><a href="#cb75-52"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_base_class<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-53"><a href="#cb75-53"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_direct_base_class<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-54"><a href="#cb75-54"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_virtual_base_class<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-55"><a href="#cb75-55"></a>  <span class="cf">return</span> is_base_class<span class="op">(</span>entity<span class="op">)</span> <span class="op">&amp;&amp;</span> is_virtual<span class="op">(</span>entity<span class="op">)</span>;</span>
+<span id="cb75-56"><a href="#cb75-56"></a>  <span class="op">}</span></span>
+<span id="cb75-57"><a href="#cb75-57"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_function<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-58"><a href="#cb75-58"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_function_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-59"><a href="#cb75-59"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_member_function<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-60"><a href="#cb75-60"></a>    <span class="cf">return</span> is_function<span class="op">(</span>entity<span class="op">)</span> <span class="op">&amp;&amp;</span> is_class_member<span class="op">(</span>entity<span class="op">)</span>;</span>
+<span id="cb75-61"><a href="#cb75-61"></a>  <span class="op">}</span>;</span>
+<span id="cb75-62"><a href="#cb75-62"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_member_function_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb75-63"><a href="#cb75-63"></a>    <span class="cf">return</span> is_function_template<span class="op">(</span>entity<span class="op">)</span> <span class="op">&amp;&amp;</span> is_class_member<span class="op">(</span>entity<span class="op">)</span>;</span>
+<span id="cb75-64"><a href="#cb75-64"></a>  <span class="op">}</span>;</span>
+<span id="cb75-65"><a href="#cb75-65"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_static_member_function<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-66"><a href="#cb75-66"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_static_member_function_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-67"><a href="#cb75-67"></a></span>
+<span id="cb75-68"><a href="#cb75-68"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_nonstatic_member_function<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-69"><a href="#cb75-69"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_nonstatic_member_function_template<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-70"><a href="#cb75-70"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_constructor<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-71"><a href="#cb75-71"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_constructor_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-72"><a href="#cb75-72"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_destructor<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-73"><a href="#cb75-73"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_destructor_template<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb75-74"><a href="#cb75-74"></a><span class="op">}</span> <span class="co">// namespace std::meta</span></span></code></pre></div>
+</blockquote>
+<p>Note that <code class="sourceCode cpp">is_bit_field</code> above is more general than what the TS proposed since it applies not only to the reflection of data members but also to expressions, because “bitfieldness” is a significant property of an expression. Similarly, we add the following five predicates (with no equivalent in the TS) for reflections of expressions:</p>
+<blockquote>
+<div class="sourceCode" id="cb76"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb76-1"><a href="#cb76-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_lvalue<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span>;</span>
+<span id="cb76-2"><a href="#cb76-2"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_xvalue<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span>;</span>
+<span id="cb76-3"><a href="#cb76-3"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_prvalue<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span>;</span>
+<span id="cb76-4"><a href="#cb76-4"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_glvalue<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb76-5"><a href="#cb76-5"></a>  <span class="cf">return</span> is_lvalue<span class="op">(</span>reflection<span class="op">)</span> <span class="op">||</span> is_xvalue<span class="op">(</span>reflection<span class="op">)</span>;</span>
+<span id="cb76-6"><a href="#cb76-6"></a><span class="op">}</span></span>
+<span id="cb76-7"><a href="#cb76-7"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_rvalue<span class="op">(</span>info reflection<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb76-8"><a href="#cb76-8"></a>  <span class="cf">return</span> is_pralue<span class="op">(</span>reflection<span class="op">)</span> <span class="op">||</span> is_xvalue<span class="op">(</span>reflection<span class="op">)</span>;</span>
+<span id="cb76-9"><a href="#cb76-9"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The following predicate produces a constant value given the reflection of a function type or closure type, or an alias thereof:</p>
+<blockquote>
+<div class="sourceCode" id="cb77"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb77-1"><a href="#cb77-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb77-2"><a href="#cb77-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_ellipsis<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb77-3"><a href="#cb77-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The following predicate produces a constant value given the reflection of a function type or an alias thereof:</p>
+<blockquote>
+<div class="sourceCode" id="cb78"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb78-1"><a href="#cb78-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb78-2"><a href="#cb78-2"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_member_function_type<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb78-3"><a href="#cb78-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Given the reflection of a function or template parameter, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">:</span>has_default</code> returns whether it has an associated default argument:</p>
+<blockquote>
+<div class="sourceCode" id="cb79"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb79-1"><a href="#cb79-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb79-2"><a href="#cb79-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_default<span class="op">(</span>info entity<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{...}</span>;</span>
+<span id="cb79-3"><a href="#cb79-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<h3 data-number="7.3.2" id="singular-properties"><span class="header-section-number">7.3.2</span> Singular Properties<a href="#singular-properties" class="self-link"></a></h3>
+<p>This section lists facilities that return properties described with a “single value”. The following function can be used to identify a source location of a declared entity:</p>
+<blockquote>
+<div class="sourceCode" id="cb80"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb80-1"><a href="#cb80-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb80-2"><a href="#cb80-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> source_location_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span>std<span class="op">::</span>source_location <span class="op">{...}</span>;</span>
+<span id="cb80-3"><a href="#cb80-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Although this produces a constant result for any reflection value, the returned value is unspecified if the reflection is not that of a declared entity (or alias).</p>
+<p>The name of declared entities can be accessed through the following:</p>
+<blockquote>
+<div class="sourceCode" id="cb81"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb81-1"><a href="#cb81-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb81-2"><a href="#cb81-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> name_of<span class="op">(</span>info entity<span class="op">)-&gt;</span>std<span class="op">::</span>string_view <span class="op">{...}</span>;</span>
+<span id="cb81-3"><a href="#cb81-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> display_name_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span>std<span class="op">::</span>string_view <span class="op">{...}</span>;</span>
+<span id="cb81-4"><a href="#cb81-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>For named declared entities/aliases, <code class="sourceCode cpp">name_of</code> returns a constant string_view describing the same identifier as that produced by the <code class="sourceCode cpp"><span class="op">[:</span> info <span class="op">:]</span></code> splicer. For any other operand, it produces a constant empty <code class="sourceCode cpp">string_view</code>.</p>
+<p>The <code class="sourceCode cpp">display_name_of</code> function produces an unspecified constant non-empty <code class="sourceCode cpp">string_view</code> for any reflection (implementations are encouraged to produce a string that is helpful in identifying the reflected item).</p>
+<p>Aliases can be “looked through” using the aforementioned function <code class="sourceCode cpp">entity</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb82"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb82-1"><a href="#cb82-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb82-2"><a href="#cb82-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> entity<span class="op">(</span>info reflection<span class="op">)-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb82-3"><a href="#cb82-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>A reflection for the type associated with an entity or expression can be retrieved with</p>
+<blockquote>
+<div class="sourceCode" id="cb83"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb83-1"><a href="#cb83-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb83-2"><a href="#cb83-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> type_of<span class="op">(</span>info reflection<span class="op">)-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb83-3"><a href="#cb83-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If reflection describes an entity (not an expression) that is not a variable, base class, data member, function, or enumerator, this function returns an invalid reflection.</p>
+<p>A “parent” entity can be identified with</p>
+<blockquote>
+<div class="sourceCode" id="cb84"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb84-1"><a href="#cb84-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb84-2"><a href="#cb84-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> parent_of<span class="op">(</span>info reflection<span class="op">)-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb84-3"><a href="#cb84-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>For members of classes or namespaces this returns a reflection of the innermost class or namespace. For a base class, this returns the class type from which the base class was obtained (only direct and virtual base classes can be reflected). For function-local entities that are not class members, <code class="sourceCode cpp">parent_of</code> returns the a reflection of the enclosing function. For reflections that do not designate an alias or a declared entity, <code class="sourceCode cpp">parent_of</code> returns an invalid reflection.</p>
+<p>The innermost enclosing function and class can also be queried:</p>
+<blockquote>
+<div class="sourceCode" id="cb85"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb85-1"><a href="#cb85-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb85-2"><a href="#cb85-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> current_function<span class="op">()-&gt;</span>info <span class="op">{...}</span></span>
+<span id="cb85-3"><a href="#cb85-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> current_class_type<span class="op">()-&gt;</span>info <span class="op">{...}</span></span>
+<span id="cb85-4"><a href="#cb85-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That is particularly useful to deal more efficiently with parameter packs (an example will be presented later on). Note that when invoked from an immediate function in a context that does not require a constant-expression, these functions return the result as if invoked from the calling function. Given the reflection of a base or nonstatic data member of a class (but not a class template), layout information can be retrieved with the following functions:</p>
+<blockquote>
+<div class="sourceCode" id="cb86"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb86-1"><a href="#cb86-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb86-2"><a href="#cb86-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> byte_offset_of<span class="op">(</span>info entity<span class="op">)-&gt;</span>std<span class="op">::</span><span class="dt">size_t</span> <span class="op">{...}</span>;</span>
+<span id="cb86-3"><a href="#cb86-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_offset_of<span class="op">(</span>info entity<span class="op">)-&gt;</span>std<span class="op">::</span><span class="dt">size_t</span> <span class="op">{...}</span>;</span>
+<span id="cb86-4"><a href="#cb86-4"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> byte_size_of<span class="op">(</span>info entity<span class="op">)-&gt;</span>std<span class="op">::</span><span class="dt">size_t</span> <span class="op">{...}</span>;</span>
+<span id="cb86-5"><a href="#cb86-5"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_size_of<span class="op">(</span>info entity<span class="op">)-&gt;</span>std<span class="op">::</span><span class="dt">size_t</span> <span class="op">{...}</span>;</span>
+<span id="cb86-6"><a href="#cb86-6"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>For reflections that do not designate a base or a nonstatic data member, this does not successfully produce a constant value. <code class="sourceCode cpp">byte_offset_of</code> returns the byte offset of the given base or nonstatic data member (within the parent class). For bit-fields, the offset of the first byte containing the bit field is returned; the bit offset of the first bit (counting from the least significant bit) within that byte is produced by <code class="sourceCode cpp">bit_offset_of</code> (for non-bit-fields, that function returns zero). <code class="sourceCode cpp">byte_size_of</code> produces the allocated size of the associated subobject, except that is does not produce a constant value for bit fields (for base classes, the result may be less than <code class="sourceCode cpp"><span class="kw">sizeof</span></code> applied to the base class type). <code class="sourceCode cpp">bit_size_of</code> produces the allocated size of the associated bit field subobject, and does not produce a constant value for non-bit-field reflections. (A precise specification of this requires a slight tightening of the C++ object model. All implementations already conform to the stricter model.)</p>
+<p>The following facilities permit examining parameter types and the <code class="sourceCode cpp"><span class="kw">this</span></code> binding type:</p>
+<blockquote>
+<div class="sourceCode" id="cb87"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb87-1"><a href="#cb87-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb87-2"><a href="#cb87-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> this_ref_type<span class="op">(</span>info func_type<span class="op">)-&gt;</span>info <span class="op">{...}</span>;</span>
+<span id="cb87-3"><a href="#cb87-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>For a member function type <code class="sourceCode cpp">this_ref_type</code> returns the reflection of the parent class associated with the member type, with any member function <em>cv-qualifiers</em> and <em>ref-qualifiers</em> added on top. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb88"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb88-1"><a href="#cb88-1"></a><span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb88-2"><a href="#cb88-2"></a>  <span class="dt">int</span> f<span class="op">()</span> <span class="kw">volatile</span> <span class="op">&amp;&amp;</span>;</span>
+<span id="cb88-3"><a href="#cb88-3"></a>  <span class="dt">int</span> g<span class="op">()</span> <span class="kw">const</span>;</span>
+<span id="cb88-4"><a href="#cb88-4"></a><span class="op">}</span> s;</span>
+<span id="cb88-5"><a href="#cb88-5"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> this_ref_type<span class="op">(^</span>s<span class="op">.</span>f<span class="op">())</span>; <span class="co">// Reflection for type “S volatile &amp;&amp;”.</span></span>
+<span id="cb88-6"><a href="#cb88-6"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> this_ref_type<span class="op">(^</span>s<span class="op">.</span>g<span class="op">())</span>; <span class="co">// Reflection for type “S const”.</span></span></code></pre></div>
+</blockquote>
+<h3 data-number="7.3.3" id="plural-properties"><span class="header-section-number">7.3.3</span> Plural properties<a href="#plural-properties" class="self-link"></a></h3>
+<p>This section lists metafunctions that return <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span></code> values describing “plural properties” (such as lists of members).</p>
+<p>We propose the following function templates to retrieve subobject information:</p>
+<blockquote>
+<div class="sourceCode" id="cb89"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb89-1"><a href="#cb89-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb89-2"><a href="#cb89-2"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> <span class="op">...</span>Fs<span class="op">&gt;</span></span>
+<span id="cb89-3"><a href="#cb89-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> members_of<span class="op">(</span>info class_type, Fs <span class="op">...</span>filters<span class="op">)</span> <span class="op">-&gt;</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{...}</span>;</span>
+<span id="cb89-4"><a href="#cb89-4"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> <span class="op">...</span>Fs<span class="op">&gt;</span></span>
+<span id="cb89-5"><a href="#cb89-5"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bases_of<span class="op">(</span>info class_type, Fs <span class="op">...</span>filters<span class="op">)</span> <span class="op">-&gt;</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{...}</span>;</span>
+<span id="cb89-6"><a href="#cb89-6"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If called with an argument for <code class="sourceCode cpp">class_type</code> that is the reflection of a non-class type or a capturing closure type (or an alias/cv-qualified version thereof), these facilities return a span referencing a single invalid reflection.</p>
+<p>Otherwise, if no <code class="sourceCode cpp">filters</code> argument is passed to it, <code class="sourceCode cpp">members_of</code> returns an “unfiltered” sequence of reflections for the following kinds of direct members of a class type (represented by <code class="sourceCode cpp">class_type</code>): nonstatic and static data members and member functions, member types (enumeration and class types) and member aliases, and member templates other than deduction guides. Generated members are included, but inherited constructors, injected-class-names, and unnamed bit fields are not (the standard doesn’t consider those members either). Nonstatic data members appear in declaration order (but not necessarily consecutively).</p>
+<p>If any “filters” are passed, they are applied as predicates to the unfiltered sequence, and members for which a predicate produces <code class="sourceCode cpp"><span class="kw">false</span></code> are left out. Predicates are applied left-to-right with short-circuit semantics (i.e., later predicates are not applied if an earlier predicate produced <code class="sourceCode cpp"><span class="kw">false</span></code>).</p>
+<p>Similarly, without <code class="sourceCode cpp">filter</code> arguments, invoking <code class="sourceCode cpp">bases_of</code> returns a sequence of reflections for the direct bases of the given (non-capturing-closure) class type. Predicates can be added to narrow down the bases of interest.</p>
+<p>The following example illustrates some uses of <code class="sourceCode cpp">members_of</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb90"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb90-1"><a href="#cb90-1"></a><span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb90-2"><a href="#cb90-2"></a>  <span class="dt">double</span> x;</span>
+<span id="cb90-3"><a href="#cb90-3"></a>  <span class="dt">int</span> y;</span>
+<span id="cb90-4"><a href="#cb90-4"></a>  <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb90-5"><a href="#cb90-5"></a><span class="op">}</span>;</span>
+<span id="cb90-6"><a href="#cb90-6"></a><span class="kw">constexpr</span> <span class="kw">auto</span> class_type <span class="op">=</span> <span class="op">^</span>S;</span>
+<span id="cb90-7"><a href="#cb90-7"></a><span class="kw">constexpr</span> <span class="kw">auto</span> s_members <span class="op">=</span> members_of<span class="op">(</span>class_type<span class="op">)</span>;</span>
+<span id="cb90-8"><a href="#cb90-8"></a><span class="kw">static_assert</span><span class="op">(</span>s_members<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">7</span><span class="op">)</span>;       <span class="co">// x, y, f(), the destructor, and generated constructors.</span></span>
+<span id="cb90-9"><a href="#cb90-9"></a><span class="kw">constexpr</span> <span class="kw">auto</span> s_data_members <span class="op">=</span> members_of<span class="op">(</span>class_type, is_nonstatic_data_member<span class="op">)</span>;</span>
+<span id="cb90-10"><a href="#cb90-10"></a><span class="kw">static_assert</span><span class="op">(</span>s_data_members<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;  <span class="co">// x and y.</span></span>
+<span id="cb90-11"><a href="#cb90-11"></a></span>
+<span id="cb90-12"><a href="#cb90-12"></a><span class="kw">consteval</span> <span class="kw">auto</span> has_integral_type<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info reflection<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb90-13"><a href="#cb90-13"></a>  <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_integral<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>type_of<span class="op">(</span>reflection<span class="op">))</span>;</span>
+<span id="cb90-14"><a href="#cb90-14"></a><span class="op">}</span>;</span>
+<span id="cb90-15"><a href="#cb90-15"></a><span class="kw">constexpr</span> <span class="kw">auto</span> s_imembers <span class="op">=</span> members_of<span class="op">(</span>class_type, is_nonstatic_data_member, has_integral_type<span class="op">)</span>;</span>
+<span id="cb90-16"><a href="#cb90-16"></a><span class="kw">static_assert</span><span class="op">(</span>s_imembers<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;     <span class="co">// Just y.</span></span>
+<span id="cb90-17"><a href="#cb90-17"></a><span class="kw">constexpr</span> <span class="kw">auto</span> s_nested_types <span class="op">=</span> members_of<span class="op">(</span>class_type, is_type<span class="op">)</span>;</span>
+<span id="cb90-18"><a href="#cb90-18"></a><span class="kw">static_assert</span><span class="op">(</span>s_members<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>;      <span class="co">// S has no nested types.</span></span></code></pre></div>
+</blockquote>
+<p>The enumerators of an enumeration type can be inspected using <code class="sourceCode cpp">enumerators_of</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb91"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb91-1"><a href="#cb91-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb91-2"><a href="#cb91-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> enumerators_of<span class="op">(</span>info enum_type<span class="op">)-&gt;</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{...}</span>;</span>
+<span id="cb91-3"><a href="#cb91-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If the argument passed for <code class="sourceCode cpp">enum_type</code> is not a reflection for an enumeration type, this returns a span referencing just an invalid reflection.</p>
+<p>The parameters of a function type or the parameters of a template can be inspected using:</p>
+<blockquote>
+<div class="sourceCode" id="cb92"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb92-1"><a href="#cb92-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb92-2"><a href="#cb92-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> parameters_of<span class="op">(</span>info reflection<span class="op">)</span> <span class="op">-&gt;</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{...}</span>;</span>
+<span id="cb92-3"><a href="#cb92-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If the argument passed for <code class="sourceCode cpp">reflection</code> is not a reflection for a function, a member function, a function type, a closure type, or a template, this returns a span referencing one invalid reflection. Otherwise, the span contains an entry for each ordinary parameter: No entry is made for the <code class="sourceCode cpp"><span class="kw">this</span></code> parameter or for an ellipsis parameter.</p>
+<p>A function is also available to introspect lambda captures associated with a closure type:</p>
+<blockquote>
+<div class="sourceCode" id="cb93"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb93-1"><a href="#cb93-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb93-2"><a href="#cb93-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> captures_of<span class="op">(</span>info closure_type<span class="op">)</span> <span class="op">-&gt;</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{...}</span>;</span>
+<span id="cb93-3"><a href="#cb93-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If the argument passed for <code class="sourceCode cpp">closure_type</code> is not a reflection for a closure type, this returns a span referencing just an invalid reflection.</p>
+<p>Of note here is that we are not proposing a function to retrieve members of namespaces: Due to their “open scope” nature, we believe that capability is somewhat meaningless. There is however no known technical reason preventing us from doing so.</p>
+<p>We are also not proposing functions to expose the structure of templates. In particular, there is no mechanism to retrieve the members of a class template or the function parameters of a function template.</p>
+<h2 data-number="7.4" id="anonymous-unions"><span class="header-section-number">7.4</span> Anonymous unions<a href="#anonymous-unions" class="self-link"></a></h2>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb94"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb94-1"><a href="#cb94-1"></a><span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb94-2"><a href="#cb94-2"></a>  <span class="dt">bool</span> flag;</span>
+<span id="cb94-3"><a href="#cb94-3"></a>  <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb94-4"><a href="#cb94-4"></a>    <span class="dt">int</span> x;</span>
+<span id="cb94-5"><a href="#cb94-5"></a>    <span class="dt">float</span> f;</span>
+<span id="cb94-6"><a href="#cb94-6"></a>  <span class="op">}</span>;</span>
+<span id="cb94-7"><a href="#cb94-7"></a><span class="op">}</span>;</span>
+<span id="cb94-8"><a href="#cb94-8"></a></span>
+<span id="cb94-9"><a href="#cb94-9"></a><span class="kw">constexpr</span> <span class="kw">auto</span> dmembers <span class="op">=</span> members_of<span class="op">(^</span>S, is_nonstatic_data_member<span class="op">)</span>;</span>
+<span id="cb94-10"><a href="#cb94-10"></a><span class="kw">static_assert</span><span class="op">(</span>dmembers<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>The sequence <code class="sourceCode cpp">dmembers</code> here will contain two reflections: One for flag and one for an unnamed data member of the unnamed union type. Conversely, <code class="sourceCode cpp">parent_of<span class="op">(^</span>S<span class="op">::</span>x<span class="op">)</span></code> produces a reflection for that unnamed union type rather than for <code class="sourceCode cpp">S</code>. Despite its lack of a declared name (which means <code class="sourceCode cpp">name_of</code> returns an empty <code class="sourceCode cpp">string_view</code>), the unnamed data member can be referred to with the <code class="sourceCode cpp"><span class="op">[:</span> <span class="op">...</span> <span class="op">:]</span></code> splicer:</p>
+<blockquote>
+<div class="sourceCode" id="cb95"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb95-1"><a href="#cb95-1"></a><span class="kw">constexpr</span> S s <span class="op">=</span> <span class="op">{</span> <span class="kw">false</span>, <span class="op">{</span> <span class="op">.</span>x <span class="op">=</span> <span class="dv">42</span> <span class="op">}</span> <span class="op">}</span>;</span>
+<span id="cb95-2"><a href="#cb95-2"></a><span class="kw">static_assert</span><span class="op">(</span>name_of<span class="op">(</span>dmembers<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">==</span> <span class="st">&quot;&quot;</span><span class="op">)</span>;                                          <span class="co">// Okay.</span></span>
+<span id="cb95-3"><a href="#cb95-3"></a><span class="kw">static_assert</span><span class="op">(</span>s<span class="op">.</span>idexpr<span class="op">(</span> dmembers<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">).</span>x <span class="op">==</span> <span class="dv">42</span><span class="op">)</span>;                                     <span class="co">// Okay.</span></span>
+<span id="cb95-4"><a href="#cb95-4"></a><span class="kw">static_assert</span><span class="op">(</span>remove_reference<span class="op">(^</span><span class="kw">decltype</span><span class="op">(</span>s<span class="op">.[:</span>dmembers<span class="op">[</span><span class="dv">1</span><span class="op">]:]))</span> <span class="op">==</span> parent_of<span class="op">(^</span>S<span class="op">::</span>f<span class="op">)</span>;   <span class="co">// Okay.</span></span></code></pre></div>
+</blockquote>
+<p>Let’s take that last line apart.</p>
+<p>In the left-hand side of the equality test <code class="sourceCode cpp">dmembers<span class="op">[</span><span class="dv">1</span><span class="op">]</span></code> is a reflection of the unnamed data member for the anonymous union. Therefore, <code class="sourceCode cpp">s<span class="op">.[:</span>dmembers<span class="op">[</span><span class="dv">1</span><span class="op">]:]</span></code> is an lvalue designating the anonymous union subobject of <code class="sourceCode cpp">s</code>, and thus <code class="sourceCode cpp"><span class="kw">decltype</span></code> applied to that produces a reference to the anonymous union type. The <code class="sourceCode cpp"><span class="op">^</span></code> operator returns the reflection designating that type and <code class="sourceCode cpp">remove_reference</code> finally returns a reflection designating the underlying union type.</p>
+<p>In the right-hand side, <code class="sourceCode cpp"><span class="op">^</span>S<span class="op">::</span>f</code> is a reflection designating the member <code class="sourceCode cpp">S<span class="op">::</span>f</code>, which is actually a member <code class="sourceCode cpp">S<span class="op">::&lt;</span>unnamed<span class="op">-</span><span class="kw">union</span><span class="op">-</span>type<span class="op">&gt;::</span>f</code>. Therefore, <code class="sourceCode cpp">parent_of</code> also produces a reflection designating the underlying union type of the anonymous union, and the assertion succeeds.</p>
+<h2 data-number="7.5" id="other-facilities"><span class="header-section-number">7.5</span> Other Facilities<a href="#other-facilities" class="self-link"></a></h2>
+<h3 data-number="7.5.1" id="reflecting-values"><span class="header-section-number">7.5.1</span> Reflecting values<a href="#reflecting-values" class="self-link"></a></h3>
+<p>It turns out to be useful to be able to lift a constant value into reflections for an expression denoting that constant value. We therefore propose a pair of metafunction templates to do exactly that:</p>
+<blockquote>
+<div class="sourceCode" id="cb96"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb96-1"><a href="#cb96-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb96-2"><a href="#cb96-2"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb96-3"><a href="#cb96-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> reflect_value<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;)-&gt;</span>info;</span>
+<span id="cb96-4"><a href="#cb96-4"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> R<span class="op">&gt;</span></span>
+<span id="cb96-5"><a href="#cb96-5"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> reflect_values<span class="op">(</span>R <span class="kw">const</span><span class="op">&amp;)-&gt;</span>std<span class="op">::</span>span<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb96-6"><a href="#cb96-6"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>(The second template applies the first to each element of a range of values.)</p>
+<p>For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb97"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb97-1"><a href="#cb97-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">{</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span> <span class="op">}</span>;</span>
+<span id="cb97-2"><a href="#cb97-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>span<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> rv <span class="op">=</span> reflect_values<span class="op">(</span>v<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Such a lifted sequence can then be spliced into a template argument context:</p>
+<blockquote>
+<div class="sourceCode" id="cb98"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb98-1"><a href="#cb98-1"></a>std<span class="op">::</span>integer_sequence<span class="op">&lt;</span><span class="dt">int</span>, <span class="op">...[:</span>rv<span class="op">:]...&gt;</span> is123; <span class="co">// same as std::integer_sequence&lt;int, 1, 2, 3&gt;</span></span></code></pre></div>
+</blockquote>
+<p>provided the reflected constants are valid in that context.</p>
+<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="metaprogramming-examples"><span class="header-section-number">8</span> Metaprogramming Examples<a href="#metaprogramming-examples" class="self-link"></a></h1>
+<p>We believe that the facilities presented here permit the kind of computation previously performed with C++ template metaprogramming and that they are preferable over TMP because they scale better. We therefore suggest that no broad set of TMP facilities should be further added to the language.</p>
+<p>Examples in this section are drawn from a variety of sources, including <span class="citation" data-cites="P0385R0">[<a href="#ref-P0385R0" role="doc-biblioref">P0385R0</a>]</span> by Matúš Chochlík and Axel Naumann and <span class="citation" data-cites="P0949R0">[<a href="#ref-P0949R0" role="doc-biblioref">P0949R0</a>]</span> by Peter Dimov.</p>
+<h2 data-number="8.1" id="hashing"><span class="header-section-number">8.1</span> Hashing<a href="#hashing" class="self-link"></a></h2>
+<p>We can also use the approach above to synthesize an overload of hash_append (proposed by Howard Hinnant et al. in <span class="citation" data-cites="N3980">[<a href="#ref-N3980" role="doc-biblioref">N3980</a>]</span>, Types Don’t Know #).</p>
+<blockquote>
+<div class="sourceCode" id="cb99"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb99-1"><a href="#cb99-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb99-2"><a href="#cb99-2"></a></span>
+<span id="cb99-3"><a href="#cb99-3"></a><span class="kw">namespace</span> meta <span class="op">=</span> std<span class="op">::</span>meta;</span>
+<span id="cb99-4"><a href="#cb99-4"></a><span class="kw">template</span><span class="op">&lt;</span>HashAlgorithm H, StandardLayoutType T<span class="op">&gt;</span></span>
+<span id="cb99-5"><a href="#cb99-5"></a>  <span class="dt">bool</span> hash_append<span class="op">(</span>H <span class="op">&amp;</span>algo, <span class="kw">const</span> T <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb99-6"><a href="#cb99-6"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> data_members <span class="op">=</span> members_of<span class="op">(^</span>T, meta<span class="op">::</span>is_nonstatic_data_member<span class="op">)</span>;</span>
+<span id="cb99-7"><a href="#cb99-7"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> meta<span class="op">::</span>info member <span class="op">:</span> data_members<span class="op">)</span></span>
+<span id="cb99-8"><a href="#cb99-8"></a>      hash_append<span class="op">(</span>algo, t<span class="op">.[:</span>member<span class="op">:])</span>;</span>
+<span id="cb99-9"><a href="#cb99-9"></a>  <span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The algorithm is straightforward: Recursively apply hash_append to each member for the class <code class="sourceCode cpp">T</code>. Within that call the expression <code class="sourceCode cpp">t<span class="op">.[:</span>member<span class="op">:]</span></code> yields a <em>postfix-expression</em> for the designated member in the class object. The resolution of that <em>postfix-expression</em> does not require name lookup or access control (unlike by-name mechanisms), and it works even for bit fields (unlike mechanisms based on pointer-to-member values).</p>
+<p>Note that this uses expansion statements as proposed by <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span> (and that is typical of practical uses of reflection). An expansion statement requires a compile-time range, which is why <code class="sourceCode cpp">data_members</code> must be a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> variable.</p>
+<h2 data-number="8.2" id="schema-generation"><span class="header-section-number">8.2</span> Schema generation<a href="#schema-generation" class="self-link"></a></h2>
+<p>We can use this same pattern to generate SQL schemas from C++ classes. The implementation here mixes runtime SQL generation with static reflection, in order to demonstrate the interaction between these two features.</p>
+<p>The entry point for the facility is a function template that takes a (standard layout) type parameter and writes the corresponding SQL CREATE TABLE statement.</p>
+<blockquote>
+<div class="sourceCode" id="cb100"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb100-1"><a href="#cb100-1"></a><span class="kw">template</span><span class="op">&lt;</span>StandardLayoutType T<span class="op">&gt;</span></span>
+<span id="cb100-2"><a href="#cb100-2"></a><span class="dt">void</span> create_table<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb100-3"><a href="#cb100-3"></a>  create_table_from_reflection<span class="op">&lt;^</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb100-4"><a href="#cb100-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This function simply delegates to a function parameterized by its reflection. Because reflection is expected to be an “advanced” feature, it might be desirable to hide it from user-facing interfaces. The SQL generating function template is shown below.</p>
+<blockquote>
+<div class="sourceCode" id="cb101"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb101-1"><a href="#cb101-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb101-2"><a href="#cb101-2"></a><span class="kw">namespace</span> meta <span class="op">=</span> std<span class="op">::</span>meta;</span>
+<span id="cb101-3"><a href="#cb101-3"></a></span>
+<span id="cb101-4"><a href="#cb101-4"></a><span class="kw">template</span><span class="op">&lt;</span>meta<span class="op">::</span>info Class<span class="op">&gt;</span></span>
+<span id="cb101-5"><a href="#cb101-5"></a>  <span class="kw">requires</span> meta<span class="op">::</span>is_class<span class="op">(</span>Class<span class="op">)</span></span>
+<span id="cb101-6"><a href="#cb101-6"></a><span class="dt">void</span> create_table_from_reflection<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb101-7"><a href="#cb101-7"></a>  std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;CREATE TABLE &quot;</span> <span class="op">&lt;&lt;</span> meta<span class="op">::</span>name_of<span class="op">(</span>Class<span class="op">)</span> <span class="op">&lt;&lt;</span> “<span class="op">(</span>\n”;</span>
+<span id="cb101-8"><a href="#cb101-8"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> members <span class="op">=</span> meta<span class="op">::</span>members_of<span class="op">(</span>Class, is_non_static_data_member<span class="op">)</span>;</span>
+<span id="cb101-9"><a href="#cb101-9"></a>  <span class="dt">int</span> size <span class="op">=</span> members<span class="op">.</span>size<span class="op">()</span>, num <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb101-10"><a href="#cb101-10"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> meta<span class="op">::</span>info member <span class="op">:</span> members<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb101-11"><a href="#cb101-11"></a>    create_column<span class="op">&lt;</span>member<span class="op">&gt;()</span>;</span>
+<span id="cb101-12"><a href="#cb101-12"></a>    <span class="cf">if</span> <span class="op">(++</span>num <span class="op">!=</span> size<span class="op">)</span></span>
+<span id="cb101-13"><a href="#cb101-13"></a>      std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> “,\n”;</span>
+<span id="cb101-14"><a href="#cb101-14"></a>  <span class="op">}</span></span>
+<span id="cb101-15"><a href="#cb101-15"></a>  std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;);</span><span class="sc">\n</span><span class="st">&quot;</span>;</span>
+<span id="cb101-16"><a href="#cb101-16"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This function emits a CREATE TABLE statement for the name of the class, and “iterates” over the class’s data members — again using an <em>expansion statement</em> (<span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>) — emitting column definitions for each (see below for <code class="sourceCode cpp">create_column</code>). We maintain the member count so that we can correctly insert commas into the output after each column.</p>
+<p>Reflection facilities can only be used at compile time. Because this function mixes runtime code (<code class="sourceCode cpp">std<span class="op">::</span>cout</code>) with static reflection (<code class="sourceCode cpp">meta<span class="op">::</span>info</code>), we need to ensure that reflections do not “mix” with the runtime systems. We cannot, with this approach to generating SQL, pass the reflected class as a function argument, as that would leak the reflection — handle to an internal data structure that is only meaningful during translation — to run time. In other words, for mixed run-time/reflective algorithms reflection values must be passed as template arguments. We explore an alternative design of this algorithm in the following section.</p>
+<p>Creating a column is straightforward: We serialize the member’s name and translate its C++ type into SQL.</p>
+<blockquote>
+<pre class="cp"><code>template&lt;meta::info Member&gt;
+  requires meta::is_non_static_data_member(Member)
+void create_column() {
+  std::cout &lt;&lt; meta::name_of(Member) &lt;&lt; &quot; &quot;;
+  std::cout &lt;&lt; to_sql(meta::type_of(Member));
+}</code></pre>
+</blockquote>
+<p>Finally, we need a facility to translate C++ types to SQL types. Here, we use a series of explicit specializations over reflections, with the generic case (i.e., primary template) triggering an instantiation error if used.</p>
+<blockquote>
+<div class="sourceCode" id="cb102"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb102-1"><a href="#cb102-1"></a><span class="kw">template</span><span class="op">&lt;</span>meta<span class="op">::</span>info Type<span class="op">&gt;</span></span>
+<span id="cb102-2"><a href="#cb102-2"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> to_sql<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb102-3"><a href="#cb102-3"></a>  <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span>, “no translation to SQL”<span class="op">)</span>;</span>
+<span id="cb102-4"><a href="#cb102-4"></a><span class="op">}</span></span>
+<span id="cb102-5"><a href="#cb102-5"></a></span>
+<span id="cb102-6"><a href="#cb102-6"></a><span class="kw">template</span><span class="op">&lt;&gt;</span></span>
+<span id="cb102-7"><a href="#cb102-7"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> to_sql<span class="op">&lt;^</span><span class="dt">int</span><span class="op">&gt;()</span> <span class="op">{</span></span>
+<span id="cb102-8"><a href="#cb102-8"></a>  <span class="cf">return</span> “INTEGER”;</span>
+<span id="cb102-9"><a href="#cb102-9"></a><span class="op">}</span></span>
+<span id="cb102-10"><a href="#cb102-10"></a></span>
+<span id="cb102-11"><a href="#cb102-11"></a><span class="kw">template</span><span class="op">&lt;&gt;</span></span>
+<span id="cb102-12"><a href="#cb102-12"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> to_sql<span class="op">&lt;^</span><span class="dt">float</span><span class="op">&gt;()</span> <span class="op">{</span></span>
+<span id="cb102-13"><a href="#cb102-13"></a>  <span class="cf">return</span> “FLOAT”;</span>
+<span id="cb102-14"><a href="#cb102-14"></a><span class="op">}</span></span>
+<span id="cb102-15"><a href="#cb102-15"></a><span class="co">// etc</span></span></code></pre></div>
+</blockquote>
+<h2 data-number="8.3" id="schema-generation-take-two"><span class="header-section-number">8.3</span> Schema generation (take two)<a href="#schema-generation-take-two" class="self-link"></a></h2>
+<p>The approach above mixes runtime SQL generation with static reflection: We call a function to print the schema to <code class="sourceCode cpp">std<span class="op">::</span>cout</code>. An alternative approach is to synthesize the schema as a compile-time string, and then print the result later:</p>
+<blockquote>
+<div class="sourceCode" id="cb103"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb103-1"><a href="#cb103-1"></a><span class="kw">template</span><span class="op">&lt;</span>StandardLayoutType T<span class="op">&gt;</span></span>
+<span id="cb103-2"><a href="#cb103-2"></a><span class="kw">consteval</span> std<span class="op">::</span>string create_table<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb103-3"><a href="#cb103-3"></a>  <span class="cf">return</span> create_table_from_reflection<span class="op">&lt;^</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb103-4"><a href="#cb103-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The string-generation code could be as follows</p>
+<blockquote>
+<div class="sourceCode" id="cb104"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb104-1"><a href="#cb104-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb104-2"><a href="#cb104-2"></a></span>
+<span id="cb104-3"><a href="#cb104-3"></a><span class="kw">template</span><span class="op">&lt;</span>meta<span class="op">::</span>info Class<span class="op">&gt;</span></span>
+<span id="cb104-4"><a href="#cb104-4"></a>  <span class="kw">requires</span> meta<span class="op">::</span>is_class<span class="op">(</span>Class<span class="op">)</span></span>
+<span id="cb104-5"><a href="#cb104-5"></a><span class="kw">consteval</span> std<span class="op">::</span>string create_table<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb104-6"><a href="#cb104-6"></a>  std<span class="op">::</span>string result<span class="op">(</span>“”<span class="op">)</span>; <span class="co">// Assuming this should work</span></span>
+<span id="cb104-7"><a href="#cb104-7"></a>  result <span class="op">+=</span> <span class="st">&quot;CREATE TABLE &quot;</span> <span class="op">+</span> meta<span class="op">::</span>name_of<span class="op">(</span>Class<span class="op">)</span> <span class="op">+</span> “<span class="op">(</span>\n”;</span>
+<span id="cb104-8"><a href="#cb104-8"></a>  std<span class="op">::</span>span<span class="op">&lt;</span>meta<span class="op">::</span>info<span class="op">&gt;</span> members <span class="op">=</span> data_members_of<span class="op">(^</span>Class<span class="op">)</span>;</span>
+<span id="cb104-9"><a href="#cb104-9"></a>  <span class="dt">int</span> num <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb104-10"><a href="#cb104-10"></a>  <span class="cf">for</span> <span class="op">(</span>meta<span class="op">::</span>info member <span class="op">:</span> members<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb104-11"><a href="#cb104-11"></a>    result <span class="op">+=</span> create_column<span class="op">(</span>member<span class="op">)</span>;</span>
+<span id="cb104-12"><a href="#cb104-12"></a>    <span class="cf">if</span> <span class="op">(++</span>num <span class="op">!=</span> members<span class="op">.</span>size<span class="op">())</span></span>
+<span id="cb104-13"><a href="#cb104-13"></a>      result <span class="op">+=</span> “,\n”;</span>
+<span id="cb104-14"><a href="#cb104-14"></a>  <span class="op">}</span></span>
+<span id="cb104-15"><a href="#cb104-15"></a>  result <span class="op">+=</span> <span class="st">&quot;);</span><span class="sc">\n</span><span class="st">&quot;</span>;</span>
+<span id="cb104-16"><a href="#cb104-16"></a>  <span class="cf">return</span> result;</span>
+<span id="cb104-17"><a href="#cb104-17"></a><span class="op">}</span></span>
+<span id="cb104-18"><a href="#cb104-18"></a></span>
+<span id="cb104-19"><a href="#cb104-19"></a><span class="kw">consteval</span> std<span class="op">::</span>string <span class="dt">void</span> create_column<span class="op">(</span>meta<span class="op">::</span>info member<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb104-20"><a href="#cb104-20"></a>  std<span class="op">::</span>string result<span class="op">(</span>“”<span class="op">)</span>;</span>
+<span id="cb104-21"><a href="#cb104-21"></a>  result <span class="op">+=</span> meta<span class="op">::</span>name_of<span class="op">(</span>member<span class="op">)</span> <span class="op">+</span> <span class="st">&quot; &quot;</span>;</span>
+<span id="cb104-22"><a href="#cb104-22"></a>  result <span class="op">+=</span> to_sql<span class="op">(</span>meta<span class="op">::</span>type_of<span class="op">(</span>member<span class="op">))</span>;</span>
+<span id="cb104-23"><a href="#cb104-23"></a>  <span class="cf">return</span> result;</span>
+<span id="cb104-24"><a href="#cb104-24"></a><span class="op">}</span></span>
+<span id="cb104-25"><a href="#cb104-25"></a></span>
+<span id="cb104-26"><a href="#cb104-26"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> to_sql<span class="op">(</span>meta<span class="op">::</span>info type<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb104-27"><a href="#cb104-27"></a>  <span class="kw">static</span> std<span class="op">::</span>unordered_map<span class="op">&lt;</span>meta<span class="op">::</span>info, <span class="kw">const</span> <span class="dt">char</span><span class="op">*&gt;</span> types <span class="op">{</span></span>
+<span id="cb104-28"><a href="#cb104-28"></a>    <span class="op">{^</span><span class="dt">int</span>, “INTEGER”<span class="op">}</span>,</span>
+<span id="cb104-29"><a href="#cb104-29"></a>    <span class="op">{^</span><span class="dt">float</span>, “FLOAT”<span class="op">}</span>,</span>
+<span id="cb104-30"><a href="#cb104-30"></a>    <span class="co">// etc.</span></span>
+<span id="cb104-31"><a href="#cb104-31"></a>  <span class="op">}</span>;</span>
+<span id="cb104-32"><a href="#cb104-32"></a></span>
+<span id="cb104-33"><a href="#cb104-33"></a>  <span class="op">[[</span><span class="at">assert</span><span class="op">:</span><span class="at"> meta</span><span class="op">::</span><span class="at">is_type</span><span class="op">(</span><span class="at">type</span><span class="op">)]]</span>;</span>
+<span id="cb104-34"><a href="#cb104-34"></a>  <span class="op">[[</span><span class="at">assert</span><span class="op">:</span><span class="at"> types</span><span class="op">.</span><span class="at">count</span><span class="op">(</span><span class="at">type</span><span class="op">)</span><span class="at"> </span><span class="op">!=</span><span class="at"> </span><span class="dv">0</span><span class="op">]]</span>;</span>
+<span id="cb104-35"><a href="#cb104-35"></a>  <span class="cf">return</span> types<span class="op">.</span>find<span class="op">(</span>type<span class="op">)-&gt;</span>second;</span>
+<span id="cb104-36"><a href="#cb104-36"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>There are significant differences between this and the earlier example. In essence, this implementation looks like a normal program except that each function is a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function dealing with reflection values. In other words, because the entire facility is expected to run at compile time, we don’t have to use different constructs between the run-time and compile-time values in the implementation (e.g., expansion statements vs. loops); everything just looks like run-time code.</p>
+<h2 data-number="8.4" id="template-argument-list-assignment"><span class="header-section-number">8.4</span> Template argument list assignment<a href="#template-argument-list-assignment" class="self-link"></a></h2>
+<p>In <span class="citation" data-cites="P0949R0">[<a href="#ref-P0949R0" role="doc-biblioref">P0949R0</a>]</span>, Peter Dimov proposes a facility to “assign” a list of template arguments for one template to another using:</p>
+<blockquote>
+<div class="sourceCode" id="cb105"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb105-1"><a href="#cb105-1"></a>mp_assign<span class="op">&lt;</span>ClassTmpl1<span class="op">&lt;</span>A1, A2, <span class="op">...&gt;</span>, ClassTmpl2<span class="op">&lt;</span>B1, B2, <span class="op">...&gt;&gt;</span></span></code></pre></div>
+</blockquote>
+<p>This is an alias for <code class="sourceCode cpp">ClassTmpl1<span class="op">&lt;</span>B1, B2, <span class="op">...&gt;</span></code>. The template arguments <code class="sourceCode cpp">An</code> and <code class="sourceCode cpp">Bn</code> are all type arguments. If the arguments of mp_assign are not of those forms, a substitution failure occurs.</p>
+<p>Using the features proposed in this paper, we can implement this facility as follows:</p>
+<blockquote>
+<div class="sourceCode" id="cb106"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb106-1"><a href="#cb106-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb106-2"><a href="#cb106-2"></a><span class="kw">using</span> std<span class="op">::</span>meta<span class="op">::</span>info;</span>
+<span id="cb106-3"><a href="#cb106-3"></a><span class="kw">using</span> std<span class="op">::</span>vector;</span>
+<span id="cb106-4"><a href="#cb106-4"></a></span>
+<span id="cb106-5"><a href="#cb106-5"></a><span class="kw">consteval</span> info class_template_of<span class="op">(</span>info inst<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb106-6"><a href="#cb106-6"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb106-7"><a href="#cb106-7"></a>  info tmpl <span class="op">=</span> template_of<span class="op">(</span>inst<span class="op">)</span>;</span>
+<span id="cb106-8"><a href="#cb106-8"></a>  <span class="cf">if</span> <span class="op">(</span>is_class_template<span class="op">(</span>inst<span class="op">)</span> <span class="op">||</span> is_invalid_reflection<span class="op">(</span>tmpl<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb106-9"><a href="#cb106-9"></a>    <span class="cf">return</span> tmpl;</span>
+<span id="cb106-10"><a href="#cb106-10"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb106-11"><a href="#cb106-11"></a>    <span class="cf">return</span> invalid_reflection<span class="op">(</span><span class="st">&quot;Not a class template instance&quot;</span><span class="op">)</span>;</span>
+<span id="cb106-12"><a href="#cb106-12"></a>  <span class="op">}</span></span>
+<span id="cb106-13"><a href="#cb106-13"></a><span class="op">}</span></span>
+<span id="cb106-14"><a href="#cb106-14"></a></span>
+<span id="cb106-15"><a href="#cb106-15"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_type_arguments_of<span class="op">(</span>info inst<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb106-16"><a href="#cb106-16"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb106-17"><a href="#cb106-17"></a>  <span class="kw">auto</span> args <span class="op">=</span> template_arguments_of<span class="op">(</span>inst<span class="op">)</span>;</span>
+<span id="cb106-18"><a href="#cb106-18"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> arg<span class="op">:</span> args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb106-19"><a href="#cb106-19"></a>    <span class="cf">if</span> <span class="op">(</span>is_invalid<span class="op">(</span>arg<span class="op">)</span> <span class="op">&amp;&amp;</span> args<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb106-20"><a href="#cb106-20"></a>      <span class="co">// template_arguments_of was invalid: Propagate the error.</span></span>
+<span id="cb106-21"><a href="#cb106-21"></a>      <span class="cf">return</span> vector<span class="op">&lt;</span>info<span class="op">&gt;(</span>args<span class="op">.</span>begin<span class="op">()</span>, args<span class="op">.</span>end<span class="op">())</span>;</span>
+<span id="cb106-22"><a href="#cb106-22"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(!</span>is_type<span class="op">(</span>arg<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb106-23"><a href="#cb106-23"></a>      <span class="co">// Not a type argument.</span></span>
+<span id="cb106-24"><a href="#cb106-24"></a>      <span class="cf">return</span> vector<span class="op">&lt;</span>info<span class="op">&gt;{</span>invalid_reflection<span class="op">(</span><span class="st">&quot;Not all arguments are types&quot;</span><span class="op">)}</span>;</span>
+<span id="cb106-25"><a href="#cb106-25"></a>    <span class="op">}</span></span>
+<span id="cb106-26"><a href="#cb106-26"></a>  <span class="op">}</span></span>
+<span id="cb106-27"><a href="#cb106-27"></a>  <span class="cf">return</span> vector<span class="op">&lt;</span>info<span class="op">&gt;(</span>args<span class="op">.</span>begin<span class="op">()</span>, args<span class="op">.</span>end<span class="op">())</span>;</span>
+<span id="cb106-28"><a href="#cb106-28"></a><span class="op">}</span></span>
+<span id="cb106-29"><a href="#cb106-29"></a></span>
+<span id="cb106-30"><a href="#cb106-30"></a><span class="kw">consteval</span> info rf_assign<span class="op">(</span>info inst1, info inst2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb106-31"><a href="#cb106-31"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb106-32"><a href="#cb106-32"></a>  info tmpl1 <span class="op">=</span> class_template_of<span class="op">(</span>inst1<span class="op">)</span>;</span>
+<span id="cb106-33"><a href="#cb106-33"></a>  info tmpl2 <span class="op">=</span> class_template_of<span class="op">(</span>inst2<span class="op">)</span>;</span>
+<span id="cb106-34"><a href="#cb106-34"></a>  <span class="cf">if</span> <span class="op">(</span>is_invalid<span class="op">(</span>tmpl2<span class="op">))</span> <span class="cf">return</span> tmpl2;</span>
+<span id="cb106-35"><a href="#cb106-35"></a>  <span class="kw">auto</span> args1 <span class="op">=</span> template_type_arguments_of<span class="op">(</span>inst1<span class="op">)</span>;</span>
+<span id="cb106-36"><a href="#cb106-36"></a>  <span class="cf">if</span> <span class="op">(</span>args1<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span> <span class="op">&amp;&amp;</span> is_invalid<span class="op">(</span>args1<span class="op">[</span><span class="dv">0</span><span class="op">]))</span> <span class="cf">return</span> args1;</span>
+<span id="cb106-37"><a href="#cb106-37"></a>  <span class="kw">auto</span> args2 <span class="op">=</span> template_type_arguments_of<span class="op">(</span>inst1<span class="op">)</span>;</span>
+<span id="cb106-38"><a href="#cb106-38"></a>  <span class="cf">return</span> substitute<span class="op">(</span>tmpl1, args2<span class="op">)</span>;</span>
+<span id="cb106-39"><a href="#cb106-39"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If needed, <code class="sourceCode cpp">mp_assign</code> could be expressed in terms of <code class="sourceCode cpp">rf_assign</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb107"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb107-1"><a href="#cb107-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T1, <span class="kw">typename</span> T2<span class="op">&gt;</span></span>
+<span id="cb107-2"><a href="#cb107-2"></a>  <span class="kw">using</span> mp_assign <span class="op">=</span> <span class="kw">typename</span><span class="op">[:</span>rf_assign<span class="op">(^</span>T1, <span class="op">^</span>T2<span class="op">):]</span>;</span></code></pre></div>
+</blockquote>
+<p>Note that in our implementation of <code class="sourceCode cpp">rf_assign</code>, much of the code is dedicated to implementing the constraints of <code class="sourceCode cpp">mp_assign</code>. However, those constraints exist only because of two TMP limitations:</p>
+<ol type="1">
+<li>parameter packs cannot model mixed-kind template argument lists, and</li>
+<li>template template parameters cannot accept function/variable templates.</li>
+</ol>
+<p>In the reflection world we can easily lift those constraints, which produces the following simplified-yet-more-powerful implementation of <code class="sourceCode cpp">rf_assign</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb108"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb108-1"><a href="#cb108-1"></a><span class="kw">consteval</span> info rf_assign<span class="op">(</span>info inst1, info inst2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb108-2"><a href="#cb108-2"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb108-3"><a href="#cb108-3"></a>  <span class="cf">return</span> substitute<span class="op">(</span>template_of<span class="op">(</span>inst1<span class="op">)</span>, template_arguments_of<span class="op">(</span>inst2<span class="op">))</span>;</span>
+<span id="cb108-4"><a href="#cb108-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<h2 data-number="8.5" id="dealing-more-efficiently-with-parameter-packs"><span class="header-section-number">8.5</span> Dealing more efficiently with parameter packs<a href="#dealing-more-efficiently-with-parameter-packs" class="self-link"></a></h2>
+<p>Currently, parameter packs are generally dealt with through recursive template instantiation (i.e., a form of TMP, with all its disadvantages). With the set of features presented here, many interesting applications of packs can be expressed more directly and using fewer compilation resources. Here is a simple example:</p>
+<blockquote>
+<div class="sourceCode" id="cb109"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb109-1"><a href="#cb109-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb109-2"><a href="#cb109-2"></a><span class="co">// Function taking an arbitrary number of arguments and returning a vector containing copies of the</span></span>
+<span id="cb109-3"><a href="#cb109-3"></a><span class="co">// arguments that have the given type T.</span></span>
+<span id="cb109-4"><a href="#cb109-4"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> <span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb109-5"><a href="#cb109-5"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> select_values_of_type<span class="op">(</span>Ts <span class="op">...</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb109-6"><a href="#cb109-6"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> result<span class="op">{}</span>;</span>
+<span id="cb109-7"><a href="#cb109-7"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> param<span class="op">:</span> parameters_of<span class="op">(</span>current_function<span class="op">()))</span> <span class="op">{</span></span>
+<span id="cb109-8"><a href="#cb109-8"></a>    <span class="cf">if</span> <span class="op">(^</span>T <span class="op">==</span> type_of<span class="op">(</span>param<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb109-9"><a href="#cb109-9"></a>      result<span class="op">.</span>push_back<span class="op">([:</span>params<span class="op">[</span>i<span class="op">]:])</span>;</span>
+<span id="cb109-10"><a href="#cb109-10"></a>    <span class="op">}</span></span>
+<span id="cb109-11"><a href="#cb109-11"></a>  <span class="op">}</span></span>
+<span id="cb109-12"><a href="#cb109-12"></a>  <span class="cf">return</span> result;</span>
+<span id="cb109-13"><a href="#cb109-13"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<h2 data-number="8.6" id="applying-functions-to-all-members"><span class="header-section-number">8.6</span> Applying functions to all members<a href="#applying-functions-to-all-members" class="self-link"></a></h2>
+<p><span class="citation" data-cites="P0949R0">[<a href="#ref-P0949R0" role="doc-biblioref">P0949R0</a>]</span> presents a TMP metafunction <code class="sourceCode cpp">get_all_data_members</code> aimed at collecting reflection information for all the data members of a class (not just the direct ones) using the facilities of the first reflection TS (<span class="citation" data-cites="N4818">[<a href="#ref-N4818" role="doc-biblioref">N4818</a>]</span>).</p>
+<p>Unfortunately, <code class="sourceCode cpp">get_all_data_members</code> as presented in <span class="citation" data-cites="P0949R0">[<a href="#ref-P0949R0" role="doc-biblioref">P0949R0</a>]</span> has a number of problems:</p>
+<ul>
+<li>It doesn’t correctly use the TMP-based reflection API to access base classes (it looks like it treats a base class as a base class <em>type</em>). Fixing that is nontrivial.</li>
+<li>Its logic ignores virtual bases.</li>
+<li>The TMP-based reflection API doesn’t deal well with bit fields (it relies on pointer-to-member constants, which cannot point to bit fields).</li>
+</ul>
+<p>To address those shortcomings, we present a different interface with similar capabilities:</p>
+<blockquote>
+<div class="sourceCode" id="cb110"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb110-1"><a href="#cb110-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb110-2"><a href="#cb110-2"></a><span class="dt">void</span> apply_to_all_data_members<span class="op">(</span>T <span class="op">&amp;&amp;</span>r_obj, F <span class="op">&amp;&amp;</span>f<span class="op">)</span>;</span>
+<span id="cb110-3"><a href="#cb110-3"></a>  <span class="co">// Invoke f(r_obj.x) for every accessible data member of r_obj, including</span></span>
+<span id="cb110-4"><a href="#cb110-4"></a>  <span class="co">// those in base classes (and possibly hidden by more-derived member declarations).</span></span></code></pre></div>
+</blockquote>
+<p>With the facilities we have proposed in this paper, this can be implemented as follows.</p>
+<blockquote>
+<div class="sourceCode" id="cb111"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb111-1"><a href="#cb111-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb111-2"><a href="#cb111-2"></a><span class="kw">using</span> std<span class="op">::</span>meta<span class="op">::</span>info;</span>
+<span id="cb111-3"><a href="#cb111-3"></a></span>
+<span id="cb111-4"><a href="#cb111-4"></a><span class="co">// Convenience function to retrieve accessible nonstatic data members of a given class:</span></span>
+<span id="cb111-5"><a href="#cb111-5"></a><span class="kw">consteval</span> <span class="kw">auto</span> get_members<span class="op">(</span>info classinfo<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-6"><a href="#cb111-6"></a>  <span class="cf">return</span> members_of<span class="op">(</span>classinfo, is_nonstatic_data_member, is_accessible<span class="op">)</span>;</span>
+<span id="cb111-7"><a href="#cb111-7"></a><span class="op">}</span>;</span>
+<span id="cb111-8"><a href="#cb111-8"></a></span>
+<span id="cb111-9"><a href="#cb111-9"></a><span class="co">// Convenience function to select nonvirtual bases and members.</span></span>
+<span id="cb111-10"><a href="#cb111-10"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_not_virtual<span class="op">(</span>info base_or_mem<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-11"><a href="#cb111-11"></a>  <span class="cf">return</span> <span class="op">!</span>is_virtual<span class="op">(</span>base_or_mem<span class="op">)</span>;</span>
+<span id="cb111-12"><a href="#cb111-12"></a><span class="op">}</span>;</span>
+<span id="cb111-13"><a href="#cb111-13"></a></span>
+<span id="cb111-14"><a href="#cb111-14"></a><span class="co">// Utility to get the reflection information for the types of base classes (rather than the base</span></span>
+<span id="cb111-15"><a href="#cb111-15"></a><span class="co">// classes themselves) of a given class.</span></span>
+<span id="cb111-16"><a href="#cb111-16"></a><span class="kw">consteval</span> <span class="kw">auto</span> get_base_types<span class="op">(</span>info classtype, <span class="dt">bool</span> virtual_bases<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-17"><a href="#cb111-17"></a>  <span class="kw">auto</span> result <span class="op">=</span> bases_of<span class="op">(</span>classtype, is_accessible, virtual_bases <span class="op">?</span> is_virtual <span class="op">:</span> is_not_virtual<span class="op">)</span>;</span>
+<span id="cb111-18"><a href="#cb111-18"></a>  <span class="co">// Replace each base reflection by the reflection of its type.</span></span>
+<span id="cb111-19"><a href="#cb111-19"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>info <span class="op">:</span> result<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-20"><a href="#cb111-20"></a>    info <span class="op">=</span> type_of<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb111-21"><a href="#cb111-21"></a>  <span class="op">}</span></span>
+<span id="cb111-22"><a href="#cb111-22"></a>  <span class="cf">return</span> result;</span>
+<span id="cb111-23"><a href="#cb111-23"></a><span class="op">}</span>;</span>
+<span id="cb111-24"><a href="#cb111-24"></a></span>
+<span id="cb111-25"><a href="#cb111-25"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb111-26"><a href="#cb111-26"></a><span class="dt">void</span> apply_to_data_members<span class="op">(</span>T <span class="op">*</span>p_obj, F <span class="op">&amp;</span>f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-27"><a href="#cb111-27"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> member <span class="op">:</span> get_members<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb111-28"><a href="#cb111-28"></a>    f<span class="op">(</span>p_obj<span class="op">-&gt;[:</span>member<span class="op">:])</span>;</span>
+<span id="cb111-29"><a href="#cb111-29"></a>  <span class="op">}</span></span>
+<span id="cb111-30"><a href="#cb111-30"></a><span class="op">}</span></span>
+<span id="cb111-31"><a href="#cb111-31"></a></span>
+<span id="cb111-32"><a href="#cb111-32"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb111-33"><a href="#cb111-33"></a><span class="dt">void</span> apply_to_base_data_members<span class="op">(</span>T <span class="op">*</span>p_obj, F <span class="op">&amp;</span>f, <span class="dt">bool</span> virtual_bases, <span class="dt">bool</span> skip_direct_members<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-34"><a href="#cb111-34"></a>  <span class="co">// Recursively traverse (depth-first) either the nonvirtual or virtual base classes (depending</span></span>
+<span id="cb111-35"><a href="#cb111-35"></a>  <span class="co">// on the virtual_bases flag). We do this by collecting the base class types and casting</span></span>
+<span id="cb111-36"><a href="#cb111-36"></a>  <span class="co">// the pointer one level up.</span></span>
+<span id="cb111-37"><a href="#cb111-37"></a>  <span class="kw">auto</span> type <span class="op">=</span> <span class="op">^</span>T;</span>
+<span id="cb111-38"><a href="#cb111-38"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> basetype <span class="op">:</span> get_base_types<span class="op">(</span>type, virtual_bases<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb111-39"><a href="#cb111-39"></a>    apply_to_base_data_members<span class="op">&lt;</span>T, F<span class="op">&gt;(</span></span>
+<span id="cb111-40"><a href="#cb111-40"></a>      <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">[:</span>basetype<span class="op">:]*&gt;(</span>p_obj<span class="op">)</span>,</span>
+<span id="cb111-41"><a href="#cb111-41"></a>      f,</span>
+<span id="cb111-42"><a href="#cb111-42"></a>      virtual_bases,</span>
+<span id="cb111-43"><a href="#cb111-43"></a>      <span class="co">/*skip_direct_members=*/</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb111-44"><a href="#cb111-44"></a>  <span class="op">}</span></span>
+<span id="cb111-45"><a href="#cb111-45"></a></span>
+<span id="cb111-46"><a href="#cb111-46"></a>  <span class="cf">if</span> <span class="op">(!</span>skip_direct_members<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-47"><a href="#cb111-47"></a>    <span class="co">// Now that the base classes have been traversed, handle the data members at this level.</span></span>
+<span id="cb111-48"><a href="#cb111-48"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> member <span class="op">:</span> get_members<span class="op">(</span>type<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb111-49"><a href="#cb111-49"></a>      f<span class="op">(</span>p_obj<span class="op">-&gt;[:</span>member<span class="op">:])</span>;</span>
+<span id="cb111-50"><a href="#cb111-50"></a>    <span class="op">}</span></span>
+<span id="cb111-51"><a href="#cb111-51"></a>  <span class="op">}</span></span>
+<span id="cb111-52"><a href="#cb111-52"></a><span class="op">}</span></span>
+<span id="cb111-53"><a href="#cb111-53"></a></span>
+<span id="cb111-54"><a href="#cb111-54"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb111-55"><a href="#cb111-55"></a><span class="dt">void</span> apply_to_all_data_members<span class="op">(</span>T <span class="kw">const</span> <span class="op">&amp;&amp;</span>r_obj, F <span class="op">&amp;&amp;</span>f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb111-56"><a href="#cb111-56"></a>  T <span class="kw">const</span> <span class="op">*</span>p_obj <span class="op">=</span> std<span class="op">::</span>addressof<span class="op">(</span>r_obj<span class="op">)</span>;</span>
+<span id="cb111-57"><a href="#cb111-57"></a>  apply_to_base_data_members<span class="op">&lt;</span>T, F<span class="op">&gt;(</span>p_obj, f, <span class="co">/*virtual_bases=*/</span><span class="kw">true</span>, <span class="co">/*skip_direct_members=*/</span><span class="kw">true</span><span class="op">)</span>;</span>
+<span id="cb111-58"><a href="#cb111-58"></a>  apply_to_base_data_members<span class="op">&lt;</span>T, F<span class="op">&gt;(</span>p_obj, f, <span class="co">/*virtual_bases=*/</span><span class="kw">false</span>, <span class="co">/*skip_direct_members=*/</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb111-59"><a href="#cb111-59"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This implementation reads like ordinary C++ code. Every invocation instantiates three function templates, independently of how complex type <code class="sourceCode cpp">T</code> is (though the amount of code in each instantiation does depend on T because of the expansion statements).</p>
+<p>This implementation still has a weakness, however: The notion of “accessibility” of bases and members is determined from the context of the implementation, not that of the call to <code class="sourceCode cpp">apply_to_all_data_members</code>. (The same limitation is imposed by the first Reflection TS.) We do not at this time propose to resolve that issue but we know of at least two ways to address it: * more powerful code injection primitives, or * introduce a reflection for “context”.</p>
+<p>The second option would be less efficient since that context would have to be passed along as a template argument, which would cause each invocation of <code class="sourceCode cpp">apply_to_all_data_members</code> to have a distinct instantiation.</p>
+<p>Alternatively, here is an implementation that doesn’t use expansion statements. Instead, it relies on <em>fold-expressions</em>.</p>
+<blockquote>
+<div class="sourceCode" id="cb112"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb112-1"><a href="#cb112-1"></a><span class="co">// Convenience function to retrieve accessible nonstatic data members of a given class:</span></span>
+<span id="cb112-2"><a href="#cb112-2"></a><span class="kw">consteval</span> <span class="kw">auto</span> get_members<span class="op">(</span>info classinfo<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-3"><a href="#cb112-3"></a>  <span class="cf">return</span> members_of<span class="op">(</span>classinfo, is_nonstatic_data_member, is_accessible<span class="op">)</span>;</span>
+<span id="cb112-4"><a href="#cb112-4"></a><span class="op">}</span>;</span>
+<span id="cb112-5"><a href="#cb112-5"></a></span>
+<span id="cb112-6"><a href="#cb112-6"></a><span class="co">// Convenience function to select nonvirtual bases and members.</span></span>
+<span id="cb112-7"><a href="#cb112-7"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_not_virtual<span class="op">(</span>info base_or_mem<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-8"><a href="#cb112-8"></a>  <span class="cf">return</span> <span class="op">!</span>is_virtual<span class="op">(</span>base_or_mem<span class="op">)</span>;</span>
+<span id="cb112-9"><a href="#cb112-9"></a><span class="op">}</span>;</span>
+<span id="cb112-10"><a href="#cb112-10"></a></span>
+<span id="cb112-11"><a href="#cb112-11"></a><span class="co">// Utility to get the reflection information for the types of base classes (rather than the base</span></span>
+<span id="cb112-12"><a href="#cb112-12"></a><span class="co">// classes themselves) of a given class.</span></span>
+<span id="cb112-13"><a href="#cb112-13"></a><span class="kw">consteval</span> <span class="kw">auto</span> get_base_types<span class="op">(</span>info classtype, <span class="dt">bool</span> virtual_bases<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-14"><a href="#cb112-14"></a>  <span class="kw">auto</span> result <span class="op">=</span> bases_of<span class="op">(</span>classtype, is_accessible, virtual_bases <span class="op">?</span> is_virtual <span class="op">:</span> is_not_virtual<span class="op">)</span>;</span>
+<span id="cb112-15"><a href="#cb112-15"></a>  <span class="co">// Replace each base reflection by the reflection of its type.</span></span>
+<span id="cb112-16"><a href="#cb112-16"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>info <span class="op">:</span> result<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-17"><a href="#cb112-17"></a>    info <span class="op">=</span> type_of<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb112-18"><a href="#cb112-18"></a>  <span class="op">}</span></span>
+<span id="cb112-19"><a href="#cb112-19"></a>  <span class="cf">return</span> result;</span>
+<span id="cb112-20"><a href="#cb112-20"></a><span class="op">}</span>;</span>
+<span id="cb112-21"><a href="#cb112-21"></a></span>
+<span id="cb112-22"><a href="#cb112-22"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F, std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">...</span> members<span class="op">&gt;</span></span>
+<span id="cb112-23"><a href="#cb112-23"></a><span class="dt">void</span> apply_to_data_members<span class="op">(</span>T <span class="op">*</span>p_obj, F <span class="op">&amp;</span>f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-24"><a href="#cb112-24"></a>  <span class="op">(</span><span class="dt">void</span><span class="op">)(</span>f<span class="op">(</span>p_obj<span class="op">-&gt;[:</span>members<span class="op">:])</span>, <span class="op">...)</span>; <span class="co">// Fold-expression.</span></span>
+<span id="cb112-25"><a href="#cb112-25"></a><span class="op">}</span></span>
+<span id="cb112-26"><a href="#cb112-26"></a></span>
+<span id="cb112-27"><a href="#cb112-27"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F, std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">...</span> classtypes<span class="op">&gt;</span></span>
+<span id="cb112-28"><a href="#cb112-28"></a><span class="dt">void</span> apply_to_base_data_members<span class="op">(</span>T <span class="op">*</span>p_obj, F <span class="op">&amp;</span>f, <span class="dt">bool</span> virtual_bases, <span class="dt">bool</span> skip_direct_members<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-29"><a href="#cb112-29"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb112-30"><a href="#cb112-30"></a>  <span class="co">// Use a fold-expression to recurse through given bases if needed.</span></span>
+<span id="cb112-31"><a href="#cb112-31"></a>  <span class="op">(</span>apply_to_base_data_members<span class="op">&lt;</span></span>
+<span id="cb112-32"><a href="#cb112-32"></a>    T, F, <span class="op">...[:</span>get_base_types<span class="op">(</span>classtypes, virtual_bases<span class="op">):]...</span></span>
+<span id="cb112-33"><a href="#cb112-33"></a>    <span class="op">&gt;(</span></span>
+<span id="cb112-34"><a href="#cb112-34"></a>      <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">(</span><span class="ex">typeof</span><span class="op">(</span>bases<span class="op">))*&gt;(</span>p_obj<span class="op">)</span>, f,</span>
+<span id="cb112-35"><a href="#cb112-35"></a>      virtual_bases,</span>
+<span id="cb112-36"><a href="#cb112-36"></a>      <span class="co">/*skip_direct_members=*/</span><span class="kw">false</span><span class="op">)</span>, <span class="op">...)</span>;</span>
+<span id="cb112-37"><a href="#cb112-37"></a></span>
+<span id="cb112-38"><a href="#cb112-38"></a>  <span class="cf">if</span> <span class="op">(!</span>skip_direct_members<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-39"><a href="#cb112-39"></a>    <span class="co">// Use another fold-expression to handle the data members of each specified class type.</span></span>
+<span id="cb112-40"><a href="#cb112-40"></a>    <span class="op">(</span>apply_to_data_members<span class="op">&lt;</span></span>
+<span id="cb112-41"><a href="#cb112-41"></a>      T, F, <span class="op">...[:</span>get_members<span class="op">(</span>classtypes<span class="op">):]...</span></span>
+<span id="cb112-42"><a href="#cb112-42"></a>      <span class="op">&gt;(</span>p_obj, f<span class="op">)</span>, <span class="op">...)</span>;</span>
+<span id="cb112-43"><a href="#cb112-43"></a>  <span class="op">}</span></span>
+<span id="cb112-44"><a href="#cb112-44"></a><span class="op">}</span></span>
+<span id="cb112-45"><a href="#cb112-45"></a></span>
+<span id="cb112-46"><a href="#cb112-46"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F<span class="op">&gt;</span></span>
+<span id="cb112-47"><a href="#cb112-47"></a><span class="dt">void</span> apply_to_all_data_members<span class="op">(</span>T <span class="kw">const</span> <span class="op">&amp;&amp;</span>r_obj, F <span class="op">&amp;&amp;</span>f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb112-48"><a href="#cb112-48"></a>  T <span class="kw">const</span> <span class="op">*</span>p_obj <span class="op">=</span> std<span class="op">::</span>addressof<span class="op">(</span>r_obj<span class="op">)</span>;</span>
+<span id="cb112-49"><a href="#cb112-49"></a></span>
+<span id="cb112-50"><a href="#cb112-50"></a>  apply_to_base_data_members<span class="op">&lt;</span>T, F, <span class="op">^</span>T<span class="op">&gt;(</span>p_obj, f, <span class="co">/*virtual_bases=*/</span><span class="kw">true</span>, <span class="co">/*skip_direct_members=*/</span><span class="kw">true</span><span class="op">)</span>;</span>
+<span id="cb112-51"><a href="#cb112-51"></a>  apply_to_base_data_members<span class="op">&lt;</span>T, F, <span class="op">^</span>T<span class="op">&gt;(</span>p_obj, f, <span class="co">/*virtual_bases=*/</span><span class="kw">false</span>, <span class="co">/*skip_direct_members=*/</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb112-52"><a href="#cb112-52"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Clearly this is far less readable than the first version. It also involves more instantiations than the first version, but it is nonetheless more efficient than a pure TMP-based solution.</p>
+<h1 data-number="9" style="border-bottom:1px solid #cccccc" id="appendix-meta-library-synopsis"><span class="header-section-number">9</span> Appendix: Meta-library synopsis<a href="#appendix-meta-library-synopsis" class="self-link"></a></h1>
+<p>This appendix briefly lists declarations for all the intrinsic meta-functions being worked on in the Lock3 Software implementation. As mentioned, these declarations are eventually meant to be brought into a program by including the standard header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code>. In its current form the list differs slightly from the discussions in this paper because of implementation realities. We expect to harmonize the two over time.</p>
+<p>Parameters to queries are named to represent the subset of <code class="sourceCode cpp">meta<span class="op">::</span>info</code> values accepted by each function:</p>
+<ul>
+<li><code class="sourceCode cpp">reflection</code> – accepts any value.</li>
+<li><code class="sourceCode cpp">invalid</code> – accepts only an invalid reflection.</li>
+<li><code class="sourceCode cpp">function</code> – accepts any value that designates a function.</li>
+<li><code class="sourceCode cpp">variable</code> – accepts any value that designates a variable.</li>
+<li><code class="sourceCode cpp">bitfield</code> – accepts any value that designates a bitfield.</li>
+<li><code class="sourceCode cpp">type</code> – accepts any value that designates a type.</li>
+<li><code class="sourceCode cpp">xxx_type</code> – accepts any value that designates a type of kind <code class="sourceCode cpp">xxx</code> (e.g., <code class="sourceCode cpp">enum_type</code>)</li>
+<li><code class="sourceCode cpp">templ</code> – accepts any value that designates a template.</li>
+<li><code class="sourceCode cpp">special</code> – accepts any value that designates a template specialization.</li>
+<li><code class="sourceCode cpp">entity</code> – accepts any value that designates an entity.</li>
+<li><code class="sourceCode cpp">parameter</code> – accepts any value that designates a function or template parameter.</li>
+<li><code class="sourceCode cpp">expression</code> – accepts any value that designates an expression.</li>
+<li><code class="sourceCode cpp">argument</code> – accepts any value that designates a function or template argument.</li>
+<li><code class="sourceCode cpp">base</code> – accepts any value that designates a base class specifier.</li>
+<li><code class="sourceCode cpp">mem</code> – accepts any value that designates a class member.</li>
+<li><code class="sourceCode cpp">mem_function</code> – accepts any value that designates a member function.</li>
+<li><code class="sourceCode cpp">spec_mem_function</code> – accepts any value that designates a special member function.</li>
+<li><code class="sourceCode cpp">base_or_mem</code> – accepts any value that designates a base class specifier or a class member.</li>
+</ul>
+<p>Some operations are polymorphic and accept combinations. For example, the parameter of <code class="sourceCode cpp">is_public</code> is <code class="sourceCode cpp">base_or_mem</code>. Operations accepting sequences are pluralized (e.g., <code class="sourceCode cpp">reflections</code>), meaning that the restriction applies to all elements of the sequence. Also, note that a function accepting a <code class="sourceCode cpp">declarator</code> will accept a function, variable, or bitfield.</p>
+<p>Although all the declarations are being considered and worked on, some are not implemented or not tested. The list below highlights those declarations as follows:</p>
+<table>
+<tr>
+<th colspan="2">
+Highlights for interfaces still requiring work
+</th>
+</tr>
+<tr>
+<td>
+<span style="background-color:red">Red</span>
+</td>
+<td>
+Not implemented, because of not-yet-resolved limitations
+</td>
+</tr>
+<tr>
+<td>
+<span style="background-color:orange">Orange</span>
+</td>
+<td>
+Not implemented, because of fixable limitations
+</td>
+</tr>
+<tr>
+<td>
+<span style="background-color:yellow">Yellow</span>
+</td>
+<td>
+Not <em>yet</em> implemented
+</td>
+</tr>
+<tr>
+<td>
+<span class="addu">Green</span>
+</td>
+<td>
+Implemented, but not tested
+</td>
+</tr>
+</table>
+<p>The synopsis of <code class="sourceCode cpp"><span class="op">&lt;</span>experimental<span class="op">/</span>meta<span class="op">&gt;</span></code> header is:</p>
+<style>
+  span.orange { background-color: orange }
+  span.red { background-color: red }
+  span.yellow { background-color: yellow }
+</style>
+<blockquote>
+<div class="sourceCode" id="cb113"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb113-1"><a href="#cb113-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb113-2"><a href="#cb113-2"></a>  <span class="co">// Reflection type</span></span>
+<span id="cb113-3"><a href="#cb113-3"></a>  <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">void</span><span class="op">)</span>;</span>
+<span id="cb113-4"><a href="#cb113-4"></a></span>
+<span id="cb113-5"><a href="#cb113-5"></a>  <span class="co">// Classification</span></span>
+<span id="cb113-6"><a href="#cb113-6"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_invalid<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-7"><a href="#cb113-7"></a></span>
+<span id="cb113-8"><a href="#cb113-8"></a>  <span class="co">// Scope</span></span>
+<span id="cb113-9"><a href="#cb113-9"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_local<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-10"><a href="#cb113-10"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_class_member<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-11"><a href="#cb113-11"></a></span>
+<span id="cb113-12"><a href="#cb113-12"></a>  <span class="co">// Variables</span></span>
+<span id="cb113-13"><a href="#cb113-13"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_variable<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-14"><a href="#cb113-14"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_static_storage_duration<span class="op">(</span>info variable<span class="op">)</span>;</span>
+<span id="cb113-15"><a href="#cb113-15"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_thread_local_storage_duration<span class="op">(</span>info variable<span class="op">)</span>;</span>
+<span id="cb113-16"><a href="#cb113-16"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_automatic_storage_duration<span class="op">(</span>info variable<span class="op">)</span>;</span>
+<span id="cb113-17"><a href="#cb113-17"></a></span>
+<span id="cb113-18"><a href="#cb113-18"></a>  <span class="co">// Functions</span></span>
+<span id="cb113-19"><a href="#cb113-19"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_function<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-20"><a href="#cb113-20"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow<span class="op">(</span>info function<span class="op">)</span>;</span>
+<span id="cb113-21"><a href="#cb113-21"></a>  <span class="orange">consteval bool has_ellipsis(info function);</span></span>
+<span id="cb113-22"><a href="#cb113-22"></a></span>
+<span id="cb113-23"><a href="#cb113-23"></a>  <span class="red">// Classes</span></span>
+<span id="cb113-24"><a href="#cb113-24"></a>  <span class="red">template&lt;typename …Args&gt;</span></span>
+<span id="cb113-25"><a href="#cb113-25"></a>  <span class="red">consteval std::span<info> members_of(info class_type, Args …filters);</span></span>
+<span id="cb113-26"><a href="#cb113-26"></a>  <span class="red">template&lt;typename …Args&gt;</span></span>
+<span id="cb113-27"><a href="#cb113-27"></a>  <span class="red">consteval std::span<info> bases_of(info class_type, Args …filters);</span></span>
+<span id="cb113-28"><a href="#cb113-28"></a></span>
+<span id="cb113-29"><a href="#cb113-29"></a>  <span class="co">// Classes</span></span>
+<span id="cb113-30"><a href="#cb113-30"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_class<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-31"><a href="#cb113-31"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_union<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-32"><a href="#cb113-32"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_virtual_destructor<span class="op">(</span>info class_type<span class="op">)</span>;</span>
+<span id="cb113-33"><a href="#cb113-33"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_declared_class<span class="op">(</span>info class_type<span class="op">)</span>;</span>
+<span id="cb113-34"><a href="#cb113-34"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_declared_struct<span class="op">(</span>info class_type<span class="op">)</span>;</span>
+<span id="cb113-35"><a href="#cb113-35"></a></span>
+<span id="cb113-36"><a href="#cb113-36"></a>  <span class="co">// Data Members</span></span>
+<span id="cb113-37"><a href="#cb113-37"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_data_member<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-38"><a href="#cb113-38"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_static_data_member<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-39"><a href="#cb113-39"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nonstatic_data_member<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-40"><a href="#cb113-40"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_bit_field<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-41"><a href="#cb113-41"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_mutable<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-42"><a href="#cb113-42"></a></span>
+<span id="cb113-43"><a href="#cb113-43"></a>  <span class="co">// Member Functions</span></span>
+<span id="cb113-44"><a href="#cb113-44"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_member_function<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-45"><a href="#cb113-45"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_static_member_function<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-46"><a href="#cb113-46"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nonstatic_member_function<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-47"><a href="#cb113-47"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_normal<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-48"><a href="#cb113-48"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_conversion<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-49"><a href="#cb113-49"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_override<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-50"><a href="#cb113-50"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_override_specified<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-51"><a href="#cb113-51"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_deleted<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-52"><a href="#cb113-52"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_virtual<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-53"><a href="#cb113-53"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_pure_virtual<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-54"><a href="#cb113-54"></a></span>
+<span id="cb113-55"><a href="#cb113-55"></a>  <span class="co">// Special Member Functions</span></span>
+<span id="cb113-56"><a href="#cb113-56"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_constructor<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-57"><a href="#cb113-57"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_default_constructor<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-58"><a href="#cb113-58"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_copy_constructor<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-59"><a href="#cb113-59"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_move_constructor<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-60"><a href="#cb113-60"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_copy_assignment_operator<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-61"><a href="#cb113-61"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_move_assignment_operator<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-62"><a href="#cb113-62"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_copy<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-63"><a href="#cb113-63"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_move<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-64"><a href="#cb113-64"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_destructor<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-65"><a href="#cb113-65"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_defaulted<span class="op">(</span>info spec_mem_function<span class="op">)</span>;</span>
+<span id="cb113-66"><a href="#cb113-66"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_explicit<span class="op">(</span>info spec_mem_function<span class="op">)</span>;</span>
+<span id="cb113-67"><a href="#cb113-67"></a></span>
+<span id="cb113-68"><a href="#cb113-68"></a>  <span class="co">// Access</span></span>
+<span id="cb113-69"><a href="#cb113-69"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_access<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-70"><a href="#cb113-70"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_public<span class="op">(</span>info base_or_mem<span class="op">)</span>;</span>
+<span id="cb113-71"><a href="#cb113-71"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_protected<span class="op">(</span>info base_or_mem<span class="op">)</span>;</span>
+<span id="cb113-72"><a href="#cb113-72"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_private<span class="op">(</span>info base_or_mem<span class="op">)</span>;</span>
+<span id="cb113-73"><a href="#cb113-73"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_default_access<span class="op">(</span>info base_or_mem<span class="op">)</span>;</span>
+<span id="cb113-74"><a href="#cb113-74"></a></span>
+<span id="cb113-75"><a href="#cb113-75"></a>  <span class="co">// Linkage</span></span>
+<span id="cb113-76"><a href="#cb113-76"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_linkage<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-77"><a href="#cb113-77"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_externally_linked<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-78"><a href="#cb113-78"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_internally_linked<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-79"><a href="#cb113-79"></a></span>
+<span id="cb113-80"><a href="#cb113-80"></a>  <span class="co">// General purpose</span></span>
+<span id="cb113-81"><a href="#cb113-81"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_extern_specified<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-82"><a href="#cb113-82"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_inline<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-83"><a href="#cb113-83"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_inline_specified<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-84"><a href="#cb113-84"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_constexpr<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-85"><a href="#cb113-85"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_consteval<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-86"><a href="#cb113-86"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_final<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-87"><a href="#cb113-87"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_defined<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-88"><a href="#cb113-88"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_complete<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-89"><a href="#cb113-89"></a></span>
+<span id="cb113-90"><a href="#cb113-90"></a>  <span class="co">// Namespaces</span></span>
+<span id="cb113-91"><a href="#cb113-91"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_namespace<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-92"><a href="#cb113-92"></a></span>
+<span id="cb113-93"><a href="#cb113-93"></a>  <span class="addu">// Aliases</span></span>
+<span id="cb113-94"><a href="#cb113-94"></a>  <span class="addu">consteval bool is_alias(info reflection);</span></span>
+<span id="cb113-95"><a href="#cb113-95"></a>  <span class="addu">consteval bool is_namespace_alias(info reflection);</span></span>
+<span id="cb113-96"><a href="#cb113-96"></a>  <span class="addu">consteval bool is_type_alias(info reflection);</span></span>
+<span id="cb113-97"><a href="#cb113-97"></a>  <span class="addu">consteval bool is_alias_template(info reflection);</span></span>
+<span id="cb113-98"><a href="#cb113-98"></a></span>
+<span id="cb113-99"><a href="#cb113-99"></a>  <span class="co">// Enums</span></span>
+<span id="cb113-100"><a href="#cb113-100"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_enum<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-101"><a href="#cb113-101"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_unscoped_enum<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-102"><a href="#cb113-102"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_scoped_enum<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-103"><a href="#cb113-103"></a>  <span class="red">consteval std::span<info> enumerators_of(info enum_type);</span></span>
+<span id="cb113-104"><a href="#cb113-104"></a></span>
+<span id="cb113-105"><a href="#cb113-105"></a>  <span class="co">// Enumerator</span></span>
+<span id="cb113-106"><a href="#cb113-106"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_enumerator<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-107"><a href="#cb113-107"></a></span>
+<span id="cb113-108"><a href="#cb113-108"></a>  <span class="co">// Templates</span></span>
+<span id="cb113-109"><a href="#cb113-109"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-110"><a href="#cb113-110"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_class_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-111"><a href="#cb113-111"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_function_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-112"><a href="#cb113-112"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_variable_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-113"><a href="#cb113-113"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_member_function_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-114"><a href="#cb113-114"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_static_member_function_template<span class="op">(</span>reflection<span class="op">)</span>;</span>
+<span id="cb113-115"><a href="#cb113-115"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nonstatic_member_function_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-116"><a href="#cb113-116"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_constructor_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-117"><a href="#cb113-117"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_destructor_template<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-118"><a href="#cb113-118"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_concept<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-119"><a href="#cb113-119"></a></span>
+<span id="cb113-120"><a href="#cb113-120"></a>  <span class="co">// Specializations</span></span>
+<span id="cb113-121"><a href="#cb113-121"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_specialization<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-122"><a href="#cb113-122"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_partial_specialization<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-123"><a href="#cb113-123"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_explicit_specialization<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-124"><a href="#cb113-124"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_implicit_instantiation<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-125"><a href="#cb113-125"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_explicit_instantiation<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-126"><a href="#cb113-126"></a>  <span class="orange">consteval info template_of(info special);</span></span>
+<span id="cb113-127"><a href="#cb113-127"></a>  <span class="orange">consteval bool has_template_arguments(info reflection);</span></span>
+<span id="cb113-128"><a href="#cb113-128"></a>  <span class="orange">consteval std::span<info> template_arguments_of(info special);</span></span>
+<span id="cb113-129"><a href="#cb113-129"></a>  <span class="orange">consteval info substitute(info templ, std::span<info> args);</span></span>
+<span id="cb113-130"><a href="#cb113-130"></a></span>
+<span id="cb113-131"><a href="#cb113-131"></a>  <span class="addu">// Base classes</span></span>
+<span id="cb113-132"><a href="#cb113-132"></a>  <span class="addu">consteval bool is_base_class(info reflection);</span></span>
+<span id="cb113-133"><a href="#cb113-133"></a>  <span class="addu">consteval bool is_direct_base_class(info reflection);</span></span>
+<span id="cb113-134"><a href="#cb113-134"></a>  <span class="addu">consteval bool is_virtual_base_class(info reflection);</span></span>
+<span id="cb113-135"><a href="#cb113-135"></a></span>
+<span id="cb113-136"><a href="#cb113-136"></a>  <span class="co">// Parameters</span></span>
+<span id="cb113-137"><a href="#cb113-137"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_function_parameter<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-138"><a href="#cb113-138"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_template_parameter<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-139"><a href="#cb113-139"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_type_template_parameter<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-140"><a href="#cb113-140"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nontype_template_parameter<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-141"><a href="#cb113-141"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_template_template_parameter<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-142"><a href="#cb113-142"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_default_argument<span class="op">(</span>info parameter<span class="op">)</span>;</span>
+<span id="cb113-143"><a href="#cb113-143"></a>  <span class="red">consteval std::span<info> parameters_of(info function_or_templ);</span></span>
+<span id="cb113-144"><a href="#cb113-144"></a></span>
+<span id="cb113-145"><a href="#cb113-145"></a>  <span class="co">// Types</span></span>
+<span id="cb113-146"><a href="#cb113-146"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-147"><a href="#cb113-147"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_fundamental_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-148"><a href="#cb113-148"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_fundamental_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-149"><a href="#cb113-149"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_arithmetic_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-150"><a href="#cb113-150"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_arithmetic_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-151"><a href="#cb113-151"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_scalar_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-152"><a href="#cb113-152"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_scalar_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-153"><a href="#cb113-153"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_object_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-154"><a href="#cb113-154"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_object_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-155"><a href="#cb113-155"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_compound_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-156"><a href="#cb113-156"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_compound_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-157"><a href="#cb113-157"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_function_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-158"><a href="#cb113-158"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_function_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-159"><a href="#cb113-159"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_class_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-160"><a href="#cb113-160"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_class_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-161"><a href="#cb113-161"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_union_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-162"><a href="#cb113-162"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_union_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-163"><a href="#cb113-163"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_enum_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-164"><a href="#cb113-164"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_enum_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-165"><a href="#cb113-165"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_unscoped_enum_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-166"><a href="#cb113-166"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_unscoped_enum_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-167"><a href="#cb113-167"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_scoped_enum_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-168"><a href="#cb113-168"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_scoped_enum_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-169"><a href="#cb113-169"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_void_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-170"><a href="#cb113-170"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_void_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-171"><a href="#cb113-171"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_null_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-172"><a href="#cb113-172"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_null_pointer_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-173"><a href="#cb113-173"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_integral_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-174"><a href="#cb113-174"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_integral_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-175"><a href="#cb113-175"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_floating_point_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-176"><a href="#cb113-176"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_floating_point_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-177"><a href="#cb113-177"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_array_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-178"><a href="#cb113-178"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_array_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-179"><a href="#cb113-179"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-180"><a href="#cb113-180"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_pointer_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-181"><a href="#cb113-181"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_reference_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-182"><a href="#cb113-182"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_reference_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-183"><a href="#cb113-183"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_lvalue_reference_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-184"><a href="#cb113-184"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_lvalue_reference_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-185"><a href="#cb113-185"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_rvalue_reference_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-186"><a href="#cb113-186"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_rvalue_reference_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-187"><a href="#cb113-187"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_member_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-188"><a href="#cb113-188"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_member_pointer_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-189"><a href="#cb113-189"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_member_object_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-190"><a href="#cb113-190"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_member_object_pointer_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-191"><a href="#cb113-191"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_member_function_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-192"><a href="#cb113-192"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_member_function_pointer_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-193"><a href="#cb113-193"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_closure_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-194"><a href="#cb113-194"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_closure_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-195"><a href="#cb113-195"></a></span>
+<span id="cb113-196"><a href="#cb113-196"></a>  <span class="co">// Type properties</span></span>
+<span id="cb113-197"><a href="#cb113-197"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_incomplete_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-198"><a href="#cb113-198"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_incomplete_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-199"><a href="#cb113-199"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_const_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-200"><a href="#cb113-200"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_const_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-201"><a href="#cb113-201"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_volatile_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-202"><a href="#cb113-202"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_volatile_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-203"><a href="#cb113-203"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivial_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-204"><a href="#cb113-204"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivial_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-205"><a href="#cb113-205"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copyable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-206"><a href="#cb113-206"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_copyable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-207"><a href="#cb113-207"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_standard_layout_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-208"><a href="#cb113-208"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_standard_layout_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-209"><a href="#cb113-209"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_pod_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-210"><a href="#cb113-210"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_pod_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-211"><a href="#cb113-211"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_literal_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-212"><a href="#cb113-212"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_literal_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-213"><a href="#cb113-213"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_empty_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-214"><a href="#cb113-214"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_empty_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-215"><a href="#cb113-215"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_polymorphic_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-216"><a href="#cb113-216"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_polymorphic_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-217"><a href="#cb113-217"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_abstract_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-218"><a href="#cb113-218"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_abstract_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-219"><a href="#cb113-219"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_final_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-220"><a href="#cb113-220"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_final_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-221"><a href="#cb113-221"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_aggregate_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-222"><a href="#cb113-222"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_aggregate_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-223"><a href="#cb113-223"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_signed_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-224"><a href="#cb113-224"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_signed_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-225"><a href="#cb113-225"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_unsigned_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-226"><a href="#cb113-226"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_unsigned_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-227"><a href="#cb113-227"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_unique_object_representations<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-228"><a href="#cb113-228"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_type_with_unique_object_representations<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-229"><a href="#cb113-229"></a>  <span class="orange">consteval std::size_t size_of(info reflection);</span></span>
+<span id="cb113-230"><a href="#cb113-230"></a>  <span class="orange">consteval std::size_t byte_size_of(info reflection);</span></span>
+<span id="cb113-231"><a href="#cb113-231"></a>  <span class="orange">consteval std::size_t bit_size_of(info reflection);</span></span>
+<span id="cb113-232"><a href="#cb113-232"></a>  <span class="orange">consteval std::size_t byte_offset_of(info reflection);</span></span>
+<span id="cb113-233"><a href="#cb113-233"></a>  <span class="orange">consteval std::size_t bit_offset_of(info reflection);</span></span>
+<span id="cb113-234"><a href="#cb113-234"></a>  <span class="orange">consteval std::size_t alignment_of(info reflection);</span></span>
+<span id="cb113-235"><a href="#cb113-235"></a>  <span class="orange">consteval std::size_t rank(info reflection);</span></span>
+<span id="cb113-236"><a href="#cb113-236"></a>  <span class="orange">consteval std::size_t extent(info reflection);</span></span>
+<span id="cb113-237"><a href="#cb113-237"></a></span>
+<span id="cb113-238"><a href="#cb113-238"></a>  <span class="co">// Type operations</span></span>
+<span id="cb113-239"><a href="#cb113-239"></a>  <span class="red">consteval bool is_constructible(info reflection, std::span<info> arguments);</span></span>
+<span id="cb113-240"><a href="#cb113-240"></a>  <span class="red">consteval bool is_trivially_constructible(info reflection, std:span<info> arguments);</span></span>
+<span id="cb113-241"><a href="#cb113-241"></a>  <span class="red">consteval bool is_nothrow_constructible(info reflection, std::span<info> arguments);</span></span>
+<span id="cb113-242"><a href="#cb113-242"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_default_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-243"><a href="#cb113-243"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_default_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-244"><a href="#cb113-244"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_default_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-245"><a href="#cb113-245"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_default_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-246"><a href="#cb113-246"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_default_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-247"><a href="#cb113-247"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_nothrow_default_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-248"><a href="#cb113-248"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_copy_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-249"><a href="#cb113-249"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_copy_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-250"><a href="#cb113-250"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copy_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-251"><a href="#cb113-251"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_copy_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-252"><a href="#cb113-252"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_copy_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-253"><a href="#cb113-253"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_nothrow_copy_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-254"><a href="#cb113-254"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_move_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-255"><a href="#cb113-255"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_move_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-256"><a href="#cb113-256"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_move_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-257"><a href="#cb113-257"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_move_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-258"><a href="#cb113-258"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_move_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-259"><a href="#cb113-259"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_nothrow_move_constructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-260"><a href="#cb113-260"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_assignable_type<span class="op">(</span>info type,info assigned_type<span class="op">)</span>;</span>
+<span id="cb113-261"><a href="#cb113-261"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_assignable_type<span class="op">(</span>info type,info assigned_type<span class="op">)</span>;</span>
+<span id="cb113-262"><a href="#cb113-262"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_assignable_type<span class="op">(</span>info type,info assigned_type<span class="op">)</span>;</span>
+<span id="cb113-263"><a href="#cb113-263"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_copy_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-264"><a href="#cb113-264"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_copy_assignable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-265"><a href="#cb113-265"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copy_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-266"><a href="#cb113-266"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_copy_assignable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-267"><a href="#cb113-267"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_copy_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-268"><a href="#cb113-268"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_nothrow_copy_assignable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-269"><a href="#cb113-269"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_move_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-270"><a href="#cb113-270"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_move_assignable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-271"><a href="#cb113-271"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_move_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-272"><a href="#cb113-272"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_move_assignable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-273"><a href="#cb113-273"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_move_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-274"><a href="#cb113-274"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_nothrow_move_assignable_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-275"><a href="#cb113-275"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_destructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-276"><a href="#cb113-276"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_destructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-277"><a href="#cb113-277"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_destructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-278"><a href="#cb113-278"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_trivially_destructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-279"><a href="#cb113-279"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_destructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-280"><a href="#cb113-280"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_nothrow_destructible_type<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-281"><a href="#cb113-281"></a>  <span class="yellow">consteval bool is_swappable(info reflection);</span></span>
+<span id="cb113-282"><a href="#cb113-282"></a>  <span class="yellow">consteval bool is_nothrow_swappable(info reflection);</span></span>
+<span id="cb113-283"><a href="#cb113-283"></a>  <span class="yellow">consteval bool is_swappable_with(info reflection1, info reflection2);</span></span>
+<span id="cb113-284"><a href="#cb113-284"></a>  <span class="yellow">consteval bool is_nothrow_swappable_with(info reflection1, info reflection2);</span></span>
+<span id="cb113-285"><a href="#cb113-285"></a></span>
+<span id="cb113-286"><a href="#cb113-286"></a>  <span class="co">// Captures</span></span>
+<span id="cb113-287"><a href="#cb113-287"></a>  <span class="red">consteval std::span<info> captures_of(info reflection);</span></span>
+<span id="cb113-288"><a href="#cb113-288"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_default_ref_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-289"><a href="#cb113-289"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_default_copy_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-290"><a href="#cb113-290"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-291"><a href="#cb113-291"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_simple_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-292"><a href="#cb113-292"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_ref_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-293"><a href="#cb113-293"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_copy_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-294"><a href="#cb113-294"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_explicit_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-295"><a href="#cb113-295"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_init_capture<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-296"><a href="#cb113-296"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_captures<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-297"><a href="#cb113-297"></a></span>
+<span id="cb113-298"><a href="#cb113-298"></a>  <span class="co">// Type relations</span></span>
+<span id="cb113-299"><a href="#cb113-299"></a>  <span class="orange">consteval bool is_same(info reflection1, info reflection2);</span></span>
+<span id="cb113-300"><a href="#cb113-300"></a>  <span class="orange">consteval bool is_base_of(info base_type, info derived_type);</span></span>
+<span id="cb113-301"><a href="#cb113-301"></a>  <span class="orange">consteval bool is_convertible(info from_type, info to_type);</span></span>
+<span id="cb113-302"><a href="#cb113-302"></a>  <span class="orange">consteval bool is_nothrow_convertible(info from_type, info to_type);</span></span>
+<span id="cb113-303"><a href="#cb113-303"></a></span>
+<span id="cb113-304"><a href="#cb113-304"></a>  <span class="co">// Invocation</span></span>
+<span id="cb113-305"><a href="#cb113-305"></a>  <span class="red">consteval bool is_invocable(info function, std::span<info> arguments);</span></span>
+<span id="cb113-306"><a href="#cb113-306"></a>  <span class="red">consteval bool is_nothrow_invocable(info function, std::span<info> arguments);</span></span>
+<span id="cb113-307"><a href="#cb113-307"></a>  <span class="red">consteval bool is_invocable_r(info function, std::span<info> arguments, info result);</span></span>
+<span id="cb113-308"><a href="#cb113-308"></a>  <span class="red">consteval bool is_nothrow_invocable_r(info function, std::span<info> arguments, info result);</span></span>
+<span id="cb113-309"><a href="#cb113-309"></a></span>
+<span id="cb113-310"><a href="#cb113-310"></a>  <span class="co">// Type transformation</span></span>
+<span id="cb113-311"><a href="#cb113-311"></a>  <span class="kw">consteval</span> info remove_const<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-312"><a href="#cb113-312"></a>  <span class="kw">consteval</span> info remove_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-313"><a href="#cb113-313"></a>  <span class="kw">consteval</span> info remove_cv<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-314"><a href="#cb113-314"></a>  <span class="kw">consteval</span> info add_const<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-315"><a href="#cb113-315"></a>  <span class="kw">consteval</span> info add_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-316"><a href="#cb113-316"></a>  <span class="kw">consteval</span> info add_cv<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-317"><a href="#cb113-317"></a>  <span class="kw">consteval</span> info remove_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-318"><a href="#cb113-318"></a>  <span class="kw">consteval</span> info add_lvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-319"><a href="#cb113-319"></a>  <span class="kw">consteval</span> info add_rvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-320"><a href="#cb113-320"></a>  <span class="kw">consteval</span> info remove_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-321"><a href="#cb113-321"></a>  <span class="kw">consteval</span> info add_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-322"><a href="#cb113-322"></a>  <span class="kw">consteval</span> info remove_cvref<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-323"><a href="#cb113-323"></a>  <span class="kw">consteval</span> info decay<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-324"><a href="#cb113-324"></a>  <span class="kw">consteval</span> info make_signed<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-325"><a href="#cb113-325"></a>  <span class="kw">consteval</span> info make_unsigned<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb113-326"><a href="#cb113-326"></a>  <span class="orange">consteval info aligned_storage(std::size_t length, std::size_t align = /* default-alignment */);</span></span>
+<span id="cb113-327"><a href="#cb113-327"></a>  <span class="red">consteval info aligned_union(std::size_t length, std::span<info> types);</span></span>
+<span id="cb113-328"><a href="#cb113-328"></a>  <span class="orange">consteval info enable_if(bool cond, info type = ^void);</span></span>
+<span id="cb113-329"><a href="#cb113-329"></a></span>
+<span id="cb113-330"><a href="#cb113-330"></a>  <span class="co">// Associated types</span></span>
+<span id="cb113-331"><a href="#cb113-331"></a>  <span class="kw">consteval</span> info this_ref_type_of<span class="op">(</span>info mem_function<span class="op">)</span>;</span>
+<span id="cb113-332"><a href="#cb113-332"></a>  <span class="orange">consteval info common_type(std::span<info> types);</span></span>
+<span id="cb113-333"><a href="#cb113-333"></a>  <span class="kw">consteval</span> info underlying_type_of<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-334"><a href="#cb113-334"></a>  <span class="red">consteval info invoke_result(info function, std::span<info> arguments);</span></span>
+<span id="cb113-335"><a href="#cb113-335"></a>  <span class="kw">consteval</span> info type_of<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-336"><a href="#cb113-336"></a>  <span class="kw">consteval</span> info return_type_of<span class="op">(</span>info function<span class="op">)</span>;</span>
+<span id="cb113-337"><a href="#cb113-337"></a></span>
+<span id="cb113-338"><a href="#cb113-338"></a>  <span class="co">// Associated reflections</span></span>
+<span id="cb113-339"><a href="#cb113-339"></a>  <span class="red">consteval bool is_entity(info reflection);</span></span>
+<span id="cb113-340"><a href="#cb113-340"></a>  <span class="kw">consteval</span> info entity_of<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-341"><a href="#cb113-341"></a>  <span class="kw">consteval</span> info parent_of<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-342"><a href="#cb113-342"></a>  <span class="kw">consteval</span> info definition_of<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-343"><a href="#cb113-343"></a></span>
+<span id="cb113-344"><a href="#cb113-344"></a>  <span class="co">// Names</span></span>
+<span id="cb113-345"><a href="#cb113-345"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_named<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-346"><a href="#cb113-346"></a>  <span class="kw">consteval</span> std<span class="op">::</span>string_view name_of<span class="op">(</span>info named<span class="op">)</span>;</span>
+<span id="cb113-347"><a href="#cb113-347"></a>  <span class="red">consteval std::string_view display_name_of(info named);</span></span>
+<span id="cb113-348"><a href="#cb113-348"></a></span>
+<span id="cb113-349"><a href="#cb113-349"></a>  <span class="co">// Expressions</span></span>
+<span id="cb113-350"><a href="#cb113-350"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_lvalue<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-351"><a href="#cb113-351"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_xvalue<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-352"><a href="#cb113-352"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_prvalue<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-353"><a href="#cb113-353"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_glvalue<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-354"><a href="#cb113-354"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_rvalue<span class="op">(</span>info reflection<span class="op">)</span>;</span>
+<span id="cb113-355"><a href="#cb113-355"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<h1 data-number="10" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">10</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-N3980">
+<p>[N3980] H. Hinnant, V. Falco, J. Byteway. 2014-05-24. Types don’t know #. <br />
+<a href="https://wg21.link/n3980">https://wg21.link/n3980</a></p>
+</div>
 <div id="ref-N4766">
 <p>[N4766] David Sankel. 2018-08-11. Working Draft, C++ Extensions for Reflection. <br />
 <a href="https://wg21.link/n4766">https://wg21.link/n4766</a></p>
 </div>
+<div id="ref-N4818">
+<p>[N4818] David Sankel. 2019-06-17. Working Draft, C++ Extensions for Reflection. <br />
+<a href="https://wg21.link/n4818">https://wg21.link/n4818</a></p>
+</div>
 <div id="ref-N4856">
 <p>[N4856] David Sankel. 2020-03-02. C++ Extensions for Reflection. <br />
 <a href="https://wg21.link/n4856">https://wg21.link/n4856</a></p>
+</div>
+<div id="ref-P0385R0">
+<p>[P0385R0] Matúš Chochlík, Alex Naumann. 2016-05-30. Static reflection: Rationale, design and evolution. <br />
+<a href="https://wg21.link/p0385r0">https://wg21.link/p0385r0</a></p>
 </div>
 <div id="ref-P0425R0">
 <p>[P0425R0] Louis Dionne. 2017-06-18. Metaprogramming by design, not by accident. <br />
@@ -1329,6 +2474,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P0784R7">
 <p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
 <a href="https://wg21.link/p0784r7">https://wg21.link/p0784r7</a></p>
+</div>
+<div id="ref-P0949R0">
+<p>[P0949R0] Peter Dimov. 2018-02-11. Adding support for type-based metaprogramming to the standard library. <br />
+<a href="https://wg21.link/p0949r0">https://wg21.link/p0949r0</a></p>
 </div>
 <div id="ref-P0993R0">
 <p>[P0993R0] Andrew Sutton, Herb Sutter. 2014-04-02. Value-based Reflection. <br />

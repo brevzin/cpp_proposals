@@ -1347,14 +1347,1480 @@ their counterparts are core language features (like the integer types and the lo
 
 ## Adapting the Reflection TS' [reflect] section
 
----
-references:
-  - id: std-discussion
-    citation-label: std-discussion
-    title: "Should a `std::basic_format_string` be specified?"
-    author:
-      - family: Joseph Thomson
-    issued:
-      year: 2021
-    URL: https://lists.isocpp.org/std-discussion/2021/12/1526.php
----
+The Reflection TS ([@N4818]) introduces a large number of template metafunctions. This proposal steals
+many of those features and adapts them to the value-based reflection world. However, we make some
+changes to better align the semantics with the constraints of the language definition and the flexibility of
+our value-based approach.
+
+### Predicates
+
+Let's start with the predicates (metafunctions returning a bool value). For example, `is_public` gets a
+counterpart as follows:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_public(info base_or_mem)->bool {...};
+}
+```
+:::
+
+That function fails to evaluate to a constant if `base_or_mem` does not designate a base class or a class
+member (that constraint corresponds to the concepts requirements imposed for the class template
+`is_public` proposed in the Reflection TS). `is_protected`, `is_private`, `is_accessible`
+(which checks whether a member is accessible from the context of invocation), `is_virtual`, and
+`is_final` are handled in the same way. For example:
+
+::: bq
+```cpp
+struct S { int x; };
+constexpr bool t = std::meta::is_public(^S::x); // = true;
+constexpr bool e = std::meta::is_public(^S);    // Error: Not a constant because ^S is not a base or member.
+```
+:::
+
+The `is_unnamed` metafunction is transcribed similarly:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_unnamed(info entity)->bool {...};
+}
+```
+:::
+
+but this time the function only evaluates to a constant if the given reflection represents a namespace, a
+data member, a function, a template, a variable, a type, or an enumerator. Failing to evaluate a constant
+will result in an error, or a deduction failure if in a SFINAE context.
+
+`is_scoped_enum` becomes
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_scoped_enum(info entity)->bool {...};
+}
+```
+:::
+
+and always evaluates to a constant.
+
+We propose to replace `is_constexpr` by:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_declared_constexpr(info entity)->bool {...};
+}
+```
+:::
+
+which is a constant value if `entity` designates a variable, a function, a static data member, or a template
+for these. (We propose the alternative name to distinguish the entities that are declared with the
+`constexpr` or `consteval` specifier from entities that are effectively `constexpr` (e.g., a function
+template may be declared `constexpr` and its instances would produce `true` values with this predicate;
+however, the instances may not actually be `constexpr` functions; conversely, lambda call operators and
+special member functions may be `constexpr` functions without being declared `constexpr`).
+
+Immediate (`consteval`) functions and function templates are also identifiable:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_consteval(info entity)->bool {...};
+}
+```
+:::
+
+Instead of `is_static` (for variables) we propose:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto has_static_storage_duration(info entity)->bool {...};
+}
+```
+:::
+
+because `is_static` suggests a query about a storage class specifier rather than a storage duration.
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_inline(info entity)->bool {...};
+}
+```
+:::
+
+produces a constant value for reflections of variables, functions, variable/function templates, and
+namespaces.
+
+A number of function properties produce a constant value for reflections of functions only:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_deleted(info entity)->bool {...};
+  consteval auto is_defaulted(info entity)->bool {...};
+  consteval auto is_explicit(info entity)->bool {...};
+  consteval auto is_override(info entity)->bool {...};
+  consteval auto is_pure_virtual(info entity)->bool {...};
+}
+```
+:::
+
+The following predicates always produce a constant value given a reflection. They produce a `false`
+value for invalid reflections, and otherwise return `true` if the predicate applies to the reflected entity:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_class_member(info reflection)->bool {
+    // Return true for class and class template members.
+  ...
+  };
+  consteval auto is_local(info reflection)->bool {
+    // Return true for local variables, local members.
+  ...
+      };
+  consteval auto is_namespace(info entity)->bool {...};
+  consteval auto is_template(info entity)->bool {...};
+  consteval auto is_type(info entity)->bool {
+    // Return true for types and type aliases.
+    ...
+  };
+  consteval auto is_incomplete_type(info entity)->bool;
+  consteval auto is_closure_type(info entity)->bool {...};
+  consteval auto has_captures(info entity)->bool {...};
+  consteval auto has_default_ref_capture(info entity)->bool {
+    // Return true even if there is no effective capture (i.e., it’s syntactical only).
+    ...
+  };
+  consteval auto has_default_copy_capture(info entity)->bool {
+    // Return true even if there is no effective capture (i.e., it’s syntactical only).
+    ...
+  };
+
+  consteval auto is_simple_capture(info entity)->bool {...};
+  consteval auto is_ref_capture(info entity)->bool {...};
+  consteval auto is_copy_capture(info entity)->bool {...};
+  consteval auto is_explicit_capture(info entity)->bool {...};
+  consteval auto is_init_capture(info entity)->bool {...};
+  consteval auto is_function_parameter(info entity)->bool {...};
+  consteval auto is_template_parameter(info entity)->bool {...};
+  consteval auto is_class_template(info entity)->bool {...};
+  consteval auto is_alias(info reflection)->bool {...};
+  consteval auto is_alias_template(info reflection)->bool {...};
+  consteval auto is_enumerator(info entity)->bool {...};
+  consteval auto is_variable(info entity)->bool {...};
+  consteval auto is_variable_template(info entity)->bool {...};
+  consteval auto is_static_data_member(info entity)->bool {
+    return is_variable(entity) && is_class_member(entity);
+  };
+  consteval auto is_nonstatic_data_member(info entity)->bool {
+    // Return true for nonstatic data members, which includes bit fields.
+    ...
+  };
+  consteval auto is_bit_field(info reflection)->bool {
+    // Return true for bit fields, but also for expressions that are bit field selections.
+    ...
+  };
+  consteval auto is_base_class(info entity)->bool {...};
+  consteval auto is_direct_base_class(info entity)->bool {...};
+  consteval auto is_virtual_base_class(info entity)->bool {
+  return is_base_class(entity) && is_virtual(entity);
+  }
+  consteval auto is_function(info entity)->bool {...};
+  consteval auto is_function_template(info entity)->bool {...};
+  consteval auto is_member_function(info entity)->bool {
+    return is_function(entity) && is_class_member(entity);
+  };
+  consteval auto is_member_function_template(info entity)->bool {
+    return is_function_template(entity) && is_class_member(entity);
+  };
+  consteval auto is_static_member_function(info entity)->bool {...};
+  consteval auto is_static_member_function_template(info entity)->bool {...};
+
+  consteval auto is_nonstatic_member_function(info entity)->bool {...};
+  consteval auto is_nonstatic_member_function_template(info entity) ->bool {...};
+  consteval auto is_constructor(info entity)->bool {...};
+  consteval auto is_constructor_template(info entity)->bool {...};
+  consteval auto is_destructor(info entity)->bool {...};
+  consteval auto is_destructor_template(info entity)->bool {...};
+} // namespace std::meta
+```
+:::
+
+Note that `is_bit_field` above is more general than what the TS proposed since it applies not only to
+the reflection of data members but also to expressions, because “bitfieldness” is a significant property of
+an expression. Similarly, we add the following five predicates (with no equivalent in the TS) for
+reflections of expressions:
+
+::: bq
+```cpp
+consteval auto is_lvalue(info reflection)->bool;
+consteval auto is_xvalue(info reflection)->bool;
+consteval auto is_prvalue(info reflection)->bool;
+consteval auto is_glvalue(info reflection)->bool {
+  return is_lvalue(reflection) || is_xvalue(reflection);
+}
+consteval auto is_rvalue(info reflection)->bool {
+  return is_pralue(reflection) || is_xvalue(reflection);
+}
+```
+:::
+
+The following predicate produces a constant value given the reflection of a function type or closure type,
+or an alias thereof:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto has_ellipsis(info entity)->bool {...};
+}
+```
+:::
+
+The following predicate produces a constant value given the reflection of a
+function type or an alias thereof:
+
+::: bq
+```cpp
+namespace std::meta {
+consteval auto is_member_function_type(info entity)->bool {...};
+}
+```
+:::
+
+Given the reflection of a function or template parameter, `std::meta:has_default` returns whether
+it has an associated default argument:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto has_default(info entity)->bool {...};
+}
+```
+:::
+
+### Singular Properties
+
+This section lists facilities that return properties described with a “single value”.
+The following function can be used to identify a source location of a declared entity:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto source_location_of(info entity) ->std::source_location {...};
+}
+```
+:::
+
+Although this produces a constant result for any reflection value, the returned value is unspecified if the
+reflection is not that of a declared entity (or alias).
+
+The name of declared entities can be accessed through the following:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto name_of(info entity)->std::string_view {...};
+  consteval auto display_name_of(info entity) ->std::string_view {...};
+}
+```
+:::
+
+For named declared entities/aliases, `name_of` returns a constant string_view describing the same
+identifier as that produced by the `[: info :]` splicer. For any other operand, it produces a constant
+empty `string_view`.
+
+The `display_name_of` function produces an unspecified constant non-empty `string_view` for any
+reflection (implementations are encouraged to produce a string that is helpful in identifying the reflected
+item).
+
+Aliases can be “looked through” using the aforementioned function `entity`:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto entity(info reflection)->info {...};
+}
+```
+:::
+
+A reflection for the type associated with an entity or expression can be retrieved with
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto type_of(info reflection)->info {...};
+}
+```
+:::
+
+If reflection describes an entity (not an expression) that is not a variable, base class, data member,
+function, or enumerator, this function returns an invalid reflection.
+
+A “parent” entity can be identified with
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto parent_of(info reflection)->info {...};
+}
+```
+:::
+
+For members of classes or namespaces this returns a reflection of the innermost class or namespace. For a
+base class, this returns the class type from which the base class was obtained (only direct and virtual base
+classes can be reflected). For function-local entities that are not class members, `parent_of` returns the a
+reflection of the enclosing function. For reflections that do not designate an alias or a declared entity,
+`parent_of` returns an invalid reflection.
+
+The innermost enclosing function and class can also be queried:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto current_function()->info {...}
+  consteval auto current_class_type()->info {...}
+}
+```
+:::
+
+That is particularly useful to deal more efficiently with parameter packs (an example will be presented
+later on). Note that when invoked from an immediate function in a context that does not require a
+constant-expression, these functions return the result as if invoked from the calling function.
+Given the reflection of a base or nonstatic data member of a class (but not a class template), layout
+information can be retrieved with the following functions:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto byte_offset_of(info entity)->std::size_t {...};
+  consteval auto bit_offset_of(info entity)->std::size_t {...};
+  consteval auto byte_size_of(info entity)->std::size_t {...};
+  consteval auto bit_size_of(info entity)->std::size_t {...};
+}
+```
+:::
+
+For reflections that do not designate a base or a nonstatic data member, this does not successfully produce
+a constant value. `byte_offset_of` returns the byte offset of the given base or nonstatic data member
+(within the parent class). For bit-fields, the offset of the first byte containing the bit field is returned; the
+bit offset of the first bit (counting from the least significant bit) within that byte is produced by
+`bit_offset_of` (for non-bit-fields, that function returns zero). `byte_size_of` produces the
+allocated size of the associated subobject, except that is does not produce a constant value for bit fields
+(for base classes, the result may be less than `sizeof` applied to the base class type). `bit_size_of`
+produces the allocated size of the associated bit field subobject, and does not produce a constant value for
+non-bit-field reflections. (A precise specification of this requires a slight tightening of the C++ object
+model. All implementations already conform to the stricter model.)
+
+The following facilities permit examining parameter types and the `this` binding type:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto this_ref_type(info func_type)->info {...};
+}
+```
+:::
+
+For a member function type `this_ref_type` returns the reflection of the parent class associated with
+the member type, with any member function *cv-qualifiers* and *ref-qualifiers* added on top. For example:
+
+::: bq
+```cpp
+struct S {
+  int f() volatile &&;
+  int g() const;
+} s;
+constexpr auto r = this_ref_type(^s.f()); // Reflection for type “S volatile &&”.
+constexpr auto r = this_ref_type(^s.g()); // Reflection for type “S const”.
+```
+:::
+
+### Plural properties
+
+This section lists metafunctions that return `std::span<info>` values describing “plural properties”
+(such as lists of members).
+
+We propose the following function templates to retrieve subobject information:
+
+::: bq
+```cpp
+namespace std::meta {
+  template<typename ...Fs>
+  consteval auto members_of(info class_type, Fs ...filters) ->std::span<info> {...};
+  template<typename ...Fs>
+  consteval auto bases_of(info class_type, Fs ...filters) ->std::span<info> {...};
+}
+```
+:::
+
+If called with an argument for `class_type` that is the reflection of a non-class type or a capturing
+closure type (or an alias/cv-qualified version thereof), these facilities return a span referencing a single
+invalid reflection.
+
+Otherwise, if no `filters` argument is passed to it, `members_of` returns an “unfiltered” sequence of
+reflections for the following kinds of direct members of a class type (represented by `class_type`):
+nonstatic and static data members and member functions, member types (enumeration and class types)
+and member aliases, and member templates other than deduction guides. Generated members are
+included, but inherited constructors, injected-class-names, and unnamed bit fields are not (the standard
+doesn’t consider those members either). Nonstatic data members appear in declaration order (but not
+necessarily consecutively).
+
+If any “filters” are passed, they are applied as predicates to the unfiltered sequence, and members for
+which a predicate produces `false` are left out. Predicates are applied left-to-right with short-circuit
+semantics (i.e., later predicates are not applied if an earlier predicate produced `false`).
+
+Similarly, without `filter` arguments, invoking `bases_of` returns a sequence of reflections for the
+direct bases of the given (non-capturing-closure) class type. Predicates can be added to narrow down the
+bases of interest.
+
+The following example illustrates some uses of `members_of`:
+
+::: bq
+```cpp
+struct S {
+  double x;
+  int y;
+  void f();
+};
+constexpr auto class_type = ^S;
+constexpr auto s_members = members_of(class_type);
+static_assert(s_members.size() == 7);       // x, y, f(), the destructor, and generated constructors.
+constexpr auto s_data_members = members_of(class_type, is_nonstatic_data_member);
+static_assert(s_data_members.size() == 2);  // x and y.
+
+consteval auto has_integral_type(std::meta::info reflection) {
+  return std::meta::is_integral(std::meta::type_of(reflection));
+};
+constexpr auto s_imembers = members_of(class_type, is_nonstatic_data_member, has_integral_type);
+static_assert(s_imembers.size() == 1);     // Just y.
+constexpr auto s_nested_types = members_of(class_type, is_type);
+static_assert(s_members.size() == 0);      // S has no nested types.
+```
+:::
+
+The enumerators of an enumeration type can be inspected using `enumerators_of`:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto enumerators_of(info enum_type)->std::span<info> {...};
+}
+```
+:::
+
+If the argument passed for `enum_type` is not a reflection for an enumeration type, this returns a span
+referencing just an invalid reflection.
+
+The parameters of a function type or the parameters of a template can be inspected using:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto parameters_of(info reflection) ->std::span<info> {...};
+}
+```
+:::
+
+If the argument passed for `reflection` is not a reflection for a function, a member function, a function
+type, a closure type, or a template, this returns a span referencing one invalid reflection. Otherwise, the
+span contains an entry for each ordinary parameter: No entry is made for the `this` parameter or for an
+ellipsis parameter.
+
+A function is also available to introspect lambda captures associated with a closure type:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto captures_of(info closure_type) ->std::span<info> {...};
+}
+```
+:::
+
+If the argument passed for `closure_type` is not a reflection for a closure type, this returns a span
+referencing just an invalid reflection.
+
+Of note here is that we are not proposing a function to retrieve members of namespaces: Due to their
+“open scope” nature, we believe that capability is somewhat meaningless. There is however no known
+technical reason preventing us from doing so.
+
+We are also not proposing functions to expose the structure of templates. In particular, there is no
+mechanism to retrieve the members of a class template or the function parameters of a function template.
+
+## Anonymous unions
+
+Consider:
+
+::: bq
+```cpp
+struct S {
+  bool flag;
+  union {
+    int x;
+    float f;
+  };
+};
+
+constexpr auto dmembers = members_of(^S, is_nonstatic_data_member);
+static_assert(dmembers.size() == 2);
+```
+:::
+
+The sequence `dmembers` here will contain two reflections: One for flag and one for an unnamed data
+member of the unnamed union type. Conversely, `parent_of(^S::x)` produces a reflection for that
+unnamed union type rather than for `S`. Despite its lack of a declared name (which means `name_of`
+returns an empty `string_view`), the unnamed data member can be referred to with the `[: ... :]`
+splicer:
+
+::: bq
+```cpp
+constexpr S s = { false, { .x = 42 } };
+static_assert(name_of(dmembers[1]) == "");                                          // Okay.
+static_assert(s.idexpr( dmembers[1] ).x == 42);                                     // Okay.
+static_assert(remove_reference(^decltype(s.[:dmembers[1]:])) == parent_of(^S::f);   // Okay.
+```
+:::
+
+Let’s take that last line apart.
+
+In the left-hand side of the equality test `dmembers[1]` is a reflection of the unnamed data member for
+the anonymous union. Therefore, `s.[:dmembers[1]:]` is an lvalue designating the anonymous union
+subobject of `s`, and thus `decltype` applied to that produces a reference to the anonymous union type.
+The `^` operator returns the reflection designating that type and `remove_reference` finally returns a
+reflection designating the underlying union type.
+
+In the right-hand side, `^S::f` is a reflection designating the member `S::f`, which is actually a member
+`S::<unnamed-union-type>::f`. Therefore, `parent_of` also produces a reflection designating
+the underlying union type of the anonymous union, and the assertion succeeds.
+
+## Other Facilities
+
+### Reflecting values
+
+It turns out to be useful to be able to lift a constant value into reflections for an expression denoting that
+constant value. We therefore propose a pair of metafunction templates to do exactly that:
+
+::: bq
+```cpp
+namespace std::meta {
+  template<typename T>
+  consteval auto reflect_value(T const&)->info;
+  template<typename R>
+  consteval auto reflect_values(R const&)->std::span<info>;
+}
+```
+:::
+
+(The second template applies the first to each element of a range of values.)
+
+For example:
+
+::: bq
+```cpp
+constexpr std::vector<int> v{ 1, 2, 3 };
+constexpr std::span<std::meta::info> rv = reflect_values(v);
+```
+:::
+
+Such a lifted sequence can then be spliced into a template argument context:
+
+::: bq
+```cpp
+std::integer_sequence<int, ...[:rv:]...> is123; // same as std::integer_sequence<int, 1, 2, 3>
+```
+:::
+
+provided the reflected constants are valid in that context.
+
+# Metaprogramming Examples
+
+We believe that the facilities presented here permit the kind of computation previously performed with
+C++ template metaprogramming and that they are preferable over TMP because they scale better. We
+therefore suggest that no broad set of TMP facilities should be further added to the language.
+
+Examples in this section are drawn from a variety of sources, including [@P0385R0] by Matúš Chochlík and
+Axel Naumann and [@P0949R0] by Peter Dimov.
+
+## Hashing
+
+We can also use the approach above to synthesize an overload of hash_append (proposed by Howard
+Hinnant et al. in [@N3980], Types Don’t Know #).
+
+::: bq
+```cpp
+#include <meta>
+
+namespace meta = std::meta;
+template<HashAlgorithm H, StandardLayoutType T>
+  bool hash_append(H &algo, const T &t) {
+    constexpr auto data_members = members_of(^T, meta::is_nonstatic_data_member);
+    template for (constexpr meta::info member : data_members)
+      hash_append(algo, t.[:member:]);
+  }
+```
+:::
+
+The algorithm is straightforward: Recursively apply hash_append to each member for the class `T`.
+Within that call the expression `t.[:member:]` yields a *postfix-expression* for the designated member in
+the class object. The resolution of that *postfix-expression* does not require name lookup or access control
+(unlike by-name mechanisms), and it works even for bit fields (unlike mechanisms based on
+pointer-to-member values).
+
+Note that this uses expansion statements as proposed by [@P1306R1] (and that is typical of practical uses of
+reflection). An expansion statement requires a compile-time range, which is why `data_members` must
+be a `constexpr` variable.
+
+## Schema generation
+
+We can use this same pattern to generate SQL schemas from C++ classes. The implementation here
+mixes runtime SQL generation with static reflection, in order to demonstrate the interaction between these
+two features.
+
+The entry point for the facility is a function template that takes a (standard layout) type parameter and
+writes the corresponding SQL CREATE TABLE statement.
+
+::: bq
+```cpp
+template<StandardLayoutType T>
+void create_table() {
+  create_table_from_reflection<^T>();
+}
+```
+:::
+
+This function simply delegates to a function parameterized by its reflection. Because reflection is
+expected to be an “advanced” feature, it might be desirable to hide it from user-facing interfaces. The
+SQL generating function template is shown below.
+
+::: bq
+```cpp
+#include <meta>
+namespace meta = std::meta;
+
+template<meta::info Class>
+  requires meta::is_class(Class)
+void create_table_from_reflection() {
+  std::cout << "CREATE TABLE " << meta::name_of(Class) << “(\n”;
+  constexpr auto members = meta::members_of(Class, is_non_static_data_member);
+  int size = members.size(), num = 0;
+  template for (constexpr meta::info member : members) {
+    create_column<member>();
+    if (++num != size)
+      std::cout << “,\n”;
+  }
+  std::cout << ");\n";
+}
+```
+:::
+
+This function emits a CREATE TABLE statement for the name of the class, and “iterates” over the class’s
+data members — again using an *expansion statement* ([@P1306R1]) — emitting column definitions for each
+(see below for `create_column`). We maintain the member count so that we can correctly insert
+commas into the output after each column.
+
+Reflection facilities can only be used at compile time. Because this function mixes runtime code
+(`std::cout`) with static reflection (`meta::info`), we need to ensure that reflections do not “mix”
+with the runtime systems. We cannot, with this approach to generating SQL, pass the reflected class as a
+function argument, as that would leak the reflection — handle to an internal data structure that is only
+meaningful during translation — to run time. In other words, for mixed run-time/reflective algorithms
+reflection values must be passed as template arguments. We explore an alternative design of this
+algorithm in the following section.
+
+Creating a column is straightforward: We serialize the member’s name and translate its C++ type into
+SQL.
+
+::: bq
+```cp
+template<meta::info Member>
+  requires meta::is_non_static_data_member(Member)
+void create_column() {
+  std::cout << meta::name_of(Member) << " ";
+  std::cout << to_sql(meta::type_of(Member));
+}
+```
+:::
+
+Finally, we need a facility to translate C++ types to SQL types. Here, we use a series of explicit
+specializations over reflections, with the generic case (i.e., primary template) triggering an instantiation
+error if used.
+
+::: bq
+```cpp
+template<meta::info Type>
+consteval const char* to_sql() {
+  static_assert(false, “no translation to SQL”);
+}
+
+template<>
+consteval const char* to_sql<^int>() {
+  return “INTEGER”;
+}
+
+template<>
+consteval const char* to_sql<^float>() {
+  return “FLOAT”;
+}
+// etc
+```
+:::
+
+## Schema generation (take two)
+
+The approach above mixes runtime SQL generation with static reflection: We call a function to print the
+schema to `std::cout`. An alternative approach is to synthesize the schema as a compile-time string,
+and then print the result later:
+
+::: bq
+```cpp
+template<StandardLayoutType T>
+consteval std::string create_table() {
+  return create_table_from_reflection<^T>();
+}
+```
+:::
+
+The string-generation code could be as follows
+
+::: bq
+```cpp
+#include <meta>
+
+template<meta::info Class>
+  requires meta::is_class(Class)
+consteval std::string create_table() {
+  std::string result(“”); // Assuming this should work
+  result += "CREATE TABLE " + meta::name_of(Class) + “(\n”;
+  std::span<meta::info> members = data_members_of(^Class);
+  int num = 0;
+  for (meta::info member : members) {
+    result += create_column(member);
+    if (++num != members.size())
+      result += “,\n”;
+  }
+  result += ");\n";
+  return result;
+}
+
+consteval std::string void create_column(meta::info member) {
+  std::string result(“”);
+  result += meta::name_of(member) + " ";
+  result += to_sql(meta::type_of(member));
+  return result;
+}
+
+consteval const char* to_sql(meta::info type) {
+  static std::unordered_map<meta::info, const char*> types {
+    {^int, “INTEGER”},
+    {^float, “FLOAT”},
+    // etc.
+  };
+
+  [[assert: meta::is_type(type)]];
+  [[assert: types.count(type) != 0]];
+  return types.find(type)->second;
+}
+```
+:::
+
+There are significant differences between this and the earlier example. In essence, this implementation
+looks like a normal program except that each function is a `consteval` function dealing with reflection
+values. In other words, because the entire facility is expected to run at compile time, we don’t have to use
+different constructs between the run-time and compile-time values in the implementation (e.g., expansion
+statements vs. loops); everything just looks like run-time code.
+
+## Template argument list assignment
+
+In [@P0949R0], Peter Dimov proposes a facility to “assign” a list of template arguments for one template to
+another using:
+
+::: bq
+```cpp
+mp_assign<ClassTmpl1<A1, A2, ...>, ClassTmpl2<B1, B2, ...>>
+```
+:::
+
+This is an alias for `ClassTmpl1<B1, B2, ...>`. The template arguments `An` and `Bn` are all
+type arguments. If the arguments of mp_assign are not of those forms, a substitution failure occurs.
+
+Using the features proposed in this paper, we can implement this facility as follows:
+
+::: bq
+```cpp
+#include <meta>
+using std::meta::info;
+using std::vector;
+
+consteval info class_template_of(info inst) {
+  using namespace std::meta;
+  info tmpl = template_of(inst);
+  if (is_class_template(inst) || is_invalid_reflection(tmpl) {
+    return tmpl;
+  } else {
+    return invalid_reflection("Not a class template instance");
+  }
+}
+
+consteval vector<info> template_type_arguments_of(info inst) {
+  using namespace std::meta;
+  auto args = template_arguments_of(inst);
+  for (auto arg: args) {
+    if (is_invalid(arg) && args.size() == 1) {
+      // template_arguments_of was invalid: Propagate the error.
+      return vector<info>(args.begin(), args.end());
+    } else if (!is_type(arg)) {
+      // Not a type argument.
+      return vector<info>{invalid_reflection("Not all arguments are types")};
+    }
+  }
+  return vector<info>(args.begin(), args.end());
+}
+
+consteval info rf_assign(info inst1, info inst2) {
+  using namespace std::meta;
+  info tmpl1 = class_template_of(inst1);
+  info tmpl2 = class_template_of(inst2);
+  if (is_invalid(tmpl2)) return tmpl2;
+  auto args1 = template_type_arguments_of(inst1);
+  if (args1.size() == 1 && is_invalid(args1[0])) return args1;
+  auto args2 = template_type_arguments_of(inst1);
+  return substitute(tmpl1, args2);
+}
+```
+:::
+
+If needed, `mp_assign` could be expressed in terms of `rf_assign`:
+
+::: bq
+```cpp
+template<typename T1, typename T2>
+  using mp_assign = typename[:rf_assign(^T1, ^T2):];
+```
+:::
+
+Note that in our implementation of `rf_assign`, much of the code is dedicated to implementing the
+constraints of `mp_assign`. However, those constraints exist only because of two TMP limitations:
+
+1. parameter packs cannot model mixed-kind template argument lists, and
+2. template template parameters cannot accept function/variable templates.
+
+In the reflection world we can easily lift those constraints, which produces the following
+simplified-yet-more-powerful implementation of `rf_assign`:
+
+::: bq
+```cpp
+consteval info rf_assign(info inst1, info inst2) {
+  using namespace std::meta;
+  return substitute(template_of(inst1), template_arguments_of(inst2));
+}
+```
+:::
+
+## Dealing more efficiently with parameter packs
+
+Currently, parameter packs are generally dealt with through recursive template instantiation (i.e., a form
+of TMP, with all its disadvantages). With the set of features presented here, many interesting applications
+of packs can be expressed more directly and using fewer compilation resources. Here is a simple example:
+
+::: bq
+```cpp
+#include <meta>
+// Function taking an arbitrary number of arguments and returning a vector containing copies of the
+// arguments that have the given type T.
+template<typename T, typename ... Ts>
+std::vector<T> select_values_of_type(Ts ... p) {
+  std::vector<T> result{};
+  template for (constexpr auto param: parameters_of(current_function())) {
+    if (^T == type_of(param)) {
+      result.push_back([:params[i]:]);
+    }
+  }
+  return result;
+}
+```
+:::
+
+## Applying functions to all members
+
+[@P0949R0] presents a TMP metafunction `get_all_data_members` aimed at collecting reflection
+information for all the data members of a class (not just the direct ones) using the facilities of the first
+reflection TS ([@N4818]).
+
+Unfortunately, `get_all_data_members` as presented in [@P0949R0] has a number of problems:
+
+* It doesn't correctly use the TMP-based reflection API to access base classes (it looks like it treats
+a base class as a base class *type*). Fixing that is nontrivial.
+* Its logic ignores virtual bases.
+* The TMP-based reflection API doesn’t deal well with bit fields (it relies on pointer-to-member
+constants, which cannot point to bit fields).
+
+To address those shortcomings, we present a different interface with similar capabilities:
+
+::: bq
+```cpp
+template<typename T, typename F>
+void apply_to_all_data_members(T &&r_obj, F &&f);
+  // Invoke f(r_obj.x) for every accessible data member of r_obj, including
+  // those in base classes (and possibly hidden by more-derived member declarations).
+```
+:::
+
+With the facilities we have proposed in this paper, this can be implemented as follows.
+
+::: bq
+```cpp
+#include <meta>
+using std::meta::info;
+
+// Convenience function to retrieve accessible nonstatic data members of a given class:
+consteval auto get_members(info classinfo) {
+  return members_of(classinfo, is_nonstatic_data_member, is_accessible);
+};
+
+// Convenience function to select nonvirtual bases and members.
+consteval auto is_not_virtual(info base_or_mem) {
+  return !is_virtual(base_or_mem);
+};
+
+// Utility to get the reflection information for the types of base classes (rather than the base
+// classes themselves) of a given class.
+consteval auto get_base_types(info classtype, bool virtual_bases) {
+  auto result = bases_of(classtype, is_accessible, virtual_bases ? is_virtual : is_not_virtual);
+  // Replace each base reflection by the reflection of its type.
+  for (auto &info : result) {
+    info = type_of(info);
+  }
+  return result;
+};
+
+template<typename T, typename F>
+void apply_to_data_members(T *p_obj, F &f) {
+  template for (constexpr auto member : get_members(^T)) {
+    f(p_obj->[:member:]);
+  }
+}
+
+template<typename T, typename F>
+void apply_to_base_data_members(T *p_obj, F &f, bool virtual_bases, bool skip_direct_members) {
+  // Recursively traverse (depth-first) either the nonvirtual or virtual base classes (depending
+  // on the virtual_bases flag). We do this by collecting the base class types and casting
+  // the pointer one level up.
+  auto type = ^T;
+  template for (constexpr auto basetype : get_base_types(type, virtual_bases)) {
+    apply_to_base_data_members<T, F>(
+      static_cast<typename[:basetype:]*>(p_obj),
+      f,
+      virtual_bases,
+      /*skip_direct_members=*/false);
+  }
+
+  if (!skip_direct_members) {
+    // Now that the base classes have been traversed, handle the data members at this level.
+    template for (constexpr auto member : get_members(type)) {
+      f(p_obj->[:member:]);
+    }
+  }
+}
+
+template<typename T, typename F>
+void apply_to_all_data_members(T const &&r_obj, F &&f) {
+  T const *p_obj = std::addressof(r_obj);
+  apply_to_base_data_members<T, F>(p_obj, f, /*virtual_bases=*/true, /*skip_direct_members=*/true);
+  apply_to_base_data_members<T, F>(p_obj, f, /*virtual_bases=*/false, /*skip_direct_members=*/false);
+}
+```
+:::
+
+This implementation reads like ordinary C++ code. Every invocation instantiates three function templates,
+independently of how complex type `T` is (though the amount of code in each instantiation does depend on
+T because of the expansion statements).
+
+This implementation still has a weakness, however: The notion of “accessibility” of bases and members is
+determined from the context of the implementation, not that of the call to
+`apply_to_all_data_members`. (The same limitation is imposed by the first Reflection TS.) We do
+not at this time propose to resolve that issue but we know of at least two ways to address it:
+* more powerful code injection primitives, or
+* introduce a reflection for “context”.
+
+The second option would be less efficient since that context would have to be passed along as a template
+argument, which would cause each invocation of `apply_to_all_data_members` to have a distinct
+instantiation.
+
+Alternatively, here is an implementation that doesn't use expansion statements. Instead, it relies on
+*fold-expressions*.
+
+::: bq
+```cpp
+// Convenience function to retrieve accessible nonstatic data members of a given class:
+consteval auto get_members(info classinfo) {
+  return members_of(classinfo, is_nonstatic_data_member, is_accessible);
+};
+
+// Convenience function to select nonvirtual bases and members.
+consteval auto is_not_virtual(info base_or_mem) {
+  return !is_virtual(base_or_mem);
+};
+
+// Utility to get the reflection information for the types of base classes (rather than the base
+// classes themselves) of a given class.
+consteval auto get_base_types(info classtype, bool virtual_bases) {
+  auto result = bases_of(classtype, is_accessible, virtual_bases ? is_virtual : is_not_virtual);
+  // Replace each base reflection by the reflection of its type.
+  for (auto &info : result) {
+    info = type_of(info);
+  }
+  return result;
+};
+
+template<typename T, typename F, std::meta::info ... members>
+void apply_to_data_members(T *p_obj, F &f) {
+  (void)(f(p_obj->[:members:]), ...); // Fold-expression.
+}
+
+template<typename T, typename F, std::meta::info ... classtypes>
+void apply_to_base_data_members(T *p_obj, F &f, bool virtual_bases, bool skip_direct_members) {
+  using namespace std::meta;
+  // Use a fold-expression to recurse through given bases if needed.
+  (apply_to_base_data_members<
+    T, F, ...[:get_base_types(classtypes, virtual_bases):]...
+    >(
+      static_cast<typename(typeof(bases))*>(p_obj), f,
+      virtual_bases,
+      /*skip_direct_members=*/false), ...);
+
+  if (!skip_direct_members) {
+    // Use another fold-expression to handle the data members of each specified class type.
+    (apply_to_data_members<
+      T, F, ...[:get_members(classtypes):]...
+      >(p_obj, f), ...);
+  }
+}
+
+template<typename T, typename F>
+void apply_to_all_data_members(T const &&r_obj, F &&f) {
+  T const *p_obj = std::addressof(r_obj);
+
+  apply_to_base_data_members<T, F, ^T>(p_obj, f, /*virtual_bases=*/true, /*skip_direct_members=*/true);
+  apply_to_base_data_members<T, F, ^T>(p_obj, f, /*virtual_bases=*/false, /*skip_direct_members=*/false);
+}
+```
+:::
+
+Clearly this is far less readable than the first version. It also involves more instantiations than the first
+version, but it is nonetheless more efficient than a pure TMP-based solution.
+
+# Appendix: Meta-library synopsis
+
+This appendix briefly lists declarations for all the intrinsic meta-functions being worked on in the Lock3
+Software implementation. As mentioned, these declarations are eventually meant to be brought into a
+program by including the standard header `<meta>`. In its current form the list differs slightly from the
+discussions in this paper because of implementation realities. We expect to harmonize the two over time.
+
+Parameters to queries are named to represent the subset of `meta::info` values accepted by each
+function:
+
+* `reflection` – accepts any value.
+* `invalid` – accepts only an invalid reflection.
+* `function` – accepts any value that designates a function.
+* `variable` – accepts any value that designates a variable.
+* `bitfield` – accepts any value that designates a bitfield.
+* `type` – accepts any value that designates a type.
+* `xxx_type` – accepts any value that designates a type of kind `xxx` (e.g., `enum_type`)
+* `templ` – accepts any value that designates a template.
+* `special` – accepts any value that designates a template specialization.
+* `entity` – accepts any value that designates an entity.
+* `parameter` – accepts any value that designates a function or template parameter.
+* `expression` – accepts any value that designates an expression.
+* `argument` – accepts any value that designates a function or template argument.
+* `base` – accepts any value that designates a base class specifier.
+* `mem` – accepts any value that designates a class member.
+* `mem_function` – accepts any value that designates a member function.
+* `spec_mem_function` – accepts any value that designates a special member function.
+* `base_or_mem` – accepts any value that designates a base class specifier or a class member.
+
+Some operations are polymorphic and accept combinations. For example, the parameter of `is_public`
+is `base_or_mem`. Operations accepting sequences are pluralized (e.g., `reflections`), meaning that
+the restriction applies to all elements of the sequence. Also, note that a function accepting a
+`declarator` will accept a function, variable, or bitfield.
+
+Although all the declarations are being considered and worked on, some are not implemented or not
+tested. The list below highlights those declarations as follows:
+
+<table>
+<tr><th colspan="2">Highlights for interfaces still requiring work</th></tr>
+<tr><td><span style="background-color:red">Red</span></td><td>Not implemented, because of not-yet-resolved limitations</td></tr>
+<tr><td><span style="background-color:orange">Orange</span></td><td>Not implemented, because of fixable limitations</td></tr>
+<tr><td><span style="background-color:yellow">Yellow</span></td><td>Not *yet* implemented</td></tr>
+<tr><td>[Green]{.addu}</td><td>Implemented, but not tested</td></tr>
+</table>
+
+The synopsis of `<experimental/meta>` header is:
+
+<style>
+  span.orange { background-color: orange }
+  span.red { background-color: red }
+  span.yellow { background-color: yellow }
+</style>
+
+::: bq
+```cpp
+namespace std::meta {
+  // Reflection type
+  using info = decltype(^void);
+
+  // Classification
+  consteval bool is_invalid(info reflection);
+
+  // Scope
+  consteval bool is_local(info reflection);
+  consteval bool is_class_member(info reflection);
+
+  // Variables
+  consteval bool is_variable(info reflection);
+  consteval bool has_static_storage_duration(info variable);
+  consteval bool has_thread_local_storage_duration(info variable);
+  consteval bool has_automatic_storage_duration(info variable);
+
+  // Functions
+  consteval bool is_function(info reflection);
+  consteval bool is_nothrow(info function);
+  @[consteval bool has_ellipsis(info function);]{.orange}@
+
+  @[// Classes]{.red}@
+  @[template<typename ...Args>]{.red}@
+  @[consteval std::span<info> members_of(info class_type, Args ...filters);]{.red}@
+  @[template<typename ...Args>]{.red}@
+  @[consteval std::span<info> bases_of(info class_type, Args ...filters);]{.red}@
+
+  // Classes
+  consteval bool is_class(info reflection);
+  consteval bool is_union(info reflection);
+  consteval bool has_virtual_destructor(info class_type);
+  consteval bool is_declared_class(info class_type);
+  consteval bool is_declared_struct(info class_type);
+
+  // Data Members
+  consteval bool is_data_member(info reflection);
+  consteval bool is_static_data_member(info reflection);
+  consteval bool is_nonstatic_data_member(info reflection);
+  consteval bool is_bit_field(info reflection);
+  consteval bool is_mutable(info reflection);
+
+  // Member Functions
+  consteval bool is_member_function(info reflection);
+  consteval bool is_static_member_function(info reflection);
+  consteval bool is_nonstatic_member_function(info reflection);
+  consteval bool is_normal(info mem_function);
+  consteval bool is_conversion(info mem_function);
+  consteval bool is_override(info mem_function);
+  consteval bool is_override_specified(info mem_function);
+  consteval bool is_deleted(info mem_function);
+  consteval bool is_virtual(info mem_function);
+  consteval bool is_pure_virtual(info mem_function);
+
+  // Special Member Functions
+  consteval bool is_constructor(info reflection);
+  consteval bool is_default_constructor(info reflection);
+  consteval bool is_copy_constructor(info reflection);
+  consteval bool is_move_constructor(info reflection);
+  consteval bool is_copy_assignment_operator(info reflection);
+  consteval bool is_move_assignment_operator(info reflection);
+  consteval bool is_copy(info mem_function);
+  consteval bool is_move(info mem_function);
+  consteval bool is_destructor(info reflection);
+  consteval bool is_defaulted(info spec_mem_function);
+  consteval bool is_explicit(info spec_mem_function);
+
+  // Access
+  consteval bool has_access(info reflection);
+  consteval bool is_public(info base_or_mem);
+  consteval bool is_protected(info base_or_mem);
+  consteval bool is_private(info base_or_mem);
+  consteval bool has_default_access(info base_or_mem);
+
+  // Linkage
+  consteval bool has_linkage(info reflection);
+  consteval bool is_externally_linked(info reflection);
+  consteval bool is_internally_linked(info reflection);
+
+  // General purpose
+  consteval bool is_extern_specified(info reflection);
+  consteval bool is_inline(info reflection);
+  consteval bool is_inline_specified(info reflection);
+  consteval bool is_constexpr(info reflection);
+  consteval bool is_consteval(info reflection);
+  consteval bool is_final(info reflection);
+  consteval bool is_defined(info reflection);
+  consteval bool is_complete(info reflection);
+
+  // Namespaces
+  consteval bool is_namespace(info reflection);
+
+  @[// Aliases]{.addu}@
+  @[consteval bool is_alias(info reflection);]{.addu}@
+  @[consteval bool is_namespace_alias(info reflection);]{.addu}@
+  @[consteval bool is_type_alias(info reflection);]{.addu}@
+  @[consteval bool is_alias_template(info reflection);]{.addu}@
+
+  // Enums
+  consteval bool is_enum(info reflection);
+  consteval bool is_unscoped_enum(info reflection);
+  consteval bool is_scoped_enum(info reflection);
+  @[consteval std::span<info> enumerators_of(info enum_type);]{.red}@
+
+  // Enumerator
+  consteval bool is_enumerator(info reflection);
+
+  // Templates
+  consteval bool is_template(info reflection);
+  consteval bool is_class_template(info reflection);
+  consteval bool is_function_template(info reflection);
+  consteval bool is_variable_template(info reflection);
+  consteval bool is_member_function_template(info reflection);
+  consteval bool is_static_member_function_template(reflection);
+  consteval bool is_nonstatic_member_function_template(info reflection);
+  consteval bool is_constructor_template(info reflection);
+  consteval bool is_destructor_template(info reflection);
+  consteval bool is_concept(info reflection);
+
+  // Specializations
+  consteval bool is_specialization(info reflection);
+  consteval bool is_partial_specialization(info reflection);
+  consteval bool is_explicit_specialization(info reflection);
+  consteval bool is_implicit_instantiation(info reflection);
+  consteval bool is_explicit_instantiation(info reflection);
+  @[consteval info template_of(info special);]{.orange}@
+  @[consteval bool has_template_arguments(info reflection);]{.orange}@
+  @[consteval std::span<info> template_arguments_of(info special);]{.orange}@
+  @[consteval info substitute(info templ, std::span<info> args);]{.orange}@
+
+  @[// Base classes]{.addu}@
+  @[consteval bool is_base_class(info reflection);]{.addu}@
+  @[consteval bool is_direct_base_class(info reflection);]{.addu}@
+  @[consteval bool is_virtual_base_class(info reflection);]{.addu}@
+
+  // Parameters
+  consteval bool is_function_parameter(info reflection);
+  consteval bool is_template_parameter(info reflection);
+  consteval bool is_type_template_parameter(info reflection);
+  consteval bool is_nontype_template_parameter(info reflection);
+  consteval bool is_template_template_parameter(info reflection);
+  consteval bool has_default_argument(info parameter);
+  @[consteval std::span<info> parameters_of(info function_or_templ);]{.red}@
+
+  // Types
+  consteval bool is_type(info reflection);
+  consteval bool is_fundamental_type(info type);
+  consteval bool has_fundamental_type(info reflection);
+  consteval bool is_arithmetic_type(info type);
+  consteval bool has_arithmetic_type(info reflection);
+  consteval bool is_scalar_type(info type);
+  consteval bool has_scalar_type(info reflection);
+  consteval bool is_object_type(info type);
+  consteval bool has_object_type(info reflection);
+  consteval bool is_compound_type(info type);
+  consteval bool has_compound_type(info reflection);
+  consteval bool is_function_type(info type);
+  consteval bool has_function_type(info reflection);
+  consteval bool is_class_type(info type);
+  consteval bool has_class_type(info reflection);
+  consteval bool is_union_type(info type);
+  consteval bool has_union_type(info reflection);
+  consteval bool is_enum_type(info type);
+  consteval bool has_enum_type(info type);
+  consteval bool is_unscoped_enum_type(info type);
+  consteval bool has_unscoped_enum_type(info reflection);
+  consteval bool is_scoped_enum_type(info type);
+  consteval bool has_scoped_enum_type(info reflection);
+  consteval bool is_void_type(info type);
+  consteval bool has_void_type(info reflection);
+  consteval bool is_null_pointer_type(info type);
+  consteval bool has_null_pointer_type(info reflection);
+  consteval bool is_integral_type(info type);
+  consteval bool has_integral_type(info reflection);
+  consteval bool is_floating_point_type(info type);
+  consteval bool has_floating_point_type(info reflection);
+  consteval bool is_array_type(info type);
+  consteval bool has_array_type(info reflection);
+  consteval bool is_pointer_type(info type);
+  consteval bool has_pointer_type(info reflection);
+  consteval bool is_reference_type(info type);
+  consteval bool has_reference_type(info reflection);
+  consteval bool is_lvalue_reference_type(info type);
+  consteval bool has_lvalue_reference_type(info reflection);
+  consteval bool is_rvalue_reference_type(info type);
+  consteval bool has_rvalue_reference_type(info reflection);
+  consteval bool is_member_pointer_type(info type);
+  consteval bool has_member_pointer_type(info reflection);
+  consteval bool is_member_object_pointer_type(info type);
+  consteval bool has_member_object_pointer_type(info reflection);
+  consteval bool is_member_function_pointer_type(info type);
+  consteval bool has_member_function_pointer_type(info reflection);
+  consteval bool is_closure_type(info type);
+  consteval bool has_closure_type(info reflection);
+
+  // Type properties
+  consteval bool is_incomplete_type(info type);
+  consteval bool has_incomplete_type(info reflection);
+  consteval bool is_const_type(info type);
+  consteval bool has_const_type(info reflection);
+  consteval bool is_volatile_type(info type);
+  consteval bool has_volatile_type(info reflection);
+  consteval bool is_trivial_type(info type);
+  consteval bool has_trivial_type(info reflection);
+  consteval bool is_trivially_copyable_type(info type);
+  consteval bool has_trivially_copyable_type(info reflection);
+  consteval bool is_standard_layout_type(info type);
+  consteval bool has_standard_layout_type(info reflection);
+  consteval bool is_pod_type(info type);
+  consteval bool has_pod_type(info reflection);
+  consteval bool is_literal_type(info type);
+  consteval bool has_literal_type(info reflection);
+  consteval bool is_empty_type(info type);
+  consteval bool has_empty_type(info reflection);
+  consteval bool is_polymorphic_type(info type);
+  consteval bool has_polymorphic_type(info reflection);
+  consteval bool is_abstract_type(info type);
+  consteval bool has_abstract_type(info reflection);
+  consteval bool is_final_type(info type);
+  consteval bool has_final_type(info reflection);
+  consteval bool is_aggregate_type(info type);
+  consteval bool has_aggregate_type(info reflection);
+  consteval bool is_signed_type(info type);
+  consteval bool has_signed_type(info reflection);
+  consteval bool is_unsigned_type(info type);
+  consteval bool has_unsigned_type(info reflection);
+  consteval bool has_unique_object_representations(info type);
+  consteval bool has_type_with_unique_object_representations(info reflection);
+  @[consteval std::size_t size_of(info reflection);]{.orange}@
+  @[consteval std::size_t byte_size_of(info reflection);]{.orange}@
+  @[consteval std::size_t bit_size_of(info reflection);]{.orange}@
+  @[consteval std::size_t byte_offset_of(info reflection);]{.orange}@
+  @[consteval std::size_t bit_offset_of(info reflection);]{.orange}@
+  @[consteval std::size_t alignment_of(info reflection);]{.orange}@
+  @[consteval std::size_t rank(info reflection);]{.orange}@
+  @[consteval std::size_t extent(info reflection);]{.orange}@
+
+  // Type operations
+  @[consteval bool is_constructible(info reflection, std::span<info> arguments);]{.red}@
+  @[consteval bool is_trivially_constructible(info reflection, std:span<info> arguments);]{.red}@
+  @[consteval bool is_nothrow_constructible(info reflection, std::span<info> arguments);]{.red}@
+  consteval bool is_default_constructible_type(info type);
+  consteval bool has_default_constructible_type(info reflection);
+  consteval bool is_trivially_default_constructible_type(info type);
+  consteval bool has_trivially_default_constructible_type(info reflection);
+  consteval bool is_nothrow_default_constructible_type(info type);
+  consteval bool has_nothrow_default_constructible_type(info reflection);
+  consteval bool is_copy_constructible_type(info type);
+  consteval bool has_copy_constructible_type(info reflection);
+  consteval bool is_trivially_copy_constructible_type(info type);
+  consteval bool has_trivially_copy_constructible_type(info reflection);
+  consteval bool is_nothrow_copy_constructible_type(info type);
+  consteval bool has_nothrow_copy_constructible_type(info reflection);
+  consteval bool is_move_constructible_type(info type);
+  consteval bool has_move_constructible_type(info reflection);
+  consteval bool is_trivially_move_constructible_type(info type);
+  consteval bool has_trivially_move_constructible_type(info reflection);
+  consteval bool is_nothrow_move_constructible_type(info type);
+  consteval bool has_nothrow_move_constructible_type(info reflection);
+  consteval bool is_assignable_type(info type,info assigned_type);
+  consteval bool is_trivially_assignable_type(info type,info assigned_type);
+  consteval bool is_nothrow_assignable_type(info type,info assigned_type);
+  consteval bool is_copy_assignable_type(info type);
+  consteval bool has_copy_assignable_type(info reflection);
+  consteval bool is_trivially_copy_assignable_type(info type);
+  consteval bool has_trivially_copy_assignable_type(info reflection);
+  consteval bool is_nothrow_copy_assignable_type(info type);
+  consteval bool has_nothrow_copy_assignable_type(info reflection);
+  consteval bool is_move_assignable_type(info type);
+  consteval bool has_move_assignable_type(info reflection);
+  consteval bool is_trivially_move_assignable_type(info type);
+  consteval bool has_trivially_move_assignable_type(info reflection);
+  consteval bool is_nothrow_move_assignable_type(info type);
+  consteval bool has_nothrow_move_assignable_type(info reflection);
+  consteval bool is_destructible_type(info type);
+  consteval bool has_destructible_type(info reflection);
+  consteval bool is_trivially_destructible_type(info type);
+  consteval bool has_trivially_destructible_type(info reflection);
+  consteval bool is_nothrow_destructible_type(info type);
+  consteval bool has_nothrow_destructible_type(info reflection);
+  @[consteval bool is_swappable(info reflection);]{.yellow}@
+  @[consteval bool is_nothrow_swappable(info reflection);]{.yellow}@
+  @[consteval bool is_swappable_with(info reflection1, info reflection2);]{.yellow}@
+  @[consteval bool is_nothrow_swappable_with(info reflection1, info reflection2);]{.yellow}@
+
+  // Captures
+  @[consteval std::span<info> captures_of(info reflection);]{.red}@
+  consteval bool has_default_ref_capture(info reflection);
+  consteval bool has_default_copy_capture(info reflection);
+  consteval bool is_capture(info reflection);
+  consteval bool is_simple_capture(info reflection);
+  consteval bool is_ref_capture(info reflection);
+  consteval bool is_copy_capture(info reflection);
+  consteval bool is_explicit_capture(info reflection);
+  consteval bool is_init_capture(info reflection);
+  consteval bool has_captures(info reflection);
+
+  // Type relations
+  @[consteval bool is_same(info reflection1, info reflection2);]{.orange}@
+  @[consteval bool is_base_of(info base_type, info derived_type);]{.orange}@
+  @[consteval bool is_convertible(info from_type, info to_type);]{.orange}@
+  @[consteval bool is_nothrow_convertible(info from_type, info to_type);]{.orange}@
+
+  // Invocation
+  @[consteval bool is_invocable(info function, std::span<info> arguments);]{.red}@
+  @[consteval bool is_nothrow_invocable(info function, std::span<info> arguments);]{.red}@
+  @[consteval bool is_invocable_r(info function, std::span<info> arguments, info result);]{.red}@
+  @[consteval bool is_nothrow_invocable_r(info function, std::span<info> arguments, info result);]{.red}@
+
+  // Type transformation
+  consteval info remove_const(info type);
+  consteval info remove_volatile(info type);
+  consteval info remove_cv(info type);
+  consteval info add_const(info type);
+  consteval info add_volatile(info type);
+  consteval info add_cv(info type);
+  consteval info remove_reference(info type);
+  consteval info add_lvalue_reference(info type);
+  consteval info add_rvalue_reference(info type);
+  consteval info remove_pointer(info type);
+  consteval info add_pointer(info type);
+  consteval info remove_cvref(info type);
+  consteval info decay(info type);
+  consteval info make_signed(info type);
+  consteval info make_unsigned(info type);
+  @[consteval info aligned_storage(std::size_t length, std::size_t align = /* default-alignment */);]{.orange}@
+  @[consteval info aligned_union(std::size_t length, std::span<info> types);]{.red}@
+  @[consteval info enable_if(bool cond, info type = ^void);]{.orange}@
+
+  // Associated types
+  consteval info this_ref_type_of(info mem_function);
+  @[consteval info common_type(std::span<info> types);]{.orange}@
+  consteval info underlying_type_of(info reflection);
+  @[consteval info invoke_result(info function, std::span<info> arguments);]{.red}@
+  consteval info type_of(info reflection);
+  consteval info return_type_of(info function);
+
+  // Associated reflections
+  @[consteval bool is_entity(info reflection);]{.red}@
+  consteval info entity_of(info reflection);
+  consteval info parent_of(info reflection);
+  consteval info definition_of(info reflection);
+
+  // Names
+  consteval bool is_named(info reflection);
+  consteval std::string_view name_of(info named);
+  @[consteval std::string_view display_name_of(info named);]{.red}@
+
+  // Expressions
+  consteval bool is_lvalue(info reflection);
+  consteval bool is_xvalue(info reflection);
+  consteval bool is_prvalue(info reflection);
+  consteval bool is_glvalue(info reflection);
+  consteval bool is_rvalue(info reflection);
+}
+```
+:::
