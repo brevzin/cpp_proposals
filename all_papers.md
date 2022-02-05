@@ -17,6 +17,7 @@
 - 1187 A type trait for <code class="language-cpp">std::compare_3way()</code>'s type: [p1187r0](118x_spaceship/p1187r0.html)
 - 1188 Library utilities for <code class="language-cpp">&lt;=&gt;</code>: [p1188r0](118x_spaceship/p1188r0.html)
 - 1189 Adding &lt;=&gt; to library: [p1189r0](118x_spaceship/p1189r0.html)
+- 1240 Scalable Reflection in C++: [p1240r2](1240_scalable_reflection/p1240r2.html)
 - 1500 Deduplicating Forwarding Overloads: [d1500r0](forward_ref/d1500r0.html)
 - 1614 The Mothership has Landed: [p1614r0](118x_spaceship/p1614r0.html) [p1614r1](118x_spaceship/p1614r1.html) [p1614r2](118x_spaceship/p1614r2.html)
 - 1630 Spaceship needs a tune-up: [p1630r0](118x_spaceship/p1630r0.html) [p1630r1](118x_spaceship/p1630r1.html)
@@ -60,4 +61,3 @@
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
-- Range-based container operations and  <code class="sourceCode cpp">ranges<span class="op">::</span>to</code>: [dxxxxr0.html](xxxx_ranges_to/dxxxxr0.html)
