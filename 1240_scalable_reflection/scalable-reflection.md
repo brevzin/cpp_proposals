@@ -1,7 +1,7 @@
 ---
 title: "Scalable Reflection in C++"
 document: P1240R2
-date: 01-15-2022
+date: 2022-01-15
 audience: SG7
 author:
     - name: Wyatt Childers
