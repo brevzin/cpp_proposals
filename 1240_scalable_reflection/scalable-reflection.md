@@ -2342,6 +2342,7 @@ This implementation still has a weakness, however: The notion of “accessibilit
 determined from the context of the implementation, not that of the call to
 `apply_to_all_data_members`. (The same limitation is imposed by the first Reflection TS.) We do
 not at this time propose to resolve that issue but we know of at least two ways to address it:
+
 * more powerful code injection primitives, or
 * introduce a reflection for “context”.
 

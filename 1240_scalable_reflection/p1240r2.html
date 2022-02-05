@@ -1952,7 +1952,11 @@ void create_column() {
 <span id="cb111-59"><a href="#cb111-59"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This implementation reads like ordinary C++ code. Every invocation instantiates three function templates, independently of how complex type <code class="sourceCode cpp">T</code> is (though the amount of code in each instantiation does depend on T because of the expansion statements).</p>
-<p>This implementation still has a weakness, however: The notion of “accessibility” of bases and members is determined from the context of the implementation, not that of the call to <code class="sourceCode cpp">apply_to_all_data_members</code>. (The same limitation is imposed by the first Reflection TS.) We do not at this time propose to resolve that issue but we know of at least two ways to address it: * more powerful code injection primitives, or * introduce a reflection for “context”.</p>
+<p>This implementation still has a weakness, however: The notion of “accessibility” of bases and members is determined from the context of the implementation, not that of the call to <code class="sourceCode cpp">apply_to_all_data_members</code>. (The same limitation is imposed by the first Reflection TS.) We do not at this time propose to resolve that issue but we know of at least two ways to address it:</p>
+<ul>
+<li>more powerful code injection primitives, or</li>
+<li>introduce a reflection for “context”.</li>
+</ul>
 <p>The second option would be less efficient since that context would have to be passed along as a template argument, which would cause each invocation of <code class="sourceCode cpp">apply_to_all_data_members</code> to have a distinct instantiation.</p>
 <p>Alternatively, here is an implementation that doesn’t use expansion statements. Instead, it relies on <em>fold-expressions</em>.</p>
 <blockquote>

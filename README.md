@@ -47,6 +47,7 @@ make all of my papers.
 - [p2387r3 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r3.html).
 - [p2441r2 - `views::join_with`](2441_join_with/p2441r2.html)
 - [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
+- [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
 
 ### Pending CWG/LWG Review
 
@@ -59,7 +60,6 @@ make all of my papers.
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 - [p2286r6 - Formatting Ranges](2286_fmt_ranges/p2286r6.html)
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
-- [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
 
 
 ### Pending EWG/LEWG Review
