@@ -124,7 +124,7 @@ void log(my_format_string<Args...> s, Args&&... args);
 
 In [format.syn]{.sref}, replace the exposition-only names `$basic-format-string$`, `$format-string$`, and `$wformat-string$` with the non-exposition-only names `basic_format_string`, `format_string`, and `wformat_string`.
 
-Do the same for their uses in [format.fmt.string]{.sref} (renaming the clause to "Class template `basic_format_string`) and [format.functions]{.sref}.
+Do the same for their uses in [format.fmt.string]{.sref} (renaming the clause to "Class template `basic_format_string`") and [format.functions]{.sref}.
 
 In [format.fmt.string]{.sref}, the member should still be exposition only. The full subclause should now read (the only changes are the name of the class template, which no longer is exposition only, and the new getter):
 
