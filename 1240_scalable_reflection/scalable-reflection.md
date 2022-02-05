@@ -1,7 +1,7 @@
 ---
 title: "Scalable Reflection in C++"
-document: P1240R2
-date: 2022-01-15
+document: P1240R3
+date: today
 audience: SG7
 author:
     - name: Wyatt Childers
@@ -193,7 +193,7 @@ The operand of `^` must be one of the following:
 * a *type-id*, including possibly a *simple-type-specifier* that designates a *template-name*
 * a possibly qualified *namespace-name*
 * the scope-qualifier token `::` (designating the global namespace)
-* a *postfix-expression*[^postfix]
+* a *cast-expression*[^postfix] that doesn't start with a *type-specifier*
 
 [^postfix]: Which includes any parenthesized expression.
 
@@ -387,7 +387,7 @@ If an expression is a *constant expression* it also designates that constant val
 ```cpp
 ^0                      // Designates the value zero and the property “prvalue of
                         // type int”. It does not capture that the expression is a
-                        // is a literal or that it is usable as a null pointer value.
+                        // literal or that it is usable as a null pointer value.
 
 ^nullptr                // Designates the null pointer value and the property “prvalue
                         // of type decltype(nullptr)”.
@@ -403,6 +403,7 @@ the arguments to that call):
 ::: bq
 ```cpp
 ^printf(“Hello, “)        // Designates printf and the property “prvalue of type int”.
+                          // Note that the call is unevaluated.
 
 ^(std::cout << “World!”)  // Designates the applicable operator<<
                           // and “lvalue of type std::ostream”.
@@ -453,7 +454,7 @@ More generally, `std::meta::entity` extracts the declared-entity from its argume
 * its argument — if its argument is a declared-entity reflection or an invalid reflection,
 * a declared-entity reflection designating an entity `E` — if the argument is an alias or expression
 reflection that also designates `E`, or
-* an invalid reflection in all other cases (e.g., `entity(^42)` is an invalid reflection).
+* an invalid reflection in all other cases (e.g., `entity(^42)` is an invalid reflection). (Note that this means that `std::meta::entity` is _idempotent_.)
 
 When the `^` operand is the name of an *alias* (type or namespace) the reflection designates the aliased
 entity indirectly (i.e., properties of the alias can be queried directly). For example:
@@ -481,42 +482,59 @@ are provided below.
 
 Reflections can be compared using `==` and `!=` operators. Intuitively, the rule for these comparisons is that
 we compare the underlying declared entity, except that we cannot compare the reflections of most
-expressions nor can we compare invalid reflections. The exact rules are as follows...
+expressions nor can we compare invalid reflections. The comparison of two valid reflections can be seen as a comparison
+of their respective expression and declared entity designators.
 
-1. If two reflections designate declared entities or aliases of such entities and do not designate
-expression properties of an expression that is not an *id-expression*, the reflections compare equal
-if the entities are identical and unequal if the entities are not identical (i.e., the comparison “looks
-through” aliases).
-2. Any reflection also (obviously) compares equal to itself and to copies of itself.
-3. An invalid reflection compares unequal to a reflection that is not invalid.
-4. A reflection that designates a declared entity or an alias of such an entity and does not designate
-expression properties of an expression that is not an *id-expression* (e.g., it is not the reflection of a
-function call) compares unequal to a reflection that either does not designate an entity or an alias
-of such entity, or that designates properties of an expression that is not an *id-expression*.
-5. All other cases are unspecified: That includes comparing reflections of expressions other than
-*id-expressions* and invalid reflections. For example:
+
+The exact rules are as follows...
+
+* [1]{.pnum} Any reflection compares equal to itself and to copies of itself.
+* [#]{.pnum} Otherwise, an invalid reflection compares unequal to a valid reflection.
+* [#]{.pnum} Otherwise, the result of comparing two invalid reflections is unspecified.
+* [#]{.pnum} Otherwise, two valid reflections, `R1` and `R2`, compare in the following way
+  * [#.#]{.pnum} If `R1` designates an expression, and `R2` does not, they compare unequal.
+  * [#.#]{.pnum} Otherwise, If both `R1` and `R2` designate an expression, their expression designations are compared according to the expression designation rules below.
+    * [#.#.#]{.pnum} If the comparison of designated expressions is unspecified, comparison of `R1` and `R2` is unspecified.
+    * [#.#.#]{.pnum} If the comparison of designated expressions is unequal, `R1` and `R2` compare unequal.
+  * [#.#]{.pnum} Otherwise, if both `R1` and `R2` designate an expression that compares equal, or neither designates an expression
+    * [#.#.#]{.pnum} if `R1` designates a declared entity, and `R2` does not, they compare unequal.
+    * [#.#.#]{.pnum} if `R1` and `R2` both designate a declared entity, `R1` and `R2` compare unequal if they don't designate the same declared entity
+    * [#.#.#]{.pnum} otherwise, `R1` and `R2` compare equal.
+
+
+Two reflections designating expressions `E1` and `E2` compare in the following way:
+
+<ol type="A">
+<li>If both `E1` and `E2` are *id-expressions*, they compare equal if they identify the same declared entity, and unequal otherwise.
+<li>Otherwise, if `E1` is an *id-expression* and `E2` is not, they compare unequal.
+<li>Otherwise, their equality is unspecified.
+</ol>
+
+These rules allow us to avoid having to provide a general definition of “expression equivalence”.  The rules can be extended to encompass any future work on expression comparison.
+
+For example:
 
 ::: bq
 ```cpp
 typedef int I1;
 typedef int I2;
-static_assert(^I1 == ^I2);        // Rule 1: Same underlying declared entity (int).
+static_assert(^I1 == ^I2);        // Rule 4.3.2: Same underlying declared entity (int).
 static_assert(^I1 == ^int);       // Ditto.
 
 float f = 3.0, e;
-static_assert(^f == ^(f));        // Rule 1: Same underlying declared entity (f).
+static_assert(^f == ^(f));        // Rule 4.3.2: Same underlying declared entity (f).
 static_assert(^f == ^::f);        // Ditto.
-static_assert(^f != ^e);          // Rule 1: Different underlying declared entities.
+static_assert(^f != ^e);          // Rule 4.3.2: Different underlying declared entities.
 static_assert(^I1 != ^float);     // Ditto.
 
 void g(int);
 constexpr auto r = ^g(1), s = r;
-static_assert(r == s);            // Rule 2: One is a copy of the other.
-static_assert(^f != ^g(1));       // Rule 4: f is an id-expression and g(1) is not.
-static_assert(^g != ^g(1));       // Rule 4: One is the reflection of an id-expression
+static_assert(r == s);            // Rule 1: One is a copy of the other.
+static_assert(^f != ^g(1));       // Rule 4.2.2/B: f is an id-expression and g(1) is not.
+static_assert(^g != ^g(1));       // Rule 4.2.2/B: One is the reflection of an id-expression
                                   // and the other is the reflection of an expression
                                   // that is not an id-expression.
-static_assert(^g(1) == ^g(1));    // Rule 5: May fail because g(1) is an expression
+static_assert(^g(1) == ^g(1));    // Rule 4.2.1: Unspecified because g(1) is an expression
                                   // that is not an id-expression
 ```
 :::
@@ -651,10 +669,6 @@ template<std::meta::info reflection> struct X {};
 
 // File t1.cpp:
 #include "t.hpp"
-enum E {};
-consteval auto d() {
-  return ^E;
-}
 X<^S> g() {
   return X<^S>{};
 }
@@ -685,10 +699,6 @@ However, it is unspecified if the following variation of the previous example is
 ::: bq
 ```cpp
 // File t1.cpp:
-enum E {};
-consteval auto d() {
-  return ^(^E);
-}
 X<^(^S)> g() {
   return X<^(^S)>{};
 }
@@ -701,7 +711,7 @@ int main() {
 ```
 :::
 
-because it is unspecified if two occurrences of `^(^S)` are equivalent.
+because it is unspecified if two occurrences of `^(^S)` (reflections of expressions) are equivalent.
 
 (In practice, this means that reflection values are mangled symbolically, according to what the reflection
 value actually designates.)
@@ -1103,7 +1113,7 @@ also be approximated using splicers with
 :::
 
 but having both improves readability depending on the context. The substitute form has the added
-advantage of not triggering an error for failures in the immediate context of the substitution[^substitution].
+advantage of not triggering an error for failures in the immediate context of the substitution[^substitution]. More importantly, `substitute` can operate on general core constant expressions, whereas the splice-bsaed approach requires constant expressions.
 
 [^substitution]: While working with our implementations, we have noticed that it would be very convenient if the lifting operator
 would be a SFINAE context as well. E.g., instantiating `^T::X` would produce an invalid reflection when `T = int`.
@@ -1160,7 +1170,7 @@ obtained from the reflection of a template:
 ::: bq
 ```cpp
 namespace std::meta {
-consteval auto parameters_of(info reflection) -> std::span<info> {...};
+consteval auto template_parameters_of(info reflection) -> std::span<info> {...};
 }
 ```
 :::
@@ -1169,13 +1179,13 @@ Given the reflection of a template, this returns a sequence of reflections for e
 of these reflections can be a type, a constant, or a template. However, not all operations applicable to
 types/constants/templates are necessarily applicable to these reflections. For example, it would not be
 possible to apply the `std::meta::substitute` operation (when available) on the reflection of
-template template parameters (but it is possible to apply the `std::meta::parameters_of` to such a
+template template parameters (but it is possible to apply the `std::meta::template_parameters_of` to such a
 reflection).
 
 # The standard metaprogramming library
 
 We have already described a number of “metafunctions” living in namespace `std::meta` that work
-with reflections (`entity`, `invalid_reflection`, `parameters_of`, etc.). We propose that these
+with reflections (`entity`, `invalid_reflection`, `template_parameters_of`, etc.). We propose that these
 and many others make up a new section of the C++ standard library that we call “the C++ standard
 metaprogramming library” and which is made available to a program by including a new standard header
 `<meta>`.
@@ -1249,7 +1259,7 @@ is valid, using the new function as `make_signed(r)` is equivalent to:
 
 ::: bq
 ```cpp
-^std::make_signed<typename(r)>::type
+^std::make_signed<typename[:r:]>::type
 ```
 :::
 
@@ -1403,7 +1413,15 @@ namespace std::meta {
 ```
 :::
 
-and always evaluates to a constant.
+and always evaluates to a constant. We also add to this:
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_opaque_num(info entity)->bool {...};
+}
+```
+:::
 
 We propose to replace `is_constexpr` by:
 
@@ -1455,7 +1473,7 @@ namespace std::meta {
 produces a constant value for reflections of variables, functions, variable/function templates, and
 namespaces.
 
-A number of function properties produce a constant value for reflections of functions only:
+A number of function properties produce a constant value for reflections of functions and function templates only:
 
 ::: bq
 ```cpp
@@ -1463,11 +1481,14 @@ namespace std::meta {
   consteval auto is_deleted(info entity)->bool {...};
   consteval auto is_defaulted(info entity)->bool {...};
   consteval auto is_explicit(info entity)->bool {...};
+  consteval auto is_conditionally_explicit(info entity)->bool {...};
   consteval auto is_override(info entity)->bool {...};
   consteval auto is_pure_virtual(info entity)->bool {...};
 }
 ```
 :::
+
+The `is_explicit` predicate returns `false` for a function template declared with a dependent `explicit(expr)` construct, but the `is_conditionally_explicit` predicate returns `true` in those cases and *only* in those cases.
 
 The following predicates always produce a constant value given a reflection. They produce a `false`
 value for invalid reflections, and otherwise return `true` if the predicate applies to the reflected entity:
@@ -1528,7 +1549,7 @@ namespace std::meta {
   consteval auto is_base_class(info entity)->bool {...};
   consteval auto is_direct_base_class(info entity)->bool {...};
   consteval auto is_virtual_base_class(info entity)->bool {
-  return is_base_class(entity) && is_virtual(entity);
+    return is_base_class(entity) && is_virtual(entity);
   }
   consteval auto is_function(info entity)->bool {...};
   consteval auto is_function_template(info entity)->bool {...};
@@ -1565,18 +1586,18 @@ consteval auto is_glvalue(info reflection)->bool {
   return is_lvalue(reflection) || is_xvalue(reflection);
 }
 consteval auto is_rvalue(info reflection)->bool {
-  return is_pralue(reflection) || is_xvalue(reflection);
+  return is_prvalue(reflection) || is_xvalue(reflection);
 }
 ```
 :::
 
 The following predicate produces a constant value given the reflection of a function type or closure type,
-or an alias thereof:
+or an alias thereof and the result is `true` if the entity has a C-style variadic parameter:
 
 ::: bq
 ```cpp
 namespace std::meta {
-  consteval auto has_ellipsis(info entity)->bool {...};
+  consteval auto is_vararg(info entity)->bool {...};
 }
 ```
 :::
@@ -1591,6 +1612,20 @@ consteval auto is_member_function_type(info entity)->bool {...};
 }
 ```
 :::
+
+Given the parameter reflection [^parameters]:
+
+[^parameters]: A parameter reflection can be obtained with `parameters_of`.
+
+::: bq
+```cpp
+namespace std::meta {
+  consteval auto is_explicit_this(info param)->bool {...};
+}
+```
+:::
+
+produces a constant value which is `true` if it as a C++23 explicit this parameter.
 
 Given the reflection of a function or template parameter, `std::meta:has_default` returns whether
 it has an associated default argument:
@@ -1673,7 +1708,7 @@ namespace std::meta {
 
 For members of classes or namespaces this returns a reflection of the innermost class or namespace. For a
 base class, this returns the class type from which the base class was obtained (only direct and virtual base
-classes can be reflected). For function-local entities that are not class members, `parent_of` returns the a
+classes can be reflected). For function-local entities that are not class members, `parent_of` returns a
 reflection of the enclosing function. For reflections that do not designate an alias or a declared entity,
 `parent_of` returns an invalid reflection.
 
@@ -1775,8 +1810,10 @@ which a predicate produces `false` are left out. Predicates are applied left-to-
 semantics (i.e., later predicates are not applied if an earlier predicate produced `false`).
 
 Similarly, without `filter` arguments, invoking `bases_of` returns a sequence of reflections for the
-direct bases of the given (non-capturing-closure) class type. Predicates can be added to narrow down the
+direct and virtual bases [^bases] of the given (non-capturing-closure) class type. Predicates can be added to narrow down the
 bases of interest.
+
+[^bases]: "Base" or "base class" in this context is a subobject designator, much like a data member is. It is not just a class type. For example, one can query whether a base is virtual or private, etc.
 
 The following example illustrates some uses of `members_of`:
 
@@ -1789,7 +1826,7 @@ struct S {
 };
 constexpr auto class_type = ^S;
 constexpr auto s_members = members_of(class_type);
-static_assert(s_members.size() == 7);       // x, y, f(), the destructor, and generated constructors.
+static_assert(s_members.size() == 9);       // x, y, f(), the destructor, and the generated constructors and assignment operators
 constexpr auto s_data_members = members_of(class_type, is_nonstatic_data_member);
 static_assert(s_data_members.size() == 2);  // x and y.
 
@@ -1828,8 +1865,8 @@ namespace std::meta {
 
 If the argument passed for `reflection` is not a reflection for a function, a member function, a function
 type, a closure type, or a template, this returns a span referencing one invalid reflection. Otherwise, the
-span contains an entry for each ordinary parameter: No entry is made for the `this` parameter or for an
-ellipsis parameter.
+span contains an entry for each ordinary parameter: No entry is made for an implicit `this` parameter or for an
+ellipsis parameter, but a C++23 explicit this parameter does get an entry.
 
 A function is also available to introspect lambda captures associated with a closure type:
 
@@ -1880,7 +1917,7 @@ splicer:
 ```cpp
 constexpr S s = { false, { .x = 42 } };
 static_assert(name_of(dmembers[1]) == "");                                          // Okay.
-static_assert(s.idexpr( dmembers[1] ).x == 42);                                     // Okay.
+static_assert(s.[:dmembers[1]:].x == 42);                                           // Okay.
 static_assert(remove_reference(^decltype(s.[:dmembers[1]:])) == parent_of(^S::f);   // Okay.
 ```
 :::
@@ -1956,7 +1993,7 @@ Hinnant et al. in [@N3980], Types Don’t Know #).
 
 namespace meta = std::meta;
 template<HashAlgorithm H, StandardLayoutType T>
-  bool hash_append(H &algo, const T &t) {
+  void hash_append(H &algo, const T &t) {
     constexpr auto data_members = members_of(^T, meta::is_nonstatic_data_member);
     template for (constexpr meta::info member : data_members)
       hash_append(algo, t.[:member:]);
@@ -2288,10 +2325,11 @@ consteval auto is_not_virtual(info base_or_mem) {
 // Utility to get the reflection information for the types of base classes (rather than the base
 // classes themselves) of a given class.
 consteval auto get_base_types(info classtype, bool virtual_bases) {
-  auto result = bases_of(classtype, is_accessible, virtual_bases ? is_virtual : is_not_virtual);
+  std::vector<info> result;
+  auto bases = bases_of(classtype, is_accessible, virtual_bases ? is_virtual : is_not_virtual);
   // Replace each base reflection by the reflection of its type.
-  for (auto &info : result) {
-    info = type_of(info);
+  for (auto &info : bases) {
+    result.push_back(type_of(info));
   }
   return result;
 };
@@ -2368,10 +2406,11 @@ consteval auto is_not_virtual(info base_or_mem) {
 // Utility to get the reflection information for the types of base classes (rather than the base
 // classes themselves) of a given class.
 consteval auto get_base_types(info classtype, bool virtual_bases) {
-  auto result = bases_of(classtype, is_accessible, virtual_bases ? is_virtual : is_not_virtual);
+  std::vector<info> result;
+  auto bases = bases_of(classtype, is_accessible, virtual_bases ? is_virtual : is_not_virtual);
   // Replace each base reflection by the reflection of its type.
-  for (auto &info : result) {
-    info = type_of(info);
+  for (auto info : bases) {
+    result.push_back(type_of(info));
   }
   return result;
 };
@@ -2413,7 +2452,7 @@ void apply_to_all_data_members(T const &&r_obj, F &&f) {
 Clearly this is far less readable than the first version. It also involves more instantiations than the first
 version, but it is nonetheless more efficient than a pure TMP-based solution.
 
-# Appendix: Meta-library synopsis
+# Appendix: Lock3 Meta-library synopsis
 
 This appendix briefly lists declarations for all the intrinsic meta-functions being worked on in the Lock3
 Software implementation. As mentioned, these declarations are eventually meant to be brought into a
