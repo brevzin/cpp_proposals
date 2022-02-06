@@ -1,6 +1,6 @@
 ---
 title: "Scalable Reflection in C++"
-document: P1240R3
+document: D1240R3
 date: today
 audience: SG7
 author:
@@ -1094,7 +1094,7 @@ We also propose a facility that is the “dual notion” of the previous functio
 ::: bq
 ```cpp
 namespace std::meta {
-  consteval auto substitute(info templ, std::span<info> args) ->info { ... };
+  consteval auto substitute(info templ, std::span<info> args) ->info { ... }
 }
 ```
 :::
@@ -1113,11 +1113,14 @@ also be approximated using splicers with
 :::
 
 but having both improves readability depending on the context. The substitute form has the added
-advantage of not triggering an error for failures in the immediate context of the substitution[^substitution]. More importantly, `substitute` can operate on general core constant expressions, whereas the splice-bsaed approach requires constant expressions.
+advantage of not triggering an error for failures in the immediate context of the substitution[^substitution].
+More importantly, `substitute` can operate on general core constant expressions, whereas the splice-bsaed
+approach requires constant expressions.
 
 [^substitution]: While working with our implementations, we have noticed that it would be very convenient if the lifting operator
 would be a SFINAE context as well. E.g., instantiating `^T::X` would produce an invalid reflection when `T = int`.
-That option is still being considered.
+That option is still being considered.  The C++20 _requires-expression_ construct is a precedent here, in that
+it introduced SFINAE in a non-deduction context.
 
 Example:
 
@@ -1170,7 +1173,7 @@ obtained from the reflection of a template:
 ::: bq
 ```cpp
 namespace std::meta {
-consteval auto template_parameters_of(info reflection) -> std::span<info> {...};
+consteval auto template_parameters_of(info reflection) -> std::span<info> {...}
 }
 ```
 :::
@@ -1181,6 +1184,42 @@ types/constants/templates are necessarily applicable to these reflections. For e
 possible to apply the `std::meta::substitute` operation (when available) on the reflection of
 template template parameters (but it is possible to apply the `std::meta::template_parameters_of` to such a
 reflection).
+
+## Bridging value-based and instantiation-based metaprogramming
+
+For decades now "template metaprogramming" (TMP) has been the primary way of metaprogramming in C++, because,
+until now, alternatives were often even less palatable.  TMP relies heavily on instantiation and substitution,
+which accumulate representation ("ASTs" or similar) in compilers, and thus leads to scaling problems as
+explained earlier.  However, programmers might want to keep using some of their existing TMP-based tools in
+combination with the tools proposed here.  To that end, we propose a few metafunctions that allow certain
+transitions from the "computational domain" (i.e., the constant evaluation process) to the "syntactic domain"
+(particularly template instantiation) [^injection].
+
+[^injection]: THe facilities proposed here are "special cases" of the more general "code injection" mechanism
+              proposed in P1717 and P2320.
+              
+The `substitute` metafunction described above is part of that "transition": It allows a constant evaluation
+to trigger a template substitution.  However, the result of `substitute` is a reflection of an instance,
+which needs additional tools to be evaluatable or invokable during evaluation.  The following are such tools:
+
+::: bq
+```cpp
+namespace std::meta {
+consteval auto invoke(info callable, std::span<info> args) -> info {...}
+
+consteval auto liftt(info templ) -> info {...}
+
+template<typename T> consteval
+  auto entity_ptr(info entity) -> T {...}
+
+template<typename T> consteval
+  auto value_of(info refl) -> T {...}
+}
+```
+:::
+
+FIXME: Describe this and add a few more.
+
 
 # The standard metaprogramming library
 
