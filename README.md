@@ -36,16 +36,17 @@ make all of my papers.
 - [p2231r1 - Missing `constexpr` in `std::optional` and `std::variant`](2231_constexpr_optional_variant/p2231r1.html).
 - [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
 - [p2415r2 - What is a `view`?](2415_what_view/p2415r2.html)
+- [p2493r0 - Missing feature test macros for C++20 core papers](2493_core_feature_test/p2493r0.html)
 
 #### C++23
 
 - [p0847r7 - Deducing this](0847_deducing_this/p0847r7.html), with Simon Brand, Gašper Ažman, and Ben Deane.
 - [p1938r3 - `if consteval`](1938_if_consteval/p1938r3.html), with Richard Smith, Andrew Sutton, and Daveed Vandevoorde.
+- [p2387r3 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r3.html).
+- [p2441r2 - `views::join_with`](2441_join_with/p2441r2.html)
 
 ### Pending Plenary
 
-- [p2387r3 - Pipe support for user-defined range adaptors](2387_ranges_pipes/p2387r3.html).
-- [p2441r2 - `views::join_with`](2441_join_with/p2441r2.html)
 - [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
 - [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
 
