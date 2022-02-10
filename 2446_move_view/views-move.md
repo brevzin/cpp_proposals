@@ -1,5 +1,5 @@
 ---
-title: "`views::all_move`"
+title: "`views::as_rvalue`"
 document: D2446R2
 date: today
 audience: LEWG
@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2446R1], updated wording.
+Since [@P2446R1], renamed to `views::as_rvalue` and updated wording.
 
 Since [@P2446R0], renamed to `views::all_move` and added a feature-test macro.
 
@@ -47,7 +47,22 @@ This is a tiny paper, and while this should be considered the lowest priority of
 
 ## Naming
 
-In range-v3, the adaptors to move all of the elements and make all of the elements const were named `views::move` and `views::const_`, respectively. [@P2446R0] and [@P2278R0] simply used range-v3's names. [@P2278R1] changed from `views::const_` to `views::as_const` (as an analogue for `std::as_const`). But during LEWG telecon discussion of these papers [@p2278-minutes] [@p2446-minutes], it was suggested that having such names is confusing because of the ambiguity between whether these adaptors operate on the _range_ or the _elements_ thereof, and so we end up with the names `views::all_move` and `views::all_const` to avoid conflict with the two `std::move`s we already have and the `std::as_const`, that do something else. I think these names are pretty bad (it's not named `views::all_transform`?), but these are the names.
+In range-v3, the adaptors to move all of the elements and make all of the elements const were named `views::move` and `views::const_`, respectively. [@P2446R0] and [@P2278R0] simply used range-v3's names. [@P2278R1] changed from `views::const_` to `views::as_const` (as an analogue for `std::as_const`). But during LEWG telecon discussion of these papers [@p2278-minutes] [@p2446-minutes], it was suggested that having such names is confusing because of the ambiguity between whether these adaptors operate on the _range_ or the _elements_ thereof, and so we end up with the names `views::all_move` and `views::all_const` to avoid conflict with the two `std::move`s we already have and the `std::as_const`, that do something else.
+
+I think these names are pretty bad (it's not named `views::all_transform`?), and there was a follow-up paper to suggest reverting this rename [@P2501R0]. Ensuing discussion pointed out a potential issue that because `std::move` and `std::views::move` can both be used unary and unqualified, there's potential for code silently changing meaning if `move` were previously used unqualified. Example from Nicolai Josuttis:
+
+::: bq
+```cpp
+using namespace std::views;
+
+std::vector<std::string> v1{"hello", "world"};
+auto v2 = move(v1);       // OOPS: initializes a view to v1
+```
+:::
+
+If the user had done a `using namespace std::views` (to do some ranges pipeline work without having to qualify `std::views::meow`) but then had previously used `move(x)` on some object with `std` as an associated namespace, in C++20 this would invoke `std::move` whereas in C++23, if we add this range adaptor under the name `std::views::move`, this would invoke the adaptor instead. The moral of the story here is probably to just always qualify `std::move` (indeed, the library specification always uses it qualified), but there was sufficient concern about this example that there was no consensus in LEWG to revert and go back to `views::move`, preferring `views::all_move`.
+
+Nevertheless, `all_move` is just not a great name, and it's also the wrong tense. A subsequent suggestion from Ville Voutilainen is `views::as_rvalue`. This has the advantage of being the correct tense and not conflicting with anything else in the standard, and the result of this adaptor is that you do end up with a range of rvalues (whether the adaptor actually does something or not. Indeed that's what the first sentence of the introductory wording has always said). An alternative name I would entertain would be `views::move_each` (but not `views::move_elements`, since `views::elements<N>` exists and these don't quite line up).
 
 # Wording
 
@@ -64,53 +79,53 @@ namespace std::ranges {
 +
 + template<view V>
 +   requires input_range<V>
-+ class all_move_view;
++ class as_rvalue_view;
 +
 + template<class T>
-+   inline constexpr bool enable_borrowed_range<all_move_view<T>> = enable_borrowed_range<T>;
++   inline constexpr bool enable_borrowed_range<as_rvalue_view<T>> = enable_borrowed_range<T>;
 +
-+ namespace views { inline constexpr $unspecified$ all_move = $unspecified$; }
++ namespace views { inline constexpr $unspecified$ as_rvalue = $unspecified$; }
 
   // ...
 }
 ```
 :::
 
-### 24.7.? All move view [range.all.move] {-}
+### 24.7.? As rvalue view [range.as.rvalue] {-}
 
-#### 24.7.?.1 Overview [range.all.move.overview] {-}
+#### 24.7.?.1 Overview [range.as.rvalue.overview] {-}
 
 ::: bq
-[1]{.pnum} `all_move_view` presents a `view` of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a `all_move_view` to replace copying with moving.
+[1]{.pnum} `as_rvalue_view` presents a `view` of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a `as_rvalue_view` to replace copying with moving.
 
-[#]{.pnum} The name `views::all_move` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression and let `T` be `decltype((E))`. The expression `views::all_move(E)` is expression-equivalent to:
+[#]{.pnum} The name `views::as_rvalue` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression and let `T` be `decltype((E))`. The expression `views::as_rvalue(E)` is expression-equivalent to:
 
 * [#.#]{.pnum} `views::all(E)` if `same_as<range_rvalue_reference_t<T>, range_reference_t<T>>` is `true`
-* [#.#]{.pnum} Otherwise, `ranges::all_move_view(E)`.
+* [#.#]{.pnum} Otherwise, `ranges::as_rvalue_view(E)`.
 
 [#]{.pnum} [*Example*:
 ```cpp
 vector<string> words = {"the", "quick", "brown", "fox", "ate", "a", "pterodactyl"};
 vector<string> new_words;
-ranges::copy(words | views::all_move, back_inserter(new_words)); // moves each string from words into new_words
+ranges::copy(words | views::as_rvalue, back_inserter(new_words)); // moves each string from words into new_words
 ```
 -*end example*]
 :::
 
-#### 24.7.?.2 Class template `all_move_view` [range.all.move.view] {-}
+#### 24.7.?.2 Class template `as_rvalue_view` [range.as.rvalue.view] {-}
 
 ::: bq
 ```cpp
 namespace std::ranges {
   template<input_range V>
     requires view<V>
-  class all_move_view : public view_interface<all_move_view<V>>
+  class as_rvalue_view : public view_interface<as_rvalue_view<V>>
   {
     V $base_$ = V(); // exposition only
 
   public:
-    all_move_view() requires default_initializable<V> = default;
-    constexpr explicit all_move_view(V base);
+    as_rvalue_view() requires default_initializable<V> = default;
+    constexpr explicit as_rvalue_view(V base);
 
     constexpr V base() const& requires copy_constructible<V> { return $base_$; }
     constexpr V base() && { return std::move($base_$); }
@@ -138,12 +153,12 @@ namespace std::ranges {
   };
 
   template<class R>
-    all_move_view(R&&) -> all_move_view<views::all_t<R>>;
+    as_rvalue_view(R&&) -> as_rvalue_view<views::all_t<R>>;
 }
 ```
 
 ```cpp
-constexpr explicit all_move_view(V base);
+constexpr explicit as_rvalue_view(V base);
 ```
 
 [1]{.pnum} *Effects*: Initializes `$base_$` with `std::move(base)`.
@@ -154,7 +169,7 @@ constexpr explicit all_move_view(V base);
 Add the following macro definition to [version.syn]{.sref}, with the value selected by the editor to reflect the date of adoption of this paper:
 
 ```cpp
-#define __cpp_lib_ranges_all_move 20XXXXL // also in <ranges>
+#define __cpp_lib_ranges_as_rvalue 20XXXXL // also in <ranges>
 ```
 
 ---

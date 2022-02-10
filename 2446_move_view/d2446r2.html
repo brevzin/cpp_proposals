@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-01-14" />
-  <title>views::all_move</title>
+  <meta name="dcterms.date" content="2022-02-10" />
+  <title>views::as_rvalue</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center"><code class="sourceCode cpp">views<span class="op">::</span>all_move</code></h1>
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code></h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-01-14</td>
+    <td>2022-02-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -571,14 +571,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a>
 <ul>
-<li><a href="#all-move-view-range.all.move">24.7.? All move view [range.all.move]<span></span></a></li>
+<li><a href="#as-rvalue-view-range.as.rvalue">24.7.? As rvalue view [range.as.rvalue]<span></span></a></li>
 <li><a href="#feature-test-macro"><span class="toc-section-number">3.1</span> Feature-test macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P2446R1">[<a href="#ref-P2446R1" role="doc-biblioref">P2446R1</a>]</span>, updated wording.</p>
+<p>Since <span class="citation" data-cites="P2446R1">[<a href="#ref-P2446R1" role="doc-biblioref">P2446R1</a>]</span>, renamed to <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> and updated wording.</p>
 <p>Since <span class="citation" data-cites="P2446R0">[<a href="#ref-P2446R0" role="doc-biblioref">P2446R0</a>]</span>, renamed to <code class="sourceCode cpp">views<span class="op">::</span>all_move</code> and added a feature-test macro.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>In <span class="citation" data-cites="P2214R1">[<a href="#ref-P2214R1" role="doc-biblioref">P2214R1</a>]</span>, I wrote:</p>
@@ -597,93 +597,102 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Second, unlike <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>, where a lot of design effort had to be spent figuring out how to implement a constant iterator, that work has already been done for move iterators. <code class="sourceCode cpp">std<span class="op">::</span>move_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span></code> <span>23.5.3 <a href="https://wg21.link/move.iterators">[move.iterators]</a></span> exists and already does the right thing, and there’s already a <code class="sourceCode cpp">std<span class="op">::</span>move_sentinel<span class="op">&lt;</span>S<span class="op">&gt;</span></code> <span>23.5.3.10 <a href="https://wg21.link/move.sentinel">[move.sentinel]</a></span> to handle non-common ranges. All the work is done, we just have to put it together. As you can see below, the wording is pretty small and very straightforward.</p>
 <p>This is a tiny paper, and while this should be considered the lowest priority of all the range adaptors (as the C++23 Ranges Plan doesn’t even propose it at all), we may as well at least try to squeeze it in.</p>
 <h2 data-number="2.2" id="naming"><span class="header-section-number">2.2</span> Naming<a href="#naming" class="self-link"></a></h2>
-<p>In range-v3, the adaptors to move all of the elements and make all of the elements const were named <code class="sourceCode cpp">views<span class="op">::</span>move</code> and <code class="sourceCode cpp">views<span class="op">::</span>const_</code>, respectively. <span class="citation" data-cites="P2446R0">[<a href="#ref-P2446R0" role="doc-biblioref">P2446R0</a>]</span> and <span class="citation" data-cites="P2278R0">[<a href="#ref-P2278R0" role="doc-biblioref">P2278R0</a>]</span> simply used range-v3’s names. <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span> changed from <code class="sourceCode cpp">views<span class="op">::</span>const_</code> to <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (as an analogue for <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>). But during LEWG telecon discussion of these papers <span class="citation" data-cites="p2278-minutes">[<a href="#ref-p2278-minutes" role="doc-biblioref">p2278-minutes</a>]</span> <span class="citation" data-cites="p2446-minutes">[<a href="#ref-p2446-minutes" role="doc-biblioref">p2446-minutes</a>]</span>, it was suggested that having such names is confusing because of the ambiguity between whether these adaptors operate on the <em>range</em> or the <em>elements</em> thereof, and so we end up with the names <code class="sourceCode cpp">views<span class="op">::</span>all_move</code> and <code class="sourceCode cpp">views<span class="op">::</span>all_const</code> to avoid conflict with the two <code class="sourceCode cpp">std<span class="op">::</span>move</code>s we already have and the <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, that do something else. I think these names are pretty bad (it’s not named <code class="sourceCode cpp">views<span class="op">::</span>all_transform</code>?), but these are the names.</p>
+<p>In range-v3, the adaptors to move all of the elements and make all of the elements const were named <code class="sourceCode cpp">views<span class="op">::</span>move</code> and <code class="sourceCode cpp">views<span class="op">::</span>const_</code>, respectively. <span class="citation" data-cites="P2446R0">[<a href="#ref-P2446R0" role="doc-biblioref">P2446R0</a>]</span> and <span class="citation" data-cites="P2278R0">[<a href="#ref-P2278R0" role="doc-biblioref">P2278R0</a>]</span> simply used range-v3’s names. <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span> changed from <code class="sourceCode cpp">views<span class="op">::</span>const_</code> to <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (as an analogue for <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>). But during LEWG telecon discussion of these papers <span class="citation" data-cites="p2278-minutes">[<a href="#ref-p2278-minutes" role="doc-biblioref">p2278-minutes</a>]</span> <span class="citation" data-cites="p2446-minutes">[<a href="#ref-p2446-minutes" role="doc-biblioref">p2446-minutes</a>]</span>, it was suggested that having such names is confusing because of the ambiguity between whether these adaptors operate on the <em>range</em> or the <em>elements</em> thereof, and so we end up with the names <code class="sourceCode cpp">views<span class="op">::</span>all_move</code> and <code class="sourceCode cpp">views<span class="op">::</span>all_const</code> to avoid conflict with the two <code class="sourceCode cpp">std<span class="op">::</span>move</code>s we already have and the <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, that do something else.</p>
+<p>I think these names are pretty bad (it’s not named <code class="sourceCode cpp">views<span class="op">::</span>all_transform</code>?), and there was a follow-up paper to suggest reverting this rename <span class="citation" data-cites="P2501R0">[<a href="#ref-P2501R0" role="doc-biblioref">P2501R0</a>]</span>. Ensuing discussion pointed out a potential issue that because <code class="sourceCode cpp">std<span class="op">::</span>move</code> and <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>move</code> can both be used unary and unqualified, there’s potential for code silently changing meaning if <code class="sourceCode cpp">move</code> were previously used unqualified. Example from Nicolai Josuttis:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>views;</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> v1<span class="op">{</span><span class="st">&quot;hello&quot;</span>, <span class="st">&quot;world&quot;</span><span class="op">}</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">auto</span> v2 <span class="op">=</span> move<span class="op">(</span>v1<span class="op">)</span>;       <span class="co">// OOPS: initializes a view to v1</span></span></code></pre></div>
+</blockquote>
+<p>If the user had done a <code class="sourceCode cpp"><span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>views</code> (to do some ranges pipeline work without having to qualify <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>meow</code>) but then had previously used <code class="sourceCode cpp">move<span class="op">(</span>x<span class="op">)</span></code> on some object with <code class="sourceCode cpp">std</code> as an associated namespace, in C++20 this would invoke <code class="sourceCode cpp">std<span class="op">::</span>move</code> whereas in C++23, if we add this range adaptor under the name <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>move</code>, this would invoke the adaptor instead. The moral of the story here is probably to just always qualify <code class="sourceCode cpp">std<span class="op">::</span>move</code> (indeed, the library specification always uses it qualified), but there was sufficient concern about this example that there was no consensus in LEWG to revert and go back to <code class="sourceCode cpp">views<span class="op">::</span>move</code>, preferring <code class="sourceCode cpp">views<span class="op">::</span>all_move</code>.</p>
+<p>Nevertheless, <code class="sourceCode cpp">all_move</code> is just not a great name, and it’s also the wrong tense. A subsequent suggestion from Ville Voutilainen is <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>. This has the advantage of being the correct tense and not conflicting with anything else in the standard, and the result of this adaptor is that you do end up with a range of rvalues (whether the adaptor actually does something or not. Indeed that’s what the first sentence of the introductory wording has always said). An alternative name I would entertain would be <code class="sourceCode cpp">views<span class="op">::</span>move_each</code> (but not <code class="sourceCode cpp">views<span class="op">::</span>move_elements</code>, since <code class="sourceCode cpp">views<span class="op">::</span>elements<span class="op">&lt;</span>N<span class="op">&gt;</span></code> exists and these don’t quite line up).</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add to <span>24.2 <a href="https://wg21.link/ranges.syn">[ranges.syn]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1"></a>#include &lt;compare&gt;              // see [compare.syn]</span>
-<span id="cb1-2"><a href="#cb1-2"></a>#include &lt;initializer_list&gt;     // see [initializer.list.syn]</span>
-<span id="cb1-3"><a href="#cb1-3"></a>#include &lt;iterator&gt;             // see [iterator.synopsis]</span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a>namespace std::ranges {</span>
-<span id="cb1-6"><a href="#cb1-6"></a>  // ...</span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="va">+</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="va">+ template&lt;view V&gt;</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="va">+   requires input_range&lt;V&gt;</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="va">+ class all_move_view;</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="va">+</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a><span class="va">+   inline constexpr bool enable_borrowed_range&lt;all_move_view&lt;T&gt;&gt; = enable_borrowed_range&lt;T&gt;;</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="va">+</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a><span class="va">+ namespace views { inline constexpr <em>unspecified</em> all_move = <em>unspecified</em>; }</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a></span>
-<span id="cb1-17"><a href="#cb1-17"></a>  // ...</span>
-<span id="cb1-18"><a href="#cb1-18"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1"></a>#include &lt;compare&gt;              // see [compare.syn]</span>
+<span id="cb2-2"><a href="#cb2-2"></a>#include &lt;initializer_list&gt;     // see [initializer.list.syn]</span>
+<span id="cb2-3"><a href="#cb2-3"></a>#include &lt;iterator&gt;             // see [iterator.synopsis]</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>namespace std::ranges {</span>
+<span id="cb2-6"><a href="#cb2-6"></a>  // ...</span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="va">+</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="va">+ template&lt;view V&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="va">+   requires input_range&lt;V&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="va">+ class as_rvalue_view;</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="va">+</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="va">+   inline constexpr bool enable_borrowed_range&lt;as_rvalue_view&lt;T&gt;&gt; = enable_borrowed_range&lt;T&gt;;</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="va">+</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="va">+ namespace views { inline constexpr <em>unspecified</em> as_rvalue = <em>unspecified</em>; }</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a></span>
+<span id="cb2-17"><a href="#cb2-17"></a>  // ...</span>
+<span id="cb2-18"><a href="#cb2-18"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<h3 class="unnumbered" data-number id="all-move-view-range.all.move">24.7.? All move view [range.all.move]<a href="#all-move-view-range.all.move" class="self-link"></a></h3>
-<h4 class="unnumbered" data-number id="overview-range.all.move.overview">24.7.?.1 Overview [range.all.move.overview]<a href="#overview-range.all.move.overview" class="self-link"></a></h4>
+<h3 class="unnumbered" data-number id="as-rvalue-view-range.as.rvalue">24.7.? As rvalue view [range.as.rvalue]<a href="#as-rvalue-view-range.as.rvalue" class="self-link"></a></h3>
+<h4 class="unnumbered" data-number id="overview-range.as.rvalue.overview">24.7.?.1 Overview [range.as.rvalue.overview]<a href="#overview-range.as.rvalue.overview" class="self-link"></a></h4>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <code class="sourceCode cpp">all_move_view</code> presents a <code class="sourceCode cpp">view</code> of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a <code class="sourceCode cpp">all_move_view</code> to replace copying with moving.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> The name <code class="sourceCode cpp">views<span class="op">::</span>all_move</code> denotes a range adaptor object ([range.adaptor.object]). Let <code class="sourceCode cpp">E</code> be an expression and let <code class="sourceCode cpp">T</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code>. The expression <code class="sourceCode cpp">views<span class="op">::</span>all_move<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <code class="sourceCode cpp">as_rvalue_view</code> presents a <code class="sourceCode cpp">view</code> of an underlying sequence with the same behavior as the underlying sequence except that its elements are rvalues. Some generic algorithms can be called with a <code class="sourceCode cpp">as_rvalue_view</code> to replace copying with moving.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> The name <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> denotes a range adaptor object ([range.adaptor.object]). Let <code class="sourceCode cpp">E</code> be an expression and let <code class="sourceCode cpp">T</code> be <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code>. The expression <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.1)</a></span> <code class="sourceCode cpp">views<span class="op">::</span>all<span class="op">(</span>E<span class="op">)</span></code> if <code class="sourceCode cpp">same_as<span class="op">&lt;</span>range_rvalue_reference_t<span class="op">&lt;</span>T<span class="op">&gt;</span>, range_reference_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">ranges<span class="op">::</span>all_move_view<span class="op">(</span>E<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">ranges<span class="op">::</span>as_rvalue_view<span class="op">(</span>E<span class="op">)</span></code>.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">3</a></span> [<em>Example</em>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="op">{</span><span class="st">&quot;the&quot;</span>, <span class="st">&quot;quick&quot;</span>, <span class="st">&quot;brown&quot;</span>, <span class="st">&quot;fox&quot;</span>, <span class="st">&quot;ate&quot;</span>, <span class="st">&quot;a&quot;</span>, <span class="st">&quot;pterodactyl&quot;</span><span class="op">}</span>;</span>
-<span id="cb2-2"><a href="#cb2-2"></a>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> new_words;</span>
-<span id="cb2-3"><a href="#cb2-3"></a>ranges<span class="op">::</span>copy<span class="op">(</span>words <span class="op">|</span> views<span class="op">::</span>all_move, back_inserter<span class="op">(</span>new_words<span class="op">))</span>; <span class="co">// moves each string from words into new_words</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> words <span class="op">=</span> <span class="op">{</span><span class="st">&quot;the&quot;</span>, <span class="st">&quot;quick&quot;</span>, <span class="st">&quot;brown&quot;</span>, <span class="st">&quot;fox&quot;</span>, <span class="st">&quot;ate&quot;</span>, <span class="st">&quot;a&quot;</span>, <span class="st">&quot;pterodactyl&quot;</span><span class="op">}</span>;</span>
+<span id="cb3-2"><a href="#cb3-2"></a>vector<span class="op">&lt;</span>string<span class="op">&gt;</span> new_words;</span>
+<span id="cb3-3"><a href="#cb3-3"></a>ranges<span class="op">::</span>copy<span class="op">(</span>words <span class="op">|</span> views<span class="op">::</span>as_rvalue, back_inserter<span class="op">(</span>new_words<span class="op">))</span>; <span class="co">// moves each string from words into new_words</span></span></code></pre></div>
 <p>-<em>end example</em>]</p>
 </blockquote>
-<h4 class="unnumbered" data-number id="class-template-all_move_view-range.all.move.view">24.7.?.2 Class template <code class="sourceCode cpp">all_move_view</code> [range.all.move.view]<a href="#class-template-all_move_view-range.all.move.view" class="self-link"></a></h4>
+<h4 class="unnumbered" data-number id="class-template-as_rvalue_view-range.as.rvalue.view">24.7.?.2 Class template <code class="sourceCode cpp">as_rvalue_view</code> [range.as.rvalue.view]<a href="#class-template-as_rvalue_view-range.as.rvalue.view" class="self-link"></a></h4>
 <blockquote>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>input_range V<span class="op">&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>  <span class="kw">class</span> all_move_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>all_move_view<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>  <span class="op">{</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>    V <em>base_</em> <span class="op">=</span> V<span class="op">()</span>; <span class="co">// exposition only</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a></span>
-<span id="cb3-8"><a href="#cb3-8"></a>  <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>    all_move_view<span class="op">()</span> <span class="kw">requires</span> default_initializable<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb3-10"><a href="#cb3-10"></a>    <span class="kw">constexpr</span> <span class="kw">explicit</span> all_move_view<span class="op">(</span>V base<span class="op">)</span>;</span>
-<span id="cb3-11"><a href="#cb3-11"></a></span>
-<span id="cb3-12"><a href="#cb3-12"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="kw">requires</span> copy_constructible<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> <em>base_</em>; <span class="op">}</span></span>
-<span id="cb3-13"><a href="#cb3-13"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb3-14"><a href="#cb3-14"></a></span>
-<span id="cb3-15"><a href="#cb3-15"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">requires</span> <span class="op">(!</span><em>simple-view</em><span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span> <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span><em>base_</em><span class="op">))</span>; <span class="op">}</span></span>
-<span id="cb3-16"><a href="#cb3-16"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span><em>base_</em><span class="op">))</span>; <span class="op">}</span></span>
-<span id="cb3-17"><a href="#cb3-17"></a></span>
-<span id="cb3-18"><a href="#cb3-18"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="kw">requires</span> <span class="op">(!</span><em>simple-view</em><span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb3-19"><a href="#cb3-19"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>common_range<span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb3-20"><a href="#cb3-20"></a>            <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
-<span id="cb3-21"><a href="#cb3-21"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb3-22"><a href="#cb3-22"></a>            <span class="cf">return</span> move_sentinel<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
-<span id="cb3-23"><a href="#cb3-23"></a>        <span class="op">}</span></span>
-<span id="cb3-24"><a href="#cb3-24"></a>    <span class="op">}</span></span>
-<span id="cb3-25"><a href="#cb3-25"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb3-26"><a href="#cb3-26"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>common_range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb3-27"><a href="#cb3-27"></a>            <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
-<span id="cb3-28"><a href="#cb3-28"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb3-29"><a href="#cb3-29"></a>            <span class="cf">return</span> move_sentinel<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
-<span id="cb3-30"><a href="#cb3-30"></a>        <span class="op">}</span></span>
-<span id="cb3-31"><a href="#cb3-31"></a>    <span class="op">}</span></span>
-<span id="cb3-32"><a href="#cb3-32"></a></span>
-<span id="cb3-33"><a href="#cb3-33"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb3-34"><a href="#cb3-34"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb3-35"><a href="#cb3-35"></a>  <span class="op">}</span>;</span>
-<span id="cb3-36"><a href="#cb3-36"></a></span>
-<span id="cb3-37"><a href="#cb3-37"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
-<span id="cb3-38"><a href="#cb3-38"></a>    all_move_view<span class="op">(</span>R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> all_move_view<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>;</span>
-<span id="cb3-39"><a href="#cb3-39"></a><span class="op">}</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">constexpr</span> <span class="kw">explicit</span> all_move_view<span class="op">(</span>V base<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">namespace</span> std<span class="op">::</span>ranges <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">template</span><span class="op">&lt;</span>input_range V<span class="op">&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">requires</span> view<span class="op">&lt;</span>V<span class="op">&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>  <span class="kw">class</span> as_rvalue_view <span class="op">:</span> <span class="kw">public</span> view_interface<span class="op">&lt;</span>as_rvalue_view<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    V <em>base_</em> <span class="op">=</span> V<span class="op">()</span>; <span class="co">// exposition only</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a></span>
+<span id="cb4-8"><a href="#cb4-8"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>    as_rvalue_view<span class="op">()</span> <span class="kw">requires</span> default_initializable<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb4-10"><a href="#cb4-10"></a>    <span class="kw">constexpr</span> <span class="kw">explicit</span> as_rvalue_view<span class="op">(</span>V base<span class="op">)</span>;</span>
+<span id="cb4-11"><a href="#cb4-11"></a></span>
+<span id="cb4-12"><a href="#cb4-12"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="kw">requires</span> copy_constructible<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> <em>base_</em>; <span class="op">}</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="kw">constexpr</span> V base<span class="op">()</span> <span class="op">&amp;&amp;</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a></span>
+<span id="cb4-15"><a href="#cb4-15"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">requires</span> <span class="op">(!</span><em>simple-view</em><span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span> <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span><em>base_</em><span class="op">))</span>; <span class="op">}</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>begin<span class="op">(</span><em>base_</em><span class="op">))</span>; <span class="op">}</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a></span>
+<span id="cb4-18"><a href="#cb4-18"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="kw">requires</span> <span class="op">(!</span><em>simple-view</em><span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>common_range<span class="op">&lt;</span>V<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a>            <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
+<span id="cb4-21"><a href="#cb4-21"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a>            <span class="cf">return</span> move_sentinel<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
+<span id="cb4-23"><a href="#cb4-23"></a>        <span class="op">}</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a>    <span class="op">}</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> end<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb4-26"><a href="#cb4-26"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>common_range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb4-27"><a href="#cb4-27"></a>            <span class="cf">return</span> move_iterator<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
+<span id="cb4-28"><a href="#cb4-28"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb4-29"><a href="#cb4-29"></a>            <span class="cf">return</span> move_sentinel<span class="op">(</span>ranges<span class="op">::</span>end<span class="op">(</span><em>base_</em><span class="op">))</span>;</span>
+<span id="cb4-30"><a href="#cb4-30"></a>        <span class="op">}</span></span>
+<span id="cb4-31"><a href="#cb4-31"></a>    <span class="op">}</span></span>
+<span id="cb4-32"><a href="#cb4-32"></a></span>
+<span id="cb4-33"><a href="#cb4-33"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span>V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb4-34"><a href="#cb4-34"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="kw">requires</span> sized_range<span class="op">&lt;</span><span class="kw">const</span> V<span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> ranges<span class="op">::</span>size<span class="op">(</span><em>base_</em><span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb4-35"><a href="#cb4-35"></a>  <span class="op">}</span>;</span>
+<span id="cb4-36"><a href="#cb4-36"></a></span>
+<span id="cb4-37"><a href="#cb4-37"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb4-38"><a href="#cb4-38"></a>    as_rvalue_view<span class="op">(</span>R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> as_rvalue_view<span class="op">&lt;</span>views<span class="op">::</span>all_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>;</span>
+<span id="cb4-39"><a href="#cb4-39"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">constexpr</span> <span class="kw">explicit</span> as_rvalue_view<span class="op">(</span>V base<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">1</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp"><em>base_</em></code> with <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>base<span class="op">)</span></code>.</p>
 </blockquote>
 <h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add the following macro definition to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>, with the value selected by the editor to reflect the date of adoption of this paper:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="pp">#define __cpp_lib_ranges_all_move </span><span class="dv">20</span><span class="er">XXXXL</span><span class="pp"> </span><span class="co">// also in &lt;ranges&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="pp">#define __cpp_lib_ranges_as_rvalue </span><span class="dv">20</span><span class="er">XXXXL</span><span class="pp"> </span><span class="co">// also in &lt;ranges&gt;</span></span></code></pre></div>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P1206R6">
@@ -721,6 +730,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P2446R1">
 <p>[P2446R1] Barry Revzin. 2021-11-17. views::all_move. <br />
 <a href="https://wg21.link/p2446r1">https://wg21.link/p2446r1</a></p>
+</div>
+<div id="ref-P2501R0">
+<p>[P2501R0] Ville Voutilainen. 2021-12-14. Undo the rename of views::move and views::as_const. <br />
+<a href="https://wg21.link/p2501r0">https://wg21.link/p2501r0</a></p>
 </div>
 </div>
 </div>
