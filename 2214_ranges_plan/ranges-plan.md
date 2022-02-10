@@ -1,6 +1,6 @@
 ---
 title: "A Plan for C++23 Ranges"
-document: P2214R1
+document: D2214R2
 date: today
 audience: LEWG
 author:
@@ -24,6 +24,8 @@ span.yellow {
 
 # Revision History
 
+Since [@P2214R1], udpating with progress and links to other papers.
+
 Since [@P2214R0], updating with progress and links to other papers. Several changes have been made here:
 
 * Pipe support for range adaptors has been added as a Tier 1 priority.
@@ -37,7 +39,7 @@ Since [@P2214R0], updating with progress and links to other papers. Several chan
 
 # Introduction
 
-When Ranges was merged into C++20 [@P0896R4], it was knowingly incomplete. While it was based on the implementation experience in range-v3 [@range-v3], only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later. 
+When Ranges was merged into C++20 [@P0896R4], it was knowingly incomplete. While it was based on the implementation experience in range-v3 [@range-v3], only a small part of that library was adopted into C++20. The Ranges proposal was big enough already, a lot of the pieces were separable and so could be included later.
 
 But now that the core of Ranges has been included, later has come and we have to figure out what to do for C++23. This is a particularly trying period in the committee's history with the global pandemic and lack of face-to-face meetings. But we do already have a plan for C++23 [@P0592R4] which laid out the following priorities:
 
@@ -55,7 +57,7 @@ and
 Where are nex-gen Ranges in this plan?
 
 We could certainly entertain more Actions and Views in the realm of Ranges. Whether such material appears for standardization is a bit unknown at this point.
-::: 
+:::
 
 We believe that adding more functionality to Ranges is important, even if it would technically be a 3rd priority item (unless you consider the spirit of the 2nd priority to include integration with itself).
 
@@ -69,9 +71,9 @@ This paper provides our opinion for how to categorize Ranges functionality into 
 
 # View adjuncts
 
-C++20 Ranges, and the range-v3 that birthed it, isn't just a collection of loosely related views and algorithms. There's some important other functionality there. 
+C++20 Ranges, and the range-v3 that birthed it, isn't just a collection of loosely related views and algorithms. There's some important other functionality there.
 
-One critical piece of missing functionality is [`ranges::to` [@P1206R6]]{.addu}. It's not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing. 
+One critical piece of missing functionality is [`ranges::to` [@P1206R6]]{.addu}. It's not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing.
 
 Another criticial piece of functionality was pointed out by Walter Brown in the telecon discussing the initial draft of this paper: it is simply not possible for users to write their own range adaptors such that they smoothly interact with standard library (or other user) range adaptors. That is, it is possible (but a little tedious) for users to write an adaptor such that they can write `r | my::thing | my::func(2)`, but it is *not* possible for them to write an adaptor such that they can write:
 
@@ -99,7 +101,7 @@ int main() {
 }
 ```
 
-and prints `[0,4,16,36,64,100,144,196,256,324]`. 
+and prints `[0,4,16,36,64,100,144,196,256,324]`.
 
 Similarly, fmtlib supports printing ranges with `fmt::join`, which is slightly more tedious but is at least still a single line:
 
@@ -119,7 +121,7 @@ int main() {
 ```
 
 But neither the ability to stream views directly nor `fmt::join` are in C++20, so there is no direct way to print a range at all.
- 
+
 
 We think it's important that C++23 provides the ability to [format all the ranges [@P2286R2]]{.addu}. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it's frustrating to even have to.
 
@@ -220,7 +222,7 @@ namespace std::ranges::views {
 
 The above is a semantically correct implementation. However, is it the implementation we would actually want for `views::tail`? There are a few extra things `views::drop` has to do. `views::drop` must store a count and a cache for the begin iterator for forward ranges (to satisfy `O(1)`), but `views:tail` has to do none of these things since 1 is a constant and invoking `next()` one time still satisfies `O(1)`.
 
-This puts us in an interesting position: we either adopt a known suboptimal implementation of `tail` with minimal LWG cost (such that we could likely adopt this for C++23) or we could hold off for the optimal implementation (in which case we could not in good conscience put `tail` as a Tier 1 view, as it is certainly not that important). As such, we have tentatively marked it as Tier 3. 
+This puts us in an interesting position: we either adopt a known suboptimal implementation of `tail` with minimal LWG cost (such that we could likely adopt this for C++23) or we could hold off for the optimal implementation (in which case we could not in good conscience put `tail` as a Tier 1 view, as it is certainly not that important). As such, we have tentatively marked it as Tier 3.
 
 Take a different view, `unbounded`. A perfectly valid implementation of it, in its entirely is:
 
@@ -243,13 +245,13 @@ where `@_forward-as-tuple_@` is a function object version of `std::forward_as_tu
 
 But they're not _quite_ equivalent &mdash; they differ in their handling of ranges that produce prvalues. `zip_transform` can't differentiate between prvalues and xvalues, while `zip` would need to, so we lose that distinction by implementing `zip` in terms of `zip_transform`.
 
-Likewise, a first-class `zip_transform` would construct those prvalues directly into the parameters of the function that gets passed in; whereas if we implemented `zip_transform` in terms of `zip` and `transform` those prvalues would have to first be materialized into a `tuple` and then moved into the function. 
+Likewise, a first-class `zip_transform` would construct those prvalues directly into the parameters of the function that gets passed in; whereas if we implemented `zip_transform` in terms of `zip` and `transform` those prvalues would have to first be materialized into a `tuple` and then moved into the function.
 
-Even though these two views are very, very similar to each other, we still don't want to specify one in terms of the other even if it means more specification effort. And we still propose that both be Tier 1 views due to their overall importance. It would be better to adopt `zip` on its own and provide a new function adapter `@_applied_@`, leaving the door open to a better `zip_transform` in the future, than specify `zip_transform` in terms of `zip` and `transform`. 
+Even though these two views are very, very similar to each other, we still don't want to specify one in terms of the other even if it means more specification effort. And we still propose that both be Tier 1 views due to their overall importance. It would be better to adopt `zip` on its own and provide a new function adapter `@_applied_@`, leaving the door open to a better `zip_transform` in the future, than specify `zip_transform` in terms of `zip` and `transform`.
 
 Another interesting example is `transform_maybe`. As we'll see later, `transform_maybe(E, F)` can easily be specified in terms of three adapters today (a `transform` followed by a `filter` followed by a `transform`). But while `tail` can be made a little bit better as a standalone view, `transform_maybe` can be _substantially_ improved.
 
-Ultimately, this question of full view or not fill view is one that should guide review of this paper. 
+Ultimately, this question of full view or not fill view is one that should guide review of this paper.
 
 ## The `zip` family
 
@@ -263,11 +265,11 @@ The `zip` family of range adapters is an extremely useful set of adapters with b
 
 Indeed, we have many algorithms that exist largely because we don't have `zip` (and prior to Ranges, didn't have the ability to compose algorithms). We have several algorithms that have single-range-unary-function and a two-range-binary-function flavors. What if you wanted to `ranges::transform` 3 ranges? Out of luck. But in all of these cases, the two-range-binary-function flavor could be written as a single-range that is a `zip` of the two ranges, `adjacent_difference` is `adjacent_transform`, `inner_product` is `zip_transform` followed by `accumulate`, and so on and so on. This is why we think `zip` is the top priority view.
 
-range-v3 uses the name `zip_with`, but here we are instead proposing `zip_transform`. The reason is that what we're doing is, quite simply, a `transform` and in C++, we don't really have a strong association of that with the `_with` suffix. Instead, we have algorithms like `begins_with` and concepts like `swappable_with` and `totally_ordered_with`, which have nothing to do with this sort of thing. 
+range-v3 uses the name `zip_with`, but here we are instead proposing `zip_transform`. The reason is that what we're doing is, quite simply, a `transform` and in C++, we don't really have a strong association of that with the `_with` suffix. Instead, we have algorithms like `begins_with` and concepts like `swappable_with` and `totally_ordered_with`, which have nothing to do with this sort of thing.
 
-range-v3 implements `zip` and `zip_with` in terms of an underlying adaptor named `iter_zip_with`, which takes an `n`-ary invocable and `n` ranges and combines those into a single range whose values are the result of `f(is...)`, where the `is` are the iterators into those ranges (note: iterators, not what they refer to). The size of an `iter_zip_with` is the minimum size of its ranges. The `reference` type is the type of `f(*is...)` while the `value_type` is `V` (described in more detail [later](#zip-and-zip_transforms-value_type) along with the specific choices for `@_V~zip_transform~_@` and `@_V~zip~_@` used below). 
+range-v3 implements `zip` and `zip_with` in terms of an underlying adaptor named `iter_zip_with`, which takes an `n`-ary invocable and `n` ranges and combines those into a single range whose values are the result of `f(is...)`, where the `is` are the iterators into those ranges (note: iterators, not what they refer to). The size of an `iter_zip_with` is the minimum size of its ranges. The `reference` type is the type of `f(*is...)` while the `value_type` is `V` (described in more detail [later](#zip-and-zip_transforms-value_type) along with the specific choices for `@_V~zip_transform~_@` and `@_V~zip~_@` used below).
 
-But it turned out that these two views have enough differences that this doesn't aid in the specification effort that much, and so [@P2321R2] did not do it this way. Instead, `zip_transform_view<F, V...>` is specified in terms of a member `zip_view<V...>`. 
+But it turned out that these two views have enough differences that this doesn't aid in the specification effort that much, and so [@P2321R2] did not do it this way. Instead, `zip_transform_view<F, V...>` is specified in terms of a member `zip_view<V...>`.
 
 Having those two, `enumerate(E)` is expression-equivalent to `zip(@_index-view_@(E), E)`. We will discuss why `@_index-view_@(E)` instead of `iota(range_size_t<decltype(E)>(0)` [later](#enumerates-first-range).
 
@@ -275,7 +277,7 @@ But we do not want to define `adjacent(E)` as `zip(E, E | drop(1))`. The primary
 
 Similar to how `zip_transform_view<F, V...>` is specified in terms of a member `zip_view<V...>`, `adjacent_transform_view<V, F, N>` is specified as having a member `adjacent_view<V, N>`.
 
-In short, we get five extremely useful ranges largely from the price of two of them (plus a lot of boilerplate). Which is why we think they should be considered and adopted as a group. 
+In short, we get five extremely useful ranges largely from the price of two of them (plus a lot of boilerplate). Which is why we think they should be considered and adopted as a group.
 
 But in order to actually adopt `zip` and friends into C++23, we need to resolve several problems.
 
@@ -313,9 +315,9 @@ int main()
 }
 ```
 
-The range was _not_ sorted, the emitted output was still in the same order as the input... because we're sorting a range of _prvalue_ `std::string`s, and trying to swap prvalue `std::string`s makes little sense because it doesn't do anything. 
+The range was _not_ sorted, the emitted output was still in the same order as the input... because we're sorting a range of _prvalue_ `std::string`s, and trying to swap prvalue `std::string`s makes little sense because it doesn't do anything.
 
-But the reason it compiled was that the constraints checked if the iterators were assignable-through, which in this case was equivalent to checking if `std::string() = std::string()` is a valid expression... and it, unfortunately, is.  Assignment operators simply are not reference-qualified - they could not have been for a long time, and they are not now. The question became then - how can the library ensure that the above nonsense _does not compile_? 
+But the reason it compiled was that the constraints checked if the iterators were assignable-through, which in this case was equivalent to checking if `std::string() = std::string()` is a valid expression... and it, unfortunately, is.  Assignment operators simply are not reference-qualified - they could not have been for a long time, and they are not now. The question became then - how can the library ensure that the above nonsense _does not compile_?
 
 As discussed in [@stl2.381]:
 
@@ -323,7 +325,7 @@ As discussed in [@stl2.381]:
 One fix would be to require that `*o` return a true reference, but that breaks when `*o` returns a proxy reference. The trick is in distinguishing between a prvalue that is a proxy from a prvalue that is just a value. The trick lies in recognizing that a proxy always represents a (logical, if not physical) indirection. As such, adding a `const` to the proxy should not effect the mutability of the thing being proxied. Further, if `decltype(*o)` is a true reference, then adding `const` to it has no effect, which also does not effect the mutability. So the fix is to add `const` to `decltype(*o)`, `const_cast` `*o` to that, and then test for writability.
 :::
 
-Which is how we ended up with the `indirectly_writable` (the concept formerly known as `Writable`) requiring `const`-assignability. 
+Which is how we ended up with the `indirectly_writable` (the concept formerly known as `Writable`) requiring `const`-assignability.
 
 Hence, in order to make `ranges::sort(zip(vi, vs))` compile, we need to make `zip_view<R...>::iterator` model `indirectly_writable`, which means we need to make `std::tuple` const-assignable. That is, adding the following assignment operators, appropriately constrained:
 
@@ -391,7 +393,7 @@ __unique_copy(
 ```
 
 This _should_ write a “true” and a “false” to `cout`, but it doesn’t compile. Why? The lambda is expecting to be passed two objects of `vector<bool>`‘s proxy reference type, but remember how `__unique_copy` calls the predicate:
-```cpp	
+```cpp
 if (!binary_pred(value, *first)) { /*...*/
 ```
 
@@ -427,13 +429,13 @@ template<class In>
 template<class In>
   concept indirectly_readable =
     @_indirectly-readable-impl_@<remove_cvref_t<In>>;
-    
+
 template<class I>
   concept input_iterator =
     input_or_output_iterator<I> &&
     indirectly_readable<I> &&
     requires { typename @_ITER_CONCEPT_@(I); } &&
-    derived_from<@_ITER_CONCEPT_@(I), input_iterator_tag>;    
+    derived_from<@_ITER_CONCEPT_@(I), input_iterator_tag>;
 ```
 
 How does this relate to `zip`?
@@ -476,7 +478,7 @@ template<class U1, class U2>
   constexpr explicit(@_see below_@) tuple(pair<U1, U2>&&);        // only if sizeof...(Types) == 2
 ```
 
-We have a converting constructor from `std::tuple<U...> const&`, viable if `(constructible_from<T, U const&> && ...)`, and a converting constructor `std::tuple<U...>&&`, viable if `(constructible_from<T, U&&> && ...)`. In both cases, we're just distributing the qualifiers. 
+We have a converting constructor from `std::tuple<U...> const&`, viable if `(constructible_from<T, U const&> && ...)`, and a converting constructor `std::tuple<U...>&&`, viable if `(constructible_from<T, U&&> && ...)`. In both cases, we're just distributing the qualifiers.
 
 When trying to construct a `std::tuple<std::unique_ptr<int>, std::string>` from a `std::tuple<std::unique_ptr<int>&, std::string&>`, we reject the converting constructor of lines 9-10 because we can't construct a `std::unique_ptr<int>` from a `std::unique_ptr<int> const&`. `std::unique_ptr` isn't copyable, and that's not going to change.
 
@@ -500,7 +502,7 @@ And indeed that's how close this is to working. All we need is one more construc
   template<class... UTypes>
     constexpr explicit(@_see below_@) tuple(tuple<UTypes...>&&);
 + template<class... UTypes>
-+   constexpr explicit(@_see below_@) tuple(const tuple<UTypes...>&&);  
++   constexpr explicit(@_see below_@) tuple(const tuple<UTypes...>&&);
 
   template<class U1, class U2>
     constexpr explicit(@_see below_@) tuple(const pair<U1, U2>&);   // only if sizeof...(Types) == 2
@@ -510,9 +512,9 @@ And indeed that's how close this is to working. All we need is one more construc
 
 If only we had a way to express "a forwarding reference to `tuple<UTypes...>`" in the language. But if we add these constructors, then suddenly we _can_ construct a `std::tuple<std::unique_ptr<int>&, std::string&>` from an lvalue `std::tuple<std::unique_ptr<int>, std::string>`. And that would just end up binding the references as you would expect.
 
-Such a change to the constructor set of `std::tuple` means that all of our `zip_view` iterators can actually be `indirectly_readable`, which means they can actually count as being iterators. In all cases then, the common reference type of zip iterators would become the reference type. Indeed, this even fixes the issue we mentioned earlier - where even when our underlying types were copyable, we originally ended up with a common reference type of `std::tuple<int, std::string>`, a type that does not have reference semantics. But now it would have a common reference type of `std::tuple<int&, std::string&>`, which certainly has reference semantics. 
+Such a change to the constructor set of `std::tuple` means that all of our `zip_view` iterators can actually be `indirectly_readable`, which means they can actually count as being iterators. In all cases then, the common reference type of zip iterators would become the reference type. Indeed, this even fixes the issue we mentioned earlier - where even when our underlying types were copyable, we originally ended up with a common reference type of `std::tuple<int, std::string>`, a type that does not have reference semantics. But now it would have a common reference type of `std::tuple<int&, std::string&>`, which certainly has reference semantics.
 
-We therefore propose that to extend the constructor overload set of `std::tuple<T...>` to add converting constructors from `std::tuple<U...>&` and `std::tuple<U...> const&&`. And likewise for `std::pair<T, U>`, for consistency. 
+We therefore propose that to extend the constructor overload set of `std::tuple<T...>` to add converting constructors from `std::tuple<U...>&` and `std::tuple<U...> const&&`. And likewise for `std::pair<T, U>`, for consistency.
 
 ### `zip` and `zip_transform`'s `value_type`
 
@@ -525,11 +527,11 @@ std::vector<std::string> vs = /* ... */;
 auto a = views::zip(vi, vs);
 ```
 
-Let's talk about `a`. The reference type of `a` is `std::tuple<int&, std::string&>`. That's really the only option, it's the whole point of `zip`. `range_reference_t<zip_view<R...>>` needs to be `std::tuple<range_reference_t<R>...>`. 
+Let's talk about `a`. The reference type of `a` is `std::tuple<int&, std::string&>`. That's really the only option, it's the whole point of `zip`. `range_reference_t<zip_view<R...>>` needs to be `std::tuple<range_reference_t<R>...>`.
 
-But what's the `value_type` of `a`? We ideally want the `value_type` to be something without reference semantics, something that we can properly hold onto and have a real copy. For a lot of ranges, the `reference` type is some `T&` or `T const&` and so the `value_type` is just `T`. But here, our `reference` is a prvalue. So we have a choice. 
+But what's the `value_type` of `a`? We ideally want the `value_type` to be something without reference semantics, something that we can properly hold onto and have a real copy. For a lot of ranges, the `reference` type is some `T&` or `T const&` and so the `value_type` is just `T`. But here, our `reference` is a prvalue. So we have a choice.
 
-We could do `std::remove_cvref_t` on the `reference` as usual, that would give us just `reference` back, so the `value_type` of `a` would be `std::tuple<int&, std::string&>`. Not really an independent, value type. 
+We could do `std::remove_cvref_t` on the `reference` as usual, that would give us just `reference` back, so the `value_type` of `a` would be `std::tuple<int&, std::string&>`. Not really an independent, value type.
 
 Or, since we know what `zip` is, we don't have to guess what a good `value_type` might be. We could use the ranges themselves to tell us what that is. Each constituent `R` already provides a `range_value_t<R>`, and if those choices are good enough for the `R`s, they should be good enough for `zip`. That is, `std::tuple<range_value_t<R>...>`. Which, for `a`, would be `std::tuple<int, std::string>`.
 
@@ -543,7 +545,7 @@ auto b = views::zip_transform([](auto&... r){
 
 The `reference` type of `b` is necessarily determined by the callable here: `invoke_result_t<F&, range_reference_t<R>...>`. In this case, this gives us `std::tuple<int&, std::string&>`. Notably, this is exactly the same `reference` type as with saw with `a`.
 
-But what's the `value_type` of `b`? Unlike in the case of `zip`, with `zip_transform` we really have no idea where the `reference` type came from. It need not be any kind of reference at all, it could be... `int`. For `zip_transform`, we really can't do much better than `remove_cvref_t<invoke_result_t<F&, range_reference_t<R>...>>` &mdash; which again gets us back to the same `std::tuple<int&, std::string&>`. 
+But what's the `value_type` of `b`? Unlike in the case of `zip`, with `zip_transform` we really have no idea where the `reference` type came from. It need not be any kind of reference at all, it could be... `int`. For `zip_transform`, we really can't do much better than `remove_cvref_t<invoke_result_t<F&, range_reference_t<R>...>>` &mdash; which again gets us back to the same `std::tuple<int&, std::string&>`.
 
 A hypothetical different direction would be to introduce a type trait that would inform range adapters how to turn a reference-semantic type to a value type. Something that would turn `std::vector<bool>::reference` into `bool`, or `std::tuple<T&...>` into `std::tuple<T...>`. Then other range adapters could have used it themselves.
 
@@ -565,7 +567,7 @@ Or for this specific example:
 |`a` &mdash;`zip(vi, vs)` | `std::tuple<int&, std::string&>` | `std::tuple<int, std::string` |
 |`b` &mdash; `zip_transform(@_std::tie_@, vi, vs)` | `std::tuple<int&, std::string&>` | `std::tuple<int&, std::string&>` |
 
-We think these would be the most valuable choices. 
+We think these would be the most valuable choices.
 
 ### `enumerate`'s first range
 
@@ -600,7 +602,7 @@ Now consider `adjacent`. This view could simply mean to take elements two-at-a-t
 This family, as the name suggests, take a range of `T` and groups them based on some provided function function. `group_by` is one of the most consistently named algorithms across all languages (modulo choice of spelling, as in `groupBy` or `group-by`) yet there are actually three-ish different approaches to what this algorithm actually means:
 
 1. Take a binary predicate, `(T, T) -> bool`, and invoke this predicate on consecutive elements and start a new group when that predicate returns `false`. Using Haskell notation, we're taking a `[T]` (range of `T`) and producing a `[[T]]` (range of range of `T`).
-2. Take a unary function, `T -> U` (such that `U` models `equality_comparable`), and group consecutive elements with the same `U`. Following the law of useful return, these algorithms don't just give you a `[[T]]` back, they rather give you a `[(U, [T])]` &mdash; the algorithm had to compute the `U`s for each element so they should give it to the user. 
+2. Take a unary function, `T -> U` (such that `U` models `equality_comparable`), and group consecutive elements with the same `U`. Following the law of useful return, these algorithms don't just give you a `[[T]]` back, they rather give you a `[(U, [T])]` &mdash; the algorithm had to compute the `U`s for each element so they should give it to the user.
 3. Take a unary function, `T -> U`, and return a dictionary that maps every `U` to a list of `T`s that mapped to it.
 
 Haskell, Elixir, D (`chunkBy`), and range-v3 (~ish) provide the first kind. Rust, Python, D (also `chunkBy` &mdash; it allows both uses), and F# provide the second. Clojure, Kotlin, and Scala provide the third.
@@ -638,7 +640,7 @@ This would give us three range adaptors that produce non-overlapping ranges of r
 - `chunk_by`, which takes a binary predicate
 - `chunk_on` (or whatever), which takes a unary projection
 
-And we think that it's nice that all of these algorithms have the same root. There *are* other algorithms that produces ranges of ranges, but they either exclude some elements (`split`) or repeat some elements (`slide`). 
+And we think that it's nice that all of these algorithms have the same root. There *are* other algorithms that produces ranges of ranges, but they either exclude some elements (`split`) or repeat some elements (`slide`).
 
 Additionally, just recently, range-v3 just added a [`views::chunk_by`](https://github.com/ericniebler/range-v3/pull/1648) that does exactly as suggested here (comparing consecutive elements, as opposed to range-v3 preexisting `views::group_by` which compares against the first in group).
 
@@ -646,18 +648,18 @@ This is proposed in [@P2443R0].
 
 ## Monadic binds
 
-We added `views::transform` in C++20, but there are closely related views in that family, which several other languages also provide. 
+We added `views::transform` in C++20, but there are closely related views in that family, which several other languages also provide.
 
 `views::transform` takes a range of `T` and a function `T -> U` and produces a range of `U`. But we can play around with the shape of the callable to produce two other extremely useful adapters:
 
-- we can take a function `T -> RangeOf<U>` and produce a range of `U`. That is, take the resulting range and flatten it out into a single range. 
-- we can take a function `T -> optional<U>` and produce a range of `U` from those resulting optionals that are engaged. 
+- we can take a function `T -> RangeOf<U>` and produce a range of `U`. That is, take the resulting range and flatten it out into a single range.
+- we can take a function `T -> optional<U>` and produce a range of `U` from those resulting optionals that are engaged.
 
 The former is commonly known as `flat_map` (because it's a `map` followed by a `flatten`), although C++20's version of `flatten` is named `join` and C++20's version of `map` is named `transform`. So perhaps this adapter should be named `join_transform` or `transform_join`? Eughh?
 
 The latter is called `filter_map` in Rust and `compactMap` in Swift. Neither strike us as great names either. A Haskell package calls this `mapMaybe` which informs our proposed name: `transform_maybe`.
 
-There really aren't any particular thorny library issues to resolve here, simply a question of specification. 
+There really aren't any particular thorny library issues to resolve here, simply a question of specification.
 
 ### `flat_map`
 
@@ -679,7 +681,7 @@ inline constexpr auto transform_maybe1 = [](auto&& f){
 };
 ```
 
-This is an expensive implementation. Not only do we need three adapters, but `join` is a very complex adapter and we have an extremely specialized case here that is much simpler. Moreover, the result of `transform_maybe1` is always an input range only (we are joining a range of prvalue ranges). 
+This is an expensive implementation. Not only do we need three adapters, but `join` is a very complex adapter and we have an extremely specialized case here that is much simpler. Moreover, the result of `transform_maybe1` is always an input range only (we are joining a range of prvalue ranges).
 
 We could get the same behavior out of three simpler adapters in a different way in C++20:
 
@@ -726,7 +728,7 @@ inline constexpr auto transform_maybe3 = [](auto&& f){
 };
 ```
 
-This is certainly quite a bit more complicated than the `views::tail` implementation suggested earlier! 
+This is certainly quite a bit more complicated than the `views::tail` implementation suggested earlier!
 
 But we don't want to specify it like that either. Even `transform3` has a huge problem: how many times do we invoke the callable? Ideally, if we're just traversing the resulting range one time, we'd invoke the function one time per element in the input range. But that's not actually the case here - we would have to end up invoking the function twice in the case that it yields an engaged `optional`. This follows directly from the underlying iterator model: the `transform_view`'s `iterator::operator*` invokes the function, while `filter_view`'s `iterator::operator++` does a `find_if`. For elements that are filtered in, there would be one dereference during the `operator++` to stop searching and then again to actually propagate the value in the `filter_view`'s `iterator::operator*`. This could be resolved by adding yet another adapter that we already mentioned:
 
@@ -746,7 +748,7 @@ inline constexpr auto transform_maybe4 = [](auto&& f){
            });
 };
 ```
-We think that `transform_view` merits a first-class view to accomplish this functionality not only because the above is very involved but also because it still has unnecessary overhead - it'd be nice to avoid instantiating _four_ views when one is sufficient, along with all the wrapping that entails. 
+We think that `transform_view` merits a first-class view to accomplish this functionality not only because the above is very involved but also because it still has unnecessary overhead - it'd be nice to avoid instantiating _four_ views when one is sufficient, along with all the wrapping that entails.
 
 However, because of the `cache_latest` dependency (see also [@P2328R1]), we're kicking this one down to Tier 2.
 
@@ -769,13 +771,13 @@ These are three specific examples of a general algorithm that takes three parame
 
 The above table isn't _quite_ right - since `stride` does not give you a range of ranges, so it would unfortunately not be implementable in terms of `@_generic_@`. And as with `tail` vs `drop`, we have the question here of should `chunk` and `slide` each be first-class views or should they both be implemented in terms of `@_generic_@`? Implementing in terms of `@_generic_@` saves specification effort and gives us a more generic algorithm, but means we would have to store two extra data members than would be necessary in first-class implementation.
 
-Moreover, as a language without named arguments, we have a different problem when it comes to `@_generic_@` here. It takes two `int`s and a `bool`. There is no natural order for these parameters, so who knows what `@_generic_@(1, 4, false)` means &mdash; especially since `@_generic_@(false, 1, 4)` would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in `@_generic_@({.step=1, .size=4, .partial=false})`. This is a very useful pattern, but one which has no precedent in the standard library as of this writing. 
+Moreover, as a language without named arguments, we have a different problem when it comes to `@_generic_@` here. It takes two `int`s and a `bool`. There is no natural order for these parameters, so who knows what `@_generic_@(1, 4, false)` means &mdash; especially since `@_generic_@(false, 1, 4)` would also compile. This suggests simply not having it as a user-facing algorithm. Or we could use an aggregate to mock up named arguments via designated-initializers, as in `@_generic_@({.step=1, .size=4, .partial=false})`. This is a very useful pattern, but one which has no precedent in the standard library as of this writing.
 
 Ultimately, we don't think an algorithm like `@_generic_@` would necessarily be useful for C++, and it wouldn't really help much in specifying either `chunk` or `slide` (and definitely not `stride`). But these are important algorithms that come up frequently enough to be in consideration for Tier 1.
 
 ## The take/drop family
 
-In C++20 already we have several views that pass through some subset of the initial range &mdash; without modifying any of the elements. Those are: `take`, `take_while`, `drop`, and `drop_while`. There are actually many more algorithms in this family that are all quite similar. Nearly all of these range adapters can be implemented in terms of adapters that already exist, although we can typically do better if we make them all first-class. The question is really what is it that we want to do here? 
+In C++20 already we have several views that pass through some subset of the initial range &mdash; without modifying any of the elements. Those are: `take`, `take_while`, `drop`, and `drop_while`. There are actually many more algorithms in this family that are all quite similar. Nearly all of these range adapters can be implemented in terms of adapters that already exist, although we can typically do better if we make them all first-class. The question is really what is it that we want to do here?
 
 We already discussed the example of `tail` earlier &mdash; should this be a first-class view or is `drop(1)` sufficient? The same question applies to most of the views in this list, and we generally have the same answer for all of them: if we're okay with derivative implementations, then we might as well make all of them Tier 1 since they would all have single-sentence specifications; but if we want better implementations, then they're certainly not important enough to gain get top priority, so we would move them down to Tier 2 or Tier 3.
 
@@ -810,11 +812,11 @@ We're tentatively labelling the more complicated ones here Tier 2 and the more t
 
 There are several views on the list that are simply factories &mdash; they cannot be piped into. So we'll consider them as their own family:
 
-- `cartesian_product(E...)` takes a bunch of ranges and yields a range of tuples that are the Cartesian product of those ranges. 
-- `concat(E...)` concatenates a bunch of ranges together, it must be a standalone range. It is also sometimes called `chain`. 
+- `cartesian_product(E...)` takes a bunch of ranges and yields a range of tuples that are the Cartesian product of those ranges.
+- `concat(E...)` concatenates a bunch of ranges together, it must be a standalone range. It is also sometimes called `chain`.
 - `generate(F)` takes a nullary function `F` and produces an infinite range of invoking that function.
 - `generate_n(F, N)` is equivalent to `generate(F) | views::take(N)`.
-- `linear_distribute(B, E, N)` produces a range of `N` values linearly distributed from `B` to `E`. 
+- `linear_distribute(B, E, N)` produces a range of `N` values linearly distributed from `B` to `E`.
 - `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
 - `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
 
@@ -833,10 +835,10 @@ Other range adapters that we haven't talked about yet, but aren't sure how to gr
 - `intersperse(V)` produces a new range alternating selecting elements from the source range and the value `V`
 - `join_with(V)`. C++20 has a version of `join` that does not take a delimiter, but we really do need a version that provides one as well. The issue with taking a delimiter is that there is an ambiguity with what ` r | views::join(v)` means, if `v` happens to itself be a joinable range. range-v3 assumes that if `v` is a joinable range that `views::join(v)` joins it without a delimiter. We think this ship has sailed in C++20, and it would be better to introduce `join_with` that requires a delimiter. See [@P2441R0].
 - `partial_sum(R)` is equivalent to `scan(R, std::plus<>())`.
-- `split_when(P)` is a more complicated version of `split` that rather than taking a value or a range, instead takes a predicate that could also return an iterator. 
+- `split_when(P)` is a more complicated version of `split` that rather than taking a value or a range, instead takes a predicate that could also return an iterator.
 - `sample(N)` yields a random sample of the given length.
 
-There are other combinatoric generators that also could be explored. For example, Python has `itertools.product`, `itertools.combinations`, and `itertools.combination_with_replacement` which all operate on a single range of `T` and produce a range of range of `T`. 
+There are other combinatoric generators that also could be explored. For example, Python has `itertools.product`, `itertools.combinations`, and `itertools.combination_with_replacement` which all operate on a single range of `T` and produce a range of range of `T`.
 
 Of these, `views::join_with` fills in an incomplete aspect of the already-existing `views::join`, so we feel that it is a Tier 1 view. The rest we consider to have lower priority.
 
@@ -859,7 +861,7 @@ would not compile. And were it to compile, what should it actually mean? `zip`'s
 
 In range-v3, the `reference` type is `common_reference_t<range_value_t<R> const&&, range_reference_t<R>>`. In this particular example, that would be `std::tuple<int const&>` (following the various `tuple` changes performed to implement `zip` in [@P2321R2]), which is exactly what you want.
 
-Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R1] and is Tier 1 material. 
+Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R1] and is Tier 1 material.
 
 # Algorithms
 
@@ -883,7 +885,7 @@ But there are a few algorithms that aren't in `<algorithm>` that do not have ran
 | `transform_inclusive_scan` | Not proposed. |
 | `transform_exclusive_scan` | Not proposed. |
 
-What to do about these algorithms? Well, one of the big motivations for Ranges was the ability to actually compose algorithms. This severely reduces the need for the combinatorial explosion of algorithms - all the `transform_meow` algorithms are `transform` followed by `meow`, so we probably don't need separate range-based algorithms for those. 
+What to do about these algorithms? Well, one of the big motivations for Ranges was the ability to actually compose algorithms. This severely reduces the need for the combinatorial explosion of algorithms - all the `transform_meow` algorithms are `transform` followed by `meow`, so we probably don't need separate range-based algorithms for those.
 
 Four of these (`accumulate`, `reduce`, `transform_reduce`, and `inner_product`) return a value, while the other seven output a range (one through a pair of writable iterators and the other six through an output iterator). We'll consider these separately.
 
@@ -891,7 +893,7 @@ Four of these (`accumulate`, `reduce`, `transform_reduce`, and `inner_product`) 
 
 ### `std::accumulate` &rarr; `ranges::fold`
 
-We think having a range-based left-fold algorithm in the standard library is very important, since this is such a fundamental algorithm. Indeed, several of the other standard library algorithms _are_ simple folds &mdash; for instance `count`, `count_if`, `max_element`, `min_element`, `minmax_element`, and `inner_product`. We don't have a generic range-based `max` or `min` (just ones that takes an `initializer_list`), but those would also be a left-folds. As such , we think adding such a left-fold to the standard library is a top tier priority for C++23. Except that we think this algorithm should be named [`ranges::fold`]{.addu} - the problem with the name `accumulate` is that it is strongly suggestive of addition, which makes uses of it over different operations just very strange. `fold` is what the algorithm is, and has no such emphasis. It's the more generic name, for the most generic algorithm. 
+We think having a range-based left-fold algorithm in the standard library is very important, since this is such a fundamental algorithm. Indeed, several of the other standard library algorithms _are_ simple folds &mdash; for instance `count`, `count_if`, `max_element`, `min_element`, `minmax_element`, and `inner_product`. We don't have a generic range-based `max` or `min` (just ones that takes an `initializer_list`), but those would also be a left-folds. As such , we think adding such a left-fold to the standard library is a top tier priority for C++23. Except that we think this algorithm should be named [`ranges::fold`]{.addu} - the problem with the name `accumulate` is that it is strongly suggestive of addition, which makes uses of it over different operations just very strange. `fold` is what the algorithm is, and has no such emphasis. It's the more generic name, for the most generic algorithm.
 
 [@P1813R0] goes through the work of introducing a set of constraints for these algorithms, and its suggestion for this algorithm is:
 
@@ -904,7 +906,7 @@ constexpr accumulate_result<safe_iterator_t<R>, T>
 
 We think this is a bad direction, for three reasons.
 
-First, we should not default the binary operation at all. Having a default `fold` operation doesn't make much sense - it's reasonable for `ranges::sort` to default to sorting by `<`, since the entire standard library is built on `<` as the primary comparison operator, but that doesn't really hold for `+`. Instead, we should add separate named algorithms [`ranges::sum`]{.addu} and [`ranges::product`]{.addu} that just invoke `ranges::fold` with `std::plus()` and `std::multiplies()` -- or more likely that these invoke `ranges::reduce` instead as the more efficient algorithm with more constraints. 
+First, we should not default the binary operation at all. Having a default `fold` operation doesn't make much sense - it's reasonable for `ranges::sort` to default to sorting by `<`, since the entire standard library is built on `<` as the primary comparison operator, but that doesn't really hold for `+`. Instead, we should add separate named algorithms [`ranges::sum`]{.addu} and [`ranges::product`]{.addu} that just invoke `ranges::fold` with `std::plus()` and `std::multiplies()` -- or more likely that these invoke `ranges::reduce` instead as the more efficient algorithm with more constraints.
 
 Second, the above definition definitely follows Alexander Stepanov's law of useful return [@stepanov] (emphasis ours):
 
@@ -930,7 +932,7 @@ or:
 int total = ranges::sum(numbers, 0).value;
 ```
 
-`ranges::fold` should just return `T`. This would be consistent with what the other range-based folds already return in C++20 (e.g. `ranges::count` returns a `range_difference_t<R>`, `ranges::any_of` - which can't quite be a `fold` due to wanting to short-circuit - just returns `bool`). 
+`ranges::fold` should just return `T`. This would be consistent with what the other range-based folds already return in C++20 (e.g. `ranges::count` returns a `range_difference_t<R>`, `ranges::any_of` - which can't quite be a `fold` due to wanting to short-circuit - just returns `bool`).
 
 Third, these constraints are far too restrictive. Copying the proposed definition of `magma` and `indirect_magma` here for readability:
 
@@ -1033,7 +1035,7 @@ concept @_indirectly-binary-foldable_@ =
     @_foldable_@<F, T, iter_reference_t<I>> &&
     @_foldable_@<F, T, iter_common_reference_t<I>>;
 
-template <input_range R, movable T, class Proj = identity, 
+template <input_range R, movable T, class Proj = identity,
     @_indirectly-binary-foldable_@<T, projected<iterator_t<R>, Proj>> BinaryOperation>
 constexpr T fold(R&& r, T init, BinaryOperation op, Proj proj = {}) {
     range_iterator_t<R> b = begin(r);
@@ -1073,10 +1075,10 @@ int main()
 {
     std::vector<int> a{0, 1, 2, 3, 4};
     std::vector<int> b{5, 4, 2, 3, 1};
- 
+
     int r1 = std::inner_product(a.begin(), a.end(), b.begin(), 0);
     std::cout << "Inner product of a and b: " << r1 << '\n';
- 
+
     int r2 = std::inner_product(a.begin(), a.end(), b.begin(), 0,
                                 std::plus<>(), std::equal_to<>());
     std::cout << "Number of pairwise matches between a and b: " <<  r2 << '\n';
@@ -1101,7 +1103,7 @@ ranges::sum(views::zip_transform(std::equal_to(), a, b));
 
 :::
 
-Even though the `ranges::fold` construction is more complicated, it's also easier to see the groupings and understand what's going on. The composed construction also allows for arbitrarily many ranges, not simply two. 
+Even though the `ranges::fold` construction is more complicated, it's also easier to see the groupings and understand what's going on. The composed construction also allows for arbitrarily many ranges, not simply two.
 
 There is also the question of projections. With `transform_reduce` and `inner_product`, there are _three_ ranges that could be projected: each range into the binary grouping operation, and the result of that grouping. This makes it exceedingly awkward if you only want to provide exactly one of those projections:
 
@@ -1112,7 +1114,7 @@ ranges::inner_product(a, b, 0,
     std::plus(), std::multiplies(),
     p1);
 ```
-    
+
 ### Composed
 ```cpp
 ranges::fold(views::zip_transform(std::multiplies(),
@@ -1151,11 +1153,11 @@ ranges::fold(views::zip_transform(std::multiplies(), a, b)
 :::
 
 We think that once we add [`ranges::fold` as Tier 1 [@P2322R2]]{.addu} and [`ranges::reduce` as Tier 2]{.yellow}, we do not actually have a need for either a `ranges::transform_reduce` or a `ranges::inner_product` (which would also save us from having to come up with a name for the latter).
- 
+
 
 ## Algorithms that Output a Range (Anamorphisms)
 
-`iota` is the easiest one to consider here. We already have `views::iota` in C++20, which importantly means that we already have all the correct constraints in place. In that sense, it almost takes less time to adopt `ranges::iota` than it would take to discuss whether or not it's worth spending time adopting it. 
+`iota` is the easiest one to consider here. We already have `views::iota` in C++20, which importantly means that we already have all the correct constraints in place. In that sense, it almost takes less time to adopt `ranges::iota` than it would take to discuss whether or not it's worth spending time adopting it.
 
 But that does not hold for the other algorithms.
 
@@ -1221,15 +1223,15 @@ This begs the question: do we actually need to have a `ranges::adjacent_transfor
 
 We saw in the catamorphism section that we have a pair of algorithms, `std::accumulate` and `std::reduce`, that solve basically the same problem except that one prejudices a particular operation (`std::accumulate` suggests `+`) while the other has the more generic name yet is actually more restrictive (`std::reduce` requires both the operation to be both associative and commutative, `std::accumulate` does not require either).
 
-We have the exact same issue here, `std::partial_sum` is strongly suggestive of `+`, while `std::inclusive_scan` is the more generically-named algorithm that nevertheless imposes the stronger restriction (in this case, just associativity). 
+We have the exact same issue here, `std::partial_sum` is strongly suggestive of `+`, while `std::inclusive_scan` is the more generically-named algorithm that nevertheless imposes the stronger restriction (in this case, just associativity).
 
 Our suggestion for what to do with `std::partial_sum` and `std::{in,ex}clusive_scan`  thus mirrors our suggestion for what we did with `std::accumulate` and `std::reduce`:
 
 - rename `std::partial_sum` to `ranges::partial_fold` (since it's a `fold` that also yields partial results), which will have neither a defaulted binary operation nor associativity requirements.
 - introduce `ranges::{in,ex}clusive_scan`
-- introduce `ranges::partial_sum` that is hard-coded to use `std::plus()` as the binary operation, which internally forwards to `ranges::inclusive_scan` (not `ranges::partial_fold`, since we know addition is associative). 
+- introduce `ranges::partial_sum` that is hard-coded to use `std::plus()` as the binary operation, which internally forwards to `ranges::inclusive_scan` (not `ranges::partial_fold`, since we know addition is associative).
 
-As we discussed with the question of the need for `adjacent_difference`, there would also be the question of whether we need these algorithms at all. As such, we ascribe them fairly low priority. 
+As we discussed with the question of the need for `adjacent_difference`, there would also be the question of whether we need these algorithms at all. As such, we ascribe them fairly low priority.
 
 ### `transform_{in,ex}clusive_scan`
 
@@ -1257,13 +1259,13 @@ The latter two having the nice property that you don't have to remember the orde
 
 One of the C++17 additions was the introduction of the parallel algorithms by way of the Parallelism TS [@P0024R2]. But with Ranges, we don't have parallel overloads of any of the algorithms yet. How should we prioritize adding parallel overloads for the range algorithms?
 
-The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the `ExecutionPolicy` parameter is constrained on `is_execution_policy_v<remove_cvref_t<ExecutionPolicy>>`. Is that good enough for executors? It might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors. 
+The most important issue to consider is: with all the ongoing work on executors, we very much want to ensure that the parallel overloads we define will end up working. The status quo in the standard library is that the `ExecutionPolicy` parameter is constrained on `is_execution_policy_v<remove_cvref_t<ExecutionPolicy>>`. Is that good enough for executors? It might not be, and it would be extremely disappointing to adopt executors in a way that is incompatible with a bunch of parallel algorithms we just added. This needs careful consideration by somebody familiar with executors.
 
-The second issue is that there are additional requirements imposed on the parallel overloads as compared to the sequential ones (see [algorithms.parallel]{.sref} as well as [@P0836R1]). Those requirements would need to be somehow captured in concepts. Even if the type trait is considered sufficient for executors going forward, the concepts work is still necessary. 
+The second issue is that there are additional requirements imposed on the parallel overloads as compared to the sequential ones (see [algorithms.parallel]{.sref} as well as [@P0836R1]). Those requirements would need to be somehow captured in concepts. Even if the type trait is considered sufficient for executors going forward, the concepts work is still necessary.
 
-And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don't have range-based overloads yet: what are the concepts that we need to constrain the various parameters? 
+And for those algorithms which we do not yet have range-based overloads, we still have exactly the same issue for why we don't have range-based overloads yet: what are the concepts that we need to constrain the various parameters?
 
-Due to the executor dependency and the need to be careful about specifying the concepts for parallel requirements, we consider this Tier 2. 
+Due to the executor dependency and the need to be careful about specifying the concepts for parallel requirements, we consider this Tier 2.
 
 # Actions
 
@@ -1275,7 +1277,7 @@ There are really three kinds of operations that exist in range-v3:
 
 While we have range-based algorithms and views in C++20, we do not yet have any actions. range-v3 comes with many actions, some of which are the action flavor of views and some of which are the action flavor of algorithms. The full list is: `drop`, `drop_while`, `erase`, `insert`, `join`, `push_back`, `push_front`, `remove_if`, `remove`, `reverse`, `shuffle`, `slice`, `sort`, `split`, `stable_sort`, `stride`, `take`, `take_while`, `transform`, `unique`, and `unstable_remove_if`.
 
-The advantage of these actions is that unlike the algorithms, they compose, and unlike the views, you can pass rvalue ranges to them. From the examples in the range-v3 documentation [@range-v3.docs]:  
+The advantage of these actions is that unlike the algorithms, they compose, and unlike the views, you can pass rvalue ranges to them. From the examples in the range-v3 documentation [@range-v3.docs]:
 
 ::: quote
  When you want to mutate a container in-place, or forward it through a chain of mutating operations, you can use actions. The following examples should make it clear.
@@ -1311,7 +1313,7 @@ ranges::sort(vi);
 ranges::unique(vi);
 ```
 
-But while it might be nicer to provide a pipeline approach, we feel this whole space simply needs more research. It is an immediate source of frustration for users when they discover that while you can pipe a `view` into an `action`, you cannot do the reverse. 
+But while it might be nicer to provide a pipeline approach, we feel this whole space simply needs more research. It is an immediate source of frustration for users when they discover that while you can pipe a `view` into an `action`, you cannot do the reverse.
 
 Given that the actions don't provide any functionality that we don't already have, simply adding the ability to compose some operations better, we give them pretty low priority relative to the wealth of new functionality many of the other operations here provide.
 
@@ -1332,7 +1334,7 @@ The following includes links ot papers that currently exist so far.
     - `views::as_const` ([@P2278R1])
     - `views::cartesian_product` ([@P2374R1])
     - `views::chunk` ([@P2442R0])
-    - `views::chunk_by` ([@P2443R0])    
+    - `views::chunk_by` ([@P2443R0])
     - `views::enumerate` ([@P2164R5])
     - `views::join_with` ([@P2441R0])
     - `views::slide` ([@P2442R0])
@@ -1355,15 +1357,15 @@ The following includes links ot papers that currently exist so far.
 
 - the addition of the following range adapters:
     - `views::cache1`
-    - `views::chunk_on`    
+    - `views::chunk_on`
     - `views::concat`
     - `views::cycle`
-    - `views::delimit`    
+    - `views::delimit`
     - `views::drop_last`
     - `views::drop_last_while`
     - `views::generate`
     - `views::generate_n`
-    - `views::group_by_key`    
+    - `views::group_by_key`
     - `views::intersperse`
     - `views::partial_sum`
     - `views::remove`
@@ -1376,7 +1378,7 @@ The following includes links ot papers that currently exist so far.
     - `views::split_when`
     - `views::take_last`
     - `views::take_last_while`
-    - `views::transform_maybe`    
+    - `views::transform_maybe`
     - `views::trim`
     - `views::unique`
 - the addition of the following range algorithms:
@@ -1390,17 +1392,17 @@ The following includes links ot papers that currently exist so far.
 - the addition of the following range adapters:
     - `views::adjacent_filter`
     - `views::adjacent_remove_if`
-    - `views::drop_exactly`    
-    - `views::flat_map` (possibly unnecessary given [@P2328R1])    
-    - `views::head`        
+    - `views::drop_exactly`
+    - `views::flat_map` (possibly unnecessary given [@P2328R1])
+    - `views::head`
     - `views::linear_distribute`
     - `views::sample`
     - `views::set_difference`
     - `views::set_intersection`
     - `views::set_union`
     - `views::set_symmetric_difference`
-    - `views::slice`    
-    - `views::tail`  
+    - `views::slice`
+    - `views::tail`
     - `views::take_exactly`
 - the addition of the following range algorithms:
     - `ranges::adjacent_transform`
@@ -1490,7 +1492,7 @@ references:
         - family: Eric Niebler
       issued:
         - year: 2015
-      URL: http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/     
+      URL: http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/
     - id: hoekstra.cppcon
       citation-label: hoekstra.cppcon
       title: "23 Ranges: slide & stride"
@@ -1514,7 +1516,7 @@ references:
         - family: Donnacha Oisín Kidney
       issues:
         - year: 2018
-      URL: https://hackage.haskell.org/package/groupBy      
+      URL: https://hackage.haskell.org/package/groupBy
     - id: P2322R4
       citation-label: P2322R4
       title: "`ranges::fold`"
@@ -1554,7 +1556,7 @@ references:
         - family: Tim Song
       issued:
         year: 2021
-      URL: https://wg21.link/p2442r0  
+      URL: https://wg21.link/p2442r0
     - id: P2443R0
       citation-label: P2443R0
       title: "`views::chunk_by`"
@@ -1562,5 +1564,5 @@ references:
         - family: Tim Song
       issued:
         year: 2021
-      URL: https://wg21.link/p2443r0         
+      URL: https://wg21.link/p2443r0
 ---

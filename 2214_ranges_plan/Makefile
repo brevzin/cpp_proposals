@@ -1,2 +1,2 @@
-p2214r1.html : ranges-plan.md
+d2214r2.html : ranges-plan.md
 include ../md/mpark-wg21.mk
