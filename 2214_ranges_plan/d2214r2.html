@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-02-10" />
+  <meta name="dcterms.date" content="2022-02-12" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-02-10</td>
+    <td>2022-02-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -592,6 +592,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#derivatives-of-transform"><span class="toc-section-number">4.9</span> Derivatives of <code class="sourceCode cpp">transform</code><span></span></a>
 <ul>
 <li><a href="#viewsas_const"><span class="toc-section-number">4.9.1</span> <code class="sourceCode cpp">views<span class="op">::</span>as_const</code><span></span></a></li>
+<li><a href="#viewsas_rvalue"><span class="toc-section-number">4.9.2</span> <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code><span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#algorithms"><span class="toc-section-number">5</span> Algorithms<span></span></a>
@@ -668,11 +669,11 @@ span.yellow {
 <p>This paper provides our opinion for how to categorize Ranges functionality into those three buckets. We go through, in turn: <a href="#view-adjuncts">views-adjacent functionality</a>, <a href="#views">views</a>, <a href="#algorithms">algorithms</a>, and <a href="#actions">actions</a> (which do not exist in C++20).</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="view-adjuncts"><span class="header-section-number">3</span> View adjuncts<a href="#view-adjuncts" class="self-link"></a></h1>
 <p>C++20 Ranges, and the range-v3 that birthed it, isn’t just a collection of loosely related views and algorithms. There’s some important other functionality there.</p>
-<p>One critical piece of missing functionality is <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> <span class="citation" data-cites="P1206R6">[<a href="#ref-P1206R6" role="doc-biblioref">P1206R6</a>]</span></span>. It’s not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing.</p>
+<p>One critical piece of missing functionality is <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> <span class="citation" data-cites="P1206R7">[<a href="#ref-P1206R7" role="doc-biblioref">P1206R7</a>]</span></span>. It’s not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing.</p>
 <p>Another criticial piece of functionality was pointed out by Walter Brown in the telecon discussing the initial draft of this paper: it is simply not possible for users to write their own range adaptors such that they smoothly interact with standard library (or other user) range adaptors. That is, it is possible (but a little tedious) for users to write an adaptor such that they can write <code class="sourceCode cpp">r <span class="op">|</span> my<span class="op">::</span>thing <span class="op">|</span> my<span class="op">::</span>func<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code>, but it is <em>not</em> possible for them to write an adaptor such that they can write:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">auto</span> adaptor <span class="op">=</span> my<span class="op">::</span>thing <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> my<span class="op">::</span>func<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="kw">auto</span> result <span class="op">=</span> r <span class="op">|</span> adaptor;</span></code></pre></div>
-<p>In order to do that, standard library adaptors need to recognize user-defined adaptors as being adaptors. That needs library help and is also a top priority - since if users can define more adaptors, it becomes less critical that the standard library provide all of them. The standard library needs to provide <span class="addu">pipe support for user-defined adaptors <span class="citation" data-cites="P2387R1">[<a href="#ref-P2387R1" role="doc-biblioref">P2387R1</a>]</span></span></p>
+<p>In order to do that, standard library adaptors need to recognize user-defined adaptors as being adaptors. That needs library help and is also a top priority - since if users can define more adaptors, it becomes less critical that the standard library provide all of them. The standard library needs to provide <span class="addu">pipe support for user-defined adaptors <span class="citation" data-cites="P2387R3">[<a href="#ref-P2387R3" role="doc-biblioref">P2387R3</a>]</span></span></p>
 <p>Another important piece of functionality is simply the ability to print views. In range-v3, views were printable, which made it easy to debug programs or to provide meaningful output. For instance, the following program using range-v3 happily compiles:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/iota.hpp&gt;</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="pp">#include </span><span class="im">&lt;range/v3/view/transform.hpp&gt;</span></span>
@@ -701,7 +702,7 @@ span.yellow {
 <span id="cb3-11"><a href="#cb3-11"></a>    fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;[{}]&quot;</span>, fmt<span class="op">::</span>join<span class="op">(</span>r, <span class="st">&quot;,&quot;</span><span class="op">))</span>;</span>
 <span id="cb3-12"><a href="#cb3-12"></a><span class="op">}</span></span></code></pre></div>
 <p>But neither the ability to stream views directly nor <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> are in C++20, so there is no direct way to print a range at all.</p>
-<p>We think it’s important that C++23 provides the ability to <span class="addu">format all the ranges <span class="citation" data-cites="P2286R2">[<a href="#ref-P2286R2" role="doc-biblioref">P2286R2</a>]</span></span>. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it’s frustrating to even have to.</p>
+<p>We think it’s important that C++23 provides the ability to <span class="addu">format all the ranges <span class="citation" data-cites="P2286R6">[<a href="#ref-P2286R6" role="doc-biblioref">P2286R6</a>]</span></span>. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it’s frustrating to even have to.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="views"><span class="header-section-number">4</span> Views<a href="#views" class="self-link"></a></h1>
 <p>C++20 included a bunch of views, but range-v3 has a whole lot more. Views, much like algorithms, are the kind of thing where it’s just generally good to have more of them. The C++20 standard library has over 100 algorithms, but only 17 range adapters and view factories (excluding <code class="sourceCode cpp">all</code> and <code class="sourceCode cpp">ref</code>). We want more.</p>
 <p>We’ll start this section by enumerating all the adapters in range-v3 (and a few that aren’t), noting their current status, and ranking them according to our view of their priority for C++23, before describing how we came up with such a ranking.</p>
@@ -778,12 +779,12 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">chunk</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1 <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">chunk_by</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1 <span class="citation" data-cites="P2443R0">[<a href="#ref-P2443R0" role="doc-biblioref">P2443R0</a>]</span></span>. This is an improved <a href="#the-group_by-family"><code class="sourceCode cpp">group_by</code></a> recently added to range-v3. <span class="yellow">Also consider a variant <code class="sourceCode cpp">chunk_on</code> as Tier 2</span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2443R1">[<a href="#ref-P2443R1" role="doc-biblioref">P2443R1</a>]</span></span>. This is an improved <a href="#the-group_by-family"><code class="sourceCode cpp">group_by</code></a> recently added to range-v3. <span class="yellow">Also consider a variant <code class="sourceCode cpp">chunk_on</code> as Tier 2</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">common</code></td>
@@ -798,7 +799,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">const_</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1 <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>, renamed to <code class="sourceCode cpp">as_const</code></span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2278R2">[<a href="#ref-P2278R2" role="doc-biblioref">P2278R2</a>]</span>, renamed to <code class="sourceCode cpp">as_const</code></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">counted</code></td>
@@ -903,7 +904,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">join</code></td>
 <td>partially C++20, lacks delimiter ability</td>
-<td><span class="addu">Tier 1 (adding delimiter ability via <code class="sourceCode cpp">join_with</code> <span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span>)</span></td>
+<td><span class="addu">Tier 1 (adding delimiter ability via <code class="sourceCode cpp">join_with</code> <span class="citation" data-cites="P2441R2">[<a href="#ref-P2441R2" role="doc-biblioref">P2441R2</a>]</span>)</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">keys</code></td>
@@ -923,7 +924,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">move</code></td>
 <td>range-v3</td>
-<td>Not proposed</td>
+<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">as_rvalue</code></span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">partial_sum</code></td>
@@ -943,12 +944,12 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">repeat</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">repeat_n</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="addu">Tier 1, but under the name <code class="sourceCode cpp">repeat</code></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">replace</code></td>
@@ -1008,12 +1009,12 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">sliding</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">slide</code> <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span></span></td>
+<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">slide</code> <span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">split</code></td>
 <td>C++20, but unergonomic</td>
-<td>See <span class="citation" data-cites="P2210R0">[<a href="#ref-P2210R0" role="doc-biblioref">P2210R0</a>]</span>.</td>
+<td>See <span class="citation" data-cites="P2210R2">[<a href="#ref-P2210R2" role="doc-biblioref">P2210R2</a>]</span>.</td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">split_when</code></td>
@@ -1023,7 +1024,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">stride</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1 <span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span></span></td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P1899R2">[<a href="#ref-P1899R2" role="doc-biblioref">P1899R2</a>]</span></span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">tail</code></td>
@@ -1560,7 +1561,7 @@ span.yellow {
 <ul>
 <li><code class="sourceCode cpp">chunk<span class="op">(</span>N<span class="op">)</span></code> breaks a range into non-overlapping ranges of length <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that the last range has length less than 4. See <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>.</li>
 <li><code class="sourceCode cpp">slide<span class="op">(</span>N<span class="op">)</span></code> is very similar to <code class="sourceCode cpp">chunk</code> except its subranges are overlapping and all have length exactly <code class="sourceCode cpp">N</code>. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>,<span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>slide<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[[</span><span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span><span class="op">]</span>,<span class="op">[</span><span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span><span class="op">]</span>,<span class="op">[</span><span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span><span class="op">]</span>,<span class="op">[</span><span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span><span class="op">]</span>,<span class="op">[</span><span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span><span class="op">]</span>,<span class="op">[</span><span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span><span class="op">]</span>,<span class="op">[</span><span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span><span class="op">]]</span></code>. Note that <code class="sourceCode cpp">slide<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is similar to <code class="sourceCode cpp">adjacent</code>, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this <code class="sourceCode cpp">sliding</code>, which has a different tense from the other two, so we change it to <code class="sourceCode cpp">slide</code> here. See <span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>.</li>
-<li><code class="sourceCode cpp">stride<span class="op">(</span>N<span class="op">)</span></code> takes every <code class="sourceCode cpp">N</code>th element. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>stride<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span><span class="op">]</span></code>. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See <span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>.</li>
+<li><code class="sourceCode cpp">stride<span class="op">(</span>N<span class="op">)</span></code> takes every <code class="sourceCode cpp">N</code>th element. <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, <span class="dv">10</span><span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>stride<span class="op">(</span><span class="dv">4</span><span class="op">)</span></code> yields <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span><span class="op">]</span></code>. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See <span class="citation" data-cites="P1899R2">[<a href="#ref-P1899R2" role="doc-biblioref">P1899R2</a>]</span>.</li>
 </ul>
 <p>These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm <code class="sourceCode cpp">windowed</code>, Scala calls it <code class="sourceCode cpp">sliding</code>, D calls it <code class="sourceCode cpp">slide</code>, Haskell calls it <code class="sourceCode cpp">divvy</code>, and Clojure calls it <code class="sourceCode cpp">partition</code>.</p>
 <table>
@@ -1646,7 +1647,7 @@ span.yellow {
 <li><code class="sourceCode cpp">repeat<span class="op">(</span>V<span class="op">)</span></code> is an infinite range of a single value, equivalent to <code class="sourceCode cpp">generate<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">})</span></code>.</li>
 <li><code class="sourceCode cpp">repeat_n<span class="op">(</span>V, N<span class="op">)</span></code> is <code class="sourceCode cpp">N</code> copies of <code class="sourceCode cpp">V</code>, equivalent to <code class="sourceCode cpp">generate_n<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">}</span>, N<span class="op">)</span></code>.</li>
 </ul>
-<p>These vary wildly in complexity (<code class="sourceCode cpp">repeat</code> is certainly far simpler than <code class="sourceCode cpp">cartesian_product</code>). But <code class="sourceCode cpp">cartesian_product</code> comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority.</p>
+<p>These vary wildly in complexity (<code class="sourceCode cpp">repeat</code> is certainly far simpler than <code class="sourceCode cpp">cartesian_product</code>). But <code class="sourceCode cpp">cartesian_product</code> comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority. <code class="sourceCode cpp">repeat</code> and <code class="sourceCode cpp">repeat_n</code> can also be grouped under the same name, with <code class="sourceCode cpp">repeat<span class="op">(</span>V<span class="op">)</span></code> being an infinite range of a single value, and <code class="sourceCode cpp">repeat<span class="op">(</span>V, N<span class="op">)</span></code> having <code class="sourceCode cpp">N</code> copies of <code class="sourceCode cpp">V</code> (similar to <code class="sourceCode cpp">views<span class="op">::</span>iota</code>), and is also sufficiently straightforward that it merits inclusion.</p>
 <p>The rest, we consider lower priority. And <code class="sourceCode cpp">generate</code> and <code class="sourceCode cpp">generate_n</code> in particular need special care to deal with <span>16.4.6.10 <a href="https://wg21.link/res.on.data.races">[res.on.data.races]</a></span>. The current implementation of <code class="sourceCode cpp">generate_n</code> in range-v3 has a data race.</p>
 <h2 data-number="4.8" id="other-view-adapters"><span class="header-section-number">4.8</span> Other view adapters<a href="#other-view-adapters" class="self-link"></a></h2>
 <p>Other range adapters that we haven’t talked about yet, but aren’t sure how to group exactly, are:</p>
@@ -1664,15 +1665,19 @@ span.yellow {
 <p>There are other combinatoric generators that also could be explored. For example, Python has <code class="sourceCode cpp">itertools<span class="op">.</span>product</code>, <code class="sourceCode cpp">itertools<span class="op">.</span>combinations</code>, and <code class="sourceCode cpp">itertools<span class="op">.</span>combination_with_replacement</code> which all operate on a single range of <code class="sourceCode cpp">T</code> and produce a range of range of <code class="sourceCode cpp">T</code>.</p>
 <p>Of these, <code class="sourceCode cpp">views<span class="op">::</span>join_with</code> fills in an incomplete aspect of the already-existing <code class="sourceCode cpp">views<span class="op">::</span>join</code>, so we feel that it is a Tier 1 view. The rest we consider to have lower priority.</p>
 <h2 data-number="4.9" id="derivatives-of-transform"><span class="header-section-number">4.9</span> Derivatives of <code class="sourceCode cpp">transform</code><a href="#derivatives-of-transform" class="self-link"></a></h2>
-<p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code>, <code class="sourceCode cpp">indirect</code>, and <code class="sourceCode cpp">move</code> are all basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), and <code class="sourceCode cpp">std<span class="op">::</span>move</code>, respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other three we can’t pass as an argument anyway.</p>
+<p>Several of the above views that are labeled “not proposed” are variations on a common theme: <code class="sourceCode cpp">addressof</code> and <code class="sourceCode cpp">indirect</code> are basically wrappers around <code class="sourceCode cpp">transform</code> that take <code class="sourceCode cpp">std<span class="op">::</span>addressof</code> and <code class="sourceCode cpp">std<span class="op">::</span>dereference</code> (a function object we do not have at the moment), respectively. Basically, but not exactly, since one of those functions doesn’t exist yet and the other we can’t pass as an argument anyway.</p>
 <p>But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. <code class="sourceCode cpp">views<span class="op">::</span>addressof</code> is shorter than <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">))</span></code> (assuming a <code class="sourceCode cpp">LIFT</code> macro that wraps a name and emits a lambda), but we’re not sure that we necessarily need to add special cases of <code class="sourceCode cpp">transform</code> for every useful function.</p>
+<p>There are two that stand out as being slightly different though.</p>
 <h3 data-number="4.9.1" id="viewsas_const"><span class="header-section-number">4.9.1</span> <code class="sourceCode cpp">views<span class="op">::</span>as_const</code><a href="#viewsas_const" class="self-link"></a></h3>
-<p>There’s one that stands out as being slightly different though: <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> isn’t quite the same as a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, because of the existence of proxy references. <code class="sourceCode cpp">std<span class="op">::</span>as_const</code> only accepts lvalues, so something like:</p>
+<p><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> isn’t quite the same as a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, because of the existence of proxy references. <code class="sourceCode cpp">std<span class="op">::</span>as_const</code> only accepts lvalues, so something like:</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v;</span>
 <span id="cb24-2"><a href="#cb24-2"></a>views<span class="op">::</span>zip<span class="op">(</span>v<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>LIFT<span class="op">(</span>std<span class="op">::</span>as_const<span class="op">))</span>;</span></code></pre></div>
 <p>would not compile. And were it to compile, what should it actually mean? <code class="sourceCode cpp">zip</code>’s <code class="sourceCode cpp">reference</code> type here, as previously discussed, should be <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code>. What would a <code class="sourceCode cpp"><span class="kw">const</span></code> view over this range mean? Should we transparently propagate prvalues, thereby being a shallow <code class="sourceCode cpp"><span class="kw">const</span></code>, and produce a new range whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code>? Or should we somehow come up with a way to do deep <code class="sourceCode cpp"><span class="kw">const</span></code>-ness here and yield a range whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;&gt;</span></code>? The latter noting that we are not doing this sort of introspection for <code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code>.</p>
 <p>In range-v3, the <code class="sourceCode cpp">reference</code> type is <code class="sourceCode cpp">common_reference_t<span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;&amp;</span>, range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code>. In this particular example, that would be <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;&gt;</span></code> (following the various <code class="sourceCode cpp">tuple</code> changes performed to implement <code class="sourceCode cpp">zip</code> in <span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>), which is exactly what you want.</p>
-<p>Having a <code class="sourceCode cpp"><span class="kw">const</span></code> view over a range is something that seems inherently useful and is more complex than simply a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, and has proven to be in high demand. The full design is explored in <span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span> and is Tier 1 material.</p>
+<p>Having a <code class="sourceCode cpp"><span class="kw">const</span></code> view over a range is something that seems inherently useful and is more complex than simply a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>as_const</code>, and has proven to be in high demand. The full design is explored in <span class="citation" data-cites="P2278R2">[<a href="#ref-P2278R2" role="doc-biblioref">P2278R2</a>]</span> and is Tier 1 material.</p>
+<h3 data-number="4.9.2" id="viewsas_rvalue"><span class="header-section-number">4.9.2</span> <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code><a href="#viewsas_rvalue" class="self-link"></a></h3>
+<p>Similarly, <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> (<span class="citation" data-cites="P2446R2">[<a href="#ref-P2446R2" role="doc-biblioref">P2446R2</a>]</span>, renamed from <code class="sourceCode cpp">views<span class="op">::</span>move</code> following a long discussion) isn’t quite the same as a <code class="sourceCode cpp">transform</code> over <code class="sourceCode cpp">std<span class="op">::</span>move</code>, both because of proxy references (where <code class="sourceCode cpp">std<span class="op">::</span>move</code> isn’t the right operation to do, since we don’t want to end up with an rvalue reference to a proxy reference) and prvalues (where it’s already a prvalue, so we don’t need to <code class="sourceCode cpp">std<span class="op">::</span>move</code> it).</p>
+<p>This is one of the easiest range adaptors to specify, since we already have <code class="sourceCode cpp">std<span class="op">::</span>move_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span></code> which already does the right thing. Typically, the challenge in specifying range adaptors is getting the iterator right. We don’t have to do that here. It’s also fairly imporant in the context of <code class="sourceCode cpp">ranges<span class="op">::</span>to</code>. Given both the ease of specification and its value, seems important to have this adaptor sooner.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="algorithms"><span class="header-section-number">5</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
 <p>The largest chunk of C++20 Ranges were the algorithms, and the work here has been very thorough. All the <code class="sourceCode cpp"><span class="op">&lt;</span>algorithm<span class="op">&gt;</span></code>s have been range-ified, which has been fantastic.</p>
 <p>But there are a few algorithms that aren’t in <code class="sourceCode cpp"><span class="op">&lt;</span>algorithm<span class="op">&gt;</span></code> that do not have range-based versions: those that are in <code class="sourceCode cpp"><span class="op">&lt;</span>numeric<span class="op">&gt;</span></code>. These are often the last algorithms considered for anything, they were the last algorithms that were made <code class="sourceCode cpp"><span class="kw">constexpr</span></code> (<span class="citation" data-cites="P1645R1">[<a href="#ref-P1645R1" role="doc-biblioref">P1645R1</a>]</span>) and now are the last to become range-based. They are:</p>
@@ -2048,35 +2053,37 @@ span.yellow {
 <p>Given that the actions don’t provide any functionality that we don’t already have, simply adding the ability to compose some operations better, we give them pretty low priority relative to the wealth of new functionality many of the other operations here provide.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="plan-summary"><span class="header-section-number">7</span> Plan Summary<a href="#plan-summary" class="self-link"></a></h1>
 <p>To summarize the above descriptions, we want to triage a lot of outstanding ranges algorithms, views, actions, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++23, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.</p>
-<p>The following includes links ot papers that currently exist so far.</p>
+<p>The following includes links ot papers that currently exist so far, and their status as of the writing of this revision.</p>
 <h2 data-number="7.1" id="tier-1"><span class="header-section-number">7.1</span> <span class="addu">Tier 1</span><a href="#tier-1" class="self-link"></a></h2>
 <ul>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> (<span class="citation" data-cites="P1206R6">[<a href="#ref-P1206R6" role="doc-biblioref">P1206R6</a>]</span>)</li>
-<li>the ability for user-defined range adaptors to properly cooperate with standard library ones (<span class="citation" data-cites="P2387R1">[<a href="#ref-P2387R1" role="doc-biblioref">P2387R1</a>]</span>)</li>
-<li>the ability to format ranges with <code class="sourceCode cpp">std<span class="op">::</span>format</code> (<span class="citation" data-cites="P2286R2">[<a href="#ref-P2286R2" role="doc-biblioref">P2286R2</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> (<span class="citation" data-cites="P1206R7">[<a href="#ref-P1206R7" role="doc-biblioref">P1206R7</a>]</span>, adopted for C++23 ✔️)</li>
+<li>the ability for user-defined range adaptors to properly cooperate with standard library ones (<span class="citation" data-cites="P2387R3">[<a href="#ref-P2387R3" role="doc-biblioref">P2387R3</a>]</span>, adopted for C++23 ✔️)</li>
+<li>the ability to format ranges with <code class="sourceCode cpp">std<span class="op">::</span>format</code> (<span class="citation" data-cites="P2286R6">[<a href="#ref-P2286R6" role="doc-biblioref">P2286R6</a>]</span>, approved by LEWG)</li>
 <li>the addition of the following range adapters:
 <ul>
-<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R1">[<a href="#ref-P2278R1" role="doc-biblioref">P2278R1</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R1">[<a href="#ref-P2374R1" role="doc-biblioref">P2374R1</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> (<span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code> (<span class="citation" data-cites="P2443R0">[<a href="#ref-P2443R0" role="doc-biblioref">P2443R0</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R2">[<a href="#ref-P2278R2" role="doc-biblioref">P2278R2</a>]</span>, approved by LEWG, pending name)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> (<span class="citation" data-cites="P2446R2">[<a href="#ref-P2446R2" role="doc-biblioref">P2446R2</a>]</span>, approved by LEWG and LWG, pending name)-</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R3">[<a href="#ref-P2374R3" role="doc-biblioref">P2374R3</a>]</span>, approved by LEWG)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> (<span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code> (<span class="citation" data-cites="P2443R1">[<a href="#ref-P2443R1" role="doc-biblioref">P2443R1</a>]</span>, adopted for C++23 ✔️)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>enumerate</code> (<span class="citation" data-cites="P2164R5">[<a href="#ref-P2164R5" role="doc-biblioref">P2164R5</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> (<span class="citation" data-cites="P2441R0">[<a href="#ref-P2441R0" role="doc-biblioref">P2441R0</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> (<span class="citation" data-cites="P2442R0">[<a href="#ref-P2442R0" role="doc-biblioref">P2442R0</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R0">[<a href="#ref-P1899R0" role="doc-biblioref">P1899R0</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>zip</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> (<span class="citation" data-cites="P2441R2">[<a href="#ref-P2441R2" role="doc-biblioref">P2441R2</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>repeat</code> (<span class="citation" data-cites="P2474R1">[<a href="#ref-P2474R1" role="doc-biblioref">P2474R1</a>]</span>, approved by LEWG)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> (<span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R2">[<a href="#ref-P1899R2" role="doc-biblioref">P1899R2</a>]</span>, approved by LEWG)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
 </ul></li>
 <li>the addition of the following range algorithms:
 <ul>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>iota</code> (<span class="citation" data-cites="P2440R0">[<a href="#ref-P2440R0" role="doc-biblioref">P2440R0</a>]</span>)</li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> (<span class="citation" data-cites="P2322R4">[<a href="#ref-P2322R4" role="doc-biblioref">P2322R4</a>]</span>)</li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_left</code> (<span class="citation" data-cites="P2440R0">[<a href="#ref-P2440R0" role="doc-biblioref">P2440R0</a>]</span>)</li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_right</code> (<span class="citation" data-cites="P2440R0">[<a href="#ref-P2440R0" role="doc-biblioref">P2440R0</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>iota</code> (<span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> (<span class="citation" data-cites="P2322R5">[<a href="#ref-P2322R5" role="doc-biblioref">P2322R5</a>]</span>, , approved by LEWG)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_left</code> (<span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span>, adopted for C++23 ✔️)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_right</code> (<span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span>, adopted for C++23 ✔️)</li>
 </ul></li>
-<li>the following other changes to standard library (necessary for the <code class="sourceCode cpp">zip</code> family, all handled by <span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>):
+<li>the following other changes to standard library (necessary for the <code class="sourceCode cpp">zip</code> family, all handled by <span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, and adopted for C++23 ✔️):
 <ul>
 <li><code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> should be const-assignable whenever <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code> are both const-assignable</li>
 <li><code class="sourceCode cpp">pair<span class="op">&lt;</span>T<span class="op">&amp;</span>, U<span class="op">&amp;&gt;</span></code> should be constructible from <code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;&amp;</span></code></li>
@@ -2103,8 +2110,6 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>partial_sum</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>remove</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>remove_if</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>repeat</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>repeat_n</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
@@ -2198,9 +2203,9 @@ span.yellow {
 <p>[P0896R4] Eric Niebler, Casey Carter, Christopher Di Bella. 2018-11-09. The One Ranges Proposal. <br />
 <a href="https://wg21.link/p0896r4">https://wg21.link/p0896r4</a></p>
 </div>
-<div id="ref-P1206R6">
-<p>[P1206R6] Corentin Jabot, Eric Niebler, Casey Carter. 2021-08-03. Conversions from ranges to containers. <br />
-<a href="https://wg21.link/p1206r6">https://wg21.link/p1206r6</a></p>
+<div id="ref-P1206R7">
+<p>[P1206R7] Corentin Jabot, Eric Niebler, Casey Carter. 2022-01-21. Conversions from ranges to containers. <br />
+<a href="https://wg21.link/p1206r7">https://wg21.link/p1206r7</a></p>
 </div>
 <div id="ref-P1243R4">
 <p>[P1243R4] Dan Raviv. 2020-02-12. Rangify New Algorithms. <br />
@@ -2234,9 +2239,9 @@ span.yellow {
 <p>[P1894R0] Andrew Tomazos. 2019-10-02. Proposal of std::upto, std::indices and std::enumerate. <br />
 <a href="https://wg21.link/p1894r0">https://wg21.link/p1894r0</a></p>
 </div>
-<div id="ref-P1899R0">
-<p>[P1899R0] Christopher Di Bella. 2019-10-07. stride_view. <br />
-<a href="https://wg21.link/p1899r0">https://wg21.link/p1899r0</a></p>
+<div id="ref-P1899R2">
+<p>[P1899R2] Christopher Di Bella, Tim Song. 2021-12-23. stride_view. <br />
+<a href="https://wg21.link/p1899r2">https://wg21.link/p1899r2</a></p>
 </div>
 <div id="ref-P2011R1">
 <p>[P2011R1] Barry Revzin, Colby Pike. 2020-04-16. A pipeline-rewrite operator. <br />
@@ -2246,9 +2251,9 @@ span.yellow {
 <p>[P2164R5] Corentin Jabot. 2021-06-15. views::enumerate. <br />
 <a href="https://wg21.link/p2164r5">https://wg21.link/p2164r5</a></p>
 </div>
-<div id="ref-P2210R0">
-<p>[P2210R0] Barry Revzin. 2020-08-14. Superior String Splitting. <br />
-<a href="https://wg21.link/p2210r0">https://wg21.link/p2210r0</a></p>
+<div id="ref-P2210R2">
+<p>[P2210R2] Barry Revzin. 2021-03-05. Superior String Splitting. <br />
+<a href="https://wg21.link/p2210r2">https://wg21.link/p2210r2</a></p>
 </div>
 <div id="ref-P2214R0">
 <p>[P2214R0] Barry Revzin, Conor Hoekstra, Tim Song. 2020-10-15. A Plan for C++23 Ranges. <br />
@@ -2258,13 +2263,13 @@ span.yellow {
 <p>[P2214R1] Barry Revzin, Conor Hoekstra, Tim Song. 2021-09-14. A Plan for C++23 Ranges. <br />
 <a href="https://wg21.link/p2214r1">https://wg21.link/p2214r1</a></p>
 </div>
-<div id="ref-P2278R1">
-<p>[P2278R1] Barry Revzin. 2021. <code class="sourceCode cpp">cbegin</code> should always return a constant iterator. <br />
-<a href="https://wg21.link/p2278r1">https://wg21.link/p2278r1</a></p>
+<div id="ref-P2278R2">
+<p>[P2278R2] Barry Revzin. 2021-11-17. cbegin should always return a constant iterator. <br />
+<a href="https://wg21.link/p2278r2">https://wg21.link/p2278r2</a></p>
 </div>
-<div id="ref-P2286R2">
-<p>[P2286R2] Barry Revzin. 2021-08-16. Formatting Ranges. <br />
-<a href="https://wg21.link/p2286r2">https://wg21.link/p2286r2</a></p>
+<div id="ref-P2286R6">
+<p>[P2286R6] Barry Revzin. 2022-01-19. Formatting Ranges. <br />
+<a href="https://wg21.link/p2286r6">https://wg21.link/p2286r6</a></p>
 </div>
 <div id="ref-P2321R2">
 <p>[P2321R2] Tim Song. 2021-06-11. zip. <br />
@@ -2275,8 +2280,12 @@ span.yellow {
 <a href="https://wg21.link/p2322r2">https://wg21.link/p2322r2</a></p>
 </div>
 <div id="ref-P2322R4">
-<p>[P2322R4] Barry Revzin. 2021. <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code>. <br />
+<p>[P2322R4] Barry Revzin. 2021-09-13. ranges::fold. <br />
 <a href="https://wg21.link/p2322r4">https://wg21.link/p2322r4</a></p>
+</div>
+<div id="ref-P2322R5">
+<p>[P2322R5] Barry Revzin. 2021-10-18. ranges::fold. <br />
+<a href="https://wg21.link/p2322r5">https://wg21.link/p2322r5</a></p>
 </div>
 <div id="ref-P2328R1">
 <p>[P2328R1] Tim Song. 2021-05-08. join_view should join all views of ranges. <br />
@@ -2286,25 +2295,49 @@ span.yellow {
 <p>[P2374R1] Sy Brand. 2021-05-11. views::cartesian_product. <br />
 <a href="https://wg21.link/p2374r1">https://wg21.link/p2374r1</a></p>
 </div>
-<div id="ref-P2387R1">
-<p>[P2387R1] Barry Revzin. 2021-08-14. Pipe support for user-defined range adaptors. <br />
-<a href="https://wg21.link/p2387r1">https://wg21.link/p2387r1</a></p>
+<div id="ref-P2374R3">
+<p>[P2374R3] Sy Brand, Michał Dominiak. 2021-12-13. views::cartesian_product. <br />
+<a href="https://wg21.link/p2374r3">https://wg21.link/p2374r3</a></p>
 </div>
-<div id="ref-P2440R0">
-<p>[P2440R0] Tim Song. 2021. <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>shift_left</code>, and <code class="sourceCode cpp">ranges<span class="op">::</span>shift_right</code>. <br />
-<a href="https://wg21.link/p2440r0">https://wg21.link/p2440r0</a></p>
+<div id="ref-P2387R3">
+<p>[P2387R3] Barry Revzin. 2021-12-17. Pipe support for user-defined range adaptors. <br />
+<a href="https://wg21.link/p2387r3">https://wg21.link/p2387r3</a></p>
+</div>
+<div id="ref-P2440R1">
+<p>[P2440R1] Tim Song. 2021-12-06. ranges::iota, ranges::shift_left, and ranges::shift_right. <br />
+<a href="https://wg21.link/p2440r1">https://wg21.link/p2440r1</a></p>
 </div>
 <div id="ref-P2441R0">
-<p>[P2441R0] Barry Revzin. 2021. <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>. <br />
+<p>[P2441R0] Barry Revzin. 2021-09-15. views::join_with. <br />
 <a href="https://wg21.link/p2441r0">https://wg21.link/p2441r0</a></p>
 </div>
+<div id="ref-P2441R2">
+<p>[P2441R2] Barry Revzin. 2021. <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>. <br />
+<a href="https://wg21.link/p2441r2">https://wg21.link/p2441r2</a></p>
+</div>
 <div id="ref-P2442R0">
-<p>[P2442R0] Tim Song. 2021. Windowing range adaptors: <code class="sourceCode cpp">views<span class="op">::</span>chunk</code> and <code class="sourceCode cpp">views<span class="op">::</span>slide</code>. <br />
+<p>[P2442R0] Tim Song. 2021-09-14. Windowing range adaptors: views::chunk and views::slide. <br />
 <a href="https://wg21.link/p2442r0">https://wg21.link/p2442r0</a></p>
 </div>
+<div id="ref-P2442R1">
+<p>[P2442R1] Tim Song. 2021-12-06. Windowing range adaptors: views::chunk and views::slide. <br />
+<a href="https://wg21.link/p2442r1">https://wg21.link/p2442r1</a></p>
+</div>
 <div id="ref-P2443R0">
-<p>[P2443R0] Tim Song. 2021. <code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code>. <br />
+<p>[P2443R0] Tim Song. 2021-09-15. views::chunk_by. <br />
 <a href="https://wg21.link/p2443r0">https://wg21.link/p2443r0</a></p>
+</div>
+<div id="ref-P2443R1">
+<p>[P2443R1] Tim Song. 2021-11-19. views::chunk_by. <br />
+<a href="https://wg21.link/p2443r1">https://wg21.link/p2443r1</a></p>
+</div>
+<div id="ref-P2446R2">
+<p>[P2446R2] Barry Revzin. 2021. <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>. <br />
+<a href="https://wg21.link/p2446r2">https://wg21.link/p2446r2</a></p>
+</div>
+<div id="ref-P2474R1">
+<p>[P2474R1] Michał Dominiak. 2022-01-18. views::repeat. <br />
+<a href="https://wg21.link/p2474r1">https://wg21.link/p2474r1</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2014. range-v3. <br />

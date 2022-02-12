@@ -73,7 +73,7 @@ This paper provides our opinion for how to categorize Ranges functionality into 
 
 C++20 Ranges, and the range-v3 that birthed it, isn't just a collection of loosely related views and algorithms. There's some important other functionality there.
 
-One critical piece of missing functionality is [`ranges::to` [@P1206R6]]{.addu}. It's not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing.
+One critical piece of missing functionality is [`ranges::to` [@P1206R7]]{.addu}. It's not a view, but it is often used as the terminal component of a view pipeline to create a new trailing range - to finally collect the results of the computation being constructed. This is a top priority and is sorely missing.
 
 Another criticial piece of functionality was pointed out by Walter Brown in the telecon discussing the initial draft of this paper: it is simply not possible for users to write their own range adaptors such that they smoothly interact with standard library (or other user) range adaptors. That is, it is possible (but a little tedious) for users to write an adaptor such that they can write `r | my::thing | my::func(2)`, but it is *not* possible for them to write an adaptor such that they can write:
 
@@ -82,7 +82,7 @@ auto adaptor = my::thing | std::views::transform(f) | my::func(2);
 auto result = r | adaptor;
 ```
 
-In order to do that, standard library adaptors need to recognize user-defined adaptors as being adaptors. That needs library help and is also a top priority - since if users can define more adaptors, it becomes less critical that the standard library provide all of them. The standard library needs to provide [pipe support for user-defined adaptors [@P2387R1]]{.addu}
+In order to do that, standard library adaptors need to recognize user-defined adaptors as being adaptors. That needs library help and is also a top priority - since if users can define more adaptors, it becomes less critical that the standard library provide all of them. The standard library needs to provide [pipe support for user-defined adaptors [@P2387R3]]{.addu}
 
 Another important piece of functionality is simply the ability to print views. In range-v3, views were printable, which made it easy to debug programs or to provide meaningful output. For instance, the following program using range-v3 happily compiles:
 
@@ -123,7 +123,7 @@ int main() {
 But neither the ability to stream views directly nor `fmt::join` are in C++20, so there is no direct way to print a range at all.
 
 
-We think it's important that C++23 provides the ability to [format all the ranges [@P2286R2]]{.addu}. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it's frustrating to even have to.
+We think it's important that C++23 provides the ability to [format all the ranges [@P2286R6]]{.addu}. Since these are all standard library types, it is difficult for the user to be able to actually do this themselves and it's frustrating to even have to.
 
 # Views
 
@@ -143,11 +143,11 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `c_str` | range-v3 | [Tier 3]{.diffdel} |
 | `cache1` | range-v3 | [Tier 2. Possibly renamed as `cache_last` or `cache_latest`]{.yellow} |
 | `cartesian_product` | range-v3 | [Tier 1 [@P2374R1]]{.addu} |
-| `chunk` | range-v3 | [Tier 1 [@P2442R0]]{.addu} |
-| `chunk_by` | range-v3 | [Tier 1 [@P2443R0]]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
+| `chunk` | range-v3 | [Tier 1 [@P2442R1]]{.addu} |
+| `chunk_by` | range-v3 | [Tier 1 [@P2443R1]]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
 | `concat` | range-v3 | [Tier 2]{.yellow} |
-| `const_` | range-v3 | [Tier 1 [@P2278R1], renamed to `as_const`]{.addu} |
+| `const_` | range-v3 | [Tier 1 [@P2278R2], renamed to `as_const`]{.addu} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
 | `delimit` | range-v3 | [Tier 2]{.yellow} |
@@ -168,16 +168,16 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
 | `iota` | C++20 | C++20 |
-| `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability via `join_with` [@P2441R0])]{.addu} |
+| `join` | partially C++20, lacks delimiter ability | [Tier 1 (adding delimiter ability via `join_with` [@P2441R2])]{.addu} |
 | `keys` | C++20 | C++20 |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R6] | ??? |
-| `move` | range-v3 | Not proposed |
+| `move` | range-v3 | [Tier 1, renamed to `as_rvalue`]{.addu} |
 | `partial_sum` | range-v3 | [Tier 2, but not taking a callable (solely as a specialized form of `scan`)]{.yellow} |
 | `remove` | range-v3 | [Tier 2]{.yellow} |
 | `remove_if` | range-v3 | [Tier 2]{.yellow} |
-| `repeat` | range-v3 | [Tier 2]{.yellow} |
-| `repeat_n` | range-v3 | [Tier 2]{.yellow} |
+| `repeat` | range-v3 | [Tier 1]{.addu} |
+| `repeat_n` | range-v3 | [Tier 1, but under the name `repeat`]{.addu} |
 | `replace` | range-v3 | [Tier 2]{.yellow} |
 | `replace_if` | range-v3 | [Tier 2]{.yellow} |
 | `reverse` | C++20 | C++20 |
@@ -189,10 +189,10 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `set_symmetric_difference` | range-v3 | [Tier 3]{.diffdel} |
 | `single` | C++20 | C++20 |
 | `slice` | range-v3 | [Tier 3]{.diffdel} |
-| `sliding` | range-v3 | [Tier 1, renamed to `slide` [@P2442R0]]{.addu} |
-| `split` | C++20, but unergonomic | See [@P2210R0]. |
+| `sliding` | range-v3 | [Tier 1, renamed to `slide` [@P2442R1]]{.addu} |
+| `split` | C++20, but unergonomic | See [@P2210R2]. |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
-| `stride` | range-v3 | [Tier 1 [@P1899R0]]{.addu} |
+| `stride` | range-v3 | [Tier 1 [@P1899R2]]{.addu} |
 | `tail` | range-v3 | [Tier 3]{.diffdel} |
 | `take` | C++20 | C++20 |
 | `take_exactly` | range-v3 | [Tier 3]{.diffdel} |
@@ -758,7 +758,7 @@ Conor talks about this family of ranges in a CppCon 2019 lighting talk [@hoekstr
 
 - `chunk(N)` breaks a range into non-overlapping ranges of length `N`. `views::iota(0,10) | views::chunk(4)` yields `[[0,1,2,3],[4,5,6,7],[8,9]]`. Note that the last range has length less than 4. See [@P2442R0].
 - `slide(N)` is very similar to `chunk` except its subranges are overlapping and all have length exactly `N`. `views::iota(0,10) | views::slide(4)` yields `[[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8],[6,7,8,9]]`. Note that `slide(2)` is similar to `adjacent`, except that the latter yields a range of tuples (i.e. having compile-time size) whereas here we have a range of ranges (still having runtime size). range-v3 calls this `sliding`, which has a different tense from the other two, so we change it to `slide` here. See [@P2442R0].
-- `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See [@P1899R0].
+- `stride(N)` takes every `N`th element. `views::iota(0, 10) | views::stride(4)` yields `[0,4,8]`. Note that unlike the other two, this one is not a range of ranges, but still fits in with this family. See [@P1899R2].
 
 These are three specific examples of a general algorithm that takes three parameters: the size of the subranges to return, the size of the step to take after each subrange, and whether to include partial ranges. Kotlin calls this algorithm `windowed`, Scala calls it `sliding`, D calls it `slide`, Haskell calls it `divvy`, and Clojure calls it `partition`.
 
@@ -820,7 +820,7 @@ There are several views on the list that are simply factories &mdash; they canno
 - `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
 - `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
 
-These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `cartesian_product` comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority.
+These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `cartesian_product` comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority. `repeat` and `repeat_n` can also be grouped under the same name, with `repeat(V)` being an infinite range of a single value, and `repeat(V, N)` having `N` copies of `V` (similar to `views::iota`), and is also sufficiently straightforward that it merits inclusion.
 
 The rest, we consider lower priority. And `generate` and `generate_n` in particular need special care to deal with [res.on.data.races]{.sref}. The current implementation of `generate_n` in range-v3 has a data race.
 
@@ -844,13 +844,15 @@ Of these, `views::join_with` fills in an incomplete aspect of the already-existi
 
 ## Derivatives of `transform`
 
-Several of the above views that are labeled "not proposed" are variations on a common theme: `addressof`, `indirect`, and `move` are all basically wrappers around `transform` that take `std::addressof`, `std::dereference` (a function object we do not have at the moment), and `std::move`, respectively. Basically, but not exactly, since one of those functions doesn't exist yet and the other three we can't pass as an argument anyway.
+Several of the above views that are labeled "not proposed" are variations on a common theme: `addressof` and `indirect` are basically wrappers around `transform` that take `std::addressof` and `std::dereference` (a function object we do not have at the moment), respectively. Basically, but not exactly, since one of those functions doesn't exist yet and the other we can't pass as an argument anyway.
 
 But some sort of broader ability to pass functions into functions would mostly alleviate the need for these. `views::addressof` is shorter than `views::transform(LIFT(std::addressof))` (assuming a `LIFT` macro that wraps a name and emits a lambda), but we're not sure that we necessarily need to add special cases of `transform` for every useful function.
 
+There are two that stand out as being slightly different though.
+
 ### `views::as_const`
 
-There's one that stands out as being slightly different though: `views::as_const` isn't quite the same as a `transform` over `std::as_const`, because of the existence of proxy references. `std::as_const` only accepts lvalues, so something like:
+`views::as_const` isn't quite the same as a `transform` over `std::as_const`, because of the existence of proxy references. `std::as_const` only accepts lvalues, so something like:
 
 ```cpp
 std::vector<int> v;
@@ -861,7 +863,13 @@ would not compile. And were it to compile, what should it actually mean? `zip`'s
 
 In range-v3, the `reference` type is `common_reference_t<range_value_t<R> const&&, range_reference_t<R>>`. In this particular example, that would be `std::tuple<int const&>` (following the various `tuple` changes performed to implement `zip` in [@P2321R2]), which is exactly what you want.
 
-Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R1] and is Tier 1 material.
+Having a `const` view over a range is something that seems inherently useful and is more complex than simply a `transform` over `std::as_const`, and has proven to be in high demand. The full design is explored in [@P2278R2] and is Tier 1 material.
+
+### `views::as_rvalue`
+
+Similarly, `views::as_rvalue` ([@P2446R2], renamed from `views::move` following a long discussion) isn't quite the same as a `transform` over `std::move`, both because of proxy references (where `std::move` isn't the right operation to do, since we don't want to end up with an rvalue reference to a proxy reference) and prvalues (where it's already a prvalue, so we don't need to `std::move` it).
+
+This is one of the easiest range adaptors to specify, since we already have `std::move_iterator<I>` which already does the right thing. Typically, the challenge in specifying range adaptors is getting the iterator right. We don't have to do that here. It's also fairly imporant in the context of `ranges::to`. Given both the ease of specification and its value, seems important to have this adaptor sooner.
 
 # Algorithms
 
@@ -1321,32 +1329,34 @@ Given that the actions don't provide any functionality that we don't already hav
 
 To summarize the above descriptions, we want to triage a lot of outstanding ranges algorithms, views, actions, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++23, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.
 
-The following includes links ot papers that currently exist so far.
+The following includes links ot papers that currently exist so far, and their status as of the writing of this revision.
 
 ## [Tier 1]{.addu}
 
-- `ranges::to` ([@P1206R6])
-- the ability for user-defined range adaptors to properly cooperate with standard library ones ([@P2387R1])
-- the ability to format ranges with `std::format` ([@P2286R2])
+- `ranges::to` ([@P1206R7], adopted for C++23 ✔️)
+- the ability for user-defined range adaptors to properly cooperate with standard library ones ([@P2387R3], adopted for C++23 ✔️)
+- the ability to format ranges with `std::format` ([@P2286R6], approved by LEWG)
 - the addition of the following range adapters:
-    - `views::adjacent` ([@P2321R2])
-    - `views::adjacent_transform` ([@P2321R2])
-    - `views::as_const` ([@P2278R1])
-    - `views::cartesian_product` ([@P2374R1])
-    - `views::chunk` ([@P2442R0])
-    - `views::chunk_by` ([@P2443R0])
+    - `views::adjacent` ([@P2321R2], adopted for C++23 ✔️)
+    - `views::adjacent_transform` ([@P2321R2], adopted for C++23 ✔️)
+    - `views::as_const` ([@P2278R2], approved by LEWG, pending name)
+    - `views::as_rvalue` ([@P2446R2], approved by LEWG and LWG, pending name)-
+    - `views::cartesian_product` ([@P2374R3], approved by LEWG)
+    - `views::chunk` ([@P2442R1], adopted for C++23 ✔️)
+    - `views::chunk_by` ([@P2443R1], adopted for C++23 ✔️)
     - `views::enumerate` ([@P2164R5])
-    - `views::join_with` ([@P2441R0])
-    - `views::slide` ([@P2442R0])
-    - `views::stride` ([@P1899R0])
-    - `views::zip` ([@P2321R2])
-    - `views::zip_transform` ([@P2321R2])
+    - `views::join_with` ([@P2441R2], adopted for C++23 ✔️)
+    - `views::repeat` ([@P2474R1], approved by LEWG)
+    - `views::slide` ([@P2442R1], adopted for C++23 ✔️)
+    - `views::stride` ([@P1899R2], approved by LEWG)
+    - `views::zip` ([@P2321R2], adopted for C++23 ✔️)
+    - `views::zip_transform` ([@P2321R2], adopted for C++23 ✔️)
 - the addition of the following range algorithms:
-    - `ranges::iota` ([@P2440R0])
-    - `ranges::fold` ([@P2322R4])
-    - `ranges::shift_left` ([@P2440R0])
-    - `ranges::shift_right` ([@P2440R0])
-- the following other changes to standard library (necessary for the `zip` family, all handled by [@P2321R2]):
+    - `ranges::iota` ([@P2440R1], adopted for C++23 ✔️)
+    - `ranges::fold` ([@P2322R5], , approved by LEWG)
+    - `ranges::shift_left` ([@P2440R1], adopted for C++23 ✔️)
+    - `ranges::shift_right` ([@P2440R1], adopted for C++23 ✔️)
+- the following other changes to standard library (necessary for the `zip` family, all handled by [@P2321R2], and adopted for C++23 ✔️):
     - `pair<T, U>` should be const-assignable whenever `T` and `U` are both const-assignable
     - `pair<T&, U&>` should be constructible from `pair<T, U>&`
     - `tuple<T...>` should be const-assignable whenever `T...` are const-assignable
@@ -1370,8 +1380,6 @@ The following includes links ot papers that currently exist so far.
     - `views::partial_sum`
     - `views::remove`
     - `views::remove_if`
-    - `views::repeat`
-    - `views::repeat_n`
     - `views::replace`
     - `views::replace_if`
     - `views::scan`
@@ -1517,52 +1525,20 @@ references:
       issues:
         - year: 2018
       URL: https://hackage.haskell.org/package/groupBy
-    - id: P2322R4
-      citation-label: P2322R4
-      title: "`ranges::fold`"
-      author:
-        - family: Barry Revzin
-      issued:
-        year: 2021
-      URL: https://wg21.link/p2322r4
-    - id: P2278R1
-      citation-label: P2278R1
-      title: "`cbegin` should always return a constant iterator"
-      author:
-        - family: Barry Revzin
-      issued:
-        year: 2021
-      URL: https://wg21.link/p2278r1
-    - id: P2440R0
-      citation-label: P2440R0
-      title: "`ranges::iota`, `ranges::shift_left`, and `ranges::shift_right`"
-      author:
-        - family: Tim Song
-      issued:
-        year: 2021
-      URL: https://wg21.link/p2440r0
-    - id: P2441R0
-      citation-label: P2441R0
+    - id: P2441R2
+      citation-label: P2441R2
       title: "`views::join_with`"
       author:
         - family: Barry Revzin
       issued:
         year: 2021
-      URL: https://wg21.link/p2441r0
-    - id: P2442R0
-      citation-label: P2442R0
-      title: "Windowing range adaptors: `views::chunk` and `views::slide`"
+      URL: https://wg21.link/p2441r2
+    - id: P2446R2
+      citation-label: P2446R2
+      title: "`views::as_rvalue`"
       author:
-        - family: Tim Song
+        - family: Barry Revzin
       issued:
         year: 2021
-      URL: https://wg21.link/p2442r0
-    - id: P2443R0
-      citation-label: P2443R0
-      title: "`views::chunk_by`"
-      author:
-        - family: Tim Song
-      issued:
-        year: 2021
-      URL: https://wg21.link/p2443r0
+      URL: https://wg21.link/p2446r2
 ---
