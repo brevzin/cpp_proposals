@@ -53,7 +53,7 @@ make all of my papers.
 ### Pending CWG/LWG Review
 
 - [p2278r2 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r2.html).
-- [p2446r1 - `views::all_move`](2441_move_view/p2446r1.html)
+- [d2446r2 - `views::as_rvalue`](2446_move_view/d2446r2.html)
 
 ### Pending EWG/LEWG Voting
 
