@@ -52,7 +52,7 @@ make all of my papers.
 
 ### Pending CWG/LWG Review
 
-- [p1169r3 - static `operator()`](1169_static_call/p1169r3.html), with Casey Carter.
+- [p1169r3 - `static operator()`](1169_static_call/p1169r3.html), with Casey Carter.
 - [p2278r2 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r2.html).
 - [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 - [p2286r6 - Formatting Ranges](2286_fmt_ranges/p2286r6.html).
@@ -62,7 +62,6 @@ make all of my papers.
 ### Pending EWG/LEWG Voting
 
 None
-
 
 ### Pending EWG/LEWG Review
 
