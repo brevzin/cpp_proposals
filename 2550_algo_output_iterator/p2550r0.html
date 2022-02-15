@@ -577,6 +577,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#rangescopy_if"><span class="toc-section-number">2.1.3</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy_if</code><span></span></a></li>
 <li><a href="#rangesmove"><span class="toc-section-number">2.1.4</span> <code class="sourceCode cpp">ranges<span class="op">::</span>move</code><span></span></a></li>
 <li><a href="#rangestransform"><span class="toc-section-number">2.1.5</span> <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code><span></span></a></li>
+<li><a href="#rangesreplace_copy"><span class="toc-section-number">2.1.6</span> <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy</code><span></span></a></li>
+<li><a href="#rangesfill"><span class="toc-section-number">2.1.7</span> <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code><span></span></a></li>
+<li><a href="#rangesgenerate"><span class="toc-section-number">2.1.8</span> <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code><span></span></a></li>
+<li><a href="#rangesremove_copy"><span class="toc-section-number">2.1.9</span> <code class="sourceCode cpp">ranges<span class="op">::</span>remove_copy</code><span></span></a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -782,7 +786,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Change <span>23.3.4.10 <a href="https://wg21.link/iterator.concept.output">[iterator.concept.output]</a></span> <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The semantic effects are specific to <code class="sourceCode default">output_iterator</code>, not <code class="sourceCode default">weak_output_iterator</code> ]</span>:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> The <span class="addu"><code class="sourceCode cpp">weak_output_iterator</code> and</span> <code class="sourceCode cpp">output_iterator</code> concept<span class="addu">s</span> define<span class="rm" style="color: #bf0303"><del>s</del></span> requirements for a type that can be used to write values (from the requirement for <code class="sourceCode cpp">indirectly_writable</code> ([iterator.concept.writable])) and which can be both pre- and post-incremented. [<em>Note 1</em>: Output iterators are not required to model <code class="sourceCode cpp">equality_comparable</code>. — <em>end note</em>]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> The <span class="addu"><code class="sourceCode cpp">weak_output_iterator</code> and</span> <code class="sourceCode cpp">output_iterator</code> <span class="rm" style="color: #bf0303"><del>concept defines</del></span> <span class="addu">concepts define</span> requirements for a type that can be used to write values (from the requirement for <code class="sourceCode cpp">indirectly_writable</code> ([iterator.concept.writable])) and which can be both pre- and post-incremented. [<em>Note 1</em>: Output iterators are not required to model <code class="sourceCode cpp">equality_comparable</code>. — <em>end note</em>]</p>
 <div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a><span class="va">+ template&lt;class I, class T&gt;</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a><span class="va">+   concept weak_output_iterator =</span></span>
@@ -931,6 +935,163 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb17-42"><a href="#cb17-42"></a>        transform(R1&amp;&amp; r1, R2&amp;&amp; r2, O result,</span>
 <span id="cb17-43"><a href="#cb17-43"></a>                  F binary_op, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
 <span id="cb17-44"><a href="#cb17-44"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="2.1.6" id="rangesreplace_copy"><span class="header-section-number">2.1.6</span> <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy</code><a href="#rangesreplace_copy" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: These already require <code class="sourceCode cpp">output_iterator</code> in one spot, so can require <code class="sourceCode cpp">output_iterator</code> in another too. This makes it more clear that it’s an output iterator for multiple types. ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1"></a>namespace std::ranges {</span>
+<span id="cb18-2"><a href="#cb18-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb18-3"><a href="#cb18-3"></a>      using replace_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S, class T1, class T2,</span>
+<span id="cb18-6"><a href="#cb18-6"></a>             output_iterator&lt;const T2&amp;&gt; O, class Proj = identity&gt;</span>
+<span id="cb18-7"><a href="#cb18-7"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt; &amp;&amp;</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a><span class="va">+     requires output_iterator&lt;O, iter_reference_t&lt;I&gt;&gt;</span></span>
+<span id="cb18-9"><a href="#cb18-9"></a>               indirect_binary_predicate&lt;ranges::equal_to, projected&lt;I, Proj&gt;, const T1*&gt;</span>
+<span id="cb18-10"><a href="#cb18-10"></a>      constexpr replace_copy_result&lt;I, O&gt;</span>
+<span id="cb18-11"><a href="#cb18-11"></a>        replace_copy(I first, S last, O result, const T1&amp; old_value, const T2&amp; new_value,</span>
+<span id="cb18-12"><a href="#cb18-12"></a>                     Proj proj = {});</span>
+<span id="cb18-13"><a href="#cb18-13"></a>    template&lt;input_range R, class T1, class T2, output_iterator&lt;const T2&amp;&gt; O,</span>
+<span id="cb18-14"><a href="#cb18-14"></a>             class Proj = identity&gt;</span>
+<span id="cb18-15"><a href="#cb18-15"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
+<span id="cb18-16"><a href="#cb18-16"></a><span class="va">+     requires output_iterator&lt;O, range_reference_t&lt;R&gt;&gt; &amp;&amp;</span></span>
+<span id="cb18-17"><a href="#cb18-17"></a>               indirect_binary_predicate&lt;ranges::equal_to,</span>
+<span id="cb18-18"><a href="#cb18-18"></a>                                         projected&lt;iterator_t&lt;R&gt;, Proj&gt;, const T1*&gt;</span>
+<span id="cb18-19"><a href="#cb18-19"></a>      constexpr replace_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb18-20"><a href="#cb18-20"></a>        replace_copy(R&amp;&amp; r, O result, const T1&amp; old_value, const T2&amp; new_value,</span>
+<span id="cb18-21"><a href="#cb18-21"></a>                     Proj proj = {});</span>
+<span id="cb18-22"><a href="#cb18-22"></a></span>
+<span id="cb18-23"><a href="#cb18-23"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb18-24"><a href="#cb18-24"></a>      using replace_copy_if_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb18-25"><a href="#cb18-25"></a></span>
+<span id="cb18-26"><a href="#cb18-26"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S, class T, output_iterator&lt;const T&amp;&gt; O,</span>
+<span id="cb18-27"><a href="#cb18-27"></a>             class Proj = identity, indirect_unary_predicate&lt;projected&lt;I, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb18-28"><a href="#cb18-28"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb18-29"><a href="#cb18-29"></a><span class="va">+     requires output_iterator&lt;O, iter_reference_t&lt;I&gt;&gt;</span></span>
+<span id="cb18-30"><a href="#cb18-30"></a>      constexpr replace_copy_if_result&lt;I, O&gt;</span>
+<span id="cb18-31"><a href="#cb18-31"></a>        replace_copy_if(I first, S last, O result, Pred pred, const T&amp; new_value,</span>
+<span id="cb18-32"><a href="#cb18-32"></a>                        Proj proj = {});</span>
+<span id="cb18-33"><a href="#cb18-33"></a>    template&lt;input_range R, class T, output_iterator&lt;const T&amp;&gt; O, class Proj = identity,</span>
+<span id="cb18-34"><a href="#cb18-34"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb18-35"><a href="#cb18-35"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
+<span id="cb18-36"><a href="#cb18-36"></a><span class="va">+     requires output_iterator&lt;O, range_reference_t&lt;R&gt;&gt; &amp;&amp;</span></span>
+<span id="cb18-37"><a href="#cb18-37"></a>      constexpr replace_copy_if_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb18-38"><a href="#cb18-38"></a>        replace_copy_if(R&amp;&amp; r, O result, Pred pred, const T&amp; new_value,</span>
+<span id="cb18-39"><a href="#cb18-39"></a>                        Proj proj = {});</span>
+<span id="cb18-40"><a href="#cb18-40"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="2.1.7" id="rangesfill"><span class="header-section-number">2.1.7</span> <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code><a href="#rangesfill" class="self-link"></a></h3>
+<p>No changes necessary, already requires <code class="sourceCode cpp">output_iterator</code>.</p>
+<h3 data-number="2.1.8" id="rangesgenerate"><span class="header-section-number">2.1.8</span> <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code><a href="#rangesgenerate" class="self-link"></a></h3>
+<p>This is the weird one. The range overload of <code class="sourceCode cpp">generate</code> requires <code class="sourceCode cpp">output_range</code>, which requires <code class="sourceCode cpp">output_iterator</code>, which requires <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> t;</code> to work. But the iterator/sentinel overload does not require <code class="sourceCode cpp">output_iterator</code>, so it does not. This doesn’t make much sense to me - these two really should line up. I don’t know if we can strengthen one, but I also don’t want to weaken the other (also <code class="sourceCode cpp">output_range</code> is our only range-based output concept, and I don’t want to add a <code class="sourceCode cpp">weak_output_range</code>).</p>
+<p>This is what it would look like if we strengthened the iterator overloads of <code class="sourceCode cpp">generate</code> and <code class="sourceCode cpp">generate_n</code>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1"></a>namespace std::ranges {</span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="st">-   template&lt;input_or_output_iterator O,</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="va">+   template&lt;class O,</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>             sentinel_for&lt;O&gt; S, copy_constructible F&gt;</span>
+<span id="cb19-5"><a href="#cb19-5"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb19-6"><a href="#cb19-6"></a><span class="st">-              indirectly_writable&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="va">+              output_iterator&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a>      constexpr O generate(O first, S last, F gen);</span>
+<span id="cb19-9"><a href="#cb19-9"></a></span>
+<span id="cb19-10"><a href="#cb19-10"></a>    template&lt;class R, copy_constructible F&gt;</span>
+<span id="cb19-11"><a href="#cb19-11"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp; output_range&lt;R, invoke_result_t&lt;F&amp;&gt;&gt;</span>
+<span id="cb19-12"><a href="#cb19-12"></a>      constexpr borrowed_iterator_t&lt;R&gt; generate(R&amp;&amp; r, F gen);</span>
+<span id="cb19-13"><a href="#cb19-13"></a></span>
+<span id="cb19-14"><a href="#cb19-14"></a><span class="st">-   template&lt;input_or_output_iterator O,</span></span>
+<span id="cb19-15"><a href="#cb19-15"></a><span class="va">+   template&lt;class O,</span></span>
+<span id="cb19-16"><a href="#cb19-16"></a>             copy_constructible F&gt;</span>
+<span id="cb19-17"><a href="#cb19-17"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb19-18"><a href="#cb19-18"></a><span class="st">-              indirectly_writable&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb19-19"><a href="#cb19-19"></a><span class="va">+              output_iterator&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb19-20"><a href="#cb19-20"></a>      constexpr O generate_n(O first, iter_difference_t&lt;O&gt; n, F gen);</span>
+<span id="cb19-21"><a href="#cb19-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>And this is what it would look like if we weakened the range overload:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1"></a>namespace std::ranges {</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="st">-   template&lt;input_or_output_iterator O,</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="va">+   template&lt;class O,</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>             sentinel_for&lt;O&gt; S, copy_constructible F&gt;</span>
+<span id="cb20-5"><a href="#cb20-5"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb20-6"><a href="#cb20-6"></a><span class="st">-              indirectly_writable&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a><span class="va">+              weak_output_iterator&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>      constexpr O generate(O first, S last, F gen);</span>
+<span id="cb20-9"><a href="#cb20-9"></a></span>
+<span id="cb20-10"><a href="#cb20-10"></a><span class="st">-   template&lt;class R,</span></span>
+<span id="cb20-11"><a href="#cb20-11"></a><span class="va">+   template&lt;range R,</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a>             copy_constructible F&gt;</span>
+<span id="cb20-13"><a href="#cb20-13"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb20-14"><a href="#cb20-14"></a><span class="st">-              output_range&lt;R, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb20-15"><a href="#cb20-15"></a><span class="va">+              weak_output_iterator&lt;iterator_t&lt;R&gt;, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb20-16"><a href="#cb20-16"></a>      constexpr borrowed_iterator_t&lt;R&gt; generate(R&amp;&amp; r, F gen);</span>
+<span id="cb20-17"><a href="#cb20-17"></a></span>
+<span id="cb20-18"><a href="#cb20-18"></a><span class="st">-   template&lt;input_or_output_iterator O,</span></span>
+<span id="cb20-19"><a href="#cb20-19"></a><span class="va">+   template&lt;class O,</span></span>
+<span id="cb20-20"><a href="#cb20-20"></a>             copy_constructible F&gt;</span>
+<span id="cb20-21"><a href="#cb20-21"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb20-22"><a href="#cb20-22"></a><span class="st">-              indirectly_writable&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb20-23"><a href="#cb20-23"></a><span class="va">+              weak_output_iterator&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb20-24"><a href="#cb20-24"></a>      constexpr O generate_n(O first, iter_difference_t&lt;O&gt; n, F gen);</span>
+<span id="cb20-25"><a href="#cb20-25"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="2.1.9" id="rangesremove_copy"><span class="header-section-number">2.1.9</span> <code class="sourceCode cpp">ranges<span class="op">::</span>remove_copy</code><a href="#rangesremove_copy" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1"></a>namespace std::ranges {</span>
+<span id="cb21-2"><a href="#cb21-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb21-3"><a href="#cb21-3"></a>      using remove_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb21-4"><a href="#cb21-4"></a></span>
+<span id="cb21-5"><a href="#cb21-5"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb21-7"><a href="#cb21-7"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O,</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a>             class T,</span>
+<span id="cb21-9"><a href="#cb21-9"></a>             class Proj = identity&gt;</span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt; &amp;&amp;</span></span>
+<span id="cb21-11"><a href="#cb21-11"></a><span class="va">+     requires</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a>               indirect_binary_predicate&lt;ranges::equal_to, projected&lt;I, Proj&gt;, const T*&gt;</span>
+<span id="cb21-13"><a href="#cb21-13"></a>      constexpr remove_copy_result&lt;I, O&gt;</span>
+<span id="cb21-14"><a href="#cb21-14"></a>        remove_copy(I first, S last, O result, const T&amp; value, Proj proj = {});</span>
+<span id="cb21-15"><a href="#cb21-15"></a></span>
+<span id="cb21-16"><a href="#cb21-16"></a>    template&lt;input_range R,</span>
+<span id="cb21-17"><a href="#cb21-17"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb21-18"><a href="#cb21-18"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O,</span></span>
+<span id="cb21-19"><a href="#cb21-19"></a>             class T, class Proj = identity&gt;</span>
+<span id="cb21-20"><a href="#cb21-20"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
+<span id="cb21-21"><a href="#cb21-21"></a><span class="va">+     requires</span></span>
+<span id="cb21-22"><a href="#cb21-22"></a>               indirect_binary_predicate&lt;ranges::equal_to,</span>
+<span id="cb21-23"><a href="#cb21-23"></a>                                         projected&lt;iterator_t&lt;R&gt;, Proj&gt;, const T*&gt;</span>
+<span id="cb21-24"><a href="#cb21-24"></a>      constexpr remove_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb21-25"><a href="#cb21-25"></a>        remove_copy(R&amp;&amp; r, O result, const T&amp; value, Proj proj = {});</span>
+<span id="cb21-26"><a href="#cb21-26"></a></span>
+<span id="cb21-27"><a href="#cb21-27"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb21-28"><a href="#cb21-28"></a>      using remove_copy_if_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb21-29"><a href="#cb21-29"></a></span>
+<span id="cb21-30"><a href="#cb21-30"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb21-31"><a href="#cb21-31"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb21-32"><a href="#cb21-32"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O,</span></span>
+<span id="cb21-33"><a href="#cb21-33"></a>             class Proj = identity, indirect_unary_predicate&lt;projected&lt;I, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb21-34"><a href="#cb21-34"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb21-35"><a href="#cb21-35"></a>      constexpr remove_copy_if_result&lt;I, O&gt;</span>
+<span id="cb21-36"><a href="#cb21-36"></a>        remove_copy_if(I first, S last, O result, Pred pred, Proj proj = {});</span>
+<span id="cb21-37"><a href="#cb21-37"></a></span>
+<span id="cb21-38"><a href="#cb21-38"></a>    template&lt;input_range R,</span>
+<span id="cb21-39"><a href="#cb21-39"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb21-40"><a href="#cb21-40"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O,</span></span>
+<span id="cb21-41"><a href="#cb21-41"></a>             class Proj = identity,</span>
+<span id="cb21-42"><a href="#cb21-42"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb21-43"><a href="#cb21-43"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb21-44"><a href="#cb21-44"></a>      constexpr remove_copy_if_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb21-45"><a href="#cb21-45"></a>        remove_copy_if(R&amp;&amp; r, O result, Pred pred, Proj proj = {});</span>
+<span id="cb21-46"><a href="#cb21-46"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>

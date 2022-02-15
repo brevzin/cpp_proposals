@@ -242,7 +242,7 @@ namespace std {
 Change [iterator.concept.output]{.sref} [The semantic effects are specific to `output_iterator`, not `weak_output_iterator`]{.ednote}:
 
 ::: bq
-[1]{.pnum} The [`weak_output_iterator` and]{.addu} `output_iterator` concept[s]{.addu} define[s]{.rm} requirements for a type that can be used to write values (from the requirement for `indirectly_writable` ([iterator.concept.writable])) and which can be both pre- and post-incremented.
+[1]{.pnum} The [`weak_output_iterator` and]{.addu} `output_iterator` [concept defines]{.rm} [concepts define]{.addu} requirements for a type that can be used to write values (from the requirement for `indirectly_writable` ([iterator.concept.writable])) and which can be both pre- and post-incremented.
 [*Note 1*: Output iterators are not required to model `equality_comparable`. — *end note*]
 
 ```diff
@@ -406,6 +406,176 @@ namespace std::ranges {
       constexpr binary_transform_result<borrowed_iterator_t<R1>, borrowed_iterator_t<R2>, O>
         transform(R1&& r1, R2&& r2, O result,
                   F binary_op, Proj1 proj1 = {}, Proj2 proj2 = {});
+}
+```
+:::
+
+### `ranges::replace_copy`
+
+[These already require `output_iterator` in one spot, so can require `output_iterator` in another too. This makes it more clear that it's an output iterator for multiple types.]{.draftnote}
+
+::: bq
+```diff
+namespace std::ranges {
+    template<class I, class O>
+      using replace_copy_result = in_out_result<I, O>;
+
+    template<input_iterator I, sentinel_for<I> S, class T1, class T2,
+             output_iterator<const T2&> O, class Proj = identity>
+-     requires indirectly_copyable<I, O> &&
++     requires output_iterator<O, iter_reference_t<I>>
+               indirect_binary_predicate<ranges::equal_to, projected<I, Proj>, const T1*>
+      constexpr replace_copy_result<I, O>
+        replace_copy(I first, S last, O result, const T1& old_value, const T2& new_value,
+                     Proj proj = {});
+    template<input_range R, class T1, class T2, output_iterator<const T2&> O,
+             class Proj = identity>
+-     requires indirectly_copyable<iterator_t<R>, O> &&
++     requires output_iterator<O, range_reference_t<R>> &&
+               indirect_binary_predicate<ranges::equal_to,
+                                         projected<iterator_t<R>, Proj>, const T1*>
+      constexpr replace_copy_result<borrowed_iterator_t<R>, O>
+        replace_copy(R&& r, O result, const T1& old_value, const T2& new_value,
+                     Proj proj = {});
+
+    template<class I, class O>
+      using replace_copy_if_result = in_out_result<I, O>;
+
+    template<input_iterator I, sentinel_for<I> S, class T, output_iterator<const T&> O,
+             class Proj = identity, indirect_unary_predicate<projected<I, Proj>> Pred>
+-     requires indirectly_copyable<I, O>
++     requires output_iterator<O, iter_reference_t<I>>
+      constexpr replace_copy_if_result<I, O>
+        replace_copy_if(I first, S last, O result, Pred pred, const T& new_value,
+                        Proj proj = {});
+    template<input_range R, class T, output_iterator<const T&> O, class Proj = identity,
+             indirect_unary_predicate<projected<iterator_t<R>, Proj>> Pred>
+-     requires indirectly_copyable<iterator_t<R>, O> &&
++     requires output_iterator<O, range_reference_t<R>> &&
+      constexpr replace_copy_if_result<borrowed_iterator_t<R>, O>
+        replace_copy_if(R&& r, O result, Pred pred, const T& new_value,
+                        Proj proj = {});
+}
+```
+:::
+
+### `ranges::fill`
+
+No changes necessary, already requires `output_iterator`.
+
+### `ranges::generate`
+
+This is the weird one. The range overload of `generate` requires `output_range`, which requires `output_iterator`, which requires `*out++ = t;` to work. But the iterator/sentinel overload does not require `output_iterator`, so it does not. This doesn't make much sense to me - these two really should line up. I don't know if we can strengthen one, but I also don't want to weaken the other (also `output_range` is our only range-based output concept, and I don't want to add a `weak_output_range`).
+
+This is what it would look like if we strengthened the iterator overloads of `generate` and `generate_n`:
+
+::: bq
+```diff
+namespace std::ranges {
+-   template<input_or_output_iterator O,
++   template<class O,
+             sentinel_for<O> S, copy_constructible F>
+      requires invocable<F&> &&
+-              indirectly_writable<O, invoke_result_t<F&>>
++              output_iterator<O, invoke_result_t<F&>>
+      constexpr O generate(O first, S last, F gen);
+
+    template<class R, copy_constructible F>
+      requires invocable<F&> && output_range<R, invoke_result_t<F&>>
+      constexpr borrowed_iterator_t<R> generate(R&& r, F gen);
+
+-   template<input_or_output_iterator O,
++   template<class O,
+             copy_constructible F>
+      requires invocable<F&> &&
+-              indirectly_writable<O, invoke_result_t<F&>>
++              output_iterator<O, invoke_result_t<F&>>
+      constexpr O generate_n(O first, iter_difference_t<O> n, F gen);
+}
+```
+:::
+
+And this is what it would look like if we weakened the range overload:
+
+::: bq
+```diff
+namespace std::ranges {
+-   template<input_or_output_iterator O,
++   template<class O,
+             sentinel_for<O> S, copy_constructible F>
+      requires invocable<F&> &&
+-              indirectly_writable<O, invoke_result_t<F&>>
++              weak_output_iterator<O, invoke_result_t<F&>>
+      constexpr O generate(O first, S last, F gen);
+
+-   template<class R,
++   template<range R,
+             copy_constructible F>
+      requires invocable<F&> &&
+-              output_range<R, invoke_result_t<F&>>
++              weak_output_iterator<iterator_t<R>, invoke_result_t<F&>>
+      constexpr borrowed_iterator_t<R> generate(R&& r, F gen);
+
+-   template<input_or_output_iterator O,
++   template<class O,
+             copy_constructible F>
+      requires invocable<F&> &&
+-              indirectly_writable<O, invoke_result_t<F&>>
++              weak_output_iterator<O, invoke_result_t<F&>>
+      constexpr O generate_n(O first, iter_difference_t<O> n, F gen);
+}
+```
+:::
+
+### `ranges::remove_copy`
+
+::: bq
+```diff
+namespace std::ranges {
+    template<class I, class O>
+      using remove_copy_result = in_out_result<I, O>;
+
+    template<input_iterator I, sentinel_for<I> S,
+-            weakly_incrementable O,
++            weak_output_iterator<iter_reference_t<I>> O,
+             class T,
+             class Proj = identity>
+-     requires indirectly_copyable<I, O> &&
++     requires
+               indirect_binary_predicate<ranges::equal_to, projected<I, Proj>, const T*>
+      constexpr remove_copy_result<I, O>
+        remove_copy(I first, S last, O result, const T& value, Proj proj = {});
+
+    template<input_range R,
+-            weakly_incrementable O,
++            weak_output_iterator<range_reference_t<R>> O,
+             class T, class Proj = identity>
+-     requires indirectly_copyable<iterator_t<R>, O> &&
++     requires
+               indirect_binary_predicate<ranges::equal_to,
+                                         projected<iterator_t<R>, Proj>, const T*>
+      constexpr remove_copy_result<borrowed_iterator_t<R>, O>
+        remove_copy(R&& r, O result, const T& value, Proj proj = {});
+
+    template<class I, class O>
+      using remove_copy_if_result = in_out_result<I, O>;
+
+    template<input_iterator I, sentinel_for<I> S,
+-            weakly_incrementable O,
++            weak_output_iterator<iter_reference_t<I>> O,
+             class Proj = identity, indirect_unary_predicate<projected<I, Proj>> Pred>
+-     requires indirectly_copyable<I, O>
+      constexpr remove_copy_if_result<I, O>
+        remove_copy_if(I first, S last, O result, Pred pred, Proj proj = {});
+
+    template<input_range R,
+-            weakly_incrementable O,
++            weak_output_iterator<range_reference_t<R>> O,
+             class Proj = identity,
+             indirect_unary_predicate<projected<iterator_t<R>, Proj>> Pred>
+-     requires indirectly_copyable<iterator_t<R>, O>
+      constexpr remove_copy_if_result<borrowed_iterator_t<R>, O>
+        remove_copy_if(R&& r, O result, Pred pred, Proj proj = {});
 }
 ```
 :::
