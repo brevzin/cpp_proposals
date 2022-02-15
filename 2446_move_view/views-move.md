@@ -1,6 +1,6 @@
 ---
 title: "`views::as_rvalue`"
-document: D2446R2
+document: P2446R2
 date: today
 audience: LEWG
 author:
