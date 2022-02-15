@@ -1,6 +1,6 @@
 ---
 title: "A Plan for C++23 Ranges"
-document: D2214R2
+document: P2214R2
 date: today
 audience: LEWG
 author:
@@ -24,7 +24,7 @@ span.yellow {
 
 # Revision History
 
-Since [@P2214R1], udpating with progress and links to other papers.
+Since [@P2214R1], updating with progress and links to other papers.
 
 Since [@P2214R0], updating with progress and links to other papers. Several changes have been made here:
 
@@ -1362,6 +1362,11 @@ The following includes links ot papers that currently exist so far, and their st
     - `tuple<T...>` should be const-assignable whenever `T...` are const-assignable
     - `tuple<T&...>` should be constructible from `tuple<T...>&`.
     - `vector<bool>::reference` should be const-assignable
+- the following other changes since C++20 that were not previously mentioned in this plan but are added here for completeness:
+  - Enabling list-initialization for ranges algorithms ([@P2248R4], approved by LEWG)
+  - `ranges::contains` ([@P2302R2], approved by LEWG)
+  - Allowing C++20 iterators to be used in more C++17 algorithms ([@P2408R4], approved by LEWG)
+  - Supporting move-only types in certain range adaptors ([@P2494R1], approved by LEWG)
 
 ## [Tier 2]{.yellow}
 
