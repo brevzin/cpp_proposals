@@ -465,9 +465,27 @@ No changes necessary, already requires `output_iterator`.
 
 ### `ranges::generate`
 
-This is the weird one. The range overload of `generate` requires `output_range`, which requires `output_iterator`, which requires `*out++ = t;` to work. But the iterator/sentinel overload does not require `output_iterator`, so it does not. This doesn't make much sense to me - these two really should line up. I don't know if we can strengthen one, but I also don't want to weaken the other (also `output_range` is our only range-based output concept, and I don't want to add a `weak_output_range`).
+This is the weird one. The range overload of `generate` requires `output_range`, which requires `output_iterator`, which requires `*out++ = t;` to work. But the iterator/sentinel overload does not require `output_iterator`, so it does not. This doesn't make much sense to me - these two really should line up. The consequence of this is, for instance:
 
-This is what it would look like if we strengthened the iterator overloads of `generate` and `generate_n`:
+::: bq
+```cpp
+auto some_generator() -> std::generator<int&>;
+auto some_func() -> int;
+
+void f() {
+    auto g = some_generator();
+    std::ranges::generate(g, some_func);                  // error
+    std::ranges::generate(g.begin(), g.end(), some_func); // ok
+}
+```
+:::
+
+Since [@P2502R0]'s `generator` (like all other input-only ranges in the standard library right now) has a postfix `operator++` that returns `void`, which makes `*out++` ill-formed. This just seems wrong.
+
+
+I don't know if we can strengthen one, but I also don't want to weaken the other (also `output_range` is our only range-based output concept, and I don't want to add a `weak_output_range`).
+
+This is what it would look like if we strengthened the iterator overloads of `generate` and `generate_n` (which makes both calls in my short snippet invalid):
 
 ::: bq
 ```diff
@@ -495,7 +513,7 @@ namespace std::ranges {
 ```
 :::
 
-And this is what it would look like if we weakened the range overload:
+And this is what it would look like if we weakened the range overload (which makes both calls in my short snippet valid):
 
 ::: bq
 ```diff
