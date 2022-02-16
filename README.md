@@ -78,6 +78,7 @@ None.
 
 - [p2214r2 - A Plan for C++23 Ranges](2214_ranges_plan/p2214r2.html), with Conor Hoekstra and Tim Song.
 - [p2520r1 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r1.html)
+- [p2550r0 - `ranges::copy` should say `output_iterator` somewhere](2550_algo_output_iterator/p2550r0.html)
 
 #### Concepts
 
