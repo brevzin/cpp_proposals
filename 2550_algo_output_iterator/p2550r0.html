@@ -597,9 +597,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#rangesset_intersection"><span class="toc-section-number">3.4.16</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_intersection</code><span></span></a></li>
 <li><a href="#rangesset_difference"><span class="toc-section-number">3.4.17</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_difference</code><span></span></a></li>
 <li><a href="#rangesset_symmetric_difference"><span class="toc-section-number">3.4.18</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_symmetric_difference</code><span></span></a></li>
+<li><a href="#rangesiota"><span class="toc-section-number">3.4.19</span> <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code><span></span></a></li>
 </ul></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">4</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -1093,8 +1095,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb22-41"><a href="#cb22-41"></a><span class="va">+            weak_output_iterator&lt;const T&amp;&gt; O,</span></span>
 <span id="cb22-42"><a href="#cb22-42"></a>             class Proj = identity,</span>
 <span id="cb22-43"><a href="#cb22-43"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
-<span id="cb22-44"><a href="#cb22-44"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
-<span id="cb22-45"><a href="#cb22-45"></a><span class="va">+     requires weak_output_iterator&lt;O, range_reference_t&lt;R&gt;&gt; &amp;&amp;</span></span>
+<span id="cb22-44"><a href="#cb22-44"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb22-45"><a href="#cb22-45"></a><span class="va">+     requires weak_output_iterator&lt;O, range_reference_t&lt;R&gt;&gt;</span></span>
 <span id="cb22-46"><a href="#cb22-46"></a>      constexpr replace_copy_if_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
 <span id="cb22-47"><a href="#cb22-47"></a>        replace_copy_if(R&amp;&amp; r, O result, Pred pred, const T&amp; new_value,</span>
 <span id="cb22-48"><a href="#cb22-48"></a>                        Proj proj = {});</span>
@@ -1123,7 +1125,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h3 data-number="3.4.8" id="rangesgenerate"><span class="header-section-number">3.4.8</span> <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code><a href="#rangesgenerate" class="self-link"></a></h3>
-<p><span class="draftnote" style="color: #01796F">[ Drafting note: THis was the inconsistent algorithm, which now becomes consistent ]</span></p>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: This was the inconsistent algorithm, which now becomes consistent ]</span></p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>namespace std::ranges {</span>
@@ -1314,7 +1316,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h3 data-number="3.4.14" id="rangesmerge"><span class="header-section-number">3.4.14</span> <code class="sourceCode cpp">ranges<span class="op">::</span>merge</code><a href="#rangesmerge" class="self-link"></a></h3>
-<p><span class="draftnote" style="color: #01796F">[ Drafting note: <code class="sourceCode cpp">mergeable</code> now requires <code class="sourceCode cpp">weak_output_iterator</code> for both input iterators. The extra <code class="sourceCode cpp">weakly_incrementable</code> here doesn’t really add anything, but keeping it around would make the merging algorithms the only ones that require <code class="sourceCode cpp">weakly_incrementable</code>, which is differently consistent. So I’m suggesting we change to <code class="sourceCode cpp"><span class="kw">class</span></code>. ]</span></p>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: <code class="sourceCode cpp">mergeable</code> now requires <code class="sourceCode cpp">weak_output_iterator<span class="op">&lt;</span>O, iter_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;&gt;</span></code> and <code class="sourceCode cpp">weak_output_iterator<span class="op">&lt;</span>O, iter_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&gt;</span></code> (for the two input iterators, <code class="sourceCode cpp">I1</code>, and <code class="sourceCode cpp">I2</code>). The extra <code class="sourceCode cpp">weakly_incrementable<span class="op">&lt;</span>O<span class="op">&gt;</span></code> here doesn’t really add anything, but keeping it around would make the merging algorithms the only ones that require <code class="sourceCode cpp">weakly_incrementable</code>, which is differently consistent. So I’m suggesting we change to <code class="sourceCode cpp"><span class="kw">class</span></code>. ]</span></p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb30"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb30-1"><a href="#cb30-1"></a>namespace std::ranges {</span>
@@ -1447,8 +1449,33 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb34-23"><a href="#cb34-23"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h3 data-number="3.4.19" id="rangesiota"><span class="header-section-number">3.4.19</span> <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code><a href="#rangesiota" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: This one is in <code class="sourceCode cpp"><span class="op">&lt;</span>numeric<span class="op">&gt;</span></code>, just adopted by way of <span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span> ]</span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb35-1"><a href="#cb35-1"></a>namespace std::ranges {</span>
+<span id="cb35-2"><a href="#cb35-2"></a>    template&lt;class O, class T&gt;</span>
+<span id="cb35-3"><a href="#cb35-3"></a>      using iota_result = out_value_result&lt;O, T&gt;;</span>
+<span id="cb35-4"><a href="#cb35-4"></a></span>
+<span id="cb35-5"><a href="#cb35-5"></a><span class="st">-   template&lt;input_or_output_iterator O, sentinel_for&lt;O&gt; S, weakly_incrementable T&gt;</span></span>
+<span id="cb35-6"><a href="#cb35-6"></a><span class="st">-     requires indirectly_writable&lt;O, const T&amp;&gt;</span></span>
+<span id="cb35-7"><a href="#cb35-7"></a><span class="va">+   template&lt;weakly_incrementable T, weak_output_iterator&lt;const T&amp;&gt; O, sentinel_for&lt;O&gt; S&gt;</span></span>
+<span id="cb35-8"><a href="#cb35-8"></a>      constexpr iota_result&lt;O, T&gt; iota(O first, S last, T value);</span>
+<span id="cb35-9"><a href="#cb35-9"></a></span>
+<span id="cb35-10"><a href="#cb35-10"></a><span class="st">-   template&lt;weakly_incrementable T, output_range&lt;const T&amp;&gt; R&gt;</span></span>
+<span id="cb35-11"><a href="#cb35-11"></a><span class="va">+   template&lt;weakly_incrementable T, weak_output_range&lt;const T&amp;&gt; R&gt;</span></span>
+<span id="cb35-12"><a href="#cb35-12"></a>      constexpr iota_result&lt;borrowed_iterator_t&lt;R&gt;, T&gt; iota(R&amp;&amp; r, T value);</span>
+<span id="cb35-13"><a href="#cb35-13"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">4</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Tim Song for all the help.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P2440R1">
+<p>[P2440R1] Tim Song. 2021-12-06. ranges::iota, ranges::shift_left, and ranges::shift_right. <br />
+<a href="https://wg21.link/p2440r1">https://wg21.link/p2440r1</a></p>
+</div>
 <div id="ref-P2502R0">
 <p>[P2502R0] Casey Carter. 2021-12-13. std::generator: Synchronous Coroutine Generator for Ranges. <br />
 <a href="https://wg21.link/p2502r0">https://wg21.link/p2502r0</a></p>

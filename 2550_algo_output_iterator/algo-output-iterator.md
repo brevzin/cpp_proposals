@@ -568,8 +568,8 @@ namespace std::ranges {
 +            weak_output_iterator<const T&> O,
              class Proj = identity,
              indirect_unary_predicate<projected<iterator_t<R>, Proj>> Pred>
--     requires indirectly_copyable<iterator_t<R>, O> &&
-+     requires weak_output_iterator<O, range_reference_t<R>> &&
+-     requires indirectly_copyable<iterator_t<R>, O>
++     requires weak_output_iterator<O, range_reference_t<R>>
       constexpr replace_copy_if_result<borrowed_iterator_t<R>, O>
         replace_copy_if(R&& r, O result, Pred pred, const T& new_value,
                         Proj proj = {});
@@ -603,7 +603,7 @@ namespace std::ranges {
 
 ### `ranges::generate`
 
-[THis was the inconsistent algorithm, which now becomes consistent]{.draftnote}
+[This was the inconsistent algorithm, which now becomes consistent]{.draftnote}
 
 ::: bq
 ```diff
@@ -808,7 +808,7 @@ namespace std::ranges {
 
 ### `ranges::merge`
 
-[`mergeable` now requires `weak_output_iterator` for both input iterators. The extra `weakly_incrementable` here doesn't really add anything, but keeping it around would make the merging algorithms the only ones that require `weakly_incrementable`, which is differently consistent. So I'm suggesting we change to `class`.]{.draftnote}
+[`mergeable` now requires `weak_output_iterator<O, iter_reference_t<I1>>` and `weak_output_iterator<O, iter_reference_t<I2>>` (for the two input iterators, `I1`, and `I2`). The extra `weakly_incrementable<O>` here doesn't really add anything, but keeping it around would make the merging algorithms the only ones that require `weakly_incrementable`, which is differently consistent. So I'm suggesting we change to `class`.]{.draftnote}
 
 ::: bq
 ```diff
@@ -951,3 +951,29 @@ namespace std::ranges {
 }
 ```
 :::
+
+### `ranges::iota`
+
+[This one is in `<numeric>`, just adopted by way of [@P2440R1]]{.draftnote}:
+
+::: bq
+```diff
+namespace std::ranges {
+    template<class O, class T>
+      using iota_result = out_value_result<O, T>;
+
+-   template<input_or_output_iterator O, sentinel_for<O> S, weakly_incrementable T>
+-     requires indirectly_writable<O, const T&>
++   template<weakly_incrementable T, weak_output_iterator<const T&> O, sentinel_for<O> S>
+      constexpr iota_result<O, T> iota(O first, S last, T value);
+
+-   template<weakly_incrementable T, output_range<const T&> R>
++   template<weakly_incrementable T, weak_output_range<const T&> R>
+      constexpr iota_result<borrowed_iterator_t<R>, T> iota(R&& r, T value);
+}
+```
+:::
+
+# Acknowledgements
+
+Thanks to Tim Song for all the help.
