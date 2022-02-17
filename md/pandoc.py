@@ -30,14 +30,14 @@ def bq(elem, doc):
 
 def sha1(x):
     return hashlib.sha1(x.encode(sys.getfilesystemencoding())).hexdigest()
-    
+
 MD_DIR = os.path.dirname(__file__)
 
 def graphviz(elem, doc):
     if isinstance(elem, pf.CodeBlock) and 'graphviz' in elem.classes:
         code = elem.text
         G = pygraphviz.AGraph(string=code)
-        G.layout()
+        G.layout(prog='dot')
 
         filename = sha1(code)
         filetype = {'html': 'png', 'latex': 'pdf'}.get(doc.format, 'png')

@@ -89,6 +89,33 @@ template<class I, class T>
 ```
 :::
 
+Or, in graph form:
+
+::: bq
+```{.graphviz caption="output iterator concept hierarchy"}
+digraph G {
+    rankdir="TB"
+    node [fontname = "consolas"];
+    overlap=false;
+    size="8.5,8.5";
+
+    "output_iterator<O, T>" -> "*o++ = std::forward<T>(t);";
+    "output_iterator<O, T>" -> "input_or_output_iterator<O>";
+    "output_iterator<O, T>" -> "indirectly_writable<O, T>";
+
+    "input_iterator<I>" -> "indirectly_readable<I>";
+
+    "input_or_output_iterator<O>" -> "weakly_incrementable<O>";
+    "input_or_output_iterator<O>" -> "*o;";
+
+    "indirectly_copyable<I, O>" -> "indirectly_readable<I>";
+    "indirectly_copyable<I, O>" -> "indirectly_writable<O, T>";
+
+    "indirectly_writable<O, T>" -> "*o;";
+}
+```
+:::
+
 And let me present two possible specifications for `ranges::copy`.
 
 ::: cmptable
