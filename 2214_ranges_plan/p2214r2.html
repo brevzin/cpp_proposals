@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-02-14" />
+  <meta name="dcterms.date" content="2022-02-18" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-02-14</td>
+    <td>2022-02-18</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -924,7 +924,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">move</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">as_rvalue</code></span></td>
+<td><span class="addu">Tier 1, renamed to <code class="sourceCode cpp">as_rvalue</code> <span class="citation" data-cites="P2446R2">[<a href="#ref-P2446R2" role="doc-biblioref">P2446R2</a>]</span></span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">partial_sum</code></td>
@@ -944,12 +944,12 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">repeat</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1</span></td>
+<td><span class="yellow">Tier 2 <span class="citation" data-cites="P2474R1">[<a href="#ref-P2474R1" role="doc-biblioref">P2474R1</a>]</span></span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">repeat_n</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1, but under the name <code class="sourceCode cpp">repeat</code></span></td>
+<td><span class="yellow">Tier 2, but under the name <code class="sourceCode cpp">repeat</code>, <span class="citation" data-cites="P2474R1">[<a href="#ref-P2474R1" role="doc-biblioref">P2474R1</a>]</span></span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">replace</code></td>
@@ -1647,7 +1647,7 @@ span.yellow {
 <li><code class="sourceCode cpp">repeat<span class="op">(</span>V<span class="op">)</span></code> is an infinite range of a single value, equivalent to <code class="sourceCode cpp">generate<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">})</span></code>.</li>
 <li><code class="sourceCode cpp">repeat_n<span class="op">(</span>V, N<span class="op">)</span></code> is <code class="sourceCode cpp">N</code> copies of <code class="sourceCode cpp">V</code>, equivalent to <code class="sourceCode cpp">generate_n<span class="op">([</span>V<span class="op">]{</span> <span class="cf">return</span> V; <span class="op">}</span>, N<span class="op">)</span></code>.</li>
 </ul>
-<p>These vary wildly in complexity (<code class="sourceCode cpp">repeat</code> is certainly far simpler than <code class="sourceCode cpp">cartesian_product</code>). But <code class="sourceCode cpp">cartesian_product</code> comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority. <code class="sourceCode cpp">repeat</code> and <code class="sourceCode cpp">repeat_n</code> can also be grouped under the same name, with <code class="sourceCode cpp">repeat<span class="op">(</span>V<span class="op">)</span></code> being an infinite range of a single value, and <code class="sourceCode cpp">repeat<span class="op">(</span>V, N<span class="op">)</span></code> having <code class="sourceCode cpp">N</code> copies of <code class="sourceCode cpp">V</code> (similar to <code class="sourceCode cpp">views<span class="op">::</span>iota</code>), and is also sufficiently straightforward that it merits inclusion.</p>
+<p>These vary wildly in complexity (<code class="sourceCode cpp">repeat</code> is certainly far simpler than <code class="sourceCode cpp">cartesian_product</code>). But <code class="sourceCode cpp">cartesian_product</code> comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority.</p>
 <p>The rest, we consider lower priority. And <code class="sourceCode cpp">generate</code> and <code class="sourceCode cpp">generate_n</code> in particular need special care to deal with <span>16.4.6.10 <a href="https://wg21.link/res.on.data.races">[res.on.data.races]</a></span>. The current implementation of <code class="sourceCode cpp">generate_n</code> in range-v3 has a data race.</p>
 <h2 data-number="4.8" id="other-view-adapters"><span class="header-section-number">4.8</span> Other view adapters<a href="#other-view-adapters" class="self-link"></a></h2>
 <p>Other range adapters that we haven’t talked about yet, but aren’t sure how to group exactly, are:</p>
@@ -2064,13 +2064,12 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>adjacent</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R2">[<a href="#ref-P2278R2" role="doc-biblioref">P2278R2</a>]</span>, approved by LEWG, pending name)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> (<span class="citation" data-cites="P2446R2">[<a href="#ref-P2446R2" role="doc-biblioref">P2446R2</a>]</span>, approved by LEWG and LWG, pending name)-</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> (<span class="citation" data-cites="P2446R2">[<a href="#ref-P2446R2" role="doc-biblioref">P2446R2</a>]</span>, approved by LEWG and LWG, pending name)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R3">[<a href="#ref-P2374R3" role="doc-biblioref">P2374R3</a>]</span>, approved by LEWG)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> (<span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span>, adopted for C++23 ✔️)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code> (<span class="citation" data-cites="P2443R1">[<a href="#ref-P2443R1" role="doc-biblioref">P2443R1</a>]</span>, adopted for C++23 ✔️)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>enumerate</code> (<span class="citation" data-cites="P2164R5">[<a href="#ref-P2164R5" role="doc-biblioref">P2164R5</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> (<span class="citation" data-cites="P2441R2">[<a href="#ref-P2441R2" role="doc-biblioref">P2441R2</a>]</span>, adopted for C++23 ✔️)</li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>repeat</code> (<span class="citation" data-cites="P2474R1">[<a href="#ref-P2474R1" role="doc-biblioref">P2474R1</a>]</span>, approved by LEWG)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> (<span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span>, adopted for C++23 ✔️)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R2">[<a href="#ref-P1899R2" role="doc-biblioref">P1899R2</a>]</span>, approved by LEWG)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>zip</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>, adopted for C++23 ✔️)</li>
@@ -2093,7 +2092,10 @@ span.yellow {
 </ul></li>
 <li>the following other changes since C++20 that were not previously mentioned in this plan but are added here for completeness:
 <ul>
-<li><span class="citation" data-cites="P2415R2">[<a href="#ref-P2415R2" role="doc-biblioref">P2415R2</a>]</span></li>
+<li>Enabling list-initialization for ranges algorithms (<span class="citation" data-cites="P2248R4">[<a href="#ref-P2248R4" role="doc-biblioref">P2248R4</a>]</span>, approved by LEWG)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>contains</code> (<span class="citation" data-cites="P2302R2">[<a href="#ref-P2302R2" role="doc-biblioref">P2302R2</a>]</span>, approved by LEWG)</li>
+<li>Allowing C++20 iterators to be used in more C++17 algorithms (<span class="citation" data-cites="P2408R4">[<a href="#ref-P2408R4" role="doc-biblioref">P2408R4</a>]</span>, approved by LEWG)</li>
+<li>Supporting move-only types in certain range adaptors (<span class="citation" data-cites="P2494R1">[<a href="#ref-P2494R1" role="doc-biblioref">P2494R1</a>]</span>, approved by LEWG)</li>
 </ul></li>
 </ul>
 <h2 data-number="7.2" id="tier-2"><span class="header-section-number">7.2</span> <span class="yellow">Tier 2</span><a href="#tier-2" class="self-link"></a></h2>
@@ -2114,6 +2116,7 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>partial_sum</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>remove</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>remove_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>repeat</code> (<span class="citation" data-cites="P2474R1">[<a href="#ref-P2474R1" role="doc-biblioref">P2474R1</a>]</span>, approved by LEWG)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
@@ -2267,6 +2270,10 @@ span.yellow {
 <p>[P2214R1] Barry Revzin, Conor Hoekstra, Tim Song. 2021-09-14. A Plan for C++23 Ranges. <br />
 <a href="https://wg21.link/p2214r1">https://wg21.link/p2214r1</a></p>
 </div>
+<div id="ref-P2248R4">
+<p>[P2248R4] Giuseppe D’Angelo. 2022-01-03. Enabling list-initialization for algorithms. <br />
+<a href="https://wg21.link/p2248r4">https://wg21.link/p2248r4</a></p>
+</div>
 <div id="ref-P2278R2">
 <p>[P2278R2] Barry Revzin. 2021-11-17. cbegin should always return a constant iterator. <br />
 <a href="https://wg21.link/p2278r2">https://wg21.link/p2278r2</a></p>
@@ -2274,6 +2281,10 @@ span.yellow {
 <div id="ref-P2286R6">
 <p>[P2286R6] Barry Revzin. 2022-01-19. Formatting Ranges. <br />
 <a href="https://wg21.link/p2286r6">https://wg21.link/p2286r6</a></p>
+</div>
+<div id="ref-P2302R2">
+<p>[P2302R2] Christopher Di Bella. 2021-12-12. std::ranges::contains. <br />
+<a href="https://wg21.link/p2302r2">https://wg21.link/p2302r2</a></p>
 </div>
 <div id="ref-P2321R2">
 <p>[P2321R2] Tim Song. 2021-06-11. zip. <br />
@@ -2307,9 +2318,9 @@ span.yellow {
 <p>[P2387R3] Barry Revzin. 2021-12-17. Pipe support for user-defined range adaptors. <br />
 <a href="https://wg21.link/p2387r3">https://wg21.link/p2387r3</a></p>
 </div>
-<div id="ref-P2415R2">
-<p>[P2415R2] Barry Revzin, Tim Song. 2021-10-15. What is a view? <br />
-<a href="https://wg21.link/p2415r2">https://wg21.link/p2415r2</a></p>
+<div id="ref-P2408R4">
+<p>[P2408R4] David Olsen. 2021-11-16. Ranges iterators as inputs to non-Ranges algorithms. <br />
+<a href="https://wg21.link/p2408r4">https://wg21.link/p2408r4</a></p>
 </div>
 <div id="ref-P2440R1">
 <p>[P2440R1] Tim Song. 2021-12-06. ranges::iota, ranges::shift_left, and ranges::shift_right. <br />
@@ -2346,6 +2357,10 @@ span.yellow {
 <div id="ref-P2474R1">
 <p>[P2474R1] Michał Dominiak. 2022-01-18. views::repeat. <br />
 <a href="https://wg21.link/p2474r1">https://wg21.link/p2474r1</a></p>
+</div>
+<div id="ref-P2494R1">
+<p>[P2494R1] Michał Dominiak. 2022-01-17. Relaxing range adaptors to allow for move only types. <br />
+<a href="https://wg21.link/p2494r1">https://wg21.link/p2494r1</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2014. range-v3. <br />

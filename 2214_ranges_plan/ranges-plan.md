@@ -172,12 +172,12 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `keys` | C++20 | C++20 |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R6] | ??? |
-| `move` | range-v3 | [Tier 1, renamed to `as_rvalue`]{.addu} |
+| `move` | range-v3 | [Tier 1, renamed to `as_rvalue` [@P2446R2]]{.addu} |
 | `partial_sum` | range-v3 | [Tier 2, but not taking a callable (solely as a specialized form of `scan`)]{.yellow} |
 | `remove` | range-v3 | [Tier 2]{.yellow} |
 | `remove_if` | range-v3 | [Tier 2]{.yellow} |
-| `repeat` | range-v3 | [Tier 1]{.addu} |
-| `repeat_n` | range-v3 | [Tier 1, but under the name `repeat`]{.addu} |
+| `repeat` | range-v3 | [Tier 2 [@P2474R1]]{.yellow} |
+| `repeat_n` | range-v3 | [Tier 2, but under the name `repeat`, [@P2474R1]]{.yellow} |
 | `replace` | range-v3 | [Tier 2]{.yellow} |
 | `replace_if` | range-v3 | [Tier 2]{.yellow} |
 | `reverse` | C++20 | C++20 |
@@ -820,7 +820,7 @@ There are several views on the list that are simply factories &mdash; they canno
 - `repeat(V)` is an infinite range of a single value, equivalent to `generate([V]{ return V; })`.
 - `repeat_n(V, N)` is `N` copies of `V`, equivalent to `generate_n([V]{ return V; }, N)`.
 
-These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `cartesian_product` comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority. `repeat` and `repeat_n` can also be grouped under the same name, with `repeat(V)` being an infinite range of a single value, and `repeat(V, N)` having `N` copies of `V` (similar to `views::iota`), and is also sufficiently straightforward that it merits inclusion.
+These vary wildly in complexity (`repeat` is certainly far simpler than `cartesian_product`). But `cartesian_product` comes up sufficiently often and are sufficiently complicated to merit Tier 1 priority.
 
 The rest, we consider lower priority. And `generate` and `generate_n` in particular need special care to deal with [res.on.data.races]{.sref}. The current implementation of `generate_n` in range-v3 has a data race.
 
@@ -1340,13 +1340,12 @@ The following includes links ot papers that currently exist so far, and their st
     - `views::adjacent` ([@P2321R2], adopted for C++23 ✔️)
     - `views::adjacent_transform` ([@P2321R2], adopted for C++23 ✔️)
     - `views::as_const` ([@P2278R2], approved by LEWG, pending name)
-    - `views::as_rvalue` ([@P2446R2], approved by LEWG and LWG, pending name)-
+    - `views::as_rvalue` ([@P2446R2], approved by LEWG and LWG, pending name)
     - `views::cartesian_product` ([@P2374R3], approved by LEWG)
     - `views::chunk` ([@P2442R1], adopted for C++23 ✔️)
     - `views::chunk_by` ([@P2443R1], adopted for C++23 ✔️)
     - `views::enumerate` ([@P2164R5])
     - `views::join_with` ([@P2441R2], adopted for C++23 ✔️)
-    - `views::repeat` ([@P2474R1], approved by LEWG)
     - `views::slide` ([@P2442R1], adopted for C++23 ✔️)
     - `views::stride` ([@P1899R2], approved by LEWG)
     - `views::zip` ([@P2321R2], adopted for C++23 ✔️)
@@ -1385,6 +1384,7 @@ The following includes links ot papers that currently exist so far, and their st
     - `views::partial_sum`
     - `views::remove`
     - `views::remove_if`
+    - `views::repeat` ([@P2474R1], approved by LEWG)
     - `views::replace`
     - `views::replace_if`
     - `views::scan`
