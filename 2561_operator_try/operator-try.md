@@ -470,6 +470,24 @@ That's a lot of different options, and the right one likely depends on context t
 
 An additional template parameter on the error type could drive what `x!!` does (as Boost.Outcome does, for instance), which would allow you to preserve the nice syntax if a particular error handling strategy is sufficiently common (maybe you always `throw`, so why would you want to write extra syntax for this case), but at a cost of suddenly having way more types. Although the `try_traits` approach does at least allow those "way more types" to interact well.
 
+This behavior can be achieved by adding a new function to `try_traits` which desugars as follows:
+
+::: cmptable
+```cpp
+auto val = expr!!;
+```
+
+```cpp
+auto&& $__val$ = expr;
+using $_Traits$ = std::try_traits<
+  std::remove_cvref_t<decltype($__val$)>>;
+if (not $_Traits$::is_ok($__val$)) {
+  $_Traits$::fail(FWD($__val$));
+}
+auto val = $_Traits$::extract_value(FWD($__val$));
+```
+:::
+
 Alternatively, perhaps `!!` is a binary operator somehow that takes its policy as an argument, like `x!!(abort)`. This reduces the number of types necessary, at the cost of simply looking bizarre.
 
 For now, this paper is only proposing `??` as only child lacking a `!!` sibling.

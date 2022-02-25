@@ -982,6 +982,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>That’s a lot of different options, and the right one likely depends on context too.</p>
 <p>An additional template parameter on the error type could drive what <code class="sourceCode cpp">x<span class="op">!!</span></code> does (as Boost.Outcome does, for instance), which would allow you to preserve the nice syntax if a particular error handling strategy is sufficiently common (maybe you always <code class="sourceCode cpp"><span class="cf">throw</span></code>, so why would you want to write extra syntax for this case), but at a cost of suddenly having way more types. Although the <code class="sourceCode cpp">try_traits</code> approach does at least allow those “way more types” to interact well.</p>
+<p>This behavior can be achieved by having this desugaring:</p>
+<table>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">auto</span> val <span class="op">=</span> expr<span class="op">!!</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__val</em> <span class="op">=</span> expr;</span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">using</span> <em>_Traits</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>  std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__val</em><span class="op">)&gt;&gt;</span>;</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_Traits</em><span class="op">::</span>is_ok<span class="op">(</span><em>__val</em><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a>  <em>_Traits</em><span class="op">::</span>fail<span class="op">(</span>FWD<span class="op">(</span><em>__val</em><span class="op">))</span>;</span>
+<span id="cb19-6"><a href="#cb19-6"></a><span class="op">}</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="kw">auto</span> val <span class="op">=</span> <em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__val</em><span class="op">))</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
 <p>Alternatively, perhaps <code class="sourceCode cpp"><span class="op">!!</span></code> is a binary operator somehow that takes its policy as an argument, like <code class="sourceCode cpp">x<span class="op">!!(</span>abort<span class="op">)</span></code>. This reduces the number of types necessary, at the cost of simply looking bizarre.</p>
 <p>For now, this paper is only proposing <code class="sourceCode cpp"><span class="op">??</span></code> as only child lacking a <code class="sourceCode cpp"><span class="op">!!</span></code> sibling.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
