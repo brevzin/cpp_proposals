@@ -92,6 +92,14 @@ template<class I, class T>
 Or, in graph form:
 
 ::: bq
+```mermaid
+graph TD;
+  A-->B;
+  A-->C;
+  B-->D;
+  C-->D;
+```
+
 ```{.graphviz caption="output iterator concept hierarchy"}
 digraph G {
     rankdir="TB"
