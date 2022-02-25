@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-02-18" />
+  <meta name="dcterms.date" content="2022-02-21" />
   <title>A Plan for C++23 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-02-18</td>
+    <td>2022-02-21</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -615,9 +615,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#actions"><span class="toc-section-number">6</span> Actions<span></span></a></li>
 <li><a href="#plan-summary"><span class="toc-section-number">7</span> Plan Summary<span></span></a>
 <ul>
-<li><a href="#tier-1"><span class="toc-section-number">7.1</span> <span class="addu">Tier 1</span><span></span></a></li>
-<li><a href="#tier-2"><span class="toc-section-number">7.2</span> <span class="yellow">Tier 2</span><span></span></a></li>
-<li><a href="#tier-3"><span class="toc-section-number">7.3</span> <span class="diffdel">Tier 3</span><span></span></a></li>
+<li><a href="#tier-nan"><span class="toc-section-number">7.1</span> Tier <code class="sourceCode cpp">NaN</code><span></span></a></li>
+<li><a href="#tier-1"><span class="toc-section-number">7.2</span> <span class="addu">Tier 1</span><span></span></a></li>
+<li><a href="#tier-2"><span class="toc-section-number">7.3</span> <span class="yellow">Tier 2</span><span></span></a></li>
+<li><a href="#tier-3"><span class="toc-section-number">7.4</span> <span class="diffdel">Tier 3</span><span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">8</span> References<span></span></a></li>
 </ul>
@@ -794,7 +795,7 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">concat</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="yellow">Tier 2 <span class="citation" data-cites="P2542R0">[<a href="#ref-P2542R0" role="doc-biblioref">P2542R0</a>]</span></span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">const_</code></td>
@@ -2053,8 +2054,16 @@ span.yellow {
 <p>Given that the actions don’t provide any functionality that we don’t already have, simply adding the ability to compose some operations better, we give them pretty low priority relative to the wealth of new functionality many of the other operations here provide.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="plan-summary"><span class="header-section-number">7</span> Plan Summary<a href="#plan-summary" class="self-link"></a></h1>
 <p>To summarize the above descriptions, we want to triage a lot of outstanding ranges algorithms, views, actions, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++23, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.</p>
-<p>The following includes links ot papers that currently exist so far, and their status as of the writing of this revision.</p>
-<h2 data-number="7.1" id="tier-1"><span class="header-section-number">7.1</span> <span class="addu">Tier 1</span><a href="#tier-1" class="self-link"></a></h2>
+<p>The following includes links to papers that currently exist so far, and their status as of the writing of this revision.</p>
+<h2 data-number="7.1" id="tier-nan"><span class="header-section-number">7.1</span> Tier <code class="sourceCode cpp">NaN</code><a href="#tier-nan" class="self-link"></a></h2>
+<p>The following other changes since C++20 that were not previously mentioned in this plan but are added here for completeness:</p>
+<ul>
+<li>Enabling list-initialization for ranges algorithms (<span class="citation" data-cites="P2248R4">[<a href="#ref-P2248R4" role="doc-biblioref">P2248R4</a>]</span>, approved by LEWG)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>contains</code> (<span class="citation" data-cites="P2302R2">[<a href="#ref-P2302R2" role="doc-biblioref">P2302R2</a>]</span>, approved by LEWG)</li>
+<li>Allowing C++20 iterators to be used in more C++17 algorithms (<span class="citation" data-cites="P2408R4">[<a href="#ref-P2408R4" role="doc-biblioref">P2408R4</a>]</span>, approved by LEWG)</li>
+<li>Supporting move-only types in certain range adaptors (<span class="citation" data-cites="P2494R1">[<a href="#ref-P2494R1" role="doc-biblioref">P2494R1</a>]</span>, approved by LEWG)</li>
+</ul>
+<h2 data-number="7.2" id="tier-1"><span class="header-section-number">7.2</span> <span class="addu">Tier 1</span><a href="#tier-1" class="self-link"></a></h2>
 <ul>
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>to</code> (<span class="citation" data-cites="P1206R7">[<a href="#ref-P1206R7" role="doc-biblioref">P1206R7</a>]</span>, adopted for C++23 ✔️)</li>
 <li>the ability for user-defined range adaptors to properly cooperate with standard library ones (<span class="citation" data-cites="P2387R3">[<a href="#ref-P2387R3" role="doc-biblioref">P2387R3</a>]</span>, adopted for C++23 ✔️)</li>
@@ -2090,21 +2099,14 @@ span.yellow {
 <li><code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">&amp;...&gt;</span></code> should be constructible from <code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">...&gt;&amp;</span></code>.</li>
 <li><code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code> should be const-assignable</li>
 </ul></li>
-<li>the following other changes since C++20 that were not previously mentioned in this plan but are added here for completeness:
-<ul>
-<li>Enabling list-initialization for ranges algorithms (<span class="citation" data-cites="P2248R4">[<a href="#ref-P2248R4" role="doc-biblioref">P2248R4</a>]</span>, approved by LEWG)</li>
-<li><code class="sourceCode cpp">ranges<span class="op">::</span>contains</code> (<span class="citation" data-cites="P2302R2">[<a href="#ref-P2302R2" role="doc-biblioref">P2302R2</a>]</span>, approved by LEWG)</li>
-<li>Allowing C++20 iterators to be used in more C++17 algorithms (<span class="citation" data-cites="P2408R4">[<a href="#ref-P2408R4" role="doc-biblioref">P2408R4</a>]</span>, approved by LEWG)</li>
-<li>Supporting move-only types in certain range adaptors (<span class="citation" data-cites="P2494R1">[<a href="#ref-P2494R1" role="doc-biblioref">P2494R1</a>]</span>, approved by LEWG)</li>
-</ul></li>
 </ul>
-<h2 data-number="7.2" id="tier-2"><span class="header-section-number">7.2</span> <span class="yellow">Tier 2</span><a href="#tier-2" class="self-link"></a></h2>
+<h2 data-number="7.3" id="tier-2"><span class="header-section-number">7.3</span> <span class="yellow">Tier 2</span><a href="#tier-2" class="self-link"></a></h2>
 <ul>
 <li>the addition of the following range adapters:
 <ul>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cache1</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk_on</code></li>
-<li><code class="sourceCode cpp">views<span class="op">::</span>concat</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>concat</code> (<span class="citation" data-cites="P2542R0">[<a href="#ref-P2542R0" role="doc-biblioref">P2542R0</a>]</span>)</li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>drop_last</code></li>
@@ -2135,7 +2137,7 @@ span.yellow {
 <li><code class="sourceCode cpp">ranges<span class="op">::</span>product</code></li>
 </ul></li>
 </ul>
-<h2 data-number="7.3" id="tier-3"><span class="header-section-number">7.3</span> <span class="diffdel">Tier 3</span><a href="#tier-3" class="self-link"></a></h2>
+<h2 data-number="7.4" id="tier-3"><span class="header-section-number">7.4</span> <span class="diffdel">Tier 3</span><a href="#tier-3" class="self-link"></a></h2>
 <ul>
 <li>the addition of the following range adapters:
 <ul>
@@ -2331,7 +2333,7 @@ span.yellow {
 <a href="https://wg21.link/p2441r0">https://wg21.link/p2441r0</a></p>
 </div>
 <div id="ref-P2441R2">
-<p>[P2441R2] Barry Revzin. 2021. <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>. <br />
+<p>[P2441R2] Barry Revzin. 2022-01-28. views::join_with. <br />
 <a href="https://wg21.link/p2441r2">https://wg21.link/p2441r2</a></p>
 </div>
 <div id="ref-P2442R0">
@@ -2351,7 +2353,7 @@ span.yellow {
 <a href="https://wg21.link/p2443r1">https://wg21.link/p2443r1</a></p>
 </div>
 <div id="ref-P2446R2">
-<p>[P2446R2] Barry Revzin. 2021. <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>. <br />
+<p>[P2446R2] Barry Revzin. 2022-02-15. views::as_rvalue. <br />
 <a href="https://wg21.link/p2446r2">https://wg21.link/p2446r2</a></p>
 </div>
 <div id="ref-P2474R1">
@@ -2361,6 +2363,10 @@ span.yellow {
 <div id="ref-P2494R1">
 <p>[P2494R1] Michał Dominiak. 2022-01-17. Relaxing range adaptors to allow for move only types. <br />
 <a href="https://wg21.link/p2494r1">https://wg21.link/p2494r1</a></p>
+</div>
+<div id="ref-P2542R0">
+<p>[P2542R0] Hui Xie, S. Levent Yilmaz. 2022-02-19. views::concat. <br />
+<a href="https://wg21.link/p2542r0">https://wg21.link/p2542r0</a></p>
 </div>
 <div id="ref-range-v3">
 <p>[range-v3] Eric Niebler. 2014. range-v3. <br />

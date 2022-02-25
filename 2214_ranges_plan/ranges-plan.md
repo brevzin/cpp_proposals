@@ -146,7 +146,7 @@ We'll start this section by enumerating all the adapters in range-v3 (and a few 
 | `chunk` | range-v3 | [Tier 1 [@P2442R1]]{.addu} |
 | `chunk_by` | range-v3 | [Tier 1 [@P2443R1]]{.addu}. This is an improved [`group_by`](#the-group_by-family) recently added to range-v3. [Also consider a variant `chunk_on` as Tier 2]{.yellow} |
 | `common` | C++20 | C++20 |
-| `concat` | range-v3 | [Tier 2]{.yellow} |
+| `concat` | range-v3 | [Tier 2 [@P2542R0]]{.yellow} |
 | `const_` | range-v3 | [Tier 1 [@P2278R2], renamed to `as_const`]{.addu} |
 | `counted` | C++20 | C++20 |
 | `cycle` | range-v3 | [Tier 2]{.yellow} |
@@ -1329,7 +1329,16 @@ Given that the actions don't provide any functionality that we don't already hav
 
 To summarize the above descriptions, we want to triage a lot of outstanding ranges algorithms, views, actions, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++23, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.
 
-The following includes links ot papers that currently exist so far, and their status as of the writing of this revision.
+The following includes links to papers that currently exist so far, and their status as of the writing of this revision.
+
+## Tier `NaN`
+
+The following other changes since C++20 that were not previously mentioned in this plan but are added here for completeness:
+
+- Enabling list-initialization for ranges algorithms ([@P2248R4], approved by LEWG)
+- `ranges::contains` ([@P2302R2], approved by LEWG)
+- Allowing C++20 iterators to be used in more C++17 algorithms ([@P2408R4], approved by LEWG)
+- Supporting move-only types in certain range adaptors ([@P2494R1], approved by LEWG)
 
 ## [Tier 1]{.addu}
 
@@ -1361,18 +1370,13 @@ The following includes links ot papers that currently exist so far, and their st
     - `tuple<T...>` should be const-assignable whenever `T...` are const-assignable
     - `tuple<T&...>` should be constructible from `tuple<T...>&`.
     - `vector<bool>::reference` should be const-assignable
-- the following other changes since C++20 that were not previously mentioned in this plan but are added here for completeness:
-  - Enabling list-initialization for ranges algorithms ([@P2248R4], approved by LEWG)
-  - `ranges::contains` ([@P2302R2], approved by LEWG)
-  - Allowing C++20 iterators to be used in more C++17 algorithms ([@P2408R4], approved by LEWG)
-  - Supporting move-only types in certain range adaptors ([@P2494R1], approved by LEWG)
 
 ## [Tier 2]{.yellow}
 
 - the addition of the following range adapters:
     - `views::cache1`
     - `views::chunk_on`
-    - `views::concat`
+    - `views::concat` ([@P2542R0])
     - `views::cycle`
     - `views::delimit`
     - `views::drop_last`
@@ -1530,20 +1534,4 @@ references:
       issues:
         - year: 2018
       URL: https://hackage.haskell.org/package/groupBy
-    - id: P2441R2
-      citation-label: P2441R2
-      title: "`views::join_with`"
-      author:
-        - family: Barry Revzin
-      issued:
-        year: 2021
-      URL: https://wg21.link/p2441r2
-    - id: P2446R2
-      citation-label: P2446R2
-      title: "`views::as_rvalue`"
-      author:
-        - family: Barry Revzin
-      issued:
-        year: 2021
-      URL: https://wg21.link/p2446r2
 ---
