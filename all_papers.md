@@ -58,8 +58,8 @@
 - 2508 Expose  <code class="sourceCode cpp">std<span class="op">::</span><em>basic-format-string</em><span class="op">&lt;</span>charT, Args<span class="op">...&gt;</span></code>: [p2508r0](2508_expose_format_string/p2508r0.html) [p2508r1](2508_expose_format_string/p2508r1.html) [p2508r2](2508_expose_format_string/p2508r2.html)
 - 2520 <code class="sourceCode cpp">move_iterator<span class="op">&lt;</span>T<span class="op">*&gt;</span></code>  should be a random access iterator: [p2520r0](2520_move_iterator/p2520r0.html)
 - 2550 <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code>  should say  <code class="sourceCode cpp">output_iterator</code>  somewhere: [p2550r0](2550_algo_output_iterator/p2550r0.html)
+- 2561 <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">?</span></code>: [p2561r0](2561_operator_try/p2561r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
-- <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">?</span></code>: [p2561.html](2561_operator_try/p2561.html)
