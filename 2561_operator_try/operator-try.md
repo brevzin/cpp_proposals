@@ -1,5 +1,5 @@
 ---
-title: "`operator?`"
+title: "`operator??`"
 document: P2561R0
 date: today
 audience: EWG
@@ -13,7 +13,11 @@ toc: true
 
 It is important to clarify a few things up front. It is not the position of this paper that exceptions are bad. Or that exceptions are good. It is not the goal of this paper to convince you to start using exceptions, nor is it to convince you to stop using exceptions.
 
-This paper simply recognizes that there are many code bases (or parts thereof) that do not use exceptions and probably will not in the future.
+This paper simply recognizes that there are many code bases (or parts thereof) that do not use exceptions and probably will not in the future. That could be for performance or space reasons. It could be because exceptions are unsupported on a particular platform. It could be for code understandability reasons. Regardless, some code bases do not use exceptions. Moreover, some problems are not solved well by exceptions -- even in code bases that otherwise use them to solve problems that they are more tailored to solve.
+
+The problem is, C++ does not currently have a good story for error handling without exceptions. We're moving away from returning bool or error codes in favor of solutions like `std::expected` ([@P0323R12]), but the ergonomics of such types are not there yet. Bad ergonomics leads to code that is clunkier than it needs to be, harder to follow, and, significantly and ironically, error-prone.
+
+We should try to improve such uses too.
 
 # Introduction
 
@@ -32,7 +36,9 @@ auto strcat(int i) -> std::string {
 ```
 :::
 
-There's a lot to like about exceptions. One nice advantage is the zero syntactic overhead necessary for propagating errors. Errors just propagate. You don't even have to know which functions can fail. Indeed, the above could even have been:
+There's a lot to like about exceptions. One nice advantage is the zero syntactic overhead necessary for propagating errors. Errors just propagate. You don't even have to know which functions can fail.
+
+We don't even need to declare variables to hold the results of `foo` and `bar`, we can even use those expressions inline:
 
 ::: bq
 ```cpp
@@ -45,7 +51,7 @@ auto strcat(int i) -> std::string {
 ```
 :::
 
-But with the newly adopted `std::expected` ([@P0323R12]), it's not quite so nice:
+But with the newly adopted `std::expected<T, E>`, it's not quite so nice:
 
 ::: bq
 ```cpp
@@ -74,7 +80,7 @@ This is significantly longer and more tedious because we have to do manual error
 * we're giving a name, `f`, to the `expected` object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as `*f`
 * the "nice" syntax for propagation is inefficient - if `E` is something more involved than `std::error_code`, we really should `std::move(f).error()` into that. And even then, we're moving the error twice when we optimally could move it just once.
 
-In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` provide such):
+In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
 
 ::: bq
 ```cpp
@@ -231,68 +237,17 @@ auto res2 = ((a?) * b) ? (*c) : d;
 
 What if you assume that a `?` is a conditional operator and try to parse that until it fails, then back up and try again to parse a postfix `?` operator? Is that really a viable strategy? If we assume both `?`s are the beginning of a conditional, then that will eventually fail since we hit a `;` before a second `:` - but it's the outer `?` that failed, not the inner - do we retry the inner first (which would lead to the `res1` parse eventually) or the outer first (which would lead to the `res2` one)?
 
-Maybe this is doable with parsing heroics, but at some point I have to ask if it's worth it. Especially since this isn't the only possible syntax for this.
+Maybe this is doable with parsing heroics, but at some point I have to ask if it's worth it. Especially since we can just pick something else: `??`
 
-Two other options worth considering are: `??` and `.?` Both are easily unambiguous by virtue of not even being valid token sequences today.
+This is only one character longer, and just as questioning. It's easily unambiguous by virtue of not even being a valid token sequence today. But it's worth commenting on the usage of `??` in other languages.
 
-### `??`
+### `??` in other languages
 
 `??` is called a "null (or nil) coalescing operator" in some languages (like C# or JavaScript or Swift) where `x ?? y` is roughly equivalent to what C++ would spell as `x ? *x : y` except that `x` is only evaluated once. Kotlin spells this operator `?:`, but it behaves differently from the gcc extension since `x ?: y` in gcc evaluates as `x ? x : y` rather than `x ? *x : y`.
 
 For `x` being some kind of `std::optional<T>` or `std::expected<T, E>`, this can *mostly* already be spelled `x.value_or(y)`. The difference is that here `y` is unconditionally evaluated, which is why [@P2218R0] proposes a separate `opt.value_or_else(f)` which invokes `f`. Which would make a proper equivalence be spelled `x.value_or_else([&]{ return y; })`.
 
 I'm not aware of any proposals to add this particular operator in C++, but because we already have two types that directly provide that functionality (as would many other non-`std` flavors thereof), and because it's fairly straightforward to write such an algorithm generically, it wouldn't seem especially valuable to have a dedicated operator for this functionality -- so it's probably safe to take for this use-case.
-
-### `.?`
-
-I'm not aware of a language that uses `.?` specifically, but it is worth commenting on the reverse: `?.` This one is called optional chaining in Swift, the null-conditional operator in C#, and the safe call operator in Kotlin.
-
-Given a `std::optional<std::string>` object named `opt`, this means:
-
-|expression|C++ equivalent|
-|-|---|
-|`opt?.size()`|`opt.transform(&std::string::size) // technically UB`|
-|`opt?.substr(from, to)`|`opt.transform([&](auto& s){ return s.substr(from, to); })`|
-
-Like `??` described above, the semantics of `opt?.f()` can be achieved using library facilities today. Quite unlike `??`, there is a significant drop in readability and just the general nice-ness of the syntax.
-
-With `value_or` and especially `value_or_else`, the library syntax is fine and doesn't strike me as sufficiently bad to merit dedicated language help - but that is decidedly not the case here. Note that `transform` is still quite useful - if you're trying to call a free function, `opt.transform(f)` is great. It's only when you're trying to call a member that it's quite bad. Kotlin's approach in particular allows you to use `?.` for both cases quite well, since it's either `opt?.member` or `opt?.let { free(it) }`.
-
-I'm not aware of any proposal to add this feature into C++ either, but between the two of them, this one at least seems like it could merit dedicated language help. Even though the spelling of that operator would be `?.` rather than `.?`, that seems a bit too close for comfort to have two different operators spelled nearly the same with different meanings entirely.
-
-### Comparison of the two
-
-Just putting our example back up, using these syntaxes (though still not describing semantics), they look basically the same (as you might expect from two different two-token sequences, each of which uses `?` as the second token):
-
-::: cmptable
-```cpp
-auto strcat(int i) -> std::expected<std::string, E>
-{
-    int f = foo(i)??;
-    int b = bar(i)??;
-    return std::format("{}{}", f, b);
-
-    // ... or simply ...
-    return std::format("{}{}", foo(i)??, bar(i)??);
-}
-```
-
-```cpp
-auto strcat(int i) -> std::expected<std::string, E>
-{
-    int f = foo(i).?;
-    int b = bar(i).?;
-    return std::format("{}{}", f, b);
-
-    // ... or simply ...
-    return std::format("{}{}", foo(i).?, bar(i).?);
-}
-```
-:::
-
-It's easy to say that both look pretty great compared to today's alternatives: they are far terser, don't require either macros or coroutines to achieve nice syntax, and don't lose anything on performance by providing nice syntax.
-
-If the parsing heroics are acceptable, then `?` is a better spelling than either `??` or `.?`. If the parsing heroics are _not_ acceptable, then it seems like `??` is the better choice of the two.
 
 Of course, now we have to talk about semantics.
 
@@ -362,7 +317,7 @@ The functionality here is driven by a new traits type called `std::try_traits`, 
 
 * telling us when the object is truthy: `is_ok`
 * extracting a value (`extract_value`) or error (`extract_error`) from it
-* constructing a new object from either a value (`from_value`, not necessary above) or an error (`from_error`)
+* constructing a new object from either a value (`from_value`, not necessary in the above example, but will demonstrate a use later) or an error (`from_error`)
 
 Note that this does not support deducing return type, since we need the return type in order to know how construct it - the above desugaring uses the return type of `std::expected<std::string, E>` to know how to re-wrap the potential error that `foo(i)` or `bar(i)` could return. This is important because it avoids the overhead that nicer syntax like `std::unexpected` or `outcome::failure` introduces (neither of which allow for deducing return type anyway, at least unless the function unconditionally fails), while still allowing nicer syntax.
 
@@ -380,7 +335,7 @@ struct try_traits<optional<T>> {
   }
 
   // extractors
-  auto extract_value(auto&& o) -> value_type {
+  auto extract_value(auto&& o) -> auto&& {
     return *FWD(o);
   }
   auto extract_error(auto&&) -> error_type {
@@ -408,10 +363,10 @@ struct try_traits<expected<T, E>> {
   }
 
   // extractors
-  auto extract_value(auto&& e) -> value_type {
+  auto extract_value(auto&& e) -> auto&& {
     return *FWD(e);
   }
-  auto extract_error(auto&& e) -> error_type {
+  auto extract_error(auto&& e) -> auto&& {
     return FWD(e).error();
   }
 
@@ -429,9 +384,11 @@ struct try_traits<expected<T, E>> {
 This also helps demonstrate the requirements for what `try_traits<O>` have to return:
 
 * `is_ok` is invoked on an lvalue of type `O` and returns `bool`
-* `extract_value` takes some kind of `O` and returns `value_type`
-* `extract_error` takes some kind of `O` and returns `error_type`
+* `extract_value` takes some kind of `O` and returns a type that, after stripping qualifiers, is `value_type`
+* `extract_error` takes some kind of `O` and returns a type that, after stripping qualifiers, is `error_type`
 * `from_value` and `from_error` return `O`.
+
+In the above case, `try_traits<expected<T, E>>::extract_error` will always give some kind of reference to `E` (either `E&`, `E const&`, `E&&`, or `E const&&`, depending on the value category of the argument), while `try_traits<optional<T>>::extract_error` will always be `std::nullopt_t`, by value. Both are fine, it simply depends on the type.
 
 Since the extractors are only invoked on an `O` directly, you can safely assume that the object passed in is basically a forwarding reference to `O`, so `auto&&` is fine (at least pending something like [@P2481R0]). The extractors have the implicit precondition that the object is in the state specified (e.g. `extract_value(o)` should only be called if `is_ok(o)`, with the converse for `extract_error(o)`) The factories can accept anything though, and should probably be constrained.
 
@@ -452,9 +409,152 @@ auto strcat(int i) -> Result<string, E>
 
 As long as each of these various error types opts into `try_traits` so that they can properly be constructed from an error, this will work just fine.
 
-### Handling errors without propagating
+### Short-circuiting fold
 
-This approach seems to work quite well at propagating errors: it's syntactically cheap, performant, and allows for integrating multiple libraries.
+One of the algorithms considered in the `ranges::fold` paper ([@P2322R5]) was a short-circuiting fold. That paper ultimately didn't propose such an algorithm, since there isn't really a good way to generically write such a thing. Probably the best option in the paper was to have a mutating accumulation function that returns `bool` on failure?
+
+But with this facility, there is a clear direction for how to write a generic, short-circuiting fold:
+
+::: bq
+```cpp
+template <typename T>
+concept Try = requires (T t) {
+    typename try_traits<T>::value_type;
+    typename try_traits<T>::error_type;
+
+    { try_traits<T>::is_ok(t) } -> $boolean-testable$;
+    // etc. ...
+};
+
+template <input_iterator I,
+          sentinel_for<I> S,
+          class T,
+          invocable<T, iter_refrence_t<R>> F,
+          Try Return = invoke_result_t<F&, T, iter_reference_t<R>>
+    requires same_as<
+        typename try_traits<Return>::value_type,
+        T>
+constexpr auto try_fold(I first, S last, T init, F accum) -> Ret
+{
+    for (; first != last; ++first) {
+        init = std::invoke(accum,
+            std::move(init),
+            *first)??;
+    }
+
+    return try_traits<Ret>::from_value(std::move(init));
+}
+```
+:::
+
+This `try_fold` can be used with an accumulation function that returns `optional<T>` or `expected<T, E>` or `boost::outcome::result<T>` or ... Any type that opts into being a `Try` will work.
+
+Note that this may not be exactly the way we'd specify this algorithm, since we probably want to return something like a `pair<I, Ret>` instead, so the body wouldn't be able to use `??` and would have to go through `try_traits` manually for the error propogation. But that's still okay, since the important part was being able to have a generic algorithm to begin with.
+
+## Potential directions to go from here
+
+This paper is proposing just `??` and the machinery necessary to make that work (including a `concept`, opt-ins for `optional` and `expected`, but not the short-circuiting fold algorithm).
+
+However, it's worth it for completeness to point out a few other directions that such an operator can take us.
+
+### Error continuations
+
+Several languages have a facility that allows for continuing to invoke member functions on optional values. This facility is called something different in every language (optional chaining in Swift, null-conditional operator in C#, safe call operator in Kotlin), but somehow it's all spelled the same and does the same thing anyway.
+
+Given a `std::optional<std::string>` named `opt`, what that operator -- spelled `?.` -- means is approximately:
+
+|expression|C++ equivalent|
+|-|---|
+|`opt?.size()`|`opt.transform(&std::string::size) // technically UB`|
+|`opt?.substr(from, to)`|`opt.transform([&](auto& s){ return s.substr(from, to); })`|
+
+That is, the expression `E1?.E2`, if `E1` is an `optional`, basically means `E1.value_or_else([&](auto&& e){ return FWD(e).E2; })` (if we had the `value_or_else` facility as proposed in [@P2218R0]).
+
+Like the null coalescing meaning of `??` described above, the semantics of `opt?.f()` can be achieved using library facilities today. Quite unlike `??`, there is a significant drop in readability and just the general nice-ness of the syntax.
+
+The `try_traits` facility very nearly gives us the tools necessary to support such a continuation operator. Since what we need to do is:
+
+* check is `E1` is truthy or falsey (`Traits::is_ok(E1)`)
+* extract the value of `E1` in order to perform the subsequent operation (`Traits::extract_value(E1).E2`)
+* extract the error of `E1` in order to return early (`Traits::extract_error(E2)`)
+
+We mostly need one more customization point: to put the types back together. What I mean is, consider:
+
+::: bq
+```cpp
+auto f(int) -> std::expected<std::string, E>;
+
+auto x = f(42)?.size();
+```
+:::
+
+The type of `x` needs to be `std::expected<size_t, E>`, since that's what the value case ends up being here. If we call that customization point `mapped_type`, as in:
+
+::: bq
+```cpp
+template <typename T, typename E>
+struct try_traits<expected<T, E>> {
+    // ... rest as before ...
+
+    template <class U>
+    using mapped_type = expected<U, E>;
+};
+```
+:::
+
+Then the above can be desugared into:
+
+::: bq
+```cpp
+using $_Traits$ = try_traits<remove_cvref_t<decltype(f(42))>>;
+using $_R$ = $_Traits$::mapped_type<decltype($_Traits$::extract_value(f(42)).size())>;
+
+auto&& $e$ = f(42);
+auto x = $_Traits$::is_ok($e$)
+       ? try_traits<$_R$>::from_value($_Traits$::extract_value(FWD($e$)).size())
+       : try_traits<$_R$>::from_error(FWD($e$));
+```
+:::
+
+That may seem like a mouthful, but all the user had to write was `f(42)?.size()` and this does do the right thing.
+
+At least, this mostly does the right thing. We still have to talk about copy elision. Consider this version:
+
+::: bq
+```cpp
+struct X {
+    auto f() -> std::mutex;
+};
+
+auto g() -> Result<X, E>;
+auto n = g()?.f();
+```
+:::
+
+Presumably, `n` is a `Result<std::mutex, E>`, but in order for this to work, we can't just evaluate this as something like `Result<std::mutex, E>(g().value().f())`. `std::mutex` isn't movable.
+
+The only way for this to work today is be able to pass a callable all the way through into this `Result`'s constructor. Which is to say, we desugar like so:
+
+::: bq
+```cpp
+auto&& $e$ = g();
+auto n = $_Traits$::is_ok($e$)
+       ? try_traits<$_R$>::from_value_func([&]() -> decltype(auto) {
+            return $_Traits$::extract_value(FWD($e$)).f()
+         })
+       : try_traits<$_R$>::from_error(FWD($e$));
+```
+:::
+
+By default, `try_traits<R>::from_value_func(f)` would just be `try_traits<R>::from_value(f())`.
+
+This is weird, but it's something to thing about it.
+
+Note also error continuation would only help in the member function case. If we want to continue into a non-member function, you'd need the sort of `.transform()` member function anyway.
+
+### Not propagating errors
+
+The `??` approach seems to work quite well at propagating errors: it's syntactically cheap, performant, and allows for integrating multiple libraries.
 
 But what if we didn't want to propagate the error, but rather do something else with it? For `std::optional` and `std::expected`, we already have a UB-if-error accessor in the form of `*x` and a throw-if-error accessor in the form of `x.value()`. It seems like the corollary to an error-propagating `x??` would be some sort of `x!!` that somehow forces the error differently.
 
@@ -488,7 +588,28 @@ auto val = $_Traits$::extract_value(FWD($__val$));
 ```
 :::
 
-Alternatively, perhaps `!!` is a binary operator somehow that takes its policy as an argument, like `x!!(abort)`. This reduces the number of types necessary, at the cost of simply looking bizarre.
+But this doesn't seem as valuable as `??` or even `?.` since this case is easy to add as a member function. Indeed, that's what `x.value()` and `*x` do for `optional` and `expected`.
 
-For now, this paper is only proposing `??` as only child lacking a `!!` sibling.
+Moreover, any of the kinds of behavior you want can be written as a free function:
 
+::: bq
+```cpp
+template <class T, Try U = std::remove_cvref_t<T>>
+auto narrow_value(T&& t) -> decltype(auto) {
+    assert(std::try_traits<U>::is_ok(t));
+    return std::try_traits<U>::extract_value(FWD(t));
+}
+
+template <class T, Try U = std::remove_cvref_t<T>>
+auto wide_value(T&& t) -> decltype(auto) {
+    if (not std::try_traits<U>::is_ok(t)) {
+        [[unlikely]] throw std::try_traits<U>::extact_error(FWD(t));
+    }
+    return std::try_traits<U>::extract_value(FWD(t));
+}
+
+// etc.
+```
+:::
+
+Which further demonstrates the utility of the proposed facility.

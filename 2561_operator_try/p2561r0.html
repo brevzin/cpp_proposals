@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-02-25" />
-  <title>operator?</title>
+  <meta name="dcterms.date" content="2022-02-27" />
+  <title>operator??</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">?</span></code></h1>
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">??</span></code></h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-02-25</td>
+    <td>2022-02-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -569,13 +569,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#syntax-for-c"><span class="toc-section-number">3.1</span> Syntax for C++<span></span></a>
 <ul>
-<li><a href="#section"><span class="toc-section-number">3.1.1</span> <code class="sourceCode cpp"><span class="op">??</span></code><span></span></a></li>
-<li><a href="#section-1"><span class="toc-section-number">3.1.2</span> <code class="sourceCode cpp"><span class="op">.?</span></code><span></span></a></li>
-<li><a href="#comparison-of-the-two"><span class="toc-section-number">3.1.3</span> Comparison of the two<span></span></a></li>
+<li><a href="#in-other-languages"><span class="toc-section-number">3.1.1</span> <code class="sourceCode cpp"><span class="op">??</span></code> in other languages<span></span></a></li>
 </ul></li>
 <li><a href="#semantics"><span class="toc-section-number">3.2</span> Semantics<span></span></a>
 <ul>
-<li><a href="#handling-errors-without-propagating"><span class="toc-section-number">3.2.1</span> Handling errors without propagating<span></span></a></li>
+<li><a href="#short-circuiting-fold"><span class="toc-section-number">3.2.1</span> Short-circuiting fold<span></span></a></li>
+</ul></li>
+<li><a href="#potential-directions-to-go-from-here"><span class="toc-section-number">3.3</span> Potential directions to go from here<span></span></a>
+<ul>
+<li><a href="#error-continuations"><span class="toc-section-number">3.3.1</span> Error continuations<span></span></a></li>
+<li><a href="#not-propagating-errors"><span class="toc-section-number">3.3.2</span> Not propagating errors<span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -583,7 +586,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="preface"><span class="header-section-number">1</span> Preface<a href="#preface" class="self-link"></a></h1>
 <p>It is important to clarify a few things up front. It is not the position of this paper that exceptions are bad. Or that exceptions are good. It is not the goal of this paper to convince you to start using exceptions, nor is it to convince you to stop using exceptions.</p>
-<p>This paper simply recognizes that there are many code bases (or parts thereof) that do not use exceptions and probably will not in the future.</p>
+<p>This paper simply recognizes that there are many code bases (or parts thereof) that do not use exceptions and probably will not in the future. That could be for performance or space reasons. It could be because exceptions are unsupported on a particular platform. It could be for code understandability reasons. Regardless, some code bases do not use exceptions. Moreover, some problems are not solved well by exceptions – even in code bases that otherwise use them to solve problems that they are more tailored to solve.</p>
+<p>The problem is, C++ does not currently have a good story for error handling without exceptions. We’re moving away from returning bool or error codes in favor of solutions like <code class="sourceCode cpp">std<span class="op">::</span>expected</code> (<span class="citation" data-cites="P0323R12">[<a href="#ref-P0323R12" role="doc-biblioref">P0323R12</a>]</span>), but the ergonomics of such types are not there yet. Bad ergonomics leads to code that is clunkier than it needs to be, harder to follow, and, significantly and ironically, error-prone.</p>
+<p>We should try to improve such uses too.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Let’s start with a fairly small example of a series of functions that can generate errors, but don’t themselves handle them - they just need to propagate them up. With exceptions, this might look like:</p>
 <blockquote>
@@ -596,7 +601,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-7"><a href="#cb1-7"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
 <span id="cb1-8"><a href="#cb1-8"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>There’s a lot to like about exceptions. One nice advantage is the zero syntactic overhead necessary for propagating errors. Errors just propagate. You don’t even have to know which functions can fail. Indeed, the above could even have been:</p>
+<p>There’s a lot to like about exceptions. One nice advantage is the zero syntactic overhead necessary for propagating errors. Errors just propagate. You don’t even have to know which functions can fail.</p>
+<p>We don’t even need to declare variables to hold the results of <code class="sourceCode cpp">foo</code> and <code class="sourceCode cpp">bar</code>, we can even use those expressions inline:</p>
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span>; <span class="co">// might throw an E</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span>; <span class="co">// might throw an E</span></span>
@@ -605,7 +611,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-5"><a href="#cb2-5"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, foo<span class="op">(</span>i<span class="op">)</span>, bar<span class="op">(</span>i<span class="op">))</span>;</span>
 <span id="cb2-6"><a href="#cb2-6"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>But with the newly adopted <code class="sourceCode cpp">std<span class="op">::</span>expected</code> (<span class="citation" data-cites="P0323R12">[<a href="#ref-P0323R12" role="doc-biblioref">P0323R12</a>]</span>), it’s not quite so nice:</p>
+<p>But with the newly adopted <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>, it’s not quite so nice:</p>
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span>;</span>
 <span id="cb3-2"><a href="#cb3-2"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span>;</span>
@@ -630,7 +636,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>we’re giving a name, <code class="sourceCode cpp">f</code>, to the <code class="sourceCode cpp">expected</code> object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as <code class="sourceCode cpp"><span class="op">*</span>f</code></li>
 <li>the “nice” syntax for propagation is inefficient - if <code class="sourceCode cpp">E</code> is something more involved than <code class="sourceCode cpp">std<span class="op">::</span>error_code</code>, we really should <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>f<span class="op">).</span>error<span class="op">()</span></code> into that. And even then, we’re moving the error twice when we optimally could move it just once.</li>
 </ul>
-<p>In an effort to avoid… that… many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this (<a href="https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN">Boost.LEAF</a>, <a href="https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html">Boost.Outcome</a>, <a href="https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h">mediapipe</a>, etc. Although not all do, neither <code class="sourceCode cpp">folly</code>’s <code class="sourceCode cpp">fb<span class="op">::</span>Expected</code> nor <code class="sourceCode cpp">tl<span class="op">::</span>expected</code> provide such):</p>
+<p>In an effort to avoid… that… many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this (<a href="https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN">Boost.LEAF</a>, <a href="https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html">Boost.Outcome</a>, <a href="https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h">mediapipe</a>, etc. Although not all do, neither <code class="sourceCode cpp">folly</code>’s <code class="sourceCode cpp">fb<span class="op">::</span>Expected</code> nor <code class="sourceCode cpp">tl<span class="op">::</span>expected</code> nor <code class="sourceCode cpp">llvm<span class="op">::</span>Expected</code> provide such):</p>
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="op">{</span></span>
@@ -760,15 +766,196 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-2"><a href="#cb10-2"></a><span class="kw">auto</span> res2 <span class="op">=</span> <span class="op">((</span>a<span class="op">?)</span> <span class="op">*</span> b<span class="op">)</span> <span class="op">?</span> <span class="op">(*</span>c<span class="op">)</span> <span class="op">:</span> d;</span></code></pre></div>
 </blockquote>
 <p>What if you assume that a <code class="sourceCode cpp"><span class="op">?</span></code> is a conditional operator and try to parse that until it fails, then back up and try again to parse a postfix <code class="sourceCode cpp"><span class="op">?</span></code> operator? Is that really a viable strategy? If we assume both <code class="sourceCode cpp"><span class="op">?</span></code>s are the beginning of a conditional, then that will eventually fail since we hit a <code class="sourceCode cpp">;</code> before a second <code class="sourceCode cpp"><span class="op">:</span></code> - but it’s the outer <code class="sourceCode cpp"><span class="op">?</span></code> that failed, not the inner - do we retry the inner first (which would lead to the <code class="sourceCode cpp">res1</code> parse eventually) or the outer first (which would lead to the <code class="sourceCode cpp">res2</code> one)?</p>
-<p>Maybe this is doable with parsing heroics, but at some point I have to ask if it’s worth it. Especially since this isn’t the only possible syntax for this.</p>
-<p>Two other options worth considering are: <code class="sourceCode cpp"><span class="op">??</span></code> and <code class="sourceCode cpp"><span class="op">.?</span></code> Both are easily unambiguous by virtue of not even being valid token sequences today.</p>
-<h3 data-number="3.1.1" id="section"><span class="header-section-number">3.1.1</span> <code class="sourceCode cpp"><span class="op">??</span></code><a href="#section" class="self-link"></a></h3>
+<p>Maybe this is doable with parsing heroics, but at some point I have to ask if it’s worth it. Especially since we can just pick something else: <code class="sourceCode cpp"><span class="op">??</span></code></p>
+<p>This is only one character longer, and just as questioning. It’s easily unambiguous by virtue of not even being a valid token sequence today. But it’s worth commenting on the usage of <code class="sourceCode cpp"><span class="op">??</span></code> in other languages.</p>
+<h3 data-number="3.1.1" id="in-other-languages"><span class="header-section-number">3.1.1</span> <code class="sourceCode cpp"><span class="op">??</span></code> in other languages<a href="#in-other-languages" class="self-link"></a></h3>
 <p><code class="sourceCode cpp"><span class="op">??</span></code> is called a “null (or nil) coalescing operator” in some languages (like C# or JavaScript or Swift) where <code class="sourceCode cpp">x <span class="op">??</span> y</code> is roughly equivalent to what C++ would spell as <code class="sourceCode cpp">x <span class="op">?</span> <span class="op">*</span>x <span class="op">:</span> y</code> except that <code class="sourceCode cpp">x</code> is only evaluated once. Kotlin spells this operator <code class="sourceCode cpp"><span class="op">?:</span></code>, but it behaves differently from the gcc extension since <code class="sourceCode cpp">x <span class="op">?:</span> y</code> in gcc evaluates as <code class="sourceCode cpp">x <span class="op">?</span> x <span class="op">:</span> y</code> rather than <code class="sourceCode cpp">x <span class="op">?</span> <span class="op">*</span>x <span class="op">:</span> y</code>.</p>
 <p>For <code class="sourceCode cpp">x</code> being some kind of <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>, this can <em>mostly</em> already be spelled <code class="sourceCode cpp">x<span class="op">.</span>value_or<span class="op">(</span>y<span class="op">)</span></code>. The difference is that here <code class="sourceCode cpp">y</code> is unconditionally evaluated, which is why <span class="citation" data-cites="P2218R0">[<a href="#ref-P2218R0" role="doc-biblioref">P2218R0</a>]</span> proposes a separate <code class="sourceCode cpp">opt<span class="op">.</span>value_or_else<span class="op">(</span>f<span class="op">)</span></code> which invokes <code class="sourceCode cpp">f</code>. Which would make a proper equivalence be spelled <code class="sourceCode cpp">x<span class="op">.</span>value_or_else<span class="op">([&amp;]{</span> <span class="cf">return</span> y; <span class="op">})</span></code>.</p>
 <p>I’m not aware of any proposals to add this particular operator in C++, but because we already have two types that directly provide that functionality (as would many other non-<code class="sourceCode cpp">std</code> flavors thereof), and because it’s fairly straightforward to write such an algorithm generically, it wouldn’t seem especially valuable to have a dedicated operator for this functionality – so it’s probably safe to take for this use-case.</p>
-<h3 data-number="3.1.2" id="section-1"><span class="header-section-number">3.1.2</span> <code class="sourceCode cpp"><span class="op">.?</span></code><a href="#section-1" class="self-link"></a></h3>
-<p>I’m not aware of a language that uses <code class="sourceCode cpp"><span class="op">.?</span></code> specifically, but it is worth commenting on the reverse: <code class="sourceCode cpp"><span class="op">?.</span></code> This one is called optional chaining in Swift, the null-conditional operator in C#, and the safe call operator in Kotlin.</p>
-<p>Given a <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span></code> object named <code class="sourceCode cpp">opt</code>, this means:</p>
+<p>Of course, now we have to talk about semantics.</p>
+<h2 data-number="3.2" id="semantics"><span class="header-section-number">3.2</span> Semantics<a href="#semantics" class="self-link"></a></h2>
+<p>This paper suggests that <code class="sourceCode cpp"><span class="op">??</span></code> evaluate as follows:</p>
+<table>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a></span>
+<span id="cb11-4"><a href="#cb11-4"></a></span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="dt">int</span> f <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)??</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a></span>
+<span id="cb11-8"><a href="#cb11-8"></a></span>
+<span id="cb11-9"><a href="#cb11-9"></a></span>
+<span id="cb11-10"><a href="#cb11-10"></a></span>
+<span id="cb11-11"><a href="#cb11-11"></a></span>
+<span id="cb11-12"><a href="#cb11-12"></a></span>
+<span id="cb11-13"><a href="#cb11-13"></a></span>
+<span id="cb11-14"><a href="#cb11-14"></a></span>
+<span id="cb11-15"><a href="#cb11-15"></a>    <span class="dt">int</span> b <span class="op">=</span> bar<span class="op">(</span>i<span class="op">)??</span>;</span>
+<span id="cb11-16"><a href="#cb11-16"></a></span>
+<span id="cb11-17"><a href="#cb11-17"></a></span>
+<span id="cb11-18"><a href="#cb11-18"></a></span>
+<span id="cb11-19"><a href="#cb11-19"></a></span>
+<span id="cb11-20"><a href="#cb11-20"></a></span>
+<span id="cb11-21"><a href="#cb11-21"></a></span>
+<span id="cb11-22"><a href="#cb11-22"></a></span>
+<span id="cb11-23"><a href="#cb11-23"></a></span>
+<span id="cb11-24"><a href="#cb11-24"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
+<span id="cb11-25"><a href="#cb11-25"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="kw">using</span> <em>_Return</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>        std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;&gt;</span>;</span>
+<span id="cb12-5"><a href="#cb12-5"></a></span>
+<span id="cb12-6"><a href="#cb12-6"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__f</em> <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb12-7"><a href="#cb12-7"></a>    <span class="kw">using</span> <em>_TraitsF</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>        std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__f</em><span class="op">)&gt;&gt;</span>;</span>
+<span id="cb12-9"><a href="#cb12-9"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_TraitsF</em><span class="op">::</span>is_ok<span class="op">(</span><em>__f</em><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a>        <span class="cf">return</span> <em>_Return</em><span class="op">::</span>from_error<span class="op">(</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a>            <em>_TraitsF</em><span class="op">::</span>extract_error<span class="op">(</span>FWD<span class="op">(</span><em>__f</em><span class="op">)))</span>;</span>
+<span id="cb12-12"><a href="#cb12-12"></a>    <span class="op">}</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a>    <span class="dt">int</span> f <span class="op">=</span> <em>_TraitsF</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__f</em><span class="op">))</span>;</span>
+<span id="cb12-14"><a href="#cb12-14"></a></span>
+<span id="cb12-15"><a href="#cb12-15"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__b</em> <span class="op">=</span> bar<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb12-16"><a href="#cb12-16"></a>    <span class="kw">using</span> <em>_TraitsB</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
+<span id="cb12-17"><a href="#cb12-17"></a>        std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__b</em><span class="op">)&gt;&gt;</span>;</span>
+<span id="cb12-18"><a href="#cb12-18"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_TraitsB</em><span class="op">::</span>is_ok<span class="op">(</span>__b<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb12-19"><a href="#cb12-19"></a>        <span class="cf">return</span> <em>_Return</em><span class="op">::</span>from_error<span class="op">(</span></span>
+<span id="cb12-20"><a href="#cb12-20"></a>            <em>_TraitsB</em><span class="op">::</span>extract_error<span class="op">(</span>FWD<span class="op">(</span><em>__b</em><span class="op">)))</span>;</span>
+<span id="cb12-21"><a href="#cb12-21"></a>    <span class="op">}</span></span>
+<span id="cb12-22"><a href="#cb12-22"></a>    <span class="dt">int</span> b <span class="op">=</span> <em>_TraitsB</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__b</em><span class="op">))</span>;</span>
+<span id="cb12-23"><a href="#cb12-23"></a></span>
+<span id="cb12-24"><a href="#cb12-24"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
+<span id="cb12-25"><a href="#cb12-25"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>The functionality here is driven by a new traits type called <code class="sourceCode cpp">std<span class="op">::</span>try_traits</code>, such that a given specialization supports:</p>
+<ul>
+<li>telling us when the object is truthy: <code class="sourceCode cpp">is_ok</code></li>
+<li>extracting a value (<code class="sourceCode cpp">extract_value</code>) or error (<code class="sourceCode cpp">extract_error</code>) from it</li>
+<li>constructing a new object from either a value (<code class="sourceCode cpp">from_value</code>, not necessary in the above example, but will demonstrate a use later) or an error (<code class="sourceCode cpp">from_error</code>)</li>
+</ul>
+<p>Note that this does not support deducing return type, since we need the return type in order to know how construct it - the above desugaring uses the return type of <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></code> to know how to re-wrap the potential error that <code class="sourceCode cpp">foo<span class="op">(</span>i<span class="op">)</span></code> or <code class="sourceCode cpp">bar<span class="op">(</span>i<span class="op">)</span></code> could return. This is important because it avoids the overhead that nicer syntax like <code class="sourceCode cpp">std<span class="op">::</span>unexpected</code> or <code class="sourceCode cpp">outcome<span class="op">::</span>failure</code> introduces (neither of which allow for deducing return type anyway, at least unless the function unconditionally fails), while still allowing nicer syntax.</p>
+<p>These functions are all very easy to implement for the kinds of types that would want to support a facility like <code class="sourceCode cpp"><span class="op">??</span></code>. Here are examples for <code class="sourceCode cpp">optional</code> and <code class="sourceCode cpp">expected</code> (with <code class="sourceCode cpp"><span class="kw">constexpr</span></code> omitted to fit):</p>
+<table>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>optional<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>  <span class="kw">using</span> value_type <span class="op">=</span> T;</span>
+<span id="cb13-4"><a href="#cb13-4"></a>  <span class="kw">using</span> error_type <span class="op">=</span> nullopt_t;</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>  <span class="kw">auto</span> is_ok<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>    <span class="cf">return</span> o<span class="op">.</span>has_value<span class="op">()</span>;</span>
+<span id="cb13-8"><a href="#cb13-8"></a>  <span class="op">}</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a></span>
+<span id="cb13-10"><a href="#cb13-10"></a>  <span class="co">// extractors</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a>  <span class="kw">auto</span> extract_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>o<span class="op">)</span>;</span>
+<span id="cb13-13"><a href="#cb13-13"></a>  <span class="op">}</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a>  <span class="kw">auto</span> extract_error<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> error_type <span class="op">{</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a>    <span class="cf">return</span> nullopt;</span>
+<span id="cb13-16"><a href="#cb13-16"></a>  <span class="op">}</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a></span>
+<span id="cb13-18"><a href="#cb13-18"></a>  <span class="co">// factories</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a>  <span class="kw">auto</span> from_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a>    <span class="cf">return</span> optional<span class="op">&lt;</span>T<span class="op">&gt;(</span>in_place, FWD<span class="op">(</span>v<span class="op">))</span>;</span>
+<span id="cb13-21"><a href="#cb13-21"></a>  <span class="op">}</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a>  <span class="kw">auto</span> from_error<span class="op">(</span>nullopt_t<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a>    <span class="cf">return</span> <span class="op">{}</span>;</span>
+<span id="cb13-24"><a href="#cb13-24"></a>  <span class="op">}</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> E<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>  <span class="kw">using</span> value_type <span class="op">=</span> T;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>  <span class="kw">using</span> error_type <span class="op">=</span> E;</span>
+<span id="cb14-5"><a href="#cb14-5"></a></span>
+<span id="cb14-6"><a href="#cb14-6"></a>  <span class="kw">auto</span> is_ok<span class="op">(</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a>    <span class="cf">return</span> e<span class="op">.</span>has_value<span class="op">()</span>;</span>
+<span id="cb14-8"><a href="#cb14-8"></a>  <span class="op">}</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a></span>
+<span id="cb14-10"><a href="#cb14-10"></a>  <span class="co">// extractors</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a>  <span class="kw">auto</span> extract_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>e<span class="op">)</span>;</span>
+<span id="cb14-13"><a href="#cb14-13"></a>  <span class="op">}</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a>  <span class="kw">auto</span> extract_error<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb14-15"><a href="#cb14-15"></a>    <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>error<span class="op">()</span>;</span>
+<span id="cb14-16"><a href="#cb14-16"></a>  <span class="op">}</span></span>
+<span id="cb14-17"><a href="#cb14-17"></a></span>
+<span id="cb14-18"><a href="#cb14-18"></a>  <span class="co">// factories</span></span>
+<span id="cb14-19"><a href="#cb14-19"></a>  <span class="kw">auto</span> from_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb14-20"><a href="#cb14-20"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;(</span>in_place, FWD<span class="op">(</span>v<span class="op">))</span>;</span>
+<span id="cb14-21"><a href="#cb14-21"></a>  <span class="op">}</span></span>
+<span id="cb14-22"><a href="#cb14-22"></a>  <span class="kw">auto</span> from_error<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb14-23"><a href="#cb14-23"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;(</span>unexpect, FWD<span class="op">(</span>e<span class="op">))</span>;</span>
+<span id="cb14-24"><a href="#cb14-24"></a>  <span class="op">}</span></span>
+<span id="cb14-25"><a href="#cb14-25"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>This also helps demonstrate the requirements for what <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>O<span class="op">&gt;</span></code> have to return:</p>
+<ul>
+<li><code class="sourceCode cpp">is_ok</code> is invoked on an lvalue of type <code class="sourceCode cpp">O</code> and returns <code class="sourceCode cpp"><span class="dt">bool</span></code></li>
+<li><code class="sourceCode cpp">extract_value</code> takes some kind of <code class="sourceCode cpp">O</code> and returns a type that, after stripping qualifiers, is <code class="sourceCode cpp">value_type</code></li>
+<li><code class="sourceCode cpp">extract_error</code> takes some kind of <code class="sourceCode cpp">O</code> and returns a type that, after stripping qualifiers, is <code class="sourceCode cpp">error_type</code></li>
+<li><code class="sourceCode cpp">from_value</code> and <code class="sourceCode cpp">from_error</code> return <code class="sourceCode cpp">O</code>.</li>
+</ul>
+<p>In the above case, <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;::</span>extract_error</code> will always give some kind of reference to <code class="sourceCode cpp">E</code> (either <code class="sourceCode cpp">E<span class="op">&amp;</span></code>, <code class="sourceCode cpp">E <span class="kw">const</span><span class="op">&amp;</span></code>, <code class="sourceCode cpp">E<span class="op">&amp;&amp;</span></code>, or <code class="sourceCode cpp">E <span class="kw">const</span><span class="op">&amp;&amp;</span></code>, depending on the value category of the argument), while <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>optional<span class="op">&lt;</span>T<span class="op">&gt;&gt;::</span>extract_error</code> will always be <code class="sourceCode cpp">std<span class="op">::</span>nullopt_t</code>, by value. Both are fine, it simply depends on the type.</p>
+<p>Since the extractors are only invoked on an <code class="sourceCode cpp">O</code> directly, you can safely assume that the object passed in is basically a forwarding reference to <code class="sourceCode cpp">O</code>, so <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">&amp;&amp;</span></code> is fine (at least pending something like <span class="citation" data-cites="P2481R0">[<a href="#ref-P2481R0" role="doc-biblioref">P2481R0</a>]</span>). The extractors have the implicit precondition that the object is in the state specified (e.g. <code class="sourceCode cpp">extract_value<span class="op">(</span>o<span class="op">)</span></code> should only be called if <code class="sourceCode cpp">is_ok<span class="op">(</span>o<span class="op">)</span></code>, with the converse for <code class="sourceCode cpp">extract_error<span class="op">(</span>o<span class="op">)</span></code>) The factories can accept anything though, and should probably be constrained.</p>
+<p>The choice of desugaring based specifically on the return type (rather than relying on each object to produce some kind of construction disambiguator like <code class="sourceCode cpp">nullopt_t</code> or <code class="sourceCode cpp">unexpected<span class="op">&lt;</span>E<span class="op">&gt;</span></code>) is not only that we can be more performant, but also we can allow conversions between different kinds of error types, which is useful when joining various libraries together:</p>
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> tl<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span>;</span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span>;</span>
+<span id="cb15-3"><a href="#cb15-3"></a></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> Result<span class="op">&lt;</span>string, E<span class="op">&gt;</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="op">{</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a>    <span class="co">// this works</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, foo<span class="op">(</span>i<span class="op">)??</span>, bar<span class="op">(</span>i<span class="op">)??)</span>;</span>
+<span id="cb15-8"><a href="#cb15-8"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>As long as each of these various error types opts into <code class="sourceCode cpp">try_traits</code> so that they can properly be constructed from an error, this will work just fine.</p>
+<h3 data-number="3.2.1" id="short-circuiting-fold"><span class="header-section-number">3.2.1</span> Short-circuiting fold<a href="#short-circuiting-fold" class="self-link"></a></h3>
+<p>One of the algorithms considered in the <code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> paper (<span class="citation" data-cites="P2322R5">[<a href="#ref-P2322R5" role="doc-biblioref">P2322R5</a>]</span>) was a short-circuiting fold. That paper ultimately didn’t propose such an algorithm, since there isn’t really a good way to generically write such a thing. Probably the best option in the paper was to have a mutating accumulation function that returns <code class="sourceCode cpp"><span class="dt">bool</span></code> on failure?</p>
+<p>But with this facility, there is a clear direction for how to write a generic, short-circuiting fold:</p>
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">concept</span> Try <span class="op">=</span> <span class="kw">requires</span> <span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    <span class="kw">typename</span> try_traits<span class="op">&lt;</span>T<span class="op">&gt;::</span>value_type;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>    <span class="kw">typename</span> try_traits<span class="op">&lt;</span>T<span class="op">&gt;::</span>error_type;</span>
+<span id="cb16-5"><a href="#cb16-5"></a></span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="op">{</span> try_traits<span class="op">&lt;</span>T<span class="op">&gt;::</span>is_ok<span class="op">(</span>t<span class="op">)</span> <span class="op">}</span> <span class="op">-&gt;</span> <em>boolean-testable</em>;</span>
+<span id="cb16-7"><a href="#cb16-7"></a>    <span class="co">// etc. ...</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a><span class="op">}</span>;</span>
+<span id="cb16-9"><a href="#cb16-9"></a></span>
+<span id="cb16-10"><a href="#cb16-10"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I,</span>
+<span id="cb16-11"><a href="#cb16-11"></a>          sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S,</span>
+<span id="cb16-12"><a href="#cb16-12"></a>          <span class="kw">class</span> T,</span>
+<span id="cb16-13"><a href="#cb16-13"></a>          invocable<span class="op">&lt;</span>T, iter_refrence_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> F,</span>
+<span id="cb16-14"><a href="#cb16-14"></a>          Try Return <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, T, iter_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
+<span id="cb16-15"><a href="#cb16-15"></a>    <span class="kw">requires</span> same_as<span class="op">&lt;</span></span>
+<span id="cb16-16"><a href="#cb16-16"></a>        <span class="kw">typename</span> try_traits<span class="op">&lt;</span>Return<span class="op">&gt;::</span>value_type,</span>
+<span id="cb16-17"><a href="#cb16-17"></a>        T<span class="op">&gt;</span></span>
+<span id="cb16-18"><a href="#cb16-18"></a><span class="kw">constexpr</span> <span class="kw">auto</span> try_fold<span class="op">(</span>I first, S last, T init, F accum<span class="op">)</span> <span class="op">-&gt;</span> Ret</span>
+<span id="cb16-19"><a href="#cb16-19"></a><span class="op">{</span></span>
+<span id="cb16-20"><a href="#cb16-20"></a>    <span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-21"><a href="#cb16-21"></a>        init <span class="op">=</span> std<span class="op">::</span>invoke<span class="op">(</span>accum,</span>
+<span id="cb16-22"><a href="#cb16-22"></a>            std<span class="op">::</span>move<span class="op">(</span>init<span class="op">)</span>,</span>
+<span id="cb16-23"><a href="#cb16-23"></a>            <span class="op">*</span>first<span class="op">)??</span>;</span>
+<span id="cb16-24"><a href="#cb16-24"></a>    <span class="op">}</span></span>
+<span id="cb16-25"><a href="#cb16-25"></a></span>
+<span id="cb16-26"><a href="#cb16-26"></a>    <span class="cf">return</span> try_traits<span class="op">&lt;</span>Ret<span class="op">&gt;::</span>from_value<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">))</span>;</span>
+<span id="cb16-27"><a href="#cb16-27"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This <code class="sourceCode cpp">try_fold</code> can be used with an accumulation function that returns <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> or <code class="sourceCode cpp">boost<span class="op">::</span>outcome<span class="op">::</span>result<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or … Any type that opts into being a <code class="sourceCode cpp">Try</code> will work.</p>
+<p>Note that this may not be exactly the way we’d specify this algorithm, since we probably want to return something like a <code class="sourceCode cpp">pair<span class="op">&lt;</span>I, Ret<span class="op">&gt;</span></code> instead, so the body wouldn’t be able to use <code class="sourceCode cpp"><span class="op">??</span></code> and would have to go through <code class="sourceCode cpp">try_traits</code> manually for the error propogation. But that’s still okay, since the important part was being able to have a generic algorithm to begin with.</p>
+<h2 data-number="3.3" id="potential-directions-to-go-from-here"><span class="header-section-number">3.3</span> Potential directions to go from here<a href="#potential-directions-to-go-from-here" class="self-link"></a></h2>
+<p>This paper is proposing just <code class="sourceCode cpp"><span class="op">??</span></code> and the machinery necessary to make that work (including a <code class="sourceCode cpp"><span class="kw">concept</span></code>, opt-ins for <code class="sourceCode cpp">optional</code> and <code class="sourceCode cpp">expected</code>, but not the short-circuiting fold algorithm).</p>
+<p>However, it’s worth it for completeness to point out a few other directions that such an operator can take us.</p>
+<h3 data-number="3.3.1" id="error-continuations"><span class="header-section-number">3.3.1</span> Error continuations<a href="#error-continuations" class="self-link"></a></h3>
+<p>Several languages have a facility that allows for continuing to invoke member functions on optional values. This facility is called something different in every language (optional chaining in Swift, null-conditional operator in C#, safe call operator in Kotlin), but somehow it’s all spelled the same and does the same thing anyway.</p>
+<p>Given a <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span></code> named <code class="sourceCode cpp">opt</code>, what that operator – spelled <code class="sourceCode cpp"><span class="op">?.</span></code> – means is approximately:</p>
 <table>
 <colgroup>
 <col style="width: 25%"></col>
@@ -795,182 +982,65 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<p>Like <code class="sourceCode cpp"><span class="op">??</span></code> described above, the semantics of <code class="sourceCode cpp">opt<span class="op">?.</span>f<span class="op">()</span></code> can be achieved using library facilities today. Quite unlike <code class="sourceCode cpp"><span class="op">??</span></code>, there is a significant drop in readability and just the general nice-ness of the syntax.</p>
-<p>With <code class="sourceCode cpp">value_or</code> and especially <code class="sourceCode cpp">value_or_else</code>, the library syntax is fine and doesn’t strike me as sufficiently bad to merit dedicated language help - but that is decidedly not the case here. Note that <code class="sourceCode cpp">transform</code> is still quite useful - if you’re trying to call a free function, <code class="sourceCode cpp">opt<span class="op">.</span>transform<span class="op">(</span>f<span class="op">)</span></code> is great. It’s only when you’re trying to call a member that it’s quite bad. Kotlin’s approach in particular allows you to use <code class="sourceCode cpp"><span class="op">?.</span></code> for both cases quite well, since it’s either <code class="sourceCode cpp">opt<span class="op">?.</span>member</code> or <code class="sourceCode cpp">opt<span class="op">?.</span>let <span class="op">{</span> free<span class="op">(</span>it<span class="op">)</span> <span class="op">}</span></code>.</p>
-<p>I’m not aware of any proposal to add this feature into C++ either, but between the two of them, this one at least seems like it could merit dedicated language help. Even though the spelling of that operator would be <code class="sourceCode cpp"><span class="op">?.</span></code> rather than <code class="sourceCode cpp"><span class="op">.?</span></code>, that seems a bit too close for comfort to have two different operators spelled nearly the same with different meanings entirely.</p>
-<h3 data-number="3.1.3" id="comparison-of-the-two"><span class="header-section-number">3.1.3</span> Comparison of the two<a href="#comparison-of-the-two" class="self-link"></a></h3>
-<p>Just putting our example back up, using these syntaxes (though still not describing semantics), they look basically the same (as you might expect from two different two-token sequences, each of which uses <code class="sourceCode cpp"><span class="op">?</span></code> as the second token):</p>
-<table>
-<tbody>
-<tr class="odd">
-<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a><span class="op">{</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a>    <span class="dt">int</span> f <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)??</span>;</span>
-<span id="cb11-4"><a href="#cb11-4"></a>    <span class="dt">int</span> b <span class="op">=</span> bar<span class="op">(</span>i<span class="op">)??</span>;</span>
-<span id="cb11-5"><a href="#cb11-5"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
-<span id="cb11-6"><a href="#cb11-6"></a></span>
-<span id="cb11-7"><a href="#cb11-7"></a>    <span class="co">// ... or simply ...</span></span>
-<span id="cb11-8"><a href="#cb11-8"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, foo<span class="op">(</span>i<span class="op">)??</span>, bar<span class="op">(</span>i<span class="op">)??)</span>;</span>
-<span id="cb11-9"><a href="#cb11-9"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a><span class="op">{</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>    <span class="dt">int</span> f <span class="op">=</span> foo<span class="op">(</span>i<span class="op">).?</span>;</span>
-<span id="cb12-4"><a href="#cb12-4"></a>    <span class="dt">int</span> b <span class="op">=</span> bar<span class="op">(</span>i<span class="op">).?</span>;</span>
-<span id="cb12-5"><a href="#cb12-5"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
-<span id="cb12-6"><a href="#cb12-6"></a></span>
-<span id="cb12-7"><a href="#cb12-7"></a>    <span class="co">// ... or simply ...</span></span>
-<span id="cb12-8"><a href="#cb12-8"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, foo<span class="op">(</span>i<span class="op">).?</span>, bar<span class="op">(</span>i<span class="op">).?)</span>;</span>
-<span id="cb12-9"><a href="#cb12-9"></a><span class="op">}</span></span></code></pre></div></td>
-</tr>
-</tbody>
-</table>
-<p>It’s easy to say that both look pretty great compared to today’s alternatives: they are far terser, don’t require either macros or coroutines to achieve nice syntax, and don’t lose anything on performance by providing nice syntax.</p>
-<p>If the parsing heroics are acceptable, then <code class="sourceCode cpp"><span class="op">?</span></code> is a better spelling than either <code class="sourceCode cpp"><span class="op">??</span></code> or <code class="sourceCode cpp"><span class="op">.?</span></code>. If the parsing heroics are <em>not</em> acceptable, then it seems like <code class="sourceCode cpp"><span class="op">??</span></code> is the better choice of the two.</p>
-<p>Of course, now we have to talk about semantics.</p>
-<h2 data-number="3.2" id="semantics"><span class="header-section-number">3.2</span> Semantics<a href="#semantics" class="self-link"></a></h2>
-<p>This paper suggests that <code class="sourceCode cpp"><span class="op">??</span></code> evaluate as follows:</p>
-<table>
-<tbody>
-<tr class="odd">
-<td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a><span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a></span>
-<span id="cb13-4"><a href="#cb13-4"></a></span>
-<span id="cb13-5"><a href="#cb13-5"></a>    <span class="dt">int</span> f <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)??</span>;</span>
-<span id="cb13-6"><a href="#cb13-6"></a></span>
-<span id="cb13-7"><a href="#cb13-7"></a></span>
-<span id="cb13-8"><a href="#cb13-8"></a></span>
-<span id="cb13-9"><a href="#cb13-9"></a></span>
-<span id="cb13-10"><a href="#cb13-10"></a></span>
-<span id="cb13-11"><a href="#cb13-11"></a></span>
-<span id="cb13-12"><a href="#cb13-12"></a></span>
-<span id="cb13-13"><a href="#cb13-13"></a></span>
-<span id="cb13-14"><a href="#cb13-14"></a></span>
-<span id="cb13-15"><a href="#cb13-15"></a>    <span class="dt">int</span> b <span class="op">=</span> bar<span class="op">(</span>i<span class="op">)??</span>;</span>
-<span id="cb13-16"><a href="#cb13-16"></a></span>
-<span id="cb13-17"><a href="#cb13-17"></a></span>
-<span id="cb13-18"><a href="#cb13-18"></a></span>
-<span id="cb13-19"><a href="#cb13-19"></a></span>
-<span id="cb13-20"><a href="#cb13-20"></a></span>
-<span id="cb13-21"><a href="#cb13-21"></a></span>
-<span id="cb13-22"><a href="#cb13-22"></a></span>
-<span id="cb13-23"><a href="#cb13-23"></a></span>
-<span id="cb13-24"><a href="#cb13-24"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
-<span id="cb13-25"><a href="#cb13-25"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="op">{</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>    <span class="kw">using</span> <em>_Return</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>        std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;&gt;</span>;</span>
-<span id="cb14-5"><a href="#cb14-5"></a></span>
-<span id="cb14-6"><a href="#cb14-6"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__f</em> <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
-<span id="cb14-7"><a href="#cb14-7"></a>    <span class="kw">using</span> <em>_TraitsF</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
-<span id="cb14-8"><a href="#cb14-8"></a>        std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__f</em><span class="op">)&gt;&gt;</span>;</span>
-<span id="cb14-9"><a href="#cb14-9"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_TraitsF</em><span class="op">::</span>is_ok<span class="op">(</span><em>__f</em><span class="op">))</span> <span class="op">{</span></span>
-<span id="cb14-10"><a href="#cb14-10"></a>        <span class="cf">return</span> <em>_Return</em><span class="op">::</span>from_error<span class="op">(</span></span>
-<span id="cb14-11"><a href="#cb14-11"></a>            <em>_TraitsF</em><span class="op">::</span>extract_error<span class="op">(</span>FWD<span class="op">(</span><em>__f</em><span class="op">)))</span>;</span>
-<span id="cb14-12"><a href="#cb14-12"></a>    <span class="op">}</span></span>
-<span id="cb14-13"><a href="#cb14-13"></a>    <span class="dt">int</span> f <span class="op">=</span> <em>_TraitsF</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__f</em><span class="op">))</span>;</span>
-<span id="cb14-14"><a href="#cb14-14"></a></span>
-<span id="cb14-15"><a href="#cb14-15"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__b</em> <span class="op">=</span> bar<span class="op">(</span>i<span class="op">)</span>;</span>
-<span id="cb14-16"><a href="#cb14-16"></a>    <span class="kw">using</span> <em>_TraitsB</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
-<span id="cb14-17"><a href="#cb14-17"></a>        std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__b</em><span class="op">)&gt;&gt;</span>;</span>
-<span id="cb14-18"><a href="#cb14-18"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_TraitsB</em><span class="op">::</span>is_ok<span class="op">(</span>__b<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb14-19"><a href="#cb14-19"></a>        <span class="cf">return</span> <em>_Return</em><span class="op">::</span>from_error<span class="op">(</span></span>
-<span id="cb14-20"><a href="#cb14-20"></a>            <em>_TraitsB</em><span class="op">::</span>extract_error<span class="op">(</span>FWD<span class="op">(</span><em>__b</em><span class="op">)))</span>;</span>
-<span id="cb14-21"><a href="#cb14-21"></a>    <span class="op">}</span></span>
-<span id="cb14-22"><a href="#cb14-22"></a>    <span class="dt">int</span> b <span class="op">=</span> <em>_TraitsB</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__b</em><span class="op">))</span>;</span>
-<span id="cb14-23"><a href="#cb14-23"></a></span>
-<span id="cb14-24"><a href="#cb14-24"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, f, b<span class="op">)</span>;</span>
-<span id="cb14-25"><a href="#cb14-25"></a><span class="op">}</span></span></code></pre></div></td>
-</tr>
-</tbody>
-</table>
-<p>The functionality here is driven by a new traits type called <code class="sourceCode cpp">std<span class="op">::</span>try_traits</code>, such that a given specialization supports:</p>
+<p>That is, the expression <code class="sourceCode cpp">E1<span class="op">?.</span>E2</code>, if <code class="sourceCode cpp">E1</code> is an <code class="sourceCode cpp">optional</code>, basically means <code class="sourceCode cpp">E1<span class="op">.</span>value_or_else<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>E2; <span class="op">})</span></code> (if we had the <code class="sourceCode cpp">value_or_else</code> facility as proposed in <span class="citation" data-cites="P2218R0">[<a href="#ref-P2218R0" role="doc-biblioref">P2218R0</a>]</span>).</p>
+<p>Like the null coalescing meaning of <code class="sourceCode cpp"><span class="op">??</span></code> described above, the semantics of <code class="sourceCode cpp">opt<span class="op">?.</span>f<span class="op">()</span></code> can be achieved using library facilities today. Quite unlike <code class="sourceCode cpp"><span class="op">??</span></code>, there is a significant drop in readability and just the general nice-ness of the syntax.</p>
+<p>The <code class="sourceCode cpp">try_traits</code> facility very nearly gives us the tools necessary to support such a continuation operator. Since what we need to do is:</p>
 <ul>
-<li>telling us when the object is truthy: <code class="sourceCode cpp">is_ok</code></li>
-<li>extracting a value (<code class="sourceCode cpp">extract_value</code>) or error (<code class="sourceCode cpp">extract_error</code>) from it</li>
-<li>constructing a new object from either a value (<code class="sourceCode cpp">from_value</code>, not necessary above) or an error (<code class="sourceCode cpp">from_error</code>)</li>
+<li>check is <code class="sourceCode cpp">E1</code> is truthy or falsey (<code class="sourceCode cpp">Traits<span class="op">::</span>is_ok<span class="op">(</span>E1<span class="op">)</span></code>)</li>
+<li>extract the value of <code class="sourceCode cpp">E1</code> in order to perform the subsequent operation (<code class="sourceCode cpp">Traits<span class="op">::</span>extract_value<span class="op">(</span>E1<span class="op">).</span>E2</code>)</li>
+<li>extract the error of <code class="sourceCode cpp">E1</code> in order to return early (<code class="sourceCode cpp">Traits<span class="op">::</span>extract_error<span class="op">(</span>E2<span class="op">)</span></code>)</li>
 </ul>
-<p>Note that this does not support deducing return type, since we need the return type in order to know how construct it - the above desugaring uses the return type of <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></code> to know how to re-wrap the potential error that <code class="sourceCode cpp">foo<span class="op">(</span>i<span class="op">)</span></code> or <code class="sourceCode cpp">bar<span class="op">(</span>i<span class="op">)</span></code> could return. This is important because it avoids the overhead that nicer syntax like <code class="sourceCode cpp">std<span class="op">::</span>unexpected</code> or <code class="sourceCode cpp">outcome<span class="op">::</span>failure</code> introduces (neither of which allow for deducing return type anyway, at least unless the function unconditionally fails), while still allowing nicer syntax.</p>
-<p>These functions are all very easy to implement for the kinds of types that would want to support a facility like <code class="sourceCode cpp"><span class="op">??</span></code>. Here are examples for <code class="sourceCode cpp">optional</code> and <code class="sourceCode cpp">expected</code> (with <code class="sourceCode cpp"><span class="kw">constexpr</span></code> omitted to fit):</p>
-<table>
-<tbody>
-<tr class="odd">
-<td><div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>optional<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
-<span id="cb15-3"><a href="#cb15-3"></a>  <span class="kw">using</span> value_type <span class="op">=</span> T;</span>
-<span id="cb15-4"><a href="#cb15-4"></a>  <span class="kw">using</span> error_type <span class="op">=</span> nullopt_t;</span>
-<span id="cb15-5"><a href="#cb15-5"></a></span>
-<span id="cb15-6"><a href="#cb15-6"></a>  <span class="kw">auto</span> is_ok<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb15-7"><a href="#cb15-7"></a>    <span class="cf">return</span> o<span class="op">.</span>has_value<span class="op">()</span>;</span>
-<span id="cb15-8"><a href="#cb15-8"></a>  <span class="op">}</span></span>
-<span id="cb15-9"><a href="#cb15-9"></a></span>
-<span id="cb15-10"><a href="#cb15-10"></a>  <span class="co">// extractors</span></span>
-<span id="cb15-11"><a href="#cb15-11"></a>  <span class="kw">auto</span> extract_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> value_type <span class="op">{</span></span>
-<span id="cb15-12"><a href="#cb15-12"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>o<span class="op">)</span>;</span>
-<span id="cb15-13"><a href="#cb15-13"></a>  <span class="op">}</span></span>
-<span id="cb15-14"><a href="#cb15-14"></a>  <span class="kw">auto</span> extract_error<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> error_type <span class="op">{</span></span>
-<span id="cb15-15"><a href="#cb15-15"></a>    <span class="cf">return</span> nullopt;</span>
-<span id="cb15-16"><a href="#cb15-16"></a>  <span class="op">}</span></span>
-<span id="cb15-17"><a href="#cb15-17"></a></span>
-<span id="cb15-18"><a href="#cb15-18"></a>  <span class="co">// factories</span></span>
-<span id="cb15-19"><a href="#cb15-19"></a>  <span class="kw">auto</span> from_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb15-20"><a href="#cb15-20"></a>    <span class="cf">return</span> optional<span class="op">&lt;</span>T<span class="op">&gt;(</span>in_place, FWD<span class="op">(</span>v<span class="op">))</span>;</span>
-<span id="cb15-21"><a href="#cb15-21"></a>  <span class="op">}</span></span>
-<span id="cb15-22"><a href="#cb15-22"></a>  <span class="kw">auto</span> from_error<span class="op">(</span>nullopt_t<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb15-23"><a href="#cb15-23"></a>    <span class="cf">return</span> <span class="op">{}</span>;</span>
-<span id="cb15-24"><a href="#cb15-24"></a>  <span class="op">}</span></span>
-<span id="cb15-25"><a href="#cb15-25"></a><span class="op">}</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> E<span class="op">&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>  <span class="kw">using</span> value_type <span class="op">=</span> T;</span>
-<span id="cb16-4"><a href="#cb16-4"></a>  <span class="kw">using</span> error_type <span class="op">=</span> E;</span>
-<span id="cb16-5"><a href="#cb16-5"></a></span>
-<span id="cb16-6"><a href="#cb16-6"></a>  <span class="kw">auto</span> is_ok<span class="op">(</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb16-7"><a href="#cb16-7"></a>    <span class="cf">return</span> e<span class="op">.</span>has_value<span class="op">()</span>;</span>
-<span id="cb16-8"><a href="#cb16-8"></a>  <span class="op">}</span></span>
-<span id="cb16-9"><a href="#cb16-9"></a></span>
-<span id="cb16-10"><a href="#cb16-10"></a>  <span class="co">// extractors</span></span>
-<span id="cb16-11"><a href="#cb16-11"></a>  <span class="kw">auto</span> extract_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> value_type <span class="op">{</span></span>
-<span id="cb16-12"><a href="#cb16-12"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>e<span class="op">)</span>;</span>
-<span id="cb16-13"><a href="#cb16-13"></a>  <span class="op">}</span></span>
-<span id="cb16-14"><a href="#cb16-14"></a>  <span class="kw">auto</span> extract_error<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> error_type <span class="op">{</span></span>
-<span id="cb16-15"><a href="#cb16-15"></a>    <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>error<span class="op">()</span>;</span>
-<span id="cb16-16"><a href="#cb16-16"></a>  <span class="op">}</span></span>
-<span id="cb16-17"><a href="#cb16-17"></a></span>
-<span id="cb16-18"><a href="#cb16-18"></a>  <span class="co">// factories</span></span>
-<span id="cb16-19"><a href="#cb16-19"></a>  <span class="kw">auto</span> from_value<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb16-20"><a href="#cb16-20"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;(</span>in_place, FWD<span class="op">(</span>v<span class="op">))</span>;</span>
-<span id="cb16-21"><a href="#cb16-21"></a>  <span class="op">}</span></span>
-<span id="cb16-22"><a href="#cb16-22"></a>  <span class="kw">auto</span> from_error<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb16-23"><a href="#cb16-23"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T, E<span class="op">&gt;(</span>unexpect, FWD<span class="op">(</span>e<span class="op">))</span>;</span>
-<span id="cb16-24"><a href="#cb16-24"></a>  <span class="op">}</span></span>
-<span id="cb16-25"><a href="#cb16-25"></a><span class="op">}</span>;</span></code></pre></div></td>
-</tr>
-</tbody>
-</table>
-<p>This also helps demonstrate the requirements for what <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>O<span class="op">&gt;</span></code> have to return:</p>
-<ul>
-<li><code class="sourceCode cpp">is_ok</code> is invoked on an lvalue of type <code class="sourceCode cpp">O</code> and returns <code class="sourceCode cpp"><span class="dt">bool</span></code></li>
-<li><code class="sourceCode cpp">extract_value</code> takes some kind of <code class="sourceCode cpp">O</code> and returns <code class="sourceCode cpp">value_type</code></li>
-<li><code class="sourceCode cpp">extract_error</code> takes some kind of <code class="sourceCode cpp">O</code> and returns <code class="sourceCode cpp">error_type</code></li>
-<li><code class="sourceCode cpp">from_value</code> and <code class="sourceCode cpp">from_error</code> return <code class="sourceCode cpp">O</code>.</li>
-</ul>
-<p>Since the extractors are only invoked on an <code class="sourceCode cpp">O</code> directly, you can safely assume that the object passed in is basically a forwarding reference to <code class="sourceCode cpp">O</code>, so <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">&amp;&amp;</span></code> is fine (at least pending something like <span class="citation" data-cites="P2481R0">[<a href="#ref-P2481R0" role="doc-biblioref">P2481R0</a>]</span>). The extractors have the implicit precondition that the object is in the state specified (e.g. <code class="sourceCode cpp">extract_value<span class="op">(</span>o<span class="op">)</span></code> should only be called if <code class="sourceCode cpp">is_ok<span class="op">(</span>o<span class="op">)</span></code>, with the converse for <code class="sourceCode cpp">extract_error<span class="op">(</span>o<span class="op">)</span></code>) The factories can accept anything though, and should probably be constrained.</p>
-<p>The choice of desugaring based specifically on the return type (rather than relying on each object to produce some kind of construction disambiguator like <code class="sourceCode cpp">nullopt_t</code> or <code class="sourceCode cpp">unexpected<span class="op">&lt;</span>E<span class="op">&gt;</span></code>) is not only that we can be more performant, but also we can allow conversions between different kinds of error types, which is useful when joining various libraries together:</p>
+<p>We mostly need one more customization point: to put the types back together. What I mean is, consider:</p>
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> tl<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span>;</span>
-<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span>;</span>
-<span id="cb17-3"><a href="#cb17-3"></a></span>
-<span id="cb17-4"><a href="#cb17-4"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> Result<span class="op">&lt;</span>string, E<span class="op">&gt;</span></span>
-<span id="cb17-5"><a href="#cb17-5"></a><span class="op">{</span></span>
-<span id="cb17-6"><a href="#cb17-6"></a>    <span class="co">// this works</span></span>
-<span id="cb17-7"><a href="#cb17-7"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}{}&quot;</span>, foo<span class="op">(</span>i<span class="op">)??</span>, bar<span class="op">(</span>i<span class="op">)??)</span>;</span>
-<span id="cb17-8"><a href="#cb17-8"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span>;</span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="kw">auto</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">42</span><span class="op">)?.</span>size<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
-<p>As long as each of these various error types opts into <code class="sourceCode cpp">try_traits</code> so that they can properly be constructed from an error, this will work just fine.</p>
-<h3 data-number="3.2.1" id="handling-errors-without-propagating"><span class="header-section-number">3.2.1</span> Handling errors without propagating<a href="#handling-errors-without-propagating" class="self-link"></a></h3>
-<p>This approach seems to work quite well at propagating errors: it’s syntactically cheap, performant, and allows for integrating multiple libraries.</p>
+<p>The type of <code class="sourceCode cpp">x</code> needs to be <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">size_t</span>, E<span class="op">&gt;</span></code>, since that’s what the value case ends up being here. If we call that customization point <code class="sourceCode cpp">mapped_type</code>, as in:</p>
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> E<span class="op">&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>    <span class="co">// ... rest as before ...</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a>    <span class="kw">using</span> mapped_type <span class="op">=</span> expected<span class="op">&lt;</span>U, E<span class="op">&gt;</span>;</span>
+<span id="cb18-7"><a href="#cb18-7"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Then the above can be desugared into:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">using</span> <em>_Traits</em> <span class="op">=</span> try_traits<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span><span class="dv">42</span><span class="op">))&gt;&gt;</span>;</span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">using</span> <em>_R</em> <span class="op">=</span> <em>_Traits</em><span class="op">::</span>mapped_type<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>f<span class="op">(</span><span class="dv">42</span><span class="op">)).</span>size<span class="op">())&gt;</span>;</span>
+<span id="cb19-3"><a href="#cb19-3"></a></span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>e</em> <span class="op">=</span> f<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;</span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="kw">auto</span> x <span class="op">=</span> <em>_Traits</em><span class="op">::</span>is_ok<span class="op">(</span><em>e</em><span class="op">)</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a>       <span class="op">?</span> try_traits<span class="op">&lt;</span><em>_R</em><span class="op">&gt;::</span>from_value<span class="op">(</span><em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>e</em><span class="op">)).</span>size<span class="op">())</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>       <span class="op">:</span> try_traits<span class="op">&lt;</span><em>_R</em><span class="op">&gt;::</span>from_error<span class="op">(</span>FWD<span class="op">(</span><em>e</em><span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>That may seem like a mouthful, but all the user had to write was <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">42</span><span class="op">)?.</span>size<span class="op">()</span></code> and this does do the right thing.</p>
+<p>At least, this mostly does the right thing. We still have to talk about copy elision. Consider this version:</p>
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>    <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>mutex;</span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="op">}</span>;</span>
+<span id="cb20-4"><a href="#cb20-4"></a></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> Result<span class="op">&lt;</span>X, E<span class="op">&gt;</span>;</span>
+<span id="cb20-6"><a href="#cb20-6"></a><span class="kw">auto</span> n <span class="op">=</span> g<span class="op">()?.</span>f<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>Presumably, <code class="sourceCode cpp">n</code> is a <code class="sourceCode cpp">Result<span class="op">&lt;</span>std<span class="op">::</span>mutex, E<span class="op">&gt;</span></code>, but in order for this to work, we can’t just evaluate this as something like <code class="sourceCode cpp">Result<span class="op">&lt;</span>std<span class="op">::</span>mutex, E<span class="op">&gt;(</span>g<span class="op">().</span>value<span class="op">().</span>f<span class="op">())</span></code>. <code class="sourceCode cpp">std<span class="op">::</span>mutex</code> isn’t movable.</p>
+<p>The only way for this to work today is be able to pass a callable all the way through into this <code class="sourceCode cpp">Result</code>’s constructor. Which is to say, we desugar like so:</p>
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>e</em> <span class="op">=</span> g<span class="op">()</span>;</span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">auto</span> n <span class="op">=</span> <em>_Traits</em><span class="op">::</span>is_ok<span class="op">(</span><em>e</em><span class="op">)</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>       <span class="op">?</span> try_traits<span class="op">&lt;</span><em>_R</em><span class="op">&gt;::</span>from_value_func<span class="op">([&amp;]()</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>            <span class="cf">return</span> <em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>e</em><span class="op">)).</span>f<span class="op">()</span></span>
+<span id="cb21-5"><a href="#cb21-5"></a>         <span class="op">})</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a>       <span class="op">:</span> try_traits<span class="op">&lt;</span><em>_R</em><span class="op">&gt;::</span>from_error<span class="op">(</span>FWD<span class="op">(</span><em>e</em><span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>By default, <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>R<span class="op">&gt;::</span>from_value_func<span class="op">(</span>f<span class="op">)</span></code> would just be <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>R<span class="op">&gt;::</span>from_value<span class="op">(</span>f<span class="op">())</span></code>.</p>
+<p>This is weird, but it’s something to thing about it.</p>
+<p>Note also error continuation would only help in the member function case. If we want to continue into a non-member function, you’d need the sort of <code class="sourceCode cpp"><span class="op">.</span>transform<span class="op">()</span></code> member function anyway.</p>
+<h3 data-number="3.3.2" id="not-propagating-errors"><span class="header-section-number">3.3.2</span> Not propagating errors<a href="#not-propagating-errors" class="self-link"></a></h3>
+<p>The <code class="sourceCode cpp"><span class="op">??</span></code> approach seems to work quite well at propagating errors: it’s syntactically cheap, performant, and allows for integrating multiple libraries.</p>
 <p>But what if we didn’t want to propagate the error, but rather do something else with it? For <code class="sourceCode cpp">std<span class="op">::</span>optional</code> and <code class="sourceCode cpp">std<span class="op">::</span>expected</code>, we already have a UB-if-error accessor in the form of <code class="sourceCode cpp"><span class="op">*</span>x</code> and a throw-if-error accessor in the form of <code class="sourceCode cpp">x<span class="op">.</span>value<span class="op">()</span></code>. It seems like the corollary to an error-propagating <code class="sourceCode cpp">x<span class="op">??</span></code> would be some sort of <code class="sourceCode cpp">x<span class="op">!!</span></code> that somehow forces the error differently.</p>
 <p>While propagating the error only really has one way to go (you return it), there are quite a few different things you can do differently:</p>
 <ul>
@@ -982,23 +1052,41 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>That’s a lot of different options, and the right one likely depends on context too.</p>
 <p>An additional template parameter on the error type could drive what <code class="sourceCode cpp">x<span class="op">!!</span></code> does (as Boost.Outcome does, for instance), which would allow you to preserve the nice syntax if a particular error handling strategy is sufficiently common (maybe you always <code class="sourceCode cpp"><span class="cf">throw</span></code>, so why would you want to write extra syntax for this case), but at a cost of suddenly having way more types. Although the <code class="sourceCode cpp">try_traits</code> approach does at least allow those “way more types” to interact well.</p>
-<p>This behavior can be achieved by having this desugaring:</p>
+<p>This behavior can be achieved by adding a new function to <code class="sourceCode cpp">try_traits</code> which desugars as follows:</p>
 <table>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">auto</span> val <span class="op">=</span> expr<span class="op">!!</span>;</span></code></pre></div></td>
-<td><div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__val</em> <span class="op">=</span> expr;</span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">using</span> <em>_Traits</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
-<span id="cb19-3"><a href="#cb19-3"></a>  std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__val</em><span class="op">)&gt;&gt;</span>;</span>
-<span id="cb19-4"><a href="#cb19-4"></a><span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_Traits</em><span class="op">::</span>is_ok<span class="op">(</span><em>__val</em><span class="op">))</span> <span class="op">{</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a>  <em>_Traits</em><span class="op">::</span>fail<span class="op">(</span>FWD<span class="op">(</span><em>__val</em><span class="op">))</span>;</span>
-<span id="cb19-6"><a href="#cb19-6"></a><span class="op">}</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a><span class="kw">auto</span> val <span class="op">=</span> <em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__val</em><span class="op">))</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">auto</span> val <span class="op">=</span> expr<span class="op">!!</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__val</em> <span class="op">=</span> expr;</span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">using</span> <em>_Traits</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>  std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>__val</em><span class="op">)&gt;&gt;</span>;</span>
+<span id="cb23-4"><a href="#cb23-4"></a><span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <em>_Traits</em><span class="op">::</span>is_ok<span class="op">(</span><em>__val</em><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb23-5"><a href="#cb23-5"></a>  <em>_Traits</em><span class="op">::</span>fail<span class="op">(</span>FWD<span class="op">(</span><em>__val</em><span class="op">))</span>;</span>
+<span id="cb23-6"><a href="#cb23-6"></a><span class="op">}</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a><span class="kw">auto</span> val <span class="op">=</span> <em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span><em>__val</em><span class="op">))</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
-<p>Alternatively, perhaps <code class="sourceCode cpp"><span class="op">!!</span></code> is a binary operator somehow that takes its policy as an argument, like <code class="sourceCode cpp">x<span class="op">!!(</span>abort<span class="op">)</span></code>. This reduces the number of types necessary, at the cost of simply looking bizarre.</p>
-<p>For now, this paper is only proposing <code class="sourceCode cpp"><span class="op">??</span></code> as only child lacking a <code class="sourceCode cpp"><span class="op">!!</span></code> sibling.</p>
+<p>But this doesn’t seem as valuable as <code class="sourceCode cpp"><span class="op">??</span></code> or even <code class="sourceCode cpp"><span class="op">?.</span></code> since this case is easy to add as a member function. Indeed, that’s what <code class="sourceCode cpp">x<span class="op">.</span>value<span class="op">()</span></code> and <code class="sourceCode cpp"><span class="op">*</span>x</code> do for <code class="sourceCode cpp">optional</code> and <code class="sourceCode cpp">expected</code>.</p>
+<p>Moreover, any of the kinds of behavior you want can be written as a free function:</p>
+<blockquote>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, Try U <span class="op">=</span> std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="kw">auto</span> narrow_value<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a>    <span class="ot">assert</span><span class="op">(</span>std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>is_ok<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb24-4"><a href="#cb24-4"></a>    <span class="cf">return</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="op">}</span></span>
+<span id="cb24-6"><a href="#cb24-6"></a></span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, Try U <span class="op">=</span> std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="kw">auto</span> wide_value<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>is_ok<span class="op">(</span>t<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a>        <span class="op">[[</span><span class="at">unlikely</span><span class="op">]]</span> <span class="cf">throw</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>extact_error<span class="op">(</span>FWD<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb24-11"><a href="#cb24-11"></a>    <span class="op">}</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a>    <span class="cf">return</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>extract_value<span class="op">(</span>FWD<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb24-13"><a href="#cb24-13"></a><span class="op">}</span></span>
+<span id="cb24-14"><a href="#cb24-14"></a></span>
+<span id="cb24-15"><a href="#cb24-15"></a><span class="co">// etc.</span></span></code></pre></div>
+</blockquote>
+<p>Which further demonstrates the utility of the proposed facility.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0323R12">
@@ -1008,6 +1096,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P2218R0">
 <p>[P2218R0] Marc Mutz. 2020-09-15. More flexible optional::value_or(). <br />
 <a href="https://wg21.link/p2218r0">https://wg21.link/p2218r0</a></p>
+</div>
+<div id="ref-P2322R5">
+<p>[P2322R5] Barry Revzin. 2021-10-18. ranges::fold. <br />
+<a href="https://wg21.link/p2322r5">https://wg21.link/p2322r5</a></p>
 </div>
 <div id="ref-P2481R0">
 <p>[P2481R0] Barry Revzin. 2021-10-15. Forwarding reference to specific type/template. <br />
