@@ -468,9 +468,9 @@ Given a `std::optional<std::string>` named `opt`, what that operator -- spelled 
 |`opt?.size()`|`opt.transform(&std::string::size) // technically UB`|
 |`opt?.substr(from, to)`|`opt.transform([&](auto& s){ return s.substr(from, to); })`|
 
-That is, the expression `E1?.E2`, if `E1` is an `optional`, basically means `E1.value_or_else([&](auto&& e){ return FWD(e).E2; })` (if we had the `value_or_else` facility as proposed in [@P2218R0]).
+Like the null coalescing meaning of `??` described above, the semantics of `opt?.f()` can be achieved using library facilities today. The expression `E1?.E2`, if `E1` is an `optional`, basically means `E1.transform([&](auto&& e){ return FWD(e).E2; })`
 
-Like the null coalescing meaning of `??` described above, the semantics of `opt?.f()` can be achieved using library facilities today. Quite unlike `??`, there is a significant drop in readability and just the general nice-ness of the syntax.
+Quite unlike `??`, there is a significant drop in readability and just the general nice-ness of the syntax.
 
 The `try_traits` facility very nearly gives us the tools necessary to support such a continuation operator. Since what we need to do is:
 
@@ -488,7 +488,7 @@ auto x = f(42)?.size();
 ```
 :::
 
-The type of `x` needs to be `std::expected<size_t, E>`, since that's what the value case ends up being here. If we call that customization point `mapped_type`, as in:
+The type of `x` needs to be `std::expected<size_t, E>`, since that's what the value case ends up being here. If we call that customization point `rebind`, as in:
 
 ::: bq
 ```cpp
@@ -497,7 +497,7 @@ struct try_traits<expected<T, E>> {
     // ... rest as before ...
 
     template <class U>
-    using mapped_type = expected<U, E>;
+    using rebind = expected<remove_cvref_t<U>, E>;
 };
 ```
 :::
@@ -507,7 +507,7 @@ Then the above can be desugared into:
 ::: bq
 ```cpp
 using $_Traits$ = try_traits<remove_cvref_t<decltype(f(42))>>;
-using $_R$ = $_Traits$::mapped_type<decltype($_Traits$::extract_value(f(42)).size())>;
+using $_R$ = $_Traits$::rebind<decltype($_Traits$::extract_value(f(42)).size())>;
 
 auto&& $e$ = f(42);
 auto x = $_Traits$::is_ok($e$)
@@ -548,7 +548,7 @@ auto n = $_Traits$::is_ok($e$)
 
 By default, `try_traits<R>::from_value_func(f)` would just be `try_traits<R>::from_value(f())`.
 
-This is weird, but it's something to thing about it.
+This is weird, but it's something to think about.
 
 Note also error continuation would only help in the member function case. If we want to continue into a non-member function, you'd need the sort of `.transform()` member function anyway.
 

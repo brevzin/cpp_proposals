@@ -982,8 +982,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<p>That is, the expression <code class="sourceCode cpp">E1<span class="op">?.</span>E2</code>, if <code class="sourceCode cpp">E1</code> is an <code class="sourceCode cpp">optional</code>, basically means <code class="sourceCode cpp">E1<span class="op">.</span>value_or_else<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>E2; <span class="op">})</span></code> (if we had the <code class="sourceCode cpp">value_or_else</code> facility as proposed in <span class="citation" data-cites="P2218R0">[<a href="#ref-P2218R0" role="doc-biblioref">P2218R0</a>]</span>).</p>
-<p>Like the null coalescing meaning of <code class="sourceCode cpp"><span class="op">??</span></code> described above, the semantics of <code class="sourceCode cpp">opt<span class="op">?.</span>f<span class="op">()</span></code> can be achieved using library facilities today. Quite unlike <code class="sourceCode cpp"><span class="op">??</span></code>, there is a significant drop in readability and just the general nice-ness of the syntax.</p>
+<p>Like the null coalescing meaning of <code class="sourceCode cpp"><span class="op">??</span></code> described above, the semantics of <code class="sourceCode cpp">opt<span class="op">?.</span>f<span class="op">()</span></code> can be achieved using library facilities today. The expression <code class="sourceCode cpp">E1<span class="op">?.</span>E2</code>, if <code class="sourceCode cpp">E1</code> is an <code class="sourceCode cpp">optional</code>, basically means <code class="sourceCode cpp">E1<span class="op">.</span>transform<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>E2; <span class="op">})</span></code></p>
+<p>Quite unlike <code class="sourceCode cpp"><span class="op">??</span></code>, there is a significant drop in readability and just the general nice-ness of the syntax.</p>
 <p>The <code class="sourceCode cpp">try_traits</code> facility very nearly gives us the tools necessary to support such a continuation operator. Since what we need to do is:</p>
 <ul>
 <li>check is <code class="sourceCode cpp">E1</code> is truthy or falsey (<code class="sourceCode cpp">Traits<span class="op">::</span>is_ok<span class="op">(</span>E1<span class="op">)</span></code>)</li>
@@ -996,20 +996,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb17-2"><a href="#cb17-2"></a></span>
 <span id="cb17-3"><a href="#cb17-3"></a><span class="kw">auto</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">42</span><span class="op">)?.</span>size<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
-<p>The type of <code class="sourceCode cpp">x</code> needs to be <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">size_t</span>, E<span class="op">&gt;</span></code>, since that’s what the value case ends up being here. If we call that customization point <code class="sourceCode cpp">mapped_type</code>, as in:</p>
+<p>The type of <code class="sourceCode cpp">x</code> needs to be <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">size_t</span>, E<span class="op">&gt;</span></code>, since that’s what the value case ends up being here. If we call that customization point <code class="sourceCode cpp">rebind</code>, as in:</p>
 <blockquote>
 <div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> E<span class="op">&gt;</span></span>
 <span id="cb18-2"><a href="#cb18-2"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
 <span id="cb18-3"><a href="#cb18-3"></a>    <span class="co">// ... rest as before ...</span></span>
 <span id="cb18-4"><a href="#cb18-4"></a></span>
 <span id="cb18-5"><a href="#cb18-5"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> U<span class="op">&gt;</span></span>
-<span id="cb18-6"><a href="#cb18-6"></a>    <span class="kw">using</span> mapped_type <span class="op">=</span> expected<span class="op">&lt;</span>U, E<span class="op">&gt;</span>;</span>
+<span id="cb18-6"><a href="#cb18-6"></a>    <span class="kw">using</span> rebind <span class="op">=</span> expected<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>U<span class="op">&gt;</span>, E<span class="op">&gt;</span>;</span>
 <span id="cb18-7"><a href="#cb18-7"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>Then the above can be desugared into:</p>
 <blockquote>
 <div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">using</span> <em>_Traits</em> <span class="op">=</span> try_traits<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>f<span class="op">(</span><span class="dv">42</span><span class="op">))&gt;&gt;</span>;</span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">using</span> <em>_R</em> <span class="op">=</span> <em>_Traits</em><span class="op">::</span>mapped_type<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>f<span class="op">(</span><span class="dv">42</span><span class="op">)).</span>size<span class="op">())&gt;</span>;</span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">using</span> <em>_R</em> <span class="op">=</span> <em>_Traits</em><span class="op">::</span>rebind<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><em>_Traits</em><span class="op">::</span>extract_value<span class="op">(</span>f<span class="op">(</span><span class="dv">42</span><span class="op">)).</span>size<span class="op">())&gt;</span>;</span>
 <span id="cb19-3"><a href="#cb19-3"></a></span>
 <span id="cb19-4"><a href="#cb19-4"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>e</em> <span class="op">=</span> f<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;</span>
 <span id="cb19-5"><a href="#cb19-5"></a><span class="kw">auto</span> x <span class="op">=</span> <em>_Traits</em><span class="op">::</span>is_ok<span class="op">(</span><em>e</em><span class="op">)</span></span>
@@ -1037,7 +1037,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb21-6"><a href="#cb21-6"></a>       <span class="op">:</span> try_traits<span class="op">&lt;</span><em>_R</em><span class="op">&gt;::</span>from_error<span class="op">(</span>FWD<span class="op">(</span><em>e</em><span class="op">))</span>;</span></code></pre></div>
 </blockquote>
 <p>By default, <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>R<span class="op">&gt;::</span>from_value_func<span class="op">(</span>f<span class="op">)</span></code> would just be <code class="sourceCode cpp">try_traits<span class="op">&lt;</span>R<span class="op">&gt;::</span>from_value<span class="op">(</span>f<span class="op">())</span></code>.</p>
-<p>This is weird, but it’s something to thing about it.</p>
+<p>This is weird, but it’s something to think about.</p>
 <p>Note also error continuation would only help in the member function case. If we want to continue into a non-member function, you’d need the sort of <code class="sourceCode cpp"><span class="op">.</span>transform<span class="op">()</span></code> member function anyway.</p>
 <h3 data-number="3.3.2" id="not-propagating-errors"><span class="header-section-number">3.3.2</span> Not propagating errors<a href="#not-propagating-errors" class="self-link"></a></h3>
 <p>The <code class="sourceCode cpp"><span class="op">??</span></code> approach seems to work quite well at propagating errors: it’s syntactically cheap, performant, and allows for integrating multiple libraries.</p>
