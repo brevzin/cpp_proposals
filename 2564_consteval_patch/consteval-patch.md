@@ -34,7 +34,7 @@ And let's pick a simple problem. We start some sequence of... we'll call them ty
 
 ::: bq
 ```cpp
-constexpr std::meta::info types[] = {1, 2, 3};
+constexpr std::meta::info types[] = {1, 3, 5};
 ```
 :::
 
