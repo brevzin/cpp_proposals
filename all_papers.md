@@ -59,6 +59,7 @@
 - 2520 <code class="sourceCode cpp">move_iterator<span class="op">&lt;</span>T<span class="op">*&gt;</span></code>  should be a random access iterator: [p2520r0](2520_move_iterator/p2520r0.html)
 - 2550 <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code>  should say  <code class="sourceCode cpp">output_iterator</code>  somewhere: [p2550r0](2550_algo_output_iterator/p2550r0.html)
 - 2561 <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">??</span></code>: [p2561r0](2561_operator_try/p2561r0.html)
+- 2564 <code class="sourceCode cpp"><span class="kw">consteval</span></code>  needs to propagate up: [p2564r0](2564_consteval_patch/p2564r0.html)
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
