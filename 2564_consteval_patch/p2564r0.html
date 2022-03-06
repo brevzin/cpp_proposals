@@ -806,11 +806,11 @@ Result
 <span id="cb12-7"><a href="#cb12-7"></a>    <span class="op">}))</span>;</span></code></pre></div>
 </td>
 <td>
-✅. Still valid.
+❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13. Still.
 </td>
 </tr>
 </table>
-<p>So… this is fine. We can still use <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions with lambdas, as long as we just wrap all of our lambda bodies in <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>.</p>
+<p>So… this is fine. We can still use <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions with lambdas, as long as we just wrap all of our lambda bodies in <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> (but definitely also not make them <code class="sourceCode cpp"><span class="kw">consteval</span></code> - they’re only kind of <code class="sourceCode cpp"><span class="kw">consteval</span></code>).</p>
 <h2 data-number="2.2" id="making-the-library-multi-colored"><span class="header-section-number">2.2</span> Making the library multi-colored<a href="#making-the-library-multi-colored" class="self-link"></a></h2>
 <p>We could avoid putting the burden of sprinkling their code with <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> by pushing all of these extra calls into the library.</p>
 <p>For instance, we could make this change to <code class="sourceCode cpp">none_of</code>:</p>

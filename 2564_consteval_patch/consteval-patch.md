@@ -233,10 +233,10 @@ static_assert(std::ranges::none_of(
         }
     }));
 ```
-</td><td>✅. Still valid.</td></tr>
+</td><td>❌. Ill-formed per [expr.const]{.sref}/13. Still.</td></tr>
 </table>
 
-So... this is fine. We can still use `consteval` functions with lambdas, as long as we just wrap all of our lambda bodies in `if consteval`.
+So... this is fine. We can still use `consteval` functions with lambdas, as long as we just wrap all of our lambda bodies in `if consteval` (but definitely also not make them `consteval` - they're only kind of `consteval`).
 
 ## Making the library multi-colored
 
