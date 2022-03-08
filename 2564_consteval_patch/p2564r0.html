@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-03-07" />
+  <meta name="dcterms.date" content="2022-03-08" />
   <title>consteval needs to propagate up</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-03-07</td>
+    <td>2022-03-08</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -945,7 +945,7 @@ Proposed
 <span id="cb19-4"><a href="#cb19-4"></a><span class="op">))</span>;</span></code></pre></div>
 </td>
 <td>
-✅. Still bad based on the library wording, but from the second proposed rule <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is usable in this context because it is manifestly constant evaluated.
+✅. Still bad based on the library wording, but from the second proposed rule <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is usable in this context because it is manifestly constant evaluated. <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> does not become <code class="sourceCode cpp"><span class="kw">consteval</span></code> here, since it does not need to do so.
 </td>
 </tr>
 <tr>
@@ -958,7 +958,7 @@ Proposed
 <span id="cb20-6"><a href="#cb20-6"></a><span class="op">))</span>;</span></code></pre></div>
 </td>
 <td>
-✅. Previously, this was ill-formed because the conversion to function pointer needed to be (in of itself) a constant expression, but with the third proposed rule this conversion would now occur in an immediate function context. The “permitted result” rule no longer has to apply, so this is fine.
+✅. Previously, this was ill-formed because the conversion to function pointer needed to be (in of itself) a constant expression, but with the third proposed rule this conversion would now occur in an immediate function context. The “permitted result” rule no longer has to apply, so this is fine. As above, <code class="sourceCode cpp">ranges<span class="op">:</span>none_of</code> here does not become <code class="sourceCode cpp"><span class="kw">consteval</span></code>.
 </td>
 </tr>
 <tr>
@@ -971,18 +971,20 @@ Proposed
 <span id="cb21-6"><a href="#cb21-6"></a><span class="op">))</span>;</span></code></pre></div>
 </td>
 <td>
-✅. Likewise, still bad based on the library wording, but from the second proposed rule, using <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> in this context makes the lambda <code class="sourceCode cpp"><span class="kw">consteval</span></code>. The third rule makes the lambda invocation okay because we’re in an immediate function context, which likewise makes <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> consteval.
+✅. The use of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> causes the lambda to be <code class="sourceCode cpp"><span class="kw">consteval</span></code>, through the second rule. And the third rule cases the invocation of the lambda to be in an immediate function context. This produces a function pointer which does not have to be a permitted result of a constant expression, because the invocation no longer needs to be constant expression. In this case too, <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> does not become <code class="sourceCode cpp"><span class="kw">consteval</span></code>.
 </td>
 </tr>
 </table>
 <h2 data-number="3.1" id="implementation-experience"><span class="header-section-number">3.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
-<p>This has been implemented in EDG by Daveed Vandevoorde. One caveat he brings up is this example:</p>
+<p>This has been implemented in EDG by Daveed Vandevoorde. One interesting example he brings up:</p>
 <blockquote>
 <div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">consteval</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> p<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> p; <span class="op">}</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span>T<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> g; <span class="op">}</span></span>
 <span id="cb22-3"><a href="#cb22-3"></a><span class="dt">int</span> r <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)(</span><span class="dv">2</span><span class="op">)</span>;  <span class="co">// Okay or not?</span></span></code></pre></div>
 </blockquote>
-<p>Per the proposal here, this is still ill-formed. <code class="sourceCode cpp">f</code> implicitly becomes a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function template due to use of <code class="sourceCode cpp">g</code>. Then, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> is required to be a constant expression, but we’re not in an immediate function context (even with the new rules). It’s probably possible to come up with a way to make this work, since <code class="sourceCode cpp">g</code> is still not leaking to runtime in any way (which was the goal of making it ill-formed to begin with). But for now, this seems fine to continue to reject.</p>
+<p>Today, this is ill-formed, because <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> is an immediate invocation that must be a constant expression, and it is yielding a consteval function - which is not a permitted result of a constant expression.</p>
+<p>Per the proposal, this is valid.</p>
+<p><code class="sourceCode cpp">f</code> implicitly becomes a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function template due to use of <code class="sourceCode cpp">g</code>. Because <code class="sourceCode cpp">r</code> is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> does not have to be a constant expression, so the fact that we’re returning a pointer to consteval function is okay. The subsequent invocation <code class="sourceCode cpp">g<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is fine, and initializes <code class="sourceCode cpp">r</code> to <code class="sourceCode cpp"><span class="dv">2</span></code>.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">4</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thanks to Daveed Vandevoorde and Tim Song for discussions around this issue and Daveed for implementing it.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>

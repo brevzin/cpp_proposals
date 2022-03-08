@@ -358,7 +358,7 @@ static_assert(std::ranges::none_of(
     std::meta::is_invalid
 ));
 ```
-</td><td>✅. Still bad based on the library wording, but from the second proposed rule `std::meta::is_invalid` is usable in this context because it is manifestly constant evaluated.</td></tr>
+</td><td>✅. Still bad based on the library wording, but from the second proposed rule `std::meta::is_invalid` is usable in this context because it is manifestly constant evaluated. `ranges::none_of` does not become `consteval` here, since it does not need to do so.</td></tr>
 <tr><td>
 ```cpp
 static_assert(std::ranges::none_of(
@@ -368,7 +368,7 @@ static_assert(std::ranges::none_of(
     }
 ));
 ```
-</td><td>✅. Previously, this was ill-formed because the conversion to function pointer needed to be (in of itself) a constant expression, but with the third proposed rule this conversion would now occur in an immediate function context. The "permitted result" rule no longer has to apply, so this is fine.</td></tr>
+</td><td>✅. Previously, this was ill-formed because the conversion to function pointer needed to be (in of itself) a constant expression, but with the third proposed rule this conversion would now occur in an immediate function context. The "permitted result" rule no longer has to apply, so this is fine. As above, `ranges:none_of` here does not become `consteval`.</td></tr>
 <tr><td>
 ```cpp
 static_assert(std::ranges::none_of(
@@ -378,12 +378,12 @@ static_assert(std::ranges::none_of(
     }()
 ));
 ```
-</td><td>✅. Likewise, still bad based on the library wording, but from the second proposed rule, using `std::meta::is_invalid` in this context makes the lambda `consteval`. The third rule makes the lambda invocation okay because we're in an immediate function context,  which likewise makes `ranges::none_of` consteval. </td></tr>
+</td><td>✅. The use of `std::meta::is_invalid` causes the lambda to be `consteval`, through the second rule. And the third rule cases the invocation of the lambda to be in an immediate function context. This produces a function pointer which does not have to be a permitted result of a constant expression, because the invocation no longer needs to be constant expression. In this case too, `ranges::none_of` does not become `consteval`.</td></tr>
 </table>
 
 ## Implementation Experience
 
-This has been implemented in EDG by Daveed Vandevoorde. One caveat he brings up is this example:
+This has been implemented in EDG by Daveed Vandevoorde. One interesting example he brings up:
 
 ::: bq
 ```cpp
@@ -393,7 +393,11 @@ int r = f(1)(2);  // Okay or not?
 ```
 :::
 
-Per the proposal here, this is still ill-formed. `f` implicitly becomes a `consteval` function template due to use of `g`. Then, `f(1)` is required to be a constant expression, but we're not in an immediate function context (even with the new rules). It's probably possible to come up with a way to make this work, since `g` is still not leaking to runtime in any way (which was the goal of making it ill-formed to begin with). But for now, this seems fine to continue to reject.
+Today, this is ill-formed, because `f(1)` is an immediate invocation that must be a constant expression, and it is yielding a consteval function - which is not a permitted result of a constant expression.
+
+Per the proposal, this is valid.
+
+`f` implicitly becomes a `consteval` function template due to use of `g`. Because `r` is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, `f(1)` does not have to be a constant expression, so the fact that we're returning a pointer to consteval function is okay. The subsequent invocation `g(2)` is fine, and initializes `r` to `2`.
 
 # Acknowledgments
 
