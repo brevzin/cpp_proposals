@@ -389,15 +389,16 @@ This has been implemented in EDG by Daveed Vandevoorde. One interesting example 
 ```cpp
 consteval int g(int p) { return p; }
 template<typename T> constexpr auto f(T) { return g; }
-int r = f(1)(2);  // Okay or not?
+int r = f(1)(2);      // proposed ok
+int s = f(1)(2) + r;  // error
 ```
 :::
 
-Today, this is ill-formed, because `f(1)` is an immediate invocation that must be a constant expression, and it is yielding a consteval function - which is not a permitted result of a constant expression.
+Today, even the initialization of `r` is ill-formed, because `f(1)` is an immediate invocation that must be a constant expression, and it is yielding a consteval function - which is not a permitted result of a constant expression.
 
-Per the proposal, this is valid.
+Per the proposal, the initialization of `r` becomes valid. `f` implicitly becomes a `consteval` function template due to use of `g`. Because `r` is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, `f(1)` does not have to be a constant expression, so the fact that we're returning a pointer to consteval function is okay. The subsequent invocation `g(2)` is fine, and initializes `r` to `2`.
 
-`f` implicitly becomes a `consteval` function template due to use of `g`. Because `r` is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, `f(1)` does not have to be a constant expression, so the fact that we're returning a pointer to consteval function is okay. The subsequent invocation `g(2)` is fine, and initializes `r` to `2`.
+But even with this proposal, the initialization of `s` is ill-formed. The tentative constant initialization fails (because `r` isn't a constant), and in the subsequent dynamic initialization, `f(1)` is now actually an immediate invocation (`f` still becomes implicitly `consteval`, which now must be a constant expression, which now has the rule that its result must be a permitted result, in which context returning a pointer to consteval function is disallowed).
 
 # Acknowledgments
 
