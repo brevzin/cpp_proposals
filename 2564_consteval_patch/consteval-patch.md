@@ -4,7 +4,7 @@ document: P2564R0
 date: today
 audience: EWG
 author:
-    - name: Barry Revzin
+    - name: Barry Patch Revzin
       email: <barry.revzin@gmail.com>
 toc: true
 ---
@@ -260,7 +260,7 @@ constexpr auto ranges::none_of(R&& r, Pred pred) -> bool {
 }
 ```
 
-### Definitely, Absolutely Not Proposed
+### Tomorrow?
 ```cpp
 template <ranges::input_range R, class Pred>
 constexpr auto my::none_of(R&& r, Pred pred) -> bool {
@@ -282,97 +282,57 @@ constexpr auto my::none_of(R&& r, Pred pred) -> bool {
 ```
 :::
 
-As shown earlier, the code on the left doesn't work with a lambda that either is `consteval` or directly invokes a `consteval` function, but the code on the right would work just fine with a `consteval` lambda:
+But unfortunately that doesn't actually work. If `pred(*first)` were actually a `consteval` call, then even duplicating the check in both branches of an `if consteval` doesn't help us. The call to `pred(*first)` in the first sub-statement (the case where we are doing constant evluation) is fine, since now we're in an immediate function context, but the call to `pred(*first)` in the second sub-statement (the "runtime" case) is just as problematic as it was without the `if consteval`.
 
-<table>
-<tr><th>Attempt</th><th>Result</th></tr>
-<tr><td>
-```cpp
-static_assert(my::none_of(
-    types,
-    [](std::meta::info i) {
-        return std::meta::is_invalid(i);
-    }));
-```
-</td><td>❌. Ill-formed per [expr.const]{.sref}/13 still.</td></tr>
-<tr><td>
-```cpp
-static_assert(my::none_of(
-    types,
-    [](std::meta::info i) consteval {
-        return std::meta::is_invalid(i);
-    }));
-```
-</td><td>✅. Now this is okay.</td></tr>
-</table>
+So the attempted solution on the right isn't just ridiculous looking, it also doesn't help. The only library solution here (and I'm using the word solution fairly loosely) is to have one set of algorithms that are `constexpr` and a completely duplicate set of algorithms that are `consteval`.
 
-The former still fails because the `is_invalid` call isn't guarded, but the latter is fine because the whole lambda now is.
-
-This is better, at least from the user's perspective. Having to explain why you need the extra `consteval` annotation surely beats having to explain why you need the extra `if consteval`. But not better enough.
+This has to be solved at the language level.
 
 ## Making the language multi-colored
 
-The reason that `my::none_of` works is because I carefully guarded the call to `pred` in `if consteval`. But notice that the code is actually the same in both branches.
-
-I didn't need to do anything different between compile time and run time. I just needed to inform the language that it is actually safe to call any `consteval` function that might be there. That is actually the motivation for the rigid `consteval` rules [@P1073R3] to begin with: to ensure that they are only invoked at compile time.
-
-In the `my::none_of` implementation, I only guarded the call to `pred`.  I could've instead written it this way:
-
-::: bq
-```cpp
-template <ranges::input_range R, class Pred>
-constexpr auto my::none_of_2(R&& r, Pred pred) -> bool {
-    if consteval {
-        auto first = ranges::begin(r);
-        auto last = ranges::end(r);
-        for (; first != last; ++first) {
-            if (pred(*first)) {
-                return false;
-            }
-        }
-        return true;
-    } else {
-        auto first = ranges::begin(r);
-        auto last = ranges::end(r);
-        for (; first != last; ++first) {
-            if (pred(*first)) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-```
-:::
-
-This looks facially ridiculous, but it's not completely without a point. Any code in this function that _directly_ contains an immediate call is safe to evaluate at compile time, because we already know that we're evaluating it at compile time.
-
-This approach isn't just true of `none-of`, it's similarly true of any `constexpr` function or function template. There's a simple replacement that we can do:
+Let's consider the problem in a very local way, going back to the lambda example and presenting it instead as a function (in order to simplify things a bit):
 
 ::: cmptable
-### Status quo function body
+### ill-formed
 ```cpp
-{
-    E;
+constexpr auto pred_bad(std::meta::info i) -> bool {
+    return std::meta::is_invalid(i);
 }
 ```
 
-### Multi-colored function body
+### ok
 ```cpp
-{
+constexpr auto pred_good(std::meta::info i) -> bool {
     if consteval {
-        E;
-    } else {
-        E;
+        return std::meta::is_invalid(i);
     }
 }
 ```
+
 :::
 
-I wouldn't want to go through and just rewrite all of my code everywhere to look like this. I want the language to do it for me. If it did, then the simple lambda just works:
+As mentioned multiple times, `pred_bad` is ill-formed today because it contains a call to an immediate function outside a consteval context and that call isn't a constant expression. That is one way we achieve the goal of the `consteval` functions that they are only invoked during compile time. But `pred_good` is good because that call only appears in an `if consteval` branch (i.e. a consteval context), which makes the call safe.
+
+What's interesting about `pred_good` is that while it's marked `constexpr`, it's actually _only_ meaningful during compile time (in this case, it's actually UB at runtime since we just flow off the end of the function). So this isn't really a great solution either. We need to ensure that `pred_good` is only called at compile time.
+
+But we have a way to ensure that: `consteval`.
+
+Put differently, `pred_bad` is today ill-formed, but only because we need to ensure that it's not called at runtime. If we could ensure that, then we calling it during compile time is otherwise totally fine. What if the language just did that ensuring for us? If such `constexpr` functions, that are only ill-formed because of calls to `consteval` functions simply became `consteval`, then we gain the ability to use them at compile time without actually losing anything - we couldn't call them at runtime to begin with.
+
+# Proposal
+
+This paper proposes:
+
+1. If a `constexpr` function that contains a call outside a consteval context to an immediate function and that call isn't a constant expression, that function implicitly becomes a `consteval` function. This is intended to include lambdas, function template specializations, special member functions, and should cover member initializers as well.
+
+2. If an _expression-id_ designates a `consteval` function without it being an immediate call in such a context, it also makes the context implicitly consteval. Such _expression-id_'s are also allowed in contexts that are manifestly constant evaluated.
+
+3. Other manifestly constant evaluated contexts (like _constant-expression_ and the condition of a constexpr if statement) are now considered to be immediate function contexts.
+
+With these rule changes, no library changes are necessary, and any way we want to write the original call just works:
 
 <table>
-<tr><th>Attempt</th><th>Result with the above change</th></tr>
+<tr><th>Attempt</th><th>Proposed</th></tr>
 <tr><td>
 ```cpp
 static_assert(std::ranges::none_of(
@@ -381,49 +341,7 @@ static_assert(std::ranges::none_of(
         return std::meta::is_invalid(i);
     }));
 ```
-</td><td>❌. Ill-formed per [expr.const]{.sref}/13. Still.</td></tr>
-</table>
-
-Just kidding.
-
-The simple rewrite doesn't cut it because we'd rewrite the lambda to:
-
-::: bq
-```cpp
-[](std::meta::info i) {
-    if consteval {
-        // this part is fine
-        return std::meta::is_invalid(i);
-    } else {
-        // this part is not
-        return std::meta::is_invalid(i);
-    }
-}
-```
-:::
-
-But this is still possible to resolve. We just need two different resolutions:
-
-* If the function contains a direct, unguarded immediate invocation that is never a constant expression, then the function becomes a `consteval` function.
-* Otherwise, the function is treated as if it were written as `if consteval { E; } else { E; }`
-
-Meaning that the lambda `[](std::meta::info i) { return std::meta::is_invalid(i); }` is treated as if it were declared `consteval`, just without the user having to do it. Since it basically already is: this lambda isn't invocable at runtime anyway, such a rule change would actually allow it to be invoked at compile time (rather than making the whole program ill-formed).
-
-This decision could be made on function template directly. If a function template contained a non-dependent call to a `consteval` function (template), then you can know at that point that the function template needs to become `consteval`. But a dependent call could be `consteval` or not depending on what actually call is made, so the decision generally needs to be pushed to instantiation time.
-
-And with that, finally:
-
-<table>
-<tr><th>Attempt</th><th>Result with the above change</th></tr>
-<tr><td>
-```cpp
-static_assert(std::ranges::none_of(
-    types,
-    [](std::meta::info i) {
-        return std::meta::is_invalid(i);
-    }));
-```
-</td><td>✅. The lambda becomes implicitly `consteval`, which also makes this instantiation of `ranges::none_of` implicitly `consteval`. Everything else just works.</td></tr>
+</td><td>✅. First, the lambda becomes implicitly `consteval` due to the non-constant call `is_invalid(i)`. This, in turn, makes this instantiation of `ranges::none_of` implicitly `consteval`. And then everything else just works.</td></tr>
 <tr><td>
 ```cpp
 static_assert(std::ranges::none_of(
@@ -432,7 +350,7 @@ static_assert(std::ranges::none_of(
         return std::meta::is_invalid(i);
     }));
 ```
-</td><td>✅. The lambda is explicitly `consteval`, which likewise also makes this instantiation of `ranges::none_of` implicitly `consteval`. Everything else just works.</td></tr>
+</td><td>✅. Now, the lambda is explicitly `consteval` instead of implicitly `consteval`, which likewise also makes this instantiation of `ranges::none_of` implicitly `consteval`. Everything else just works.</td></tr>
 <tr><td>
 ```cpp
 static_assert(std::ranges::none_of(
@@ -440,8 +358,46 @@ static_assert(std::ranges::none_of(
     std::meta::is_invalid
 ));
 ```
-</td><td>❌. Still bad based on the library wording, but this case still isn't completely covered by this design approach thus far. The call to `is_invalid` from the `none_of` instantiation wouldn't be an immediate call, since `consteval` isn't part of the type. If it were though, then we'd satisfy the [expr.prim.id.general] rule since `none_of` would become `consteval` and thus we'd only be naming `is_invalid` in an immediate invocation.
+</td><td>✅. Still bad based on the library wording, but from the second proposed rule `std::meta::is_invalid` is usable in this context because it is manifestly constant evaluated.</td></tr>
+<tr><td>
+```cpp
+static_assert(std::ranges::none_of(
+    types,
+    +[](std::meta::info i) consteval {
+        return std::meta::is_invalid(i);
+    }
+));
+```
+</td><td>✅. Previously, this was ill-formed because the conversion to function pointer needed to be (in of itself) a constant expression, but with the third proposed rule this conversion would now occur in an immediate function context. The "permitted result" rule no longer has to apply, so this is fine.</td></tr>
+<tr><td>
+```cpp
+static_assert(std::ranges::none_of(
+    types,
+    []{
+        return std::meta::is_invalid;
+    }()
+));
+```
+</td><td>✅. Likewise, still bad based on the library wording, but from the second proposed rule, using `std::meta::is_invalid` in this context makes the lambda `consteval`. The third rule makes the lambda invocation okay because we're in an immediate function context,  which likewise makes `ranges::none_of` consteval. </td></tr>
 </table>
+
+## Implementation Experience
+
+This has been implemented in EDG by Daveed Vandevoorde. One caveat he brings up is this example:
+
+::: bq
+```cpp
+consteval int g(int p) { return p; }
+template<typename T> constexpr auto f(T) { return g; }
+int r = f(1)(2);  // Okay or not?
+```
+:::
+
+Per the proposal here, this is still ill-formed. `f` implicitly becomes a `consteval` function template due to use of `g`. Then, `f(1)` is required to be a constant expression, but we're not in an immediate function context (even with the new rules). It's probably possible to come up with a way to make this work, since `g` is still not leaking to runtime in any way (which was the goal of making it ill-formed to begin with). But for now, this seems fine to continue to reject.
+
+# Acknowledgments
+
+Thanks to Daveed Vandevoorde and Tim Song for discussions around this issue and Daveed for implementing it.
 
 ---
 references:
