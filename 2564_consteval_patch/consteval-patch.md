@@ -4,7 +4,7 @@ document: P2564R0
 date: today
 audience: EWG
 author:
-    - name: Barry Patch Revzin
+    - name: Barry "Patch" Revzin
       email: <barry.revzin@gmail.com>
 toc: true
 ---
