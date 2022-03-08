@@ -394,7 +394,7 @@ int s = f(1)(2) + r;  // error
 ```
 :::
 
-Today, even the initialization of `r` is ill-formed, because `f(1)` is an immediate invocation that must be a constant expression, and it is yielding a consteval function - which is not a permitted result of a constant expression.
+Today, even the call `f(1)` is ill-formed, because naming `g` isn't allowed in that context (it is neither a subexpression of an immediate invocation nor in an immediate function context).
 
 Per the proposal, the initialization of `r` becomes valid. `f` implicitly becomes a `consteval` function template due to use of `g`. Because `r` is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, `f(1)` does not have to be a constant expression, so the fact that we're returning a pointer to consteval function is okay. The subsequent invocation `g(2)` is fine, and initializes `r` to `2`.
 
