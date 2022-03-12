@@ -321,9 +321,11 @@ Put differently, `pred_bad` is today ill-formed, but only because we need to ens
 
 # Proposal
 
-This paper proposes:
+This paper proposes avoiding the `consteval` coloring problem (or, at least, mitigating the annoyances thereof) by allowing certain existing `constexpr` functions to implicitly become `consteval` functions when those functions can already only be invoked during compile time anyway.
 
-1. If a `constexpr` function that contains a call outside a consteval context to an immediate function and that call isn't a constant expression, that function implicitly becomes a `consteval` function. This is intended to include lambdas, function template specializations, special member functions, and should cover member initializers as well.
+Specifically, these three rules:
+
+1. If a `constexpr` function that contains a call to an immediate function outside of an immediate function context, and that call itself isn't a constant expression, said `constexpr` function implicitly becomes a `consteval` function. This is intended to include lambdas, function template specializations, special member functions, and should cover member initializers as well.
 
 2. If an _expression-id_ designates a `consteval` function without it being an immediate call in such a context, it also makes the context implicitly consteval. Such _expression-id_'s are also allowed in contexts that are manifestly constant evaluated.
 
