@@ -400,6 +400,92 @@ Per the proposal, the initialization of `r` becomes valid. `f` implicitly become
 
 But even with this proposal, the initialization of `s` is ill-formed. The tentative constant initialization fails (because `r` isn't a constant), and in the subsequent dynamic initialization, `f(1)` is now actually an immediate invocation (`f` still becomes implicitly `consteval`, which now must be a constant expression, which now has the rule that its result must be a permitted result, in which context returning a pointer to consteval function is disallowed).
 
+## Wording Circularity
+
+One of the issues with actually wording this proposal is its chicken-and-egg nature. Let's consider the main example again:
+
+::: bq
+```cpp
+[](std::meta::info i) {
+    return std::meta::is_invalid(i);
+}
+```
+:::
+
+And let's work through both the status quo reasoning and the proposed reasoning.
+
+<table>
+<tr><th>Current Reasoning</th><th>Proposed Reasoning</th></tr>
+<tr><td>
+1. `std::meta::is_invalid` is an _immediate function_ because it is declared `consteval` (these are synonyms).
+2. The lambda's call operator is not an immediate function, because it is not declared `consteval`.
+3. The expression `std::meta::is_invalid(i)` is not in an _immediate function context_ because of (2) and also it is not in an `if consteval`.
+4. The combination of (1) and (3) make the expression `std::meta::is_invalid(i)` an _immediate invocation_, which is required to be a constant expression.
+5. That expression isn't a constant expression because of the use of the function parameter, `i`, so this is ill-formed.
+</td><td>
+1. `std::meta::is_invalid` is an _immediate function_ because it is declared `consteval`.
+2. The lambda's call operator is not an immediate function, because it is not declared `consteval`.
+3. The expression `std::meta::is_invalid(i)` is not in an _immediate function context_ because of (2) and also it is not in an `if consteval` and also it is not manifestly-constant-evaluated.
+4. The combination of (1) and (3) make the expression `std::meta::is_invalid(i)` an _immediate-escalating expression_.
+5. The lambda's call operator is declared neither `constexpr` nor `consteval`, which makes it an _immediate-escalating function_.
+6. The combination of (4) and (5) cause the lambda's call operator to become an _immediate function_.
+7. ... which means that now the expression `std::meta::is_invalid(i)` is in an immediate function context.
+8. Which now means that the expression `std::meta::is_invalid(i)` is no longer an immediate invocation.
+</td></tr>
+</table>
+
+Essentially, we have a flow of reasoning that starts with a function _not_ being an immediate function and, because of that, becoming an immediate function. This is, admittedly, confusing. But I think it does make sense, and Daveed had less trouble implementing this than we had even attempting to try to reason about wording it.
+
+# Wording
+
+This wording is known to be incomplete at this point, the primary goal in this revision is to at least set the stage so that people can understand the intent. The crux of the wording change is to extend [expr.const]{.sref}/13:
+
+::: bq
+[13]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
+
+* [#.#]{.pnum} its innermost enclosing non-block scope is a function parameter scope of an immediate function, [or]{.rm}
+* [#.#]{.pnum} [it is a subexpression of a manifestly constant-evaluated expression or conversion, or]{.addu}
+* [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the _compound-statement_ of a consteval if statement ([stmt.if]).
+
+::: addu
+[13a]{.pnum} An expression or conversion is _immediate-escalating_ if it is not initially in an immediate function context and it is either
+
+* [13a.#]{.pnum} a potentially-evaluated _id-expression_ that denotes an immediate function, or
+* [13a.#]{.pnum} a potentially-evaluated explicit or implicit invocation of an immediate function that is not a constant expression.
+
+[13b]{.pnum} An _immediate-escalating_ function is:
+
+* [13b.#]{.pnum} the call operator of a lambda that is declared with neither the constexpr nor consteval specifiers,
+* [13b.#]{.pnum} a defaulted special member function that is declared with neither the constexpr nor consteval specifiers, or
+* [13b.#]{.pnum} a function that results from the instantiation of a templated entity defined with the constexpr specifier.
+
+[13c]{.pnum} An _immediate function_ is a function or constructor that is:
+
+* [13c.#]{.pnum} declared with the `consteval` specifier, or
+* [13c.#]{.pnum} an immediate-escalating function, F, that contains an immediate-escalating expression, E, such that E's innermost enclosing non-block scope is F's function parameter scope.
+:::
+
+An expression or conversion is an _immediate invocation_ if it is [a potentially-evaluated explicit or implicit invocation of an immediate function]{.rm} [immediate-escalating]{.addu} and is not in an immediate function context. An immediate invocation shall be a constant expression.
+:::
+
+With which we can remove [expr.prim.id.general]{.sref}/4, which is now handled in the above:
+
+::: bq
+::: rm
+[4]{.pnum} A potentially-evaluated id-expression that denotes an immediate function shall appear only
+
+* [#.#]{.pnum} as a subexpression of an immediate invocation, or
+* [#.#]{.pnum} in an immediate function context.
+:::
+:::
+
+And removing the current definition of _immediate function_ from [dcl.constexpr]{.sref}/2, since it's now defined (recursively) above.
+
+::: bq
+[2]{.pnum} A `constexpr` or `consteval` specifier used in the declaration of a function declares that function to be a _constexpr function_.
+[ \[*Note*: ]{.addu}    A function or constructor declared with the consteval specifier is [called]{.rm} an immediate function [(\[expr.const\]) *-end note* \]]{.addu}. A destructor, an allocation function, or a deallocation function shall not be declared with the consteval specifier.
+:::
+
 # Acknowledgments
 
 Thanks to Daveed Vandevoorde and Tim Song for discussions around this issue and Daveed for implementing it.

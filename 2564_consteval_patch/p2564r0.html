@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-03-08" />
+  <meta name="dcterms.date" content="2022-03-12" />
   <title>consteval needs to propagate up</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-03-08</td>
+    <td>2022-03-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -573,9 +573,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
 <li><a href="#implementation-experience"><span class="toc-section-number">3.1</span> Implementation Experience<span></span></a></li>
+<li><a href="#wording-circularity"><span class="toc-section-number">3.2</span> Wording Circularity<span></span></a></li>
 </ul></li>
-<li><a href="#acknowledgments"><span class="toc-section-number">4</span> Acknowledgments<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">5</span> Acknowledgments<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -986,9 +988,95 @@ Proposed
 <p>Today, even the call <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> is ill-formed, because naming <code class="sourceCode cpp">g</code> isn’t allowed in that context (it is neither a subexpression of an immediate invocation nor in an immediate function context).</p>
 <p>Per the proposal, the initialization of <code class="sourceCode cpp">r</code> becomes valid. <code class="sourceCode cpp">f</code> implicitly becomes a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function template due to use of <code class="sourceCode cpp">g</code>. Because <code class="sourceCode cpp">r</code> is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> does not have to be a constant expression, so the fact that we’re returning a pointer to consteval function is okay. The subsequent invocation <code class="sourceCode cpp">g<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is fine, and initializes <code class="sourceCode cpp">r</code> to <code class="sourceCode cpp"><span class="dv">2</span></code>.</p>
 <p>But even with this proposal, the initialization of <code class="sourceCode cpp">s</code> is ill-formed. The tentative constant initialization fails (because <code class="sourceCode cpp">r</code> isn’t a constant), and in the subsequent dynamic initialization, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> is now actually an immediate invocation (<code class="sourceCode cpp">f</code> still becomes implicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code>, which now must be a constant expression, which now has the rule that its result must be a permitted result, in which context returning a pointer to consteval function is disallowed).</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">4</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<h2 data-number="3.2" id="wording-circularity"><span class="header-section-number">3.2</span> Wording Circularity<a href="#wording-circularity" class="self-link"></a></h2>
+<p>One of the issues with actually wording this proposal is its chicken-and-egg nature. Let’s consider the main example again:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>    <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>And let’s work through both the status quo reasoning and the proposed reasoning.</p>
+<table>
+<tr>
+<th>
+Current Reasoning
+</th>
+<th>
+Proposed Reasoning
+</th>
+</tr>
+<tr>
+<td>
+<ol type="1">
+<li><code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is an <em>immediate function</em> because it is declared <code class="sourceCode cpp"><span class="kw">consteval</span></code> (these are synonyms).</li>
+<li>The lambda’s call operator is not an immediate function, because it is not declared <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
+<li>The expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is not in an <em>immediate function context</em> because of (2) and also it is not in an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>.</li>
+<li>The combination of (1) and (3) make the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> an <em>immediate invocation</em>, which is required to be a constant expression.</li>
+<li>That expression isn’t a constant expression because of the use of the function parameter, <code class="sourceCode cpp">i</code>, so this is ill-formed.</li>
+</ol>
+</td>
+<td>
+<ol type="1">
+<li><code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is an <em>immediate function</em> because it is declared <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
+<li>The lambda’s call operator is not an immediate function, because it is not declared <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
+<li>The expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is not in an <em>immediate function context</em> because of (2) and also it is not in an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> and also it is not manifestly-constant-evaluated.</li>
+<li>The combination of (1) and (3) make the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> an <em>immediate-escalating expression</em>.</li>
+<li>The lambda’s call operator is declared neither <code class="sourceCode cpp"><span class="kw">constexpr</span></code> nor <code class="sourceCode cpp"><span class="kw">consteval</span></code>, which makes it an <em>immediate-escalating function</em>.</li>
+<li>The combination of (4) and (5) cause the lambda’s call operator to become an <em>immediate function</em>.</li>
+<li>… which means that now the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is in an immediate function context.</li>
+<li>Which now means that the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is no longer an immediate invocation.</li>
+</ol>
+</td>
+</tr>
+</table>
+<p>Essentially, we have a flow of reasoning that starts with a function <em>not</em> being an immediate function and, because of that, becoming an immediate function. This is, admittedly, confusing. But I think it does make sense, and Daveed had less trouble implementing this than we had even attempting to try to reason about wording it.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>This wording is known to be incomplete at this point, the primary goal in this revision is to at least set the stage so that people can understand the intent. The crux of the wording change is to extend <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">13</a></span> An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(13.1)</a></span> its innermost enclosing non-block scope is a function parameter scope of an immediate function, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(13.2)</a></span> <span class="addu">it is a subexpression of a manifestly constant-evaluated expression or conversion, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(13.3)</a></span> its enclosing statement is enclosed ([stmt.pre]) by the <em>compound-statement</em> of a consteval if statement ([stmt.if]).</li>
+</ul>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">13a</a></span> An expression or conversion is <em>immediate-escalating</em> if it is not initially in an immediate function context and it is either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(13a.1)</a></span> a potentially-evaluated <em>id-expression</em> that denotes an immediate function, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(13a.2)</a></span> a potentially-evaluated explicit or implicit invocation of an immediate function that is not a constant expression.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">13b</a></span> An <em>immediate-escalating</em> function is:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(13b.1)</a></span> the call operator of a lambda that is declared with neither the constexpr nor consteval specifiers,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(13b.2)</a></span> a defaulted special member function that is declared with neither the constexpr nor consteval specifiers, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(13b.3)</a></span> a function that results from the instantiation of a templated entity defined with the constexpr specifier.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">13c</a></span> An <em>immediate function</em> is a function or constructor that is:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(13c.1)</a></span> declared with the <code class="sourceCode cpp"><span class="kw">consteval</span></code> specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(13c.2)</a></span> an immediate-escalating function, F, that contains an immediate-escalating expression, E, such that E’s innermost enclosing non-block scope is F’s function parameter scope.</li>
+</ul>
+</div>
+<p>An expression or conversion is an <em>immediate invocation</em> if it is <span class="rm" style="color: #bf0303"><del>a potentially-evaluated explicit or implicit invocation of an immediate function</del></span> <span class="addu">immediate-escalating</span> and is not in an immediate function context. An immediate invocation shall be a constant expression.</p>
+</blockquote>
+<p>With which we can remove <span>7.5.4.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4, which is now handled in the above:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">4</a></span> A potentially-evaluated id-expression that denotes an immediate function shall appear only</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(4.1)</a></span> as a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(4.2)</a></span> in an immediate function context.</li>
+</ul>
+
+</div>
+</blockquote>
+<p>And removing the current definition of <em>immediate function</em> from <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/2, since it’s now defined (recursively) above.</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">2</a></span> A <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> specifier used in the declaration of a function declares that function to be a <em>constexpr function</em>. <span class="addu">[<em>Note</em>:</span> A function or constructor declared with the consteval specifier is <span class="rm" style="color: #bf0303"><del>called</del></span> an immediate function <span class="addu">([expr.const]) <em>-end note</em> ]</span>. A destructor, an allocation function, or a deallocation function shall not be declared with the consteval specifier.</p>
+</blockquote>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">5</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thanks to Daveed Vandevoorde and Tim Song for discussions around this issue and Daveed for implementing it.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0595R2">
 <p>[P0595R2] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-09. std::is_constant_evaluated. <br />
