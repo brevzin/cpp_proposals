@@ -321,7 +321,7 @@ Put differently, `pred_bad` is today ill-formed, but only because we need to ens
 
 # Proposal
 
-This paper proposes avoiding the `consteval` coloring problem (or, at least, mitigating the annoyances thereof) by allowing certain existing `constexpr` functions to implicitly become `consteval` functions when those functions can already only be invoked during compile time anyway.
+This paper proposes avoiding the `consteval` coloring problem (or, at least, mitigating its annoyances) by allowing certain existing `constexpr` functions to implicitly become `consteval` functions when those functions can already only be invoked during compile time anyway.
 
 Specifically, these three rules:
 
