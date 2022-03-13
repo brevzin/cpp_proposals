@@ -325,7 +325,7 @@ This paper proposes avoiding the `consteval` coloring problem (or, at least, mit
 
 Specifically, these three rules:
 
-1. If a `constexpr` function that contains a call to an immediate function outside of an immediate function context, and that call itself isn't a constant expression, said `constexpr` function implicitly becomes a `consteval` function. This is intended to include lambdas, function template specializations, special member functions, and should cover member initializers as well.
+1. If a `constexpr` function contains a call to an immediate function outside of an immediate function context, and that call itself isn't a constant expression, said `constexpr` function implicitly becomes a `consteval` function. This is intended to include lambdas, function template specializations, special member functions, and should cover member initializers as well.
 
 2. If an _expression-id_ designates a `consteval` function without it being an immediate call in such a context, it also makes the context implicitly consteval. Such _expression-id_'s are also allowed in contexts that are manifestly constant evaluated.
 
