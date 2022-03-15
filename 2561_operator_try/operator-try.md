@@ -451,6 +451,29 @@ This `try_fold` can be used with an accumulation function that returns `optional
 
 Note that this may not be exactly the way we'd specify this algorithm, since we probably want to return something like a `pair<I, Ret>` instead, so the body wouldn't be able to use `??` and would have to go through `try_traits` manually for the error propogation. But that's still okay, since the important part was being able to have a generic algorithm to begin with.
 
+### Range of `expected` to `expected` of Range
+
+There's an algorithm in Haskell called `sequence` which takes a `t (m a)` and yields a `m (t a)`. In C++ terms, that might be an algorithm that takes a range of `expected<T, E>` and yields a `expected<vector<T>, E>` - which contains either all the results or the first error.
+
+With the same `Try` concept from a above, this can be generalized to also work for `optional<T>` or any number of other `Result`-like types:
+
+::: bq
+```cpp
+template <ranges::input_range R,
+          Try T = remove_cvref_t<ranges::range_reference_t<R>>,
+          typename Traits = try_traits<T>,
+          typename Result = Traits::rebind<vector<typename Traits::value_type>>>
+auto sequence(R&& r) -> Result
+{
+    vector<typename Traits::value_type> results;
+    for (auto it = ranges::begin(r); it != ranges::end(r); ++it) {
+        results.push_back((*it)??);
+    }
+    return Result::from_value(std::move(results));
+}
+```
+:::
+
 ## Potential directions to go from here
 
 This paper is proposing just `??` and the machinery necessary to make that work (including a `concept`, opt-ins for `optional` and `expected`, but not the short-circuiting fold algorithm).
