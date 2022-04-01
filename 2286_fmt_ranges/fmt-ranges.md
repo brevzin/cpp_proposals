@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R6
+document: P2286R7
 date: today
 audience: LEWG
 author:
@@ -11,6 +11,8 @@ toc-depth: 4
 ---
 
 # Revision History
+
+Since [@P2286R6], wording.
 
 Since [@P2286R5], missing feature test macro and few wording changes, including:
 
@@ -1325,11 +1327,11 @@ namespace std {
 
 + // [format.range.formatter], class template range_formatter
 + template<class T, class charT = char>
-+     requires formattable<T, charT>
++     requires same_as<remove_cvref_t<T>, T> && formattable<T, charT>
 +   class range_formatter;
 +
 + template<ranges::input_range R, class charT>
-+         requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
++         requires (!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
 +           && formattable<ranges::range_reference_t<R>, charT>
 +   struct formatter<R, charT>;
 
@@ -1369,13 +1371,13 @@ $range-underlying-spec$:
 
 [#]{.pnum} The `$range-fill-and-align$` is interpreted the same way as a `$fill-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
 
-[#]{.pnum} The `n` option causes the range to be formatted without the open and close brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
+[#]{.pnum} The `n` option causes the range to be formatted without the opening and closing brackets. [*Note*: this is equivalent to invoking `set_brackets({}, {})` *- end note* ]
 
 [#]{.pnum} The `$range-type$` specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
 
 |Option|Requirements|Meaning|
 |-|-|-|
-|`m`|`T` shall be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size<T>::value` is `2`|Indicates that the open bracket should be `"{"`, the close bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `n` option is also provided, both the open and close brackets are still empty. *-end note*]|
+|`m`|`T` shall be either a specialization of `pair` or a specialization of `tuple` such that `tuple_size_v<T>` is `2`|Indicates that the opening bracket should be `"{"`, the closing bracket should be `"}"`, the separator should be `", "`, and each range element should be formatted as if `m` were specified for its `$tuple-type$`. [*Note*: if the `n` option is also provided, both the opening and closing brackets are still empty. *-end note*]|
 |`s`|`T` shall be `charT`|Indicates that the range should be formatted as a `string`.|
 |`?s`|`T` shall be `charT`|Indicates that the range should be formatted as an escaped `string` ([format.string.escaped]).|
 
@@ -1384,16 +1386,16 @@ If the `$range-type$` is `s` or `?s`, then there shall be no `n` option and no `
 ```
 namespace std {
   template<class T, class charT = char>
-    requires formattable<T, charT>
+    requires same_as<remove_cvref_t<T>, T> && formattable<T, charT>
   class range_formatter {
-    formatter<T, charT> $underlying_$;                                        // exposition only
-    basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
-    basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("[");  // exposition only
-    basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
+    formatter<T, charT> $underlying_$;                                          // exposition only
+    basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");      // exposition only
+    basic_string_view<charT> $opening-bracket_$ = $STATICALLY-WIDEN$<charT>("["); // exposition only
+    basic_string_view<charT> $closing-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
 
   public:
     void set_separator(basic_string_view<charT> sep);
-    void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+    void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
     formatter<T, charT>& underlying() { return $underlying_$; }
 
     template <class ParseContext>
@@ -1416,15 +1418,15 @@ void set_separator(basic_string_view<charT> sep);
 [#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
 ```
-void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to
 
 ::: bq
 ```
-$open-bracket_$ = open;
-$close-bracket_$ = close;
+$opening-bracket_$ = opening;
+$closing-bracket_$ = closing;
 ```
 :::
 
@@ -1436,7 +1438,7 @@ template <class ParseContext>
 
 [#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. Unless the `$range-type$` is either `s` or `?s`, if `$underlying_$.set_debug_format()` is a valid expression and there is no `$range-underlying-spec$`, calls `$underlying_$.set_debug_format()`.
 
-[#]{.pnum} *Returns*: an iterator past the end of the `$range-format-spec$`.
+[#]{.pnum} *Returns*: An iterator past the end of the `$range-format-spec$`.
 
 ```
 template <ranges::input_range R, class FormatContext>
@@ -1451,18 +1453,18 @@ template <ranges::input_range R, class FormatContext>
 * [#.#]{.pnum} If the `$range-type$` was `s`, then as if by formatting `basic_string<charT>(from_range, r)`.
 * [#.#]{.pnum} Otherwise, if the `$range-type$` was `?s`, then as if by formatting `basic_string<charT>(from_range, r)` as an escaped string ([format.string.escaped]).
 * [#.#]{.pnum} Otherwise,
-  * [#.#.#]{.pnum} `$open-bracket_$`
+  * [#.#.#]{.pnum} `$opening-bracket_$`
   * [#.#.#]{.pnum} for each element, `e`, of the range `r`:
     * [#.#.#.#]{.pnum} the result of writing `e` via `$underlying_$`
     * [#.#.#.#]{.pnum} `$separator_$`, unless `e` is the last element of `r`
-  * [#.#.#]{.pnum} `$close-bracket_$`
+  * [#.#.#]{.pnum} `$closing-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
 
 ```
 namespace std {
   template<ranges::input_range R, class charT>
-        requires (not same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
+        requires (!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
                && formattable<ranges::range_reference_t<R>, charT>
   struct formatter<R, charT> {
   private:
@@ -1470,7 +1472,7 @@ namespace std {
 
   public:
     void set_separator(basic_string_view<charT> sep);
-    void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+    void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1490,10 +1492,10 @@ void set_separator(basic_string_view<charT> sep);
 [#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_separator(sep)`;
 
 ```
-void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_brackets(open, close)`;
+[#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_brackets(opening, closing)`;
 
 ```
 template <class ParseContext>
@@ -1687,14 +1689,14 @@ namespace std {
 template <class charT, formattable<charT>... Ts>
   struct formatter<$tuple-type$<Ts...>, charT> {
   private:
-    tuple<formatter<remove_cvref_t<Ts>, charT>...> $underlying_$;             // exposition only
-    basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");    // exposition only
-    basic_string_view<charT> $open-bracket_$ = $STATICALLY-WIDEN$<charT>("(");  // exposition only
-    basic_string_view<charT> $close-bracket_$ = $STATICALLY-WIDEN$<charT>(")"); // exposition only
+    tuple<formatter<remove_cvref_t<Ts>, charT>...> $underlying_$;               // exposition only
+    basic_string_view<charT> $separator_$ = $STATICALLY-WIDEN$<charT>(", ");      // exposition only
+    basic_string_view<charT> $opening-bracket_$ = $STATICALLY-WIDEN$<charT>("("); // exposition only
+    basic_string_view<charT> $closing-bracket_$ = $STATICALLY-WIDEN$<charT>(")"); // exposition only
 
   public:
     void set_separator(basic_string_view<charT> sep);
-    void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+    void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1730,8 +1732,8 @@ $tuple-type$:
 
 |Option|Requirements|Meaning|
 |-|-|-|
-|`m`|`sizeof...(Ts) == 2` |Indicates that the open and close bracket should be `""` and the separator should be `": "`.|
-|`n`|None|Indicates that the open and close bracket should be `""`.|
+|`m`|`sizeof...(Ts) == 2` |Indicates that the opening and closing bracket should be `""` and the separator should be `": "`.|
+|`n`|None|Indicates that the opening and closing bracket should be `""`.|
 
 ```
 void set_separator(basic_string_view<charT> sep);
@@ -1740,15 +1742,15 @@ void set_separator(basic_string_view<charT> sep);
 [#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
 ```
-void set_brackets(basic_string_view<charT> open, basic_string_view<charT> close);
+void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to
 
 ::: bq
 ```
-$open-bracket_$ = open;
-$close-bracket_$ = close;
+$opening-bracket_$ = opening;
+$closing-bracket_$ = closing;
 ```
 :::
 
@@ -1776,11 +1778,11 @@ template <class FormatContext>
 
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$tuple-format-spec$`:
 
-* [#.#]{.pnum} `$open-bracket_$`
+* [#.#]{.pnum} `$opening-bracket_$`
 * [#.#]{.pnum} for each index `I` from `0` up to `sizeof...(Ts)`, exclusive:
   * [#.#.#]{.pnum} if `I != 0`, `$separator_$`
   * [#.#.#]{.pnum} the result of writing `get<I>(elems)` via `get<I>($underlying_$)`
-* [#.#]{.pnum} `$close-bracket_$`
+* [#.#]{.pnum} `$closeing-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
 :::
