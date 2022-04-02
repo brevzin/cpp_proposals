@@ -1782,7 +1782,7 @@ template <class FormatContext>
 * [#.#]{.pnum} for each index `I` from `0` up to `sizeof...(Ts)`, exclusive:
   * [#.#.#]{.pnum} if `I != 0`, `$separator_$`
   * [#.#.#]{.pnum} the result of writing `get<I>(elems)` via `get<I>($underlying_$)`
-* [#.#]{.pnum} `$closeing-bracket_$`
+* [#.#]{.pnum} `$closing-bracket_$`
 
 [#]{.pnum} *Returns*: an iterator past the end of the output range.
 :::
