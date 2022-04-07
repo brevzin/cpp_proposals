@@ -535,11 +535,11 @@ using $_R$ = $_Traits$::rebind<decltype($_Traits$::extract_value(f(42)).size())>
 auto&& $e$ = f(42);
 auto x = $_Traits$::is_ok($e$)
        ? try_traits<$_R$>::from_value($_Traits$::extract_value(FWD($e$)).size())
-       : try_traits<$_R$>::from_error(FWD($e$));
+       : try_traits<$_R$>::from_error($_Traits$::extract_error(FWD($e$)));
 ```
 :::
 
-That may seem like a mouthful, but all the user had to write was `f(42)?.size()` and this does do the right thing.
+That may seem like a mouthful. Because it is a mouthful. But it's a mouthful that the user doesn't have to write any part of, they just put `f(42)?.size()` and this does do the right thing.
 
 At least, this mostly does the right thing. We still have to talk about copy elision. Consider this version:
 
@@ -565,7 +565,7 @@ auto n = $_Traits$::is_ok($e$)
        ? try_traits<$_R$>::from_value_func([&]() -> decltype(auto) {
             return $_Traits$::extract_value(FWD($e$)).f()
          })
-       : try_traits<$_R$>::from_error(FWD($e$));
+       : try_traits<$_R$>::from_error($_Traits$::extract_error(FWD($e$)));
 ```
 :::
 
@@ -585,9 +585,11 @@ While propagating the error only really has one way to go (you return it), there
 
 * `assert` that `is_ok()`
 * `abort()` if `not is_ok()`
+* `terminate()` if `not is_ok()`
 * `unreachable()` (or `[[assume]]`) if `not is_ok()`
 * `throw extract_error()` if `not is_ok()`
 * `throw f(extract_error())` if `not is_ok()` for some `f`
+* log an error and come up with some default value if `not is_ok()`
 
 That's a lot of different options, and the right one likely depends on context too.
 
