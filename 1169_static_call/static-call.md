@@ -292,7 +292,7 @@ Add `static` to the grammar of [expr.prim.lambda.general]{.sref}:
 Change [expr.prim.lambda.general]{.sref}/4:
 
 ::: bq
-[4]{.pnum} A _lambda-specifier-seq_ shall contain at most one of each _lambda-specifier_ and shall not contain both `constexpr` and `consteval`. If the _lambda-declarator_ contains an explicit object parameter ([dcl.fct]), then no _lambda-specifier_ in the _lambda-specifier-seq_ shall be `mutable` [or `static`]{.addu}.
+[4]{.pnum} A _lambda-specifier-seq_ shall contain at most one of each _lambda-specifier_ and shall not contain both `constexpr` and `consteval`. If the _lambda-declarator_ contains an explicit object parameter ([dcl.fct]), then no _lambda-specifier_ in the _lambda-specifier-seq_ shall be `mutable` [or `static`]{.addu}. [The _lambda-specifier-seq_ shall not contain both `mutable` and `static`. If the _lambda-specifier-seq_ contains `static`, there shall be no _lambda-capture_]{.addu}.
 :::
 
 Change [expr.prim.lambda.closure]{.sref}/5:
