@@ -1,2 +1,2 @@
-p1169r3.html : static-call.md
+d1169r4.html : static-call.md
 include ../md/mpark-wg21.mk

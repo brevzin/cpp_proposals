@@ -1,6 +1,6 @@
 ---
 title: "static `operator()`"
-document: P1169R3
+document: D1169R4
 date: today
 audience: EWG
 author:
@@ -12,6 +12,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P1169R3], wording.
 
 Since [@P1169R2], added missing feature-test macro and updated wording to include [@LWG3617].
 
@@ -275,26 +277,38 @@ The language changes have been implemented in EDG.
 
 ## Language Wording
 
-Change [expr.prim.lambda.general]{.sref}/3:
+Add `static` to the grammar of [expr.prim.lambda.general]{.sref}:
 
 ::: bq
-[3]{.pnum} In the *decl-specifier-seq* of the *lambda-declarator*, each *decl-specifier* shall be one of `mutable`, [`static`,]{.addu} `constexpr`, or `consteval`. [The *decl-specifier-seq* shall not contain both `mutable` and `static`. If the *decl-specifier-seq* contains `static`, there shall be no *lambda-capture*.]{.addu}
+```diff
+  $lambda-specifier$:
+    consteval
+    constexpr
+    mutable
++   static
+```
 :::
 
-Change [expr.prim.lambda.closure]{.sref}/4:
+Change [expr.prim.lambda.general]{.sref}/4:
 
 ::: bq
-[4]{.pnum} The function call operator or operator template is  [a static member function or static member function template ([class.static.mfct]) if the *lambda-expression*'s *parameter-declaration-clause* is followed by `static`. Otherwise, it is a non-static member function or member function template ([class.mfct.non-static]) that is]{.addu} declared `const` ([class.mfct.non-static]) if and only if the *lambda-expression*'s *parameter-declaration-clause* is not followed by `mutable`. It is neither virtual nor declared `volatile`. Any *noexcept-specifier* specified on a *lambda-expression* applies to the corresponding function call operator or operator template. An *attribute-specifier-seq* in a *lambda-declarator* appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a `constexpr` function if either the corresponding *lambda-expression*'s *parameter-declaration-clause* is followed by `constexpr`, or it satisfies the requirements for a `constexpr` function.
+[4]{.pnum} A _lambda-specifier-seq_ shall contain at most one of each _lambda-specifier_ and shall not contain both `constexpr` and `consteval`. If the _lambda-declarator_ contains an explicit object parameter ([dcl.fct]), then no _lambda-specifier_ in the _lambda-specifier-seq_ shall be `mutable` [or `static`]{.addu}.
 :::
 
-Add a note to [expr.prim.lambda.closure]{.sref}/7 and /10 indicating that we could just return the call operator. The wording as-is specifies the behavior of the return here, and returning the call operator already would be allowed, so no wording change is necessary. But the note would be helpful:
+Change [expr.prim.lambda.closure]{.sref}/5:
 
 ::: bq
-[7]{.pnum} The closure type for a non-generic *lambda-expression* with no *lambda-capture* whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type's function call operator.
+[5]{.pnum} The function call operator or operator template is [a static member function or static member function template ([class.static.mfct]) if the *lambda-expression*'s *parameter-declaration-clause* is followed by `static`. Otherwise, it is a non-static member function or member function template ([class.mfct.non-static]) that is]{.addu} declared `const` ([class.mfct.non.static]) if and only if the _lambda-expression_'s _parameter-declaration-clause_ is not followed by `mutable` and the _lambda-declarator_ does not contain an explicit object parameter. It is neither virtual nor declared `volatile`. Any *noexcept-specifier* specified on a *lambda-expression* applies to the corresponding function call operator or operator template. An *attribute-specifier-seq* in a *lambda-declarator* appertains to the type of the corresponding function call operator or operator template. The function call operator or any given operator template specialization is a `constexpr` function if either the corresponding *lambda-expression*'s *parameter-declaration-clause* is followed by `constexpr`, or it satisfies the requirements for a `constexpr` function.
+:::
+
+Add a note to [expr.prim.lambda.closure]{.sref}/8 and /11 indicating that we could just return the call operator. The wording as-is specifies the behavior of the return here, and returning the call operator already would be allowed, so no wording change is necessary. But the note would be helpful:
+
+::: bq
+[8]{.pnum} The closure type for a non-generic *lambda-expression* with no *lambda-capture* whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type's function call operator.
 The conversion is to “pointer to `noexcept` function” if the function call operator has a non-throwing exception specification.
 The value returned by this conversion function is the address of a function `F` that, when invoked, has the same effect as invoking the closure type's function call operator on a default-constructed instance of the closure type. `F` is a constexpr function if the function call operator is a constexpr function and is an immediate function if the function call operator is an immediate function. [ [*Note*: if the function call operator is a static member function, the conversion function may return the address of the function call operator. -*end note*] ]{.addu}
 
-[10]{.pnum} The value returned by any given specialization of this conversion function template is the address of a function `F` that, when invoked, has the same effect as invoking the generic lambda's corresponding function call operator template specialization on a default-constructed instance of the closure type. F is a constexpr function if the corresponding specialization is a constexpr function and F is an immediate function if the function call operator template specialization is an immediate function. [ [*Note*: if the function call operator template is a static member function template, the conversion function may return the address of a specialization of the function call operator template. -*end note*] ]{.addu}
+[11]{.pnum} The value returned by any given specialization of this conversion function template is the address of a function `F` that, when invoked, has the same effect as invoking the generic lambda's corresponding function call operator template specialization on a default-constructed instance of the closure type. F is a constexpr function if the corresponding specialization is a constexpr function and F is an immediate function if the function call operator template specialization is an immediate function. [ [*Note*: if the function call operator template is a static member function template, the conversion function may return the address of a specialization of the function call operator template. -*end note*] ]{.addu}
 :::
 
 Change [over.match.best.general]{.sref}/1 to drop the static member exception and remove the bullets and the footnote:
