@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-04-07" />
+  <meta name="dcterms.date" content="2022-04-08" />
   <title>static operator()</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-04-07</td>
+    <td>2022-04-08</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -833,8 +833,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Add a note to <span>7.5.5.2 <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>/8 and /11 indicating that we could just return the call operator. The wording as-is specifies the behavior of the return here, and returning the call operator already would be allowed, so no wording change is necessary. But the note would be helpful:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">8</a></span> The closure type for a non-generic <em>lambda-expression</em> with no <em>lambda-capture</em> whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type’s function call operator. The conversion is to “pointer to <code class="sourceCode cpp"><span class="kw">noexcept</span></code> function” if the function call operator has a non-throwing exception specification. The value returned by this conversion function is the address of a function <code class="sourceCode cpp">F</code> that, when invoked, has the same effect as invoking the closure type’s function call operator on a default-constructed instance of the closure type. <code class="sourceCode cpp">F</code> is a constexpr function if the function call operator is a constexpr function and is an immediate function if the function call operator is an immediate function. <span class="addu">[<em>Note</em>: if the function call operator is a static member function, the conversion function may return the address of the function call operator. -<em>end note</em>]</span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">11</a></span> The value returned by any given specialization of this conversion function template is the address of a function <code class="sourceCode cpp">F</code> that, when invoked, has the same effect as invoking the generic lambda’s corresponding function call operator template specialization on a default-constructed instance of the closure type. F is a constexpr function if the corresponding specialization is a constexpr function and F is an immediate function if the function call operator template specialization is an immediate function. <span class="addu">[<em>Note</em>: if the function call operator template is a static member function template, the conversion function may return the address of a specialization of the function call operator template. -<em>end note</em>]</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">8</a></span> The closure type for a non-generic <em>lambda-expression</em> with no <em>lambda-capture</em> whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type’s function call operator. The conversion is to “pointer to <code class="sourceCode cpp"><span class="kw">noexcept</span></code> function” if the function call operator has a non-throwing exception specification. <span class="addu">If the function call operator is a static member function, then the value returned by this conversion function is the address of the function call operator. Otherwise, the</span> <span class="rm" style="color: #bf0303"><del>The</del></span> value returned by this conversion function is the address of a function <code class="sourceCode cpp">F</code> that, when invoked, has the same effect as invoking the closure type’s function call operator on a default-constructed instance of the closure type. <code class="sourceCode cpp">F</code> is a constexpr function if the function call operator is a constexpr function and is an immediate function if the function call operator is an immediate function.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">11</a></span> <span class="addu">If the function call operator template is a static member function template, then the value returned by any given specialization of this conversion function template is the address of the corresponding function call operator template specialization. Otherwise, the</span> <span class="rm" style="color: #bf0303"><del>The</del></span> value returned by any given specialization of this conversion function template is the address of a function <code class="sourceCode cpp">F</code> that, when invoked, has the same effect as invoking the generic lambda’s corresponding function call operator template specialization on a default-constructed instance of the closure type. F is a constexpr function if the corresponding specialization is a constexpr function and F is an immediate function if the function call operator template specialization is an immediate function.</p>
 </blockquote>
 <p>Change <span>12.2.4.1 <a href="https://wg21.link/over.match.best.general">[over.match.best.general]</a></span>/1 to drop the static member exception and remove the bullets and the footnote:</p>
 <blockquote>
