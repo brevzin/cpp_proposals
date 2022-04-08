@@ -631,8 +631,8 @@ void splash(Swim& swam) {
 extern Swim dc;
 extern Swim& trident;
 
-constexpr auto& x = typeid(dc);         // ok: can only be typeid(Swim)
-constexpr auto& y = typeid(trident);    // error: constexpr-unknown dynamic type
+constexpr auto& sandeno   = typeid(dc);         // ok: can only be typeid(Swim)
+constexpr auto& gallagher = typeid(trident);    // error: constexpr-unknown dynamic type
 ```
 - *end example*]
 :::
