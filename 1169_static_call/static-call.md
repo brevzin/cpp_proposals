@@ -1,6 +1,6 @@
 ---
 title: "static `operator()`"
-document: D1169R4
+document: P1169R4
 date: today
 audience: EWG
 author:

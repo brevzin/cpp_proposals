@@ -47,14 +47,14 @@ make all of my papers.
 
 ### Pending Plenary
 
+- [p1169r4 - `static operator()`](1169_static_call/p1169r4.html), with Casey Carter.
+- [p2280r4 - Using unknown references in constant expressions](2280_unknown_reference/p2280r4.html).
 - [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
 - [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
 
 ### Pending CWG/LWG Review
 
-- [d1169r4 - `static operator()`](1169_static_call/d1169r4.html), with Casey Carter.
 - [p2278r2 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r2.html).
-- [p2280r3 - Using unknown references in constant expressions](2280_unknown_reference/p2280r3.html).
 - [p2286r7 - Formatting Ranges](2286_fmt_ranges/p2286r7.html).
 - [p2322r5 - `ranges::fold`](2322_fold/p2322r5.html).
 - [p2446r2 - `views::as_rvalue`](2446_move_view/p2446r2.html).
