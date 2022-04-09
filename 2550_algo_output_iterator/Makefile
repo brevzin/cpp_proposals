@@ -1,2 +1,2 @@
-p2550r0.html : algo-output-iterator.md
+p2550r1.html : algo-output-iterator.md
 include ../md/mpark-wg21.mk

@@ -2,6 +2,7 @@
 import panflute as pf
 import os
 import sys
+import subprocess
 import pygraphviz
 import hashlib
 
@@ -54,5 +55,30 @@ def graphviz(elem, doc):
             sys.stderr.write(f'Created image {src}\n')
         return pf.Para(pf.Image(pf.Str(caption), url=src, title=caption))
 
+def mermaid(elem, doc):
+    if isinstance(elem, pf.CodeBlock) and 'mermaid' in elem.classes:
+        code = elem.text
+        caption = elem.attributes.get('caption', '')
+        filename = sha1(code)
+
+        mermaid_dir = f'{MD_DIR}/mermaid-images'
+        src_file = f'{mermaid_dir}/{filename}.mmd'
+        dst_img = f'{mermaid_dir}/{filename}.svg'
+        if not os.path.isfile(src_file):
+            try:
+                os.mkdir(mermaid_dir)
+                sys.stderr.write(f'Created directory {mermaid_dir}\n')
+            except OSError:
+                pass
+
+            with open(src_file, 'w') as f:
+                f.write(code)
+
+            subprocess.check_call(['mmdc', '-i', src_file, '-o', dst_img],
+                stderr=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL)
+        return pf.Para(pf.Image(pf.Str(caption), url=dst_img, title=caption))
+
+
 if __name__ == '__main__':
-    pf.run_filters([h1hr, bq, graphviz])
+    pf.run_filters([h1hr, bq, graphviz, mermaid])

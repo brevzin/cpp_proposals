@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2022-04-09" />
+  <title>ranges::copy should say output_iterator somewhere</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp">ranges<span class="op">::</span>copy</code> should say <code class="sourceCode cpp">output_iterator</code> somewhere</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2550R1</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2022-04-09</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#output-concept-hierarchy"><span class="toc-section-number">2.1</span> Output concept hierarchy<span></span></a></li>
+<li><a href="#does-anything-in-ranges-use-output_iterator"><span class="toc-section-number">2.2</span> Does anything in Ranges use <code class="sourceCode cpp">output_iterator</code>?<span></span></a></li>
+</ul></li>
+<li><a href="#proposal-a-weaker-output-iterator"><span class="toc-section-number">3</span> Proposal: A Weaker Output Iterator<span></span></a>
+<ul>
+<li><a href="#summary-of-proposal"><span class="toc-section-number">3.1</span> Summary of Proposal<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a>
+<ul>
+<li><a href="#concept-weak_output_iterator"><span class="toc-section-number">4.1</span> <code class="sourceCode cpp"><span class="kw">concept</span> weak_output_iterator</code><span></span></a></li>
+<li><a href="#concept-mergeable"><span class="toc-section-number">4.2</span> <code class="sourceCode cpp"><span class="kw">concept</span> mergeable</code><span></span></a></li>
+<li><a href="#concept-weak_output_range"><span class="toc-section-number">4.3</span> <code class="sourceCode cpp"><span class="kw">concept</span> weak_output_range</code><span></span></a></li>
+<li><a href="#algorithms"><span class="toc-section-number">4.4</span> Algorithms<span></span></a>
+<ul>
+<li><a href="#rangescopy"><span class="toc-section-number">4.4.1</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code><span></span></a></li>
+<li><a href="#rangescopy_n"><span class="toc-section-number">4.4.2</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy_n</code><span></span></a></li>
+<li><a href="#rangescopy_if"><span class="toc-section-number">4.4.3</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy_if</code><span></span></a></li>
+<li><a href="#rangesmove"><span class="toc-section-number">4.4.4</span> <code class="sourceCode cpp">ranges<span class="op">::</span>move</code><span></span></a></li>
+<li><a href="#rangestransform"><span class="toc-section-number">4.4.5</span> <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code><span></span></a></li>
+<li><a href="#rangesreplace_copy"><span class="toc-section-number">4.4.6</span> <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy</code><span></span></a></li>
+<li><a href="#rangesfill"><span class="toc-section-number">4.4.7</span> <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code><span></span></a></li>
+<li><a href="#rangesgenerate"><span class="toc-section-number">4.4.8</span> <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code><span></span></a></li>
+<li><a href="#rangesremove_copy"><span class="toc-section-number">4.4.9</span> <code class="sourceCode cpp">ranges<span class="op">::</span>remove_copy</code><span></span></a></li>
+<li><a href="#rangesunique_copy"><span class="toc-section-number">4.4.10</span> <code class="sourceCode cpp">ranges<span class="op">::</span>unique_copy</code><span></span></a></li>
+<li><a href="#rangesreverse_copy"><span class="toc-section-number">4.4.11</span> <code class="sourceCode cpp">ranges<span class="op">::</span>reverse_copy</code><span></span></a></li>
+<li><a href="#rangesrotate_copy"><span class="toc-section-number">4.4.12</span> <code class="sourceCode cpp">ranges<span class="op">::</span>rotate_copy</code><span></span></a></li>
+<li><a href="#rangespartition_copy"><span class="toc-section-number">4.4.13</span> <code class="sourceCode cpp">ranges<span class="op">::</span>partition_copy</code><span></span></a></li>
+<li><a href="#rangesmerge"><span class="toc-section-number">4.4.14</span> <code class="sourceCode cpp">ranges<span class="op">::</span>merge</code><span></span></a></li>
+<li><a href="#rangesset_union"><span class="toc-section-number">4.4.15</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_union</code><span></span></a></li>
+<li><a href="#rangesset_intersection"><span class="toc-section-number">4.4.16</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_intersection</code><span></span></a></li>
+<li><a href="#rangesset_difference"><span class="toc-section-number">4.4.17</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_difference</code><span></span></a></li>
+<li><a href="#rangesset_symmetric_difference"><span class="toc-section-number">4.4.18</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_symmetric_difference</code><span></span></a></li>
+<li><a href="#rangesiota"><span class="toc-section-number">4.4.19</span> <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code><span></span></a></li>
+</ul></li>
+</ul></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">5</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2550R0">[<a href="#ref-P2550R0" role="doc-biblioref">P2550R0</a>]</span>, made the graphs prettier.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>In the beginning, we had:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> InputIterator, <span class="kw">class</span> OutputIterator<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">constexpr</span> OutputIterator copy<span class="op">(</span>InputIterator first, InputIterator last,</span>
+<span id="cb1-3"><a href="#cb1-3"></a>                                OutputIterator result<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>And then, in C++20, we added Concepts and Ranges - which came with a whole library of <code class="sourceCode cpp"><span class="kw">concept</span></code>s for the standard library, in particular for iterators and ragnes. This included a concept <code class="sourceCode cpp">input_iterator</code> and <code class="sourceCode cpp">output_iterator</code>. We also added new rangified versions of all the algorithms, constrained using these concepts.</p>
+<p>The new overloads look like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, weakly_incrementable O<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">requires</span> indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>  <span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">template</span><span class="op">&lt;</span>input_range R, weakly_incrementable O<span class="op">&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>  <span class="kw">requires</span> indirectly_copyable<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, O<span class="op">&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>  <span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>borrowed_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, O<span class="op">&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, O result<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>The crux of this paper is that <code class="sourceCode cpp">std<span class="op">::</span>copy</code> takes an <code class="sourceCode cpp">OutputIterator</code> (even if the name of this parameter does nothing), but <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>copy</code> does not have anything named <code class="sourceCode cpp">output_iterator</code> in this constraints at all. That just seems wrong. Output iterator is a thing that users understand, but “weakly incrementable” and “indirectly copyable,” while reasonable names for the functionality they require, are not particularly well known and are not really useful when they show up in diagnostics.</p>
+<p>We should do better here.</p>
+<h2 data-number="2.1" id="output-concept-hierarchy"><span class="header-section-number">2.1</span> Output concept hierarchy<a href="#output-concept-hierarchy" class="self-link"></a></h2>
+<p>Let me start with what all the relevant <code class="sourceCode cpp"><span class="kw">concept</span></code>s actually are:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">concept</span> weakly_incrementable <span class="op">=</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    movable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="kw">requires</span><span class="op">(</span>I i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>      <span class="kw">typename</span> iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;</span>;</span>
+<span id="cb3-6"><a href="#cb3-6"></a>      <span class="kw">requires</span> <em>is-signed-integer-like</em><span class="op">&lt;</span>iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>;</span>
+<span id="cb3-7"><a href="#cb3-7"></a>      <span class="op">{</span> <span class="op">++</span>i <span class="op">}</span> <span class="op">-&gt;</span> same_as<span class="op">&lt;</span>I<span class="op">&amp;&gt;</span>;   <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>      i<span class="op">++</span>;                      <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>    <span class="op">}</span>;</span>
+<span id="cb3-10"><a href="#cb3-10"></a></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>  <span class="kw">concept</span> input_or_output_iterator <span class="op">=</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a>    <span class="kw">requires</span><span class="op">(</span>I i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>      <span class="op">{</span> <span class="op">*</span>i <span class="op">}</span> <span class="op">-&gt;</span> <em>can-reference</em>;</span>
+<span id="cb3-15"><a href="#cb3-15"></a>    <span class="op">}</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a>    weakly_incrementable<span class="op">&lt;</span>I<span class="op">&gt;</span>;</span>
+<span id="cb3-17"><a href="#cb3-17"></a></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Out, <span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a>  <span class="kw">concept</span> indirectly_writable <span class="op">=</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a>    <span class="kw">requires</span><span class="op">(</span>Out<span class="op">&amp;&amp;</span> o, T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a>      <span class="op">*</span>o <span class="op">=</span> std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span>;  <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>      <span class="op">*</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Out<span class="op">&gt;(</span>o<span class="op">)</span> <span class="op">=</span> std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span>;   <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a>      <span class="kw">const_cast</span><span class="op">&lt;</span><span class="kw">const</span> iter_reference_t<span class="op">&lt;</span>Out<span class="op">&gt;&amp;&amp;&gt;(*</span>o<span class="op">)</span> <span class="op">=</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span>;     <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a>      <span class="kw">const_cast</span><span class="op">&lt;</span><span class="kw">const</span> iter_reference_t<span class="op">&lt;</span>Out<span class="op">&gt;&amp;&amp;&gt;(*</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Out<span class="op">&gt;(</span>o<span class="op">))</span> <span class="op">=</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a>        std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span>;     <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a>    <span class="op">}</span>;</span>
+<span id="cb3-28"><a href="#cb3-28"></a></span>
+<span id="cb3-29"><a href="#cb3-29"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> In, <span class="kw">class</span> Out<span class="op">&gt;</span></span>
+<span id="cb3-30"><a href="#cb3-30"></a>  <span class="kw">concept</span> indirectly_copyable <span class="op">=</span></span>
+<span id="cb3-31"><a href="#cb3-31"></a>    indirectly_readable<span class="op">&lt;</span>In<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-32"><a href="#cb3-32"></a>    indirectly_writable<span class="op">&lt;</span>Out, iter_reference_t<span class="op">&lt;</span>In<span class="op">&gt;&gt;</span>;</span>
+<span id="cb3-33"><a href="#cb3-33"></a></span>
+<span id="cb3-34"><a href="#cb3-34"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> I, <span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-35"><a href="#cb3-35"></a>  <span class="kw">concept</span> output_iterator <span class="op">=</span></span>
+<span id="cb3-36"><a href="#cb3-36"></a>    input_or_output_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-37"><a href="#cb3-37"></a>    indirectly_writable<span class="op">&lt;</span>I, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb3-38"><a href="#cb3-38"></a>    <span class="kw">requires</span><span class="op">(</span>I i, T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-39"><a href="#cb3-39"></a>      <span class="op">*</span>i<span class="op">++</span> <span class="op">=</span> std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span>;        <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb3-40"><a href="#cb3-40"></a>    <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Or, in graph form:</p>
+<blockquote>
+<p><img src="data:image/svg+xml;base64,PHN2ZyBpZD0ibWVybWFpZC0xNjQ5NTE5MjAzMDkyIiB3aWR0aD0iMTAwJSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgaGVpZ2h0PSIzMTYiIHN0eWxlPSJtYXgtd2lkdGg6IDU4Ni41cHg7IGJhY2tncm91bmQtY29sb3I6IHdoaXRlOyIgdmlld0JveD0iMCAwIDU4Ni41IDMxNiI+PHN0eWxlPiNtZXJtYWlkLTE2NDk1MTkyMDMwOTIge2ZvbnQtZmFtaWx5Ok1vbm9zcGFjZTtmb250LXNpemU6OXB4O2ZpbGw6IzMzMzt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAuZXJyb3ItaWNvbntmaWxsOiM1NTIyMjI7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLmVycm9yLXRleHR7ZmlsbDojNTUyMjIyO3N0cm9rZTojNTUyMjIyO30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5lZGdlLXRoaWNrbmVzcy1ub3JtYWx7c3Ryb2tlLXdpZHRoOjJweDt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAuZWRnZS10aGlja25lc3MtdGhpY2t7c3Ryb2tlLXdpZHRoOjMuNXB4O30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5lZGdlLXBhdHRlcm4tc29saWR7c3Ryb2tlLWRhc2hhcnJheTowO30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5lZGdlLXBhdHRlcm4tZGFzaGVke3N0cm9rZS1kYXNoYXJyYXk6Mzt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAuZWRnZS1wYXR0ZXJuLWRvdHRlZHtzdHJva2UtZGFzaGFycmF5OjI7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLm1hcmtlcntmaWxsOiMzMzMzMzM7c3Ryb2tlOiMzMzMzMzM7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLm1hcmtlci5jcm9zc3tzdHJva2U6IzMzMzMzMzt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiBzdmd7Zm9udC1mYW1pbHk6TW9ub3NwYWNlO2ZvbnQtc2l6ZTo5cHg7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLmxhYmVse2ZvbnQtZmFtaWx5Ok1vbm9zcGFjZTtjb2xvcjojMzMzO30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5jbHVzdGVyLWxhYmVsIHRleHR7ZmlsbDojMzMzO30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5jbHVzdGVyLWxhYmVsIHNwYW57Y29sb3I6IzMzMzt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAubGFiZWwgdGV4dCwjbWVybWFpZC0xNjQ5NTE5MjAzMDkyIHNwYW57ZmlsbDojMzMzO2NvbG9yOiMzMzM7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLm5vZGUgcmVjdCwjbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5ub2RlIGNpcmNsZSwjbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5ub2RlIGVsbGlwc2UsI21lcm1haWQtMTY0OTUxOTIwMzA5MiAubm9kZSBwb2x5Z29uLCNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLm5vZGUgcGF0aHtmaWxsOiNFQ0VDRkY7c3Ryb2tlOiM5MzcwREI7c3Ryb2tlLXdpZHRoOjFweDt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAubm9kZSAubGFiZWx7dGV4dC1hbGlnbjpjZW50ZXI7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLm5vZGUuY2xpY2thYmxle2N1cnNvcjpwb2ludGVyO30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5hcnJvd2hlYWRQYXRoe2ZpbGw6IzMzMzMzMzt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAuZWRnZVBhdGggLnBhdGh7c3Ryb2tlOiMzMzMzMzM7c3Ryb2tlLXdpZHRoOjIuMHB4O30jbWVybWFpZC0xNjQ5NTE5MjAzMDkyIC5mbG93Y2hhcnQtbGlua3tzdHJva2U6IzMzMzMzMztmaWxsOm5vbmU7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLmVkZ2VMYWJlbHtiYWNrZ3JvdW5kLWNvbG9yOiNlOGU4ZTg7dGV4dC1hbGlnbjpjZW50ZXI7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLmVkZ2VMYWJlbCByZWN0e29wYWNpdHk6MC41O2JhY2tncm91bmQtY29sb3I6I2U4ZThlODtmaWxsOiNlOGU4ZTg7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgLmNsdXN0ZXIgcmVjdHtmaWxsOiNmZmZmZGU7c3Ryb2tlOiNhYWFhMzM7c3Ryb2tlLXdpZHRoOjFweDt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAuY2x1c3RlciB0ZXh0e2ZpbGw6IzMzMzt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiAuY2x1c3RlciBzcGFue2NvbG9yOiMzMzM7fSNtZXJtYWlkLTE2NDk1MTkyMDMwOTIgZGl2Lm1lcm1haWRUb29sdGlwe3Bvc2l0aW9uOmFic29sdXRlO3RleHQtYWxpZ246Y2VudGVyO21heC13aWR0aDoyMDBweDtwYWRkaW5nOjJweDtmb250LWZhbWlseTpNb25vc3BhY2U7Zm9udC1zaXplOjEycHg7YmFja2dyb3VuZDpoc2woODAsIDEwMCUsIDk2LjI3NDUwOTgwMzklKTtib3JkZXI6MXB4IHNvbGlkICNhYWFhMzM7Ym9yZGVyLXJhZGl1czoycHg7cG9pbnRlci1ldmVudHM6bm9uZTt6LWluZGV4OjEwMDt9I21lcm1haWQtMTY0OTUxOTIwMzA5MiA6cm9vdHstLW1lcm1haWQtZm9udC1mYW1pbHk6InRyZWJ1Y2hldCBtcyIsdmVyZGFuYSxhcmlhbCxzYW5zLXNlcmlmO308L3N0eWxlPjxnPjxnIGNsYXNzPSJvdXRwdXQiPjxnIGNsYXNzPSJjbHVzdGVycyI+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aHMiPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1BIExFLUIiIGlkPSJMLUEtQiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTEwNC43MzczMDQ2ODc1LDg4TDExOC42MTk2Mjg5MDYyNSw3Ny4xNjY2NjY2NjY2NjY2N0MxMzIuNTAxOTUzMTI1LDY2LjMzMzMzMzMzMzMzMzMzLDE2MC4yNjY2MDE1NjI1LDQ0LjY2NjY2NjY2NjY2NjY2NCwxNzguMzE1NTkyNDQ3OTE2NjYsMzMuODMzMzMzMzMzMzMzMzM2QzE5Ni4zNjQ1ODMzMzMzMzMzNCwyMywyMDQuNjk3OTE2NjY2NjY2NjYsMjMsMjA4Ljg2NDU4MzMzMzMzMzM0LDIzTDIxMy4wMzEyNSwyMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQxOSkiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQxOSIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1BIExFLUMiIGlkPSJMLUEtQyIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTE1Mi4yMjY1NjI1LDEwM0wxNTguMTk0MDEwNDE2NjY2NjYsMTAzQzE2NC4xNjE0NTgzMzMzMzMzNCwxMDMsMTc2LjA5NjM1NDE2NjY2NjY2LDEwMywxODYuNjgwOTg5NTgzMzMzMzQsMTAzQzE5Ny4yNjU2MjUsMTAzLDIwNi41LDEwMywyMTEuMTE3MTg3NSwxMDNMMjE1LjczNDM3NSwxMDMiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMjApIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtQSBMRS1EIiBpZD0iTC1BLUQiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0xMTEuMTQ0NTMxMjUsMTE4TDEyMy45NTg5ODQzNzUsMTI1LjVDMTM2Ljc3MzQzNzUsMTMzLDE2Mi40MDIzNDM3NSwxNDgsMTg0LjQzNDg5NTgzMzMzMzM0LDE1OEMyMDYuNDY3NDQ3OTE2NjY2NjYsMTY4LDIyNC45MDM2NDU4MzMzMzMzNCwxNzMsMjM0LjEyMTc0NDc5MTY2NjY2LDE3NS41TDI0My4zMzk4NDM3NSwxNzgiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMjEpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMjEiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtQyBMRS1HIiBpZD0iTC1DLUciIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0zODEuNTYyNSw5NS41MDQ0MTQxNTM1NDE5MkwzODYuMTc5Njg3NSw5NS4wODcwMTE3OTQ2MTgyNkMzOTAuNzk2ODc1LDk0LjY2OTYwOTQzNTY5NDYxLDQwMC4wMzEyNSw5My44MzQ4MDQ3MTc4NDczLDQwOC44MTUxMDQxNjY2NjY3LDkzLjQxNzQwMjM1ODkyMzY1QzQxNy41OTg5NTgzMzMzMzMzLDkzLDQyNS45MzIyOTE2NjY2NjY3LDkzLDQzMC4wOTg5NTgzMzMzMzMzLDkzTDQzNC4yNjU2MjUsOTMiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMjIpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMjIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtQyBMRS1IIiBpZD0iTC1DLUgiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0zNDAuMTI5ODgyODEyNSwxMThMMzUxLjY1MjUwNjUxMDQxNjcsMTIyLjE2NjY2NjY2NjY2NjY3QzM2My4xNzUxMzAyMDgzMzMzLDEyNi4zMzMzMzMzMzMzMzMzMywzODYuMjIwMzc3NjA0MTY2NywxMzQuNjY2NjY2NjY2NjY2NjYsNDEwLjkxMjI3MjEzNTQxNjcsMTQ0LjI1NzQwNzU1NjM3Nzg3QzQzNS42MDQxNjY2NjY2NjY3LDE1My44NDgxNDg0NDYwODkwOCw0NjEuOTQyNzA4MzMzMzMzMywxNjQuNjk2Mjk2ODkyMTc4MTQsNDc1LjExMTk3OTE2NjY2NjcsMTcwLjEyMDM3MTExNTIyMjdMNDg4LjI4MTI1LDE3NS41NDQ0NDUzMzgyNjcyMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQyMykiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQyMyIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1JIExFLUoiIGlkPSJMLUktSiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTEzNi43NzM0Mzc1LDIyOEwxNDUuMzE2NDA2MjUsMjMwLjVDMTUzLjg1OTM3NSwyMzMsMTcwLjk0NTMxMjUsMjM4LDE5MS4wMTA5MDQ5NDc5MTY2NiwyNDQuNjY2NjY2NjY2NjY2NjZDMjExLjA3NjQ5NzM5NTgzMzM0LDI1MS4zMzMzMzMzMzMzMzMzNCwyMzQuMTIxNzQ0NzkxNjY2NjYsMjU5LjY2NjY2NjY2NjY2NjcsMjQ1LjY0NDM2ODQ4OTU4MzM0LDI2My44MzMzMzMzMzMzMzMzTDI1Ny4xNjY5OTIxODc1LDI2OCIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQyNCkiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQyNCIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1JIExFLUQiIGlkPSJMLUktRCIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTE2My4wMzEyNSwyMDUuNDM4NjUyNjQ0NDEzOTZMMTY3LjE5NzkxNjY2NjY2NjY2LDIwNS4wMzIyMTA1MzcwMTE2NUMxNzEuMzY0NTgzMzMzMzMzMzQsMjA0LjYyNTc2ODQyOTYwOTM0LDE3OS42OTc5MTY2NjY2NjY2NiwyMDMuODEyODg0MjE0ODA0NjUsMTg5LjM4MTUxMDQxNjY2NjY2LDIwMi45MDc3MDE2MTI1NDYyOEMxOTkuMDY1MTA0MTY2NjY2NjYsMjAyLjAwMjUxOTAxMDI4NzksMjEwLjA5ODk1ODMzMzMzMzM0LDIwMS4wMDUwMzgwMjA1NzU4MiwyMTUuNjE1ODg1NDE2NjY2NjYsMjAwLjUwNjI5NzUyNTcxOThMMjIxLjEzMjgxMjUsMjAwLjAwNzU1NzAzMDg2Mzc1IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZDI1KSIgc3R5bGU9ImZpbGw6bm9uZSI+PC9wYXRoPjxkZWZzPjxtYXJrZXIgaWQ9ImFycm93aGVhZDI1IiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJzdHJva2VXaWR0aCIgbWFya2VyV2lkdGg9IjgiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDAgMCBMIDEwIDUgTCAwIDEwIHoiIGNsYXNzPSJhcnJvd2hlYWRQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAxOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyI+PC9wYXRoPjwvbWFya2VyPjwvZGVmcz48L2c+PGcgY2xhc3M9ImVkZ2VQYXRoIExTLUUgTEUtSiIgaWQ9IkwtRS1KIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxwYXRoIGNsYXNzPSJwYXRoIiBkPSJNMTQxLjQyOTY4NzUsMjkzTDE0OS4xOTY2MTQ1ODMzMzMzNCwyOTNDMTU2Ljk2MzU0MTY2NjY2NjY2LDI5MywxNzIuNDk3Mzk1ODMzMzMzMzQsMjkzLDE4Ny4xMzE1MTA0MTY2NjY2NiwyOTIuMzc5MTkzNDQ1ODY0OEMyMDEuNzY1NjI1LDI5MS43NTgzODY4OTE3Mjk3LDIxNS41LDI5MC41MTY3NzM3ODM0NTkzLDIyMi4zNjcxODc1LDI4OS44OTU5NjcyMjkzMjQxTDIyOS4yMzQzNzUsMjg5LjI3NTE2MDY3NTE4ODk0IiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZDI2KSIgc3R5bGU9ImZpbGw6bm9uZSI+PC9wYXRoPjxkZWZzPjxtYXJrZXIgaWQ9ImFycm93aGVhZDI2IiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJzdHJva2VXaWR0aCIgbWFya2VyV2lkdGg9IjgiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDAgMCBMIDEwIDUgTCAwIDEwIHoiIGNsYXNzPSJhcnJvd2hlYWRQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAxOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyI+PC9wYXRoPjwvbWFya2VyPjwvZGVmcz48L2c+PGcgY2xhc3M9ImVkZ2VQYXRoIExTLUQgTEUtSCIgaWQ9IkwtRC1IIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxwYXRoIGNsYXNzPSJwYXRoIiBkPSJNMzc2LjE2NDA2MjUsMTkzTDM4MS42ODA5ODk1ODMzMzMzLDE5M0MzODcuMTk3OTE2NjY2NjY2NywxOTMsMzk4LjIzMTc3MDgzMzMzMzMsMTkzLDQxNi45MTc5Njg3NSwxOTEuNjQzOTgxNDQ0MjM4ODhDNDM1LjYwNDE2NjY2NjY2NjcsMTkwLjI4Nzk2Mjg4ODQ3Nzc1LDQ2MS45NDI3MDgzMzMzMzMzLDE4Ny41NzU5MjU3NzY5NTU0Nyw0NzUuMTExOTc5MTY2NjY2NywxODYuMjE5OTA3MjIxMTk0MzVMNDg4LjI4MTI1LDE4NC44NjM4ODg2NjU0MzMyIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZDI3KSIgc3R5bGU9ImZpbGw6bm9uZSI+PC9wYXRoPjxkZWZzPjxtYXJrZXIgaWQ9ImFycm93aGVhZDI3IiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJzdHJva2VXaWR0aCIgbWFya2VyV2lkdGg9IjgiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDAgMCBMIDEwIDUgTCAwIDEwIHoiIGNsYXNzPSJhcnJvd2hlYWRQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAxOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyI+PC9wYXRoPjwvbWFya2VyPjwvZGVmcz48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWxzIj48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLUEtQiIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLUEnIEwtTEUtQiI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWwiIHRyYW5zZm9ybT0iIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGNsYXNzPSJsYWJlbCI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48L3JlY3Q+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjAiIGhlaWdodD0iMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPjxzcGFuIGlkPSJMLUwtQS1DIiBjbGFzcz0iZWRnZUxhYmVsIEwtTFMtQScgTC1MRS1DIj48L3NwYW4+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgY2xhc3M9ImxhYmVsIj48cmVjdCByeD0iMCIgcnk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjwvcmVjdD48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+PHNwYW4gaWQ9IkwtTC1BLUQiIGNsYXNzPSJlZGdlTGFiZWwgTC1MUy1BJyBMLUxFLUQiPjwvc3Bhbj48L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLUMtRyIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLUMnIEwtTEUtRyI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWwiIHRyYW5zZm9ybT0iIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGNsYXNzPSJsYWJlbCI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48L3JlY3Q+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjAiIGhlaWdodD0iMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPjxzcGFuIGlkPSJMLUwtQy1IIiBjbGFzcz0iZWRnZUxhYmVsIEwtTFMtQycgTC1MRS1IIj48L3NwYW4+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgY2xhc3M9ImxhYmVsIj48cmVjdCByeD0iMCIgcnk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjwvcmVjdD48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+PHNwYW4gaWQ9IkwtTC1JLUoiIGNsYXNzPSJlZGdlTGFiZWwgTC1MUy1JJyBMLUxFLUoiPjwvc3Bhbj48L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLUktRCIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLUknIEwtTEUtRCI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWwiIHRyYW5zZm9ybT0iIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGNsYXNzPSJsYWJlbCI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48L3JlY3Q+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjAiIGhlaWdodD0iMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPjxzcGFuIGlkPSJMLUwtRS1KIiBjbGFzcz0iZWRnZUxhYmVsIEwtTFMtRScgTC1MRS1KIj48L3NwYW4+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgY2xhc3M9ImxhYmVsIj48cmVjdCByeD0iMCIgcnk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjwvcmVjdD48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+PHNwYW4gaWQ9IkwtTC1ELUgiIGNsYXNzPSJlZGdlTGFiZWwgTC1MUy1EJyBMLUxFLUgiPjwvc3Bhbj48L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGVzIj48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUEtMTgiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDg1LjUxNTYyNSwxMDMpIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxyZWN0IHJ4PSIwIiByeT0iMCIgeD0iLTY2LjcxMDkzNzUiIHk9Ii0xNSIgd2lkdGg9IjEzMy40MjE4NzUiIGhlaWdodD0iMzAiIGNsYXNzPSJsYWJlbC1jb250YWluZXIiPjwvcmVjdD48ZyBjbGFzcz0ibGFiZWwiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01Ni43MTA5Mzc1LC01KSI+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjExMy40MjE4NzUiIGhlaWdodD0iMTAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij5vdXRwdXRfaXRlcmF0b3ImbHQ7TywgVCZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1CLTE5IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyOTguNjQ4NDM3NSwyMykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItODUuNjE3MTg3NSIgeT0iLTE1IiB3aWR0aD0iMTcxLjIzNDM3NSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTc1LjYxNzE4NzUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTUxLjIzNDM3NSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPipvdXQrKyA9IHN0ZDo6Zm9yd2FyZCZsdDtUJmd0Oyh0KTs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1DLTIxIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyOTguNjQ4NDM3NSwxMDMpIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxyZWN0IHJ4PSIwIiByeT0iMCIgeD0iLTgyLjkxNDA2MjUiIHk9Ii0xNSIgd2lkdGg9IjE2NS44MjgxMjUiIGhlaWdodD0iMzAiIGNsYXNzPSJsYWJlbC1jb250YWluZXIiPjwvcmVjdD48ZyBjbGFzcz0ibGFiZWwiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC03Mi45MTQwNjI1LC01KSI+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjE0NS44MjgxMjUiIGhlaWdodD0iMTAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij5pbnB1dF9vcl9vdXRwdXRfaXRlcmF0b3ImbHQ7TyZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1ELTIzIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyOTguNjQ4NDM3NSwxOTMpIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxyZWN0IHJ4PSIwIiByeT0iMCIgeD0iLTc3LjUxNTYyNSIgeT0iLTE1IiB3aWR0aD0iMTU1LjAzMTI1IiBoZWlnaHQ9IjMwIiBjbGFzcz0ibGFiZWwtY29udGFpbmVyIj48L3JlY3Q+PGcgY2xhc3M9ImxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNjcuNTE1NjI1LC01KSI+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjEzNS4wMzEyNSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPmluZGlyZWN0bHlfd3JpdGFibGUmbHQ7TywgVCZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1HLTI1IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MDYuMzgyODEyNSw5MykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNzIuMTE3MTg3NSIgeT0iLTE1IiB3aWR0aD0iMTQ0LjIzNDM3NSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTYyLjExNzE4NzUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTI0LjIzNDM3NSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPndlYWtseV9pbmNyZW1lbnRhYmxlJmx0O08mZ3Q7PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PC9nPjxnIGNsYXNzPSJub2RlIGRlZmF1bHQiIGlkPSJmbG93Y2hhcnQtSC0yNyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTA2LjM4MjgxMjUsMTgzKSIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cmVjdCByeD0iMCIgcnk9IjAiIHg9Ii0xOC4xMDE1NjI1IiB5PSItMTUiIHdpZHRoPSIzNi4yMDMxMjUiIGhlaWdodD0iMzAiIGNsYXNzPSJsYWJlbC1jb250YWluZXIiPjwvcmVjdD48ZyBjbGFzcz0ibGFiZWwiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjEwMTU2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTYuMjAzMTI1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+Km87PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PC9nPjxnIGNsYXNzPSJub2RlIGRlZmF1bHQiIGlkPSJmbG93Y2hhcnQtSS0yOCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODUuNTE1NjI1LDIxMykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNzcuNTE1NjI1IiB5PSItMTUiIHdpZHRoPSIxNTUuMDMxMjUiIGhlaWdodD0iMzAiIGNsYXNzPSJsYWJlbC1jb250YWluZXIiPjwvcmVjdD48ZyBjbGFzcz0ibGFiZWwiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC02Ny41MTU2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTM1LjAzMTI1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+aW5kaXJlY3RseV9jb3B5YWJsZSZsdDtJLCBPJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUotMjkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI5OC42NDg0Mzc1LDI4MykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNjkuNDE0MDYyNSIgeT0iLTE1IiB3aWR0aD0iMTM4LjgyODEyNSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTU5LjQxNDA2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTE4LjgyODEyNSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPmluZGlyZWN0bHlfcmVhZGFibGUmbHQ7SSZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1FLTMyIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg4NS41MTU2MjUsMjkzKSIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cmVjdCByeD0iMCIgcnk9IjAiIHg9Ii01NS45MTQwNjI1IiB5PSItMTUiIHdpZHRoPSIxMTEuODI4MTI1IiBoZWlnaHQ9IjMwIiBjbGFzcz0ibGFiZWwtY29udGFpbmVyIj48L3JlY3Q+PGcgY2xhc3M9ImxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDUuOTE0MDYyNSwtNSkiPjxmb3JlaWduT2JqZWN0IHdpZHRoPSI5MS44MjgxMjUiIGhlaWdodD0iMTAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij5pbnB1dF9pdGVyYXRvciZsdDtJJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48L2c+PC9nPjwvZz48L3N2Zz4=" alt /></p>
+</blockquote>
+<p>And let me present two possible specifications for <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>In C++20</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Hypothetical</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I,</span>
+<span id="cb4-2"><a href="#cb4-2"></a>          sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S,</span>
+<span id="cb4-3"><a href="#cb4-3"></a>          weakly_incrementable O<span class="op">&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>  <span class="kw">requires</span> indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I,</span>
+<span id="cb5-2"><a href="#cb5-2"></a>          sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S,</span>
+<span id="cb5-3"><a href="#cb5-3"></a>          output_iterator<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> O<span class="op">&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Now, the one on the right actually says <code class="sourceCode cpp">output_iterator</code>, which I think is extremely valuable. But are the requirements any different?</p>
+<p>In C++20, we require:</p>
+<ul>
+<li><code class="sourceCode cpp">O</code> is <code class="sourceCode cpp">weakly_incrementable</code></li>
+<li><code class="sourceCode cpp">indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></code>, which means <code class="sourceCode cpp">I</code> is <code class="sourceCode cpp">indirectly_readable</code> (which is already required by <code class="sourceCode cpp">input_iterator</code>) and <code class="sourceCode cpp">O</code> is <code class="sourceCode cpp">indirectly_writable<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></code></li>
+</ul>
+<p>The hypothetical version requires <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></code>, which breaks down into:</p>
+<ul>
+<li><code class="sourceCode cpp">input_or_output_iterator</code>
+<ul>
+<li>dereferencable (already required by <code class="sourceCode cpp">indirectly_writable</code>, since you have to have <code class="sourceCode cpp"><span class="op">*</span>o <span class="op">=</span> expr;</code> work)</li>
+<li><code class="sourceCode cpp">weakly_incrementable</code> (explicitly required in C++20)</li>
+</ul></li>
+<li><code class="sourceCode cpp">indirectly_writable</code> (explicitly required in C++20)</li>
+<li><code class="sourceCode cpp"><span class="op">*</span>i<span class="op">++</span> <span class="op">=</span> t;</code> (<em>not</em> required in C++20)</li>
+</ul>
+<p>Basically: the two formulations have identical requirements <em>except</em> that today’s specification of <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>copy</code> does not require <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> t;</code> to work, while my hypothetical one does. Generally speaking, this is a good thing. It may be syntactically nice to write <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> t;</code> instead of <code class="sourceCode cpp"><span class="op">*</span>out <span class="op">=</span> t; <span class="op">++</span>out;</code>, but it’s not actually necessary to solve any problems. This makes <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code> more usable, but it means that our most output-y of output algorithms doesn’t use <code class="sourceCode cpp">output_iterator</code>.</p>
+<h2 data-number="2.2" id="does-anything-in-ranges-use-output_iterator"><span class="header-section-number">2.2</span> Does anything in Ranges use <code class="sourceCode cpp">output_iterator</code>?<a href="#does-anything-in-ranges-use-output_iterator" class="self-link"></a></h2>
+<p>I thought it’d be useful to go through everything in <code class="sourceCode cpp"><span class="op">&lt;</span>algorithm<span class="op">&gt;</span></code> that uses an output iterator (if not an <code class="sourceCode cpp">output_iterator</code>) and catalogue all the kinds of constraints we have on them. There are many different approaches (in the below, <code class="sourceCode cpp">X</code> just denotes some type, <code class="sourceCode cpp">O</code> is our output iterator, <code class="sourceCode cpp">I</code> is the corresponding input iterator):</p>
+<ul>
+<li><code class="sourceCode cpp">weakly_incrementable<span class="op">&lt;</span>O<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></code>: <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>copy_n</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>copy_if</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>remove_copy</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>remove_copy_if</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>unique_copy</code> (although this one has a disjunction that might include other constraints), <code class="sourceCode cpp">ranges<span class="op">::</span>reverse_copy</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>rotate_copy</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>partition_copy</code></li>
+<li><code class="sourceCode cpp">weakly_incrementable<span class="op">&lt;</span>O<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> indirectly_movable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></code>: <code class="sourceCode cpp">ranges<span class="op">::</span>move</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>move_if</code></li>
+<li><code class="sourceCode cpp">weakly_incrementable<span class="op">&lt;</span>O<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> indirectly_writable<span class="op">&lt;</span>O, X<span class="op">&gt;</span></code>: <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code></li>
+<li><code class="sourceCode cpp">output_iterator<span class="op">&lt;</span>O, X<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></code>: <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy_if</code></li>
+<li><code class="sourceCode cpp">output_iterator<span class="op">&lt;</span>O, X<span class="op">&gt;</span></code>: <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>fill_n</code></li>
+<li><code class="sourceCode cpp">input_or_output_iterator<span class="op">&lt;</span>O<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> indirectly_writable<span class="op">&lt;</span>O, X<span class="op">&gt;</span></code>: <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code> (see below), <code class="sourceCode cpp">ranges<span class="op">::</span>generate_n</code></li>
+<li><code class="sourceCode cpp">weakly_incrementable<span class="op">&lt;</span>O<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> mergeable<span class="op">&lt;</span>I1, I2, O, X, X<span class="op">&gt;</span></code> (technically <code class="sourceCode cpp">mergeable</code>’s requirements on <code class="sourceCode cpp">O</code> are just <code class="sourceCode cpp">indirectly_copyable</code>, but putting it separately for completeness): <code class="sourceCode cpp">ranges<span class="op">::</span>merge</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>set_union</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>set_intersection</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>set_difference</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>set_symmetric_difference</code></li>
+</ul>
+<p>Put differently, there are only 4 algorithms that use <code class="sourceCode cpp">output_iterator</code>: <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy_if</code>, <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code>, and <code class="sourceCode cpp">ranges<span class="op">::</span>fill_n</code>.</p>
+<p>There are, separately, 2 algorithms that use <code class="sourceCode cpp">output_range<span class="op">&lt;</span>R<span class="op">&gt;</span></code> (which requires its iterator to be an <code class="sourceCode cpp">output_iterator</code>): <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code>. While <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code> has the same requirements on its iterator/sentinel and range overloads, <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code> does not. The consequence of this is, for instance:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">auto</span> some_generator<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">auto</span> some_func<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span>;</span>
+<span id="cb6-3"><a href="#cb6-3"></a></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="kw">auto</span> g <span class="op">=</span> some_generator<span class="op">()</span>;</span>
+<span id="cb6-6"><a href="#cb6-6"></a>    std<span class="op">::</span>ranges<span class="op">::</span>generate<span class="op">(</span>g, some_func<span class="op">)</span>;                  <span class="co">// error</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>    std<span class="op">::</span>ranges<span class="op">::</span>generate<span class="op">(</span>g<span class="op">.</span>begin<span class="op">()</span>, g<span class="op">.</span>end<span class="op">()</span>, some_func<span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Since <span class="citation" data-cites="P2502R0">[<a href="#ref-P2502R0" role="doc-biblioref">P2502R0</a>]</span>’s <code class="sourceCode cpp">generator</code> (like all other input-only ranges in the standard library right now) has a postfix <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++</span></code> that returns <code class="sourceCode cpp"><span class="dt">void</span></code>, this makes <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span></code> ill-formed, which means that <code class="sourceCode cpp">iterator_t<span class="op">&lt;</span>generator<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;&gt;</span></code> is not an <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code> which means that <code class="sourceCode cpp">generator<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code> is not an <code class="sourceCode cpp">output_range<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code>. That makes the range overload fail. But <code class="sourceCode cpp">iterator_t<span class="op">&lt;</span>generator<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;&gt;</span></code> is <code class="sourceCode cpp">weakly_incrementable</code> and <code class="sourceCode cpp">indirectly_writable<span class="op">&lt;</span><span class="dt">int</span><span class="op">&amp;&gt;</span></code>, which are all the requirements of the iterator/sentinel overload, so this… works? The inconsistency is a problem.</p>
+<p>Now, <code class="sourceCode cpp">indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></code> is really two constraints put together. It requires that <code class="sourceCode cpp">I</code> is an <code class="sourceCode cpp">input_iterator</code> and that <code class="sourceCode cpp">O</code> is <code class="sourceCode cpp">indirectly_writable<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></code>. This constraint is by far the most common formulation for output ranges. But it’s a bit redundant, since all of these algorithms already separately require <code class="sourceCode cpp">input_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span></code>. The only new requirement that <code class="sourceCode cpp">indirectly_copyable</code> brings in is the <code class="sourceCode cpp">indirectly_writable</code> one. What I mean is that instead of:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, weakly_incrementable O<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>  <span class="kw">requires</span> indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>  <span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>we could get the same exact same requirements (no more, no less) by instead writing:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_iterator I, sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S, weakly_incrementable O<span class="op">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="kw">requires</span> indirectly_writable<span class="op">&lt;</span>O, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>  <span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span> ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>The same idea could hold for the algorithms requiring <code class="sourceCode cpp">indirectly_movable</code> (replaced with a different kind of <code class="sourceCode cpp">indirectly_writable</code> constraint).</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal-a-weaker-output-iterator"><span class="header-section-number">3</span> Proposal: A Weaker Output Iterator<a href="#proposal-a-weaker-output-iterator" class="self-link"></a></h1>
+<p>We can’t remove the <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++=</span> r;</code> requirement from <code class="sourceCode cpp">output_iterator</code>. It’s 2022, surely somebody has written some C++20 code by now, and might rely on that part of the <code class="sourceCode cpp"><span class="kw">concept</span></code>. Similarly, we cannot add the <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> r;</code> requirement to all the algorithms which take an output iterator, since likewise somebody could have written C++20 code that passes in a type into these algorithms that meets every requirement but that one, and this added constraint would break their code.</p>
+<p>However, the current state of affairs isn’t great. Algorithm requirements are inconsistent and aren’t written using terms that the algorithms have historically used, which users are familiar with.</p>
+<p>If this were 2019 or 2020, I would suggest that we either drop the <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> r;</code> requirement from <code class="sourceCode cpp">output_iterator</code> or strengthen all the algorithms to require <code class="sourceCode cpp">output_iterator</code>. But it’s 2022, and we can clearly do neither. Consequently, this paper does not propose anything that would change the behavior of any valid C++20 code.</p>
+<p>Instead, the problem this paper seeks to solve is to unify the requirements that all the output algorithms use. We cannot unify around the stronger concept, so instead we can introduce a new, weaker output iterator concept:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> I, <span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>  <span class="kw">concept</span> weak_output_iterator <span class="op">=</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    input_or_output_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    indirectly_writable<span class="op">&lt;</span>I, T<span class="op">&gt;</span>;</span>
+<span id="cb9-5"><a href="#cb9-5"></a></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> I, <span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>  <span class="kw">concept</span> output_iterator <span class="op">=</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>    weak_output_iterator<span class="op">&lt;</span>I, T<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>    <span class="kw">requires</span><span class="op">(</span>I i, T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>      <span class="op">*</span>i<span class="op">++</span> <span class="op">=</span> std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span>;        <span class="co">// not required to be equality-preserving</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a>    <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Or, again in graph form:</p>
+<blockquote>
+<p><img src="data:image/svg+xml;base64,PHN2ZyBpZD0ibWVybWFpZC0xNjQ5NTE5MTk0MDI5IiB3aWR0aD0iMTAwJSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgaGVpZ2h0PSIzMTYiIHN0eWxlPSJtYXgtd2lkdGg6IDc3NS4zMjhweDsgYmFja2dyb3VuZC1jb2xvcjogd2hpdGU7IiB2aWV3Qm94PSIwIDAgNzc1LjMyODEyNSAzMTYiPjxzdHlsZT4jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IHtmb250LWZhbWlseTpNb25vc3BhY2U7Zm9udC1zaXplOjlweDtmaWxsOiMzMzM7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmVycm9yLWljb257ZmlsbDojNTUyMjIyO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5lcnJvci10ZXh0e2ZpbGw6IzU1MjIyMjtzdHJva2U6IzU1MjIyMjt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuZWRnZS10aGlja25lc3Mtbm9ybWFse3N0cm9rZS13aWR0aDoycHg7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmVkZ2UtdGhpY2tuZXNzLXRoaWNre3N0cm9rZS13aWR0aDozLjVweDt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuZWRnZS1wYXR0ZXJuLXNvbGlke3N0cm9rZS1kYXNoYXJyYXk6MDt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuZWRnZS1wYXR0ZXJuLWRhc2hlZHtzdHJva2UtZGFzaGFycmF5OjM7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmVkZ2UtcGF0dGVybi1kb3R0ZWR7c3Ryb2tlLWRhc2hhcnJheToyO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5tYXJrZXJ7ZmlsbDojMzMzMzMzO3N0cm9rZTojMzMzMzMzO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5tYXJrZXIuY3Jvc3N7c3Ryb2tlOiMzMzMzMzM7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgc3Zne2ZvbnQtZmFtaWx5Ok1vbm9zcGFjZTtmb250LXNpemU6OXB4O30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5sYWJlbHtmb250LWZhbWlseTpNb25vc3BhY2U7Y29sb3I6IzMzMzt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuY2x1c3Rlci1sYWJlbCB0ZXh0e2ZpbGw6IzMzMzt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuY2x1c3Rlci1sYWJlbCBzcGFue2NvbG9yOiMzMzM7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmxhYmVsIHRleHQsI21lcm1haWQtMTY0OTUxOTE5NDAyOSBzcGFue2ZpbGw6IzMzMztjb2xvcjojMzMzO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5ub2RlIHJlY3QsI21lcm1haWQtMTY0OTUxOTE5NDAyOSAubm9kZSBjaXJjbGUsI21lcm1haWQtMTY0OTUxOTE5NDAyOSAubm9kZSBlbGxpcHNlLCNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLm5vZGUgcG9seWdvbiwjbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5ub2RlIHBhdGh7ZmlsbDojRUNFQ0ZGO3N0cm9rZTojOTM3MERCO3N0cm9rZS13aWR0aDoxcHg7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLm5vZGUgLmxhYmVse3RleHQtYWxpZ246Y2VudGVyO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5ub2RlLmNsaWNrYWJsZXtjdXJzb3I6cG9pbnRlcjt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuYXJyb3doZWFkUGF0aHtmaWxsOiMzMzMzMzM7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmVkZ2VQYXRoIC5wYXRoe3N0cm9rZTojMzMzMzMzO3N0cm9rZS13aWR0aDoyLjBweDt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuZmxvd2NoYXJ0LWxpbmt7c3Ryb2tlOiMzMzMzMzM7ZmlsbDpub25lO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5lZGdlTGFiZWx7YmFja2dyb3VuZC1jb2xvcjojZThlOGU4O3RleHQtYWxpZ246Y2VudGVyO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5lZGdlTGFiZWwgcmVjdHtvcGFjaXR5OjAuNTtiYWNrZ3JvdW5kLWNvbG9yOiNlOGU4ZTg7ZmlsbDojZThlOGU4O30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IC5jbHVzdGVyIHJlY3R7ZmlsbDojZmZmZmRlO3N0cm9rZTojYWFhYTMzO3N0cm9rZS13aWR0aDoxcHg7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmNsdXN0ZXIgdGV4dHtmaWxsOiMzMzM7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgLmNsdXN0ZXIgc3Bhbntjb2xvcjojMzMzO30jbWVybWFpZC0xNjQ5NTE5MTk0MDI5IGRpdi5tZXJtYWlkVG9vbHRpcHtwb3NpdGlvbjphYnNvbHV0ZTt0ZXh0LWFsaWduOmNlbnRlcjttYXgtd2lkdGg6MjAwcHg7cGFkZGluZzoycHg7Zm9udC1mYW1pbHk6TW9ub3NwYWNlO2ZvbnQtc2l6ZToxMnB4O2JhY2tncm91bmQ6aHNsKDgwLCAxMDAlLCA5Ni4yNzQ1MDk4MDM5JSk7Ym9yZGVyOjFweCBzb2xpZCAjYWFhYTMzO2JvcmRlci1yYWRpdXM6MnB4O3BvaW50ZXItZXZlbnRzOm5vbmU7ei1pbmRleDoxMDA7fSNtZXJtYWlkLTE2NDk1MTkxOTQwMjkgOnJvb3R7LS1tZXJtYWlkLWZvbnQtZmFtaWx5OiJ0cmVidWNoZXQgbXMiLHZlcmRhbmEsYXJpYWwsc2Fucy1zZXJpZjt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuZ3JlZW4mZ3Q7KntmaWxsOiM5ZjYhaW1wb3J0YW50O3N0cm9rZTojMzMzIWltcG9ydGFudDtzdHJva2Utd2lkdGg6MnB4IWltcG9ydGFudDt9I21lcm1haWQtMTY0OTUxOTE5NDAyOSAuZ3JlZW4gc3BhbntmaWxsOiM5ZjYhaW1wb3J0YW50O3N0cm9rZTojMzMzIWltcG9ydGFudDtzdHJva2Utd2lkdGg6MnB4IWltcG9ydGFudDt9PC9zdHlsZT48Zz48ZyBjbGFzcz0ib3V0cHV0Ij48ZyBjbGFzcz0iY2x1c3RlcnMiPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGhzIj48ZyBjbGFzcz0iZWRnZVBhdGggTFMtQSBMRS1CIiBpZD0iTC1BLUIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0xMDIuMjI0MjE4NzUsNThMMTEyLjkyMzgyODEyNSw1Mi4xNjY2NjY2NjY2NjY2NjRDMTIzLjYyMzQzNzUwMDAwMDAxLDQ2LjMzMzMzMzMzMzMzMzMzNiwxNDUuMDIyNjU2MjQ5OTk5OTgsMzQuNjY2NjY2NjY2NjY2NjY0LDE3My4yNTg3MjM5NTgzMzMzNSwyOC44MzMzMzMzMzMzMzMzMzJDMjAxLjQ5NDc5MTY2NjY2NjY2LDIzLDIzNi41Njc3MDgzMzMzMzMzNCwyMywyNzEuNjQwNjI1LDIzQzMwNi43MTM1NDE2NjY2NjY3LDIzLDM0MS43ODY0NTgzMzMzMzMzLDIzLDM2My40ODk1ODMzMzMzMzMzLDIzQzM4NS4xOTI3MDgzMzMzMzMzLDIzLDM5My41MjYwNDE2NjY2NjY3LDIzLDM5Ny42OTI3MDgzMzMzMzMzLDIzTDQwMS44NTkzNzUsMjMiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMjYpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMjYiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtQSBMRS1YIiBpZD0iTC1BLVgiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0xMDkuMTAyNTM5MDYyNSw4OEwxMTguNjU1NzYxNzE4NzUsOTIuMTY2NjY2NjY2NjY2NjdDMTI4LjIwODk4NDM3NSw5Ni4zMzMzMzMzMzMzMzMzMywxNDcuMzE1NDI5Njg3NSwxMDQuNjY2NjY2NjY2NjY2NjcsMTYxLjAzNTMxOTAxMDQxNjY2LDEwOC44MzMzMzMzMzMzMzMzM0MxNzQuNzU1MjA4MzMzMzMzMzQsMTEzLDE4My4wODg1NDE2NjY2NjY2NiwxMTMsMTg3LjI1NTIwODMzMzMzMzM0LDExM0wxOTEuNDIxODc1LDExMyIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQyNykiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQyNyIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1YIExFLUMiIGlkPSJMLVgtQyIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTM1MS44NTkzNzUsMTA1LjM3NjAwMjM3NjAwMjM4TDM1Ni4wMjYwNDE2NjY2NjY3LDEwNC45ODAwMDE5ODAwMDE5OUMzNjAuMTkyNzA4MzMzMzMzMywxMDQuNTg0MDAxNTg0MDAxNTcsMzY4LjUyNjA0MTY2NjY2NjcsMTAzLjc5MjAwMDc5MjAwMDc5LDM3Ny4zMDk4OTU4MzMzMzMzLDEwMy4zOTYwMDAzOTYwMDAzOUMzODYuMDkzNzUsMTAzLDM5NS4zMjgxMjUsMTAzLDM5OS45NDUzMTI1LDEwM0w0MDQuNTYyNSwxMDMiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMjgpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMjgiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtWCBMRS1EIiBpZD0iTC1YLUQiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0zMDMuMjA2MjUsMTI4TDMxNS40ODE3NzA4MzMzMzMzLDEzMy44MzMzMzMzMzMzMzMzNEMzMjcuNzU3MjkxNjY2NjY2NywxMzkuNjY2NjY2NjY2NjY2NjYsMzUyLjMwODMzMzMzMzMzMzM0LDE1MS4zMzMzMzMzMzMzMzMzNCwzNzMuODAxOTUzMTI1LDE1OS42NjY2NjY2NjY2NjY2NkMzOTUuMjk1NTcyOTE2NjY2NywxNjgsNDEzLjczMTc3MDgzMzMzMzMsMTczLDQyMi45NDk4Njk3OTE2NjY3LDE3NS41TDQzMi4xNjc5Njg3NSwxNzgiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMjkpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMjkiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtQyBMRS1HIiBpZD0iTC1DLUciIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik01NzAuMzkwNjI1LDk1LjUwNDQxNDE1MzU0MTkyTDU3NS4wMDc4MTI1LDk1LjA4NzAxMTc5NDYxODI2QzU3OS42MjUsOTQuNjY5NjA5NDM1Njk0NjEsNTg4Ljg1OTM3NSw5My44MzQ4MDQ3MTc4NDczLDU5Ny42NDMyMjkxNjY2NjY2LDkzLjQxNzQwMjM1ODkyMzY1QzYwNi40MjcwODMzMzMzMzM0LDkzLDYxNC43NjA0MTY2NjY2NjY2LDkzLDYxOC45MjcwODMzMzMzMzM0LDkzTDYyMy4wOTM3NSw5MyIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQzMCkiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQzMCIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1DIExFLUgiIGlkPSJMLUMtSCIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTUyOC45NTgwMDc4MTI1LDExOEw1NDAuNDgwNjMxNTEwNDE2NiwxMjIuMTY2NjY2NjY2NjY2NjdDNTUyLjAwMzI1NTIwODMzMzQsMTI2LjMzMzMzMzMzMzMzMzMzLDU3NS4wNDg1MDI2MDQxNjY2LDEzNC42NjY2NjY2NjY2NjY2Niw1OTkuNzQwMzk3MTM1NDE2NiwxNDQuMjU3NDA3NTU2Mzc3ODdDNjI0LjQzMjI5MTY2NjY2NjYsMTUzLjg0ODE0ODQ0NjA4OTA4LDY1MC43NzA4MzMzMzMzMzM0LDE2NC42OTYyOTY4OTIxNzgxNCw2NjMuOTQwMTA0MTY2NjY2NiwxNzAuMTIwMzcxMTE1MjIyN0w2NzcuMTA5Mzc1LDE3NS41NDQ0NDUzMzgyNjcyMiIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQzMSkiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQzMSIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1JIExFLUoiIGlkPSJMLUktSiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTMyNC4yNSwyMjhMMzMzLjAxODIyOTE2NjY2NjcsMjMwLjVDMzQxLjc4NjQ1ODMzMzMzMzMsMjMzLDM1OS4zMjI5MTY2NjY2NjY3LDIzOCwzNzkuNjEzNzY5NTMxMjUsMjQ0LjY2NjY2NjY2NjY2NjY2QzM5OS45MDQ2MjIzOTU4MzMzLDI1MS4zMzMzMzMzMzMzMzMzNCw0MjIuOTQ5ODY5NzkxNjY2NywyNTkuNjY2NjY2NjY2NjY2Nyw0MzQuNDcyNDkzNDg5NTgzMywyNjMuODMzMzMzMzMzMzMzM0w0NDUuOTk1MTE3MTg3NSwyNjgiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMzIpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMzIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtSSBMRS1EIiBpZD0iTC1JLUQiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik0zNDkuMTU2MjUsMjA1LjYzMjkwNzYzMjkwNzYzTDM1My43NzM0Mzc1LDIwNS4xOTQwODk2OTQwODk2OEMzNTguMzkwNjI1LDIwNC43NTUyNzE3NTUyNzE3NiwzNjcuNjI1LDIwMy44Nzc2MzU4Nzc2MzU4NywzNzcuNzU5MTE0NTgzMzMzMywyMDIuOTQwMDc3NDQzOTYxODhDMzg3Ljg5MzIyOTE2NjY2NjcsMjAyLjAwMjUxOTAxMDI4NzksMzk4LjkyNzA4MzMzMzMzMzMsMjAxLjAwNTAzODAyMDU3NTgyLDQwNC40NDQwMTA0MTY2NjY3LDIwMC41MDYyOTc1MjU3MTk4TDQwOS45NjA5Mzc1LDIwMC4wMDc1NTcwMzA4NjM3NSIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQzMykiIHN0eWxlPSJmaWxsOm5vbmUiPjwvcGF0aD48ZGVmcz48bWFya2VyIGlkPSJhcnJvd2hlYWQzMyIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJVbml0cz0ic3Ryb2tlV2lkdGgiIG1hcmtlcldpZHRoPSI4IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6IiBjbGFzcz0iYXJyb3doZWFkUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+PC9nPjxnIGNsYXNzPSJlZGdlUGF0aCBMUy1FIExFLUoiIGlkPSJMLUUtSiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cGF0aCBjbGFzcz0icGF0aCIgZD0iTTMyNy41NTQ2ODc1LDI5M0wzMzUuNzcyMTM1NDE2NjY2NywyOTNDMzQzLjk4OTU4MzMzMzMzMzMsMjkzLDM2MC40MjQ0NzkxNjY2NjY3LDI5MywzNzUuNTA5MTE0NTgzMzMzMywyOTIuMzc5MTkzNDQ1ODY0OEMzOTAuNTkzNzUsMjkxLjc1ODM4Njg5MTcyOTcsNDA0LjMyODEyNSwyOTAuNTE2NzczNzgzNDU5Myw0MTEuMTk1MzEyNSwyODkuODk1OTY3MjI5MzI0MUw0MTguMDYyNSwyODkuMjc1MTYwNjc1MTg4OTQiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkMzQpIiBzdHlsZT0iZmlsbDpub25lIj48L3BhdGg+PGRlZnM+PG1hcmtlciBpZD0iYXJyb3doZWFkMzQiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InN0cm9rZVdpZHRoIiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI2IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMCAwIEwgMTAgNSBMIDAgMTAgeiIgY2xhc3M9ImFycm93aGVhZFBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ij48L3BhdGg+PC9tYXJrZXI+PC9kZWZzPjwvZz48ZyBjbGFzcz0iZWRnZVBhdGggTFMtRCBMRS1IIiBpZD0iTC1ELUgiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHBhdGggY2xhc3M9InBhdGgiIGQ9Ik01NjQuOTkyMTg3NSwxOTNMNTcwLjUwOTExNDU4MzMzMzQsMTkzQzU3Ni4wMjYwNDE2NjY2NjY2LDE5Myw1ODcuMDU5ODk1ODMzMzMzNCwxOTMsNjA1Ljc0NjA5Mzc1LDE5MS42NDM5ODE0NDQyMzg4OEM2MjQuNDMyMjkxNjY2NjY2NiwxOTAuMjg3OTYyODg4NDc3NzUsNjUwLjc3MDgzMzMzMzMzMzQsMTg3LjU3NTkyNTc3Njk1NTQ3LDY2My45NDAxMDQxNjY2NjY2LDE4Ni4yMTk5MDcyMjExOTQzNUw2NzcuMTA5Mzc1LDE4NC44NjM4ODg2NjU0MzMyIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZDM1KSIgc3R5bGU9ImZpbGw6bm9uZSI+PC9wYXRoPjxkZWZzPjxtYXJrZXIgaWQ9ImFycm93aGVhZDM1IiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJzdHJva2VXaWR0aCIgbWFya2VyV2lkdGg9IjgiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDAgMCBMIDEwIDUgTCAwIDEwIHoiIGNsYXNzPSJhcnJvd2hlYWRQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAxOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyI+PC9wYXRoPjwvbWFya2VyPjwvZGVmcz48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWxzIj48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLUEtQiIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLUEnIEwtTEUtQiI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWwiIHRyYW5zZm9ybT0iIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGNsYXNzPSJsYWJlbCI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48L3JlY3Q+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjAiIGhlaWdodD0iMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPjxzcGFuIGlkPSJMLUwtQS1YIiBjbGFzcz0iZWRnZUxhYmVsIEwtTFMtQScgTC1MRS1YIj48L3NwYW4+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgY2xhc3M9ImxhYmVsIj48cmVjdCByeD0iMCIgcnk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjwvcmVjdD48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+PHNwYW4gaWQ9IkwtTC1YLUMiIGNsYXNzPSJlZGdlTGFiZWwgTC1MUy1YJyBMLUxFLUMiPjwvc3Bhbj48L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLVgtRCIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLVgnIEwtTEUtRCI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWwiIHRyYW5zZm9ybT0iIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGNsYXNzPSJsYWJlbCI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48L3JlY3Q+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjAiIGhlaWdodD0iMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPjxzcGFuIGlkPSJMLUwtQy1HIiBjbGFzcz0iZWRnZUxhYmVsIEwtTFMtQycgTC1MRS1HIj48L3NwYW4+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgY2xhc3M9ImxhYmVsIj48cmVjdCByeD0iMCIgcnk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjwvcmVjdD48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+PHNwYW4gaWQ9IkwtTC1DLUgiIGNsYXNzPSJlZGdlTGFiZWwgTC1MUy1DJyBMLUxFLUgiPjwvc3Bhbj48L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLUktSiIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLUknIEwtTEUtSiI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWwiIHRyYW5zZm9ybT0iIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGNsYXNzPSJsYWJlbCI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48L3JlY3Q+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjAiIGhlaWdodD0iMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPjxzcGFuIGlkPSJMLUwtSS1EIiBjbGFzcz0iZWRnZUxhYmVsIEwtTFMtSScgTC1MRS1EIj48L3NwYW4+PC9kaXY+PC9mb3JlaWduT2JqZWN0PjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSIiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgY2xhc3M9ImxhYmVsIj48cmVjdCByeD0iMCIgcnk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjwvcmVjdD48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMCIgaGVpZ2h0PSIwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+PHNwYW4gaWQ9IkwtTC1FLUoiIGNsYXNzPSJlZGdlTGFiZWwgTC1MUy1FJyBMLUxFLUoiPjwvc3Bhbj48L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09IiIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBjbGFzcz0ibGFiZWwiPjxyZWN0IHJ4PSIwIiByeT0iMCIgd2lkdGg9IjAiIGhlaWdodD0iMCI+PC9yZWN0Pjxmb3JlaWduT2JqZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij48c3BhbiBpZD0iTC1MLUQtSCIgY2xhc3M9ImVkZ2VMYWJlbCBMLUxTLUQnIEwtTEUtSCI+PC9zcGFuPjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZXMiPjxnIGNsYXNzPSJub2RlIGRlZmF1bHQiIGlkPSJmbG93Y2hhcnQtQS0yMCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNzQuNzEwOTM3NSw3MykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNjYuNzEwOTM3NSIgeT0iLTE1IiB3aWR0aD0iMTMzLjQyMTg3NSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTU2LjcxMDkzNzUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTEzLjQyMTg3NSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPm91dHB1dF9pdGVyYXRvciZsdDtPLCBUJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUItMjEiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQ4Ny40NzY1NjI1LDIzKSIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cmVjdCByeD0iMCIgcnk9IjAiIHg9Ii04NS42MTcxODc1IiB5PSItMTUiIHdpZHRoPSIxNzEuMjM0Mzc1IiBoZWlnaHQ9IjMwIiBjbGFzcz0ibGFiZWwtY29udGFpbmVyIj48L3JlY3Q+PGcgY2xhc3M9ImxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNzUuNjE3MTg3NSwtNSkiPjxmb3JlaWduT2JqZWN0IHdpZHRoPSIxNTEuMjM0Mzc1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+Km91dCsrID0gc3RkOjpmb3J3YXJkJmx0O1QmZ3Q7KHQpOzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBncmVlbiIgaWQ9ImZsb3djaGFydC1YLTIzIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzEuNjQwNjI1LDExMykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItODAuMjE4NzUiIHk9Ii0xNSIgd2lkdGg9IjE2MC40Mzc1IiBoZWlnaHQ9IjMwIiBjbGFzcz0ibGFiZWwtY29udGFpbmVyIj48L3JlY3Q+PGcgY2xhc3M9ImxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNzAuMjE4NzUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTQwLjQzNzUiIGhlaWdodD0iMTAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij53ZWFrX291dHB1dF9pdGVyYXRvciZsdDtPLCBUJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUMtMjUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQ4Ny40NzY1NjI1LDEwMykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItODIuOTE0MDYyNSIgeT0iLTE1IiB3aWR0aD0iMTY1LjgyODEyNSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTcyLjkxNDA2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTQ1LjgyODEyNSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPmlucHV0X29yX291dHB1dF9pdGVyYXRvciZsdDtPJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUQtMjciIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQ4Ny40NzY1NjI1LDE5MykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNzcuNTE1NjI1IiB5PSItMTUiIHdpZHRoPSIxNTUuMDMxMjUiIGhlaWdodD0iMzAiIGNsYXNzPSJsYWJlbC1jb250YWluZXIiPjwvcmVjdD48ZyBjbGFzcz0ibGFiZWwiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC02Ny41MTU2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTM1LjAzMTI1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+aW5kaXJlY3RseV93cml0YWJsZSZsdDtPLCBUJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUctMjkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDY5NS4yMTA5Mzc1LDkzKSIgc3R5bGU9Im9wYWNpdHk6IDE7Ij48cmVjdCByeD0iMCIgcnk9IjAiIHg9Ii03Mi4xMTcxODc1IiB5PSItMTUiIHdpZHRoPSIxNDQuMjM0Mzc1IiBoZWlnaHQ9IjMwIiBjbGFzcz0ibGFiZWwtY29udGFpbmVyIj48L3JlY3Q+PGcgY2xhc3M9ImxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNjIuMTE3MTg3NSwtNSkiPjxmb3JlaWduT2JqZWN0IHdpZHRoPSIxMjQuMjM0Mzc1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+d2Vha2x5X2luY3JlbWVudGFibGUmbHQ7TyZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1ILTMxIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg2OTUuMjEwOTM3NSwxODMpIiBzdHlsZT0ib3BhY2l0eTogMTsiPjxyZWN0IHJ4PSIwIiByeT0iMCIgeD0iLTE4LjEwMTU2MjUiIHk9Ii0xNSIgd2lkdGg9IjM2LjIwMzEyNSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTguMTAxNTYyNSwtNSkiPjxmb3JlaWduT2JqZWN0IHdpZHRoPSIxNi4yMDMxMjUiIGhlaWdodD0iMTAiPjxkaXYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHN0eWxlPSJkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IHdoaXRlLXNwYWNlOiBub3dyYXA7Ij4qbzs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1JLTMyIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzEuNjQwNjI1LDIxMykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNzcuNTE1NjI1IiB5PSItMTUiIHdpZHRoPSIxNTUuMDMxMjUiIGhlaWdodD0iMzAiIGNsYXNzPSJsYWJlbC1jb250YWluZXIiPjwvcmVjdD48ZyBjbGFzcz0ibGFiZWwiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC02Ny41MTU2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTM1LjAzMTI1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+aW5kaXJlY3RseV9jb3B5YWJsZSZsdDtJLCBPJmd0OzwvZGl2PjwvZm9yZWlnbk9iamVjdD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0iZmxvd2NoYXJ0LUotMzMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQ4Ny40NzY1NjI1LDI4MykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNjkuNDE0MDYyNSIgeT0iLTE1IiB3aWR0aD0iMTM4LjgyODEyNSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTU5LjQxNDA2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iMTE4LjgyODEyNSIgaGVpZ2h0PSIxMCI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94aHRtbCIgc3R5bGU9ImRpc3BsYXk6IGlubGluZS1ibG9jazsgd2hpdGUtc3BhY2U6IG5vd3JhcDsiPmluZGlyZWN0bHlfcmVhZGFibGUmbHQ7SSZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9ImZsb3djaGFydC1FLTM2IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzEuNjQwNjI1LDI5MykiIHN0eWxlPSJvcGFjaXR5OiAxOyI+PHJlY3Qgcng9IjAiIHJ5PSIwIiB4PSItNTUuOTE0MDYyNSIgeT0iLTE1IiB3aWR0aD0iMTExLjgyODEyNSIgaGVpZ2h0PSIzMCIgY2xhc3M9ImxhYmVsLWNvbnRhaW5lciI+PC9yZWN0PjxnIGNsYXNzPSJsYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTQ1LjkxNDA2MjUsLTUpIj48Zm9yZWlnbk9iamVjdCB3aWR0aD0iOTEuODI4MTI1IiBoZWlnaHQ9IjEwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiBzdHlsZT0iZGlzcGxheTogaW5saW5lLWJsb2NrOyB3aGl0ZS1zcGFjZTogbm93cmFwOyI+aW5wdXRfaXRlcmF0b3ImbHQ7SSZndDs8L2Rpdj48L2ZvcmVpZ25PYmplY3Q+PC9nPjwvZz48L2c+PC9nPjwvZz48L2c+PC9zdmc+" alt /></p>
+</blockquote>
+<p>With such a concept, we can go through all the algorithms and respecify them to just use it. For example, <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code> becomes:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>In C++20</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I,</span>
+<span id="cb10-2"><a href="#cb10-2"></a>          sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S,</span>
+<span id="cb10-3"><a href="#cb10-3"></a>          weakly_incrementable O<span class="op">&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>  <span class="kw">requires</span> indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I,</span>
+<span id="cb11-2"><a href="#cb11-2"></a>          sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S,</span>
+<span id="cb11-3"><a href="#cb11-3"></a>          weak_output_iterator<span class="op">&lt;</span>iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> O<span class="op">&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a><span class="kw">constexpr</span> ranges<span class="op">::</span>copy_result<span class="op">&lt;</span>I, O<span class="op">&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>ranges<span class="op">::</span>copy<span class="op">(</span>I first, S last, O result<span class="op">)</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Unlike my hypothetical spelling earlier, these two now have identical requirements.</p>
+<h2 data-number="3.1" id="summary-of-proposal"><span class="header-section-number">3.1</span> Summary of Proposal<a href="#summary-of-proposal" class="self-link"></a></h2>
+<p>This proposal introduces:</p>
+<ul>
+<li>A new concept <code class="sourceCode cpp">weak_output_iterator</code>, that <code class="sourceCode cpp">output_iterator</code> adds the <code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> r;</code> requirement on top of.</li>
+<li>A new concept <code class="sourceCode cpp">weak_output_range</code>, which requires <code class="sourceCode cpp">weak_output_iterator</code>. <code class="sourceCode cpp">output_range</code> is re-specified to refine <code class="sourceCode cpp">weak_output_range</code>.</li>
+<li>Modifying the <code class="sourceCode cpp">mergeable</code> concept to use <code class="sourceCode cpp">weak_output_iterator</code>. This does not change the requirements of this concept in any way.</li>
+<li>All output algorithms now require <code class="sourceCode cpp">weak_output_iterator</code>
+<ul>
+<li>In most cases, that’s re-specifying <code class="sourceCode cpp">weakly_incrementable</code> and <code class="sourceCode cpp">indirectly_writable</code> (no requirements change, just better name)</li>
+<li>In some cases, that’s <em>weakening</em> the requirement on those algorithms that require <code class="sourceCode cpp">output_iterator</code> (all currently valid code is still valid)</li>
+</ul></li>
+</ul>
+<p>As a result, all the output algorithms will have the same constraints (including different overloads of the same algorithm), and all those constraints will have <code class="sourceCode cpp">output_iterator</code> in them somewhere (even if it’s <code class="sourceCode cpp">weak_output_iterator</code>).</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h2 data-number="4.1" id="concept-weak_output_iterator"><span class="header-section-number">4.1</span> <code class="sourceCode cpp"><span class="kw">concept</span> weak_output_iterator</code><a href="#concept-weak_output_iterator" class="self-link"></a></h2>
+<p>Change <span>23.2 <a href="https://wg21.link/iterator.synopsis">[iterator.synopsis]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>namespace std {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  // ...</span>
+<span id="cb12-3"><a href="#cb12-3"></a></span>
+<span id="cb12-4"><a href="#cb12-4"></a>  // [iterator.concept.output], concept output_iterator</span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="va">+ template&lt;class I, class T&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="va">+   concept weak_output_iterator = <em>see below</em>;</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a></span>
+<span id="cb12-8"><a href="#cb12-8"></a>  template&lt;class I, class T&gt;</span>
+<span id="cb12-9"><a href="#cb12-9"></a>    concept output_iterator = see below;</span>
+<span id="cb12-10"><a href="#cb12-10"></a></span>
+<span id="cb12-11"><a href="#cb12-11"></a>  // ...</span>
+<span id="cb12-12"><a href="#cb12-12"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change <span>23.3.4.10 <a href="https://wg21.link/iterator.concept.output">[iterator.concept.output]</a></span> <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The semantic effects are specific to <code class="sourceCode default">output_iterator</code>, not <code class="sourceCode default">weak_output_iterator</code> ]</span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> The <span class="addu"><code class="sourceCode cpp">weak_output_iterator</code> and</span> <code class="sourceCode cpp">output_iterator</code> <span class="rm" style="color: #bf0303"><del>concept defines</del></span> <span class="addu">concepts define</span> requirements for a type that can be used to write values (from the requirement for <code class="sourceCode cpp">indirectly_writable</code> ([iterator.concept.writable])) and which can be both pre- and post-incremented. [<em>Note 1</em>: Output iterators are not required to model <code class="sourceCode cpp">equality_comparable</code>. — <em>end note</em>]</p>
+<div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a><span class="va">+ template&lt;class I, class T&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="va">+   concept weak_output_iterator =</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="va">+     input_or_output_iterator&lt;I&gt; &amp;&amp;</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="va">+     indirectly_writable&lt;I, T&gt;;</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>  template&lt;class I, class T&gt;</span>
+<span id="cb13-7"><a href="#cb13-7"></a>    concept output_iterator =</span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="st">-     input_or_output_iterator&lt;I&gt; &amp;&amp;</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="st">-     indirectly_writable&lt;I, T&gt; &amp;&amp;</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="va">+     weak_output_iterator&lt;I, T&gt; &amp;&amp;</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a>      requires(I i, T&amp;&amp; t) {</span>
+<span id="cb13-12"><a href="#cb13-12"></a>        *i++ = std::forward&lt;T&gt;(t);        // not required to be equality-preserving</span>
+<span id="cb13-13"><a href="#cb13-13"></a>      };</span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> Let <code class="sourceCode cpp">E</code> be an expression such that <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">((</span>E<span class="op">))</span></code> is <code class="sourceCode cpp">T</code>, and let <code class="sourceCode cpp">i</code> be a dereferenceable object of type <code class="sourceCode cpp">I</code>. <code class="sourceCode cpp">I</code> and <code class="sourceCode cpp">T</code> model <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span>I, T<span class="op">&gt;</span></code> only if <code class="sourceCode cpp"><span class="op">*</span>i<span class="op">++</span> <span class="op">=</span> E;</code> has effects equivalent to: <code class="sourceCode cpp"><span class="op">*</span>i <span class="op">=</span> E; <span class="op">++</span>i;</code></p>
+</blockquote>
+<h2 data-number="4.2" id="concept-mergeable"><span class="header-section-number">4.2</span> <code class="sourceCode cpp"><span class="kw">concept</span> mergeable</code><a href="#concept-mergeable" class="self-link"></a></h2>
+<p>Change <span>23.3.7.7 <a href="https://wg21.link/alg.req.mergeable">[alg.req.mergeable]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">1</a></span> The <code class="sourceCode cpp">mergeable</code> concept specifies the requirements of algorithms that merge sorted sequences into an output sequence by copying elements.</p>
+<div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a>template&lt;class I1, class I2, class Out, class R = ranges::less,</span>
+<span id="cb14-2"><a href="#cb14-2"></a>         class P1 = identity, class P2 = identity&gt;</span>
+<span id="cb14-3"><a href="#cb14-3"></a>  concept mergeable =</span>
+<span id="cb14-4"><a href="#cb14-4"></a>    input_iterator&lt;I1&gt; &amp;&amp;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>    input_iterator&lt;I2&gt; &amp;&amp;</span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="st">-   weakly_incrementable&lt;Out&gt; &amp;&amp;</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a><span class="st">-   indirectly_copyable&lt;I1, Out&gt; &amp;&amp;</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="st">-   indirectly_copyable&lt;I2, Out&gt; &amp;&amp;</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="va">+   weak_output_iterator&lt;Out, iter_reference_t&lt;I1&gt;&gt; &amp;&amp;</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="va">+   weak_output_iterator&lt;Out, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a>    indirect_strict_weak_order&lt;R, projected&lt;I1, P1&gt;, projected&lt;I2, P2&gt;&gt;;</span></code></pre></div>
+</div>
+</blockquote>
+<h2 data-number="4.3" id="concept-weak_output_range"><span class="header-section-number">4.3</span> <code class="sourceCode cpp"><span class="kw">concept</span> weak_output_range</code><a href="#concept-weak_output_range" class="self-link"></a></h2>
+<p>Change <span>24.2 <a href="https://wg21.link/ranges.syn">[ranges.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a>namespace std::ranges {</span>
+<span id="cb15-2"><a href="#cb15-2"></a>  // ...</span>
+<span id="cb15-3"><a href="#cb15-3"></a></span>
+<span id="cb15-4"><a href="#cb15-4"></a>  // [range.refinements], other range refinements</span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="va">+ template&lt;class R, class T&gt;</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="va">+   concept weak_output_range = <em>see below</em>;</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a></span>
+<span id="cb15-8"><a href="#cb15-8"></a>  template&lt;class R, class T&gt;</span>
+<span id="cb15-9"><a href="#cb15-9"></a>    concept output_range = see below;</span>
+<span id="cb15-10"><a href="#cb15-10"></a></span>
+<span id="cb15-11"><a href="#cb15-11"></a>  // ...</span>
+<span id="cb15-12"><a href="#cb15-12"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Change <span>24.4.5 <a href="https://wg21.link/range.refinements">[range.refinements]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span> The <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">output_range</code></span></del></span> <span class="addu"><code class="sourceCode cpp">weak_output_range</code></span> concept specifies requirements of a range type for which <code class="sourceCode cpp">ranges<span class="op">::</span>begin</code> returns a model of <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">output_iterator</code></span></del></span> <span class="addu"><code class="sourceCode cpp">weak_output_iterator</code></span> ([iterator.concept.output]). <span class="addu"><code class="sourceCode cpp">output_range</code>,</span> <code class="sourceCode cpp">input_range</code>, <code class="sourceCode cpp">forward_range</code>, <code class="sourceCode cpp">bidirectional_range</code>, and <code class="sourceCode cpp">random_access_range</code> are defined similarly.</p>
+<div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1"></a><span class="va">+ template&lt;class R, class T&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="va">+   concept weak_output_range =</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="va">+     range&lt;R&gt; &amp;&amp; weak_output_iterator&lt;iterator_t&lt;R&gt;, T&gt;;</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a>  template&lt;class R, class T&gt;</span>
+<span id="cb16-6"><a href="#cb16-6"></a>    concept output_range =</span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="st">-     range&lt;R&gt; &amp;&amp; output_iterator&lt;iterator_t&lt;R&gt;, T&gt;;</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a><span class="va">+     weak_output_range&lt;R&gt; &amp;&amp; output_iterator&lt;iterator_t&lt;R&gt;, T&gt;;</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a></span>
+<span id="cb16-10"><a href="#cb16-10"></a>  template&lt;class T&gt;</span>
+<span id="cb16-11"><a href="#cb16-11"></a>    concept input_range =</span>
+<span id="cb16-12"><a href="#cb16-12"></a>      range&lt;T&gt; &amp;&amp; input_iterator&lt;iterator_t&lt;T&gt;&gt;;</span>
+<span id="cb16-13"><a href="#cb16-13"></a></span>
+<span id="cb16-14"><a href="#cb16-14"></a>  template&lt;class T&gt;</span>
+<span id="cb16-15"><a href="#cb16-15"></a>    concept forward_range =</span>
+<span id="cb16-16"><a href="#cb16-16"></a>      input_range&lt;T&gt; &amp;&amp; forward_iterator&lt;iterator_t&lt;T&gt;&gt;;</span>
+<span id="cb16-17"><a href="#cb16-17"></a></span>
+<span id="cb16-18"><a href="#cb16-18"></a>  template&lt;class T&gt;</span>
+<span id="cb16-19"><a href="#cb16-19"></a>    concept bidirectional_range =</span>
+<span id="cb16-20"><a href="#cb16-20"></a>      forward_range&lt;T&gt; &amp;&amp; bidirectional_iterator&lt;iterator_t&lt;T&gt;&gt;;</span>
+<span id="cb16-21"><a href="#cb16-21"></a></span>
+<span id="cb16-22"><a href="#cb16-22"></a>  template&lt;class T&gt;</span>
+<span id="cb16-23"><a href="#cb16-23"></a>    concept random_access_range =</span>
+<span id="cb16-24"><a href="#cb16-24"></a>      bidirectional_range&lt;T&gt; &amp;&amp; random_access_iterator&lt;iterator_t&lt;T&gt;&gt;;</span></code></pre></div>
+</div>
+</blockquote>
+<h2 data-number="4.4" id="algorithms"><span class="header-section-number">4.4</span> Algorithms<a href="#algorithms" class="self-link"></a></h2>
+<p>Change all the constraints to use <code class="sourceCode cpp">weak_output_iterator</code> or <code class="sourceCode cpp">weak_output_range</code> in the algorithms. The wording diff here only includes the synopsis, the same changes need to be made in these algorithms’ corresponding definition too. These are all in <span>25.4 <a href="https://wg21.link/algorithm.syn">[algorithm.syn]</a></span>, broken up by algorithm for convenience:</p>
+<h3 data-number="4.4.1" id="rangescopy"><span class="header-section-number">4.4.1</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code><a href="#rangescopy" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1"></a>namespace std::ranges {</span>
+<span id="cb17-2"><a href="#cb17-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb17-3"><a href="#cb17-3"></a>      using copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb17-4"><a href="#cb17-4"></a></span>
+<span id="cb17-5"><a href="#cb17-5"></a><span class="st">-   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weakly_incrementable O&gt;</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="va">+   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O&gt;</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a>      constexpr copy_result&lt;I, O&gt;</span>
+<span id="cb17-9"><a href="#cb17-9"></a>        copy(I first, S last, O result);</span>
+<span id="cb17-10"><a href="#cb17-10"></a></span>
+<span id="cb17-11"><a href="#cb17-11"></a><span class="st">-   template&lt;input_range R, weakly_incrementable O&gt;</span></span>
+<span id="cb17-12"><a href="#cb17-12"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb17-13"><a href="#cb17-13"></a><span class="va">+   template&lt;input_range R, weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O&gt;</span></span>
+<span id="cb17-14"><a href="#cb17-14"></a>      constexpr copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb17-15"><a href="#cb17-15"></a>        copy(R&amp;&amp; r, O result);</span>
+<span id="cb17-16"><a href="#cb17-16"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.2" id="rangescopy_n"><span class="header-section-number">4.4.2</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy_n</code><a href="#rangescopy_n" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1"></a>namespace std::ranges {</span>
+<span id="cb18-2"><a href="#cb18-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb18-3"><a href="#cb18-3"></a>      using copy_n_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a><span class="st">-   template&lt;input_iterator I, weakly_incrementable O&gt;</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a><span class="va">+   template&lt;input_iterator I, weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O&gt;</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a>      constexpr copy_n_result&lt;I, O&gt;</span>
+<span id="cb18-9"><a href="#cb18-9"></a>        copy_n(I first, iter_difference_t&lt;I&gt; n, O result);</span>
+<span id="cb18-10"><a href="#cb18-10"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.3" id="rangescopy_if"><span class="header-section-number">4.4.3</span> <code class="sourceCode cpp">ranges<span class="op">::</span>copy_if</code><a href="#rangescopy_if" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1"></a>namespace std::ranges {</span>
+<span id="cb19-2"><a href="#cb19-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb19-3"><a href="#cb19-3"></a>      using copy_if_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb19-4"><a href="#cb19-4"></a></span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="st">-   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weakly_incrementable O,</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a><span class="va">+   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O,</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>             class Proj = identity,</span>
+<span id="cb19-8"><a href="#cb19-8"></a>             indirect_unary_predicate&lt;projected&lt;I, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb19-9"><a href="#cb19-9"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb19-10"><a href="#cb19-10"></a>      constexpr copy_if_result&lt;I, O&gt;</span>
+<span id="cb19-11"><a href="#cb19-11"></a>        copy_if(I first, S last, O result, Pred pred, Proj proj = {});</span>
+<span id="cb19-12"><a href="#cb19-12"></a></span>
+<span id="cb19-13"><a href="#cb19-13"></a><span class="st">-   template&lt;input_range R, weakly_incrementable O,</span></span>
+<span id="cb19-14"><a href="#cb19-14"></a><span class="va">+   template&lt;input_range R, weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O,</span></span>
+<span id="cb19-15"><a href="#cb19-15"></a>             class Proj = identity,</span>
+<span id="cb19-16"><a href="#cb19-16"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb19-17"><a href="#cb19-17"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb19-18"><a href="#cb19-18"></a>      constexpr copy_if_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb19-19"><a href="#cb19-19"></a>        copy_if(R&amp;&amp; r, O result, Pred pred, Proj proj = {});</span>
+<span id="cb19-20"><a href="#cb19-20"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.4" id="rangesmove"><span class="header-section-number">4.4.4</span> <code class="sourceCode cpp">ranges<span class="op">::</span>move</code><a href="#rangesmove" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1"></a>namespace std::ranges {</span>
+<span id="cb20-2"><a href="#cb20-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb20-3"><a href="#cb20-3"></a>      using move_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb20-4"><a href="#cb20-4"></a></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="st">-   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weakly_incrementable O&gt;</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a><span class="st">-     requires indirectly_movable&lt;I, O&gt;</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a><span class="va">+   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weak_output_iterator&lt;iter_rvalue_reference_t&lt;I&gt;&gt; O&gt;</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>      constexpr move_result&lt;I, O&gt;</span>
+<span id="cb20-9"><a href="#cb20-9"></a>        move(I first, S last, O result);</span>
+<span id="cb20-10"><a href="#cb20-10"></a></span>
+<span id="cb20-11"><a href="#cb20-11"></a><span class="st">-   template&lt;input_range R, weakly_incrementable O&gt;</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a><span class="st">-     requires indirectly_movable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb20-13"><a href="#cb20-13"></a><span class="va">+   template&lt;input_range, weak_output_iterator&lt;range_rvalue_reference_t&lt;R&gt;&gt; O&gt;</span></span>
+<span id="cb20-14"><a href="#cb20-14"></a>      constexpr move_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb20-15"><a href="#cb20-15"></a>        move(R&amp;&amp; r, O result);</span>
+<span id="cb20-16"><a href="#cb20-16"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.5" id="rangestransform"><span class="header-section-number">4.4.5</span> <code class="sourceCode cpp">ranges<span class="op">::</span>transform</code><a href="#rangestransform" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: Here, I’m using <code class="sourceCode cpp"><span class="kw">class</span> O</code> and having a trailing <code class="sourceCode cpp"><span class="kw">requires</span> weak_output_iterator<span class="op">&lt;</span>O, T<span class="op">&gt;</span></code> because the relevant type <code class="sourceCode cpp">T</code> here is based on <code class="sourceCode cpp">Proj</code>, which is declared after <code class="sourceCode cpp">O</code>. ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1"></a>namespace std::ranges {</span>
+<span id="cb21-2"><a href="#cb21-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb21-3"><a href="#cb21-3"></a>      using unary_transform_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb21-4"><a href="#cb21-4"></a></span>
+<span id="cb21-5"><a href="#cb21-5"></a><span class="st">-   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, weakly_incrementable O,</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="va">+   template&lt;input_iterator I, sentinel_for&lt;I&gt; S, class O,</span></span>
+<span id="cb21-7"><a href="#cb21-7"></a>             copy_constructible F, class Proj = identity&gt;</span>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="st">-     requires indirectly_writable&lt;O, indirect_result_t&lt;F&amp;, projected&lt;I, Proj&gt;&gt;&gt;</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="va">+     requires weak_output_iterator&lt;O, indirect_result_t&lt;F&amp;, projected&lt;I, Proj&gt;&gt;&gt;</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a>      constexpr unary_transform_result&lt;I, O&gt;</span>
+<span id="cb21-11"><a href="#cb21-11"></a>        transform(I first1, S last1, O result, F op, Proj proj = {});</span>
+<span id="cb21-12"><a href="#cb21-12"></a></span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="st">-   template&lt;input_range R, weakly_incrementable O, copy_constructible F,</span></span>
+<span id="cb21-14"><a href="#cb21-14"></a><span class="va">+   template&lt;input_range R, class O, copy_constructible F,</span></span>
+<span id="cb21-15"><a href="#cb21-15"></a>             class Proj = identity&gt;</span>
+<span id="cb21-16"><a href="#cb21-16"></a><span class="st">-     requires indirectly_writable&lt;O, indirect_result_t&lt;F&amp;, projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt;&gt;</span></span>
+<span id="cb21-17"><a href="#cb21-17"></a><span class="va">+     requires weak_output_iterator&lt;O, indirect_result_t&lt;F&amp;, projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt;&gt;</span></span>
+<span id="cb21-18"><a href="#cb21-18"></a>      constexpr unary_transform_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb21-19"><a href="#cb21-19"></a>        transform(R&amp;&amp; r, O result, F op, Proj proj = {});</span>
+<span id="cb21-20"><a href="#cb21-20"></a></span>
+<span id="cb21-21"><a href="#cb21-21"></a>    template&lt;class I1, class I2, class O&gt;</span>
+<span id="cb21-22"><a href="#cb21-22"></a>      using binary_transform_result = in_in_out_result&lt;I1, I2, O&gt;;</span>
+<span id="cb21-23"><a href="#cb21-23"></a></span>
+<span id="cb21-24"><a href="#cb21-24"></a>    template&lt;input_iterator I1, sentinel_for&lt;I1&gt; S1, input_iterator I2, sentinel_for&lt;I2&gt; S2,</span>
+<span id="cb21-25"><a href="#cb21-25"></a><span class="st">-            weakly_incrementable O, copy_constructible F, class Proj1 = identity,</span></span>
+<span id="cb21-26"><a href="#cb21-26"></a><span class="va">+            class O, copy_constructible F, class Proj1 = identity,</span></span>
+<span id="cb21-27"><a href="#cb21-27"></a>             class Proj2 = identity&gt;</span>
+<span id="cb21-28"><a href="#cb21-28"></a><span class="st">-     requires indirectly_writable&lt;O, indirect_result_t&lt;F&amp;, projected&lt;I1, Proj1&gt;,</span></span>
+<span id="cb21-29"><a href="#cb21-29"></a><span class="va">+     requires weak_output_iterator&lt;O, indirect_result_t&lt;F&amp;, projected&lt;I1, Proj1&gt;,</span></span>
+<span id="cb21-30"><a href="#cb21-30"></a>                                             projected&lt;I2, Proj2&gt;&gt;&gt;</span>
+<span id="cb21-31"><a href="#cb21-31"></a>      constexpr binary_transform_result&lt;I1, I2, O&gt;</span>
+<span id="cb21-32"><a href="#cb21-32"></a>        transform(I1 first1, S1 last1, I2 first2, S2 last2, O result,</span>
+<span id="cb21-33"><a href="#cb21-33"></a>                  F binary_op, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb21-34"><a href="#cb21-34"></a></span>
+<span id="cb21-35"><a href="#cb21-35"></a><span class="st">-   template&lt;input_range R1, input_range R2, weakly_incrementable O,</span></span>
+<span id="cb21-36"><a href="#cb21-36"></a><span class="va">+   template&lt;input_range R1, input_range R2, class O,</span></span>
+<span id="cb21-37"><a href="#cb21-37"></a>             copy_constructible F, class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb21-38"><a href="#cb21-38"></a><span class="st">-     requires indirectly_writable&lt;O, indirect_result_t&lt;F&amp;, projected&lt;iterator_t&lt;R1&gt;, Proj1&gt;,</span></span>
+<span id="cb21-39"><a href="#cb21-39"></a><span class="va">+     requires weak_output_iterator&lt;O, indirect_result_t&lt;F&amp;, projected&lt;iterator_t&lt;R1&gt;, Proj1&gt;,</span></span>
+<span id="cb21-40"><a href="#cb21-40"></a>                                             projected&lt;iterator_t&lt;R2&gt;, Proj2&gt;&gt;&gt;</span>
+<span id="cb21-41"><a href="#cb21-41"></a>      constexpr binary_transform_result&lt;borrowed_iterator_t&lt;R1&gt;, borrowed_iterator_t&lt;R2&gt;, O&gt;</span>
+<span id="cb21-42"><a href="#cb21-42"></a>        transform(R1&amp;&amp; r1, R2&amp;&amp; r2, O result,</span>
+<span id="cb21-43"><a href="#cb21-43"></a>                  F binary_op, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb21-44"><a href="#cb21-44"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.6" id="rangesreplace_copy"><span class="header-section-number">4.4.6</span> <code class="sourceCode cpp">ranges<span class="op">::</span>replace_copy</code><a href="#rangesreplace_copy" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: This is one of the algorithms that had already required <code class="sourceCode cpp">output_iterator</code>, its requirements are being weakened. ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1"></a>namespace std::ranges {</span>
+<span id="cb22-2"><a href="#cb22-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb22-3"><a href="#cb22-3"></a>      using replace_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb22-4"><a href="#cb22-4"></a></span>
+<span id="cb22-5"><a href="#cb22-5"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S, class T1, class T2,</span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="st">-            output_iterator&lt;const T2&amp;&gt; O,</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a><span class="va">+            weak_output_iterator&lt;const T2&amp;&gt; O,</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>             class Proj = identity&gt;</span>
+<span id="cb22-9"><a href="#cb22-9"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt; &amp;&amp;</span></span>
+<span id="cb22-10"><a href="#cb22-10"></a><span class="va">+     requires weak_output_iterator&lt;O, iter_reference_t&lt;I&gt;&gt;</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a>               indirect_binary_predicate&lt;ranges::equal_to, projected&lt;I, Proj&gt;, const T1*&gt;</span>
+<span id="cb22-12"><a href="#cb22-12"></a>      constexpr replace_copy_result&lt;I, O&gt;</span>
+<span id="cb22-13"><a href="#cb22-13"></a>        replace_copy(I first, S last, O result, const T1&amp; old_value, const T2&amp; new_value,</span>
+<span id="cb22-14"><a href="#cb22-14"></a>                     Proj proj = {});</span>
+<span id="cb22-15"><a href="#cb22-15"></a>    template&lt;input_range R, class T1, class T2,</span>
+<span id="cb22-16"><a href="#cb22-16"></a><span class="st">-            output_iterator&lt;const T2&amp;&gt; O,</span></span>
+<span id="cb22-17"><a href="#cb22-17"></a><span class="va">+            weak_output_iterator&lt;const T2&amp;&gt; O,</span></span>
+<span id="cb22-18"><a href="#cb22-18"></a>             class Proj = identity&gt;</span>
+<span id="cb22-19"><a href="#cb22-19"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
+<span id="cb22-20"><a href="#cb22-20"></a><span class="va">+     requires weak_output_iterator&lt;O, range_reference_t&lt;R&gt;&gt; &amp;&amp;</span></span>
+<span id="cb22-21"><a href="#cb22-21"></a>               indirect_binary_predicate&lt;ranges::equal_to,</span>
+<span id="cb22-22"><a href="#cb22-22"></a>                                         projected&lt;iterator_t&lt;R&gt;, Proj&gt;, const T1*&gt;</span>
+<span id="cb22-23"><a href="#cb22-23"></a>      constexpr replace_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb22-24"><a href="#cb22-24"></a>        replace_copy(R&amp;&amp; r, O result, const T1&amp; old_value, const T2&amp; new_value,</span>
+<span id="cb22-25"><a href="#cb22-25"></a>                     Proj proj = {});</span>
+<span id="cb22-26"><a href="#cb22-26"></a></span>
+<span id="cb22-27"><a href="#cb22-27"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb22-28"><a href="#cb22-28"></a>      using replace_copy_if_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb22-29"><a href="#cb22-29"></a></span>
+<span id="cb22-30"><a href="#cb22-30"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S, class T,</span>
+<span id="cb22-31"><a href="#cb22-31"></a><span class="st">-            output_iterator&lt;const T&amp;&gt; O,</span></span>
+<span id="cb22-32"><a href="#cb22-32"></a><span class="va">+            weak_output_iterator&lt;const T&amp;&gt; O,</span></span>
+<span id="cb22-33"><a href="#cb22-33"></a>             class Proj = identity, indirect_unary_predicate&lt;projected&lt;I, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb22-34"><a href="#cb22-34"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb22-35"><a href="#cb22-35"></a><span class="va">+     requires weak_output_iterator&lt;O, iter_reference_t&lt;I&gt;&gt;</span></span>
+<span id="cb22-36"><a href="#cb22-36"></a>      constexpr replace_copy_if_result&lt;I, O&gt;</span>
+<span id="cb22-37"><a href="#cb22-37"></a>        replace_copy_if(I first, S last, O result, Pred pred, const T&amp; new_value,</span>
+<span id="cb22-38"><a href="#cb22-38"></a>                        Proj proj = {});</span>
+<span id="cb22-39"><a href="#cb22-39"></a>    template&lt;input_range R, class T,</span>
+<span id="cb22-40"><a href="#cb22-40"></a><span class="st">-            output_iterator&lt;const T&amp;&gt; O,</span></span>
+<span id="cb22-41"><a href="#cb22-41"></a><span class="va">+            weak_output_iterator&lt;const T&amp;&gt; O,</span></span>
+<span id="cb22-42"><a href="#cb22-42"></a>             class Proj = identity,</span>
+<span id="cb22-43"><a href="#cb22-43"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb22-44"><a href="#cb22-44"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb22-45"><a href="#cb22-45"></a><span class="va">+     requires weak_output_iterator&lt;O, range_reference_t&lt;R&gt;&gt;</span></span>
+<span id="cb22-46"><a href="#cb22-46"></a>      constexpr replace_copy_if_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb22-47"><a href="#cb22-47"></a>        replace_copy_if(R&amp;&amp; r, O result, Pred pred, const T&amp; new_value,</span>
+<span id="cb22-48"><a href="#cb22-48"></a>                        Proj proj = {});</span>
+<span id="cb22-49"><a href="#cb22-49"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.7" id="rangesfill"><span class="header-section-number">4.4.7</span> <code class="sourceCode cpp">ranges<span class="op">::</span>fill</code><a href="#rangesfill" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: This was the one, consistent algorithm that required both <code class="sourceCode cpp">output_iterator</code> and <code class="sourceCode cpp">output_range</code>. Now it (still consistently) requires <code class="sourceCode cpp">weak_output_iterator</code> and <code class="sourceCode cpp">weak_output_range</code>. ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb23-1"><a href="#cb23-1"></a>namespace std::ranges {</span>
+<span id="cb23-2"><a href="#cb23-2"></a>    template&lt;class T,</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="st">-            output_iterator&lt;const T&amp;&gt; O,</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a><span class="va">+            weak_output_iterator&lt;const T&amp;&gt; O,</span></span>
+<span id="cb23-5"><a href="#cb23-5"></a>             sentinel_for&lt;O&gt; S&gt;</span>
+<span id="cb23-6"><a href="#cb23-6"></a>      constexpr O fill(O first, S last, const T&amp; value);</span>
+<span id="cb23-7"><a href="#cb23-7"></a>    template&lt;class T,</span>
+<span id="cb23-8"><a href="#cb23-8"></a><span class="st">-            output_range&lt;const T&amp;&gt; R&gt;</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a><span class="va">+            weak_output_range&lt;const T&amp;&gt; R&gt;</span></span>
+<span id="cb23-10"><a href="#cb23-10"></a>      constexpr borrowed_iterator_t&lt;R&gt; fill(R&amp;&amp; r, const T&amp; value);</span>
+<span id="cb23-11"><a href="#cb23-11"></a>    template&lt;class T,</span>
+<span id="cb23-12"><a href="#cb23-12"></a><span class="st">-            output_iterator&lt;const T&amp;&gt; O&gt;</span></span>
+<span id="cb23-13"><a href="#cb23-13"></a><span class="va">+            weak_output_iterator&lt;const T&amp;&gt; O&gt;</span></span>
+<span id="cb23-14"><a href="#cb23-14"></a>      constexpr O fill_n(O first, iter_difference_t&lt;O&gt; n, const T&amp; value);</span>
+<span id="cb23-15"><a href="#cb23-15"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.8" id="rangesgenerate"><span class="header-section-number">4.4.8</span> <code class="sourceCode cpp">ranges<span class="op">::</span>generate</code><a href="#rangesgenerate" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: This was the inconsistent algorithm, which now becomes consistent ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>namespace std::ranges {</span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="st">-   template&lt;input_or_output_iterator O,</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="va">+   template&lt;class O,</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a>             sentinel_for&lt;O&gt; S, copy_constructible F&gt;</span>
+<span id="cb24-5"><a href="#cb24-5"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb24-6"><a href="#cb24-6"></a><span class="st">-              indirectly_writable&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="va">+              weak_output_iterator&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a>      constexpr O generate(O first, S last, F gen);</span>
+<span id="cb24-9"><a href="#cb24-9"></a></span>
+<span id="cb24-10"><a href="#cb24-10"></a>   template&lt;class R, copy_constructible F&gt;</span>
+<span id="cb24-11"><a href="#cb24-11"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb24-12"><a href="#cb24-12"></a><span class="st">-              output_range&lt;R, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb24-13"><a href="#cb24-13"></a><span class="va">+              weak_output_range&lt;R, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb24-14"><a href="#cb24-14"></a>      constexpr borrowed_iterator_t&lt;R&gt; generate(R&amp;&amp; r, F gen);</span>
+<span id="cb24-15"><a href="#cb24-15"></a></span>
+<span id="cb24-16"><a href="#cb24-16"></a><span class="st">-   template&lt;input_or_output_iterator O,</span></span>
+<span id="cb24-17"><a href="#cb24-17"></a><span class="va">+   template&lt;class O,</span></span>
+<span id="cb24-18"><a href="#cb24-18"></a>             copy_constructible F&gt;</span>
+<span id="cb24-19"><a href="#cb24-19"></a>      requires invocable&lt;F&amp;&gt; &amp;&amp;</span>
+<span id="cb24-20"><a href="#cb24-20"></a><span class="st">-              indirectly_writable&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb24-21"><a href="#cb24-21"></a><span class="va">+              weak_output_iterator&lt;O, invoke_result_t&lt;F&amp;&gt;&gt;</span></span>
+<span id="cb24-22"><a href="#cb24-22"></a>      constexpr O generate_n(O first, iter_difference_t&lt;O&gt; n, F gen);</span>
+<span id="cb24-23"><a href="#cb24-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.9" id="rangesremove_copy"><span class="header-section-number">4.4.9</span> <code class="sourceCode cpp">ranges<span class="op">::</span>remove_copy</code><a href="#rangesremove_copy" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1"></a>namespace std::ranges {</span>
+<span id="cb25-2"><a href="#cb25-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb25-3"><a href="#cb25-3"></a>      using remove_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb25-4"><a href="#cb25-4"></a></span>
+<span id="cb25-5"><a href="#cb25-5"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb25-6"><a href="#cb25-6"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb25-7"><a href="#cb25-7"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O,</span></span>
+<span id="cb25-8"><a href="#cb25-8"></a>             class T,</span>
+<span id="cb25-9"><a href="#cb25-9"></a>             class Proj = identity&gt;</span>
+<span id="cb25-10"><a href="#cb25-10"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt; &amp;&amp;</span></span>
+<span id="cb25-11"><a href="#cb25-11"></a><span class="va">+     requires</span></span>
+<span id="cb25-12"><a href="#cb25-12"></a>               indirect_binary_predicate&lt;ranges::equal_to, projected&lt;I, Proj&gt;, const T*&gt;</span>
+<span id="cb25-13"><a href="#cb25-13"></a>      constexpr remove_copy_result&lt;I, O&gt;</span>
+<span id="cb25-14"><a href="#cb25-14"></a>        remove_copy(I first, S last, O result, const T&amp; value, Proj proj = {});</span>
+<span id="cb25-15"><a href="#cb25-15"></a></span>
+<span id="cb25-16"><a href="#cb25-16"></a>    template&lt;input_range R,</span>
+<span id="cb25-17"><a href="#cb25-17"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb25-18"><a href="#cb25-18"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O,</span></span>
+<span id="cb25-19"><a href="#cb25-19"></a>             class T, class Proj = identity&gt;</span>
+<span id="cb25-20"><a href="#cb25-20"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
+<span id="cb25-21"><a href="#cb25-21"></a><span class="va">+     requires</span></span>
+<span id="cb25-22"><a href="#cb25-22"></a>               indirect_binary_predicate&lt;ranges::equal_to,</span>
+<span id="cb25-23"><a href="#cb25-23"></a>                                         projected&lt;iterator_t&lt;R&gt;, Proj&gt;, const T*&gt;</span>
+<span id="cb25-24"><a href="#cb25-24"></a>      constexpr remove_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb25-25"><a href="#cb25-25"></a>        remove_copy(R&amp;&amp; r, O result, const T&amp; value, Proj proj = {});</span>
+<span id="cb25-26"><a href="#cb25-26"></a></span>
+<span id="cb25-27"><a href="#cb25-27"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb25-28"><a href="#cb25-28"></a>      using remove_copy_if_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb25-29"><a href="#cb25-29"></a></span>
+<span id="cb25-30"><a href="#cb25-30"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb25-31"><a href="#cb25-31"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb25-32"><a href="#cb25-32"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O,</span></span>
+<span id="cb25-33"><a href="#cb25-33"></a>             class Proj = identity, indirect_unary_predicate&lt;projected&lt;I, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb25-34"><a href="#cb25-34"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb25-35"><a href="#cb25-35"></a>      constexpr remove_copy_if_result&lt;I, O&gt;</span>
+<span id="cb25-36"><a href="#cb25-36"></a>        remove_copy_if(I first, S last, O result, Pred pred, Proj proj = {});</span>
+<span id="cb25-37"><a href="#cb25-37"></a></span>
+<span id="cb25-38"><a href="#cb25-38"></a>    template&lt;input_range R,</span>
+<span id="cb25-39"><a href="#cb25-39"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb25-40"><a href="#cb25-40"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O,</span></span>
+<span id="cb25-41"><a href="#cb25-41"></a>             class Proj = identity,</span>
+<span id="cb25-42"><a href="#cb25-42"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb25-43"><a href="#cb25-43"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb25-44"><a href="#cb25-44"></a>      constexpr remove_copy_if_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb25-45"><a href="#cb25-45"></a>        remove_copy_if(R&amp;&amp; r, O result, Pred pred, Proj proj = {});</span>
+<span id="cb25-46"><a href="#cb25-46"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.10" id="rangesunique_copy"><span class="header-section-number">4.4.10</span> <code class="sourceCode cpp">ranges<span class="op">::</span>unique_copy</code><a href="#rangesunique_copy" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: The constraints here have a disjunction, but <code class="sourceCode cpp">indirectly_copyable<span class="op">&lt;</span>I, O<span class="op">&gt;</span></code> is always required, which is the <code class="sourceCode cpp">weak_output_iterator</code> constraint. ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1"></a>namespace std::ranges {</span>
+<span id="cb26-2"><a href="#cb26-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb26-3"><a href="#cb26-3"></a>      using unique_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb26-4"><a href="#cb26-4"></a></span>
+<span id="cb26-5"><a href="#cb26-5"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb26-6"><a href="#cb26-6"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O,</span></span>
+<span id="cb26-8"><a href="#cb26-8"></a>             class Proj = identity,</span>
+<span id="cb26-9"><a href="#cb26-9"></a>             indirect_equivalence_relation&lt;projected&lt;I, Proj&gt;&gt; C = ranges::equal_to&gt;</span>
+<span id="cb26-10"><a href="#cb26-10"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt; &amp;&amp;</span></span>
+<span id="cb26-11"><a href="#cb26-11"></a><span class="va">+     requires</span></span>
+<span id="cb26-12"><a href="#cb26-12"></a>               (forward_iterator&lt;I&gt; ||</span>
+<span id="cb26-13"><a href="#cb26-13"></a>                (input_iterator&lt;O&gt; &amp;&amp; same_as&lt;iter_value_t&lt;I&gt;, iter_value_t&lt;O&gt;&gt;) ||</span>
+<span id="cb26-14"><a href="#cb26-14"></a>                indirectly_copyable_storable&lt;I, O&gt;)</span>
+<span id="cb26-15"><a href="#cb26-15"></a>      constexpr unique_copy_result&lt;I, O&gt;</span>
+<span id="cb26-16"><a href="#cb26-16"></a>        unique_copy(I first, S last, O result, C comp = {}, Proj proj = {});</span>
+<span id="cb26-17"><a href="#cb26-17"></a></span>
+<span id="cb26-18"><a href="#cb26-18"></a>    template&lt;input_range R,</span>
+<span id="cb26-19"><a href="#cb26-19"></a><span class="st">-            weakly_incrementable O,</span></span>
+<span id="cb26-20"><a href="#cb26-20"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O,</span></span>
+<span id="cb26-21"><a href="#cb26-21"></a>             class Proj = identity,</span>
+<span id="cb26-22"><a href="#cb26-22"></a>             indirect_equivalence_relation&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; C = ranges::equal_to&gt;</span>
+<span id="cb26-23"><a href="#cb26-23"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt; &amp;&amp;</span></span>
+<span id="cb26-24"><a href="#cb26-24"></a><span class="va">+     requires</span></span>
+<span id="cb26-25"><a href="#cb26-25"></a>               (forward_iterator&lt;iterator_t&lt;R&gt;&gt; ||</span>
+<span id="cb26-26"><a href="#cb26-26"></a>                (input_iterator&lt;O&gt; &amp;&amp; same_as&lt;range_value_t&lt;R&gt;, iter_value_t&lt;O&gt;&gt;) ||</span>
+<span id="cb26-27"><a href="#cb26-27"></a>                indirectly_copyable_storable&lt;iterator_t&lt;R&gt;, O&gt;)</span>
+<span id="cb26-28"><a href="#cb26-28"></a>      constexpr unique_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb26-29"><a href="#cb26-29"></a>        unique_copy(R&amp;&amp; r, O result, C comp = {}, Proj proj = {});</span>
+<span id="cb26-30"><a href="#cb26-30"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.11" id="rangesreverse_copy"><span class="header-section-number">4.4.11</span> <code class="sourceCode cpp">ranges<span class="op">::</span>reverse_copy</code><a href="#rangesreverse_copy" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1"></a>namespace std::ranges {</span>
+<span id="cb27-2"><a href="#cb27-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb27-3"><a href="#cb27-3"></a>      using reverse_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb27-4"><a href="#cb27-4"></a></span>
+<span id="cb27-5"><a href="#cb27-5"></a>    template&lt;bidirectional_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb27-6"><a href="#cb27-6"></a><span class="st">-            weakly_incrementable O&gt;</span></span>
+<span id="cb27-7"><a href="#cb27-7"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O&gt;</span></span>
+<span id="cb27-8"><a href="#cb27-8"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb27-9"><a href="#cb27-9"></a>      constexpr reverse_copy_result&lt;I, O&gt;</span>
+<span id="cb27-10"><a href="#cb27-10"></a>        reverse_copy(I first, S last, O result);</span>
+<span id="cb27-11"><a href="#cb27-11"></a></span>
+<span id="cb27-12"><a href="#cb27-12"></a>    template&lt;bidirectional_range R,</span>
+<span id="cb27-13"><a href="#cb27-13"></a><span class="st">-            weakly_incrementable O&gt;</span></span>
+<span id="cb27-14"><a href="#cb27-14"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O&gt;</span></span>
+<span id="cb27-15"><a href="#cb27-15"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb27-16"><a href="#cb27-16"></a>      constexpr reverse_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb27-17"><a href="#cb27-17"></a>        reverse_copy(R&amp;&amp; r, O result);</span>
+<span id="cb27-18"><a href="#cb27-18"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.12" id="rangesrotate_copy"><span class="header-section-number">4.4.12</span> <code class="sourceCode cpp">ranges<span class="op">::</span>rotate_copy</code><a href="#rangesrotate_copy" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb28-1"><a href="#cb28-1"></a>namespace std::ranges {</span>
+<span id="cb28-2"><a href="#cb28-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb28-3"><a href="#cb28-3"></a>      using rotate_copy_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb28-4"><a href="#cb28-4"></a></span>
+<span id="cb28-5"><a href="#cb28-5"></a>    template&lt;forward_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="st">-            weakly_incrementable O&gt;</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O&gt;</span></span>
+<span id="cb28-8"><a href="#cb28-8"></a><span class="st">-     requires indirectly_copyable&lt;I, O&gt;</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a>      constexpr rotate_copy_result&lt;I, O&gt;</span>
+<span id="cb28-10"><a href="#cb28-10"></a>        rotate_copy(I first, I middle, S last, O result);</span>
+<span id="cb28-11"><a href="#cb28-11"></a></span>
+<span id="cb28-12"><a href="#cb28-12"></a><span class="st">-   template&lt;forward_range R, weakly_incrementable O&gt;</span></span>
+<span id="cb28-13"><a href="#cb28-13"></a><span class="va">+   template&lt;forward_range R, weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O&gt;</span></span>
+<span id="cb28-14"><a href="#cb28-14"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O&gt;</span></span>
+<span id="cb28-15"><a href="#cb28-15"></a>      constexpr rotate_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O&gt;</span>
+<span id="cb28-16"><a href="#cb28-16"></a>        rotate_copy(R&amp;&amp; r, iterator_t&lt;R&gt; middle, O result);</span>
+<span id="cb28-17"><a href="#cb28-17"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.13" id="rangespartition_copy"><span class="header-section-number">4.4.13</span> <code class="sourceCode cpp">ranges<span class="op">::</span>partition_copy</code><a href="#rangespartition_copy" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb29-1"><a href="#cb29-1"></a>namespace std::ranges {</span>
+<span id="cb29-2"><a href="#cb29-2"></a>    template&lt;class I, class O1, class O2&gt;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>      using partition_copy_result = in_out_out_result&lt;I, O1, O2&gt;;</span>
+<span id="cb29-4"><a href="#cb29-4"></a></span>
+<span id="cb29-5"><a href="#cb29-5"></a>    template&lt;input_iterator I, sentinel_for&lt;I&gt; S,</span>
+<span id="cb29-6"><a href="#cb29-6"></a><span class="st">-            weakly_incrementable O1, weakly_incrementable O2,</span></span>
+<span id="cb29-7"><a href="#cb29-7"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O1,</span></span>
+<span id="cb29-8"><a href="#cb29-8"></a><span class="va">+            weak_output_iterator&lt;iter_reference_t&lt;I&gt;&gt; O2,</span></span>
+<span id="cb29-9"><a href="#cb29-9"></a>             class Proj = identity, indirect_unary_predicate&lt;projected&lt;I, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb29-10"><a href="#cb29-10"></a><span class="st">-     requires indirectly_copyable&lt;I, O1&gt; &amp;&amp; indirectly_copyable&lt;I, O2&gt;</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a>      constexpr partition_copy_result&lt;I, O1, O2&gt;</span>
+<span id="cb29-12"><a href="#cb29-12"></a>        partition_copy(I first, S last, O1 out_true, O2 out_false, Pred pred,</span>
+<span id="cb29-13"><a href="#cb29-13"></a>                       Proj proj = {});</span>
+<span id="cb29-14"><a href="#cb29-14"></a></span>
+<span id="cb29-15"><a href="#cb29-15"></a>    template&lt;input_range R,</span>
+<span id="cb29-16"><a href="#cb29-16"></a><span class="st">-            weakly_incrementable O1, weakly_incrementable O2,</span></span>
+<span id="cb29-17"><a href="#cb29-17"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O1,</span></span>
+<span id="cb29-18"><a href="#cb29-18"></a><span class="va">+            weak_output_iterator&lt;range_reference_t&lt;R&gt;&gt; O2,</span></span>
+<span id="cb29-19"><a href="#cb29-19"></a>             class Proj = identity,</span>
+<span id="cb29-20"><a href="#cb29-20"></a>             indirect_unary_predicate&lt;projected&lt;iterator_t&lt;R&gt;, Proj&gt;&gt; Pred&gt;</span>
+<span id="cb29-21"><a href="#cb29-21"></a><span class="st">-     requires indirectly_copyable&lt;iterator_t&lt;R&gt;, O1&gt; &amp;&amp;</span></span>
+<span id="cb29-22"><a href="#cb29-22"></a><span class="st">-              indirectly_copyable&lt;iterator_t&lt;R&gt;, O2&gt;</span></span>
+<span id="cb29-23"><a href="#cb29-23"></a>      constexpr partition_copy_result&lt;borrowed_iterator_t&lt;R&gt;, O1, O2&gt;</span>
+<span id="cb29-24"><a href="#cb29-24"></a>        partition_copy(R&amp;&amp; r, O1 out_true, O2 out_false, Pred pred, Proj proj = {});</span>
+<span id="cb29-25"><a href="#cb29-25"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.14" id="rangesmerge"><span class="header-section-number">4.4.14</span> <code class="sourceCode cpp">ranges<span class="op">::</span>merge</code><a href="#rangesmerge" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: <code class="sourceCode cpp">mergeable</code> now requires <code class="sourceCode cpp">weak_output_iterator<span class="op">&lt;</span>O, iter_reference_t<span class="op">&lt;</span>I1<span class="op">&gt;&gt;</span></code> and <code class="sourceCode cpp">weak_output_iterator<span class="op">&lt;</span>O, iter_reference_t<span class="op">&lt;</span>I2<span class="op">&gt;&gt;</span></code> (for the two input iterators, <code class="sourceCode cpp">I1</code>, and <code class="sourceCode cpp">I2</code>). The extra <code class="sourceCode cpp">weakly_incrementable<span class="op">&lt;</span>O<span class="op">&gt;</span></code> here doesn’t really add anything, but keeping it around would make the merging algorithms the only ones that require <code class="sourceCode cpp">weakly_incrementable</code>, which is differently consistent. So I’m suggesting we change to <code class="sourceCode cpp"><span class="kw">class</span></code>. ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb30-1"><a href="#cb30-1"></a>namespace std::ranges {</span>
+<span id="cb30-2"><a href="#cb30-2"></a>    template&lt;class I1, class I2, class O&gt;</span>
+<span id="cb30-3"><a href="#cb30-3"></a>      using merge_result = in_in_out_result&lt;I1, I2, O&gt;;</span>
+<span id="cb30-4"><a href="#cb30-4"></a></span>
+<span id="cb30-5"><a href="#cb30-5"></a>    template&lt;input_iterator I1, sentinel_for&lt;I1&gt; S1, input_iterator I2, sentinel_for&lt;I2&gt; S2,</span>
+<span id="cb30-6"><a href="#cb30-6"></a><span class="st">-            weakly_incrementable O, class Comp = ranges::less, class Proj1 = identity,</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a><span class="va">+            class O, class Comp = ranges::less, class Proj1 = identity,</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a>             class Proj2 = identity&gt;</span>
+<span id="cb30-9"><a href="#cb30-9"></a>      requires mergeable&lt;I1, I2, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb30-10"><a href="#cb30-10"></a>      constexpr merge_result&lt;I1, I2, O&gt;</span>
+<span id="cb30-11"><a href="#cb30-11"></a>        merge(I1 first1, S1 last1, I2 first2, S2 last2, O result,</span>
+<span id="cb30-12"><a href="#cb30-12"></a>              Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb30-13"><a href="#cb30-13"></a></span>
+<span id="cb30-14"><a href="#cb30-14"></a><span class="st">-   template&lt;input_range R1, input_range R2, weakly_incrementable O, class Comp = ranges::less,</span></span>
+<span id="cb30-15"><a href="#cb30-15"></a><span class="va">+   template&lt;input_range R1, input_range R2, class O, class Comp = ranges::less,</span></span>
+<span id="cb30-16"><a href="#cb30-16"></a>             class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb30-17"><a href="#cb30-17"></a>      requires mergeable&lt;iterator_t&lt;R1&gt;, iterator_t&lt;R2&gt;, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb30-18"><a href="#cb30-18"></a>      constexpr merge_result&lt;borrowed_iterator_t&lt;R1&gt;, borrowed_iterator_t&lt;R2&gt;, O&gt;</span>
+<span id="cb30-19"><a href="#cb30-19"></a>        merge(R1&amp;&amp; r1, R2&amp;&amp; r2, O result,</span>
+<span id="cb30-20"><a href="#cb30-20"></a>              Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb30-21"><a href="#cb30-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.15" id="rangesset_union"><span class="header-section-number">4.4.15</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_union</code><a href="#rangesset_union" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: Same idea as <code class="sourceCode cpp">ranges<span class="op">::</span>merge</code>, here and for the other set algorithms ]</span></p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb31-1"><a href="#cb31-1"></a>namespace std::ranges {</span>
+<span id="cb31-2"><a href="#cb31-2"></a>    template&lt;class I1, class I2, class O&gt;</span>
+<span id="cb31-3"><a href="#cb31-3"></a>      using set_union_result = in_in_out_result&lt;I1, I2, O&gt;;</span>
+<span id="cb31-4"><a href="#cb31-4"></a></span>
+<span id="cb31-5"><a href="#cb31-5"></a>    template&lt;input_iterator I1, sentinel_for&lt;I1&gt; S1, input_iterator I2, sentinel_for&lt;I2&gt; S2,</span>
+<span id="cb31-6"><a href="#cb31-6"></a><span class="st">-            weakly_incrementable O, class Comp = ranges::less,</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="va">+            class O, class Comp = ranges::less,</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a>             class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb31-9"><a href="#cb31-9"></a>      requires mergeable&lt;I1, I2, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb31-10"><a href="#cb31-10"></a>      constexpr set_union_result&lt;I1, I2, O&gt;</span>
+<span id="cb31-11"><a href="#cb31-11"></a>        set_union(I1 first1, S1 last1, I2 first2, S2 last2, O result, Comp comp = {},</span>
+<span id="cb31-12"><a href="#cb31-12"></a>                  Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb31-13"><a href="#cb31-13"></a></span>
+<span id="cb31-14"><a href="#cb31-14"></a><span class="st">-   template&lt;input_range R1, input_range R2, weakly_incrementable O,</span></span>
+<span id="cb31-15"><a href="#cb31-15"></a><span class="va">+   template&lt;input_range R1, input_range R2, class O,</span></span>
+<span id="cb31-16"><a href="#cb31-16"></a>             class Comp = ranges::less, class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb31-17"><a href="#cb31-17"></a>      requires mergeable&lt;iterator_t&lt;R1&gt;, iterator_t&lt;R2&gt;, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb31-18"><a href="#cb31-18"></a>      constexpr set_union_result&lt;borrowed_iterator_t&lt;R1&gt;, borrowed_iterator_t&lt;R2&gt;, O&gt;</span>
+<span id="cb31-19"><a href="#cb31-19"></a>        set_union(R1&amp;&amp; r1, R2&amp;&amp; r2, O result, Comp comp = {},</span>
+<span id="cb31-20"><a href="#cb31-20"></a>                  Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb31-21"><a href="#cb31-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.16" id="rangesset_intersection"><span class="header-section-number">4.4.16</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_intersection</code><a href="#rangesset_intersection" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1"></a>namespace std::ranges {</span>
+<span id="cb32-2"><a href="#cb32-2"></a>    template&lt;class I1, class I2, class O&gt;</span>
+<span id="cb32-3"><a href="#cb32-3"></a>      using set_intersection_result = in_in_out_result&lt;I1, I2, O&gt;;</span>
+<span id="cb32-4"><a href="#cb32-4"></a></span>
+<span id="cb32-5"><a href="#cb32-5"></a>    template&lt;input_iterator I1, sentinel_for&lt;I1&gt; S1, input_iterator I2, sentinel_for&lt;I2&gt; S2,</span>
+<span id="cb32-6"><a href="#cb32-6"></a><span class="st">-            weakly_incrementable O, class Comp = ranges::less,</span></span>
+<span id="cb32-7"><a href="#cb32-7"></a><span class="va">+            class O, class Comp = ranges::less,</span></span>
+<span id="cb32-8"><a href="#cb32-8"></a>             class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb32-9"><a href="#cb32-9"></a>      requires mergeable&lt;I1, I2, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb32-10"><a href="#cb32-10"></a>      constexpr set_intersection_result&lt;I1, I2, O&gt;</span>
+<span id="cb32-11"><a href="#cb32-11"></a>        set_intersection(I1 first1, S1 last1, I2 first2, S2 last2, O result,</span>
+<span id="cb32-12"><a href="#cb32-12"></a>                         Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb32-13"><a href="#cb32-13"></a></span>
+<span id="cb32-14"><a href="#cb32-14"></a><span class="st">-   template&lt;input_range R1, input_range R2, weakly_incrementable O,</span></span>
+<span id="cb32-15"><a href="#cb32-15"></a><span class="va">+   template&lt;input_range R1, input_range R2, class O,</span></span>
+<span id="cb32-16"><a href="#cb32-16"></a>             class Comp = ranges::less, class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb32-17"><a href="#cb32-17"></a>      requires mergeable&lt;iterator_t&lt;R1&gt;, iterator_t&lt;R2&gt;, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb32-18"><a href="#cb32-18"></a>      constexpr set_intersection_result&lt;borrowed_iterator_t&lt;R1&gt;, borrowed_iterator_t&lt;R2&gt;, O&gt;</span>
+<span id="cb32-19"><a href="#cb32-19"></a>        set_intersection(R1&amp;&amp; r1, R2&amp;&amp; r2, O result,</span>
+<span id="cb32-20"><a href="#cb32-20"></a>                         Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb32-21"><a href="#cb32-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.17" id="rangesset_difference"><span class="header-section-number">4.4.17</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_difference</code><a href="#rangesset_difference" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb33-1"><a href="#cb33-1"></a>namespace std::ranges {</span>
+<span id="cb33-2"><a href="#cb33-2"></a>    template&lt;class I, class O&gt;</span>
+<span id="cb33-3"><a href="#cb33-3"></a>      using set_difference_result = in_out_result&lt;I, O&gt;;</span>
+<span id="cb33-4"><a href="#cb33-4"></a></span>
+<span id="cb33-5"><a href="#cb33-5"></a>    template&lt;input_iterator I1, sentinel_for&lt;I1&gt; S1, input_iterator I2, sentinel_for&lt;I2&gt; S2,</span>
+<span id="cb33-6"><a href="#cb33-6"></a><span class="st">-            weakly_incrementable O, class Comp = ranges::less,</span></span>
+<span id="cb33-7"><a href="#cb33-7"></a><span class="va">+            class O, class Comp = ranges::less,</span></span>
+<span id="cb33-8"><a href="#cb33-8"></a>             class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb33-9"><a href="#cb33-9"></a>      requires mergeable&lt;I1, I2, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb33-10"><a href="#cb33-10"></a>      constexpr set_difference_result&lt;I1, O&gt;</span>
+<span id="cb33-11"><a href="#cb33-11"></a>        set_difference(I1 first1, S1 last1, I2 first2, S2 last2, O result,</span>
+<span id="cb33-12"><a href="#cb33-12"></a>                       Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb33-13"><a href="#cb33-13"></a></span>
+<span id="cb33-14"><a href="#cb33-14"></a><span class="st">-   template&lt;input_range R1, input_range R2, weakly_incrementable O,</span></span>
+<span id="cb33-15"><a href="#cb33-15"></a><span class="va">+   template&lt;input_range R1, input_range R2, class O,</span></span>
+<span id="cb33-16"><a href="#cb33-16"></a>             class Comp = ranges::less, class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb33-17"><a href="#cb33-17"></a>      requires mergeable&lt;iterator_t&lt;R1&gt;, iterator_t&lt;R2&gt;, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb33-18"><a href="#cb33-18"></a>      constexpr set_difference_result&lt;borrowed_iterator_t&lt;R1&gt;, O&gt;</span>
+<span id="cb33-19"><a href="#cb33-19"></a>        set_difference(R1&amp;&amp; r1, R2&amp;&amp; r2, O result,</span>
+<span id="cb33-20"><a href="#cb33-20"></a>                       Comp comp = {}, Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb33-21"><a href="#cb33-21"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.18" id="rangesset_symmetric_difference"><span class="header-section-number">4.4.18</span> <code class="sourceCode cpp">ranges<span class="op">::</span>set_symmetric_difference</code><a href="#rangesset_symmetric_difference" class="self-link"></a></h3>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb34-1"><a href="#cb34-1"></a>namespace std::ranges {</span>
+<span id="cb34-2"><a href="#cb34-2"></a>    template&lt;class I1, class I2, class O&gt;</span>
+<span id="cb34-3"><a href="#cb34-3"></a>      using set_symmetric_difference_result = in_in_out_result&lt;I1, I2, O&gt;;</span>
+<span id="cb34-4"><a href="#cb34-4"></a></span>
+<span id="cb34-5"><a href="#cb34-5"></a>    template&lt;input_iterator I1, sentinel_for&lt;I1&gt; S1, input_iterator I2, sentinel_for&lt;I2&gt; S2,</span>
+<span id="cb34-6"><a href="#cb34-6"></a><span class="st">-            weakly_incrementable O, class Comp = ranges::less,</span></span>
+<span id="cb34-7"><a href="#cb34-7"></a><span class="va">+            class O, class Comp = ranges::less,</span></span>
+<span id="cb34-8"><a href="#cb34-8"></a>             class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb34-9"><a href="#cb34-9"></a>      requires mergeable&lt;I1, I2, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb34-10"><a href="#cb34-10"></a>      constexpr set_symmetric_difference_result&lt;I1, I2, O&gt;</span>
+<span id="cb34-11"><a href="#cb34-11"></a>        set_symmetric_difference(I1 first1, S1 last1, I2 first2, S2 last2, O result,</span>
+<span id="cb34-12"><a href="#cb34-12"></a>                                 Comp comp = {}, Proj1 proj1 = {},</span>
+<span id="cb34-13"><a href="#cb34-13"></a>                                 Proj2 proj2 = {});</span>
+<span id="cb34-14"><a href="#cb34-14"></a></span>
+<span id="cb34-15"><a href="#cb34-15"></a><span class="st">-   template&lt;input_range R1, input_range R2, weakly_incrementable O,</span></span>
+<span id="cb34-16"><a href="#cb34-16"></a><span class="va">+   template&lt;input_range R1, input_range R2, class O,</span></span>
+<span id="cb34-17"><a href="#cb34-17"></a>             class Comp = ranges::less, class Proj1 = identity, class Proj2 = identity&gt;</span>
+<span id="cb34-18"><a href="#cb34-18"></a>      requires mergeable&lt;iterator_t&lt;R1&gt;, iterator_t&lt;R2&gt;, O, Comp, Proj1, Proj2&gt;</span>
+<span id="cb34-19"><a href="#cb34-19"></a>      constexpr set_symmetric_difference_result&lt;borrowed_iterator_t&lt;R1&gt;,</span>
+<span id="cb34-20"><a href="#cb34-20"></a>                                                borrowed_iterator_t&lt;R2&gt;, O&gt;</span>
+<span id="cb34-21"><a href="#cb34-21"></a>        set_symmetric_difference(R1&amp;&amp; r1, R2&amp;&amp; r2, O result, Comp comp = {},</span>
+<span id="cb34-22"><a href="#cb34-22"></a>                                 Proj1 proj1 = {}, Proj2 proj2 = {});</span>
+<span id="cb34-23"><a href="#cb34-23"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="4.4.19" id="rangesiota"><span class="header-section-number">4.4.19</span> <code class="sourceCode cpp">ranges<span class="op">::</span>iota</code><a href="#rangesiota" class="self-link"></a></h3>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: This one is in <code class="sourceCode cpp"><span class="op">&lt;</span>numeric<span class="op">&gt;</span></code>, just adopted by way of <span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span> ]</span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb35-1"><a href="#cb35-1"></a>namespace std::ranges {</span>
+<span id="cb35-2"><a href="#cb35-2"></a>    template&lt;class O, class T&gt;</span>
+<span id="cb35-3"><a href="#cb35-3"></a>      using iota_result = out_value_result&lt;O, T&gt;;</span>
+<span id="cb35-4"><a href="#cb35-4"></a></span>
+<span id="cb35-5"><a href="#cb35-5"></a><span class="st">-   template&lt;input_or_output_iterator O, sentinel_for&lt;O&gt; S, weakly_incrementable T&gt;</span></span>
+<span id="cb35-6"><a href="#cb35-6"></a><span class="st">-     requires indirectly_writable&lt;O, const T&amp;&gt;</span></span>
+<span id="cb35-7"><a href="#cb35-7"></a><span class="va">+   template&lt;weakly_incrementable T, weak_output_iterator&lt;const T&amp;&gt; O, sentinel_for&lt;O&gt; S&gt;</span></span>
+<span id="cb35-8"><a href="#cb35-8"></a>      constexpr iota_result&lt;O, T&gt; iota(O first, S last, T value);</span>
+<span id="cb35-9"><a href="#cb35-9"></a></span>
+<span id="cb35-10"><a href="#cb35-10"></a><span class="st">-   template&lt;weakly_incrementable T, output_range&lt;const T&amp;&gt; R&gt;</span></span>
+<span id="cb35-11"><a href="#cb35-11"></a><span class="va">+   template&lt;weakly_incrementable T, weak_output_range&lt;const T&amp;&gt; R&gt;</span></span>
+<span id="cb35-12"><a href="#cb35-12"></a>      constexpr iota_result&lt;borrowed_iterator_t&lt;R&gt;, T&gt; iota(R&amp;&amp; r, T value);</span>
+<span id="cb35-13"><a href="#cb35-13"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Tim Song for all the help.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P2440R1">
+<p>[P2440R1] Tim Song. 2021-12-06. ranges::iota, ranges::shift_left, and ranges::shift_right. <br />
+<a href="https://wg21.link/p2440r1">https://wg21.link/p2440r1</a></p>
+</div>
+<div id="ref-P2502R0">
+<p>[P2502R0] Casey Carter. 2021-12-13. std::generator: Synchronous Coroutine Generator for Ranges. <br />
+<a href="https://wg21.link/p2502r0">https://wg21.link/p2502r0</a></p>
+</div>
+<div id="ref-P2550R0">
+<p>[P2550R0] Barry Revzin. 2022-02-17. ranges::copy should say output_iterator somewhere. <br />
+<a href="https://wg21.link/p2550r0">https://wg21.link/p2550r0</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

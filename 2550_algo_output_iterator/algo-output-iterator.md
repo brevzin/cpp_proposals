@@ -1,6 +1,6 @@
 ---
 title: "`ranges::copy` should say `output_iterator` somewhere"
-document: P2550R0
+document: P2550R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2550R0], made the graphs prettier.
 
 # Introduction
 
@@ -93,34 +97,22 @@ Or, in graph form:
 
 ::: bq
 ```mermaid
-graph TD;
-  A-->B;
-  A-->C;
-  B-->D;
-  C-->D;
-```
+%%{init: {'themeVariables': { 'fontFamily': 'Monospace', 'fontSize': '9px'}}}%%
+graph LR
+    A[output_iterator&ltO, T&gt] --> B["*out++ = std::forward&ltT&gt(t);"];
+    A --> C[input_or_output_iterator&ltO&gt];
+    A --> D[indirectly_writable&ltO, T&gt];
 
-```{.graphviz caption="output iterator concept hierarchy"}
-digraph G {
-    rankdir="TB"
-    node [fontname = "consolas"];
-    overlap=false;
-    size="8.5,8.5";
 
-    "output_iterator<O, T>" -> "*o++ = std::forward<T>(t);";
-    "output_iterator<O, T>" -> "input_or_output_iterator<O>";
-    "output_iterator<O, T>" -> "indirectly_writable<O, T>";
+    C --> G[weakly_incrementable&ltO&gt];
+    C --> H["*o;"];
 
-    "input_iterator<I>" -> "indirectly_readable<I>";
+    I[indirectly_copyable&ltI, O&gt] --> J[indirectly_readable&ltI&gt];
+    I --> D;
 
-    "input_or_output_iterator<O>" -> "weakly_incrementable<O>";
-    "input_or_output_iterator<O>" -> "*o;";
+    E[input_iterator&ltI&gt] --> J;
 
-    "indirectly_copyable<I, O>" -> "indirectly_readable<I>";
-    "indirectly_copyable<I, O>" -> "indirectly_writable<O, T>";
-
-    "indirectly_writable<O, T>" -> "*o;";
-}
+    D --> H;
 ```
 :::
 
@@ -240,6 +232,32 @@ template<class I, class T>
     requires(I i, T&& t) {
       *i++ = std::forward<T>(t);        // not required to be equality-preserving
     };
+```
+:::
+
+Or, again in graph form:
+
+::: bq
+```mermaid
+%%{init: {'themeVariables': { 'fontFamily': 'Monospace', 'fontSize': '9px'}}}%%
+graph LR
+    A[output_iterator&ltO, T&gt] ---> B["*out++ = std::forward&ltT&gt(t);"];
+    A --> X[weak_output_iterator&ltO, T&gt];
+    X --> C[input_or_output_iterator&ltO&gt];
+    X --> D[indirectly_writable&ltO, T&gt];
+
+    C --> G[weakly_incrementable&ltO&gt];
+    C --> H["*o;"];
+
+    I[indirectly_copyable&ltI, O&gt] --> J[indirectly_readable&ltI&gt];
+    I --> D;
+
+    E[input_iterator&ltI&gt] --> J;
+
+    D --> H;
+
+    classDef green fill:#9f6,stroke:#333,stroke-width:2px;
+    class X green;
 ```
 :::
 
