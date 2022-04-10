@@ -7,13 +7,14 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+tag: ranges
 ---
 
 # Revision History
 
 Since [@P2210R1], wording improvements, resolving [@LWG3478] for the existing `lazy_split` (and rebasing on [@LWG3505]), and having the implementation section actually refer to the implementation of the proposal.
 
-Since [@P2210R0], corrected the explanation of `const`-iteration and corrected that it is sort of possible to build a better `split` on top of the existing one. Changed the proposal to keep the preexisting `split` with its semantics under a different name instead. 
+Since [@P2210R0], corrected the explanation of `const`-iteration and corrected that it is sort of possible to build a better `split` on top of the existing one. Changed the proposal to keep the preexisting `split` with its semantics under a different name instead.
 
 # Introduction
 
@@ -86,7 +87,7 @@ auto split2(Pattern pattern) {
               auto b = r.begin();
               auto e = ranges::next(b, r.end());
               return ranges::subrange(b.base(), e.base());
-           });    
+           });
 }
 
 std::string input = "1.2.3.4";
@@ -111,13 +112,13 @@ auto split2(Pattern pattern) {
                 } else {
                     return r;
                 }
-           });    
+           });
 }
 ```
 
-Now we properly handle input ranges as well, although we can't really avoid the extra completely-pointless `transform` without writing a proper range adapter closure ourselves. 
+Now we properly handle input ranges as well, although we can't really avoid the extra completely-pointless `transform` without writing a proper range adapter closure ourselves.
 
-Second, this has the problem that every iterator dereference from the resulting view has to do a linear search. That's a cost that's incurred entirely due to this implementation strategy. This cost could be alleviated by using [@P2214R0]'s suggested `views::cache_latest`, though this itself has the problem that it demotes the resulting range to input-only... whereas a `split_view` could be a forward range. 
+Second, this has the problem that every iterator dereference from the resulting view has to do a linear search. That's a cost that's incurred entirely due to this implementation strategy. This cost could be alleviated by using [@P2214R0]'s suggested `views::cache_latest`, though this itself has the problem that it demotes the resulting range to input-only... whereas a `split_view` could be a forward range.
 
 Third, this is complicated! There are two important points here:
 
@@ -198,7 +199,7 @@ is the overwhemlingly common case) by doing something like:
 ```cpp
 struct reference : subrange<iterator_t<V>> {
     using subrange::subrange;
-    
+
     operator string_view() const
         requires same_as<range_value_t<V>, char>
               && contiguous_range<V>
@@ -246,7 +247,7 @@ You can't do this in a `const` member function. We cannot simply specify the
 update it concurrently. We _could_ introduce a synchronization mechanism
 into `split_view` which would safely allow such concurrent modification, but
 that's a very expensive solution which would also pessimize the typical
-non-const-iteration case. So we _shouldn't_. 
+non-const-iteration case. So we _shouldn't_.
 
 So that's okay, we just don't support `const`-iteration. What's the big deal?
 
@@ -260,7 +261,7 @@ produces `subrange`s for splitting a `string const` necessarily has to
 do work to get that first `subrange` and that ends up being a clash with the existing
 design.
 
-The question is - how much code currently exists that iterates over, 
+The question is - how much code currently exists that iterates over,
 specifically, a `const split_view` that is splitting a contiguous range? It's
 likely to be exceedingly small, both because of the likelihood if such iteration
 to begin with (you'd have to _specifically_ declare an object of type `split_view`
@@ -278,11 +279,11 @@ it makes `split` substantially more useful.
 
 This strategy of producing a range of `subrange<iterator_t<V>>` works fine for
 forward ranges, and is a significant improvement over status quo for bidirectional,
-random access, and contiguous ranges. 
+random access, and contiguous ranges.
 
 But it fails miserably for input ranges, which the current `views::split` supports.
 While `const`-iteration doesn't strike me as important functionality, being able
-to `split` an input range definitely does. 
+to `split` an input range definitely does.
 
 A `subrange`-yielding split could still fall back to the existing `views::split`
 behavior for splitting input ranges, but then we end up with fairly different
@@ -316,7 +317,7 @@ existing facility to `views::lazy_split`. This isn't a great name, since
 
 Note that, as described earlier, `views::split` should not be specified (or
 implemented) in terms of `views::lazy_split`, since a proper implementation of it
-could be much more efficient. 
+could be much more efficient.
 
 # Proposal
 
@@ -333,7 +334,7 @@ to the _`inner-iterator`_ type to get back to the adapted range's iterators.
     b. Splitting a `V` will yield `subrange<iterator_t<V>>`s, ensuring that the adapted range's
     category is preserved. Splitting a bidirectional range gives out bidirectional
     subranges. Spltiting a contiguous range gives out contiguous subranges.
-    c. `views::split` will not be `const`-iterable. 
+    c. `views::split` will not be `const`-iterable.
 
 This could certainly break some C++20 code. But I would argue that `views::split`
 is so unergonomic for its most common intended use-case that the benefit of
@@ -345,7 +346,7 @@ issues and lack of implementations thus far).
 
 The implementation can be found in action here [@revzin.split.impl], but
 reproduced here for clarity. It's written inside of `namespace std::ranges`
-(and thus has to be named `split_view2`) and makes use of libstdc++'s internals. 
+(and thus has to be named `split_view2`) and makes use of libstdc++'s internals.
 
 This implementation also correctly handles [@LWG3505] and [@LWG3478].
 
@@ -414,13 +415,13 @@ class split_view2 : public view_interface<split_view2<V, Pattern>> {
   struct sentinel {
   private:
     sentinel_t<V> end_ = sentinel_t<V>();
-    
+
   public:
     sentinel() = default;
     constexpr explicit sentinel(split_view2& parent)
         : end_(ranges::end(parent.base_))
     { }
-    
+
     constexpr bool operator==(const iterator& x) const {
         return x.cur_ == end_ && !x.trailing_empty_;
     }
@@ -729,7 +730,7 @@ namespace std::ranges {
     constexpr V base() && { return std::move(@*base_*@); }
 
     constexpr @_iterator_@ begin();
-    
+
     constexpr auto end() {
         if constexpr (common_range<V>) {
             return @_iterator_@{*this, ranges::end(@*base_*@), {}};
@@ -737,7 +738,7 @@ namespace std::ranges {
             return @_sentinel_@{*this};
         }
     }
-    
+
     constexpr subrange<iterator_t<V>> @_find-next_@(iterator_t<V>); // exposition only
   };
 
@@ -801,13 +802,13 @@ namespace std::ranges {
     iterator_t<V> @*cur_*@ = iterator_t<V>();                       // exposition only
     subrange<iterator_t<V>> @*next_*@ = subrange<iterator_t<V>>();  // exposition only
     bool @*trailing_empty_*@ = false;                               // exposition only
-    
+
   public:
     using iterator_concept = forward_iterator_tag;
     using iterator_category = input_iterator_tag;
     using value_type = subrange<iterator_t<V>>;
     using difference_type = range_difference_t<V>;
-    
+
     @_iterator_@() = default;
     constexpr iterator(split_view& parent, iterator_t<V> current, subrange<iterator_t<V>> next);
 
@@ -866,7 +867,7 @@ return tmp;
 ```cpp
 friend constexpr bool operator==(const @_iterator_@& x, const @_iterator_@& y)
 ```
-[6]{.pnum} *Effects*: Equivalent to: 
+[6]{.pnum} *Effects*: Equivalent to:
 ```cpp
 return x.@*cur_*@ == y.@*cur_*@ && x.@*trailing_empty_*@ == y.@*trailing_empty_*@;
 ```
@@ -884,11 +885,11 @@ namespace std::ranges {
   struct split_view<V, Pattern>::@_sentinel_@ {
   private:
     sentinel_t<V> @*end_*@ = sentinel_t<V>(); // exposition only
-    
+
   public:
     @_sentinel_@() = default;
     constexpr explicit @_sentinel_@(split_view& parent);
-    
+
     friend constexpr bool operator==(const @_iterator_@& x, const @_sentinel_@& y);
   };
 }
@@ -925,7 +926,7 @@ references:
     author:
         - family: Barry Revzin
     issued:
-        - year: 2021    
+        - year: 2021
     URL: https://godbolt.org/z/Khz9dT
   - id: issue385
     citation-label: issue385

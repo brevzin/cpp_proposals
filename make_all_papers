@@ -3,6 +3,8 @@ import glob
 import os
 import re
 import collections
+import sys
+import frontmatter
 from bs4 import BeautifulSoup
 
 def get_title(filename):
@@ -10,6 +12,24 @@ def get_title(filename):
         html = BeautifulSoup(f.read(), 'html.parser')
         text = ' '.join(map(str,html.h1.children))
         return text.replace('<p>', '').replace('</p>','')
+
+def get_tag_from_md(path, num):
+    makefile = f'{path}/Makefile'
+    if not os.path.exists(makefile):
+        return
+
+    with open(makefile) as f:
+        for line in f:
+            try:
+                dst, src = line.split(':')
+                dst = dst.strip()
+                src = src.strip()
+
+                if dst.startswith(f'p{num}r'):
+                    paper = frontmatter.load(open(f'{path}/{src}'))
+                    return paper.get('tag', None)
+            except ValueError:
+                pass
 
 iso = re.compile('([pd])(\d{4})r(\d+).html')
 papers = collections.defaultdict(list)
@@ -25,7 +45,7 @@ for filename in glob.glob(f'*/*.html'):
         pd, num, rev = m.groups()
         num = int(num)
         rev = int(rev)
-        papers[num].append((rev, pd, path, filename))
+        papers[num].append((rev, pd, get_tag_from_md(path, num), filename))
     else:
         others.append((base, filename))
 
@@ -34,13 +54,22 @@ print('# Papers with Numbers', file=out)
 titles = {847: "Deducing `this`"}
 for num in sorted(papers):
     vals = sorted(papers[num])
-    path = vals[-1][2]
     title = titles.get(num)
     if title is None:
         title = get_title(vals[-1][-1])
-    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, path, filename) in vals)
-    print(f'- {num} {title}: {all_revs}', file=out)
+    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, _, filename) in vals)
 
+    tag = vals[-1][2]
+    if tag is None:
+        tag_str = ''
+    else:
+        tag_str = f'![][~{tag}] '
+    print(f'- {tag_str}{num} {title}: {all_revs}', file=out)
+
+print(file=out)
+print('[~ranges]: https://img.shields.io/badge/-ranges-brightgreen', file=out)
+print('[~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet', file=out)
+print('[~spaceship]: https://img.shields.io/badge/-%3C%3D%3E-yellow', file=out)
 print(file=out)
 print('# Other Papers', file=out)
 for (base, filename) in sorted(others):

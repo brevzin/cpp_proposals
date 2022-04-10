@@ -9,6 +9,7 @@ author:
     - name: Tim Song
       email: <t.canens.cpp@gmail.com>
 toc: true
+tag: ranges
 ---
 
 # Revision History
@@ -53,7 +54,7 @@ This design got muddled a bit when views ceased to require copyability, as a res
 * views are O(1) move constructible, move assignable, and destructible
 * views are either O(1) copy constructible/assignable or not copy constructible/assignable
 
-But somehow absent from the discussion is: why do we care about views and range adaptors being cheap to copy and assign and destroy? This isn't just idle navel-gazing either, [@LWG3452] points out that requiring strict O(1) destruction has implications for whether `std::generator` [@P2168R3] can be a `view`. What can go wrong in a program that annotates a range as being a `view` despite not meeting these requirements? 
+But somehow absent from the discussion is: why do we care about views and range adaptors being cheap to copy and assign and destroy? This isn't just idle navel-gazing either, [@LWG3452] points out that requiring strict O(1) destruction has implications for whether `std::generator` [@P2168R3] can be a `view`. What can go wrong in a program that annotates a range as being a `view` despite not meeting these requirements?
 
 The goal of this paper is to provide good answers to these questions.
 
@@ -87,7 +88,7 @@ void some_algo(R&& r);
 ```
 :::
 
-At best, we write algorithms that do require views and it's those algorithms that themselves construct the views that they need - but their API surface still takes ranges (specifically, `viewable_range`s [range.refinements]{.sref}) by forwarding reference. 
+At best, we write algorithms that do require views and it's those algorithms that themselves construct the views that they need - but their API surface still takes ranges (specifically, `viewable_range`s [range.refinements]{.sref}) by forwarding reference.
 
 If we don't care about views being cheap to copy because of the desire to write algorithms that take them by value, then why do we care about views being cheap to copy?
 
@@ -115,7 +116,7 @@ If constructing each of these range adaptors in turn required touching all the e
 
 # Refining the view requirements
 
-Currently, in order for a type `T` to model `view`, it needs to have O(1) move construction, move assignment, and destruction. If `T` is copyable, the copy operations also need to be O(1). What happens if a type `T` satisfies `view` (whether by it inheriting from `view_base`, inheriting from `view_interface<T>`, or simply specializing `enable_view<T>` to be `true`), yet does not actually satisfy the O(1) semantics I just laid out? 
+Currently, in order for a type `T` to model `view`, it needs to have O(1) move construction, move assignment, and destruction. If `T` is copyable, the copy operations also need to be O(1). What happens if a type `T` satisfies `view` (whether by it inheriting from `view_base`, inheriting from `view_interface<T>`, or simply specializing `enable_view<T>` to be `true`), yet does not actually satisfy the O(1) semantics I just laid out?
 
 Consider:
 
@@ -123,9 +124,9 @@ Consider:
 ```cpp
 struct bad_view : view_interface<bad_view> {
     std::vector<int> v;
-    
+
     bad_view(std::vector<int> v) : v(std::move(v)) { }
-    
+
     std::vector<int>::iterator begin() { return v.begin(); }
     std::vector<int>::iterator end()   { return v.end(); }
 };
@@ -143,11 +144,11 @@ for (auto const& [idx, i] : rng) {
 
 ::: bq
 [2]{.pnum} If the validity or meaning of a program depends on whether a sequence of template arguments models a concept, and the concept is satisfied but not modeled, the program is ill-formed, no diagnostic required.
-::: 
+:::
 
-Ill-formed, no diagnostic required! That is a harsh ruling for this program! 
+Ill-formed, no diagnostic required! That is a harsh ruling for this program!
 
-But what actually goes wrong if a program-defined `view` ends up violating the semantic requirements of a `view`? The goal of a `view` is to enable cheap construction of range adaptors. If that construction isn't as cheap as expected, then the result is just that the construction is... more expensive than expected. It would still be semantically *correct*, it's just less efficient than ideal? That's not usually the line to draw for ill-formed, no diagnostic required. 
+But what actually goes wrong if a program-defined `view` ends up violating the semantic requirements of a `view`? The goal of a `view` is to enable cheap construction of range adaptors. If that construction isn't as cheap as expected, then the result is just that the construction is... more expensive than expected. It would still be semantically *correct*, it's just less efficient than ideal? That's not usually the line to draw for ill-formed, no diagnostic required.
 
 Furthermore, what actual operations do we need to be cheap? Consider this refinement:
 
@@ -155,15 +156,15 @@ Furthermore, what actual operations do we need to be cheap? Consider this refine
 ```cpp
 struct bad_view2 : view_interface<bad_view2> {
     std::vector<int> v;
-    
+
     bad_view2(std::vector<int> v) : v(std::move(v)) { }
-    
+
     // movable, but not copyable
     bad_view2(bad_view2 const&) = delete;
     bad_view2(bad_view2&&) = default;
     bad_view2& operator=(bad_view2 const&) = delete;
     bad_view2& operator+(bad_view2&&) = default;
-    
+
     std::vector<int>::iterator begin() { return v.begin(); }
     std::vector<int>::iterator end()   { return v.end(); }
 };
@@ -218,7 +219,7 @@ In this formulation, `std::generator<T>` is definitely a `view` that does not vi
 This formulation has another extremely significant consequence. [@N4128] stated:
 
 ::: quote
-[Views] are lightweight objects that refer to elements they do not own. As a result, they can guarantee O(1) copyability and assignability. 
+[Views] are lightweight objects that refer to elements they do not own. As a result, they can guarantee O(1) copyability and assignability.
 :::
 
 But this would no longer *necessarily* have to be the case. Consider the following:
@@ -228,11 +229,11 @@ But this would no longer *necessarily* have to be the case. Consider the followi
 template <range R> requires is_object_v<R> && movable<R>
 class owning_view : public view_interface<owning_view<R>> {
     R r_; // exposition only
-    
+
 public:
     owning_view() = default;
     constexpr owning_view(R&& t);
-    
+
     owning_view(const owning_view&) = delete;
     owning_view(owning_view&&) = default;
     owning_view& operator=(const owning_view&) = delete;
@@ -245,32 +246,32 @@ public:
 
     constexpr iterator_t<R> begin() { return ranges::begin(r_); }
     constexpr iterator_t<const R> begin() const requires range<const R>{ return ranges::begin(r_); }
-    
+
     constexpr sentinel_t<R> end() { return ranges::end(r_); }
     constexpr sentinel_t<const R> end() const requires range<const R> { return ranges::end(r_); }
 
 
     // + overloads for empty, size, data
 };
-  
+
 template <class R>
 owning_view(R&&) -> owning_view<R>;
 ```
 :::
 
-An `owning_view<vector<int>>` would completely satisfy the semantics of `view`: it is not copyable, it is O(1) movable, and moved-from object would be O(1) destructible. All without sacrificing any of the benefit that views provide: cheap construction of range adaptor pipelines. 
+An `owning_view<vector<int>>` would completely satisfy the semantics of `view`: it is not copyable, it is O(1) movable, and moved-from object would be O(1) destructible. All without sacrificing any of the benefit that views provide: cheap construction of range adaptor pipelines.
 
 Adopting these semantics, along with `owning_view`, would further allow us to respecify `views::all` ([range.all]{.sref}) as:
 
 ::: bq
-[2]{.pnum} The name `views​::​all` denotes a range adaptor object ([range.adaptor.object]). Given a subexpression `E`, the expression `views​::​all(E)` is expression-equivalent to: 
+[2]{.pnum} The name `views​::​all` denotes a range adaptor object ([range.adaptor.object]). Given a subexpression `E`, the expression `views​::​all(E)` is expression-equivalent to:
 
 - [2.1]{.pnum} `@*decay-copy*@(E)` if the decayed type of `E` models `view`.
 - [2.2]{.pnum} Otherwise, `ref_view{E}` if that expression is well-formed.
-- [2.3]{.pnum} Otherwise, [`subrange{E}`]{.rm} [`owning_view{E}`]{.addu}. 
+- [2.3]{.pnum} Otherwise, [`subrange{E}`]{.rm} [`owning_view{E}`]{.addu}.
 :::
 
-The first sub-bullet effectively rejects using lvalue non-copyable views, as desired. Then the second bullet captures lvalue non-view ranges by reference and the new third bullet[^3] would capture rvalue non-view ranges by ownership. This is safer and more ergonomic too. 
+The first sub-bullet effectively rejects using lvalue non-copyable views, as desired. Then the second bullet captures lvalue non-view ranges by reference and the new third bullet[^3] would capture rvalue non-view ranges by ownership. This is safer and more ergonomic too.
 
 Making the above change implies we also need to respecify `viewable_range` (in [range.refinements]{.sref}/5), since this concept and `views::all` need to stay in sync:
 
@@ -305,12 +306,12 @@ If `v` is an lvalue, do you want `rng` to *copy* `v` or to *refer*  to `v`? If y
 
 # Implementation Experience
 
-This proposal has been implemented and passes the libstdc++ testsuite (with suitable modifications). 
+This proposal has been implemented and passes the libstdc++ testsuite (with suitable modifications).
 
 # Proposed Wording
 
 
-This also resolves [@LWG3452]. 
+This also resolves [@LWG3452].
 
 Update [version.syn]{.sref}
 
@@ -332,7 +333,7 @@ Add `owning_view` to [ranges.syn]{.sref}:
 
 namespace std::ranges {
   // ...
-  
+
   // [range.all], all view
   namespace views {
     inline constexpr @*unspecified*@ all = @*unspecified*@;
@@ -351,11 +352,11 @@ namespace std::ranges {
 + template<range R>
 +   requires @*see below*@
 + class owning_view;
-+ 
++
 + template<class T>
-+   inline constexpr bool enable_borrowed_range<owning_view<T>> = enable_borrowed_range<T>;  
++   inline constexpr bool enable_borrowed_range<owning_view<T>> = enable_borrowed_range<T>;
 
-  // ...    
+  // ...
 }
 ```
 :::
@@ -416,11 +417,11 @@ concept viewable_range =
 Change the last bullet in the definition of `views::all` in [range.all.general]{.sref}:
 
 ::: bq
-[2]{.pnum} The name `views​::​all` denotes a range adaptor object ([range.adaptor.object]). Given a subexpression `E`, the expression `views​::​all(E)` is expression-equivalent to: 
+[2]{.pnum} The name `views​::​all` denotes a range adaptor object ([range.adaptor.object]). Given a subexpression `E`, the expression `views​::​all(E)` is expression-equivalent to:
 
 - [2.1]{.pnum} `@*decay-copy*@(E)` if the decayed type of `E` models `view`.
 - [2.2]{.pnum} Otherwise, `ref_view{E}` if that expression is well-formed.
-- [2.3]{.pnum} Otherwise, [`subrange{E}`]{.rm} [`owning_view{E}`]{.addu}. 
+- [2.3]{.pnum} Otherwise, [`subrange{E}`]{.rm} [`owning_view{E}`]{.addu}.
 :::
 
 Add a new subclause under [range.all] directly after [range.ref.view]{.sref} named "Class template `owning_view`" with stable name [range.owning.view]:
@@ -449,7 +450,7 @@ namespace std::ranges {
 
     constexpr iterator_t<R> begin() { return ranges::begin($r_$); }
     constexpr sentinel_t<R> end() { return ranges::end($r_$); }
-    
+
     constexpr auto begin() const requires range<const R>
     { return ranges::begin($r_$); }
     constexpr auto end() const requires range<const R>
@@ -457,7 +458,7 @@ namespace std::ranges {
 
     constexpr bool empty()
       requires requires { ranges::empty($r_$); }
-    { return ranges::empty($r_$); }    
+    { return ranges::empty($r_$); }
     constexpr bool empty() const
       requires requires { ranges::empty($r_$); }
     { return ranges::empty($r_$); }
@@ -485,4 +486,4 @@ constexpr owning_view(R&& t);
 
 [^1]: This is why they're called _range_ adaptors rather than _view_ adaptors, perhaps that should change as well?
 [^2]: except `views::single`
-[^3]: the existing third bullet could only have been hit by rvalue, *borrowed*, non-view ranges. Before the adoption of [@P2325R3], fixed-extent `span` was the pub quiz trivia answer to what this bullet was for. Afterwards, is there a real type that would fit here? 
+[^3]: the existing third bullet could only have been hit by rvalue, *borrowed*, non-view ranges. Before the adoption of [@P2325R3], fixed-extent `span` was the pub quiz trivia answer to what this bullet was for. Afterwards, is there a real type that would fit here?

@@ -1,7 +1,10 @@
+---
 Title: Library utilities for `<=>`
 Document-Number: P1188R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
+tag: spaceship
+---
 
 # Introduction
 

@@ -61,7 +61,7 @@ make all of my papers.
 
 ### Pending EWG/LEWG Voting
 
-- ![][~ranges] [p2520r1 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r1.html).
+- ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
 
 ### Pending EWG/LEWG Review
 

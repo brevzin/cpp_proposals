@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+tag: spaceship
 ---
 
 # Introduction
@@ -71,7 +72,7 @@ Remove the `XXX_equality` cases from 11.11.3 [class.spaceship], paragraph 1:
 - [1.5]{.pnum} Otherwise, if `R` is `partial_ordering`, then
 
   > ```
-  > a == b ? partial_ordering::equivalent : 
+  > a == b ? partial_ordering::equivalent :
   > a < b  ? partial_ordering::less :
   > b < a  ? partial_ordering::greater :
   >          partial_ordering::unordered
@@ -188,11 +189,11 @@ Remove the conversion operator to `weak_equality` from 17.11.2.4 [cmp.partialord
 ```diff
 namespace std {
   class partial_ordering {
-    [...] 
- 
+    [...]
+
 -   // conversion
--   constexpr operator weak_equality() const noexcept;  
-  
+-   constexpr operator weak_equality() const noexcept;
+
     [...]
   };
 }
@@ -214,12 +215,12 @@ Remove the conversion operator to `weak_equality` from 17.11.2.5 [cmp.weakord]:
 ```diff
 namespace std {
   class weak_ordering  {
-    [...] 
- 
+    [...]
+
     // conversion
--   constexpr operator weak_equality() const noexcept; 
-    constexpr operator partial_ordering() const noexcept; 
-  
+-   constexpr operator weak_equality() const noexcept;
+    constexpr operator partial_ordering() const noexcept;
+
     [...]
   };
 }
@@ -238,14 +239,14 @@ Remove the conversion operators to `XXX_equality` from 17.11.2.6 [cmp.strongord]
 ```diff
 namespace std {
   class strong_ordering   {
-    [...] 
- 
+    [...]
+
     // conversions
 -   constexpr operator weak_equality() const noexcept;
 -   constexpr operator strong_equality() const noexcept;
     constexpr operator partial_ordering() const noexcept;
     constexpr operator weak_ordering() const noexcept;
-  
+
     [...]
   };
 }
@@ -293,7 +294,7 @@ template <typename T, typename Cat = partial_ordering>
 ```diff
 template <typename T, typename U,
           typename Cat = partial_ordering>
-  concept three_way_comparable_with = 
+  concept three_way_comparable_with =
     @_weakly-equality-comparable-with_@<T, U> &&
 -   (!convertible_to<Cat, partial_ordering> || @_partially-ordered-with_@<T, U>) &&
 +   @_partially-ordered-with_@<T, U> &&
@@ -334,21 +335,21 @@ Change the root comparison category in some of the iterator `operator<=>`s from 
 
 namespace std {
   [...]
-  
+
 - template<class Iterator1, three_way_comparable_with<Iterator1@[, weak_equality]{.diffdel}@> Iterator2>
 + template<class Iterator1, three_way_comparable_with<Iterator1> Iterator2>
     constexpr compare_three_way_result_t<Iterator1, Iterator2>
       operator<=>(const reverse_iterator<Iterator1>& x,
-                  const reverse_iterator<Iterator2>& y);  
-                  
+                  const reverse_iterator<Iterator2>& y);
+
   [...]
-                  
+
 - template<class Iterator1, three_way_comparable_with<Iterator1@[, weak_equality]{.diffdel}@> Iterator2>
 + template<class Iterator1, three_way_comparable_with<Iterator1> Iterator2>
     constexpr compare_three_way_result_t<Iterator1, Iterator2>
       operator<=>(const move_iterator<Iterator1>& x,
                   const move_iterator<Iterator2>& y);
-                  
+
   [...]
 }
 ```
@@ -362,7 +363,7 @@ And the same in 23.5.1.7 [reverse.iter.cmp]:
 + template<class Iterator1, three_way_comparable_with<Iterator1> Iterator2>
     constexpr compare_three_way_result_t<Iterator1, Iterator2>
       operator<=>(const reverse_iterator<Iterator1>& x,
-                  const reverse_iterator<Iterator2>& y);  	
+                  const reverse_iterator<Iterator2>& y);
 ```
 [13]{.pnum} *Returns*: `y.base() <=> x.base()`.
 :::

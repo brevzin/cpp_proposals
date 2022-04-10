@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+tag: ranges
 ---
 
 # Revision History
@@ -30,13 +31,13 @@ concept view =
     enable_view<T>;
 ```
 
-Three of these four criteria, I understand. A `view` clearly needs to be a `range`, and it's important that they be `movable` for various operations to work. And the difference between a `view` and `range` is largely semantic, and so there needs to be an explicit opt-in in the form of `enable_view`. 
+Three of these four criteria, I understand. A `view` clearly needs to be a `range`, and it's important that they be `movable` for various operations to work. And the difference between a `view` and `range` is largely semantic, and so there needs to be an explicit opt-in in the form of `enable_view`.
 
-But why does a view need to be `default_initializable`? 
+But why does a view need to be `default_initializable`?
 
 ## History
 
-The history of the design of Ranges is split between many papers and github issues in both the range-v3 [@range-v3] and stl2 [@stl2] libraries. However, I simply am unable to find much information that motivates this particular choice. 
+The history of the design of Ranges is split between many papers and github issues in both the range-v3 [@range-v3] and stl2 [@stl2] libraries. However, I simply am unable to find much information that motivates this particular choice.
 
 In [@N4128], we have (this paper predates the term `view`, at the time the term "range" instead was used to refer to what is now called a `view`. To alleviate confusion, I have editted this paragraph accordingly):
 
@@ -57,7 +58,7 @@ Relaxing the default construction requirement for iterators would also remove on
 Though, importantly, Casey points out one concern:
 
 ::: bq
-The recent trend of making everything in the standard library `constexpr` is in conflict with the desire to not require default construction. The traditional workaround for delayed initialization of a non-default-constructible `T` is to instead store an `optional<T>`. Changing an `optional<T>` from the empty to filled states is not possible in a constant expression 
+The recent trend of making everything in the standard library `constexpr` is in conflict with the desire to not require default construction. The traditional workaround for delayed initialization of a non-default-constructible `T` is to instead store an `optional<T>`. Changing an `optional<T>` from the empty to filled states is not possible in a constant expression
 :::
 
 This was true at the time of the writing of the issue, but has since been resolved first at the core language level by [@P1330R0] and then at the library level by [@P2231R1]. As such, I'm simply unsure what the motivation is for requiring default construction of views.
@@ -76,7 +77,7 @@ And the answer is... not much. The commit can be found here: [@range-v3-no-dflt]
 
 3. One of range-v3's mechanisms for easier implementation of views and iterators is called `view_facade`. This is an implementation strategy that uses the view as part of the iterator as an implementation detail. As such, because the iterator has to be default constructible, the view must be as well. So `linear_distribute_view` and `chunk_view` (the specialization for input ranges) kept their defaulted default constructors. But this is simply an implementation strategy, there's nothing inherent to these views that requires this approach.
 
-4. There's one test for `any_view` that just tests that it's default constructible. 
+4. There's one test for `any_view` that just tests that it's default constructible.
 
 That's it. Broadly, just a few views that actually need default construction that can easily provide it, most simply don't need this constraint.
 
@@ -124,9 +125,9 @@ concept view =
     enable_view<T>;
 ```
 
-Remove the `default_initializable` constraint from `weakly_incrementable`. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (`forward_iterator` requires `incrementable` which requires `regular`). 
+Remove the `default_initializable` constraint from `weakly_incrementable`. This ends up removing the default constructible requirement from input-only and output iterators, while still keeping it on forward iterators (`forward_iterator` requires `incrementable` which requires `regular`).
 
-For `iota_view`, replace the `semiregular<W>` constraint with `copyable<W>`, and add a constraint on `iota_view<W, Bound>::iterator`'s default constructor. This allows an input-only `iota_view` with a non-default-constructible `W` while preserving the current behavior for all forward-or-better `iota_view`s. 
+For `iota_view`, replace the `semiregular<W>` constraint with `copyable<W>`, and add a constraint on `iota_view<W, Bound>::iterator`'s default constructor. This allows an input-only `iota_view` with a non-default-constructible `W` while preserving the current behavior for all forward-or-better `iota_view`s.
 
 Remove the default constructors from the standard library views and iterators for which they only exist to satisfy the requirement (`ref_view`, `istream_view`, `ostream_iterator`, `ostreambuf_iterator`, `back_insert_iterator`, `front_insert_iterator`, `insert_iterator`). Constrain the other standard library views' default constructors on the underlying types being default constructible.
 
@@ -154,7 +155,7 @@ Make `span` unconditionally a view in [span.syn]{.sref}:
 ```diff
 namespace std {
   // ...
-  
+
   // [views.span], class template span
   template<class ElementType, size_t Extent = dynamic_extent>
     class span;
@@ -201,7 +202,7 @@ namespace std {
     // ...
 
 -   constexpr back_insert_iterator() noexcept = default;
-    
+
     // ...
   };
 }
@@ -223,7 +224,7 @@ namespace std {
     // ...
 
 -   constexpr front_insert_iterator() noexcept = default;
-    
+
     // ...
   };
 }
@@ -247,7 +248,7 @@ namespace std {
     // ...
 
 -   insert_iterator() = default;
-    
+
     // ...
   };
 }
@@ -265,7 +266,7 @@ namespace std {
   public:
 -   constexpr common_iterator() = default;
 +   constexpr common_iterator() @[requires default_initializable&lt;I>]{.diffins}@ = default;
-    
+
     // ...
 
   private:
@@ -283,10 +284,10 @@ namespace std {
   class counted_iterator {
   public:
     // ...
-    
+
 -   constexpr counted_iterator() = default;
 +   constexpr counted_iterator() @[requires default_initializable&lt;I>]{.diffins}@ = default;
-    
+
     // ...
 
   private:
@@ -310,7 +311,7 @@ namespace std {
     // ...
 
 -   constexpr ostream_iterator() noexcept = default;
-    
+
     // ...
 
   private:
@@ -334,7 +335,7 @@ namespace std {
     // ...
 
 -   constexpr ostreambuf_iterator() noexcept = default;
-    
+
     // ...
 
   private:
@@ -356,7 +357,7 @@ Adjust the `iota_view` constraints in [ranges.syn]{.sref}:
 
 namespace std::ranges {
   // ...
-  
+
   // [range.iota], iota view
   template<weakly_incrementable W, semiregular Bound = unreachable_sentinel_t>
 -   requires weakly-equality-comparable-with<W, Bound> && @[semiregular]{.diffdel}@<W>
@@ -368,7 +369,7 @@ namespace std::ranges {
 
   namespace views { inline constexpr @*unspecified*@ iota = @*unspecified*@; }
 
-  // ...  
+  // ...
 }
 ```
 :::
@@ -390,7 +391,7 @@ Constrain the defaulted default constructor in [range.subrange.general]{.sref}:
 ```diff
 namespace std::ranges {
   // ...
-  
+
   template<input_or_output_iterator I, sentinel_for<I> S = I, subrange_kind K =
       sized_sentinel_for<S, I> ? subrange_kind::sized : subrange_kind::unsized>
     requires (K == subrange_kind::sized || !sized_sentinel_for<S, I>)
@@ -405,10 +406,10 @@ namespace std::ranges {
   public:
 -   subrange() = default;
 +   subrange() @[requires default_initializable&lt;I>]{.diffins}@ = default;
-  
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -428,7 +429,7 @@ namespace std::ranges {
   public:
 -   single_view() = default;
 +   single_view() @[requires default_initializable&lt;T>]{.diffins}@ = default;
-    
+
     // ...
   };
 }
@@ -486,7 +487,7 @@ namespace std::ranges {
 
 -   iterator() = default;
 +   iterator() @[requires default_initializable&lt;W>]{.diffins}@ = default;
-    
+
     // ...
   };
 }
@@ -557,7 +558,7 @@ namespace std::ranges {
     // ...
 
 -   iterator() = default;
-    
+
     // ...
 
   private:
@@ -616,7 +617,7 @@ Replace the subclause [range.semi.wrap] (all the uses of `semiregular-box<T>` ar
 ```diff
 - constexpr @*semiregular-box*@() noexcept(is_nothrow_default_constructible_v<T>)
 -    : @*semiregular-box*@{in_place}
-+ constexpr @*copyable-box*@() noexcept(is_nothrow_default_constructible_v<T>) @[requires default_initializable&lt;T>]{.diffins}@ 
++ constexpr @*copyable-box*@() noexcept(is_nothrow_default_constructible_v<T>) @[requires default_initializable&lt;T>]{.diffins}@
 +    : @*copyable-box*@{in_place}
 { }
 ```
@@ -626,7 +627,7 @@ Replace the subclause [range.semi.wrap] (all the uses of `semiregular-box<T>` ar
 + @*copyable-box*@& operator=(const @*copyable-box*@& that)
     noexcept(is_nothrow_copy_constructible_v<T>)
   {
-+   if (this != addressof(that)) {  
++   if (this != addressof(that)) {
       if (that) emplace(*that);
       else reset();
 +   }
@@ -666,7 +667,7 @@ namespace std::ranges {
 +   R* r_;                      // exposition only
   public:
 -   constexpr ref_view() noexcept = default;
-    
+
     // ...
   };
 }
@@ -720,7 +721,7 @@ namespace std::ranges {
 
 -   iterator() = default;
 +   iterator() @[requires default_initializable&lt;iterator_t&lt;V>>]{.diffins}@ = default;
-    
+
     // ...
   };
 }
@@ -750,10 +751,10 @@ namespace std::ranges {
   public:
 -   transform_view() = default;
 +   transform_view() @[requires default_initializable&lt;V> && default_initializable&lt;F>]{.diffins}@ = default;
-    
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -781,7 +782,7 @@ namespace std::ranges {
 
 -   iterator() = default;
 +   iterator() @[requires default_initializable&lt;iterator_t&lt;*Base*>>]{.diffins}@ = default;
-    
+
     // ...
   };
 }
@@ -803,10 +804,10 @@ namespace std::ranges {
   public:
 -   take_view() = default;
 +   take_view() @[requires default_initializable&lt;V>]{.diffins}@ = default;
-    
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -831,10 +832,10 @@ namespace std::ranges {
   public:
 -   take_while_view() = default;
 +   take_while_view() @[requires default_initializable&lt;V> && default_initializable&lt;Pred>]{.diffins}@ = default;
-    
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -850,7 +851,7 @@ namespace std::ranges {
   public:
 -   drop_view() = default;
 +   drop_view() @[requires default_initializable&lt;V>]{.diffins}@ = default;
-    
+
     // ...
   private:
     V base_ = V();                              // exposition only
@@ -874,7 +875,7 @@ namespace std::ranges {
   public:
 -   drop_while_view() = default;
 +   drop_while_view() @[requires default_initializable&lt;V> && default_initializable&lt;Pred>]{.diffins}@ = default;
-    
+
     // ...
 
   private:
@@ -916,7 +917,7 @@ namespace std::ranges {
   public:
 -   join_view() = default;
 +   join_view() @[requires default_initializable&lt;V>]{.diffins}@ = default;
-    
+
     // ...
   };
 
@@ -955,7 +956,7 @@ namespace std::ranges {
 
 -   iterator() = default;
 +   iterator() @[requires default_initializable&lt;*OuterIter*> && default_initializable&lt;*InnerIter*>]{.diffins}@ = default;
-    
+
     // ...
   };
 }
@@ -980,14 +981,14 @@ constexpr void @*satisfy*@();       // exposition only
 +     return *@*parent_*@->@*inner_*@;
 +   }
   };
-  
+
   for (; outer_ != ranges::end(@*parent_*@->@*base_*@); ++@*outer_*@) {
     auto& inner = update_inner(*@*outer_*@);
     @*inner_*@ = ranges::begin(inner);
     if (@*inner_*@ != ranges::end(inner))
       return;
   }
-  
+
   if constexpr (@*ref-is-glvalue*@)
     @*inner_*@ = @*InnerIter*@();
 ```
@@ -1042,10 +1043,10 @@ namespace std::ranges {
   public:
 -   split_view() = default;
 +   split_view() @[requires default_initializable&lt;V> && default_initializable&lt;Pattern>]{.diffins}@ = default;
-    
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -1072,10 +1073,10 @@ namespace std::ranges {
   public:
 -   common_view() = default;
 +   common_view() @[requires default_initializable&lt;V>]{.diffins}@ = default;
-    
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -1094,10 +1095,10 @@ namespace std::ranges {
   public:
 -   reverse_view() = default;
 +   reverse_view() @[requires default_initializable&lt;V>]{.diffins}@ = default;
-    
+
     // ...
   };
-  
+
   // ...
 }
 ```
@@ -1119,7 +1120,7 @@ namespace std::ranges {
   public:
 -   elements_view() = default;
 +   elements_view() @[requires default_initializable&lt;V>]{.diffins}@ = default;
-    
+
     // ...
 
   private:
@@ -1155,7 +1156,7 @@ namespace std::ranges {
 
 -   iterator() = default;
 +   iterator() @[requires default_initializable&lt;iterator_t&lt;*Base*>>]{.diffins}@ = default;
-    
+
     // ...
   };
 }
@@ -1197,7 +1198,7 @@ references:
         - family: Eric Niebler and Casey Carter
       issued:
         - year: 2014
-      URL: https://github.com/ericniebler/stl2/  
+      URL: https://github.com/ericniebler/stl2/
     - id: stl2-179
       citation-label: stl2-179
       title: "Consider relaxing the DefaultConstructible requirements"

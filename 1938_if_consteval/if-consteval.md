@@ -13,6 +13,7 @@ author:
     - name: Daveed Vandevoorde
       email: <daveed@edg.com>
 toc: true
+tag: constexpr
 ---
 
 # Revision history
@@ -22,12 +23,12 @@ R2 to R3: Wording changes.
 R1 to R2: R1 [@P1938R1] of this paper originally mandated the use of braces in `if consteval` (see [why braces](#why-braces), also new in this revision) grammatically. Davis Herring pointed out in an EWG telecon that this causes some issues:
 
 ```cpp
-if (cond) 
+if (cond)
     if consteval { s0; }
     else s1;
 ```
 
-If the grammar for `if consteval` has _compound-statement_, then the `else` here _cannot_ be associated with the `if consteval`, it must be associated with the outer `if`. Rather than that, we want this to a compile error due to the lack of braces around `s1`. 
+If the grammar for `if consteval` has _compound-statement_, then the `else` here _cannot_ be associated with the `if consteval`, it must be associated with the outer `if`. Rather than that, we want this to a compile error due to the lack of braces around `s1`.
 
 R0 to R1: R0 [@P1938R0] of this paper initially contained only a positive form: `if consteval`. This paper additionally adds a negated form, `if not consteval`.
 
@@ -77,7 +78,7 @@ The function `h` here is basically a lifted, constant-evaluation-only version
 of the function `g`. At constant evaluation time, they do the same thing,
 except that during runtime, you cannot call `h`, and `g` has this extra path.
 Maybe this code started with just `h` and someone decided a runtime version
-would also be useful and turned it into `g`. 
+would also be useful and turned it into `g`.
 
 Unfortunately, `h` is well-formed while `g` is ill-formed. You cannot make that
 call to `f` (that is ominously marked with an arrow) in that location. Even
@@ -110,9 +111,9 @@ constexpr size_t strlen(char const* s) {
             if (*p == '\0') {
                 return static_cast<std::size_t>(p - s);
             }
-        }    
+        }
     } else {
-        __asm__("SSE 4.2 insanity");        
+        __asm__("SSE 4.2 insanity");
     }
 }
 ```
@@ -206,7 +207,7 @@ except with three differences:
 1. No header include is necessary.
 2. The syntax is different, which completely sidesteps the confusion over the
 proper way to check if we're in constant evaluation. You simply cannot misuse
-the syntax. 
+the syntax.
 3. We can use `if consteval` to allow invoking immediate functions.
 
 To explain the last point a bit more, the current language rules allow you to invoke
@@ -270,7 +271,7 @@ or
 if ! consteval { }
 ```
 
-With the semantics that the first substatement is executed if the context is _not_ manifestly constant evaluated, otherwise the second substatement (if any) is executed. 
+With the semantics that the first substatement is executed if the context is _not_ manifestly constant evaluated, otherwise the second substatement (if any) is executed.
 
 ## Conditioned Form
 
@@ -286,7 +287,7 @@ There are currently two uses in libstdc++ that are of the form
 ```cpp
 if (std::is_constant_evaluated() && __n < 0)
   throw "attempt to decrement a non-bidirectional iterator";
-``` 
+```
 
 This usage is perfectly fine and doesn't necessary need special support from
 this proposal. Or it could also be written as:
@@ -307,7 +308,7 @@ if consteval {
 ```
 
 Either way, the condition form doesn't feel strongly motivated except for
-consistency with `if` and `if constexpr`. 
+consistency with `if` and `if constexpr`.
 
 ## Deprecating `std::is_constant_evaluated()`
 
@@ -323,7 +324,7 @@ of it - the users that need this will definitely be able to write it correctly -
 but we are concerned with a proliferation of exactly this function. The advantage
 of having the one `std::is_constant_evaluated()` is both that it becomes actually
 teachable and also that it becomes warnable: the warnings discussed can happen
-only because we know what this name means. Maybe it's still possible to warn 
+only because we know what this name means. Maybe it's still possible to warn
 on `if constexpr (your::is_constant_evaluated())` but that's a much harder
 problem.
 
@@ -441,7 +442,7 @@ if consteval {
 :::
 
 As of this writing, libstdc++ has 23 uses that could be replaced by `if consteval`, 2 that could be replaced by `if not consteval`, and 2 that require an extra
-condition on the comparison. 
+condition on the comparison.
 
 # History
 
@@ -449,7 +450,7 @@ The initial revision of the `std::is_constant_evaluated()` proposal [@P0595R0]
 was actually targeted as a language feature rather than a library feature. The
 original spelling was `if (constexpr())`. The paper was presented in Kona 2017
 and was received very favorably in the form it was presented (17-4). The poll
-to consider a magic library alternative was only marginally more preferred (17-3). 
+to consider a magic library alternative was only marginally more preferred (17-3).
 We believe that in the two years since these polls were taken, having a dedicated
 language feature with an impossible-to-misuse API, that can coexist with the rest
 of the constant ecosystem, is the right direction.
@@ -534,9 +535,9 @@ constexpr bool is_constant_evaluated() noexcept;
 [1]{.pnum} *Returns*: `true` if and only if evaluation of the call occurs within
 the evaluation of an expression or conversion that is
 manifestly constant-evaluated ([expr.const]).
-::: 
+:::
 ::: addu
-[1]{.pnum} *Effects*: Equivalent to: 
+[1]{.pnum} *Effects*: Equivalent to:
 ```
 if consteval {
     return true;

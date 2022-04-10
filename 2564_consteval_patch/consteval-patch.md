@@ -7,6 +7,7 @@ author:
     - name: Barry "Patch" Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+tag: constexpr
 ---
 
 # Introduction

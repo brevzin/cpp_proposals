@@ -1,7 +1,10 @@
+---
 Title: Equality categories
 Document-Number: DxxxxRx
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: EWG, LEWG
+tag: spaceship
+---
 
 # History
 

@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+tag: constexpr
 ---
 
 # Introduction
@@ -66,9 +67,9 @@ In short, this concepts extension will allow for parameter identifiers to appear
 
 I think this proposal has a few problems.
 
-## Ephemerality 
+## Ephemerality
 
-The fundamental problem is that whether or not an expression is a _constant 
+The fundamental problem is that whether or not an expression is a _constant
 expression_ is an ephemeral property of an expression. It has a tendency to not
 last as long as you want it to.
 Relying on an expression being a constant expression is going to prevent a whole
@@ -145,7 +146,7 @@ classes.emplace_back(reflexpr(some_class)); // error
 while our expression is still a constant expression. But `emplace_back` fails
 because it deduces its parameter to `info&&` and has to perform the construction
 of `class_info` internally, at which point our object is no longer a constant
-expression. 
+expression.
 
 The general problem here is that the conversion has to happen _right away_,
 before we pass any function boundaries. If we stay as an `info` for too long, we
@@ -206,7 +207,7 @@ add a "back-up" conversion mechanism from `meta:info` to `meta::class_info`.
 
 The proposal at hand introduces the notion of value-based overloading, but
 everything else in the language and library only ever deal with type-based
-overloading. 
+overloading.
 
 What would `constructible_from<meta::class_info, meta::info>` yield? By the rules
 laid out in these papers, it would yield `false`. Except sometimes, it actually
@@ -255,7 +256,7 @@ constexpr int foo(int i) {
 
 foo(42);
 ```
- 
+
 And be surprised that this fails, even though the function is `constexpr`, even
 though the argument is a constant expression. And so we have to repeat the
 mantra over and over that function parameters are never constant expressions.
@@ -263,7 +264,7 @@ Function parameters are never constant expressions.
 
 Except, suddenly, with this paper, they can be. But only in a `requires` clause.
 This adds more wrinkles into an already very-complex model that just makes it
-harder to understand. 
+harder to understand.
 
 # Conclusion
 

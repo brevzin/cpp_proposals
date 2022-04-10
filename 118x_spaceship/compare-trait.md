@@ -1,7 +1,10 @@
+---
 Title: A type trait and concept for spaceship
 Document-Number: P1187R1
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
+tag: spaceship
+---
 
 # Revision History
 

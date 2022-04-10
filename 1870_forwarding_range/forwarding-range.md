@@ -7,11 +7,12 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+tag: ranges
 ---
 
 # Revision History
 
-R0 [@P1870R0] of this paper was presented to LEWG in Belfast. There was consensus to change the opt-in mechanism to use the trait rather than the non-member function as presented in the paper. However, there was unanimous dissent to remove the ability to invoke `ranges::begin` (and other CPOs) on rvalues. This draft adds that ability back. 
+R0 [@P1870R0] of this paper was presented to LEWG in Belfast. There was consensus to change the opt-in mechanism to use the trait rather than the non-member function as presented in the paper. However, there was unanimous dissent to remove the ability to invoke `ranges::begin` (and other CPOs) on rvalues. This draft adds that ability back.
 
 In short, the only change then is the opt-in mechanism. All other functionality is preserved.
 
@@ -50,7 +51,7 @@ The name _`forwarding-range`_ is problematic. There is a concept `std::forward_r
 
 However, coming up with a good name for it is very difficult. The concept has to refer to the range, but the salient aspect really has more to do with the iterators. Words that seem relevant are detachable, untethered, unfettered, nondangling. But then applying them to the range ends up being a mouthful: `range_with_detachable_iterators`. Granted, this concept isn't _directly_ used in too many places so maybe a long name is fine.
 
-The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. It still doesn't seem like a great name though, but at least all the relevant library things are similarly named. 
+The naming direction this proposal takes is to use the name `safe_range`, based on the existence of `safe_iterator` and `safe_subrange`. It still doesn't seem like a great name though, but at least all the relevant library things are similarly named.
 
 Also the concept is still exposition-only, despite being a fairly important concept that people may want to use in their own code. This can be worked around:
 
@@ -84,7 +85,7 @@ namespace N {
 }
 ```
 
-Does `N::my_vector` satisfy the concept `__begin::has_non_member`? It does not. The reason is that the poison pill candidate binds an rvalue reference to the argument while the ADL candidate binds an lvalue reference, and tiebreaker of rvalue reference to lvalue reference happens much earlier than non-template to template. The only way to have a better match than the poison pill for rvalues is to either have a function/function template that takes its argument by value or rvalue reference, or to have a function template that takes a constrained forwarding reference. 
+Does `N::my_vector` satisfy the concept `__begin::has_non_member`? It does not. The reason is that the poison pill candidate binds an rvalue reference to the argument while the ADL candidate binds an lvalue reference, and tiebreaker of rvalue reference to lvalue reference happens much earlier than non-template to template. The only way to have a better match than the poison pill for rvalues is to either have a function/function template that takes its argument by value or rvalue reference, or to have a function template that takes a constrained forwarding reference.
 
 This is a pretty subtle design decision - why did we decide to use the existence of non-member overloads as the opt-in?
 
@@ -183,9 +184,9 @@ namespace std {
   // [string.view.template], class template basic_­string_­view
   template<class charT, class traits = char_traits<charT>>
   class basic_string_view;
-  
+
 + template<class charT, class traits>
-+   inline constexpr bool enable_safe_range<basic_string_view<charT, traits>> = true;  
++   inline constexpr bool enable_safe_range<basic_string_view<charT, traits>> = true;
 }
 ```
 :::
@@ -215,9 +216,9 @@ namespace std {
   // [views.span], class template span
   template<class ElementType, size_t Extent = dynamic_extent>
     class span;
-    
+
 + template<class ElementType, size_t Extent>
-+   inline constexpr bool enable_safe_range<span<ElementType, Extent>> = true;    
++   inline constexpr bool enable_safe_range<span<ElementType, Extent>> = true;
 }
 ```
 :::
@@ -230,7 +231,7 @@ namespace std {
   template<class ElementType, size_t Extent = dynamic_extent>
   class span {
     [...]
-    
+
 -   friend constexpr iterator begin(span s) noexcept { return s.begin(); }
 -   friend constexpr iterator end(span s) noexcept { return s.end(); }
 
@@ -238,10 +239,10 @@ namespace std {
     pointer data_;    // exposition only
     index_type size_; // exposition only
   };
-  
+
   template<class Container>
     span(const Container&) -> span<const typename Container::value_type>;
-}  
+}
 ```
 :::
 
@@ -255,7 +256,7 @@ Change 24.2 [ranges.syn] to introduce the new trait and the new non-exposition-o
 namespace std::ranges {
   [ ... ]
 
-  // [range.range], ranges  
+  // [range.range], ranges
   template<class T>
     concept range = @_see below_@;
 
@@ -265,18 +266,18 @@ namespace std::ranges {
 + template<class T>
 +   concept safe_range = @_see below_@;
 
-  [ ... ]    
-  
+  [ ... ]
+
   // [range.subrange], sub-ranges
   enum class subrange_kind : bool { unsized, sized };
 
   template<input_or_output_iterator I, sentinel_for<I> S = I, subrange_kind K = see below>
     requires (K == subrange_kind::sized || !sized_sentinel_for<S, I>)
-  class subrange;  
-  
+  class subrange;
+
 + template<input_or_output_iterator I, sentinel_for<I> S, subrange_kind K>
-+   inline constexpr bool enable_safe_range<subrange<I, S, K>> = true;  
-  
++   inline constexpr bool enable_safe_range<subrange<I, S, K>> = true;
+
   // [range.dangling], dangling iterator handling
   struct dangling;
 
@@ -288,34 +289,34 @@ namespace std::ranges {
     using safe_subrange_t =
 -     conditional_t<@[_forwarding-range_]{.diffdel}@<R>, subrange<iterator_t<R>>, dangling>;
 +     conditional_t<@[safe_range]{.diffins}@<R>, subrange<iterator_t<R>>, dangling>;
-      
+
   // [range.empty], empty view
   template<class T>
     requires is_object_v<T>
   class empty_view;
 
 + template<class T>
-+   inline constexpr bool enable_safe_range<empty_view<T>> = true;  
-  
-  
++   inline constexpr bool enable_safe_range<empty_view<T>> = true;
+
+
   [...]
-  
+
   // [range.iota], iota view
   template<weakly_incrementable W, semiregular Bound = unreachable_sentinel_t>
     requires weakly-equality-comparable-with<W, Bound>
   class iota_view;
-  
+
 + template<weakly_incrementable W, semiregular Bound>
-+   inline constexpr bool enable_safe_range<iota_view<W, Bound>> = true;  
-  
++   inline constexpr bool enable_safe_range<iota_view<W, Bound>> = true;
+
   [...]
-  
+
   template<range R>
     requires is_object_v<R>
   class ref_view;
-  
+
 + template<class T>
-+   inline constexpr bool enable_safe_range<ref_view<T>> = true;  
++   inline constexpr bool enable_safe_range<ref_view<T>> = true;
 
   [...]
 }
@@ -385,7 +386,7 @@ Change 24.3.5 [range.access.rbegin]:
 
 [2]{.pnum} [ *Note*: Whenever `ranges​::​rbegin(E)` is a valid expression, its type models `input_or_output_iterator`. — *end note* ]
 :::
- 
+
 Change 24.3.6 [range.access.rend]:
 
 ::: bq
@@ -420,10 +421,10 @@ Change 24.4.2 [range.range]:
 -       ranges::begin(std::forward<T>(t));        // sometimes equality-preserving (see below)
 -       ranges::end(std::forward<T>(t));
 -     };
-- 
+-
 - template<class T>
 -   concept range = @_range-impl_@<T&>;
-- 
+-
 - template<class T>
 -   concept forwarding-range =    // exposition only
 -     range<T> && range-impl<T>;
@@ -433,7 +434,7 @@ Change 24.4.2 [range.range]:
 +     requires(T& t) {
 +       ranges::begin(t);                         // sometimes equality-preserving (see below)
 +       ranges::end(t);
-+     }; 
++     };
 +
 + template<class T>
 +   concept safe_range =
@@ -488,7 +489,7 @@ namespace std::ranges {
       sized_sentinel_for<S, I> ? subrange_kind::sized : subrange_kind::unsized>
     requires (K == subrange_kind::sized || !sized_sentinel_for<S, I>)
   class subrange : public view_interface<subrange<I, S, K>> {
-  
+
     template<@_not-same-as_@<subrange> R>
 -     requires @[_forwarding-range_]{.diffdel}@<R> &&
 +     requires @[safe_range]{.diffins}@<R> &&
@@ -501,8 +502,8 @@ namespace std::ranges {
     constexpr subrange(R&& r, @_make-unsigned-like-t_@(iter_difference_t<I>) n)
       requires (K == subrange_kind::sized)
         : subrange{ranges::begin(r), ranges::end(r), n}
-    {}  
-  
+    {}
+
 -   friend constexpr I begin(subrange&& r) { return r.begin(); }
 -   friend constexpr S end(subrange&& r) { return r.end(); }
   };
@@ -519,10 +520,10 @@ namespace std::ranges {
 + template<@[safe_range]{.diffins}@ R>
     subrange(R&&, @_make-unsigned-like-t_@(range_difference_t<R>)) ->
       subrange<iterator_t<R>, sentinel_t<R>, subrange_kind::sized>;
-      
+
   template<size_t N, class I, class S, subrange_kind K>
     requires (N < 2)
-  constexpr auto get(const subrange<I, S, K>& r);  
+  constexpr auto get(const subrange<I, S, K>& r);
 }
 ```
 :::
@@ -544,7 +545,7 @@ Change the name of the concept in 24.5.4 [range.dangling]:
 ::: bq
 [1]{.pnum} The tag type `dangling` is used together with the template aliases `safe_iterator_t` and `safe_subrange_t` to indicate that an algorithm that typically returns an iterator into or subrange of a `range` argument does not return an iterator or subrange which could potentially reference a range whose lifetime has ended for a particular rvalue `range` argument which does not model [_`forwarding-range`_]{.rm} [`safe_range`]{.addu} ([range.range]).
 
-[2]{.pnum} [ *Example*: [...] 
+[2]{.pnum} [ *Example*: [...]
 
 The call to `ranges​::​find` at `#1` returns `ranges​::​dangling` since `f()` is an rvalue `vector`; the `vector` could potentially be destroyed before a returned iterator is dereferenced. However, the calls at `#2` and `#3` both return iterators since the lvalue vec and specializations of `subrange` model [_`forwarding-range`_]{.rm} [`safe_range`]{.addu}. — *end example* ]
 :::
@@ -590,7 +591,7 @@ namespace std::ranges {
 :::
 
 [^1]: There is a hypothetical kind of range where the range itself owns its data by `shared_ptr`, and the iterators _also_ share ownership of the data. In this way, the iterators' validity isn't tied to the range's lifetime not because the range doesn't own the elements (as in the `span` case) but because the iterators _also_ own the elements. I'm not sure if anybody has ever written such a thing.
-[^2]: I intend this as a positive, not as being derogatory. 
+[^2]: I intend this as a positive, not as being derogatory.
 
 # Acknowledgements
 

@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+tag: constexpr
 ---
 
 # Revision History
@@ -34,16 +35,16 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
  #endif
 @@ -206,7 +205,7 @@
          { }
- 
+
          // User-provided destructor is needed when _Up has non-trivial dtor.
 -        ~_Storage() { }
 +        constexpr ~_Storage() { }
- 
+
          _Empty_byte _M_empty;
          _Up _M_value;
 @@ -217,12 +216,12 @@
      bool _M_engaged = false;
- 
+
      template<typename... _Args>
 -    void
 +    constexpr void
@@ -56,10 +57,10 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
 +            std::forward<_Args>(__args)...);
          this->_M_engaged = true;
      }
- 
+
 @@ -371,7 +370,7 @@
      _Optional_payload& operator=(_Optional_payload&&) = default;
- 
+
      // Destructor needs to destroy the contained value:
 -    ~_Optional_payload()
 +    constexpr ~_Optional_payload()
@@ -82,7 +83,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
 +            std::forward<_Args>(__args)...);
          static_cast<_Dp*>(this)->_M_payload._M_engaged = true;
      }
- 
+
 -    void
 +    constexpr void
      _M_destruct() noexcept
@@ -90,7 +91,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
          static_cast<_Dp*>(this)->_M_payload._M_destroy();
 @@ -754,7 +752,7 @@
          : _Base(std::in_place, __il, std::forward<_Args>(__args)...) { }
- 
+
      // Assignment operators.
 -    optional&
 +    constexpr optional&
@@ -99,7 +100,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
          this->_M_reset();
 @@ -762,6 +760,7 @@
      }
- 
+
      template<typename _Up = _Tp>
 +    constexpr
      enable_if_t<__and_v<__not_self<_Up>,
@@ -107,7 +108,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
                                        is_same<_Tp, decay_t<_Up>>>>,
 @@ -780,6 +779,7 @@
      }
- 
+
      template<typename _Up>
 +    constexpr
      enable_if_t<__and_v<__not_<is_same<_Tp, _Up>>,
@@ -115,7 +116,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
                          is_assignable<_Tp&, _Up>,
 @@ -801,6 +801,7 @@
      }
- 
+
      template<typename _Up>
 +    constexpr
      enable_if_t<__and_v<__not_<is_same<_Tp, _Up>>,
@@ -123,7 +124,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
                          is_assignable<_Tp&, _Up>,
 @@ -823,6 +824,7 @@
      }
- 
+
      template<typename... _Args>
 +    constexpr
      enable_if_t<is_constructible_v<_Tp, _Args&&...>, _Tp&>
@@ -131,7 +132,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
      {
 @@ -832,6 +834,7 @@
      }
- 
+
      template<typename _Up, typename... _Args>
 +    constexpr
      enable_if_t<is_constructible_v<_Tp, initializer_list<_Up>&,
@@ -139,7 +140,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
      emplace(initializer_list<_Up> __il, _Args&&... __args)
 @@ -844,7 +847,7 @@
      // Destructor is implicit, implemented in _Optional_base.
- 
+
      // Swap.
 -    void
 +    constexpr void
@@ -149,7 +150,7 @@ I updated libstdc++'s implementation of `std::optional` to add these `constexpr`
 @@ -957,7 +960,7 @@
          : static_cast<_Tp>(std::forward<_Up>(__u));
      }
- 
+
 -    void reset() noexcept
 +    constexpr void reset() noexcept
      {
@@ -173,7 +174,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 ```diff
 @@ -121,7 +121,7 @@
  __do_visit(_Visitor&& __visitor, _Variants&&... __variants);
- 
+
  template <typename... _Types, typename _Tp>
 -decltype(auto)
 +constexpr decltype(auto)
@@ -183,9 +184,9 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 @@ -329,6 +329,11 @@
          : _M_rest(in_place_index<_Np-1>, std::forward<_Args>(__args)...)
      { }
- 
+
 +    constexpr ~_Variadic_union() {}
-+    constexpr ~_Variadic_union() 
++    constexpr ~_Variadic_union()
 +        requires (std::is_trivially_destructible_v<_First> && ... &&
 +                  std::is_trivially_destructible_v<_Rest>)  = default;
 +
@@ -195,7 +196,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 @@ -380,7 +385,7 @@
            _M_index(_Np)
      { }
- 
+
 -    void _M_reset()
 +    constexpr void _M_reset()
      {
@@ -204,14 +205,14 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 @@ -392,7 +397,7 @@
          _M_index = variant_npos;
      }
- 
+
 -    ~_Variant_storage()
 +    constexpr ~_Variant_storage()
      {
          _M_reset();
      }
 @@ -420,6 +425,10 @@
- 
+
  template<typename... _Types>
  struct _Variant_storage<true, _Types...> {
 +    template<typename _Tp>
@@ -219,12 +220,12 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 +        __detail::__variant::__index_of_v<_Tp, _Types...>;
 +
      constexpr _Variant_storage() : _M_index(variant_npos) { }
- 
+
      template<size_t _Np, typename... _Args>
 @@ -428,7 +437,7 @@
            _M_index(_Np)
      { }
- 
+
 -    void _M_reset() noexcept
 +    constexpr void _M_reset() noexcept
      {
@@ -232,7 +233,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
      }
 @@ -459,13 +468,16 @@
      _Variant_storage<_Traits<_Types...>::_S_trivial_dtor, _Types...>;
- 
+
  template<typename _Tp, typename _Up>
 -void __variant_construct_single(_Tp&& __lhs, _Up&& __rhs_mem)
 +constexpr void __variant_construct_single(_Tp&& __lhs, _Up&& __rhs_mem)
@@ -250,11 +251,11 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 +            _Type(std::forward<decltype(__rhs_mem)>(__rhs_mem)));
 +    }
  }
- 
+
  template<typename... _Types, typename _Tp, typename _Up>
 @@ -519,7 +531,7 @@
      }
- 
+
      template<typename _Up>
 -    void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
 +    constexpr void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
@@ -263,7 +264,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
          __variant_construct_single(*this, std::forward<_Up>(__rhs));
 @@ -527,7 +539,7 @@
      }
- 
+
      template<typename _Up>
 -    void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
 +    constexpr void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
@@ -272,7 +273,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
          __variant_construct_single(*this, __rhs);
 @@ -545,7 +557,7 @@
      using _Base::_Base;
- 
+
      template<typename _Up>
 -    void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
 +    constexpr void _M_destructive_move(unsigned short __rhs_index, _Up&& __rhs)
@@ -281,7 +282,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
          __variant_construct_single(*this, std::forward<_Up>(__rhs));
 @@ -553,7 +565,7 @@
      }
- 
+
      template<typename _Up>
 -    void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
 +    constexpr void _M_destructive_copy(unsigned short __rhs_index, const _Up& __rhs)
@@ -291,7 +292,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 @@ -570,7 +582,7 @@
      using _Base = _Move_ctor_alias<_Types...>;
      using _Base::_Base;
- 
+
 -    _Copy_assign_base&
 +    constexpr _Copy_assign_base&
      operator=(const _Copy_assign_base& __rhs)
@@ -300,7 +301,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 @@ -625,7 +637,7 @@
      using _Base = _Copy_assign_alias<_Types...>;
      using _Base::_Base;
- 
+
 -    _Move_assign_base&
 +    constexpr _Move_assign_base&
      operator=(_Move_assign_base&& __rhs)
@@ -308,7 +309,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
      {
 @@ -1033,12 +1045,10 @@
  } // namespace __detail
- 
+
  template<size_t _Np, typename _Variant, typename... _Args>
 -void __variant_construct_by_index(_Variant& __v, _Args&&... __args) {
 -    __v._M_index = _Np;
@@ -317,15 +318,15 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 -    remove_reference_t<decltype(__storage)>
 -    (std::forward<_Args>(__args)...);
 +constexpr void __variant_construct_by_index(_Variant& __v, _Args&&... __args) {
-+    std::construct_at(std::addressof(__v), 
++    std::construct_at(std::addressof(__v),
 +        in_place_index<_Np>,
 +        std::forward<_Args>(__args)...);
  }
- 
+
  template<typename _Tp, typename... _Types>
 @@ -1220,6 +1230,7 @@
  constexpr decltype(auto) visit(_Visitor&&, _Variants&&...);
- 
+
  template<typename... _Types>
 +constexpr
  inline enable_if_t<(is_move_constructible_v<_Types> && ...)
@@ -341,11 +342,11 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 -    friend void __variant_construct_by_index(_Variant& __v,
 +    friend constexpr void __variant_construct_by_index(_Variant& __v,
              _Args&&... __args);
- 
+
      static_assert(sizeof...(_Types) > 0,
 @@ -1397,6 +1408,7 @@
      { }
- 
+
      template<typename _Tp>
 +    constexpr
      enable_if_t<__exactly_once<__accepted_type<_Tp&&>>
@@ -353,7 +354,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
                  && is_assignable_v<__accepted_type<_Tp&&>&, _Tp>,
 @@ -1421,6 +1433,7 @@
      }
- 
+
      template<typename _Tp, typename... _Args>
 +    constexpr
      enable_if_t<is_constructible_v<_Tp, _Args...> && __exactly_once<_Tp>,
@@ -361,7 +362,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
      emplace(_Args&&... __args)
 @@ -1430,6 +1443,7 @@
      }
- 
+
      template<typename _Tp, typename _Up, typename... _Args>
 +    constexpr
      enable_if_t<is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>
@@ -369,7 +370,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
                  _Tp&>
 @@ -1440,6 +1454,7 @@
      }
- 
+
      template<size_t _Np, typename... _Args>
 +    constexpr
      enable_if_t<is_constructible_v<variant_alternative_t<_Np, variant>,
@@ -377,7 +378,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
                  variant_alternative_t<_Np, variant>&>
 @@ -1484,6 +1499,7 @@
      }
- 
+
      template<size_t _Np, typename _Up, typename... _Args>
 +    constexpr
      enable_if_t<is_constructible_v<variant_alternative_t<_Np, variant>,
@@ -386,7 +387,7 @@ And likewise, here is a diff against libstdc++'s implementation of `std::variant
 @@ -1540,7 +1556,7 @@
          }
      }
- 
+
 -    void
 +    constexpr void
      swap(variant& __rhs)
@@ -406,13 +407,13 @@ namespace std {
   // [optional.optional], class template optional
   template<class T>
     class optional;
-    
+
   [...]
-  
+
   // [optional.specalg], specialized algorithms
   template<class T>
--   void swap(optional<T>&, optional<T>&) noexcept(@_see below_@);  
-+   @[constexpr]{.diffins}@ void swap(optional<T>&, optional<T>&) noexcept(@_see below_@);  
+-   void swap(optional<T>&, optional<T>&) noexcept(@_see below_@);
++   @[constexpr]{.diffins}@ void swap(optional<T>&, optional<T>&) noexcept(@_see below_@);
 
   [...]
 
@@ -508,14 +509,14 @@ namespace std {
     class variant;
 
   [...]
-  
+
   // [variant.specalg], specialized algorithms
   template<class... Types>
 -   void swap(variant<Types...>&, variant<Types...>&) noexcept(@_see below_@);
 +   @[constexpr]{.diffins}@ void swap(variant<Types...>&, variant<Types...>&) noexcept(@_see below_@);
 
   [...]
-}    
+}
 ```
 
 Add `constexpr` to the rest of the functions in [variant.variant.general]{.sref} (and likewise in [variant.dtor]{.sref}, [variant.assign]{.sref}, [variant.mod]{.sref}, and [variant.swap]{.sref}):
@@ -602,4 +603,4 @@ Change [version.syn]{.sref}:
 
 # Acknowledgements
 
-Thanks to Tim Song for all the help. Thanks to Jonathan Wakely for looking over the paper, pointing out how repetitive the introduction was, and pointing out how repetitive the introduction was. 
+Thanks to Tim Song for all the help. Thanks to Jonathan Wakely for looking over the paper, pointing out how repetitive the introduction was, and pointing out how repetitive the introduction was.

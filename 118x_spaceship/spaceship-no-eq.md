@@ -1,11 +1,14 @@
-Title: `<=> != ==`
+---
+Title: "<=> != =="
 Document-Number: P1185R2
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: CWG, EWG
+tag: spaceship
+---
 
 # Revision History
 
-R1 of this paper was presented to Evolution in Kona, who preferred that defaulted `operator<=>` unconditionally declares defaulted `operator==`. This has been noted in the questions section. 
+R1 of this paper was presented to Evolution in Kona, who preferred that defaulted `operator<=>` unconditionally declares defaulted `operator==`. This has been noted in the questions section.
 
 R0 of this paper was approved in its entirety by Evolution in San Diego. This new revision contains brand new wording after core review. There were two [design questions](#core-design-questions) brought up by Core during this review, both based on the meaning of implicitly generated `==`, which are discussed in this revision.
 
@@ -20,7 +23,7 @@ Consider a type like:
         vector<string> names;
         auto operator<=>(S const&) const = default;
     };
-    
+
 Today, this is ill-formed, because `vector` does not implement `<=>`. In order to make this work, we need to add that implementation. It is _not_ recommended that `vector` only provide `<=>`, but we will start there and it will become clear why that is the recommendation.
 
 The most straightforward implementation of `<=>` for `vector` is (let's just assume `strong_ordering` and note that I'm deliberately not using `std::lexicographical_compare_3way()` for clarity):
@@ -52,17 +55,17 @@ In order to do `==` efficiently, we have to short-circuit and do `==` all the wa
         if (size != rhs.size()) {
             return false;
         }
-    
+
         for (size_t i = 0; i != size; ++i) {
             // use ==, not <=>, in all nested comparisons
             if (lhs[i] != rhs[i]) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
 ## Why this is really bad
 
 This is really bad on several levels, significant levels.
@@ -70,7 +73,7 @@ This is really bad on several levels, significant levels.
 First, since `==` falls back on `<=>`, it's easy to fall into the trap that once `v1 == v2` compiles and gives the correct answer, we're done. If we didn't implement the efficient `==`, outside of very studious code review, we'd have no way of finding out. The problem is that `v1 <=> v2 == 0` would always give the _correct_ answer (assuming we correctly implemented `<=>`). How do you write a test to ensure that we did the short circuiting? The only way you could do it is to time some pathological case - comparing a vector containing a million entries against a vector containing those same million entries plus `1` - and checking if it was fast?
 
 Second, the above isn't even complete yet. Because even if we were careful enough to write `==`, we'd get an efficient `v1 == v2`... but still an inefficient `v1 != v2`, because that one would call `<=>`. We would have to also write this manually:
-    
+
     :::cpp
     template<typename T>
     bool operator!=(vector<T> const& lhs, vector<T> const& rhs)
@@ -85,7 +88,7 @@ Third, this compounds _further_ for any types that have something like this as a
         vector<string> names;
         auto operator<=>(S const&) const = default;
     };
-    
+
 Even if we correctly implemented `==`, `!=`, and `<=>` for `vector` and `string`, comparing two `S`s for equality _still_ calls `<=>` and is _still_ a completely silent pessimization. Which _again_ we cannot test functionally, only with a timer.
 
 And then, it somehow gets even worse, because it's be easy to fall into yet another trap: you somehow have the diligence to remember that you need to explicitly define `==` for this type and you do it this way:
@@ -96,10 +99,10 @@ And then, it somehow gets even worse, because it's be easy to fall into yet anot
         auto operator<=>(S const&) const = default;
         bool operator==(S const&) const = default; // problem solved, right?
     };
-    
-But what does defaulting `operator==` actually do? It [invokes `<=>`](http://eel.is/c++draft/class.rel.eq "[class.rel.eq]"). So here's explicit code that seems sensible to add to attempt to address this problem, that does absolutely nothing to address this problem. 
 
-The only way to get efficiency is to have every type, even `S` above, implement both not just `<=>` but also `==` and `!=`. By hand. 
+But what does defaulting `operator==` actually do? It [invokes `<=>`](http://eel.is/c++draft/class.rel.eq "[class.rel.eq]"). So here's explicit code that seems sensible to add to attempt to address this problem, that does absolutely nothing to address this problem.
+
+The only way to get efficiency is to have every type, even `S` above, implement both not just `<=>` but also `==` and `!=`. By hand.
 
     :::cpp
     struct S {
@@ -110,11 +113,11 @@ The only way to get efficiency is to have every type, even `S` above, implement 
     };
 
 That is the status quo today and the problem that needs to be solved.
-    
+
 
 ## Other Languages
 
-In order how to best figure out how to solve this problem for C++, it is helpful to look at how other languages have already addressed this issue. While P0515 listed many languages which have a three-way comparison returning a signed integer, there is another set of otherwise mostly-unrelated languages that take a different approach. 
+In order how to best figure out how to solve this problem for C++, it is helpful to look at how other languages have already addressed this issue. While P0515 listed many languages which have a three-way comparison returning a signed integer, there is another set of otherwise mostly-unrelated languages that take a different approach.
 
 ### Rust
 
@@ -129,7 +132,7 @@ Rust deals in Traits (which are roughly analogous to C++0x concepts and Swift pr
 
 The actual operators are [implicitly generated][rust.oper] from these traits, but not all from the same one. Importantly, `x == y` is translated as `PartialEq::eq(x, y)` whereas ` x < y` is translated as `PartialOrd::lt(x, y)` (which is effectively checking that `PartialOrd::partial_cmp(x, y)` is `Less`).
 
-That is, you don't get *six* functions for the price of one. You need to write _two functions_. 
+That is, you don't get *six* functions for the price of one. You need to write _two functions_.
 
 Even if you don't know Rust (and I really don't know Rust), I think it would be instructive here would be to look at how the equivalent comparisons are implemented for Rust's `vector` type. The important parts look like this:
 
@@ -163,7 +166,7 @@ Even if you don't know Rust (and I really don't know Rust), I think it would be 
 
             true
         }
-    }    
+    }
 </td>
 <td>
     :::rust hl_lines="11"
@@ -185,12 +188,12 @@ Even if you don't know Rust (and I really don't know Rust), I think it would be 
 
             self.len().cmp(&other.len())
         }
-    }    
+    }
 </td>
 </tr>
 </table>
 
-In other words, `eq` calls `eq` all the way down while doing short-circuiting whereas `cmp` calls `cmp` all the way down, and these are two separate functions. Both algorithms exactly match our implementation of `==` and `<=>` for `vector` above. Even though `cmp` performs a 3-way ordering, and you can use the result of `a.cmp(b)` to determine that `a == b`, it is _not_ the way that Rust (or other languages in this realm like Swift and Kotlin and Haskell) determine equality. 
+In other words, `eq` calls `eq` all the way down while doing short-circuiting whereas `cmp` calls `cmp` all the way down, and these are two separate functions. Both algorithms exactly match our implementation of `==` and `<=>` for `vector` above. Even though `cmp` performs a 3-way ordering, and you can use the result of `a.cmp(b)` to determine that `a == b`, it is _not_ the way that Rust (or other languages in this realm like Swift and Kotlin and Haskell) determine equality.
 
 ### Other Languages
 
@@ -206,7 +209,7 @@ There are other languages that make roughly the same decision in this regard tha
 
 Fundamentally, we have two sets of operations: equality and comparison. In order to be efficient and not throw away performance, we need to implement them separately. `operator<=>()` as specified in the working draft today generating all six functions just doesn't seem to be a good solution.
 
-This paper proposes to do something similar to the Rust model above and first described in [this section](https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md#make-operator-create-only-operator-operator-operator-and-operator) of the previously linked paper: require two separate functions to implement all the functionality. 
+This paper proposes to do something similar to the Rust model above and first described in [this section](https://github.com/davidstone/isocpp/blob/master/operator-spaceship/I-did-not-order-this.md#make-operator-create-only-operator-operator-operator-and-operator) of the previously linked paper: require two separate functions to implement all the functionality.
 
 The proposal has two core components:
 
@@ -221,7 +224,7 @@ And two optional components:
 
 ## Change the candidate set for operator lookup
 
-Today, lookup for any of the relational and equality operators will also consider [`operator<=>`](http://eel.is/c++draft/over.match.oper#3.4), but preferring [the actual used operator](http://eel.is/c++draft/over.match.best#1.10). 
+Today, lookup for any of the relational and equality operators will also consider [`operator<=>`](http://eel.is/c++draft/over.match.oper#3.4), but preferring [the actual used operator](http://eel.is/c++draft/over.match.best#1.10).
 
 The proposed change is for the equality operators to _not_ consider `<=>` candidates. Instead, inequality will consider equality as a candidate. In other words, here is the proposed set of candidates. There are no changes proposed for the relational operators, only for the equality ones:
 
@@ -322,7 +325,7 @@ Proposed
 </tr>
 </table>
 
-In short, `==` and `!=` never invoke `<=>` implicitly. 
+In short, `==` and `!=` never invoke `<=>` implicitly.
 
 ## Change the meaning of defaulted equality operators
 
@@ -349,7 +352,7 @@ Proposed Meaning
       A a;
       B b;
       C c;
-        
+
       auto operator<=>(X const&) const = default;
       bool operator==(X const&) const = default;
       bool operator!=(X const&) const = default;
@@ -361,7 +364,7 @@ Proposed Meaning
       A a;
       B b;
       C c;
-        
+
       ??? operator<=>(X const& rhs) const {
         if (auto cmp = a <=> rhs.a; cmp != 0)
           return cmp;
@@ -369,11 +372,11 @@ Proposed Meaning
           return cmp;
         return c <=> rhs.c;
       }
-      
+
       bool operator==(X const& rhs) const {
         return (*this <=> rhs) == 0;
       }
-      
+
       bool operator!=(X const& rhs) const {
         return (*this <=> rhs) != 0;
       }
@@ -385,7 +388,7 @@ Proposed Meaning
       A a;
       B b;
       C c;
-        
+
       ??? operator<=>(X const& rhs) const {
         if (auto cmp = a <=> rhs.a; cmp != 0)
           return cmp;
@@ -393,13 +396,13 @@ Proposed Meaning
           return cmp;
         return c <=> rhs.c;
       }
-      
+
       bool operator==(X const& rhs) const {
         return a == rhs.a &&
           b == rhs.b &&
           c == rhs.c;
       }
-      
+
       bool operator!=(X const& rhs) const {
         return !(*this == rhs);
       }
@@ -408,7 +411,7 @@ Proposed Meaning
 </tr>
 </table>
 
-These two changes ensure that the equality operators and the relational operators remain segregated. 
+These two changes ensure that the equality operators and the relational operators remain segregated.
 
 ## Change how we define strong structural equality
 
@@ -418,9 +421,9 @@ This criteria clashes somewhat with this proposal, which is fundamentally about 
 
 We have two options here:
 
-1. Do nothing. Do not change the rules here at all, still require defaulted `<=>` for use as a non-type template parameter. This means that there may be types which don't have a natural ordering for which we would have to both default `==` and default `<=>` (with `strong_equality`), the latter being a function that _only_ exists to opt-in to this behavior. 
+1. Do nothing. Do not change the rules here at all, still require defaulted `<=>` for use as a non-type template parameter. This means that there may be types which don't have a natural ordering for which we would have to both default `==` and default `<=>` (with `strong_equality`), the latter being a function that _only_ exists to opt-in to this behavior.
 
-2. Change the definition of strong structural equality to use `==` instead. The wording here would have to be slightly more complex: define a type `T` as having strong structural equality if each subobject recursively has defaulted `==` and none of the subobjects are floating point types. 
+2. Change the definition of strong structural equality to use `==` instead. The wording here would have to be slightly more complex: define a type `T` as having strong structural equality if each subobject recursively has defaulted `==` and none of the subobjects are floating point types.
 
 The impact of this change revolves around the code necessary to write a type that is intended to only be equality-comparable (not ordered) but also usable as a non-type template parameter: only `operator==` would be necessary.
 
@@ -478,8 +481,8 @@ Proposed
     struct A {
         auto operator<=>(A const&) const = default;
     };
-    
-    
+
+
     // just equality, no relational
     struct B {
         strong_equality operator<=>(B const&) const = default;
@@ -492,7 +495,7 @@ Proposed
         bool operator==(A const&) const = default;
         auto operator<=>(A const&) const = default;
     };
-    
+
     // just equality, no relational
     struct B {
         bool operator==(B const&) const = default;
@@ -501,19 +504,19 @@ Proposed
 </tr>
 </table>
 
-Arguably, `A` isn't terrible here and `B` is somewhat simpler. But it makes this proposal seem like it's fighting against the promise of P0515 of making a trivial opt-in to ordering. 
+Arguably, `A` isn't terrible here and `B` is somewhat simpler. But it makes this proposal seem like it's fighting against the promise of P0515 of making a trivial opt-in to ordering.
 
 As an optional extension, this paper proposes that a defaulted `<=>` operator also generate a defaulted `==`. We can do this regardless of whether the return type of the defaulted `<=>` is provided or not, since even `weak_equality` implies `==`.
 
 This change, combined with the core proposal, means that one single defaulted operator is sufficient for full comparison. The difference is that, with this proposal, we still get optimal equality.
 
-This change may also obviate the need for the previous optional extension of changing the definition of strong structural extension. But even still, the changes are worth considering separately. 
+This change may also obviate the need for the previous optional extension of changing the definition of strong structural extension. But even still, the changes are worth considering separately.
 
 # Important implications
 
 This proposal means that for complex types (like containers), we have to write two functions instead of just `<=>`. But we really have to do that anyway if we want performance. Even though the two `vector` functions are very similar, and for `optional` they are even more similar (see below), this seems like a very necessary change.
 
-For compound types (like aggregates), depending on the preference of the previous choices, we either have to default to functions instead or still just default `<=>`... but we get optimal performance. 
+For compound types (like aggregates), depending on the preference of the previous choices, we either have to default to functions instead or still just default `<=>`... but we get optimal performance.
 
 Getting back to our initial example, we would write:
 
@@ -579,7 +582,7 @@ Proposed
         } else {
             return lhs.has_value() == rhs.has_value();
         }
-    }    
+    }
 </td>
 </tr>
 </table>
@@ -588,8 +591,8 @@ As is probably obvious, the implementations of `==` and `<=>` are basically iden
 
 It's important to keep in mind three things.
 
-1. In C++17 we'd have to write six functions, so writing two is a large improvement. 
-2. These two functions may be duplicated, but they give us optimal performance - writing the one `<=>` to generate all six comparison functions does not. 
+1. In C++17 we'd have to write six functions, so writing two is a large improvement.
+2. These two functions may be duplicated, but they give us optimal performance - writing the one `<=>` to generate all six comparison functions does not.
 3. The amount of special types of this kind - types that have non-default comparison behavior but perform the same algorithm for both `==` and `<=>` - is fairly small. Most container types would have separate algorithms. Typical types default both, or just default `==`. The canonical examples that would need special behavior are `std::array` and `std::forward_list` (which either have fixed or unknown size and thus cannot short-circuit) and `std::optional` and `std::variant` (which can't do default comparison). So this particular duplication is a fairly limited problem.
 
 ## Implications for comparison categories
@@ -600,8 +603,8 @@ One of the features of P0515 is that you could default `<=>` to, instead of retu
     struct X {
         std::strong_equality operator<=>(X const&) const = default;
     };
-    
-In a world where neither `==` nor `!=` would be generated from `<=>`, this no longer makes much sense. We could have to require that the return type of `<=>` be some kind of ordering - that is, at least `std::partial_ordering`. Allowing the declaration of `X` above would be misleading, at best. 
+
+In a world where neither `==` nor `!=` would be generated from `<=>`, this no longer makes much sense. We could have to require that the return type of `<=>` be some kind of ordering - that is, at least `std::partial_ordering`. Allowing the declaration of `X` above would be misleading, at best.
 
 This means there may not be a way to differentiate between `std::strong_equality` and `std::weak_equality`. The only other place to do this kind of differentiation would be if we somehow allowed it in the return of `operator==`:
 
@@ -610,7 +613,7 @@ This means there may not be a way to differentiate between `std::strong_equality
         std::strong_equality operator==(X const&) const = default;
     };
 
-And I'm not sure this makes any sense. 
+And I'm not sure this makes any sense.
 
 # Core Design Questions
 
@@ -629,16 +632,16 @@ The rule that this paper proposes, that EWG approved, was that if a class has an
             bool operator==(Weird const&) const;
             auto operator<=>(Weird const&) const = delete;
         };
-        
+
         template <typename T>
         struct wrapper {
             T t;
             auto operator<=>(wrapper const&) const = default;
         };
-        
+
         template <typename T>
         bool operator==(T const&, T const&); // global, unconstrained candidate
-        
+
         template <typename T>
         bool check(wrapper<T> const& x) {
             return x == x; // (*)
@@ -648,8 +651,8 @@ The question is, what do `check<Nothing>`, `check<OnlyEq>`, and `check<Weird>` d
 
 There are several choices that we could make here. A defaulted `<=>` that is defined as deleted...
 
-a) ... should still implicitly generate a defaulted `==`. That defaulted `==` could be defined as defaulted or deleted for its own rules.  
-b) ... should **not** generate a defaulted `==`.  
+a) ... should still implicitly generate a defaulted `==`. That defaulted `==` could be defined as defaulted or deleted for its own rules.
+b) ... should **not** generate a defaulted `==`.
 c) ... should generated an explicitly deleted `==`.
 
 Option (c) seems pointlessly user-hostile without much upside, so it will not be considered further. The meaning of the first two cases can be enumerated as follows:
@@ -701,7 +704,7 @@ There is no generated `==`, so in all cases, the global candidate is invoked.
 </table>
 
 
-In other words, there is a case (i.e. `Nothing`) where option 1 ends up with a deleted `==` instead of nothing and two cases (i.e. `OnlyEq` and `Weird`) where option 1 ends up with a valid and defaulted `==` instead of nothing. 
+In other words, there is a case (i.e. `Nothing`) where option 1 ends up with a deleted `==` instead of nothing and two cases (i.e. `OnlyEq` and `Weird`) where option 1 ends up with a valid and defaulted `==` instead of nothing.
 
 The question is: what is the intent of the class author of `wrapper`? Arguably, the intent in this case is clear: just give me all the defaults. If we do not actually end up getting all the defaults (that is, `wrapper<OnlyEq>` is not equality comparable), then the class author would have to write this regardless:
 
@@ -711,22 +714,22 @@ The question is: what is the intent of the class author of `wrapper`? Arguably, 
         T t;
         bool operator==(wrapper const&) const = default;
         auto operator<=>(wrapper const&) const = default;
-    };    
-    
-Just to ensure that we really do _get the defaults_. And at that point, we've basically obviated the feature. 
+    };
 
-The intent of the proposal that defaulting `<=>` gets you defaulted `==` is very much that defaulting `<=>` really means also having declared defaulted `==`. Option B does not get us there, and Option C definitely does not get us anywhere. I believe Option A is the clear choice here. 
+Just to ensure that we really do _get the defaults_. And at that point, we've basically obviated the feature.
+
+The intent of the proposal that defaulting `<=>` gets you defaulted `==` is very much that defaulting `<=>` really means also having declared defaulted `==`. Option B does not get us there, and Option C definitely does not get us anywhere. I believe Option A is the clear choice here.
 
 ## Answers to Core Questions
 
-Evolution preferred that declaring `operator<=>` unconditionally declare defaulted `operator==`. Whether or not `operator<=>` is defined as deleted is orthogonal. This was option (a) above. 
-        
+Evolution preferred that declaring `operator<=>` unconditionally declare defaulted `operator==`. Whether or not `operator<=>` is defined as deleted is orthogonal. This was option (a) above.
+
 # Wording
 
 Add a missing const to 10.10.1 [class.compare.default] paragraph 1, bullet 1:
 
 > A defaulted comparison operator function ([expr.spaceship], [expr.rel], [expr.eq]) for some class `C` shall be a non-template function declared in the member-specification of `C` that is
-> 
+>
 > - a non-static <ins>const</ins> member of `C` having one parameter of type `const C&`, or
 > - a friend of `C` having two parameters of type `const C&`.
 
@@ -734,11 +737,11 @@ Add a new paragraph after 10.10.1 [class.compare.default] paragraph 1:
 
 > <ins>If the class definition does not explicitly declare an `==` operator function, but declares a defaulted three-way comparison operator function, an `==` operator function is declared implicitly with the same access as the three-way comparison operator function. The implicitly-declared `==` operator for a class `X` is an inline member and is defined as defaulted in the definition of `X`. If the three-way comparison operator function is declared as a non-static const member, the implicitly-declared `==` operator function is a member of the form</ins>
 
-> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>  
+> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>bool X::operator==(const X&) const</code></ins>
 
 > <ins>Otherwise, the implicitly-declared `==` operator function is of the form</ins>
 
-> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>friend bool operator==(const X&, const X&)</code></ins>  
+> &nbsp;&nbsp;&nbsp;&nbsp;<ins><code>friend bool operator==(const X&, const X&)</code></ins>
 
 > <ins>The operator is a `constexpr` function if its definition would satisfy the requirements for a `constexpr` function. <i>[ Note: </i> the `==` operator function is declared implicitly even if the defaulted three-way comparison operator function is defined as deleted. <i> - end note]</i>
 
@@ -749,9 +752,9 @@ Replace 10.10.1 [class.compare.default] paragraph 2:
 with:
 
 > <ins>A type `C` has _strong structural equality_ if, given a glvalue `x` of type `const C`, either:</ins>
-> 
+>
 - <ins>`C` is a non-class type and `x <=> x` is a valid expression of type `std::strong_ordering` or `std::strong_equality`, or</ins>
-- <ins>`C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is well-formed when contextually converted to `bool`, all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.</ins> 
+- <ins>`C` is a class type with an `==` operator defined as defaulted in the definition of `C`, `x == x` is well-formed when contextually converted to `bool`, all of `C`'s base class subobjects and non-static data members have strong structural equality, and `C` has no `mutable` or `volatile` subobjects.</ins>
 
 Move most of 10.10.2 [class.spaceship] paragraph 1 into a new paragraph at the end of 10.10.1 [class.compare.default]:
 
@@ -815,7 +818,7 @@ Change the example in [class.rel.eq] paragraph 3:
 <blockquote><pre><code class="language-cpp">struct C {
   friend std::strong_equality operator<=>(const C&, const C&);
   </code><code><del>friend bool operator==(const C& x, const C& y) = default; // OK, returns x <=> y == 0</del></code><code class="language-cpp">
-  bool operator<(const C&) = default;                       // OK, function is deleted  
+  bool operator<(const C&) = default;                       // OK, function is deleted
 };</code></pre></blockquote>
 
 Change 11.3.1.2 [over.match.oper] paragraph 3.4:
@@ -843,12 +846,12 @@ Change the example in 12.3.2 [temp.arg.nontype]/p4 to default `==` instead of `<
 Change 12.5 [temp.type] to refer to `==` instead of `<=>`:
 
 > - their remaining corresponding non-type template-arguments have the same type and value after conversion to the type of the template-parameter, where they are considered to have the same value if they compare equal with <del><code>operator&lt;=&gt;</code></del> <ins><code>operator==</code></ins>, and
-    
+
 
 # Acknowledgements
 
 This paper most certainly would not exist without David Stone's extensive work in this area. Thanks also to Agustín Bergé for discussing issues with me. Thanks to Jens Maurer for extensive wording help.
-    
+
 [rust.oper]: https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators "Comparison Operators - The Rust Reference"
 [swift.eq]: https://developer.apple.com/documentation/swift/equatable "Equatable - Swift Standard Library"
 [swift.comp]: https://developer.apple.com/documentation/swift/comparable "Comparable - Swift Standard Library"

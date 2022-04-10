@@ -1,7 +1,10 @@
+---
 Title: Adding <=> to library
 Document-Number: P1189R0
 Authors: Barry Revzin, barry dot revzin at gmail dot com
 Audience: LEWG
+tag: spaceship
+---
 
 # Revision History
 

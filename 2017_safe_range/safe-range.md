@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+tag: ranges
 ---
 
 # Revision History
@@ -27,9 +28,9 @@ auto trim(std::string const& s) {
 }
 ```
 
-This is a fairly nice and, importantly, safe way to implement `trim`. The 
+This is a fairly nice and, importantly, safe way to implement `trim`. The
 iterators `b` and `e` returned from `find_if` will not dangle, since they point
-into the string `s` whose lifetime outlives the function. 
+into the string `s` whose lifetime outlives the function.
 
 Except this code will not compile at the moment, either in C++20 or in
 range-v3, failing on the declaration of `e`. The algorithm `find_if` is in
@@ -62,7 +63,7 @@ auto trim(std::string const& s) {
 
 Which is an unnecessary code indirection. The goal of this paper is to make the
 initial example just work. We clearly have a borrowed range that is not marked
-as such, so I consider this to be a library defect. 
+as such, so I consider this to be a library defect.
 
 # History and Status Quo
 
@@ -86,14 +87,14 @@ If the `ref_view` dies, the referred to range can still be around.
 - `string_view` is a borrowed range. Like `ref_view`, it just refers to data - the
 iterators it gives out are iterators into some other containers. `span` and
 `subrange` are similar.
-- `empty_view` doesn't even have any data, so it's trivially borrowed. 
+- `empty_view` doesn't even have any data, so it's trivially borrowed.
 - `iota_view` works by having the iterators themselves own the "counter", so
 having the iterators stick around is sufficient.
 
 And that's it. We have six, _unconditionally_ borrowed ranges. All other ranges
 and views in the standard library are _unconditionally_ not borrowed. But this is
 far too strict. As the opening example demonstrates, there are many more kinds
-of borrowed ranges you can construct than _just_ the chosen six. 
+of borrowed ranges you can construct than _just_ the chosen six.
 
 This issue was first pointed out by Johel Ernesto Guerrero Peña in [@stl2.640].
 
@@ -102,7 +103,7 @@ This issue was first pointed out by Johel Ernesto Guerrero Peña in [@stl2.640].
 A range is going to be borrowed if its iterators do not in any way refer to it. For
 the ranges in the working draft which are unconditionally borrowed, this follows
 directly from how they actually work. But for some other ranges, it might
-depend on implementation strategy. 
+depend on implementation strategy.
 
 One can imagine different specifications for views like `transform_view` and
 even `filter_view` that might allow them to be borrowed, but that's beyond the scope
@@ -116,7 +117,7 @@ range adapter itself can be transitively borrowed. For example, `s | views::reve
 has the type `reverse_view<ref_view<string const>>`. This can be a `borrowed_range`
 because `ref_view<string const>` is a `borrowed_range`. Likewise,
 `s | views::reverse | views::take(3)` can also be a `borrowed_range` by extending
-this logic further. 
+this logic further.
 
 Here is a table of all the range adapters and factories in the current working
 draft, what their current `borrowed_range` status is, and what this paper proposes.
@@ -154,27 +155,27 @@ Add six variable template specializations to [ranges.syn]{.sref}:
 
 namespace std::ranges {
   // [...]
-  
+
 
   // [range.take], take view
   template<view> class take_view;
-  
-+ template<class T>
-+   inline constexpr bool enable_borrowed_range<take_view<T>> = enable_borrowed_range<T>; 
 
-  namespace views { inline constexpr @_unspecified_@ take = @_unspecified_@; }  
-  
++ template<class T>
++   inline constexpr bool enable_borrowed_range<take_view<T>> = enable_borrowed_range<T>;
+
+  namespace views { inline constexpr @_unspecified_@ take = @_unspecified_@; }
+
   // [...]
-  
+
   // [range.drop], drop view
   template<view V>
     class drop_view;
-    
-+ template<class T>
-+   inline constexpr bool enable_borrowed_range<drop_view<T>> = enable_borrowed_range<T>; 
 
-  namespace views { inline constexpr @_unspecified_@ drop = @_unspecified_@; }  
-  
++ template<class T>
++   inline constexpr bool enable_borrowed_range<drop_view<T>> = enable_borrowed_range<T>;
+
+  namespace views { inline constexpr @_unspecified_@ drop = @_unspecified_@; }
+
   // [range.drop.while], drop while view
   template<view V, class Pred>
     requires input_range<V> && is_object_v<Pred> &&
@@ -182,19 +183,19 @@ namespace std::ranges {
     class drop_while_view;
 
 + template<class T, class Pred>
-+   inline constexpr bool enable_borrowed_range<drop_while_view<T, Pred>> = enable_borrowed_range<T>; 
++   inline constexpr bool enable_borrowed_range<drop_while_view<T, Pred>> = enable_borrowed_range<T>;
 
   namespace views { inline constexpr @_unspecified_@ drop_while = @_unspecified_@; }
 
-  // [...]  
-  
+  // [...]
+
   // [range.common], common view
   template<view V>
     requires (!common_range<V> && copyable<iterator_t<V>>)
   class common_view;
-  
+
 + template<class T>
-+   inline constexpr bool enable_borrowed_range<common_view<T>> = enable_borrowed_range<T>;   
++   inline constexpr bool enable_borrowed_range<common_view<T>> = enable_borrowed_range<T>;
 
   namespace views { inline constexpr @_unspecified_@ common = @_unspecified_@; }
 
@@ -202,9 +203,9 @@ namespace std::ranges {
   template<view V>
     requires bidirectional_range<V>
   class reverse_view;
-  
+
 + template<class T>
-+   inline constexpr bool enable_borrowed_range<reverse_view<T>> = enable_borrowed_range<T>;    
++   inline constexpr bool enable_borrowed_range<reverse_view<T>> = enable_borrowed_range<T>;
 
   namespace views { inline constexpr @_unspecified_@ reverse = @_unspecified_@; }
 
@@ -212,9 +213,9 @@ namespace std::ranges {
   template<input_range V, size_t N>
     requires @_see below_@;
   class elements_view;
-  
+
 + template<class T, size_t N>
-+   inline constexpr bool enable_borrowed_range<elements_view<T, N>> = enable_borrowed_range<T>;  
++   inline constexpr bool enable_borrowed_range<elements_view<T, N>> = enable_borrowed_range<T>;
 
   template<class R>
     using keys_view = elements_view<all_view<R>, 0>;
@@ -259,5 +260,5 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://github.com/ericniebler/range-v3/pull/1405    
+    URL: https://github.com/ericniebler/range-v3/pull/1405
 ---

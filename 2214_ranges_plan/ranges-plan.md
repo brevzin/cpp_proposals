@@ -11,6 +11,7 @@ author:
     - name: Tim Song
       email: <t.canens.cpp@gmail.com>
 toc: true
+tag: ranges
 ---
 
 <style type="text/css">
