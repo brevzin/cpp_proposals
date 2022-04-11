@@ -1,6 +1,6 @@
 ---
 title: "`cbegin` should always return a constant iterator"
-document: P2278R2
+document: P2278R3
 date: today
 audience: LEWG
 author:
@@ -11,6 +11,8 @@ tag: ranges
 ---
 
 # Revision History
+
+Since [@P2278R2], renamed `views::all_const` back to `views::as_const`, see [naming](#naming). Wording fixes.
 
 Since [@P2278R1], renamed `views::as_const` to `views::all_const`. Added several additional alias templates and a feature-test macro. Fixed some wording issues.
 
@@ -584,7 +586,18 @@ dont_touch_me(views::as_const(r));
 
 As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `const_`, but there's a few other good name options here like `views::as_const` (like `std::as_const`, but for `views`) or `views::to_const` or `views::constify` or `views::all_const` (like `views::all`). [@P2278R0] used range-v3's `views::const_`, [@P2287R1] used `views::as_const`. The advantage of `views::as_const` is that it is a mirror of `std::as_const` and so sharing a name seems reasonable. The disadvantage is that it could cause users to use `std::as_const` when they meant to use `views::as_const`.
 
-A recent LEWG telecon [@p2278-minutes] preferred the name `views::all_const` under the premise that `views::as_const` is too much like `std::as_const` and that users might think it applies `const` to the top-level range rather than each element.
+A recent LEWG telecon [@p2278-minutes] preferred the name `views::all_const` under the premise that `views::as_const` is too much like `std::as_const` and that users might think it applies `const` to the top-level range rather than each element. But, as [@P2501R0] points out, `views::all_const` is... not a great name? Moreover, the main motivation of originally renaming `views::move` to `views::all_move` was this example:
+
+::: bq
+```cpp
+using namespace std::views;
+
+std::vector<std::string> v1{"hello", "world"};
+auto v2 = move(v1);       // OOPS: initializes a view to v1
+```
+:::
+
+Here, the user intended to `std::move` and now accidentally uses `std::views::move`. This isn't really the same level of issue for using `std::views::as_const` instead of `std::as_const` (indeed, it may even be an improvement to accidentally use the range adaptor here). The LEWG discussion on that paper suggested that the desire to avoid `views::move` was much stronger than the desire to avoid `views::as_const`, and the polling did not provide a clear direction for this adaptor. As such, this revision reverts to the original proposed name of `views::as_const`.
 
 ## What About `std::cbegin` and `std::cend`?
 
@@ -1292,7 +1305,7 @@ namespace std::ranges {
 +   using const_iterator_t = const_iterator<iterator_t<R>>;
   template<range R>
     using range_difference_t = iter_difference_t<iterator_t<R>>;
-  template<sized_­range R>
+  template<sized_range R>
     using range_size_t = decltype(ranges::size(declval<R&>()));
   template<range R>
     using range_value_t = iter_value_t<iterator_t<R>>;
@@ -1469,6 +1482,32 @@ constexpr auto $as-const-pointer$(const T* p) { return p; } // exposition only
 :::
 
 [2]{.pnum} [*Note 1*: Whenever `ranges​::​cdata(E)` is a valid expression, it has pointer to [constant]{.addu} object type. — end note]
+:::
+
+Add `constant_range` in [range.refinements]{.sref}:
+
+::: bq
+[6]{.pnum} The `viewable_range` concept specifies the requirements of a `range` type that can be converted to a `view` safely.
+
+```
+template<class T>
+  concept viewable_range =
+    range<T> &&
+    ((view<remove_cvref_t<T>> && constructible_from<remove_cvref_t<T>, T>) ||
+     (!view<remove_cvref_t<T>> &&
+      (is_lvalue_reference_v<T> || (movable<remove_reference_t<T>> && !is-initializer-list<T>))));
+```
+
+::: addu
+[7]{.pnum} The `constant_range` concept specifies the requirements of a `range` type that its elements are not modifiable.
+
+```
+template<class T>
+concept constant_range =
+    range<T> &&
+    $constant-iterator$<iterator_t<R>>;
+```
+:::
 :::
 
 Add `cbegin` and `cend` to `view_interface` in [view.interface.general]{.sref}:
