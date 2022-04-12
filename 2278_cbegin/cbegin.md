@@ -520,7 +520,7 @@ In addition to simply working across all ranges, it has a few other features wor
 
 Note that here, `ranges::end` already checks that the type returned is a `sentinel` for the type returned by `ranges::begin`. Given that fact, the implementation here already ensures that `sentinel_for<decltype(cbegin(r)), decltype(cend(r))>`  holds.
 
-## A `views::all_const`
+## A `views::as_const`
 
 A whole const-view can be implemented on top of these pieces, in the same way that `views::reverse` is implemented on top of `reverse_iterator` (see the full implementation [@const-impl]):
 
@@ -547,7 +547,7 @@ inline constexpr bool ::std::ranges::enable_borrowed_range<const_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 // libstdc++ specific (hopefully standard version coming soon from P2387!)
-inline constexpr std::views::__adaptor::_RangeAdaptorClosure all_const =
+inline constexpr std::views::__adaptor::_RangeAdaptorClosure as_const =
     []<std::ranges::viewable_range R>(R&& r)
     {
         using U = std::remove_cvref_t<R>;
@@ -584,9 +584,11 @@ dont_touch_me(views::as_const(r));
 
 ### Naming
 
-As far as naming goes, obviously we can't just call it `views::const`. range-v3 calls it `const_`, but there's a few other good name options here like `views::as_const` (like `std::as_const`, but for `views`) or `views::to_const` or `views::constify` or `views::all_const` (like `views::all`). [@P2278R0] used range-v3's `views::const_`, [@P2287R1] used `views::as_const`. The advantage of `views::as_const` is that it is a mirror of `std::as_const` and so sharing a name seems reasonable. The disadvantage is that it could cause users to use `std::as_const` when they meant to use `views::as_const`.
+As far as naming goes, obviously we can't just call it `views::const`. range-v3 uses the name `views::const_`.
 
-A recent LEWG telecon [@p2278-minutes] preferred the name `views::all_const` under the premise that `views::as_const` is too much like `std::as_const` and that users might think it applies `const` to the top-level range rather than each element. But, as [@P2501R0] points out, `views::all_const` is... not a great name? Moreover, the main motivation of originally renaming `views::move` to `views::all_move` was this example:
+[@P2278R0] used range-v3's `views::const_`. [@P2278R1] switched to `views::as_const`. The advantage of `views::as_const` is that it is a mirror of `std::as_const`, so sharing a name seems reasonable. Indeed, when ranges are involved, `views::as_const` is superior to `std::as_const` as it ensures immutable elements.
+
+A recent LWg telecon [@p2278-minutes] preferred the name `views::all_const` under the premise that `views::as_const` is too much like `std::as_const` and that users might think it applies `const` to the top-level range rather than each element. But, as [@P2501R0] points out, `views::all_const` is... not a great name. While [@P2278R2] used the name `views::all_const`, the main motivation of the `all_meow` naming was in conjunction with renaming [@P2446R0]'s `views::move` to `views::all_move`, and that rename was driven by examples like this:
 
 ::: bq
 ```cpp
@@ -597,7 +599,12 @@ auto v2 = move(v1);       // OOPS: initializes a view to v1
 ```
 :::
 
-Here, the user intended to `std::move` and now accidentally uses `std::views::move`. This isn't really the same level of issue for using `std::views::as_const` instead of `std::as_const` (indeed, it may even be an improvement to accidentally use the range adaptor here). The LEWG discussion on that paper suggested that the desire to avoid `views::move` was much stronger than the desire to avoid `views::as_const`, and the polling did not provide a clear direction for this adaptor. As such, this revision reverts to the original proposed name of `views::as_const`.
+Here, the user intended to `std::move` and now accidentally uses `std::views::move`. A very different outcome.
+
+
+But this isn't really the same level of issue for using `std::views::as_const` instead of `std::as_const` (indeed, it may even be an improvement to accidentally use the range adaptor here). The LEWG discussion on that paper suggested that the desire to avoid `views::move` was much stronger than the desire to avoid `views::as_const`, and the polling did not provide a clear direction for this adaptor.
+
+As such, this revision (R3) reverts to [@P2278R1]'s choice of name: `views::as_const`. This strikes me as the best name amongst the options.
 
 ## What About `std::cbegin` and `std::cend`?
 
@@ -850,7 +857,7 @@ But this is fine. None of these member functions are even strictly necessary, an
 
 The status quo is that we have an algorithm named `cbegin` whose job is to provide a constant iterator, but it does not always do that, and sometimes it doesn't even provide a mutable iterator. This is an unfortunate situation.
 
-We can resolve this by extending `std::ranges::cbegin` and `std::ranges::cend` to conditionally wrap their provided range's `iterator`/`sentinel` pairs to ensure that the result is a constant iterator, and use these tools to build up a `views::all_const` range adapter. This completely solves the problem without any imposed boilerplate per range.
+We can resolve this by extending `std::ranges::cbegin` and `std::ranges::cend` to conditionally wrap their provided range's `iterator`/`sentinel` pairs to ensure that the result is a constant iterator, and use these tools to build up a `views::as_const` range adapter. This completely solves the problem without any imposed boilerplate per range.
 
 However, `std::cbegin` and `std::cend` are harder to extend. If we changed them at all, we would probably punt on handling C++17 input iterators and non-`const`-iterable ranges. This means that `std::cbegin` and `std::ranges::cbegin` do different things, but `std::rbegin` and `std::ranges::rbegin` _already_ do different things. `std::ranges::rbegin` is already a superior `std::rbegin`, so having `std::ranges::cbegin` be a superior `std::cbegin` only follows from that. In other words, `std::cbegin` is constrained to not deviate too much from its current behavior, whereas `std::ranges::cbegin` is new and Can Do Better.
 
@@ -1371,12 +1378,12 @@ namespace std::ranges {
 +
 + template<view V>
 +   requires input_range<V>
-+ class all_const_view;
++ class as_const_view;
 +
 + template<class T>
-+   inline constexpr bool enable_borrowed_range<all_const_view<T>> = enable_borrowed_range<T>;
++   inline constexpr bool enable_borrowed_range<as_const_view<T>> = enable_borrowed_range<T>;
 +
-+ namespace views { inline constexpr $unspecified$ all_const = $unspecified$; }
++ namespace views { inline constexpr $unspecified$ as_const = $unspecified$; }
 
   // ...
 }
@@ -1558,13 +1565,13 @@ namespace std::ranges {
 #### 24.7.?.1 Overview [range.all.const.overview] {-}
 
 ::: bq
-[1]{.pnum} `all_const_view` presents a `view` of an underlying sequence as constant. That is, the elements of an `all_const_view` cannot be modified.
+[1]{.pnum} `as_const_view` presents a `view` of an underlying sequence as constant. That is, the elements of an `as_const_view` cannot be modified.
 
-[#]{.pnum} The name `views::all_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U` be `remove_cvref_t<T>`. The expression `views::all_const(E)` is expression-equivalent to:
+[#]{.pnum} The name `views::as_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U` be `remove_cvref_t<T>`. The expression `views::as_const(E)` is expression-equivalent to:
 
 * [#.#]{.pnum} If `views::all_t<T>` models `constant_range`, then `views::all(E)` .
 * [#.#]{.pnum} Otherwise, if `E` is an lvalue, `const U` models `constant_range`, and `U` does not model `view`, then `views::all(static_cast<const U&>(E))`.
-* [#.#]{.pnum} Otherwise, `ranges::all_const_view(E)`.
+* [#.#]{.pnum} Otherwise, `ranges::as_const_view(E)`.
 
 [#]{.pnum} [*Example*:
 ```cpp
@@ -1572,25 +1579,25 @@ template<constant_range R>
 void cant_touch_this(R&&);
 
 std::vector<int> beat = {1, 2, 3, 4};
-cant_touch_this(views::all_const(beat)); // will not modify the elements of beat
+cant_touch_this(views::as_const(beat)); // will not modify the elements of beat
 ```
 -*end example*]
 :::
 
-#### 24.7.?.2 Class template `all_const_view` [range.all.const.view] {-}
+#### 24.7.?.2 Class template `as_const_view` [range.as.const.view] {-}
 
 ::: bq
 ```cpp
 namespace std::ranges {
   template<input_range V>
     requires view<V>
-  class all_const_view : public view_interface<all_const_view<V>>
+  class as_const_view : public view_interface<as_const_view<V>>
   {
     V $base_$ = V(); // exposition only
 
   public:
-    all_const_view() requires default_initializable<V> = default;
-    constexpr explicit all_const_view(V base);
+    as_const_view() requires default_initializable<V> = default;
+    constexpr explicit as_const_view(V base);
 
     constexpr V base() const& requires copy_constructible<V> { return base_; }
     constexpr V base() && { return std::move(base_); }
@@ -1606,12 +1613,12 @@ namespace std::ranges {
   };
 
   template<class R>
-    all_const_view(R&&) -> all_const_view<views::all_t<R>>;
+    as_const_view(R&&) -> as_const_view<views::all_t<R>>;
 }
 ```
 
 ```cpp
-constexpr explicit all_const_view(V base);
+constexpr explicit as_const_view(V base);
 ```
 
 [1]{.pnum} *Effects*: Initializes `$base_$` with `std::move(base)`.
@@ -1622,7 +1629,7 @@ constexpr explicit all_const_view(V base);
 Add the following macro definition to [version.syn]{.sref}, with the value selected by the editor to reflect the date of adoption of this paper:
 
 ```cpp
-#define __cpp_lib_ranges_all_const 20XXXXL // also in <ranges>
+#define __cpp_lib_ranges_as_const 20XXXXL // also in <ranges>
 ```
 
 
