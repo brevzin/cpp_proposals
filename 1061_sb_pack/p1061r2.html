@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D1061R2</td>
+    <td>P1061R2</td>
   </tr>
   <tr>
     <td>Date:</td>
@@ -554,7 +554,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
     <td style="vertical-align:top">Reply-to:</td>
     <td>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
-      Jonathan Wakely<br>&lt;<a href="mailto:jonathan.wakely@gmail.com" class="email">jonathan.wakely@gmail.com</a>&gt;<br>
+      Jonathan Wakely<br>&lt;<a href="mailto:cxx@kayari.org" class="email">cxx@kayari.org</a>&gt;<br>
     </td>
   </tr>
 </table>
@@ -796,14 +796,13 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <span id="cb13-4"><a href="#cb13-4"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>We have not yet in the history of C++ had this notion of packs outside of dependent contexts. This is completely novel, and imposes a burden on implementations to have to track packs outside of templates where they previously had not.</p>
-<p>However, in our estimation, this functionality is going to come to C++ in one form or other fairly soon. Reflection, in the latest form of <span class="citation" data-cites="P1240R1">[<a href="#ref-P1240R1" role="doc-biblioref">P1240R1</a>]</span>, has many examples of introducing packs in non-template contexts as well - through the notion of a <em>reflection range</em>. That paper introduces several reifiers that can manipilate a newly-introduced pack, such as:</p>
+<p>However, in our estimation, this functionality is going to come to C++ in one form or other fairly soon. Reflection, in the latest form of <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span>, has many examples of introducing packs in non-template contexts as well - through the notion of a <em>reflection range</em>. That paper introduces several reifiers that can manipilate a newly-introduced pack, such as:</p>
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info t_args<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span> reflexpr<span class="op">(</span><span class="dt">int</span><span class="op">)</span>, reflexpr<span class="op">(</span><span class="dv">42</span><span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, T<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb14-3"><a href="#cb14-3"></a>X<span class="op">&lt;[&lt;...</span> t_args<span class="op">&gt;]&gt;</span> x; <span class="co">// same as X&lt;int, 42&gt; x;</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a></span>
-<span id="cb14-5"><a href="#cb14-5"></a><span class="kw">template</span> <span class="op">&lt;</span>typeanme, typeanme<span class="op">&gt;</span> <span class="kw">struct</span> Y <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb14-6"><a href="#cb14-6"></a>Y<span class="op">&lt;[&lt;...</span> t_args<span class="op">&gt;]&gt;</span> y; <span class="co">// error: same as Y&lt;int, 42&gt; y;</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info t_args<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span> <span class="op">^</span><span class="dt">int</span>, <span class="op">^</span><span class="dv">42</span> <span class="op">}</span>;</span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, T<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{}</span>;</span>
+<span id="cb14-3"><a href="#cb14-3"></a>X<span class="op">&lt;...[:</span>t_args<span class="op">:]...&gt;</span> x; <span class="co">// Same as &quot;X&lt;int, 42&gt; x;&quot;.</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span>, <span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">struct</span> Y <span class="op">{}</span>;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>Y<span class="op">&lt;...[:</span>t_args<span class="op">:]...&gt;</span> y; <span class="co">// Error: same as &quot;Y&lt;int, 42&gt; y;&quot;.</span></span></code></pre></div>
 </blockquote>
 <p>As with the structured bindings example in this paper - we have a non-dependent object outside of a template that we’re using to introduce a pack.</p>
 <p>Furthermore, unlike some of the reflection examples, and some of the more generic pack facilities proposed in <span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span>, this paper offers a nice benefit: all packs must still be declared before use. Even in the <code class="sourceCode cpp">sum_non_template</code> example which, as the name suggests, is not a template in any way, the pack <code class="sourceCode cpp">elems</code> needs an initial declaration. So any machinery that implementations need to track packs doesn’t need to be enabled everywhere - only when a pack declaration has been seen.</p>
@@ -1021,9 +1020,9 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <p>[P1061R1.Minutes] EWG. 2019. Belfast 2020 EWG: P1061R1. <br />
 <a href="https://wiki.edg.com/bin/view/Wg21belfast/P1061-EWG">https://wiki.edg.com/bin/view/Wg21belfast/P1061-EWG</a></p>
 </div>
-<div id="ref-P1240R1">
-<p>[P1240R1] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2019-10-08. Scalable Reflection in C++. <br />
-<a href="https://wg21.link/p1240r1">https://wg21.link/p1240r1</a></p>
+<div id="ref-P1240R2">
+<p>[P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali. 2022-01-14. Scalable Reflection. <br />
+<a href="https://wg21.link/p1240r2">https://wg21.link/p1240r2</a></p>
 </div>
 <div id="ref-P1858R2">
 <p>[P1858R2] Barry Revzin. 2020-03-01. Generalized pack declaration and usage. <br />

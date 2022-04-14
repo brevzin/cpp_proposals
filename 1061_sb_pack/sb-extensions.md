@@ -1,25 +1,25 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: D1061R2
+document: P1061R2
 date: today
 audience: EWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Jonathan Wakely
-      email: <jonathan.wakely@gmail.com>
-toc: false
+      email: <cxx@kayari.org>
+toc: true
 ---
 
 # Revision History
 
-R1 -> R2 adds a section about implementation complexity and wording.
+R2 adds a section about implementation complexity, implementation experience, and wording.
 
 R1 of this paper [@P1061R1] was presented to EWG in Belfast 2019 [@P1061R1.Minutes]
 which approved the direction as presented (12-5-2-0-1).
 
 R0 of this paper [@P1061R0] was presented to EWGI in Kona 2019 [@P1061R0.Minutes], who
-reviewed it favorably and thought this was a good investment of our time 
+reviewed it favorably and thought this was a good investment of our time
 (4-3-4-1-0). The consensus in the room was that the restriction that the
 introduced pack need not be the trailing identifier.
 
@@ -112,15 +112,15 @@ If we additionally add the structured binding customization machinery to `std::i
 namespace detail {
     template <class F, class Tuple, std::size_t... I>
     constexpr decltype(auto) apply_impl(F &&f, Tuple &&t,
-        std::index_sequence<I...>) 
+        std::index_sequence<I...>)
     {
         return std::invoke(std::forward<F>(f),
             std::get<I>(std::forward<Tuple>(t))...);
     }
 }
- 
+
 template <class F, class Tuple>
-constexpr decltype(auto) apply(F &&f, Tuple &&t) 
+constexpr decltype(auto) apply(F &&f, Tuple &&t)
 {
     return detail::apply_impl(
         std::forward<F>(f), std::forward<Tuple>(t),
@@ -228,11 +228,11 @@ where you have to provide all the identifiers:
   File "<stdin>", line 1
     a, *b = range(3)
        ^
-SyntaxError: invalid syntax       
+SyntaxError: invalid syntax
 ```
 
 But you could not do any more than that. Python 3 went one step further by way
- of PEP-3132 [@PEP.3132]. That proposal allowed for a single starred 
+ of PEP-3132 [@PEP.3132]. That proposal allowed for a single starred
 identifier to be used, which would bind to all the elements as necessary:
 
 ```python
@@ -249,9 +249,9 @@ The Python 3 behavior is synonymous with what is being proposed here. Notably,
 from that PEP:
 
 > Possible changes discussed were:
-> 
-> - Only allow a starred expression as the last item in the exprlist. This 
-> would simplify the unpacking code a bit and allow for the starred expression 
+>
+> - Only allow a starred expression as the last item in the exprlist. This
+> would simplify the unpacking code a bit and allow for the starred expression
 > to be assigned an iterator. This behavior was rejected because it would be too
 >  surprising.
 
@@ -260,7 +260,7 @@ was changed in R1.
 
 ## Implementation Burden
 
-Unfortunately, this proposal has a high degree of implementation complexity. The
+Unfortunately, this proposal has some implementation complexity. The
 issue is not so much this aspect:
 
 ::: bq
@@ -271,7 +271,7 @@ auto sum_template(Tuple tuple) {
     return (... + elems);
 }
 ```
-::: 
+:::
 
 This part is more or less straightforward - we have a dependent type and we
 introduce a pack from it, but we're already in a template context where dealing
@@ -286,41 +286,53 @@ auto sum_non_template(SomeConreteType tuple) {
     return (... + elems);
 }
 ```
-::: 
+:::
 
 We have not yet in the history of C++ had this notion of packs outside of
-dependent contexts. This is completely novel and adds a significant degree
-of implementation burden - since nobody has had to do anything yet. The estimates
-we've received from implementers is that it could take several months to
-implement, at least.
+dependent contexts. This is completely novel, and imposes a burden on
+implementations to have to track packs outside of templates where they
+previously had not.
 
 However, in our estimation, this functionality is going to come to C++ in one
-form or other fairly soon. Reflection, in the latest form of [@P1240R1], has
+form or other fairly soon. Reflection, in the latest form of [@P1240R2], has
 many examples of introducing packs in non-template contexts as well - through
 the notion of a _reflection range_. That paper introduces several reifiers that
 can manipilate a newly-introduced pack, such as:
 
 ::: bq
 ```cpp
-std::meta::info t_args[] = { reflexpr(int), reflexpr(42); }
-template <typename T, T> struct X { };
-X<[<... t_args>]> x; // same as X<int, 42> x;
-
-template <typeanme, typeanme> struct Y { };
-Y<[<... t_args>]> y; // error: same as Y<int, 42> y; 
+std::meta::info t_args[] = { ^int, ^42 };
+template<typename T, T> struct X {};
+X<...[:t_args:]...> x; // Same as "X<int, 42> x;".
+template<typename, typename> struct Y {};
+Y<...[:t_args:]...> y; // Error: same as "Y<int, 42> y;".
 ```
 :::
 
 As with the structured bindings example in this paper - we have a non-dependent
-object outside of a template that we're using to introduce a pack. 
+object outside of a template that we're using to introduce a pack.
+
+Furthermore, unlike some of the reflection examples, and some of the more
+generic pack facilities proposed in [@P1858R2], this paper offers a nice
+benefit: all packs must still be declared before use. Even in the
+`sum_non_template` example which, as the name suggests, is not a template in any
+way, the pack `elems` needs an initial declaration. So any machinery that
+implementations need to track packs doesn't need to be enabled everywhere - only
+when a pack declaration has been seen.
+
+## Implementation Experience
+
+Jason Rice has implemented this in a
+[clang](https://github.com/ricejasonf/llvm-project/commits/ricejasonf/p1061). As
+far as we've been able to ascertain, it works great.
 
 ## Handling non-dependent packs in the wording
 
 The strategy the wording takes to handle `sum_non_template` above is to
 designate `elems` as a _non-dependent pack_ and to state that non-dependent
 packs are instantiated immediately. In that example, `elems` is obviously
-non-dependent (nothing anywhere is dependent), so we just instantiate the 
-_fold-expression_ immediately. 
+non-dependent (nothing anywhere is dependent), so we just instantiate the
+_fold-expression_ immediately.
 
 But defining "non-dependent pack" is non-trivial. Examples from Richard Smith:
 
@@ -336,7 +348,7 @@ template<typename T> void f() {
 :::
 
 Is `X<sizeof...(v)>` a dependent type or is the pack `v` expanded eagerly because
-we already know its size? 
+we already know its size?
 
 One approach could be to say that packs are instantiated immediately only if
 they appear outside of _any_ template. But then:
@@ -401,7 +413,7 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 > |     [_sb-pack-identifier_]{.addu}
 > |     [_sb-identifier-list_ `,` _identifier_]{.addu}
 > |     [_sb-identifier-list_ `,` _sb-pack-identifier_]{.addu}
-> | 
+> |
 > | _simple-declaration_:
 > |     _decl-specifier-seq_ _init-declarator-list_~opt~ `;`
 > |     _attribute-specifier-seq_ _decl-specifier-seq_ _init-declarator-list_ `;`
@@ -411,22 +423,22 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 
 Change [dcl.pre]{.sref} paragraph 8:
 
-> A _simple-declaration_ with an [_identifier-list_]{.rm} 
+> A _simple-declaration_ with an [_identifier-list_]{.rm}
 [_sb-identifier-list_]{.addu} is called a structured binding declaration (
-[dcl.struct.bind]). The _decl-specifier-seq_ shall contain only the 
+[dcl.struct.bind]). The _decl-specifier-seq_ shall contain only the
 _type-specifier_ `auto` and _cv-qualifiers_. The _initializer_ shall be of the
- form "= _assignment-expression_", of the form "{ _assignment-expression_ }", 
-or of the form "( _assignment-expression_ )", where the 
+ form "= _assignment-expression_", of the form "{ _assignment-expression_ }",
+or of the form "( _assignment-expression_ )", where the
 _assignment-expression_ is of array or non-union class type.
 
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
-A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) of <i>structured bindings</i>. 
+A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) of <i>structured bindings</i>.
 [The declaration shall contain at most one _sb-pack-identifier_. If the declaration
-contains an _sb-identifier_, the declaration introduces a _structured binding 
+contains an _sb-identifier_, the declaration introduces a _structured binding
 pack_ ([temp.variadic]).]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
-> in the <i>decl-specifier-seq</i>. 
+> in the <i>decl-specifier-seq</i>.
 :::
 
 Introduce new paragraphs after [dcl.struct.bind]{.sref} paragraph 1, introducing
@@ -434,14 +446,14 @@ the terms "structured binding size" and SB~_i_~:
 
 ::: bq
 ::: addu
-The _structured binding size_ of a type `E` is the required 
-number of names that need to be introduced by the structured binding 
-declaration, as defined below. If there is no structured binding pack, then 
-the number of elements in the _sb-identifier-list_ shall be equal to the 
-structured binding size. Otherwise, the number of elements of the structured 
+The _structured binding size_ of a type `E` is the required
+number of names that need to be introduced by the structured binding
+declaration, as defined below. If there is no structured binding pack, then
+the number of elements in the _sb-identifier-list_ shall be equal to the
+structured binding size. Otherwise, the number of elements of the structured
 binding pack is the structured binding size less the number of elements in the
  _sb-identifier-list_.
- 
+
 Let SB~_i_~ denote _i_^th^ _identifier_ in the structured binding declaration after
 expanding the structured binding pack, if any [ _Note_: if there is no
 structured binding pack, then the SB~_i_~ denotes v~_i_~. - _end note_ ] [ _Example_:
@@ -477,7 +489,7 @@ auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array refe
 ```
 
  — _end example_]
-::: 
+:::
 
 Change [dcl.struct.bind]{.sref} paragraph 4 to define a structured binding size:
 
@@ -505,7 +517,7 @@ auto [e, f, g, ...h] = foo(); // error: too many identifiers
 ```
 
 - _end example]_
-::: 
+:::
 :::
 
 In [temp.variadic]{.sref}, change paragraph 4:
@@ -521,7 +533,7 @@ In [temp.variadic]{.sref}, add a bullet to paragraph 8:
 ::: bq
 Such an element, in the context of the instantiation, is interpreted as follows:
 
-* if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the 
+* if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the
 <i>i</i><sup>th</sup> corresponding type or value template argument;
 * if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the  <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; [otherwise]{.rm}
 * if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack[.]{.rm} [; otherwise]{.addu}
@@ -539,7 +551,7 @@ initializer:
 - `E` is not a member of the current instantiation, and
 - either `E` is not a local class or `E` has a dependent base class.
 
-[ *Example:* 
+[ *Example:*
 
 ```
 struct B { int i; };
@@ -552,13 +564,13 @@ void f(T t) {
    auto [...a] = t;        // a is dependent
    auto [...b] = B{1};     // b is not dependent
    auto [...c] = C<T>{t};  // c is dependent
-   
+
    struct D { T t; };
    auto [...d] = D{t};     // d is not dependent
-   
+
    struct E : T {};
    auto [...e] = E{t};     // e is dependent
-   
+
 }
 ```
 - *end example* ]
@@ -584,7 +596,8 @@ static_assert(sum({.i=1, .j=2}) == 3); // ok
 # Acknowledgements
 
 Thanks to Michael Park and Tomasz Kamiński for their helpful feedback. Thanks to
-Richard Smith for help with the wording.
+Richard Smith for help with the wording. Thanks especially to Jason Rice for the
+implementation.
 
 ---
 references:
@@ -603,7 +616,7 @@ references:
       - family: EWG
     issued:
       - year: 2019
-    URL: https://wiki.edg.com/bin/view/Wg21belfast/P1061-EWG  
+    URL: https://wiki.edg.com/bin/view/Wg21belfast/P1061-EWG
   - id: PEP.3132
     citation-label: PEP.3132
     title: "PEP 3132 -- Extended Iterable Unpacking"

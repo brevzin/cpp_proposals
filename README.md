@@ -75,7 +75,7 @@ make all of my papers.
 
 #### Figure out packs outside of templates?
 
-- [p1061r1 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r1.html), with Jonathan Wakely.
+- [p1061r2 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r2.html), with Jonathan Wakely.
 - [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
 - [p2277r0 - Packs outside of templates](2277_packs_outside_of_templates/p2277r0.html).
 - [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
