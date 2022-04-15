@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-04-02" />
+  <meta name="dcterms.date" content="2022-04-15" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-04-02</td>
+    <td>2022-04-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1847,7 +1847,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The wording here is grouped by functionality added rather than linearly going through the standard text.</p>
 <h2 data-number="5.1" id="concept-formattable"><span class="header-section-number">5.1</span> Concept <code class="sourceCode cpp">formattable</code><a href="#concept-formattable" class="self-link"></a></h2>
 <p>First, we need to define a user-facing concept. We need this because we need to constrain <code class="sourceCode cpp">formatter</code> specializations on whether the underlying elements of the <code class="sourceCode cpp">pair</code>/<code class="sourceCode cpp">tuple</code>/range are formattable, and users would need to do the same kind of thing for their types. This is tricky since formatting involves so many different types, so this concept will never be perfect, so instead we’re trying to be good enough.</p>
-<p>Change <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
+<p>Change <span>22.14.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb36"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb36-1"><a href="#cb36-1"></a>namespace std {</span>
@@ -1866,7 +1866,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb36-14"><a href="#cb36-14"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<p>Add a clause [format.formattable] under <span>20.20.6 <a href="https://wg21.link/format.formatter">[format.formatter]</a></span> and likely after <span>20.20.6.1 <a href="https://wg21.link/formatter.requirements">[formatter.requirements]</a></span>:</p>
+<p>Add a clause [format.formattable] under <span>22.14.6 <a href="https://wg21.link/format.formatter">[format.formatter]</a></span> and likely after <span>22.14.6.1 <a href="https://wg21.link/formatter.requirements">[formatter.requirements]</a></span>:</p>
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> Let <code class="sourceCode cpp"><em>fmt-iter-for</em><span class="op">&lt;</span>charT<span class="op">&gt;</span></code> be an unspecified type that models <code class="sourceCode cpp">output_iterator<span class="op">&lt;</span><span class="kw">const</span> charT<span class="op">&amp;&gt;</span></code> ([iterator.concept.output]).</p>
@@ -1885,13 +1885,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h2 data-number="5.2" id="additional-formatting-support-for-characters-and-strings"><span class="header-section-number">5.2</span> Additional formatting support for characters and strings<a href="#additional-formatting-support-for-characters-and-strings" class="self-link"></a></h2>
-<p>Change <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span> to add <code class="sourceCode cpp"><span class="op">?</span></code> as a valid type:</p>
+<p>Change <span>22.14.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span> to add <code class="sourceCode cpp"><span class="op">?</span></code> as a valid type:</p>
 <blockquote>
 <p>The syntax of format specifications is as follows:</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb38-1"><a href="#cb38-1"></a><em>type</em>: one of</span>
 <span id="cb38-2"><a href="#cb38-2"></a>  a A b B c d e E f F g G o p s x X <span class="addu">?</span></span></code></pre></div>
 </blockquote>
-<p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the strings table in <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/17 (Table 64):</p>
+<p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the strings table in <span>22.14.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/17 (Table 64):</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">17</a></span> The available string presentation types are specified in Table 64.</p>
 <table>
@@ -1917,7 +1917,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 </blockquote>
-<p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the <code class="sourceCode cpp">charT</code> table in <span>20.20.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/20 (Table 66):</p>
+<p>Add <code class="sourceCode cpp"><span class="op">?</span></code> to the <code class="sourceCode cpp">charT</code> table in <span>22.14.2.2 <a href="https://wg21.link/format.string.std">[format.string.std]</a></span>/20 (Table 66):</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">20</a></span> The available <code class="sourceCode cpp">charT</code> presentation types are specified in Table 66.</p>
 <table>
@@ -1947,10 +1947,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 </blockquote>
-<p>Add <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> to the character and string specializations in <span>20.20.6.2 <a href="https://wg21.link/format.formatter.spec">[format.formatter.spec]</a></span>:</p>
+<p>Add <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> to the character and string specializations in <span>22.14.6.2 <a href="https://wg21.link/format.formatter.spec">[format.formatter.spec]</a></span>:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span> The functions defined in [format.functions] use specializations of the class template <code class="sourceCode cpp">formatter</code> to format individual arguments.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span> Let <code class="sourceCode cpp">charT</code> be either <code class="sourceCode cpp"><span class="dt">char</span></code> or <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>. Each specialization of <code class="sourceCode cpp">formatter</code> is either enabled or disabled, as described below. <span class="addu">A <em>debug-enabled</em> specialization of <code class="sourceCode cpp">formatter</code> additionally provides a public, non-static member function <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> which will cause these formatters to interpret the format specification as if its <code class="sourceCode cpp"><em>type</em></code> were <code class="sourceCode cpp"><span class="op">?</span></code>.</span> Each header that declares the template <code class="sourceCode cpp">formatter</code> provides the following enabled specializations:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span> Let <code class="sourceCode cpp">charT</code> be either <code class="sourceCode cpp"><span class="dt">char</span></code> or <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>. Each specialization of <code class="sourceCode cpp">formatter</code> is either enabled or disabled, as described below. <span class="addu">A <em>debug-enabled</em> specialization of <code class="sourceCode cpp">formatter</code> additionally provides a public, non-static member function <code class="sourceCode cpp">set_debug_format<span class="op">()</span></code> which will cause these formatters to interpret the format specification as if its <code class="sourceCode cpp"><em>type</em></code> were <code class="sourceCode cpp"><span class="op">?</span></code>.</span> (TODO: this should be called after <code class="sourceCode cpp">parse</code>) Each header that declares the template <code class="sourceCode cpp">formatter</code> provides the following enabled specializations:</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.1)</a></span> The <span class="addu">debug-enabled</span> specializations</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">char</span>, <span class="dt">char</span><span class="op">&gt;</span>;</span>
@@ -1976,10 +1976,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1</a></span> A character or string can be formatted as <em>escaped</em> to make it more suitable for debugging or for logging.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> The escaped string representation of a string, <code class="sourceCode cpp"><em>S</em></code>, in a Unicode encoding consists of the following sequence of scalar values:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> The escaped string representation of a string <code class="sourceCode cpp"><em>S</em></code> in a Unicode encoding consists of the following sequence of scalar values:</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(2.1)</a></span> A U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) character</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(2.2)</a></span> For each UCS scalar value in <code class="sourceCode cpp"><em>S</em></code>, or a code unit if it is not a part of a valid UCS scalar value:</p>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(2.2)</a></span> For each UCS scalar value in <code class="sourceCode cpp"><em>S</em></code>, or a code unit that is not a part of a valid UCS scalar value:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(2.3)</a></span> If the UCS scalar value is in the table below, then its corresponding two-character escape sequence:</li>
 </ul>
@@ -2020,17 +2020,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(2.4)</a></span> Otherwise, if the UCS scalar value</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(2.4.1)</a></span> is not U+0020 SPACE and has the Unicode property <code class="sourceCode cpp">General_Category<span class="op">=</span>Separator</code> (<code class="sourceCode cpp">Z</code>) or <code class="sourceCode cpp">General_Category<span class="op">=</span>Other</code> (<code class="sourceCode cpp">C</code>), or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.4.2)</a></span> has the Unicode property <code class="sourceCode cpp">Grapheme_Extend<span class="op">=</span>Yes</code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(2.4.1)</a></span> is not U+0020 SPACE and has the Unicode property <code class="sourceCode cpp">General_Category<span class="op">=</span>Separator</code> (<code class="sourceCode cpp">Z</code>) or <code class="sourceCode cpp">General_Category<span class="op">=</span>Other</code> (<code class="sourceCode cpp">C</code>) as described by UAX #44, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.4.2)</a></span> has the Unicode property <code class="sourceCode cpp">Grapheme_Extend<span class="op">=</span>Yes</code> as described by UAX #44</li>
 </ul>
-<p>then its universal character name escape sequence in the form <code class="sourceCode cpp">\u<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is the shortest hexadecimal representation of the UCS scalar value using lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.5)</a></span> Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form <code class="sourceCode cpp">\x<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is the shortest hexadecimal representation of the code unit using lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s.</p></li>
+<p>then the sequence <code class="sourceCode cpp">\u<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is the shortest hexadecimal representation of the UCS scalar value using lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.5)</a></span> Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then the sequence <code class="sourceCode cpp">\x<span class="op">{</span><em>simple-hexadecimal-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>simple-hexadecimal-digit-sequence</em></code> is the shortest hexadecimal representation of the code unit using lower-case <code class="sourceCode cpp"><em>hexadecimal-digit</em></code>s.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(2.6)</a></span> Otherwise, the UCS scalar value as-is.</p></li>
 </ul></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(2.7)</a></span> Finally, another U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) character.</p></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span> The escaped character representation of a character, <code class="sourceCode cpp"><em>C</em></code>, in a Unicode encoding is equivalent to the escaped string representation a string of <code class="sourceCode cpp"><em>C</em></code>, except that the result starts and ends with U+0027 APOSTROPHE (<code class="sourceCode cpp"><span class="ch">&#39;</span></code>) instead of U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) and U+0027 APOSTROPHE is escaped as <code class="sourceCode cpp">\<span class="ch">&#39;</span></code> while U+0022 QUOTATION MARK is left unchanged.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span> The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span> The escaped character representation of a character <code class="sourceCode cpp"><em>C</em></code> in a Unicode encoding is equivalent to the escaped string representation of a string of <code class="sourceCode cpp"><em>C</em></code>, except that:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(3.1)</a></span> the result starts and ends with U+0027 APOSTROPHE (<code class="sourceCode cpp"><span class="ch">&#39;</span></code>) instead of U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>), and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(3.2)</a></span> U+0027 APOSTROPHE is escaped as <code class="sourceCode cpp">\<span class="ch">&#39;</span></code> while U+0022 QUOTATION MARK is left unchanged.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">4</a></span> The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.</p>
 <p>[<em>Example</em>:</p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1"></a>string s0 = format(&quot;[{}]&quot;, &quot;h\tllo&quot;);                  // s0 has value: [h    llo]</span>
 <span id="cb43-2"><a href="#cb43-2"></a>string s1 = format(&quot;[{:?}]&quot;, &quot;h\tllo&quot;);                // s1 has value: [&quot;h\tllo&quot;]</span>
@@ -2045,7 +2049,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h2 data-number="5.3" id="formatting-for-ranges"><span class="header-section-number">5.3</span> Formatting for ranges<a href="#formatting-for-ranges" class="self-link"></a></h2>
-<p>Add to <span>20.20.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
+<p>Add to <span>22.14.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb44"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb44-1"><a href="#cb44-1"></a>namespace std {</span>
@@ -2071,8 +2075,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And a new clause [format.range]:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">1</a></span> The class template <code class="sourceCode cpp">range_formatter</code> is a convenient utility for implementing <code class="sourceCode cpp">formatter</code> specializations for range types.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">2</a></span> <code class="sourceCode cpp">range_formatter</code> interprets <code class="sourceCode cpp"><em>format-spec</em></code> as a <code class="sourceCode cpp"><em>range-format-spec</em></code>. The syntax of format specifications is as follows:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">1</a></span> The class template <code class="sourceCode cpp">range_formatter</code> is a convenient utility for implementing <code class="sourceCode cpp">formatter</code> specializations for range types.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">2</a></span> <code class="sourceCode cpp">range_formatter</code> interprets <code class="sourceCode cpp"><em>format-spec</em></code> as a <code class="sourceCode cpp"><em>range-format-spec</em></code>. The syntax of format specifications is as follows:</p>
 <div class="sourceCode" id="cb45"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb45-1"><a href="#cb45-1"></a><em>range-format-spec</em>:</span>
 <span id="cb45-2"><a href="#cb45-2"></a>    <em>range-fill-and-align</em><sub>opt</sub> <em>width</em><sub>opt</sub> n<sub>opt</sub> <em>range-type</em><sub>opt</sub> <em>range-underlying-spec</em><sub>opt</sub></span>
 <span id="cb45-3"><a href="#cb45-3"></a></span>
@@ -2089,10 +2093,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb45-14"><a href="#cb45-14"></a></span>
 <span id="cb45-15"><a href="#cb45-15"></a><em>range-underlying-spec</em>:</span>
 <span id="cb45-16"><a href="#cb45-16"></a>    : <em>format-spec</em></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">3</a></span> For <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code>, the <code class="sourceCode cpp"><em>format-spec</em></code> in a <code class="sourceCode cpp"><em>range-underlying-spec</em></code>, if any, is interpreted by <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">4</a></span> The <code class="sourceCode cpp"><em>range-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>fill-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">5</a></span> The <code class="sourceCode cpp">n</code> option causes the range to be formatted without the opening and closing brackets. [<em>Note</em>: this is equivalent to invoking <code class="sourceCode cpp">set_brackets<span class="op">({}</span>, <span class="op">{})</span></code> <em>- end note</em> ]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">6</a></span> The <code class="sourceCode cpp"><em>range-type</em></code> specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">3</a></span> For <code class="sourceCode cpp">range_formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code>, the <code class="sourceCode cpp"><em>format-spec</em></code> in a <code class="sourceCode cpp"><em>range-underlying-spec</em></code>, if any, is interpreted by <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T, charT<span class="op">&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">4</a></span> The <code class="sourceCode cpp"><em>range-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>fill-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">5</a></span> The <code class="sourceCode cpp">n</code> option causes the range to be formatted without the opening and closing brackets. [<em>Note</em>: this is equivalent to invoking <code class="sourceCode cpp">set_brackets<span class="op">({}</span>, <span class="op">{})</span></code> <em>- end note</em> ]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">6</a></span> The <code class="sourceCode cpp"><em>range-type</em></code> specifier changes the way a range is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.</p>
 <table>
 <colgroup>
 <col style="width: 33%"></col>
@@ -2157,9 +2161,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb46-24"><a href="#cb46-24"></a>  };</span>
 <span id="cb46-25"><a href="#cb46-25"></a>}</span></code></pre></div>
 <div class="sourceCode" id="cb47"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb47-1"><a href="#cb47-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">7</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">7</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
 <div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1"></a>void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">8</a></span> <em>Effects</em>: Equivalent to</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">8</a></span> <em>Effects</em>: Equivalent to</p>
 <blockquote>
 <div class="sourceCode" id="cb49"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb49-1"><a href="#cb49-1"></a><em>opening-bracket_</em> = opening;</span>
 <span id="cb49-2"><a href="#cb49-2"></a><em>closing-bracket_</em> = closing;</span></code></pre></div>
@@ -2167,74 +2171,82 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb50"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb50-1"><a href="#cb50-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb50-2"><a href="#cb50-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb50-3"><a href="#cb50-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">9</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>range-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. Unless the <code class="sourceCode cpp"><em>range-type</em></code> is either <code class="sourceCode cpp">s</code> or <code class="sourceCode cpp"><span class="op">?</span>s</code>, if <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression and there is no <code class="sourceCode cpp"><em>range-underlying-spec</em></code>, calls <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">10</a></span> <em>Returns</em>: An iterator past the end of the <code class="sourceCode cpp"><em>range-format-spec</em></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">9</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>range-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. If:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(9.1)</a></span> the <code class="sourceCode cpp"><em>range-type</em></code> is neither <code class="sourceCode cpp">s</code> nor <code class="sourceCode cpp"><span class="op">?</span>s</code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(9.2)</a></span> <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(9.3)</a></span> there is no <code class="sourceCode cpp"><em>range-underlying-spec</em></code>,</li>
+</ul>
+<p>then calls <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
+<p>TODO: need to ensure that <code class="sourceCode cpp">parse</code> doesn’t override defaults, because other stuff here is specified assuming that.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">10</a></span> <em>Returns</em>: An iterator past the end of the <code class="sourceCode cpp"><em>range-format-spec</em></code>.</p>
 <div class="sourceCode" id="cb51"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb51-1"><a href="#cb51-1"></a>template &lt;ranges::input_range R, class FormatContext&gt;</span>
 <span id="cb51-2"><a href="#cb51-2"></a>    requires formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
 <span id="cb51-3"><a href="#cb51-3"></a>          &amp;&amp; same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
 <span id="cb51-4"><a href="#cb51-4"></a>  typename FormatContext::iterator</span>
 <span id="cb51-5"><a href="#cb51-5"></a>    format(R&amp;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">11</a></span> <em>Effects</em>: Writes the following into <code class="sourceCode cpp">ctx<span class="op">.</span>out<span class="op">()</span></code>, adjusted according to the <code class="sourceCode cpp"><em>range-format-spec</em></code>:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">11</a></span> <em>Effects</em>: Writes the following into <code class="sourceCode cpp">ctx<span class="op">.</span>out<span class="op">()</span></code>, adjusted according to the <code class="sourceCode cpp"><em>range-format-spec</em></code>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(11.1)</a></span> If the <code class="sourceCode cpp"><em>range-type</em></code> was <code class="sourceCode cpp">s</code>, then as if by formatting <code class="sourceCode cpp">basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(11.2)</a></span> Otherwise, if the <code class="sourceCode cpp"><em>range-type</em></code> was <code class="sourceCode cpp"><span class="op">?</span>s</code>, then as if by formatting <code class="sourceCode cpp">basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span></code> as an escaped string ([format.string.escaped]).</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(11.3)</a></span> Otherwise,
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(11.1)</a></span> If the <code class="sourceCode cpp"><em>range-type</em></code> was <code class="sourceCode cpp">s</code>, then as if by formatting <code class="sourceCode cpp">basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(11.2)</a></span> Otherwise, if the <code class="sourceCode cpp"><em>range-type</em></code> was <code class="sourceCode cpp"><span class="op">?</span>s</code>, then as if by formatting <code class="sourceCode cpp">basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span></code> as an escaped string ([format.string.escaped]).</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(11.3)</a></span> Otherwise,
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(11.3.1)</a></span> <code class="sourceCode cpp"><em>opening-bracket_</em></code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(11.3.2)</a></span> for each element, <code class="sourceCode cpp">e</code>, of the range <code class="sourceCode cpp">r</code>:
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(11.3.1)</a></span> <code class="sourceCode cpp"><em>opening-bracket_</em></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(11.3.2)</a></span> for each element <code class="sourceCode cpp">e</code> of the range <code class="sourceCode cpp">r</code>:
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(11.3.2.1)</a></span> the result of writing <code class="sourceCode cpp">e</code> via <code class="sourceCode cpp"><em>underlying_</em></code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(11.3.2.2)</a></span> <code class="sourceCode cpp"><em>separator_</em></code>, unless <code class="sourceCode cpp">e</code> is the last element of <code class="sourceCode cpp">r</code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(11.3.2.1)</a></span> the result of writing <code class="sourceCode cpp">e</code> via <code class="sourceCode cpp"><em>underlying_</em></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(11.3.2.2)</a></span> <code class="sourceCode cpp"><em>separator_</em></code>, unless <code class="sourceCode cpp">e</code> is the last element of <code class="sourceCode cpp">r</code></li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(11.3.3)</a></span> <code class="sourceCode cpp"><em>closing-bracket_</em></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(11.3.3)</a></span> <code class="sourceCode cpp"><em>closing-bracket_</em></code></li>
 </ul></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">12</a></span> <em>Returns</em>: an iterator past the end of the output range.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">12</a></span> <em>Returns</em>: an iterator past the end of the output range.</p>
 <div class="sourceCode" id="cb52"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb52-1"><a href="#cb52-1"></a>namespace std {</span>
 <span id="cb52-2"><a href="#cb52-2"></a>  template&lt;ranges::input_range R, class charT&gt;</span>
 <span id="cb52-3"><a href="#cb52-3"></a>        requires (!same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span>
 <span id="cb52-4"><a href="#cb52-4"></a>               &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
 <span id="cb52-5"><a href="#cb52-5"></a>  struct formatter&lt;R, charT&gt; {</span>
 <span id="cb52-6"><a href="#cb52-6"></a>  private:</span>
-<span id="cb52-7"><a href="#cb52-7"></a>    range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;&gt; <em>underlying_</em>; // exposition only</span>
-<span id="cb52-8"><a href="#cb52-8"></a></span>
-<span id="cb52-9"><a href="#cb52-9"></a>  public:</span>
-<span id="cb52-10"><a href="#cb52-10"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
-<span id="cb52-11"><a href="#cb52-11"></a>    void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span>
-<span id="cb52-12"><a href="#cb52-12"></a></span>
-<span id="cb52-13"><a href="#cb52-13"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb52-14"><a href="#cb52-14"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb52-15"><a href="#cb52-15"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb52-16"><a href="#cb52-16"></a></span>
-<span id="cb52-17"><a href="#cb52-17"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb52-18"><a href="#cb52-18"></a>      typename FormatContext::iterator</span>
-<span id="cb52-19"><a href="#cb52-19"></a>        format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span>
-<span id="cb52-20"><a href="#cb52-20"></a>  };</span>
-<span id="cb52-21"><a href="#cb52-21"></a>}</span></code></pre></div>
+<span id="cb52-7"><a href="#cb52-7"></a>    using <em>maybe-const-r</em> = <em>see below</em>;</span>
+<span id="cb52-8"><a href="#cb52-8"></a>    range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-r</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span>
+<span id="cb52-9"><a href="#cb52-9"></a></span>
+<span id="cb52-10"><a href="#cb52-10"></a>  public:</span>
+<span id="cb52-11"><a href="#cb52-11"></a>    void set_separator(basic_string_view&lt;charT&gt; sep);</span>
+<span id="cb52-12"><a href="#cb52-12"></a>    void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span>
+<span id="cb52-13"><a href="#cb52-13"></a></span>
+<span id="cb52-14"><a href="#cb52-14"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb52-15"><a href="#cb52-15"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb52-16"><a href="#cb52-16"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb52-17"><a href="#cb52-17"></a></span>
+<span id="cb52-18"><a href="#cb52-18"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb52-19"><a href="#cb52-19"></a>      typename FormatContext::iterator</span>
+<span id="cb52-20"><a href="#cb52-20"></a>        format(<em>maybe-const-r</em>&amp; elems, FormatContext&amp; ctx) const;</span>
+<span id="cb52-21"><a href="#cb52-21"></a>  };</span>
+<span id="cb52-22"><a href="#cb52-22"></a>}</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">13</a></span> <code class="sourceCode cpp"><em>maybe-const-r</em></code> denotes the type</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(13.1)</a></span> <code class="sourceCode cpp"><span class="kw">const</span> R</code> if <code class="sourceCode cpp"><span class="kw">const</span> R</code> models <code class="sourceCode cpp">ranges<span class="op">::</span>input_range</code> and <code class="sourceCode cpp">formattable<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span>, charT<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(13.2)</a></span> Otherwise, <code class="sourceCode cpp">R</code>.</li>
+</ul>
 <div class="sourceCode" id="cb53"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb53-1"><a href="#cb53-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">13</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_separator<span class="op">(</span>sep<span class="op">)</span></code>;</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">14</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_separator<span class="op">(</span>sep<span class="op">)</span></code>;</p>
 <div class="sourceCode" id="cb54"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb54-1"><a href="#cb54-1"></a>void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">14</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_brackets<span class="op">(</span>opening, closing<span class="op">)</span></code>;</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">15</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>underlying_</em><span class="op">.</span>set_brackets<span class="op">(</span>opening, closing<span class="op">)</span></code>;</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb55-1"><a href="#cb55-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb55-2"><a href="#cb55-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb55-3"><a href="#cb55-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">15</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">16</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb56"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb56-1"><a href="#cb56-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb56-2"><a href="#cb56-2"></a>  typename FormatContext::iterator</span>
-<span id="cb56-3"><a href="#cb56-3"></a>    format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">16</a></span> The type of <code class="sourceCode cpp">elems</code> is:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(16.1)</a></span> If <code class="sourceCode cpp"><span class="kw">const</span> R</code> models <code class="sourceCode cpp">ranges<span class="op">::</span>input_range</code> and <code class="sourceCode cpp">formattable<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span>, charT<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> R<span class="op">&amp;</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">(16.2)</a></span> Otherwise <code class="sourceCode cpp">R<span class="op">&amp;</span></code>.</li>
-</ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">17</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>elems, ctx<span class="op">)</span>;</code></p>
+<span id="cb56-3"><a href="#cb56-3"></a>    format(<em>maybe-const-r</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">17</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>elems, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h3 data-number="5.3.1" id="formatting-for-specific-ranges-all-the-maps-and-sets"><span class="header-section-number">5.3.1</span> Formatting for specific ranges: all the maps and sets<a href="#formatting-for-specific-ranges-all-the-maps-and-sets" class="self-link"></a></h3>
-<p>Add a clause (maybe after <span>22.5 <a href="https://wg21.link/unord">[unord]</a></span> and before <span>22.6 <a href="https://wg21.link/container.adaptors">[container.adaptors]</a></span>) [assoc.format] Associative Formatting:</p>
+<p>Add a clause (maybe after <span>24.5 <a href="https://wg21.link/unord">[unord]</a></span> and before <span>24.6 <a href="https://wg21.link/container.adaptors">[container.adaptors]</a></span>) [assoc.format] Associative Formatting:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">1</a></span> For each of <code class="sourceCode cpp">map</code>, <code class="sourceCode cpp">multimap</code>, <code class="sourceCode cpp">unordered_map</code>, and <code class="sourceCode cpp">unordered_multimap</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>map-type</em></code> is the name of the template:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">1</a></span> For each of <code class="sourceCode cpp">map</code>, <code class="sourceCode cpp">multimap</code>, <code class="sourceCode cpp">unordered_map</code>, and <code class="sourceCode cpp">unordered_multimap</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>map-type</em></code> is the name of the template:</p>
 <div class="sourceCode" id="cb57"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb57-1"><a href="#cb57-1"></a>namespace std {</span>
 <span id="cb57-2"><a href="#cb57-2"></a>  template &lt;class charT, formattable&lt;charT&gt; Key, formattable&lt;charT&gt; T, class... U&gt;</span>
 <span id="cb57-3"><a href="#cb57-3"></a>  struct formatter&lt;<em>map-type</em>&lt;Key, T, U...&gt;, charT&gt;</span>
@@ -2254,19 +2266,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb57-17"><a href="#cb57-17"></a>  };</span>
 <span id="cb57-18"><a href="#cb57-18"></a>}</span></code></pre></div>
 <div class="sourceCode" id="cb58"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb58-1"><a href="#cb58-1"></a>formatter();</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">2</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb59-1"><a href="#cb59-1"></a>this-&gt;set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span>
-<span id="cb59-2"><a href="#cb59-2"></a>this-&gt;underlying().set_brackets({}, {});</span>
-<span id="cb59-3"><a href="#cb59-3"></a>this-&gt;underlying().set_separator(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;: &quot;));</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">2</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb59-1"><a href="#cb59-1"></a><em>underlying_</em>.set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span>
+<span id="cb59-2"><a href="#cb59-2"></a><em>underlying_</em>.underlying().set_brackets({}, {});</span>
+<span id="cb59-3"><a href="#cb59-3"></a><em>underlying_</em>.underlying().set_separator(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;: &quot;));</span></code></pre></div>
 <div class="sourceCode" id="cb60"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb60-1"><a href="#cb60-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb60-2"><a href="#cb60-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb60-3"><a href="#cb60-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb61-1"><a href="#cb61-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb61-2"><a href="#cb61-2"></a>  typename FormatContext::iterator</span>
 <span id="cb61-3"><a href="#cb61-3"></a>    format(const <em>map-type</em>&lt;Key, T, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">4</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</code></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">5</a></span> For each of <code class="sourceCode cpp">set</code>, <code class="sourceCode cpp">multiset</code>, <code class="sourceCode cpp">unordered_set</code>, and <code class="sourceCode cpp">unordered_multiset</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>set-type</em></code> is the name of the template:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">4</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">5</a></span> For each of <code class="sourceCode cpp">set</code>, <code class="sourceCode cpp">multiset</code>, <code class="sourceCode cpp">unordered_set</code>, and <code class="sourceCode cpp">unordered_multiset</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>set-type</em></code> is the name of the template:</p>
 <div class="sourceCode" id="cb62"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb62-1"><a href="#cb62-1"></a>namespace std {</span>
 <span id="cb62-2"><a href="#cb62-2"></a>  template &lt;class charT, formattable&lt;charT&gt; Key, class... U&gt;</span>
 <span id="cb62-3"><a href="#cb62-3"></a>  struct formatter&lt;<em>set-type</em>&lt;Key, U...&gt;, charT&gt;</span>
@@ -2287,23 +2299,23 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb62-18"><a href="#cb62-18"></a>  };</span>
 <span id="cb62-19"><a href="#cb62-19"></a>}</span></code></pre></div>
 <div class="sourceCode" id="cb63"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb63-1"><a href="#cb63-1"></a>formatter();</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">6</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a>this-&gt;set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">6</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb64-1"><a href="#cb64-1"></a><em>underlying_</em>.set_brackets(<em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;{&quot;), <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;}&quot;));</span></code></pre></div>
 <div class="sourceCode" id="cb65"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb65-1"><a href="#cb65-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb65-2"><a href="#cb65-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb65-3"><a href="#cb65-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">7</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">7</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb66"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb66-1"><a href="#cb66-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb66-2"><a href="#cb66-2"></a>  typename FormatContext::iterator</span>
 <span id="cb66-3"><a href="#cb66-3"></a>    format(const <em>set-type</em>&lt;Key, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">8</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">8</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h3 data-number="5.3.2" id="formatting-for-specific-ranges-all-the-container-adaptors"><span class="header-section-number">5.3.2</span> Formatting for specific ranges: all the container adaptors<a href="#formatting-for-specific-ranges-all-the-container-adaptors" class="self-link"></a></h3>
-<p>At the end of <span>22.6 <a href="https://wg21.link/container.adaptors">[container.adaptors]</a></span>, add a clause [container.adaptors.format]:</p>
+<p>At the end of <span>24.6 <a href="https://wg21.link/container.adaptors">[container.adaptors]</a></span>, add a clause [container.adaptors.format]:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">1</a></span> For each of <code class="sourceCode cpp">queue</code>, <code class="sourceCode cpp">priority_queue</code>, and <code class="sourceCode cpp">stack</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>adaptor-type</em></code> is the name of the template:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">1</a></span> For each of <code class="sourceCode cpp">queue</code>, <code class="sourceCode cpp">priority_queue</code>, and <code class="sourceCode cpp">stack</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>adaptor-type</em></code> is the name of the template:</p>
 <div class="sourceCode" id="cb67"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb67-1"><a href="#cb67-1"></a>namespace std {</span>
 <span id="cb67-2"><a href="#cb67-2"></a>  template &lt;class charT, class T, formattable&lt;charT&gt; Container, class... U&gt;</span>
 <span id="cb67-3"><a href="#cb67-3"></a>  struct formatter&lt;<em>adaptor-type</em>&lt;T, Container, U...&gt;, charT&gt;</span>
@@ -2324,18 +2336,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb68"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb68-1"><a href="#cb68-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb68-2"><a href="#cb68-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb68-3"><a href="#cb68-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">2</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">2</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb69"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb69-1"><a href="#cb69-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb69-2"><a href="#cb69-2"></a>  typename FormatContext::iterator</span>
 <span id="cb69-3"><a href="#cb69-3"></a>    format(const <em>adaptor-type</em>&lt;T, Container, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r<span class="op">.</span>c, ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>r<span class="op">.</span>c, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h2 data-number="5.4" id="formatting-for-pair-and-tuple"><span class="header-section-number">5.4</span> Formatting for <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code><a href="#formatting-for-pair-and-tuple" class="self-link"></a></h2>
 <p>And a new clause [format.tuple]:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">1</a></span> For each of <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>tuple-type</em></code> is the name of the template:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">1</a></span> For each of <code class="sourceCode cpp">pair</code> and <code class="sourceCode cpp">tuple</code>, the library provides the following formatter specialization where <code class="sourceCode cpp"><em>tuple-type</em></code> is the name of the template:</p>
 <div class="sourceCode" id="cb70"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb70-1"><a href="#cb70-1"></a>namespace std {</span>
 <span id="cb70-2"><a href="#cb70-2"></a>template &lt;class charT, formattable&lt;charT&gt;... Ts&gt;</span>
 <span id="cb70-3"><a href="#cb70-3"></a>  struct formatter&lt;<em>tuple-type</em>&lt;Ts...&gt;, charT&gt; {</span>
@@ -2358,7 +2370,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb70-20"><a href="#cb70-20"></a>        format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span>
 <span id="cb70-21"><a href="#cb70-21"></a>  };</span>
 <span id="cb70-22"><a href="#cb70-22"></a>}</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">2</a></span> The <code class="sourceCode cpp">parse</code> member functions of these formatters interpret the format specification as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> according to the following syntax:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">2</a></span> The <code class="sourceCode cpp">parse</code> member functions of these formatters interpret the format specification as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> according to the following syntax:</p>
 <div class="sourceCode" id="cb71"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb71-1"><a href="#cb71-1"></a><em>tuple-format-spec</em>:</span>
 <span id="cb71-2"><a href="#cb71-2"></a>    <em>tuple-fill-and-align</em><sub>opt</sub> <em>width</em><sub>opt</sub> <em>tuple-type</em><sub>opt</sub></span>
 <span id="cb71-3"><a href="#cb71-3"></a></span>
@@ -2371,8 +2383,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb71-10"><a href="#cb71-10"></a><em>tuple-type</em>:</span>
 <span id="cb71-11"><a href="#cb71-11"></a>    m</span>
 <span id="cb71-12"><a href="#cb71-12"></a>    n</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">3</a></span> The <code class="sourceCode cpp"><em>tuple-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>tuple-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">4</a></span> The <code class="sourceCode cpp"><em>tuple-type</em></code> specifier changes the way a <code class="sourceCode cpp">pair</code> or <code class="sourceCode cpp">tuple</code> is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">3</a></span> The <code class="sourceCode cpp"><em>tuple-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>tuple-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">4</a></span> The <code class="sourceCode cpp"><em>tuple-type</em></code> specifier changes the way a <code class="sourceCode cpp">pair</code> or <code class="sourceCode cpp">tuple</code> is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.</p>
 <table>
 <colgroup>
 <col style="width: 33%"></col>
@@ -2396,19 +2408,24 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <tr class="odd">
 <td><code class="sourceCode cpp">m</code></td>
 <td><code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">2</span></code></td>
-<td>Indicates that the opening and closing bracket should be <code class="sourceCode cpp"><span class="st">&quot;&quot;</span></code> and the separator should be <code class="sourceCode cpp"><span class="st">&quot;: &quot;</span></code>.</td>
+<td>Equivalent to: <code class="sourceCode cpp">set_separator<span class="op">(</span><span class="st">&quot;: &quot;</span><span class="op">)</span>; set_brackets<span class="op">({}</span>, <span class="op">{})</span>;</code></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">n</code></td>
-<td>None</td>
-<td>Indicates that the opening and closing bracket should be <code class="sourceCode cpp"><span class="st">&quot;&quot;</span></code>.</td>
+<td>none</td>
+<td>Equivalent to: <code class="sourceCode cpp">set_brackets<span class="op">({}</span>, <span class="op">{})</span>;</code></td>
+</tr>
+<tr class="odd">
+<td>none</td>
+<td>none</td>
+<td>No effects</td>
 </tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">5</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">5</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">6</a></span> <em>Effects</em>: Equivalent to</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">6</a></span> <em>Effects</em>: Equivalent to</p>
 <blockquote>
 <div class="sourceCode" id="cb74"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb74-1"><a href="#cb74-1"></a><em>opening-bracket_</em> = opening;</span>
 <span id="cb74-2"><a href="#cb74-2"></a><em>closing-bracket_</em> = closing;</span></code></pre></div>
@@ -2416,31 +2433,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb75"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb75-1"><a href="#cb75-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb75-2"><a href="#cb75-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb75-3"><a href="#cb75-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">7</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. For each element <code class="sourceCode cpp"><em>e</em></code> in <code class="sourceCode cpp"><em>underlying_</em></code>, if <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression, calls <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">8</a></span> <em>Returns</em>: an iterator past the end of the <code class="sourceCode cpp"><em>tuple-format-spec</em></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">7</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. For each element <code class="sourceCode cpp"><em>e</em></code> in <code class="sourceCode cpp"><em>underlying_</em></code>, if <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression, calls <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">8</a></span> <em>Returns</em>: an iterator past the end of the <code class="sourceCode cpp"><em>tuple-format-spec</em></code>.</p>
 <div class="sourceCode" id="cb76"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb76-1"><a href="#cb76-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb76-2"><a href="#cb76-2"></a>  typename FormatContext::iterator</span>
 <span id="cb76-3"><a href="#cb76-3"></a>    format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">9</a></span> The type of <code class="sourceCode cpp">elems</code> is:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">9</a></span> The type of <code class="sourceCode cpp">elems</code> is:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">(9.1)</a></span> If <code class="sourceCode cpp"><span class="op">(</span>formattable<span class="op">&lt;</span><span class="kw">const</span> Ts, charT<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> <em>tuple-type</em><span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">(9.2)</a></span> Otherwise <code class="sourceCode cpp"><em>tuple-type</em><span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">(9.1)</a></span> If <code class="sourceCode cpp"><span class="op">(</span>formattable<span class="op">&lt;</span><span class="kw">const</span> Ts, charT<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> <em>tuple-type</em><span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">(9.2)</a></span> Otherwise <code class="sourceCode cpp"><em>tuple-type</em><span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span></code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">10</a></span> <em>Effects</em>: Writes the following into <code class="sourceCode cpp">ctx<span class="op">.</span>out<span class="op">()</span></code>, adjusted according to the <code class="sourceCode cpp"><em>tuple-format-spec</em></code>:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">10</a></span> <em>Effects</em>: Writes the following into <code class="sourceCode cpp">ctx<span class="op">.</span>out<span class="op">()</span></code>, adjusted according to the <code class="sourceCode cpp"><em>tuple-format-spec</em></code>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">(10.1)</a></span> <code class="sourceCode cpp"><em>opening-bracket_</em></code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">(10.2)</a></span> for each index <code class="sourceCode cpp">I</code> from <code class="sourceCode cpp"><span class="dv">0</span></code> up to <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span></code>, exclusive:
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">(10.1)</a></span> <code class="sourceCode cpp"><em>opening-bracket_</em></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">(10.2)</a></span> for each index <code class="sourceCode cpp">I</code> in the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>, <span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">))</span></code>:
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">(10.2.1)</a></span> if <code class="sourceCode cpp">I <span class="op">!=</span> <span class="dv">0</span></code>, <code class="sourceCode cpp"><em>separator_</em></code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">(10.2.2)</a></span> the result of writing <code class="sourceCode cpp">get<span class="op">&lt;</span>I<span class="op">&gt;(</span>elems<span class="op">)</span></code> via <code class="sourceCode cpp">get<span class="op">&lt;</span>I<span class="op">&gt;(</span><em>underlying_</em><span class="op">)</span></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_81" id="pnum_81">(10.2.1)</a></span> if <code class="sourceCode cpp">I <span class="op">!=</span> <span class="dv">0</span></code>, <code class="sourceCode cpp"><em>separator_</em></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_82" id="pnum_82">(10.2.2)</a></span> the result of writing <code class="sourceCode cpp">get<span class="op">&lt;</span>I<span class="op">&gt;(</span>elems<span class="op">)</span></code> via <code class="sourceCode cpp">get<span class="op">&lt;</span>I<span class="op">&gt;(</span><em>underlying_</em><span class="op">)</span></code></li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">(10.3)</a></span> <code class="sourceCode cpp"><em>closing-bracket_</em></code></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">(10.3)</a></span> <code class="sourceCode cpp"><em>closing-bracket_</em></code></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">11</a></span> <em>Returns</em>: an iterator past the end of the output range.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_84" id="pnum_84">11</a></span> <em>Returns</em>: an iterator past the end of the output range.</p>
 </div>
 </blockquote>
 <h2 data-number="5.5" id="formatter-for-vectorboolreference"><span class="header-section-number">5.5</span> Formatter for <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code><a href="#formatter-for-vectorboolreference" class="self-link"></a></h2>
-<p>Add to <span>22.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
+<p>Add to <span>24.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb77"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb77-1"><a href="#cb77-1"></a>namespace std {</span>
@@ -2464,11 +2481,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <div class="sourceCode" id="cb78"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb78-1"><a href="#cb78-1"></a>template&lt;class R&gt;</span>
 <span id="cb78-2"><a href="#cb78-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_85" id="pnum_85">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
 <div class="sourceCode" id="cb79"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb79-1"><a href="#cb79-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
 <span id="cb79-2"><a href="#cb79-2"></a>  struct formatter&lt;T, charT&gt; {</span>
 <span id="cb79-3"><a href="#cb79-3"></a>  private:</span>
-<span id="cb79-4"><a href="#cb79-4"></a>    formatter&lt;bool, charT&gt; <em>fmt</em>;     // exposition only</span>
+<span id="cb79-4"><a href="#cb79-4"></a>    formatter&lt;bool, charT&gt; <em>underlying_</em>;     // exposition only</span>
 <span id="cb79-5"><a href="#cb79-5"></a></span>
 <span id="cb79-6"><a href="#cb79-6"></a>  public:</span>
 <span id="cb79-7"><a href="#cb79-7"></a>    template &lt;class ParseContext&gt;</span>
@@ -2482,11 +2499,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb80"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb80-1"><a href="#cb80-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb80-2"><a href="#cb80-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb80-3"><a href="#cb80-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_81" id="pnum_81">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_86" id="pnum_86">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb81"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb81-1"><a href="#cb81-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb81-2"><a href="#cb81-2"></a>  typename FormatContext::iterator</span>
 <span id="cb81-3"><a href="#cb81-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_82" id="pnum_82">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>fmt</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h2 data-number="5.6" id="feature-test-macro"><span class="header-section-number">5.6</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>

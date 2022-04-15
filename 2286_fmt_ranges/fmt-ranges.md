@@ -1222,7 +1222,7 @@ Add `set_debug_format()` to the character and string specializations in [format.
 ::: bq
 [1]{.pnum} The functions defined in [format.functions] use specializations of the class template `formatter` to format individual arguments.
 
-[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of `formatter` is either enabled or disabled, as described below. [A _debug-enabled_ specialization of `formatter` additionally provides a public, non-static member function `set_debug_format()` which will cause these formatters to interpret the format specification as if its `$type$` were `?`.]{.addu} Each header that declares the template `formatter` provides the following enabled specializations:
+[2]{.pnum} Let `charT` be either `char` or `wchar_t`. Each specialization of `formatter` is either enabled or disabled, as described below. [A _debug-enabled_ specialization of `formatter` additionally provides a public, non-static member function `set_debug_format()` which will cause these formatters to interpret the format specification as if its `$type$` were `?`.]{.addu} (TODO: this should be called after `parse`) Each header that declares the template `formatter` provides the following enabled specializations:
 
 * [2.#]{.pnum} The [debug-enabled]{.addu} specializations
 
@@ -1265,11 +1265,11 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 ::: addu
 [1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
 
-[2]{.pnum} The escaped string representation of a string, `$S$`, in a Unicode encoding consists of the following sequence of scalar values:
+[2]{.pnum} The escaped string representation of a string `$S$` in a Unicode encoding consists of the following sequence of scalar values:
 
 * [2.#]{.pnum} A U+0022 QUOTATION MARK (`"`) character
 
-* [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit if it is not a part of a valid UCS scalar value:
+* [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit that is not a part of a valid UCS scalar value:
 
   * [2.#]{.pnum} If the UCS scalar value is in the table below, then its corresponding two-character escape sequence:
 
@@ -1283,18 +1283,21 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
   * [2.#]{.pnum} Otherwise, if the UCS scalar value
 
-    * [2.#.#]{.pnum} is not U+0020 SPACE and has the Unicode property `General_Category=Separator` (`Z`) or `General_Category=Other` (`C`), or
-    * [2.#.#]{.pnum} has the Unicode property `Grapheme_Extend=Yes`
+    * [2.#.#]{.pnum} is not U+0020 SPACE and has the Unicode property `General_Category=Separator` (`Z`) or `General_Category=Other` (`C`) as described by UAX #44, or
+    * [2.#.#]{.pnum} has the Unicode property `Grapheme_Extend=Yes` as described by UAX #44
 
-    then its universal character name escape sequence in the form `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the UCS scalar value using lower-case `$hexadecimal-digit$`s.
+    then the sequence `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the UCS scalar value using lower-case `$hexadecimal-digit$`s.
 
-  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then a hexadecimal escape sequence in the form `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the code unit using lower-case `$hexadecimal-digit$`s.
+  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then the sequence `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the code unit using lower-case `$hexadecimal-digit$`s.
 
   * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
 
 * [2.#]{.pnum} Finally, another U+0022 QUOTATION MARK (`"`) character.
 
-[3]{.pnum} The escaped character representation of a character, `$C$`, in a Unicode encoding is equivalent to the escaped string representation a string of `$C$`, except that the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`) and U+0027 APOSTROPHE is escaped as `\'` while U+0022 QUOTATION MARK is left unchanged.
+[3]{.pnum} The escaped character representation of a character `$C$` in a Unicode encoding is equivalent to the escaped string representation of a string of `$C$`, except that:
+
+  * [3.#]{.pnum} the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`), and
+  * [3.#]{.pnum} U+0027 APOSTROPHE is escaped as `\'` while U+0022 QUOTATION MARK is left unchanged.
 
 [4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
 
@@ -1437,7 +1440,15 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. Unless the `$range-type$` is either `s` or `?s`, if `$underlying_$.set_debug_format()` is a valid expression and there is no `$range-underlying-spec$`, calls `$underlying_$.set_debug_format()`.
+[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. If:
+
+  * [#.#]{.pnum} the `$range-type$` is neither `s` nor `?s`,
+  * [#.#]{.pnum} `$underlying_$.set_debug_format()` is a valid expression, and
+  * [#.#]{.pnum} there is no `$range-underlying-spec$`,
+
+then calls `$underlying_$.set_debug_format()`.
+
+TODO: need to ensure that `parse` doesn't override defaults, because other stuff here is specified assuming that.
 
 [#]{.pnum} *Returns*: An iterator past the end of the `$range-format-spec$`.
 
@@ -1455,7 +1466,7 @@ template <ranges::input_range R, class FormatContext>
 * [#.#]{.pnum} Otherwise, if the `$range-type$` was `?s`, then as if by formatting `basic_string<charT>(from_range, r)` as an escaped string ([format.string.escaped]).
 * [#.#]{.pnum} Otherwise,
   * [#.#.#]{.pnum} `$opening-bracket_$`
-  * [#.#.#]{.pnum} for each element, `e`, of the range `r`:
+  * [#.#.#]{.pnum} for each element `e` of the range `r`:
     * [#.#.#.#]{.pnum} the result of writing `e` via `$underlying_$`
     * [#.#.#.#]{.pnum} `$separator_$`, unless `e` is the last element of `r`
   * [#.#.#]{.pnum} `$closing-bracket_$`
@@ -1469,7 +1480,8 @@ namespace std {
                && formattable<ranges::range_reference_t<R>, charT>
   struct formatter<R, charT> {
   private:
-    range_formatter<remove_cvref_t<ranges::range_reference_t<R>>> $underlying_$; // exposition only
+    using $maybe-const-r$ = $see below$;
+    range_formatter<remove_cvref_t<ranges::range_reference_t<$maybe-const-r$>>, charT> $underlying_$; // exposition only
 
   public:
     void set_separator(basic_string_view<charT> sep);
@@ -1481,10 +1493,16 @@ namespace std {
 
     template <class FormatContext>
       typename FormatContext::iterator
-        format($see below$& elems, FormatContext& ctx) const;
+        format($maybe-const-r$& elems, FormatContext& ctx) const;
   };
 }
 ```
+
+[#]{.pnum} `$maybe-const-r$` denotes the type
+
+* [#.#]{.pnum} `const R` if `const R` models `ranges::input_range` and `formattable<ranges::range_reference_t<const R>, charT>` is `true`.
+* [#.#]{.pnum} Otherwise, `R`.
+
 
 ```
 void set_separator(basic_string_view<charT> sep);
@@ -1509,13 +1527,8 @@ template <class ParseContext>
 ```
 template <class FormatContext>
   typename FormatContext::iterator
-    format($see below$& elems, FormatContext& ctx) const;
+    format($maybe-const-r$& elems, FormatContext& ctx) const;
 ```
-
-[#]{.pnum} The type of `elems` is:
-
-* [#.#]{.pnum} If `const R` models `ranges::input_range` and `formattable<ranges::range_reference_t<const R>, charT>` is `true`, `const R&`.
-* [#.#]{.pnum} Otherwise `R&`.
 
 [#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(elems, ctx);`
 
@@ -1558,9 +1571,9 @@ formatter();
 [#]{.pnum} *Effects*: Equivalent to:
 
 ```
-this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
-this->underlying().set_brackets({}, {});
-this->underlying().set_separator($STATICALLY-WIDEN$<charT>(": "));
+$underlying_$.set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
+$underlying_$.underlying().set_brackets({}, {});
+$underlying_$.underlying().set_separator($STATICALLY-WIDEN$<charT>(": "));
 ```
 
 ```
@@ -1610,7 +1623,7 @@ formatter();
 [#]{.pnum} *Effects*: Equivalent to:
 
 ```
-this->set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
+$underlying_$.set_brackets($STATICALLY-WIDEN$<charT>("{"), $STATICALLY-WIDEN$<charT>("}"));
 ```
 
 ```
@@ -1733,8 +1746,9 @@ $tuple-type$:
 
 |Option|Requirements|Meaning|
 |-|-|-|
-|`m`|`sizeof...(Ts) == 2` |Indicates that the opening and closing bracket should be `""` and the separator should be `": "`.|
-|`n`|None|Indicates that the opening and closing bracket should be `""`.|
+|`m`|`sizeof...(Ts) == 2` |Equivalent to: `set_separator(": "); set_brackets({}, {});`|
+|`n`|none|Equivalent to: `set_brackets({}, {});`|
+|none|none|No effects|
 
 ```
 void set_separator(basic_string_view<charT> sep);
@@ -1780,7 +1794,7 @@ template <class FormatContext>
 [#]{.pnum} *Effects*: Writes the following into `ctx.out()`, adjusted according to the `$tuple-format-spec$`:
 
 * [#.#]{.pnum} `$opening-bracket_$`
-* [#.#]{.pnum} for each index `I` from `0` up to `sizeof...(Ts)`, exclusive:
+* [#.#]{.pnum} for each index `I` in the range `[0, sizeof...(Ts))`:
   * [#.#.#]{.pnum} if `I != 0`, `$separator_$`
   * [#.#.#]{.pnum} the result of writing `get<I>(elems)` via `get<I>($underlying_$)`
 * [#.#]{.pnum} `$closing-bracket_$`
@@ -1826,7 +1840,7 @@ template<class R>
 template<class T, class charT> requires @*is-vector-bool-reference*@<T>
   struct formatter<T, charT> {
   private:
-    formatter<bool, charT> @*fmt*@;     // exposition only
+    formatter<bool, charT> $underlying_$;     // exposition only
 
   public:
     template <class ParseContext>
@@ -1845,7 +1859,7 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[9]{.pnum} *Effects*: Equivalent to `return @*fmt*@.parse(ctx);`
+[9]{.pnum} *Effects*: Equivalent to `return $underlying_$.parse(ctx);`
 
 ```
 template <class FormatContext>
@@ -1853,7 +1867,7 @@ template <class FormatContext>
     format(const T& ref, FormatContext& ctx) const;
 ```
 
-[10]{.pnum} *Effects*: Equivalent to `return @*fmt*@.format(ref, ctx);`
+[10]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(ref, ctx);`
 :::
 :::
 
