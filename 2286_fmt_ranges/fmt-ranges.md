@@ -1440,15 +1440,13 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. If:
+[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. Unless the _range-type_ is `m`, the values of `$opening-bracket_$`, `$closing-bracket_$`, and `$separator_$` remain unchanged. If:
 
   * [#.#]{.pnum} the `$range-type$` is neither `s` nor `?s`,
   * [#.#]{.pnum} `$underlying_$.set_debug_format()` is a valid expression, and
   * [#.#]{.pnum} there is no `$range-underlying-spec$`,
 
 then calls `$underlying_$.set_debug_format()`.
-
-TODO: need to ensure that `parse` doesn't override defaults, because other stuff here is specified assuming that.
 
 [#]{.pnum} *Returns*: An iterator past the end of the `$range-format-spec$`.
 
@@ -1545,11 +1543,14 @@ Add a clause (maybe after [unord]{.sref} and before [container.adaptors]{.sref})
 
 ```
 namespace std {
-  template <class charT, formattable<charT> Key, formattable<charT> T, class... U>
+  template <class charT, class Key, formattable<charT> T, class... U>
+    requires formattable<const Key, charT>
   struct formatter<$map-type$<Key, T, U...>, charT>
   {
   private:
-    range_formatter<pair<const Key, T>> $underlying_$; // exposition only
+    static constexpr bool $is-const$ = formattable<const T, charT>;           // exposition only
+    using $maybe-const-map$ = $maybe-const$<$is-const$, $map-type$<Key, T, U...>>;  // exposition only
+    range_formatter<pair<const Key, $maybe-const$<$is-const$, T>>> $underlying_$; // exposition only
   public:
     formatter();
 
@@ -1559,7 +1560,7 @@ namespace std {
 
     template <class FormatContext>
       typename FormatContext::iterator
-        format(const $map-type$<Key, T, U...>& r, FormatContext& ctx) const;
+        format($maybe-const-map$& r, FormatContext& ctx) const;
   };
 }
 ```
@@ -1587,7 +1588,7 @@ template <class ParseContext>
 ```
 template <class FormatContext>
   typename FormatContext::iterator
-    format(const $map-type$<Key, T, U...>& r, FormatContext& ctx) const;
+    format($maybe-const-map$& r, FormatContext& ctx) const;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(r, ctx);`
@@ -1596,7 +1597,8 @@ template <class FormatContext>
 
 ```
 namespace std {
-  template <class charT, formattable<charT> Key, class... U>
+  template <class charT, class Key, class... U>
+    requires formattable<const Key, charT>
   struct formatter<$set-type$<Key, U...>, charT>
   {
   private:
@@ -1658,6 +1660,7 @@ namespace std {
   struct formatter<$adaptor-type$<T, Container, U...>, charT>
   {
   private:
+    using $maybe-const-adaptor$ = $see below$;   // exposition only
     formatter<Container, charT> $underlying_$; // exposition only
 
   public:
@@ -1667,10 +1670,15 @@ namespace std {
 
     template <class FormatContext>
       typename FormatContext::iterator
-        format(const $adaptor-type$<T, Container, U...>& r, FormatContext& ctx) const;
+        format($maybe-const-adaptor$& r, FormatContext& ctx) const;
   };
 }
 ```
+
+[#]{.pnum} `$maybe-const-adaptor$` denotes the type
+
+  * [#]{.pnum} `const $adaptor-type$<T, Container, U...>` if `const $adaptor-type$<T, Container, U...>` models `ranges::input_range` and `formattable<ranges::range_reference_t<const $adaptor-type$<T, Container, U...>>, charT>` is `true`.
+  * [#]{.pnum} Otherwise, `$adaptor-type$<T, Container, U...>`.
 
 ```
 template <class ParseContext>
@@ -1683,7 +1691,7 @@ template <class ParseContext>
 ```
 template <class FormatContext>
   typename FormatContext::iterator
-    format(const $adaptor-type$<T, Container, U...>& r, FormatContext& ctx) const;
+    format($maybe-const-adaptor$& r, FormatContext& ctx) const;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(r.c, ctx);`
@@ -1775,8 +1783,7 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Parses the format specifier as a `$tuple-format-spec$` and stores the parsed specifiers in `*this`.
-For each element `$e$` in `$underlying_$`, if `$e$.set_debug_format()` is a valid expression, calls `$e$.set_debug_format()`.
+[#]{.pnum} *Effects*: Parses the format specifier as a `$tuple-format-spec$` and stores the parsed specifiers in `*this`. Unless the _tuple-type_ is `m` or `n`, the values of `$opening-bracket_$`, `$closing-bracket_$`, and `$separator_$` remain unchanged. If the _tuple-type_ is `n`, the value of `$separator_$` remains unchanged. For each element `$e$` in `$underlying_$`, if `$e$.set_debug_format()` is a valid expression, calls `$e$.set_debug_format()`.
 
 [#]{.pnum} *Returns*: an iterator past the end of the `$tuple-format-spec$`.
 
