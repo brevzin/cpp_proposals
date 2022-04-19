@@ -1500,7 +1500,7 @@ namespace std {
 }
 ```
 
-[#]{.pnum} [*Note*: The `(!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)` constraint is to be prevent constraint recursion for ranges whose reference type is the same range type. For example, `std::filesystem::path` is a range of `std::filesystem::path`. *-end note* ]
+[#]{.pnum} [*Note*: The `(!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)` constraint prevents constraint recursion for ranges whose reference type is the same range type. For example, `std::filesystem::path` is a range of `std::filesystem::path`. *-end note* ]
 
 ```
 constexpr void set_separator(basic_string_view<charT> sep);
