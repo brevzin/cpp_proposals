@@ -1299,7 +1299,7 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
   * [3.#]{.pnum} the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`), and
   * [3.#]{.pnum} U+0027 APOSTROPHE is escaped as `\'` while U+0022 QUOTATION MARK is left unchanged.
 
-[4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is implementation-defined.
+[4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is unspecified.
 
 [*Example*:
 ```
@@ -1398,9 +1398,9 @@ namespace std {
     basic_string_view<charT> $closing-bracket_$ = $STATICALLY-WIDEN$<charT>("]"); // exposition only
 
   public:
-    void set_separator(basic_string_view<charT> sep);
-    void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
-    formatter<T, charT>& underlying() { return $underlying_$; }
+    constexpr void set_separator(basic_string_view<charT> sep);
+    constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
+    constexpr formatter<T, charT>& underlying() { return $underlying_$; }
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1416,13 +1416,13 @@ namespace std {
 ```
 
 ```
-void set_separator(basic_string_view<charT> sep);
+constexpr void set_separator(basic_string_view<charT> sep);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
 ```
-void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
+constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to
@@ -1482,8 +1482,8 @@ namespace std {
     range_formatter<remove_cvref_t<ranges::range_reference_t<$maybe-const-r$>>, charT> $underlying_$; // exposition only
 
   public:
-    void set_separator(basic_string_view<charT> sep);
-    void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
+    constexpr void set_separator(basic_string_view<charT> sep);
+    constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1503,13 +1503,13 @@ namespace std {
 
 
 ```
-void set_separator(basic_string_view<charT> sep);
+constexpr void set_separator(basic_string_view<charT> sep);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_separator(sep)`;
 
 ```
-void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
+constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `$underlying_$.set_brackets(opening, closing)`;
@@ -1552,7 +1552,7 @@ namespace std {
     using $maybe-const-map$ = $maybe-const$<$is-const$, $map-type$<Key, T, U...>>;  // exposition only
     range_formatter<pair<const Key, $maybe-const$<$is-const$, T>>> $underlying_$; // exposition only
   public:
-    formatter();
+    constexpr formatter();
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1566,7 +1566,7 @@ namespace std {
 ```
 
 ```
-formatter();
+constexpr formatter();
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -1605,7 +1605,7 @@ namespace std {
     range_formatter<Key, charT> $underlying_$; // exposition only
 
   public:
-    formatter();
+    constexpr formatter();
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1619,7 +1619,7 @@ namespace std {
 ```
 
 ```
-formatter();
+constexpr formatter();
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
