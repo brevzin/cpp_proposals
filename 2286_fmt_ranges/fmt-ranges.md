@@ -1405,6 +1405,7 @@ namespace std {
     constexpr void set_separator(basic_string_view<charT> sep);
     constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
     constexpr formatter<T, charT>& underlying() { return $underlying_$; }
+    constexpr const formatter<T, charT>& underlying() const { return $underlying_$; }
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1444,7 +1445,7 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. The values of `$opening-bracket_$`, `$closing-bracket_$`, and `$separator_$` are modified if and only if required by the `$range-type$`. If:
+[#]{.pnum} *Effects*: Parses the format specifier as a `$range-format-spec$` and stores the parsed specifiers in `*this`. The values of `$opening-bracket_$`, `$closing-bracket_$`, and `$separator_$` are modified if and only if required by the `$range-type$` or the `n` option, if present. If:
 
   * [#.#]{.pnum} the `$range-type$` is neither `s` nor `?s`,
   * [#.#]{.pnum} `$underlying_$.set_debug_format()` is a valid expression, and
@@ -1777,7 +1778,7 @@ template <class ParseContext>
     parse(ParseContext& ctx);
 ```
 
-[#]{.pnum} *Effects*: Parses the format specifier as a `$tuple-format-spec$` and stores the parsed specifiers in `*this`. The values of `$opening-bracket_$`, `$closing-bracket_$`, and `$separator_$` are modified if and only if required by the _tuple-type_. For each element `$e$` in `$underlying_$`, if `$e$.set_debug_format()` is a valid expression, calls `$e$.set_debug_format()`.
+[#]{.pnum} *Effects*: Parses the format specifier as a `$tuple-format-spec$` and stores the parsed specifiers in `*this`. The values of `$opening-bracket_$`, `$closing-bracket_$`, and `$separator_$` are modified if and only if required by the _tuple-type_, if present. For each element `$e$` in `$underlying_$`, if `$e$.set_debug_format()` is a valid expression, calls `$e$.set_debug_format()`.
 
 [#]{.pnum} *Returns*: an iterator past the end of the `$tuple-format-spec$`.
 
