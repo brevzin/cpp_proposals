@@ -1,6 +1,6 @@
 ---
 title: "`ranges::fold`"
-document: P2322R5
+document: P2322R6
 date: today
 audience: LEWG
 author:
