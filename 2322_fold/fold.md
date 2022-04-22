@@ -12,6 +12,8 @@ tag: ranges
 
 # Revision History
 
+Since [@P2322R5], minor wording changes.
+
 Since [@P2322R4], removed the short-circuiting fold with one that simply returns the end iterator in addition to the value. Also removed the projections, see [the discussion](#no-projections).
 
 LEWG also reconfirmed having `foldl` and `foldl1` under different names, polling "fold with an initial value and fold with no initial value should have the same name (presumably just foldl)" (since once the projections were removed, there is no more ambiguity between the two algorithms)
@@ -612,7 +614,7 @@ Add a feature-test macro to [version.syn]{.sref}:
 
 ::: bq
 ```
-#define __cpp_­lib_fold 2021XXL // also in <algorithm>
+#define __cpp_­lib_fold 2022XXL // also in <algorithm>
 ```
 :::
 
@@ -665,9 +667,10 @@ namespace std {
   // [alg.fold], folds
   namespace ranges {
     template<class F>
-    struct @*flipped*@ {  // exposition only
-      F f;
+    class $flipped$ {  // exposition only
+      F $f$;           // exposition only
 
+    public:
       template<class T, class U>
         requires invocable<F&, U, T>
       invoke_result_t<F&, U, T> operator()(T&&, U&&);
