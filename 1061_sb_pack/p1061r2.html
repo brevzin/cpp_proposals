@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-04-14" />
+  <meta name="dcterms.date" content="2022-04-22" />
   <title>Structured Bindings can introduce a Pack</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-04-14</td>
+    <td>2022-04-22</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -572,6 +572,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#implementation-burden"><span class="toc-section-number">3.2</span> Implementation Burden<span></span></a></li>
 <li><a href="#implementation-experience"><span class="toc-section-number">3.3</span> Implementation Experience<span></span></a></li>
 <li><a href="#handling-non-dependent-packs-in-the-wording"><span class="toc-section-number">3.4</span> Handling non-dependent packs in the wording<span></span></a></li>
+<li><a href="#namespace-scope-packs"><span class="toc-section-number">3.5</span> Namespace-scope packs<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
 <li><a href="#acknowledgements"><span class="toc-section-number">5</span> Acknowledgements<span></span></a></li>
@@ -808,6 +809,7 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <p>Furthermore, unlike some of the reflection examples, and some of the more generic pack facilities proposed in <span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span>, this paper offers a nice benefit: all packs must still be declared before use. Even in the <code class="sourceCode cpp">sum_non_template</code> example which, as the name suggests, is not a template in any way, the pack <code class="sourceCode cpp">elems</code> needs an initial declaration. So any machinery that implementations need to track packs doesn’t need to be enabled everywhere - only when a pack declaration has been seen.</p>
 <h2 data-number="3.3" id="implementation-experience"><span class="header-section-number">3.3</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Jason Rice has implemented this in a <a href="https://github.com/ricejasonf/llvm-project/commits/ricejasonf/p1061">clang</a>. As far as we’ve been able to ascertain, it works great.</p>
+<p>It is also <a href="https://godbolt.org/z/Tnz4e1dY9">available on Compiler Explorer</a>.</p>
 <h2 data-number="3.4" id="handling-non-dependent-packs-in-the-wording"><span class="header-section-number">3.4</span> Handling non-dependent packs in the wording<a href="#handling-non-dependent-packs-in-the-wording" class="self-link"></a></h2>
 <p>The strategy the wording takes to handle <code class="sourceCode cpp">sum_non_template</code> above is to designate <code class="sourceCode cpp">elems</code> as a <em>non-dependent pack</em> and to state that non-dependent packs are instantiated immediately. In that example, <code class="sourceCode cpp">elems</code> is obviously non-dependent (nothing anywhere is dependent), so we just instantiate the <em>fold-expression</em> immediately.</p>
 <p>But defining “non-dependent pack” is non-trivial. Examples from Richard Smith:</p>
@@ -848,6 +850,13 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <p>Perhaps the right answer is that the types should be dependent but a member of the current instantiation, permitting name lookup without typename.</p>
 </div>
 <p>I think the best rule would be to follow the suggested answer in this core issue: a structured bindings pack is dependent if: the type of its initializer (the <code class="sourceCode cpp">E</code> in <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>) is dependent and it is not a member of the current instantiaton. This would make neither of the <code class="sourceCode cpp"><span class="op">...</span>v</code> packs dependent, which seems conceptually correct.</p>
+<h2 data-number="3.5" id="namespace-scope-packs"><span class="header-section-number">3.5</span> Namespace-scope packs<a href="#namespace-scope-packs" class="self-link"></a></h2>
+<p>In addition to non-dependent packs, this paper also seems like it would offer the ability to declare a pack at <em>namespace</em> scope:</p>
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">struct</span> Point <span class="op">{</span> <span class="dt">int</span> x, y; <span class="op">}</span>;</span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="kw">auto</span> <span class="op">[...</span> parts<span class="op">]</span> <span class="op">=</span> Point<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared <code class="sourceCode cpp"><span class="kw">inline</span></code>. A structured binding pack at namespace scope adds that much more complexity. For now, this paper simply rejects such a declaration since we are now very far removed from the primary motivation of the paper, and this only serves to add additional complexity.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add a new grammar option for <em>simple-declaration</em> to <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>:</p>
 <blockquote>
@@ -874,18 +883,18 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 </blockquote>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 1:</p>
 <blockquote>
-<p>A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, … of the <span class="rm" style="color: #bf0303"><del><i>identifier-list</i></del></span> <span class="addu"><i>sb-identifier-list</i></span> as names ([basic.scope.declarative]) of <i>structured bindings</i>. <span class="addu">The declaration shall contain at most one <em>sb-pack-identifier</em>. If the declaration contains an <em>sb-identifier</em>, the declaration introduces a <em>structured binding pack</em> ([temp.variadic]).</span> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>.</p>
+<p>A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, … of the <span class="rm" style="color: #bf0303"><del><i>identifier-list</i></del></span> <span class="addu"><i>sb-identifier-list</i></span> as names ([basic.scope.declarative]) of <i>structured bindings</i>. <span class="addu">The declaration shall contain at most one <em>sb-pack-identifier</em>. If the declaration contains an <em>sb-identifier</em>, the declaration shall not appear at namespace scope and introduces a <em>structured binding pack</em> ([temp.variadic]).</span> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>.</p>
 </blockquote>
 <p>Introduce new paragraphs after <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 1, introducing the terms “structured binding size” and SB<sub><em>i</em></sub>:</p>
 <blockquote>
 <div class="addu">
 <p>The <em>structured binding size</em> of a type <code class="sourceCode cpp">E</code> is the required number of names that need to be introduced by the structured binding declaration, as defined below. If there is no structured binding pack, then the number of elements in the <em>sb-identifier-list</em> shall be equal to the structured binding size. Otherwise, the number of elements of the structured binding pack is the structured binding size less the number of elements in the <em>sb-identifier-list</em>.</p>
 <p>Let SB<sub><em>i</em></sub> denote <em>i</em><sup>th</sup> <em>identifier</em> in the structured binding declaration after expanding the structured binding pack, if any [ <em>Note</em>: if there is no structured binding pack, then the SB<sub><em>i</em></sub> denotes v<sub><em>i</em></sub>. - <em>end note</em> ] [ <em>Example</em>:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1"></a>struct C { int x, y, z; };</span>
-<span id="cb18-2"><a href="#cb18-2"></a></span>
-<span id="cb18-3"><a href="#cb18-3"></a>auto [a, b, c] = C(); // SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
-<span id="cb18-4"><a href="#cb18-4"></a>auto [d, ...e] = C(); // SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two identifiers: SB<sub>1</sub> and SB<sub>2</sub></span>
-<span id="cb18-5"><a href="#cb18-5"></a>auto [...f, g] = C(); // the pack f (v<sub>0</sub>) contains two identifiers: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1"></a>struct C { int x, y, z; };</span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a>auto [a, b, c] = C(); // SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
+<span id="cb19-4"><a href="#cb19-4"></a>auto [d, ...e] = C(); // SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two identifiers: SB<sub>1</sub> and SB<sub>2</sub></span>
+<span id="cb19-5"><a href="#cb19-5"></a>auto [...f, g] = C(); // the pack f (v<sub>0</sub>) contains two identifiers: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
@@ -895,14 +904,14 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <blockquote>
 <p>If <code>E</code> is an array type with element type <code>T</code>, <span class="rm" style="color: #bf0303"><del>the number of elements in the <i>identifier-list</i></del></span> <span class="addu">the structured binding size of <code>E</code></span> shall be equal to the number of elements of <code>E</code>. Each <span class="rm" style="color: #bf0303"><del><i>v<sub>i</sub></i></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>. [<em>Note</em>: The top-level <em>cv</em>-qualifiers of <code class="sourceCode cpp">T</code> are <em>cv</em>. — <em>end note</em>] [<em>Example</em>:</p>
 <div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1"></a>auto f() -&gt; int(&amp;)[2];</span>
-<span id="cb19-2"><a href="#cb19-2"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
-<span id="cb19-3"><a href="#cb19-3"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
-<span id="cb19-4"><a href="#cb19-4"></a></span>
-<span id="cb19-5"><a href="#cb19-5"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
-<span id="cb19-6"><a href="#cb19-6"></a><span class="va">+ auto [a, ...b, c] = g();      // a is the first element of the array, b is a pack containing the second and</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a><span class="va">+                               // third elements, and c is the fourth element</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1"></a>auto f() -&gt; int(&amp;)[2];</span>
+<span id="cb20-2"><a href="#cb20-2"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
+<span id="cb20-3"><a href="#cb20-3"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
+<span id="cb20-4"><a href="#cb20-4"></a></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a><span class="va">+ auto [a, ...b, c] = g();      // a is the first element of the array, b is a pack containing the second and</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a><span class="va">+                               // third elements, and c is the fourth element</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
@@ -918,10 +927,10 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <blockquote>
 <div class="addu">
 <p>A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i></p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
-<span id="cb20-2"><a href="#cb20-2"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
-<span id="cb20-3"><a href="#cb20-3"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span>
-<span id="cb20-4"><a href="#cb20-4"></a>auto [e, f, g, ...h] = foo(); // error: too many identifiers</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
+<span id="cb21-2"><a href="#cb21-2"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
+<span id="cb21-3"><a href="#cb21-3"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span>
+<span id="cb21-4"><a href="#cb21-4"></a>auto [e, f, g, ...h] = foo(); // error: too many identifiers</span></code></pre></div>
 <ul>
 <li><em>end example]</em></li>
 </ul>
@@ -952,37 +961,37 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 <li>either <code class="sourceCode cpp">E</code> is not a local class or <code class="sourceCode cpp">E</code> has a dependent base class.</li>
 </ul>
 <p>[ <em>Example:</em></p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1"></a>struct B { int i; };</span>
-<span id="cb21-2"><a href="#cb21-2"></a></span>
-<span id="cb21-3"><a href="#cb21-3"></a>template &lt;typeanme T&gt;</span>
-<span id="cb21-4"><a href="#cb21-4"></a>struct C { T t; };</span>
-<span id="cb21-5"><a href="#cb21-5"></a></span>
-<span id="cb21-6"><a href="#cb21-6"></a>template &lt;typename T&gt;</span>
-<span id="cb21-7"><a href="#cb21-7"></a>void f(T t) {</span>
-<span id="cb21-8"><a href="#cb21-8"></a>   auto [...a] = t;        // a is dependent</span>
-<span id="cb21-9"><a href="#cb21-9"></a>   auto [...b] = B{1};     // b is not dependent</span>
-<span id="cb21-10"><a href="#cb21-10"></a>   auto [...c] = C&lt;T&gt;{t};  // c is dependent</span>
-<span id="cb21-11"><a href="#cb21-11"></a></span>
-<span id="cb21-12"><a href="#cb21-12"></a>   struct D { T t; };</span>
-<span id="cb21-13"><a href="#cb21-13"></a>   auto [...d] = D{t};     // d is not dependent</span>
-<span id="cb21-14"><a href="#cb21-14"></a></span>
-<span id="cb21-15"><a href="#cb21-15"></a>   struct E : T {};</span>
-<span id="cb21-16"><a href="#cb21-16"></a>   auto [...e] = E{t};     // e is dependent</span>
-<span id="cb21-17"><a href="#cb21-17"></a></span>
-<span id="cb21-18"><a href="#cb21-18"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1"></a>struct B { int i; };</span>
+<span id="cb22-2"><a href="#cb22-2"></a></span>
+<span id="cb22-3"><a href="#cb22-3"></a>template &lt;typeanme T&gt;</span>
+<span id="cb22-4"><a href="#cb22-4"></a>struct C { T t; };</span>
+<span id="cb22-5"><a href="#cb22-5"></a></span>
+<span id="cb22-6"><a href="#cb22-6"></a>template &lt;typename T&gt;</span>
+<span id="cb22-7"><a href="#cb22-7"></a>void f(T t) {</span>
+<span id="cb22-8"><a href="#cb22-8"></a>   auto [...a] = t;        // a is dependent</span>
+<span id="cb22-9"><a href="#cb22-9"></a>   auto [...b] = B{1};     // b is not dependent</span>
+<span id="cb22-10"><a href="#cb22-10"></a>   auto [...c] = C&lt;T&gt;{t};  // c is dependent</span>
+<span id="cb22-11"><a href="#cb22-11"></a></span>
+<span id="cb22-12"><a href="#cb22-12"></a>   struct D { T t; };</span>
+<span id="cb22-13"><a href="#cb22-13"></a>   auto [...d] = D{t};     // d is not dependent</span>
+<span id="cb22-14"><a href="#cb22-14"></a></span>
+<span id="cb22-15"><a href="#cb22-15"></a>   struct E : T {};</span>
+<span id="cb22-16"><a href="#cb22-16"></a>   auto [...e] = E{t};     // e is dependent</span>
+<span id="cb22-17"><a href="#cb22-17"></a></span>
+<span id="cb22-18"><a href="#cb22-18"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
 <p>If all of the packs expanded by a pack expansion are structured bindings packs that are not dependent, the pack expansion is instantiated immediately.</p>
 <p>[ <em>Example:</em></p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1"></a>struct E { int i, j; };</span>
-<span id="cb22-2"><a href="#cb22-2"></a></span>
-<span id="cb22-3"><a href="#cb22-3"></a>constexpr int sum(E e) {</span>
-<span id="cb22-4"><a href="#cb22-4"></a>    auto [...v] = e;</span>
-<span id="cb22-5"><a href="#cb22-5"></a>    return (... + v);</span>
-<span id="cb22-6"><a href="#cb22-6"></a>}</span>
-<span id="cb22-7"><a href="#cb22-7"></a></span>
-<span id="cb22-8"><a href="#cb22-8"></a>static_assert(sum({.i=1, .j=2}) == 3); // ok</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1"></a>struct E { int i, j; };</span>
+<span id="cb23-2"><a href="#cb23-2"></a></span>
+<span id="cb23-3"><a href="#cb23-3"></a>constexpr int sum(E e) {</span>
+<span id="cb23-4"><a href="#cb23-4"></a>    auto [...v] = e;</span>
+<span id="cb23-5"><a href="#cb23-5"></a>    return (... + v);</span>
+<span id="cb23-6"><a href="#cb23-6"></a>}</span>
+<span id="cb23-7"><a href="#cb23-7"></a></span>
+<span id="cb23-8"><a href="#cb23-8"></a>static_assert(sum({.i=1, .j=2}) == 3); // ok</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>

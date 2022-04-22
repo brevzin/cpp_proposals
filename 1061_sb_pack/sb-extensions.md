@@ -326,6 +326,8 @@ Jason Rice has implemented this in a
 [clang](https://github.com/ricejasonf/llvm-project/commits/ricejasonf/p1061). As
 far as we've been able to ascertain, it works great.
 
+It is also [available on Compiler Explorer](https://godbolt.org/z/Tnz4e1dY9).
+
 ## Handling non-dependent packs in the wording
 
 The strategy the wording takes to handle `sum_non_template` above is to
@@ -399,6 +401,20 @@ a structured bindings pack is dependent if: the type of its initializer
 current instantiaton. This would make neither of the `...v` packs dependent,
 which seems conceptually correct.
 
+## Namespace-scope packs
+
+In addition to non-dependent packs, this paper also seems like it would offer the ability to declare a pack at _namespace_ scope:
+
+::: bq
+```cpp
+struct Point { int x, y; };
+auto [... parts] = Point{1, 2};
+```
+:::
+
+Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity. For now, this paper simply rejects such a declaration since we are now very far removed from the primary motivation of the paper, and this only serves to add additional complexity.
+
+
 # Wording
 
 Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
@@ -436,7 +452,7 @@ Change [dcl.struct.bind]{.sref} paragraph 1:
 ::: bq
 A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) of <i>structured bindings</i>.
 [The declaration shall contain at most one _sb-pack-identifier_. If the declaration
-contains an _sb-identifier_, the declaration introduces a _structured binding
+contains an _sb-identifier_, the declaration shall not appear at namespace scope and introduces a _structured binding
 pack_ ([temp.variadic]).]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
