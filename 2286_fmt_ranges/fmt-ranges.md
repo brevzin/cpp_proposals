@@ -1,6 +1,6 @@
 ---
 title: "Formatting Ranges"
-document: P2286R7
+document: P2286R8
 date: today
 audience: LEWG
 author:
@@ -12,6 +12,8 @@ tag: ranges
 ---
 
 # Revision History
+
+Since [@P2286R7], wording.
 
 Since [@P2286R6], wording.
 
@@ -1712,8 +1714,8 @@ template <class charT, formattable<charT>... Ts>
     basic_string_view<charT> $closing-bracket_$ = $STATICALLY-WIDEN$<charT>(")"); // exposition only
 
   public:
-    void set_separator(basic_string_view<charT> sep);
-    void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
+    constexpr void set_separator(basic_string_view<charT> sep);
+    constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 
     template <class ParseContext>
       constexpr typename ParseContext::iterator
@@ -1754,13 +1756,13 @@ $tuple-type$:
 |none|none|No effects|
 
 ```
-void set_separator(basic_string_view<charT> sep);
+constexpr void set_separator(basic_string_view<charT> sep);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `$separator_$ = sep`;
 
 ```
-void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
+constexpr void set_brackets(basic_string_view<charT> opening, basic_string_view<charT> closing);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to
