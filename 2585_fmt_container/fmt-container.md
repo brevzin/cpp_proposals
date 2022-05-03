@@ -18,9 +18,9 @@ For example, simply using `"{}"` as the specifier, we get the following outputs:
 
 |Expression|Output|
 |-|-|
-|`std::vector<std::pair<int, int>>{{1, 2}, {3, 4}}`|`[(1, 2), (3, 4)]`|
-|`std::set<std::pair<int, int>>{{1, 2}, {3, 4}}`|`{(1, 2), (3, 4)}`|
-|`std::map<int, int>{{1, 2}, {3, 4}}`|`{1: 2, 3: 4}`|
+|`std::vector<std::pair<int, int>>{@{@1, 2}, {3, 4}}`|`[(1, 2), (3, 4)]`|
+|`std::set<std::pair<int, int>>{@{@1, 2}, {3, 4}}`|`{(1, 2), (3, 4)}`|
+|`std::map<int, int>{@{@1, 2}, {3, 4}}`|`{1: 2, 3: 4}`|
 
 In each case, we have a range over a pair of ints, but we have three different outputs - as appropriate for the different kinds of containers.
 
@@ -29,7 +29,7 @@ However, this distinction is a result of [@P2286R7] explicitly providing formatt
 |Expression|Output|
 |-|-|
 |`boost::container::flat_set<int>{1, 2, 3}`|`[1, 2, 3]`|
-|`absl::flat_hash_map<int, int>{{1, 2}, {3, 4}}`|`[(1, 2), (3, 4)]`|
+|`absl::flat_hash_map<int, int>{@{@1, 2}, {3, 4}}`|`[(1, 2), (3, 4)]`|
 
 This output isn't _wrong_, per se. It's just that it's not ideal. And, sure, Abseil could certainly add the code necessary to make this happen. Which, at a bare minimum, would be:
 
