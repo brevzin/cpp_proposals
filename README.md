@@ -68,6 +68,7 @@ make all of my papers.
 - ![][~constexpr] [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
 - ![][~ranges] [p2550r1 - `ranges::copy` should say `output_iterator` somewhere](2550_algo_output_iterator/p2550r1.html).
 - ![][~constexpr] [p2564r0 - `consteval` needs to propagate up](2564_consteval_patch/p2564r0.html).
+- ![][~ranges] [p2585r0 - Improve default container formatting](2585_fmt_container/p2585r0.html).
 
 ### Ongoing Plans
 
