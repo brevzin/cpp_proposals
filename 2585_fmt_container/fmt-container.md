@@ -165,8 +165,8 @@ template<class R>
 [a]{.pnum} For a type `R`, `format_kind<R>` is defined as follows:
 
   * [a.#]{.pnum} If `same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>` is `true`, `format_kind<R>` is `range_format_kind::disabled`. [*Note*: This prevents constraint recursion for ranges whose reference type is the same range type. For example, `std::filesystem::path` is a range of `std::filesystem::path`. *-end note* ]
-  * [a.#]{.pnum} If the _qualified-id_ s `R::key_type` and `R::mapped_type` are valid and denote types, `format_kind<R>` is `range_format_kind::map`.
-  * [a.#]{.pnum} If the _qualified-id_ `R::key_type` is valid and denotes a type, `format_kind<R>` is `range_format_kind::set`.
+  * [a.#]{.pnum} Otherwise, if the _qualified-id_ s `R::key_type` and `R::mapped_type` are valid and denote types, `format_kind<R>` is `range_format_kind::map`.
+  * [a.#]{.pnum} Otherwise, if the _qualified-id_ `R::key_type` is valid and denotes a type, `format_kind<R>` is `range_format_kind::set`.
   * [a.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::sequence`.
 
 [b]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `format_kind` for *cv*-unqualified program-defined types.
@@ -303,7 +303,8 @@ namespace std {
   {
   private:
 -   range_formatter<Key, charT> $underlying_$; // exposition only
-+   range_formatter<remove_cvref_t<ranges::range_reference_t<R>>, charT> $underlying_$; // exposition only
++   using $maybe-const-set$ = $fmt-maybe-const$<R, charT>;                       // exposition only
++   range_formatter<remove_cvref_t<ranges::range_reference_t<$maybe-const-set$>>, charT> $underlying_$; // exposition only
 
   public:
     constexpr formatter();
@@ -315,7 +316,7 @@ namespace std {
     template <class FormatContext>
       typename FormatContext::iterator
 -       format(const $set-type$<Key, U...>& r, FormatContext& ctx) const;
-+       format(const R& r, FormatContext& ctx) const;
++       format($maybe-const-set$& r, FormatContext& ctx) const;
   };
 }
 ```
@@ -342,7 +343,7 @@ template <class ParseContext>
 template <class FormatContext>
   typename FormatContext::iterator
 -   format(const $set-type$<Key, U...>& r, FormatContext& ctx) const;
-+   format(const R& r, FormatContext& ctx) const;
++   format($maybe-const-set$& r, FormatContext& ctx) const;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(r, ctx);`
@@ -372,7 +373,7 @@ public:
 
   template <class FormatContext>
     typename FormatContext::iterator
-      format(const R& str, FormatContext& ctx) const;
+      format($see below$& str, FormatContext& ctx) const;
 };
 ```
 
@@ -397,10 +398,12 @@ return i;
 ```
 template <class FormatContext>
   typename FormatContext::iterator
-    format(const R& r, FormatContext& ctx) const;
+    format($see below$& r, FormatContext& ctx) const;
 ```
 
-[#]{.pnum} *Returns*: `$underlying_$.format(basic_string<charT>(from_range, r), ctx);`
+[#]{.pnum} The type of `r` is `const R&` if `input_range<const R>` is `true` and `R&` otherwise.
+
+[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(basic_string<charT>(from_range, r), ctx);`
 :::
 :::
 
