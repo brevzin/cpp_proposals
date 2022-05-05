@@ -1897,7 +1897,7 @@ Bump the feature-test macro for `__cpp_lib_format` in [version.syn]{.sref}:
 
 # Acknowledgments
 
-Thanks to Victor Zverovich for `{fmt}`, explanation of Unicode, and numerous design discussions. Thanks to Peter Dimov for design feedback. Thanks to Tim Song for invaluable help on the design and wording.
+Thanks to Victor Zverovich for `{fmt}`, explanation of Unicode, and numerous design discussions. Thanks to Peter Dimov for design feedback. Thanks to Tim Song for invaluable help on the design and wording. Thanks to Tom Honermann, Corentin Jabot, Jens Maurer, Hubert Tong, and Victor for dictating the string escaping wording.
 
 ---
 references:
