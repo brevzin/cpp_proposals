@@ -427,4 +427,4 @@ template <class FormatContext>
 
 # Acknowledgements
 
-Thanks to Tomasz Kamiński for suggesting this approach, Victor Zverovich for having more or less already implemented it, and Tim Song for everything else.
+Thanks to Jeff Garland for initially pointing out this distinction, Tomasz Kamiński for suggesting this approach, Victor Zverovich for having more or less already implemented it, and Tim Song for everything else.
