@@ -1276,34 +1276,38 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 ::: addu
 [1]{.pnum} A character or string can be formatted as _escaped_ to make it more suitable for debugging or for logging.
 
-[2]{.pnum} The escaped string representation of a string `$S$` in a Unicode encoding consists of the following sequence of scalar values:
+[2]{.pnum} The escaped string `$E$` representation of a string `$S$` is constructed by encoding a sequence of characters in the associated character encoding `$CE$` for `charT` ([lex.string.literal]) as follows:
 
-* [2.#]{.pnum} A U+0022 QUOTATION MARK (`"`) character
+* [2.#]{.pnum} U+0022 QUOTATION MARK (`"`) is appended to `$E$`
 
-* [2.#]{.pnum} For each UCS scalar value in `$S$`, or a code unit that is not a part of a valid UCS scalar value:
+* [2.#]{.pnum} For each code sequence `$X$` in `$S$` that either encodes a single character or encoding state transition or that is a sequence of ill-formed code units is processed in order as follows:
 
-  * [2.#]{.pnum} If the UCS scalar value is in the table below, then its corresponding two-character escape sequence:
+  * [2.#]{.pnum} If `$X$` encodes a single character `$C$`, then:
 
-  |UCS scalar value|escape sequence|
-  |-|-|
-  |U+0009 CHARACTER TABULATION|`\t`|
-  |U+000A LINE FEED|`\n`|
-  |U+000D CARRIAGE RETURN|`\r`|
-  |U+0022 QUOTATION MARK|`\"`|
-  |U+005C REVERSE SOLIDUS|`\\`|
+    * [2.#.#]{.pnum} If `$C$` is one of the UCS scalar values the table below, then the corresponding escape sequence is appended to `$E$`:
 
-  * [2.#]{.pnum} Otherwise, if the UCS scalar value
+    |UCS scalar value|escape sequence|
+    |-|-|
+    |U+0009 CHARACTER TABULATION|`\t`|
+    |U+000A LINE FEED|`\n`|
+    |U+000D CARRIAGE RETURN|`\r`|
+    |U+0022 QUOTATION MARK|`\"`|
+    |U+005C REVERSE SOLIDUS|`\\`|
 
-    * [2.#.#]{.pnum} is not U+0020 SPACE and has a `General_Category` Unicode property that falls within the `General_Category` values `Separator` (`Z`) or `Other` (`C`) as described by UAX #44
-    * [2.#.#]{.pnum} has the Unicode property `Grapheme_Extend=Yes` as described by UAX #44
+    * [2.#.#]{.pnum} Otherwise, if `$C$` is not U+0020 SPACE and
 
-    then the sequence `\u{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the UCS scalar value using lower-case `$hexadecimal-digit$`s.
+      * [2.#.#]{.pnum} `$CE$` is a Unicode encoding and `$C$` corresponds to a UCS scalar value whose Unicode property `General_Category` has a value in the groups `Separator` (`Z`) or `Other` (`C`), as described by table 12 of UAX#44, or
+      * [2.#.#]{.pnum} `$CE$` is not a Unicode encoding and `$C$` is one of an implementation-defined set of separator or non-printable characters
 
-  * [2.#]{.pnum} Otherwise, if it is a code unit that is not a part of a valid UCS scalar value, then the sequence `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of the code unit using lower-case `$hexadecimal-digit$`s.
+      then the sequence `\u{$simple-hexadecimal-digit-sequence$}` is appended to `$E$`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of `$C$` using lower-case `$hexadecimal-digit$`s.
 
-  * [2.#]{.pnum} Otherwise, the UCS scalar value as-is.
+    * [2.#.#]{.pnum} Otherwise, `$C$` is appended to `$E$`.
 
-* [2.#]{.pnum} Finally, another U+0022 QUOTATION MARK (`"`) character.
+  * [2.#]{.pnum} Otherwise, if `$X$` encodes a state transition, the effect on `$E$` is unspecified.
+
+  * [2.#]{.pnum} Otherwise, `$X$` is a sequence of ill-formed code units. Each code unit `$U$` is appended to `$E$` in order as the sequence `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of `$U$` using lower-case `$hexadecimal-digit$`s. When encoding a stateful character encoding, these additions should have no effect on encoding state.
+
+* [2.#]{.pnum} Finally, U+0022 QUOTATION MARK (`"`) is appended to `$E$`.
 
 [3]{.pnum} The escaped character representation of a character `$C$` in a Unicode encoding is equivalent to the escaped string representation of a string of `$C$`, except that:
 
