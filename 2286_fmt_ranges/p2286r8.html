@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-04-24" />
+  <meta name="dcterms.date" content="2022-05-04" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-04-24</td>
+    <td>2022-05-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1865,10 +1865,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb36-12"><a href="#cb36-12"></a><span class="va">+ template&lt;class T, class charT&gt;</span></span>
 <span id="cb36-13"><a href="#cb36-13"></a><span class="va">+   concept formattable = <em>see below</em>;</span></span>
 <span id="cb36-14"><a href="#cb36-14"></a><span class="va">+</span></span>
-<span id="cb36-15"><a href="#cb36-15"></a><span class="va">+ template&lt;class T, class charT&gt;</span></span>
-<span id="cb36-16"><a href="#cb36-16"></a><span class="va">+   using <em>fmt-maybe-const</em> = conditional_t&lt;formattable&lt;const T, charT&gt;, const T, T&gt;; // exposition only</span></span>
-<span id="cb36-17"><a href="#cb36-17"></a>  // ...</span>
-<span id="cb36-18"><a href="#cb36-18"></a>}</span></code></pre></div>
+<span id="cb36-15"><a href="#cb36-15"></a><span class="va">+ template&lt;class R, class charT&gt;</span></span>
+<span id="cb36-16"><a href="#cb36-16"></a><span class="va">+   concept <em>const-formattable-range</em> =</span></span>
+<span id="cb36-17"><a href="#cb36-17"></a><span class="va">+     ranges::input_range&lt;const R&gt;</span></span>
+<span id="cb36-18"><a href="#cb36-18"></a><span class="va">+     &amp;&amp; formattable&lt;ranges::range_reference_t&lt;const R&gt;, charT&gt;;</span></span>
+<span id="cb36-19"><a href="#cb36-19"></a><span class="va">+</span></span>
+<span id="cb36-20"><a href="#cb36-20"></a><span class="va">+ template&lt;class R, class charT&gt;</span></span>
+<span id="cb36-21"><a href="#cb36-21"></a><span class="va">+   using <em>fmt-maybe-const</em> = conditional_t&lt;<em>const-formattable-range</em>&lt;R, charT&gt;, const R, R&gt;; // exposition only</span></span>
+<span id="cb36-22"><a href="#cb36-22"></a>  // ...</span>
+<span id="cb36-23"><a href="#cb36-23"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a clause [format.formattable] under <span>22.14.6 <a href="https://wg21.link/format.formatter">[format.formatter]</a></span> and likely after <span>22.14.6.1 <a href="https://wg21.link/formatter.requirements">[formatter.requirements]</a></span>:</p>

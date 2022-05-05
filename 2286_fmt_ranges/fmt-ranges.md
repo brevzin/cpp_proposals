@@ -1158,8 +1158,13 @@ namespace std {
 + template<class T, class charT>
 +   concept formattable = @*see below*@;
 +
-+ template<class T, class charT>
-+   using $fmt-maybe-const$ = conditional_t<formattable<const T, charT>, const T, T>; // exposition only
++ template<class R, class charT>
++   concept $const-formattable-range$ =
++     ranges::input_range<const R>
++     && formattable<ranges::range_reference_t<const R>, charT>;
++
++ template<class R, class charT>
++   using $fmt-maybe-const$ = conditional_t<$const-formattable-range$<R, charT>, const R, R>; // exposition only
   // ...
 }
 ```

@@ -145,8 +145,24 @@ namespace std {
   template<ranges::input_range R, class charT>
 -         requires (!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
 +         requires (format_kind<R> == range_format_kind::sequence)
-            && formattable<ranges::range_reference_t<R>, charT>
+                && formattable<ranges::range_reference_t<R>, charT>
     struct formatter<R, charT>;
++
++ template<ranges::input_range R, class charT>
++         requires (format_kind<R> == range_format_kind::map)
++               && formattable<ranges::range_reference_t<R>, charT>
++   struct formatter<R, charT>;
++
++ template<ranges::input_range R, class charT>
++         requires (format_kind<R> == range_format_kind::set)
++               && formattable<ranges::range_reference_t<R>, charT>
++   struct formatter<R, charT>;
++
++ template<ranges::input_range R, class charT>
++         requires (format_kind<R> == range_format_kind::string
++                || format_kind<R> == range_format_kind::debug_string)
++                && same_as<remove_cvref_t<range_reference_t<R>>, charT>
++   struct formatter<R, charT>;
 
   // ...
 }
@@ -165,8 +181,9 @@ template<class R>
 [a]{.pnum} For a type `R`, `format_kind<R>` is defined as follows:
 
   * [a.#]{.pnum} If `same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>` is `true`, `format_kind<R>` is `range_format_kind::disabled`. [*Note*: This prevents constraint recursion for ranges whose reference type is the same range type. For example, `std::filesystem::path` is a range of `std::filesystem::path`. *-end note* ]
-  * [a.#]{.pnum} Otherwise, if the _qualified-id_ s `R::key_type` and `R::mapped_type` are valid and denote types, `format_kind<R>` is `range_format_kind::map`.
-  * [a.#]{.pnum} Otherwise, if the _qualified-id_ `R::key_type` is valid and denotes a type, `format_kind<R>` is `range_format_kind::set`.
+  * [a.#]{.pnum} Otherwise, if the _qualified-id_ `R::key_type` is valid and denotes a type:
+    * [a.#.#]{.pnum} If the _qualified-id_ `R::mapped_type` is valid and denotes a type, `format_kind<R>` is `range_format_kind::map`.
+    * [a.#.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::set`.
   * [a.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::sequence`.
 
 [b]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `format_kind` for *cv*-unqualified program-defined types.
@@ -230,14 +247,15 @@ namespace std {
 - struct formatter<$map-type$<Key, T, U...>, charT>
 + template <input_range R, class charT>
 +   requires (format_kind<R> == range_format_kind::map)
-+         && formattable<tuple_element_t<0, remove_reference_t<ranges::range_reference_t<R>>>, charT>
-+         && formattable<tuple_element_t<1, remove_reference_t<ranges::range_reference_t<R>>>, charT>
++         && formattable<ranges::range_reference_t<R>, charT>
 + struct formatter<R, charT>
   {
   private:
--   using $maybe-const-map$ = $fmt-maybe-const$<$map-type$<Key, T, U...>, charT>;  // exposition only
-+   using $maybe-const-map$ = $fmt-maybe-const$<R, charT>;                       // exposition only
-    range_formatter<remove_cvref_t<ranges::range_reference_t<$maybe-const-map$>>, charT> $underlying_$; // exposition only
+-   using $maybe-const-map$ = $fmt-maybe-const$<$map-type$<Key, T, U...>, charT>;                         // exposition only
+-   range_formatter<remove_cvref_t<ranges::range_reference_t<$maybe-const-map$>>, charT> $underlying_$; // exposition only
++   using $maybe-const-map$ = $fmt-maybe-const$<R, charT>;                               // exposition only
++   using $element-type$ = remove_cvref_t<ranges::range_reference_t<$maybe-const-map$>>; // exposition only
++   range_formatter<$element-type$, charT> $underlying_$;                                // exposition only
   public:
     constexpr formatter();
 
@@ -257,10 +275,10 @@ constexpr formatter();
 ```
 
 ::: addu
-[#]{.pnum} *Mandates*: Let `T` denote `ranges::range_value_t<R>`. Either:
+[#]{.pnum} *Mandates*: Either:
 
-  * [#.#]{.pnum} `T` is a specialization of `std::pair`, or
-  * [#.#]{.pnum} `T` is a specialization of `std::tuple` and `std::tuple_size_v<T> == 2`.
+  * [#.#]{.pnum} `$element-type$` is a specialization of `std::pair`, or
+  * [#.#]{.pnum} `$element-type$` is a specialization of `std::tuple` and `std::tuple_size_v<T> == 2`.
 :::
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -298,7 +316,7 @@ namespace std {
 - struct formatter<$set-type$<Key, U...>, charT>
 + template <input_range R, class charT>
 +   requires (format_kind<R> == range_format_kind::set)
-+         && formattable<ranges::range_reference_t<const R>, charT>
++         && formattable<ranges::range_reference_t<R>, charT>
 + struct formatter<R, charT>
   {
   private:
