@@ -1280,11 +1280,11 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
 * [2.#]{.pnum} U+0022 QUOTATION MARK (`"`) is appended to `$E$`
 
-* [2.#]{.pnum} For each code sequence `$X$` in `$S$` that either encodes a single character or encoding state transition or that is a sequence of ill-formed code units is processed in order as follows:
+* [2.#]{.pnum} For each code sequence `$X$` in `$S$` that either encodes a single character, encodes a state transition, or is a sequence of ill-formed code units, processing is in order as follows:
 
   * [2.#]{.pnum} If `$X$` encodes a single character `$C$`, then:
 
-    * [2.#.#]{.pnum} If `$C$` is one of the UCS scalar values the table below, then the corresponding escape sequence is appended to `$E$`:
+    * [2.#.#]{.pnum} If `$C$` is one of the UCS scalar values in the table below, then the two characters shown as the corresponding escape sequence are appended to `$E$`:
 
     |UCS scalar value|escape sequence|
     |-|-|
@@ -1296,23 +1296,24 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
     * [2.#.#]{.pnum} Otherwise, if `$C$` is not U+0020 SPACE and
 
-      * [2.#.#]{.pnum} `$CE$` is a Unicode encoding and `$C$` corresponds to a UCS scalar value whose Unicode property `General_Category` has a value in the groups `Separator` (`Z`) or `Other` (`C`), as described by table 12 of UAX#44, or
+      * [2.#.#]{.pnum} `$CE$` is a Unicode encoding and `$C$` corresponds to either a UCS scalar value whose Unicode property `General_Category` has a value in the groups `Separator` (`Z`) or `Other` (`C`) or to a UCS scalar value which has the Unicode property `Grapheme_Extend=Yes`, as described by table 12 of UAX#44, or
       * [2.#.#]{.pnum} `$CE$` is not a Unicode encoding and `$C$` is one of an implementation-defined set of separator or non-printable characters
 
-      then the sequence `\u{$simple-hexadecimal-digit-sequence$}` is appended to `$E$`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of `$C$` using lower-case `$hexadecimal-digit$`s.
+      then the sequence `\u{$hex-digit-sequence$}` is appended to `$E$`, where `$hex-digit-sequence$` is the shortest hexadecimal representation of `$C$` using lower-case `$hexadecimal-digit$`s.
 
     * [2.#.#]{.pnum} Otherwise, `$C$` is appended to `$E$`.
 
   * [2.#]{.pnum} Otherwise, if `$X$` encodes a state transition, the effect on `$E$` is unspecified.
 
-  * [2.#]{.pnum} Otherwise, `$X$` is a sequence of ill-formed code units. Each code unit `$U$` is appended to `$E$` in order as the sequence `\x{$simple-hexadecimal-digit-sequence$}`, where `$simple-hexadecimal-digit-sequence$` is the shortest hexadecimal representation of `$U$` using lower-case `$hexadecimal-digit$`s. When encoding a stateful character encoding, these additions should have no effect on encoding state.
+  * [2.#]{.pnum} Otherwise (`$X$` is a sequence of ill-formed code units), each code unit `$U$` is appended to `$E$` in order as the sequence `\x{$hex-digit-sequence$}`, where `$hex-digit-sequence$` is the shortest hexadecimal representation of `$U$` using lower-case `$hexadecimal-digit$`s. When encoding a stateful character encoding, these additions should have no effect on encoding state.
 
 * [2.#]{.pnum} Finally, U+0022 QUOTATION MARK (`"`) is appended to `$E$`.
 
 [3]{.pnum} The escaped character representation of a character `$C$` in a Unicode encoding is equivalent to the escaped string representation of a string of `$C$`, except that:
 
   * [3.#]{.pnum} the result starts and ends with U+0027 APOSTROPHE (`'`) instead of U+0022 QUOTATION MARK (`"`), and
-  * [3.#]{.pnum} U+0027 APOSTROPHE is escaped as `\'` while U+0022 QUOTATION MARK is left unchanged.
+  * [3.#]{.pnum} if `$C$` is U+0027 APOSTROPHE, the two characters `\'` are appended to `$E$`, and
+  * [3.#]{.pnum} if `$C$` is U+0022 QUOTATION MARK, then `$C$` is appended unchanged.
 
 [4]{.pnum} The escaped character and escaped string representations of a character or string in a non-Unicode encoding is unspecified.
 
