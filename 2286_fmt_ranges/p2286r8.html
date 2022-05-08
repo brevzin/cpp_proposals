@@ -2398,61 +2398,72 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb71-10"><a href="#cb71-10"></a><em>tuple-type</em>:</span>
 <span id="cb71-11"><a href="#cb71-11"></a>    m</span>
 <span id="cb71-12"><a href="#cb71-12"></a>    n</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">3</a></span> The <code class="sourceCode cpp"><em>tuple-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>tuple-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">3</a></span> The <code class="sourceCode cpp"><em>tuple-fill-and-align</em></code> is interpreted the same way as a <code class="sourceCode cpp"><em>fill-and-align</em></code> ([format.string.std]). The productions <code class="sourceCode cpp"><em>align</em></code> and <code class="sourceCode cpp"><em>width</em></code> are described in [format.string].</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">4</a></span> The <code class="sourceCode cpp"><em>tuple-type</em></code> specifier changes the way a <code class="sourceCode cpp">pair</code> or <code class="sourceCode cpp">tuple</code> is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.</p>
 <table>
-<colgroup>
-<col style="width: 33%"></col>
-<col style="width: 33%"></col>
-<col style="width: 33%"></col>
-</colgroup>
-<thead>
-<tr class="header">
-<th><div style="text-align:center">
-<strong>Option</strong>
-</div></th>
-<th><div style="text-align:center">
-<strong>Requirements</strong>
-</div></th>
-<th><div style="text-align:center">
-<strong>Meaning</strong>
-</div></th>
+<tr>
+<th>
+Option
+</th>
+<th>
+Requirements
+</th>
+<th>
+Meaning
+</th>
 </tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code class="sourceCode cpp">m</code></td>
-<td><code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">2</span></code></td>
-<td>Equivalent to: <code class="sourceCode cpp">set_separator<span class="op">(</span><span class="st">&quot;: &quot;</span><span class="op">)</span>; set_brackets<span class="op">({}</span>, <span class="op">{})</span>;</code></td>
+<tr>
+<td>
+<code class="sourceCode cpp">m</code>
+</td>
+<td>
+<code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">2</span></code>
+</td>
+<td>
+<p>Equivalent to:</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1"></a>set_separator<span class="op">(</span><em>STATICALLY-WIDEN</em><span class="op">&lt;</span>charT<span class="op">&gt;(</span><span class="st">&quot;: &quot;</span><span class="op">))</span>;</span>
+<span id="cb72-2"><a href="#cb72-2"></a>set_brackets<span class="op">({}</span>, <span class="op">{})</span>;</span></code></pre></div>
+</td>
 </tr>
-<tr class="even">
-<td><code class="sourceCode cpp">n</code></td>
-<td>none</td>
-<td>Equivalent to: <code class="sourceCode cpp">set_brackets<span class="op">({}</span>, <span class="op">{})</span>;</code></td>
+<tr>
+<td>
+<code class="sourceCode cpp">n</code>
+</td>
+<td>
+none
+</td>
+<td>
+Equivalent to: <code class="sourceCode cpp">set_brackets<span class="op">({}</span>, <span class="op">{})</span>;</code>
+</td>
 </tr>
-<tr class="odd">
-<td>none</td>
-<td>none</td>
-<td>No effects</td>
+<tr>
+<td>
+none
+</td>
+<td>
+none
+</td>
+<td>
+No effects
+</td>
 </tr>
-</tbody>
 </table>
-<div class="sourceCode" id="cb72"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb72-1"><a href="#cb72-1"></a>constexpr void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>constexpr void set_separator(basic_string_view&lt;charT&gt; sep);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">5</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><em>separator_</em> <span class="op">=</span> sep</code>;</p>
-<div class="sourceCode" id="cb73"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb73-1"><a href="#cb73-1"></a>constexpr void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb74-1"><a href="#cb74-1"></a>constexpr void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">6</a></span> <em>Effects</em>: Equivalent to</p>
 <blockquote>
-<div class="sourceCode" id="cb74"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb74-1"><a href="#cb74-1"></a><em>opening-bracket_</em> = opening;</span>
-<span id="cb74-2"><a href="#cb74-2"></a><em>closing-bracket_</em> = closing;</span></code></pre></div>
+<div class="sourceCode" id="cb75"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb75-1"><a href="#cb75-1"></a><em>opening-bracket_</em> = opening;</span>
+<span id="cb75-2"><a href="#cb75-2"></a><em>closing-bracket_</em> = closing;</span></code></pre></div>
 </blockquote>
-<div class="sourceCode" id="cb75"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb75-1"><a href="#cb75-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb75-2"><a href="#cb75-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb75-3"><a href="#cb75-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb76-1"><a href="#cb76-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb76-2"><a href="#cb76-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb76-3"><a href="#cb76-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">7</a></span> <em>Effects</em>: Parses the format specifier as a <code class="sourceCode cpp"><em>tuple-format-spec</em></code> and stores the parsed specifiers in <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>. The values of <code class="sourceCode cpp"><em>opening-bracket_</em></code>, <code class="sourceCode cpp"><em>closing-bracket_</em></code>, and <code class="sourceCode cpp"><em>separator_</em></code> are modified if and only if required by the <em>tuple-type</em>, if present. For each element <code class="sourceCode cpp"><em>e</em></code> in <code class="sourceCode cpp"><em>underlying_</em></code>, if <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code> is a valid expression, calls <code class="sourceCode cpp"><em>e</em><span class="op">.</span>set_debug_format<span class="op">()</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">8</a></span> <em>Returns</em>: an iterator past the end of the <code class="sourceCode cpp"><em>tuple-format-spec</em></code>.</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb76-1"><a href="#cb76-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb76-2"><a href="#cb76-2"></a>  typename FormatContext::iterator</span>
-<span id="cb76-3"><a href="#cb76-3"></a>    format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb77-1"><a href="#cb77-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb77-2"><a href="#cb77-2"></a>  typename FormatContext::iterator</span>
+<span id="cb77-3"><a href="#cb77-3"></a>    format(<em>see below</em>&amp; elems, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">9</a></span> The type of <code class="sourceCode cpp">elems</code> is:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">(9.1)</a></span> If <code class="sourceCode cpp"><span class="op">(</span>formattable<span class="op">&lt;</span><span class="kw">const</span> Ts, charT<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> <span class="op">...)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> <em>tuple-type</em><span class="op">&lt;</span>Ts<span class="op">...&gt;&amp;</span></code>.</li>
@@ -2475,49 +2486,49 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Add to <span>24.3.6 <a href="https://wg21.link/vector.syn">[vector.syn]</a></span></p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb77"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb77-1"><a href="#cb77-1"></a>namespace std {</span>
-<span id="cb77-2"><a href="#cb77-2"></a>  // [vector], class template vector</span>
-<span id="cb77-3"><a href="#cb77-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
-<span id="cb77-4"><a href="#cb77-4"></a></span>
-<span id="cb77-5"><a href="#cb77-5"></a>  // ...</span>
-<span id="cb77-6"><a href="#cb77-6"></a></span>
-<span id="cb77-7"><a href="#cb77-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
-<span id="cb77-8"><a href="#cb77-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
-<span id="cb77-9"><a href="#cb77-9"></a></span>
-<span id="cb77-10"><a href="#cb77-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb77-11"><a href="#cb77-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
-<span id="cb77-12"><a href="#cb77-12"></a></span>
-<span id="cb77-13"><a href="#cb77-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
-<span id="cb77-14"><a href="#cb77-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb78-1"><a href="#cb78-1"></a>namespace std {</span>
+<span id="cb78-2"><a href="#cb78-2"></a>  // [vector], class template vector</span>
+<span id="cb78-3"><a href="#cb78-3"></a>  template&lt;class T, class Allocator = allocator&lt;T&gt;&gt; class vector;</span>
+<span id="cb78-4"><a href="#cb78-4"></a></span>
+<span id="cb78-5"><a href="#cb78-5"></a>  // ...</span>
+<span id="cb78-6"><a href="#cb78-6"></a></span>
+<span id="cb78-7"><a href="#cb78-7"></a>  // [vector.bool], class vector&lt;bool&gt;</span>
+<span id="cb78-8"><a href="#cb78-8"></a>  template&lt;class Allocator&gt; class vector&lt;bool, Allocator&gt;;</span>
+<span id="cb78-9"><a href="#cb78-9"></a></span>
+<span id="cb78-10"><a href="#cb78-10"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb78-11"><a href="#cb78-11"></a><span class="va">+   inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>; // exposition only</span></span>
+<span id="cb78-12"><a href="#cb78-12"></a></span>
+<span id="cb78-13"><a href="#cb78-13"></a><span class="va">+ template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span></span>
+<span id="cb78-14"><a href="#cb78-14"></a><span class="va">+   struct formatter&lt;T, charT&gt;;</span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to [vector.bool] at the end:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb78"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb78-1"><a href="#cb78-1"></a>template&lt;class R&gt;</span>
-<span id="cb78-2"><a href="#cb78-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb79-1"><a href="#cb79-1"></a>template&lt;class R&gt;</span>
+<span id="cb79-2"><a href="#cb79-2"></a>  inline constexpr bool <em>is-vector-bool-reference</em> = <em>see below</em>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_86" id="pnum_86">8</a></span> The variable template <code class="sourceCode cpp"><em>is-vector-bool-reference</em><span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">T</code> denotes the type <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;::</span>reference</code> for some type <code class="sourceCode cpp">Alloc</code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span>, Alloc<span class="op">&gt;</span></code> is not a program-defined specialization.</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb79-1"><a href="#cb79-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
-<span id="cb79-2"><a href="#cb79-2"></a>  struct formatter&lt;T, charT&gt; {</span>
-<span id="cb79-3"><a href="#cb79-3"></a>  private:</span>
-<span id="cb79-4"><a href="#cb79-4"></a>    formatter&lt;bool, charT&gt; <em>underlying_</em>;     // exposition only</span>
-<span id="cb79-5"><a href="#cb79-5"></a></span>
-<span id="cb79-6"><a href="#cb79-6"></a>  public:</span>
-<span id="cb79-7"><a href="#cb79-7"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb79-8"><a href="#cb79-8"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb79-9"><a href="#cb79-9"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb79-10"><a href="#cb79-10"></a></span>
-<span id="cb79-11"><a href="#cb79-11"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb79-12"><a href="#cb79-12"></a>      typename FormatContext::iterator</span>
-<span id="cb79-13"><a href="#cb79-13"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
-<span id="cb79-14"><a href="#cb79-14"></a>  };</span></code></pre></div>
-<div class="sourceCode" id="cb80"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb80-1"><a href="#cb80-1"></a>template &lt;class ParseContext&gt;</span>
-<span id="cb80-2"><a href="#cb80-2"></a>  constexpr typename ParseContext::iterator</span>
-<span id="cb80-3"><a href="#cb80-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb80-1"><a href="#cb80-1"></a>template&lt;class T, class charT&gt; requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
+<span id="cb80-2"><a href="#cb80-2"></a>  struct formatter&lt;T, charT&gt; {</span>
+<span id="cb80-3"><a href="#cb80-3"></a>  private:</span>
+<span id="cb80-4"><a href="#cb80-4"></a>    formatter&lt;bool, charT&gt; <em>underlying_</em>;     // exposition only</span>
+<span id="cb80-5"><a href="#cb80-5"></a></span>
+<span id="cb80-6"><a href="#cb80-6"></a>  public:</span>
+<span id="cb80-7"><a href="#cb80-7"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb80-8"><a href="#cb80-8"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb80-9"><a href="#cb80-9"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb80-10"><a href="#cb80-10"></a></span>
+<span id="cb80-11"><a href="#cb80-11"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb80-12"><a href="#cb80-12"></a>      typename FormatContext::iterator</span>
+<span id="cb80-13"><a href="#cb80-13"></a>        format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
+<span id="cb80-14"><a href="#cb80-14"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb81"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb81-1"><a href="#cb81-1"></a>template &lt;class ParseContext&gt;</span>
+<span id="cb81-2"><a href="#cb81-2"></a>  constexpr typename ParseContext::iterator</span>
+<span id="cb81-3"><a href="#cb81-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">9</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>parse<span class="op">(</span>ctx<span class="op">)</span>;</code></p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb81-1"><a href="#cb81-1"></a>template &lt;class FormatContext&gt;</span>
-<span id="cb81-2"><a href="#cb81-2"></a>  typename FormatContext::iterator</span>
-<span id="cb81-3"><a href="#cb81-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb82-1"><a href="#cb82-1"></a>template &lt;class FormatContext&gt;</span>
+<span id="cb82-2"><a href="#cb82-2"></a>  typename FormatContext::iterator</span>
+<span id="cb82-3"><a href="#cb82-3"></a>    format(const T&amp; ref, FormatContext&amp; ctx) const;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">10</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>ref, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
@@ -2525,8 +2536,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Bump the feature-test macro for <code class="sourceCode cpp">__cpp_lib_format</code> in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb82"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb82-1"><a href="#cb82-1"></a><span class="st">- #define __cpp_lib_format  <span class="diffdel">202110L</span> // also in &lt;format&gt;</span></span>
-<span id="cb82-2"><a href="#cb82-2"></a><span class="va">+ #define __cpp_lib_format  <span class="diffins">2022XXL</span> // also in &lt;format&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb83"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb83-1"><a href="#cb83-1"></a><span class="st">- #define __cpp_lib_format  <span class="diffdel">202110L</span> // also in &lt;format&gt;</span></span>
+<span id="cb83-2"><a href="#cb83-2"></a><span class="va">+ #define __cpp_lib_format  <span class="diffins">2022XXL</span> // also in &lt;format&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">6</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>

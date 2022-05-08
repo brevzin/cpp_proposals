@@ -1755,15 +1755,22 @@ $tuple-type$:
     n
 ```
 
-[#]{.pnum} The `$tuple-fill-and-align$` is interpreted the same way as a `$tuple-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
+[#]{.pnum} The `$tuple-fill-and-align$` is interpreted the same way as a `$fill-and-align$` ([format.string.std]). The productions `$align$` and `$width$` are described in [format.string].
 
 [#]{.pnum} The `$tuple-type$` specifier changes the way a `pair` or `tuple` is formatted, with certain options only valid with certain argument types. The meaning of the various type options is as specified in Table X.
 
-|Option|Requirements|Meaning|
-|-|-|-|
-|`m`|`sizeof...(Ts) == 2` |Equivalent to: `set_separator(": "); set_brackets({}, {});`|
-|`n`|none|Equivalent to: `set_brackets({}, {});`|
-|none|none|No effects|
+<table>
+<tr><th>Option</th><th>Requirements</th><th>Meaning</th></tr>
+<tr><td>`m`</td><td>`sizeof...(Ts) == 2`</td>
+<td>Equivalent to:
+```cpp
+set_separator($STATICALLY-WIDEN$<charT>(": "));
+set_brackets({}, {});
+```
+</td></tr>
+<tr><td>`n`</td><td>none</td><td>Equivalent to: `set_brackets({}, {});`</td></tr>
+<tr><td>none</td><td>none</td><td>No effects</td></tr>
+</table>
 
 ```
 constexpr void set_separator(basic_string_view<charT> sep);
