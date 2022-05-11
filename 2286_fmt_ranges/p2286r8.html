@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-05-09" />
+  <meta name="dcterms.date" content="2022-05-10" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-05-09</td>
+    <td>2022-05-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -2038,7 +2038,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>then the sequence <code class="sourceCode cpp">\u<span class="op">{</span><em>hex-digit-sequence</em><span class="op">}</span></code> is appended to <code class="sourceCode cpp"><em>E</em></code>, where <code class="sourceCode cpp"><em>hex-digit-sequence</em></code> is the shortest hexadecimal representation of <code class="sourceCode cpp"><em>C</em></code> using lower-case hexadecimal digits.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(2.3.5)</a></span> Otherwise, <code class="sourceCode cpp"><em>C</em></code> is appended to <code class="sourceCode cpp"><em>E</em></code>.</p></li>
 </ul></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp"><em>X</em></code> encodes a state transition, the effect on <code class="sourceCode cpp"><em>E</em></code> is unspecified. [ <em>Note</em>: the intent is that a state transition be represented in <code class="sourceCode cpp"><em>E</em></code> such that its original code unit sequence can be reconstructed -<em>end note</em> ]</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp"><em>X</em></code> encodes a state transition, the effect on <code class="sourceCode cpp"><em>E</em></code> and further decoding of <code class="sourceCode cpp"><em>S</em></code> is unspecified. [ <em>Note</em>: the intent is that a state transition be represented in <code class="sourceCode cpp"><em>E</em></code> such that the original code unit sequence of <code class="sourceCode cpp"><em>S</em></code> can be reconstructed -<em>end note</em> ]</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.5)</a></span> Otherwise (<code class="sourceCode cpp"><em>X</em></code> is a sequence of ill-formed code units), each code unit <code class="sourceCode cpp"><em>U</em></code> is appended to <code class="sourceCode cpp"><em>E</em></code> in order as the sequence <code class="sourceCode cpp">\x<span class="op">{</span><em>hex-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>hex-digit-sequence</em></code> is the shortest hexadecimal representation of <code class="sourceCode cpp"><em>U</em></code> using lower-case hexadecimal digits.</p></li>
 </ul></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.6)</a></span> Finally, U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) is appended to <code class="sourceCode cpp"><em>E</em></code>.</p></li>
@@ -2054,11 +2054,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb43-2"><a href="#cb43-2"></a>string s1 = format(&quot;[{:?}]&quot;, &quot;h\tllo&quot;);                // s1 has value: [&quot;h\tllo&quot;]</span>
 <span id="cb43-3"><a href="#cb43-3"></a>string s2 = format(&quot;[{:?}]&quot;, &quot;Спасибо, Виктор ♥!&quot;);    // s2 has value: [&quot;Спасибо, Виктор ♥!&quot;]</span>
 <span id="cb43-4"><a href="#cb43-4"></a>string s3 = format(&quot;[{:?}] [{:?}]&quot;, &#39;\&#39;&#39;, &#39;&quot;&#39;);        // s3 has value: [&#39;\&#39;&#39;, &#39;&quot;&#39;]</span>
-<span id="cb43-5"><a href="#cb43-5"></a>string s4 = format(&quot;[{:?}]&quot;, string(&quot;\0 \n \t \x02 \x1b&quot;, 9));</span>
-<span id="cb43-6"><a href="#cb43-6"></a>                                                       // s4 has value [\u{0} \n \t \u{2} \u{1b}]</span>
-<span id="cb43-7"><a href="#cb43-7"></a>string s5 = format(&quot;[{:?}]&quot;, &quot;\xc3\x28&quot;);              // invalid UTF-8</span>
-<span id="cb43-8"><a href="#cb43-8"></a>                                                       // s5 has value: [&quot;\x{c3}\x{28}&quot;]</span>
-<span id="cb43-9"><a href="#cb43-9"></a>string s6 = format(&quot;[{:?}]&quot;, &quot;🤷🏻‍♂️&quot;);                    // s6 has value: [&quot;🤷🏻\u{200d}♂\u{fe0f}&quot;]</span></code></pre></div>
+<span id="cb43-5"><a href="#cb43-5"></a></span>
+<span id="cb43-6"><a href="#cb43-6"></a> // The following examples assume use of the UTF-8 encoding</span>
+<span id="cb43-7"><a href="#cb43-7"></a>string s4 = format(&quot;[{:?}]&quot;, string(&quot;\0 \n \t \x02 \x1b&quot;, 9));</span>
+<span id="cb43-8"><a href="#cb43-8"></a>                                                       // s4 has value [\u{0} \n \t \u{2} \u{1b}]</span>
+<span id="cb43-9"><a href="#cb43-9"></a>string s5 = format(&quot;[{:?}]&quot;, &quot;\xc3\x28&quot;);              // invalid UTF-8</span>
+<span id="cb43-10"><a href="#cb43-10"></a>                                                       // s5 has value: [&quot;\x{c3}\x{28}&quot;]</span>
+<span id="cb43-11"><a href="#cb43-11"></a>string s6 = format(&quot;[{:?}]&quot;, &quot;🤷🏻‍♂️&quot;);                    // s6 has value: [&quot;🤷🏻\u{200d}♂\u{fe0f}&quot;]</span></code></pre></div>
 <p><em>-end example</em>]</p>
 </div>
 </blockquote>

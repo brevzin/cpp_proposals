@@ -1303,7 +1303,7 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
     * [2.#.#]{.pnum} Otherwise, `$C$` is appended to `$E$`.
 
-  * [2.#]{.pnum} Otherwise, if `$X$` encodes a state transition, the effect on `$E$` is unspecified. [ *Note*:  the intent is that a state transition be represented in `$E$` such that its original code unit sequence can be reconstructed -*end note* ]
+  * [2.#]{.pnum} Otherwise, if `$X$` encodes a state transition, the effect on `$E$` and further decoding of `$S$` is unspecified. [ *Note*:  the intent is that a state transition be represented in `$E$` such that the original code unit sequence of `$S$` can be reconstructed -*end note* ]
 
   * [2.#]{.pnum} Otherwise (`$X$` is a sequence of ill-formed code units), each code unit `$U$` is appended to `$E$` in order as the sequence `\x{$hex-digit-sequence$}`, where `$hex-digit-sequence$` is the shortest hexadecimal representation of `$U$` using lower-case hexadecimal digits.
 
@@ -1321,6 +1321,8 @@ string s0 = format("[{}]", "h\tllo");                  // s0 has value: [h    ll
 string s1 = format("[{:?}]", "h\tllo");                // s1 has value: ["h\tllo"]
 string s2 = format("[{:?}]", "Спасибо, Виктор ♥!");    // s2 has value: ["Спасибо, Виктор ♥!"]
 string s3 = format("[{:?}] [{:?}]", '\'', '"');        // s3 has value: ['\'', '"']
+
+ // The following examples assume use of the UTF-8 encoding
 string s4 = format("[{:?}]", string("\0 \n \t \x02 \x1b", 9));
                                                        // s4 has value [\u{0} \n \t \u{2} \u{1b}]
 string s5 = format("[{:?}]", "\xc3\x28");              // invalid UTF-8
