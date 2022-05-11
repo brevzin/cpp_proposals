@@ -13,7 +13,7 @@ tag: ranges
 
 # Revision History
 
-Since [@P2286R7], wording.
+Since [@P2286R7], further wording improvements, almost exclusively around string and character escaping.
 
 Since [@P2286R6], wording.
 
@@ -1284,9 +1284,9 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
   * [2.#]{.pnum} If `$X$` encodes a single character `$C$`, then:
 
-    * [2.#.#]{.pnum} If `$C$` is one of the UCS scalar values in the table below, then the two characters shown as the corresponding escape sequence are appended to `$E$`:
+    * [2.#.#]{.pnum} If `$C$` is one of the characters in the table below, then the two characters shown as the corresponding escape sequence are appended to `$E$`:
 
-    |UCS scalar value|escape sequence|
+    |character|escape sequence|
     |-|-|
     |U+0009 CHARACTER TABULATION|`\t`|
     |U+000A LINE FEED|`\n`|
