@@ -1303,7 +1303,9 @@ Add a new clause [format.string.escaped] "Formatting escaped characters and stri
 
     * [2.#.#]{.pnum} Otherwise, `$C$` is appended to `$E$`.
 
-  * [2.#]{.pnum} Otherwise, if `$X$` encodes a state transition, the effect on `$E$` and further decoding of `$S$` is unspecified. [ *Note*:  the intent is that a state transition be represented in `$E$` such that the original code unit sequence of `$S$` can be reconstructed -*end note* ]
+  * [2.#]{.pnum} Otherwise, if `$X$` encodes a state transition, the effect on `$E$` and further decoding of `$S$` is unspecified.
+
+    *Recommended Practice*: a state transition should be represented in `$E$` such that the original code unit sequence of `$S$` can be reconstructed.
 
   * [2.#]{.pnum} Otherwise (`$X$` is a sequence of ill-formed code units), each code unit `$U$` is appended to `$E$` in order as the sequence `\x{$hex-digit-sequence$}`, where `$hex-digit-sequence$` is the shortest hexadecimal representation of `$U$` using lower-case hexadecimal digits.
 
