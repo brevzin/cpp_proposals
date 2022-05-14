@@ -12,7 +12,7 @@ tag: ranges
 
 # Introduction
 
-[@P2286R7] adds support for formatting any range whose underlying type is formattable. Additionally, it adds support for different kinds of formatting that users can opt into, while also providing a default choice for associating containers that is more suited to what those containers represent.
+[@P2286R8] adds support for formatting any range whose underlying type is formattable. Additionally, it adds support for different kinds of formatting that users can opt into, while also providing a default choice for associating containers that is more suited to what those containers represent.
 
 For example, simply using `"{}"` as the specifier, we get the following outputs:
 
@@ -24,7 +24,7 @@ For example, simply using `"{}"` as the specifier, we get the following outputs:
 
 In each case, we have a range over a pair of ints, but we have three different outputs - as appropriate for the different kinds of containers.
 
-However, this distinction is a result of [@P2286R7] explicitly providing formatters for all the standard library map and set containers, and applying those changes to them. This is something that users _can_ do for their own containers as well, but which also means that it is something users _have_ to do - if this is the behavior they want. For instance, the containers in Boost or Abseil just format like normal ranges:
+However, this distinction is a result of [@P2286R8] explicitly providing formatters for all the standard library map and set containers, and applying those changes to them. This is something that users _can_ do for their own containers as well, but which also means that it is something users _have_ to do - if this is the behavior they want. For instance, the containers in Boost or Abseil just format like normal ranges:
 
 |Expression|Output|
 |-|-|
@@ -72,23 +72,29 @@ We can introduce an enum class for all of these kinds:
 ::: bq
 ```cpp
 enum class range_format_kind {
+    disabled,
     map,
     set,
     sequence,
     string,
     debug_string,
-    disabled
 };
 ```
 :::
+
+Note that `range_format_kind::disabled` is `0` so that converting to `bool` checks if it's enabled.
 
 And a variable template (allowed to be specialized) to determine the right kind:
 
 ::: bq
 ```cpp
 template <class R>
-inline constexpr range_format_kind format_kind = []{
-  if constexpr (requires { typename R::key_type; typename R::mapped_type; }) {
+inline constexpr auto format_kind = $unspecified$;
+
+template <input_range R>
+inline constexpr range_format_kind format_kind<R> = []{
+  if constexpr (requires { typename R::key_type; typename R::mapped_type; }
+                and $is-2-tuple$<range_reference_t<R>>) {
     return range_format_kind::map;
   } else if constexpr (requires { typename R::key_type; }) {
     return range_format_kind::set;
@@ -99,9 +105,11 @@ inline constexpr range_format_kind format_kind = []{
 ```
 :::
 
-As far as heuristics go, this is a pretty safe bet. While we've previously tried to do a heuristic for `view` and then had to walk it back a lot, here the stakes are much lower. Worst-case, we're just talking about getting the default formatting wrong - for some definition of wrong - though we'd still format all the elements. And there probably aren't too many range types floating around that define `key_type` and `mapped_type` but aren't maps?
+`format_kind<U>` for non-range types `U` is `$unspecified$` to allow for future evolution in case we want to do this for non-range types. Fow now, it doesn't cost anything.
 
-Note that we're deliberately not making any sort of guess about `string`. Not looking at convertibility to `string` or `string_view` or `char const*` or anything of the sort. If users want some container to be formatted as a string, they can do so. Explicitly.
+As far as heuristics go, this is a pretty safe bet. While we've previously tried to do a heuristic for `view` and then had to walk it back a lot, here the stakes are much lower. Worst-case, we're just talking about getting the default formatting wrong - for some definition of wrong - though we'd still format all the elements. And there probably aren't too many range types floating around that define `key_type` and `mapped_type` but aren't maps? Note that we're being especially safe here by checking not just `R::key_type` and `R::mapped_type` but also that the reference type is a two-tuple (by which I mean that it's either a specialization of `std::pair` or a specialization of `std::tuple` whose size is `2`). This added check ensures that we don't accidentally end up with an ill-formed default whereas the previous default could have worked fine (on the off chance that we have some type with a `key_type` and a `mapped_type` yet is somehow a range of `int`).
+
+Note that we're deliberately not making any sort of guess about `string`. Not looking at convertibility to `string` or `string_view` or `char const*` or anything of the sort. If users want some container to be formatted as a string, they can do so by explicitly specializing `format_kind` - which isn't that much effort at all. The problem is that coming up with a heuristic would complicate `format_kind`, since we can't just check convertibility to `string_view`, we have to specifically check convertibility to `basic_string_view<charT>`, and now suddenly we have this extra `charT` parameter. Is it worth it? I'm not sure it is.
 
 If we then change the way the standard library does formatting based on `format_kind<R>`, then with no additional code changes necessary, all the Boost and Abseil containers would start being formatted in the same kind of way that the standard library ones are today. That and many other user-defined associative containers.
 
@@ -109,9 +117,10 @@ Moreover, for user-defined containers, specializing a variable template is quite
 
 While this design as-is has not been implemented, `{fmt}`'s approach is pretty comparable.
 
+
 # Wording
 
-This is in terms of [@P2286R7].
+This is in terms of [@P2286R8]. The wording here chooses to define `formatter<R, charT>` as inheriting from an exposition-only `$default-range-formatter$<format_kind<R>, R, charT>` rather than a bunch of specializations for each `format_kind<R>` case because this allows future extensions where uses can create more constrained specializations of `formatter` for enabled ranges much easier.
 
 ## Trait and Regular Sequences
 
@@ -127,42 +136,33 @@ namespace std {
 
   // [format.range.formatter], class template range_formatter
 + enum class range_format_kind {
++   disabled,
 +   map,
 +   set,
 +   sequence,
 +   string,
-+   debug_string,
-+   disabled
++   debug_string
 + };
 +
 + template<class R>
-+   inline constexpr range_format_kind format_kind = $see below$;
++   inline constexpr $unspecified$ format_kind = $unspecified$;
++
++ template<ranges::input_range R>
++   inline constexpr range_format_kind format_kind<R> = $see below$;
 
   template<class T, class charT = char>
       requires same_as<remove_cvref_t<T>, T> && formattable<T, charT>
     class range_formatter;
 
++ template<range_format_kind K, ranges::input_range R, class charT>
++   struct $default-range-formatter$; // exposition only
+
   template<ranges::input_range R, class charT>
 -         requires (!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
-+         requires (format_kind<R> == range_format_kind::sequence)
++         requires (format_kind<R> != range_format_kind::disabled)
                 && formattable<ranges::range_reference_t<R>, charT>
-    struct formatter<R, charT>;
-+
-+ template<ranges::input_range R, class charT>
-+         requires (format_kind<R> == range_format_kind::map)
-+               && formattable<ranges::range_reference_t<R>, charT>
-+   struct formatter<R, charT>;
-+
-+ template<ranges::input_range R, class charT>
-+         requires (format_kind<R> == range_format_kind::set)
-+               && formattable<ranges::range_reference_t<R>, charT>
-+   struct formatter<R, charT>;
-+
-+ template<ranges::input_range R, class charT>
-+         requires (format_kind<R> == range_format_kind::string
-+                || format_kind<R> == range_format_kind::debug_string)
-+                && same_as<remove_cvref_t<range_reference_t<R>>, charT>
-+   struct formatter<R, charT>;
+-   struct formatter<R, charT>;
++   struct formatter<R, charT> : $default-range-formatter$<format_kind<R>, R, charT> { };
 
   // ...
 }
@@ -174,15 +174,15 @@ Add to [format.range]:
 ::: bq
 ::: addu
 ```cpp
-template<class R>
-  inline constexpr range_format_kind format_kind = $see below$;
+template<input_range R>
+  inline constexpr range_format_kind format_kind<R> = $see below$;
 ```
 
 [a]{.pnum} For a type `R`, `format_kind<R>` is defined as follows:
 
   * [a.#]{.pnum} If `same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>` is `true`, `format_kind<R>` is `range_format_kind::disabled`. [*Note*: This prevents constraint recursion for ranges whose reference type is the same range type. For example, `std::filesystem::path` is a range of `std::filesystem::path`. *-end note* ]
   * [a.#]{.pnum} Otherwise, if the _qualified-id_ `R::key_type` is valid and denotes a type:
-    * [a.#.#]{.pnum} If the _qualified-id_ `R::mapped_type` is valid and denotes a type, `format_kind<R>` is `range_format_kind::map`.
+    * [a.#.#]{.pnum} If the _qualified-id_ `R::mapped_type` is valid and denotes a type, let `U` be `remove_cvref_t<ranges::range_reference_t<R>>`. If either `U` is a specialization of `pair` or `U` is a specialization of `tuple` and `tuple_size_v<U> == 2`, `format_kind<R>` is `range_format_kind::map`.
     * [a.#.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::set`.
   * [a.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::sequence`.
 
@@ -196,11 +196,12 @@ And later:
 ::: bq
 ```diff
 namespace std {
-  template<ranges::input_range R, class charT>
+- template<ranges::input_range R, class charT>
 -         requires (!same_as<remove_cvref_t<ranges::range_reference_t<R>>, R>)
-+         requires (format_kind<R> == range_format_kind::sequence)
-            && formattable<ranges::range_reference_t<R>, charT>
-  struct formatter<R, charT> {
+-           && formattable<ranges::range_reference_t<R>, charT>
+- struct formatter<R, charT> {
++ template <ranges::input_range R, class charT>
++ struct $default-range-formatter$<range_format_kind::sequence, R, charT> {
   private:
     using $maybe-const-r$ = $fmt-maybe-const$<R, charT>;
     range_formatter<remove_cvref_t<ranges::range_reference_t<$maybe-const-r$>>, charT> $underlying_$; // exposition only
@@ -245,10 +246,8 @@ namespace std {
 - template <class charT, class Key, formattable<charT> T, class... U>
 -   requires formattable<const Key, charT>
 - struct formatter<$map-type$<Key, T, U...>, charT>
-+ template <input_range R, class charT>
-+   requires (format_kind<R> == range_format_kind::map)
-+         && formattable<ranges::range_reference_t<R>, charT>
-+ struct formatter<R, charT>
++ template <ranges::input_range R, class charT>
++ struct $default-range-formatter$<range_format_kind::map, R, charT> {
   {
   private:
 -   using $maybe-const-map$ = $fmt-maybe-const$<$map-type$<Key, T, U...>, charT>;                         // exposition only
@@ -277,8 +276,8 @@ constexpr formatter();
 ::: addu
 [#]{.pnum} *Mandates*: Either:
 
-  * [#.#]{.pnum} `$element-type$` is a specialization of `std::pair`, or
-  * [#.#]{.pnum} `$element-type$` is a specialization of `std::tuple` and `std::tuple_size_v<T> == 2`.
+  * [#.#]{.pnum} `$element-type$` is a specialization of `pair`, or
+  * [#.#]{.pnum} `$element-type$` is a specialization of `tuple` and `tuple_size_v<T> == 2`.
 :::
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -314,10 +313,9 @@ namespace std {
 - template <class charT, class Key, class... U>
 -   requires formattable<const Key, charT>
 - struct formatter<$set-type$<Key, U...>, charT>
-+ template <input_range R, class charT>
-+   requires (format_kind<R> == range_format_kind::set)
-+         && formattable<ranges::range_reference_t<R>, charT>
-+ struct formatter<R, charT>
++ template <ranges::input_range R, class charT>
++ struct $default-range-formatter$<range_format_kind::set, R, charT> {
+
   {
   private:
 -   range_formatter<Key, charT> $underlying_$; // exposition only
@@ -375,11 +373,10 @@ Also add this partial specialization to handle string types:
 ::: bq
 ::: addu
 ```
-template <input_range R, class charT>
-  requires (format_kind<R> == range_format_kind::string ||
-            format_kind<R> == range_format_kind::debug_string)
-        && same_as<remove_cvref_t<range_reference_t<R>>, charT>
-struct formatter<R, charT>
+template <range_format_kind K, ranges::input_range R, class charT>
+  requires (K == range_format_kind::string ||
+            K == range_format_kind::debug_string)
+struct $default-range-formatter$<K, R, charT> {
 {
 private:
   formatter<basic_string<charT>, charT> $underlying_$; // exposition only
@@ -395,6 +392,8 @@ public:
 };
 ```
 
+[#]{.pnum} *Mandates*: `same_as<remove_cvref_t<range_reference_t<R>>, charT>` is `true`.
+
 ```
 template <class ParseContext>
   constexpr typename ParseContext::iterator
@@ -406,7 +405,7 @@ template <class ParseContext>
 ::: bq
 ```
 auto i = $underlying_$.parse(ctx);
-if constexpr (format_kind<R> == range_format_kind::debug_string) {
+if constexpr (K == range_format_kind::debug_string) {
   $underlying_$.set_debug_format();
 }
 return i;
@@ -428,3 +427,18 @@ template <class FormatContext>
 # Acknowledgements
 
 Thanks to Jeff Garland for initially pointing out this distinction, Tomasz Kamiński for suggesting this approach, Victor Zverovich for having more or less already implemented it, and Tim Song for everything else.
+
+---
+references:
+    - id: P2286R8
+      citation-label: P2286R8
+      title: "Formatting Ranges"
+      author:
+        - family: Barry Revzin
+      issued:
+        date-parts:
+        - - 2022
+          - 05
+          - 13
+      URL: https://wg21.link/p2286r8
+---

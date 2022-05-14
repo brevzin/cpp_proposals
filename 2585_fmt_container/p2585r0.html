@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-05-05" />
+  <meta name="dcterms.date" content="2022-05-14" />
   <title>Improve default container formatting</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-05-05</td>
+    <td>2022-05-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -576,7 +576,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p><span class="citation" data-cites="P2286R7">[<a href="#ref-P2286R7" role="doc-biblioref">P2286R7</a>]</span> adds support for formatting any range whose underlying type is formattable. Additionally, it adds support for different kinds of formatting that users can opt into, while also providing a default choice for associating containers that is more suited to what those containers represent.</p>
+<p><span class="citation" data-cites="P2286R8">[<a href="#ref-P2286R8" role="doc-biblioref">P2286R8</a>]</span> adds support for formatting any range whose underlying type is formattable. Additionally, it adds support for different kinds of formatting that users can opt into, while also providing a default choice for associating containers that is more suited to what those containers represent.</p>
 <p>For example, simply using <code class="sourceCode cpp"><span class="st">&quot;{}&quot;</span></code> as the specifier, we get the following outputs:</p>
 <table>
 <thead>
@@ -605,7 +605,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>In each case, we have a range over a pair of ints, but we have three different outputs - as appropriate for the different kinds of containers.</p>
-<p>However, this distinction is a result of <span class="citation" data-cites="P2286R7">[<a href="#ref-P2286R7" role="doc-biblioref">P2286R7</a>]</span> explicitly providing formatters for all the standard library map and set containers, and applying those changes to them. This is something that users <em>can</em> do for their own containers as well, but which also means that it is something users <em>have</em> to do - if this is the behavior they want. For instance, the containers in Boost or Abseil just format like normal ranges:</p>
+<p>However, this distinction is a result of <span class="citation" data-cites="P2286R8">[<a href="#ref-P2286R8" role="doc-biblioref">P2286R8</a>]</span> explicitly providing formatters for all the standard library map and set containers, and applying those changes to them. This is something that users <em>can</em> do for their own containers as well, but which also means that it is something users <em>have</em> to do - if this is the behavior they want. For instance, the containers in Boost or Abseil just format like normal ranges:</p>
 <table>
 <thead>
 <tr class="header">
@@ -659,34 +659,40 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>We can introduce an enum class for all of these kinds:</p>
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">enum</span> <span class="kw">class</span> range_format_kind <span class="op">{</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>    map,</span>
-<span id="cb2-3"><a href="#cb2-3"></a>    set,</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    sequence,</span>
-<span id="cb2-5"><a href="#cb2-5"></a>    string,</span>
-<span id="cb2-6"><a href="#cb2-6"></a>    debug_string,</span>
-<span id="cb2-7"><a href="#cb2-7"></a>    disabled</span>
+<span id="cb2-2"><a href="#cb2-2"></a>    disabled,</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    map,</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    set,</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    sequence,</span>
+<span id="cb2-6"><a href="#cb2-6"></a>    string,</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    debug_string,</span>
 <span id="cb2-8"><a href="#cb2-8"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
+<p>Note that <code class="sourceCode cpp">range_format_kind<span class="op">::</span>disabled</code> is <code class="sourceCode cpp"><span class="dv">0</span></code> so that converting to <code class="sourceCode cpp"><span class="dt">bool</span></code> checks if it’s enabled.</p>
 <p>And a variable template (allowed to be specialized) to determine the right kind:</p>
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">inline</span> <span class="kw">constexpr</span> range_format_kind format_kind <span class="op">=</span> <span class="op">[]{</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> <span class="kw">typename</span> R<span class="op">::</span>key_type; <span class="kw">typename</span> R<span class="op">::</span>mapped_type; <span class="op">})</span> <span class="op">{</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>    <span class="cf">return</span> range_format_kind<span class="op">::</span>map;</span>
-<span id="cb3-5"><a href="#cb3-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> <span class="kw">typename</span> R<span class="op">::</span>key_type; <span class="op">})</span> <span class="op">{</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>    <span class="cf">return</span> range_format_kind<span class="op">::</span>set;</span>
-<span id="cb3-7"><a href="#cb3-7"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">return</span> range_format_kind<span class="op">::</span>sequence;</span>
-<span id="cb3-9"><a href="#cb3-9"></a>  <span class="op">}</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a><span class="op">}()</span>;</span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> format_kind <span class="op">=</span> <em>unspecified</em>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">inline</span> <span class="kw">constexpr</span> range_format_kind format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> <span class="kw">typename</span> R<span class="op">::</span>key_type; <span class="kw">typename</span> R<span class="op">::</span>mapped_type; <span class="op">}</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>                <span class="kw">and</span> <em>is-2-tuple</em><span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">return</span> range_format_kind<span class="op">::</span>map;</span>
+<span id="cb3-9"><a href="#cb3-9"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> <span class="kw">typename</span> R<span class="op">::</span>key_type; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="cf">return</span> range_format_kind<span class="op">::</span>set;</span>
+<span id="cb3-11"><a href="#cb3-11"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>    <span class="cf">return</span> range_format_kind<span class="op">::</span>sequence;</span>
+<span id="cb3-13"><a href="#cb3-13"></a>  <span class="op">}</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="op">}()</span>;</span></code></pre></div>
 </blockquote>
-<p>As far as heuristics go, this is a pretty safe bet. While we’ve previously tried to do a heuristic for <code class="sourceCode cpp">view</code> and then had to walk it back a lot, here the stakes are much lower. Worst-case, we’re just talking about getting the default formatting wrong - for some definition of wrong - though we’d still format all the elements. And there probably aren’t too many range types floating around that define <code class="sourceCode cpp">key_type</code> and <code class="sourceCode cpp">mapped_type</code> but aren’t maps?</p>
-<p>Note that we’re deliberately not making any sort of guess about <code class="sourceCode cpp">string</code>. Not looking at convertibility to <code class="sourceCode cpp">string</code> or <code class="sourceCode cpp">string_view</code> or <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code> or anything of the sort. If users want some container to be formatted as a string, they can do so. Explicitly.</p>
+<p><code class="sourceCode cpp">format_kind<span class="op">&lt;</span>U<span class="op">&gt;</span></code> for non-range types <code class="sourceCode cpp">U</code> is <code class="sourceCode cpp"><em>unspecified</em></code> to allow for future evolution in case we want to do this for non-range types. Fow now, it doesn’t cost anything.</p>
+<p>As far as heuristics go, this is a pretty safe bet. While we’ve previously tried to do a heuristic for <code class="sourceCode cpp">view</code> and then had to walk it back a lot, here the stakes are much lower. Worst-case, we’re just talking about getting the default formatting wrong - for some definition of wrong - though we’d still format all the elements. And there probably aren’t too many range types floating around that define <code class="sourceCode cpp">key_type</code> and <code class="sourceCode cpp">mapped_type</code> but aren’t maps? Note that we’re being especially safe here by checking not just <code class="sourceCode cpp">R<span class="op">::</span>key_type</code> and <code class="sourceCode cpp">R<span class="op">::</span>mapped_type</code> but also that the reference type is a two-tuple (by which I mean that it’s either a specialization of <code class="sourceCode cpp">std<span class="op">::</span>pair</code> or a specialization of <code class="sourceCode cpp">std<span class="op">::</span>tuple</code> whose size is <code class="sourceCode cpp"><span class="dv">2</span></code>). This added check ensures that we don’t accidentally end up with an ill-formed default whereas the previous default could have worked fine (on the off chance that we have some type with a <code class="sourceCode cpp">key_type</code> and a <code class="sourceCode cpp">mapped_type</code> yet is somehow a range of <code class="sourceCode cpp"><span class="dt">int</span></code>).</p>
+<p>Note that we’re deliberately not making any sort of guess about <code class="sourceCode cpp">string</code>. Not looking at convertibility to <code class="sourceCode cpp">string</code> or <code class="sourceCode cpp">string_view</code> or <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code> or anything of the sort. If users want some container to be formatted as a string, they can do so by explicitly specializing <code class="sourceCode cpp">format_kind</code> - which isn’t that much effort at all. The problem is that coming up with a heuristic would complicate <code class="sourceCode cpp">format_kind</code>, since we can’t just check convertibility to <code class="sourceCode cpp">string_view</code>, we have to specifically check convertibility to <code class="sourceCode cpp">basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;</span></code>, and now suddenly we have this extra <code class="sourceCode cpp">charT</code> parameter. Is it worth it? I’m not sure it is.</p>
 <p>If we then change the way the standard library does formatting based on <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code>, then with no additional code changes necessary, all the Boost and Abseil containers would start being formatted in the same kind of way that the standard library ones are today. That and many other user-defined associative containers.</p>
 <p>Moreover, for user-defined containers, specializing a variable template is quite a bit less work than almost anything else you can do. So even for containers where the heuristic is wrong, this design offers an easier way forward to get the desired behavior.</p>
 <p>While this design as-is has not been implemented, <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>’s approach is pretty comparable.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>This is in terms of <span class="citation" data-cites="P2286R7">[<a href="#ref-P2286R7" role="doc-biblioref">P2286R7</a>]</span>.</p>
+<p>This is in terms of <span class="citation" data-cites="P2286R8">[<a href="#ref-P2286R8" role="doc-biblioref">P2286R8</a>]</span>. The wording here chooses to define <code class="sourceCode cpp">formatter<span class="op">&lt;</span>R, charT<span class="op">&gt;</span></code> as inheriting from an exposition-only <code class="sourceCode cpp"><em>default-range-formatter</em><span class="op">&lt;</span>format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span>, R, charT<span class="op">&gt;</span></code> rather than a bunch of specializations for each <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> case because this allows future extensions where uses can create more constrained specializations of <code class="sourceCode cpp">formatter</code> for enabled ranges much easier.</p>
 <h2 data-number="3.1" id="trait-and-regular-sequences"><span class="header-section-number">3.1</span> Trait and Regular Sequences<a href="#trait-and-regular-sequences" class="self-link"></a></h2>
 <p>Change <span>22.14.1 <a href="https://wg21.link/format.syn">[format.syn]</a></span>:</p>
 <blockquote>
@@ -699,58 +705,49 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-6"><a href="#cb4-6"></a></span>
 <span id="cb4-7"><a href="#cb4-7"></a>  // [format.range.formatter], class template range_formatter</span>
 <span id="cb4-8"><a href="#cb4-8"></a><span class="va">+ enum class range_format_kind {</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a><span class="va">+   map,</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a><span class="va">+   set,</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="va">+   sequence,</span></span>
-<span id="cb4-12"><a href="#cb4-12"></a><span class="va">+   string,</span></span>
-<span id="cb4-13"><a href="#cb4-13"></a><span class="va">+   debug_string,</span></span>
-<span id="cb4-14"><a href="#cb4-14"></a><span class="va">+   disabled</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="va">+   disabled,</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="va">+   map,</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="va">+   set,</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="va">+   sequence,</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="va">+   string,</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="va">+   debug_string</span></span>
 <span id="cb4-15"><a href="#cb4-15"></a><span class="va">+ };</span></span>
 <span id="cb4-16"><a href="#cb4-16"></a><span class="va">+</span></span>
 <span id="cb4-17"><a href="#cb4-17"></a><span class="va">+ template&lt;class R&gt;</span></span>
-<span id="cb4-18"><a href="#cb4-18"></a><span class="va">+   inline constexpr range_format_kind format_kind = <em>see below</em>;</span></span>
-<span id="cb4-19"><a href="#cb4-19"></a></span>
-<span id="cb4-20"><a href="#cb4-20"></a>  template&lt;class T, class charT = char&gt;</span>
-<span id="cb4-21"><a href="#cb4-21"></a>      requires same_as&lt;remove_cvref_t&lt;T&gt;, T&gt; &amp;&amp; formattable&lt;T, charT&gt;</span>
-<span id="cb4-22"><a href="#cb4-22"></a>    class range_formatter;</span>
-<span id="cb4-23"><a href="#cb4-23"></a></span>
-<span id="cb4-24"><a href="#cb4-24"></a>  template&lt;ranges::input_range R, class charT&gt;</span>
-<span id="cb4-25"><a href="#cb4-25"></a><span class="st">-         requires (!same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span></span>
-<span id="cb4-26"><a href="#cb4-26"></a><span class="va">+         requires (format_kind&lt;R&gt; == range_format_kind::sequence)</span></span>
-<span id="cb4-27"><a href="#cb4-27"></a>                &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
-<span id="cb4-28"><a href="#cb4-28"></a>    struct formatter&lt;R, charT&gt;;</span>
-<span id="cb4-29"><a href="#cb4-29"></a><span class="va">+</span></span>
-<span id="cb4-30"><a href="#cb4-30"></a><span class="va">+ template&lt;ranges::input_range R, class charT&gt;</span></span>
-<span id="cb4-31"><a href="#cb4-31"></a><span class="va">+         requires (format_kind&lt;R&gt; == range_format_kind::map)</span></span>
-<span id="cb4-32"><a href="#cb4-32"></a><span class="va">+               &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
-<span id="cb4-33"><a href="#cb4-33"></a><span class="va">+   struct formatter&lt;R, charT&gt;;</span></span>
-<span id="cb4-34"><a href="#cb4-34"></a><span class="va">+</span></span>
-<span id="cb4-35"><a href="#cb4-35"></a><span class="va">+ template&lt;ranges::input_range R, class charT&gt;</span></span>
-<span id="cb4-36"><a href="#cb4-36"></a><span class="va">+         requires (format_kind&lt;R&gt; == range_format_kind::set)</span></span>
-<span id="cb4-37"><a href="#cb4-37"></a><span class="va">+               &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
-<span id="cb4-38"><a href="#cb4-38"></a><span class="va">+   struct formatter&lt;R, charT&gt;;</span></span>
-<span id="cb4-39"><a href="#cb4-39"></a><span class="va">+</span></span>
-<span id="cb4-40"><a href="#cb4-40"></a><span class="va">+ template&lt;ranges::input_range R, class charT&gt;</span></span>
-<span id="cb4-41"><a href="#cb4-41"></a><span class="va">+         requires (format_kind&lt;R&gt; == range_format_kind::string</span></span>
-<span id="cb4-42"><a href="#cb4-42"></a><span class="va">+                || format_kind&lt;R&gt; == range_format_kind::debug_string)</span></span>
-<span id="cb4-43"><a href="#cb4-43"></a><span class="va">+                &amp;&amp; same_as&lt;remove_cvref_t&lt;range_reference_t&lt;R&gt;&gt;, charT&gt;</span></span>
-<span id="cb4-44"><a href="#cb4-44"></a><span class="va">+   struct formatter&lt;R, charT&gt;;</span></span>
-<span id="cb4-45"><a href="#cb4-45"></a></span>
-<span id="cb4-46"><a href="#cb4-46"></a>  // ...</span>
-<span id="cb4-47"><a href="#cb4-47"></a>}</span></code></pre></div>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="va">+   inline constexpr <em>unspecified</em> format_kind = <em>unspecified</em>;</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a><span class="va">+</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="va">+ template&lt;ranges::input_range R&gt;</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a><span class="va">+   inline constexpr range_format_kind format_kind&lt;R&gt; = <em>see below</em>;</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a></span>
+<span id="cb4-23"><a href="#cb4-23"></a>  template&lt;class T, class charT = char&gt;</span>
+<span id="cb4-24"><a href="#cb4-24"></a>      requires same_as&lt;remove_cvref_t&lt;T&gt;, T&gt; &amp;&amp; formattable&lt;T, charT&gt;</span>
+<span id="cb4-25"><a href="#cb4-25"></a>    class range_formatter;</span>
+<span id="cb4-26"><a href="#cb4-26"></a></span>
+<span id="cb4-27"><a href="#cb4-27"></a><span class="va">+ template&lt;range_format_kind K, ranges::input_range R, class charT&gt;</span></span>
+<span id="cb4-28"><a href="#cb4-28"></a><span class="va">+   struct <em>default-range-formatter</em>; // exposition only</span></span>
+<span id="cb4-29"><a href="#cb4-29"></a></span>
+<span id="cb4-30"><a href="#cb4-30"></a>  template&lt;ranges::input_range R, class charT&gt;</span>
+<span id="cb4-31"><a href="#cb4-31"></a><span class="st">-         requires (!same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span></span>
+<span id="cb4-32"><a href="#cb4-32"></a><span class="va">+         requires (format_kind&lt;R&gt; != range_format_kind::disabled)</span></span>
+<span id="cb4-33"><a href="#cb4-33"></a>                &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
+<span id="cb4-34"><a href="#cb4-34"></a><span class="st">-   struct formatter&lt;R, charT&gt;;</span></span>
+<span id="cb4-35"><a href="#cb4-35"></a><span class="va">+   struct formatter&lt;R, charT&gt; : <em>default-range-formatter</em>&lt;format_kind&lt;R&gt;, R, charT&gt; { };</span></span>
+<span id="cb4-36"><a href="#cb4-36"></a></span>
+<span id="cb4-37"><a href="#cb4-37"></a>  // ...</span>
+<span id="cb4-38"><a href="#cb4-38"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to [format.range]:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> range_format_kind format_kind <span class="op">=</span> <em>see below</em>;</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">inline</span> <span class="kw">constexpr</span> range_format_kind format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">=</span> <em>see below</em>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">a</a></span> For a type <code class="sourceCode cpp">R</code>, <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is defined as follows:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(a.1)</a></span> If <code class="sourceCode cpp">same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, R<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is <code class="sourceCode cpp">range_format_kind<span class="op">::</span>disabled</code>. [<em>Note</em>: This prevents constraint recursion for ranges whose reference type is the same range type. For example, <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>path</code> is a range of <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>path</code>. <em>-end note</em> ]</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(a.2)</a></span> Otherwise, if the <em>qualified-id</em> <code class="sourceCode cpp">R<span class="op">::</span>key_type</code> is valid and denotes a type:
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(a.2.1)</a></span> If the <em>qualified-id</em> <code class="sourceCode cpp">R<span class="op">::</span>mapped_type</code> is valid and denotes a type, <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is <code class="sourceCode cpp">range_format_kind<span class="op">::</span>map</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(a.2.1)</a></span> If the <em>qualified-id</em> <code class="sourceCode cpp">R<span class="op">::</span>mapped_type</code> is valid and denotes a type, let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code>. If either <code class="sourceCode cpp">U</code> is a specialization of <code class="sourceCode cpp">pair</code> or <code class="sourceCode cpp">U</code> is a specialization of <code class="sourceCode cpp">tuple</code> and <code class="sourceCode cpp">tuple_size_v<span class="op">&lt;</span>U<span class="op">&gt;</span> <span class="op">==</span> <span class="dv">2</span></code>, <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is <code class="sourceCode cpp">range_format_kind<span class="op">::</span>map</code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(a.2.2)</a></span> Otherwise, <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is <code class="sourceCode cpp">range_format_kind<span class="op">::</span>set</code>.</li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(a.3)</a></span> Otherwise, <code class="sourceCode cpp">format_kind<span class="op">&lt;</span>R<span class="op">&gt;</span></code> is <code class="sourceCode cpp">range_format_kind<span class="op">::</span>sequence</code>.</li>
@@ -762,28 +759,29 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div>
 <div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>namespace std {</span>
-<span id="cb6-2"><a href="#cb6-2"></a>  template&lt;ranges::input_range R, class charT&gt;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="st">- template&lt;ranges::input_range R, class charT&gt;</span></span>
 <span id="cb6-3"><a href="#cb6-3"></a><span class="st">-         requires (!same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="va">+         requires (format_kind&lt;R&gt; == range_format_kind::sequence)</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a>            &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span>
-<span id="cb6-6"><a href="#cb6-6"></a>  struct formatter&lt;R, charT&gt; {</span>
-<span id="cb6-7"><a href="#cb6-7"></a>  private:</span>
-<span id="cb6-8"><a href="#cb6-8"></a>    using <em>maybe-const-r</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;</span>
-<span id="cb6-9"><a href="#cb6-9"></a>    range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-r</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span>
-<span id="cb6-10"><a href="#cb6-10"></a></span>
-<span id="cb6-11"><a href="#cb6-11"></a>  public:</span>
-<span id="cb6-12"><a href="#cb6-12"></a>    constexpr void set_separator(basic_string_view&lt;charT&gt; sep);</span>
-<span id="cb6-13"><a href="#cb6-13"></a>    constexpr void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span>
-<span id="cb6-14"><a href="#cb6-14"></a></span>
-<span id="cb6-15"><a href="#cb6-15"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb6-16"><a href="#cb6-16"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb6-17"><a href="#cb6-17"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb6-18"><a href="#cb6-18"></a></span>
-<span id="cb6-19"><a href="#cb6-19"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb6-20"><a href="#cb6-20"></a>      typename FormatContext::iterator</span>
-<span id="cb6-21"><a href="#cb6-21"></a>        format(<em>maybe-const-r</em>&amp; elems, FormatContext&amp; ctx) const;</span>
-<span id="cb6-22"><a href="#cb6-22"></a>  };</span>
-<span id="cb6-23"><a href="#cb6-23"></a>}</span></code></pre></div>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="st">-           &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="st">- struct formatter&lt;R, charT&gt; {</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="va">+ template &lt;ranges::input_range R, class charT&gt;</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="va">+ struct <em>default-range-formatter</em>&lt;range_format_kind::sequence, R, charT&gt; {</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>  private:</span>
+<span id="cb6-9"><a href="#cb6-9"></a>    using <em>maybe-const-r</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-r</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span>
+<span id="cb6-11"><a href="#cb6-11"></a></span>
+<span id="cb6-12"><a href="#cb6-12"></a>  public:</span>
+<span id="cb6-13"><a href="#cb6-13"></a>    constexpr void set_separator(basic_string_view&lt;charT&gt; sep);</span>
+<span id="cb6-14"><a href="#cb6-14"></a>    constexpr void set_brackets(basic_string_view&lt;charT&gt; opening, basic_string_view&lt;charT&gt; closing);</span>
+<span id="cb6-15"><a href="#cb6-15"></a></span>
+<span id="cb6-16"><a href="#cb6-16"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb6-17"><a href="#cb6-17"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb6-18"><a href="#cb6-18"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb6-19"><a href="#cb6-19"></a></span>
+<span id="cb6-20"><a href="#cb6-20"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb6-21"><a href="#cb6-21"></a>      typename FormatContext::iterator</span>
+<span id="cb6-22"><a href="#cb6-22"></a>        format(<em>maybe-const-r</em>&amp; elems, FormatContext&amp; ctx) const;</span>
+<span id="cb6-23"><a href="#cb6-23"></a>  };</span>
+<span id="cb6-24"><a href="#cb6-24"></a>}</span></code></pre></div>
 </div>
 <div class="rm" style="color: #bf0303">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">13</a></span> [<em>Note</em>: The <code class="sourceCode default">(!same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, R&gt;)</code> constraint prevents constraint recursion for ranges whose reference type is the same range type. For example, <code class="sourceCode default">std::filesystem::path</code> is a range of <code class="sourceCode default">std::filesystem::path</code>. <em>-end note</em> ]</p>
@@ -802,36 +800,34 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-2"><a href="#cb8-2"></a><span class="st">- template &lt;class charT, class Key, formattable&lt;charT&gt; T, class... U&gt;</span></span>
 <span id="cb8-3"><a href="#cb8-3"></a><span class="st">-   requires formattable&lt;const Key, charT&gt;</span></span>
 <span id="cb8-4"><a href="#cb8-4"></a><span class="st">- struct formatter&lt;<em>map-type</em>&lt;Key, T, U...&gt;, charT&gt;</span></span>
-<span id="cb8-5"><a href="#cb8-5"></a><span class="va">+ template &lt;input_range R, class charT&gt;</span></span>
-<span id="cb8-6"><a href="#cb8-6"></a><span class="va">+   requires (format_kind&lt;R&gt; == range_format_kind::map)</span></span>
-<span id="cb8-7"><a href="#cb8-7"></a><span class="va">+         &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
-<span id="cb8-8"><a href="#cb8-8"></a><span class="va">+ struct formatter&lt;R, charT&gt;</span></span>
-<span id="cb8-9"><a href="#cb8-9"></a>  {</span>
-<span id="cb8-10"><a href="#cb8-10"></a>  private:</span>
-<span id="cb8-11"><a href="#cb8-11"></a><span class="st">-   using <em>maybe-const-map</em> = <em>fmt-maybe-const</em>&lt;<em>map-type</em>&lt;Key, T, U...&gt;, charT&gt;;                         // exposition only</span></span>
-<span id="cb8-12"><a href="#cb8-12"></a><span class="st">-   range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-map</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span></span>
-<span id="cb8-13"><a href="#cb8-13"></a><span class="va">+   using <em>maybe-const-map</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                               // exposition only</span></span>
-<span id="cb8-14"><a href="#cb8-14"></a><span class="va">+   using <em>element-type</em> = remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-map</em>&gt;&gt;; // exposition only</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a><span class="va">+   range_formatter&lt;<em>element-type</em>, charT&gt; <em>underlying_</em>;                                // exposition only</span></span>
-<span id="cb8-16"><a href="#cb8-16"></a>  public:</span>
-<span id="cb8-17"><a href="#cb8-17"></a>    constexpr formatter();</span>
-<span id="cb8-18"><a href="#cb8-18"></a></span>
-<span id="cb8-19"><a href="#cb8-19"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb8-20"><a href="#cb8-20"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb8-21"><a href="#cb8-21"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb8-22"><a href="#cb8-22"></a></span>
-<span id="cb8-23"><a href="#cb8-23"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb8-24"><a href="#cb8-24"></a>      typename FormatContext::iterator</span>
-<span id="cb8-25"><a href="#cb8-25"></a>        format(<em>maybe-const-map</em>&amp; r, FormatContext&amp; ctx) const;</span>
-<span id="cb8-26"><a href="#cb8-26"></a>  };</span>
-<span id="cb8-27"><a href="#cb8-27"></a>}</span></code></pre></div>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="va">+ template &lt;ranges::input_range R, class charT&gt;</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="va">+ struct <em>default-range-formatter</em>&lt;range_format_kind::map, R, charT&gt; {</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>  {</span>
+<span id="cb8-8"><a href="#cb8-8"></a>  private:</span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="st">-   using <em>maybe-const-map</em> = <em>fmt-maybe-const</em>&lt;<em>map-type</em>&lt;Key, T, U...&gt;, charT&gt;;                         // exposition only</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="st">-   range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-map</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="va">+   using <em>maybe-const-map</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                               // exposition only</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="va">+   using <em>element-type</em> = remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-map</em>&gt;&gt;; // exposition only</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="va">+   range_formatter&lt;<em>element-type</em>, charT&gt; <em>underlying_</em>;                                // exposition only</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a>  public:</span>
+<span id="cb8-15"><a href="#cb8-15"></a>    constexpr formatter();</span>
+<span id="cb8-16"><a href="#cb8-16"></a></span>
+<span id="cb8-17"><a href="#cb8-17"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb8-18"><a href="#cb8-18"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb8-19"><a href="#cb8-19"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb8-20"><a href="#cb8-20"></a></span>
+<span id="cb8-21"><a href="#cb8-21"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb8-22"><a href="#cb8-22"></a>      typename FormatContext::iterator</span>
+<span id="cb8-23"><a href="#cb8-23"></a>        format(<em>maybe-const-map</em>&amp; r, FormatContext&amp; ctx) const;</span>
+<span id="cb8-24"><a href="#cb8-24"></a>  };</span>
+<span id="cb8-25"><a href="#cb8-25"></a>}</span></code></pre></div>
 </div>
 <div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>constexpr formatter();</span></code></pre></div>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">2</a></span> <em>Mandates</em>: Either:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(2.1)</a></span> <code class="sourceCode cpp"><em>element-type</em></code> is a specialization of <code class="sourceCode cpp">std<span class="op">::</span>pair</code>, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(2.2)</a></span> <code class="sourceCode cpp"><em>element-type</em></code> is a specialization of <code class="sourceCode cpp">std<span class="op">::</span>tuple</code> and <code class="sourceCode cpp">std<span class="op">::</span>tuple_size_v<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">==</span> <span class="dv">2</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(2.1)</a></span> <code class="sourceCode cpp"><em>element-type</em></code> is a specialization of <code class="sourceCode cpp">pair</code>, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(2.2)</a></span> <code class="sourceCode cpp"><em>element-type</em></code> is a specialization of <code class="sourceCode cpp">tuple</code> and <code class="sourceCode cpp">tuple_size_v<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">==</span> <span class="dv">2</span></code>.</li>
 </ul>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">3</a></span> <em>Effects</em>: Equivalent to:</p>
@@ -854,29 +850,28 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb13-2"><a href="#cb13-2"></a><span class="st">- template &lt;class charT, class Key, class... U&gt;</span></span>
 <span id="cb13-3"><a href="#cb13-3"></a><span class="st">-   requires formattable&lt;const Key, charT&gt;</span></span>
 <span id="cb13-4"><a href="#cb13-4"></a><span class="st">- struct formatter&lt;<em>set-type</em>&lt;Key, U...&gt;, charT&gt;</span></span>
-<span id="cb13-5"><a href="#cb13-5"></a><span class="va">+ template &lt;input_range R, class charT&gt;</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a><span class="va">+   requires (format_kind&lt;R&gt; == range_format_kind::set)</span></span>
-<span id="cb13-7"><a href="#cb13-7"></a><span class="va">+         &amp;&amp; formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt;</span></span>
-<span id="cb13-8"><a href="#cb13-8"></a><span class="va">+ struct formatter&lt;R, charT&gt;</span></span>
-<span id="cb13-9"><a href="#cb13-9"></a>  {</span>
-<span id="cb13-10"><a href="#cb13-10"></a>  private:</span>
-<span id="cb13-11"><a href="#cb13-11"></a><span class="st">-   range_formatter&lt;Key, charT&gt; <em>underlying_</em>; // exposition only</span></span>
-<span id="cb13-12"><a href="#cb13-12"></a><span class="va">+   using <em>maybe-const-set</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                       // exposition only</span></span>
-<span id="cb13-13"><a href="#cb13-13"></a><span class="va">+   range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-set</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span></span>
-<span id="cb13-14"><a href="#cb13-14"></a></span>
-<span id="cb13-15"><a href="#cb13-15"></a>  public:</span>
-<span id="cb13-16"><a href="#cb13-16"></a>    constexpr formatter();</span>
-<span id="cb13-17"><a href="#cb13-17"></a></span>
-<span id="cb13-18"><a href="#cb13-18"></a>    template &lt;class ParseContext&gt;</span>
-<span id="cb13-19"><a href="#cb13-19"></a>      constexpr typename ParseContext::iterator</span>
-<span id="cb13-20"><a href="#cb13-20"></a>        parse(ParseContext&amp; ctx);</span>
-<span id="cb13-21"><a href="#cb13-21"></a></span>
-<span id="cb13-22"><a href="#cb13-22"></a>    template &lt;class FormatContext&gt;</span>
-<span id="cb13-23"><a href="#cb13-23"></a>      typename FormatContext::iterator</span>
-<span id="cb13-24"><a href="#cb13-24"></a><span class="st">-       format(const <em>set-type</em>&lt;Key, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></span>
-<span id="cb13-25"><a href="#cb13-25"></a><span class="va">+       format(<em>maybe-const-set</em>&amp; r, FormatContext&amp; ctx) const;</span></span>
-<span id="cb13-26"><a href="#cb13-26"></a>  };</span>
-<span id="cb13-27"><a href="#cb13-27"></a>}</span></code></pre></div>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="va">+ template &lt;ranges::input_range R, class charT&gt;</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="va">+ struct <em>default-range-formatter</em>&lt;range_format_kind::set, R, charT&gt; {</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a></span>
+<span id="cb13-8"><a href="#cb13-8"></a>  {</span>
+<span id="cb13-9"><a href="#cb13-9"></a>  private:</span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="st">-   range_formatter&lt;Key, charT&gt; <em>underlying_</em>; // exposition only</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="va">+   using <em>maybe-const-set</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                       // exposition only</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="va">+   range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-set</em>&gt;&gt;, charT&gt; <em>underlying_</em>; // exposition only</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a></span>
+<span id="cb13-14"><a href="#cb13-14"></a>  public:</span>
+<span id="cb13-15"><a href="#cb13-15"></a>    constexpr formatter();</span>
+<span id="cb13-16"><a href="#cb13-16"></a></span>
+<span id="cb13-17"><a href="#cb13-17"></a>    template &lt;class ParseContext&gt;</span>
+<span id="cb13-18"><a href="#cb13-18"></a>      constexpr typename ParseContext::iterator</span>
+<span id="cb13-19"><a href="#cb13-19"></a>        parse(ParseContext&amp; ctx);</span>
+<span id="cb13-20"><a href="#cb13-20"></a></span>
+<span id="cb13-21"><a href="#cb13-21"></a>    template &lt;class FormatContext&gt;</span>
+<span id="cb13-22"><a href="#cb13-22"></a>      typename FormatContext::iterator</span>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="st">-       format(const <em>set-type</em>&lt;Key, U...&gt;&amp; r, FormatContext&amp; ctx) const;</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a><span class="va">+       format(<em>maybe-const-set</em>&amp; r, FormatContext&amp; ctx) const;</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a>  };</span>
+<span id="cb13-26"><a href="#cb13-26"></a>}</span></code></pre></div>
 </div>
 <div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>constexpr formatter();</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">7</a></span> <em>Effects</em>: Equivalent to:</p>
@@ -897,31 +892,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Also add this partial specialization to handle string types:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1"></a>template &lt;input_range R, class charT&gt;</span>
-<span id="cb18-2"><a href="#cb18-2"></a>  requires (format_kind&lt;R&gt; == range_format_kind::string ||</span>
-<span id="cb18-3"><a href="#cb18-3"></a>            format_kind&lt;R&gt; == range_format_kind::debug_string)</span>
-<span id="cb18-4"><a href="#cb18-4"></a>        &amp;&amp; same_as&lt;remove_cvref_t&lt;range_reference_t&lt;R&gt;&gt;, charT&gt;</span>
-<span id="cb18-5"><a href="#cb18-5"></a>struct formatter&lt;R, charT&gt;</span>
-<span id="cb18-6"><a href="#cb18-6"></a>{</span>
-<span id="cb18-7"><a href="#cb18-7"></a>private:</span>
-<span id="cb18-8"><a href="#cb18-8"></a>  formatter&lt;basic_string&lt;charT&gt;, charT&gt; <em>underlying_</em>; // exposition only</span>
-<span id="cb18-9"><a href="#cb18-9"></a></span>
-<span id="cb18-10"><a href="#cb18-10"></a>public:</span>
-<span id="cb18-11"><a href="#cb18-11"></a>  template &lt;class ParseContext&gt;</span>
-<span id="cb18-12"><a href="#cb18-12"></a>    constexpr typename ParseContext::iterator</span>
-<span id="cb18-13"><a href="#cb18-13"></a>      parse(ParseContext&amp; ctx);</span>
-<span id="cb18-14"><a href="#cb18-14"></a></span>
-<span id="cb18-15"><a href="#cb18-15"></a>  template &lt;class FormatContext&gt;</span>
-<span id="cb18-16"><a href="#cb18-16"></a>    typename FormatContext::iterator</span>
-<span id="cb18-17"><a href="#cb18-17"></a>      format(<em>see below</em>&amp; str, FormatContext&amp; ctx) const;</span>
-<span id="cb18-18"><a href="#cb18-18"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1"></a>template &lt;range_format_kind K, ranges::input_range R, class charT&gt;</span>
+<span id="cb18-2"><a href="#cb18-2"></a>  requires (K == range_format_kind::string ||</span>
+<span id="cb18-3"><a href="#cb18-3"></a>            K == range_format_kind::debug_string)</span>
+<span id="cb18-4"><a href="#cb18-4"></a>struct <em>default-range-formatter</em>&lt;K, R, charT&gt; {</span>
+<span id="cb18-5"><a href="#cb18-5"></a>{</span>
+<span id="cb18-6"><a href="#cb18-6"></a>private:</span>
+<span id="cb18-7"><a href="#cb18-7"></a>  formatter&lt;basic_string&lt;charT&gt;, charT&gt; <em>underlying_</em>; // exposition only</span>
+<span id="cb18-8"><a href="#cb18-8"></a></span>
+<span id="cb18-9"><a href="#cb18-9"></a>public:</span>
+<span id="cb18-10"><a href="#cb18-10"></a>  template &lt;class ParseContext&gt;</span>
+<span id="cb18-11"><a href="#cb18-11"></a>    constexpr typename ParseContext::iterator</span>
+<span id="cb18-12"><a href="#cb18-12"></a>      parse(ParseContext&amp; ctx);</span>
+<span id="cb18-13"><a href="#cb18-13"></a></span>
+<span id="cb18-14"><a href="#cb18-14"></a>  template &lt;class FormatContext&gt;</span>
+<span id="cb18-15"><a href="#cb18-15"></a>    typename FormatContext::iterator</span>
+<span id="cb18-16"><a href="#cb18-16"></a>      format(<em>see below</em>&amp; str, FormatContext&amp; ctx) const;</span>
+<span id="cb18-17"><a href="#cb18-17"></a>};</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">1</a></span> <em>Mandates</em>: <code class="sourceCode cpp">same_as<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>, charT<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1"></a>template &lt;class ParseContext&gt;</span>
 <span id="cb19-2"><a href="#cb19-2"></a>  constexpr typename ParseContext::iterator</span>
 <span id="cb19-3"><a href="#cb19-3"></a>    parse(ParseContext&amp; ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">1</a></span> <em>Effects</em>: Equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">2</a></span> <em>Effects</em>: Equivalent to:</p>
 <blockquote>
 <div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1"></a>auto i = <em>underlying_</em>.parse(ctx);</span>
-<span id="cb20-2"><a href="#cb20-2"></a>if constexpr (format_kind&lt;R&gt; == range_format_kind::debug_string) {</span>
+<span id="cb20-2"><a href="#cb20-2"></a>if constexpr (K == range_format_kind::debug_string) {</span>
 <span id="cb20-3"><a href="#cb20-3"></a>  <em>underlying_</em>.set_debug_format();</span>
 <span id="cb20-4"><a href="#cb20-4"></a>}</span>
 <span id="cb20-5"><a href="#cb20-5"></a>return i;</span></code></pre></div>
@@ -929,17 +924,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1"></a>template &lt;class FormatContext&gt;</span>
 <span id="cb21-2"><a href="#cb21-2"></a>  typename FormatContext::iterator</span>
 <span id="cb21-3"><a href="#cb21-3"></a>    format(<em>see below</em>&amp; r, FormatContext&amp; ctx) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">2</a></span> The type of <code class="sourceCode cpp">r</code> is <code class="sourceCode cpp"><span class="kw">const</span> R<span class="op">&amp;</span></code> if <code class="sourceCode cpp">input_range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> and <code class="sourceCode cpp">R<span class="op">&amp;</span></code> otherwise.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">3</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span>, ctx<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">3</a></span> The type of <code class="sourceCode cpp">r</code> is <code class="sourceCode cpp"><span class="kw">const</span> R<span class="op">&amp;</span></code> if <code class="sourceCode cpp">input_range<span class="op">&lt;</span><span class="kw">const</span> R<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code> and <code class="sourceCode cpp">R<span class="op">&amp;</span></code> otherwise.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">4</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>underlying_</em><span class="op">.</span>format<span class="op">(</span>basic_string<span class="op">&lt;</span>charT<span class="op">&gt;(</span>from_range, r<span class="op">)</span>, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">4</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Jeff Garland for initially pointing out this distinction, Tomasz Kamiński for suggesting this approach, Victor Zverovich for having more or less already implemented it, and Tim Song for everything else.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
-<div id="ref-P2286R7">
-<p>[P2286R7] Barry Revzin. 2022-04-22. Formatting Ranges. <br />
-<a href="https://wg21.link/p2286r7">https://wg21.link/p2286r7</a></p>
+<div id="ref-P2286R8">
+<p>[P2286R8] Barry Revzin. 2022-05-13. Formatting Ranges. <br />
+<a href="https://wg21.link/p2286r8">https://wg21.link/p2286r8</a></p>
 </div>
 </div>
 </div>
