@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-05-13" />
+  <meta name="dcterms.date" content="2022-05-16" />
   <title>Formatting Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-05-13</td>
+    <td>2022-05-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1989,7 +1989,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> The escaped string <code class="sourceCode cpp"><em>E</em></code> representation of a string <code class="sourceCode cpp"><em>S</em></code> is constructed by encoding a sequence of characters as follows. The associated character encoding <code class="sourceCode cpp"><em>CE</em></code> for <code class="sourceCode cpp">charT</code> ([lex.string.literal]) is used to both interpret <code class="sourceCode cpp"><em>S</em></code> and construct <code class="sourceCode cpp"><em>E</em></code>.</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(2.1)</a></span> U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) is appended to <code class="sourceCode cpp"><em>E</em></code></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(2.2)</a></span> For each code unit sequence <code class="sourceCode cpp"><em>X</em></code> in <code class="sourceCode cpp"><em>S</em></code> that either encodes a single character, encodes a state transition, or is a sequence of ill-formed code units, processing is in order as follows:</p>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(2.2)</a></span> For each code unit sequence <code class="sourceCode cpp"><em>X</em></code> in <code class="sourceCode cpp"><em>S</em></code> that either encodes a single character, is a shift sequence, or is a sequence of ill-formed code units, processing is in order as follows:</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(2.3)</a></span> If <code class="sourceCode cpp"><em>X</em></code> encodes a single character <code class="sourceCode cpp"><em>C</em></code>, then:</p>
 <ul>
@@ -2038,8 +2038,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>then the sequence <code class="sourceCode cpp">\u<span class="op">{</span><em>hex-digit-sequence</em><span class="op">}</span></code> is appended to <code class="sourceCode cpp"><em>E</em></code>, where <code class="sourceCode cpp"><em>hex-digit-sequence</em></code> is the shortest hexadecimal representation of <code class="sourceCode cpp"><em>C</em></code> using lower-case hexadecimal digits.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(2.3.5)</a></span> Otherwise, <code class="sourceCode cpp"><em>C</em></code> is appended to <code class="sourceCode cpp"><em>E</em></code>.</p></li>
 </ul></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp"><em>X</em></code> encodes a state transition, the effect on <code class="sourceCode cpp"><em>E</em></code> and further decoding of <code class="sourceCode cpp"><em>S</em></code> is unspecified.</p>
-<p><em>Recommended Practice</em>: a state transition should be represented in <code class="sourceCode cpp"><em>E</em></code> such that the original code unit sequence of <code class="sourceCode cpp"><em>S</em></code> can be reconstructed.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp"><em>X</em></code> is a shift sequence, the effect on <code class="sourceCode cpp"><em>E</em></code> and further decoding of <code class="sourceCode cpp"><em>S</em></code> is unspecified.</p>
+<p><em>Recommended Practice</em>: a shift sequence should be represented in <code class="sourceCode cpp"><em>E</em></code> such that the original code unit sequence of <code class="sourceCode cpp"><em>S</em></code> can be reconstructed.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.5)</a></span> Otherwise (<code class="sourceCode cpp"><em>X</em></code> is a sequence of ill-formed code units), each code unit <code class="sourceCode cpp"><em>U</em></code> is appended to <code class="sourceCode cpp"><em>E</em></code> in order as the sequence <code class="sourceCode cpp">\x<span class="op">{</span><em>hex-digit-sequence</em><span class="op">}</span></code>, where <code class="sourceCode cpp"><em>hex-digit-sequence</em></code> is the shortest hexadecimal representation of <code class="sourceCode cpp"><em>U</em></code> using lower-case hexadecimal digits.</p></li>
 </ul></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.6)</a></span> Finally, U+0022 QUOTATION MARK (<code class="sourceCode cpp"><span class="st">&quot;</span></code>) is appended to <code class="sourceCode cpp"><em>E</em></code>.</p></li>
