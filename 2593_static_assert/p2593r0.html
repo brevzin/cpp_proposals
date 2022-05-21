@@ -695,14 +695,37 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>This was followed up by a language proposal to make <code class="sourceCode cpp"><span class="kw">static_assert</span></code> more dependent <span class="citation" data-cites="P1936R0">[<a href="#ref-P1936R0" role="doc-biblioref">P1936R0</a>]</span> - which proposed <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">&lt;</span>T<span class="op">&gt;(</span><span class="kw">false</span><span class="op">)</span></code>. This has the same issues with kind as the library solution, but also is just adding more stuff to <code class="sourceCode cpp"><span class="kw">static_assert</span></code> that still needs to be taught. Sometimes you need this extra stuff, sometimes you don’t?</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The proposal here is quite simple. <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> should just work.</p>
+<p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>/10:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">10</a></span> In a <em>static_assert-declaration</em>, the <em>constant-expression</em> is contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code> and the converted expression shall be a constant expression ([expr.const]). If the value of the expression when so converted is <code class="sourceCode cpp"><span class="kw">true</span></code> <span class="addu">or the expression is evaluated in a non-instantiated template</span>, the declaration has no effect. Otherwise, the program is ill-formed, and the resulting diagnostic message ([intro.compliance]) should include the text of the <em>string-literal</em>, if one is supplied.</p>
+<p>[<em>Example 3</em>:</p>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>  static_assert(sizeof(int) == sizeof(void*), &quot;wrong pointer size&quot;);</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  static_assert(sizeof(int[2]));          // OK, narrowing allowed</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="va">+ template &lt;class T&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="va">+ void f(T t) {</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="va">+   if constexpr (sizeof(T) == 4) {</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="va">+     use(t);</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="va">+   } else {</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="va">+     static_assert(false, &quot;must be size 4&quot;);</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="va">+   }</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="va">+ }</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="va">+</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="va">+ void g(char c) {</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="va">+   f(c); // error: must be size 4</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="va">+ }</span></span></code></pre></div>
+</div>
+<p>— <em>end example</em>]</p>
+</blockquote>
 <p>Change <span>13.8 <a href="https://wg21.link/temp.res">[temp.res]</a></span>/6:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">6</a></span> The validity of a template may be checked prior to any instantiation.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">6</a></span> The validity of a template may be checked prior to any instantiation.</p>
 <p>[<em>Note 3</em>: Knowing which names are type names allows the syntax of every template to be checked in this way. — <em>end note</em>]</p>
 <p>The program is ill-formed, no diagnostic required, if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(6.1)</a></span> <span class="addu">ignoring all <i>static-assert-declaration</i>s,</span> no valid specialization can be generated for a template or a substatement of a constexpr if statement within a template and the template is not instantiated, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(6.2)</a></span> …</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(6.1)</a></span> <span class="addu">ignoring all <i>static-assert-declaration</i>s,</span> no valid specialization can be generated for a template or a substatement of a constexpr if statement within a template and the template is not instantiated, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(6.2)</a></span> …</li>
 </ul>
 </blockquote>
 <p>This sidesteps the question of whether it’s <em>just</em> <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> that should be okay or <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></code> or <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="dv">1</span> <span class="op">-</span> <span class="dv">1</span><span class="op">)</span></code> or <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span>not_quite_dependent_false<span class="op">)</span></code>. anything else. Just, all <code class="sourceCode cpp"><span class="kw">static_assert</span></code> declarations should be delayed until the template (or appropriate specialization or constexpr if substatement thereof) is actually instantiated.</p>

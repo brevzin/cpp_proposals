@@ -145,6 +145,33 @@ This was followed up by a language proposal to make `static_assert` more depende
 
 The proposal here is quite simple. `static_assert(false)` should just work.
 
+Change [dcl.pre]{.sref}/10:
+
+::: bq
+[10]{.pnum} In a _static_assert-declaration_, the _constant-expression_ is contextually converted to `bool` and the converted expression shall be a constant expression ([expr.const]). If the value of the expression when so converted is `true` [or the expression is evaluated in a non-instantiated template]{.addu}, the declaration has no effect.
+Otherwise, the program is ill-formed, and the resulting diagnostic message ([intro.compliance]) should include the text of the _string-literal_, if one is supplied.
+
+[*Example 3*:
+```diff
+  static_assert(sizeof(int) == sizeof(void*), "wrong pointer size");
+  static_assert(sizeof(int[2]));          // OK, narrowing allowed
+
++ template <class T>
++ void f(T t) {
++   if constexpr (sizeof(T) == 4) {
++     use(t);
++   } else {
++     static_assert(false, "must be size 4");
++   }
++ }
++
++ void g(char c) {
++   f(c); // error: must be size 4
++ }
+```
+— *end example*]
+:::
+
 Change [temp.res]{.sref}/6:
 
 ::: bq
