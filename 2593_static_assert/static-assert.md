@@ -192,7 +192,7 @@ If the condition is false, we're going to get a compiler error anyway. And that'
 
 ## Implementation Experience
 
-I implemented this in EDG. It's a two line code change: simply don't try to diagnose `static_assert` declarations if we're still in a template dependent context. Wait until they're instantiated.
+I implemented this in both EDG and Clang. In both compilers, it's basically a two line code change: simply don't try to diagnose `static_assert` declarations if we're still in a template dependent context. Wait until they're instantiated.
 
 # Acknowledgements
 
