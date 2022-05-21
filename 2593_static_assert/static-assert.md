@@ -159,7 +159,7 @@ The program is ill-formed, no diagnostic required, if:
 * [6.2]{.pnum} ...
 :::
 
-This sidesteps the question of where just `static_assert(false)` should be okay or `static_assert(0)` or `static_assert(1 - 1)` or anything else. Just, all `static_assert` declarations should be delayed until the template (or appropriate specialization or constexpr if substatement thereof) is actually instantiated.
+This sidesteps the question of whether it's _just_ `static_assert(false)` that should be okay or `static_assert(0)` or `static_assert(1 - 1)` or `static_assert(not_quite_dependent_false)`. anything else. Just, all `static_assert` declarations should be delayed until the template (or appropriate specialization or constexpr if substatement thereof) is actually instantiated.
 
 If the condition is false, we're going to get a compiler error anyway. And that's fine! But let's just actually fail the program when it's actually broken, and not early.
 
