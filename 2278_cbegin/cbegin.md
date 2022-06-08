@@ -1284,7 +1284,7 @@ template <$different-from$<basic_const_iterator> I>
 
 [#]{.pnum} Let `$op$` be the operator.
 
-[#]{.pnum} *Returns*: Equivalent to: `return x op y.$current_$ $op$;`
+[#]{.pnum} *Returns*: Equivalent to: `return x op y.$current_$;`
 
 ```cpp
 friend constexpr basic_const_iterator operator+(const basic_const_iterator& i, difference_type n)
