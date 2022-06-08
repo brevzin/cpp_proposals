@@ -12,6 +12,8 @@ tag: ranges
 
 # Revision History
 
+Since [@P2278R3], wording updates and having `views::as_const(s)` for a `span<T>` return a `span<T const>`. This ensures that, for instance, `s | views::take(n) | views::as_const` and `s | views::as_const | views::take(n)` both produce the same type.
+
 Since [@P2278R2], renamed `views::all_const` back to `views::as_const`, see [naming](#naming). Wording fixes.
 
 Since [@P2278R1], renamed `views::as_const` to `views::all_const`. Added several additional alias templates and a feature-test macro. Fixed some wording issues.
@@ -1685,7 +1687,7 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/x7o5dvM36
+    URL: https://godbolt.org/z/Wzv156z8K
   - id: coerce-const
     citation-label: coerce-const
     title: "Coercing deep const-ness"
