@@ -1081,6 +1081,18 @@ public:
       friend constexpr bool operator>=(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
     template <$different-from$<basic_const_iterator> I>
+      friend constexpr bool operator<(const I& x, const basic_const_iterator& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$different-from$<basic_const_iterator> I>
+      friend constexpr bool operator>(const I& x, const basic_const_iterator& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$different-from$<basic_const_iterator> I>
+      friend constexpr bool operator<=(const I& x, const basic_const_iterator& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$different-from$<basic_const_iterator> I>
+      friend constexpr bool operator>=(const I& x, const basic_const_iterator& y)
+        requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+    template <$different-from$<basic_const_iterator> I>
       friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator>
               && totally_ordered_with<Iterator, I>
@@ -1251,7 +1263,26 @@ template <$different-from$<basic_const_iterator> I>
 
 [#]{.pnum} Let `$op$` be the operator.
 
-[#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ $op$ y;`
+[#]{.pnum} *Returns*: Equivalent to: `return x.$current_$ $op$ y;`
+
+```cpp
+template <$different-from$<basic_const_iterator> I>
+  friend constexpr bool operator<(const I& x, const basic_const_iterator& y)
+    requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+template <$different-from$<basic_const_iterator> I>
+  friend constexpr bool operator>(const I& x, const basic_const_iterator& y)
+    requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+template <$different-from$<basic_const_iterator> I>
+  friend constexpr bool operator<=(const I& x, const basic_const_iterator& y)
+    requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+template <$different-from$<basic_const_iterator> I>
+  friend constexpr bool operator>=(const I& x, const basic_const_iterator& y)
+    requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
+```
+
+[#]{.pnum} Let `$op$` be the operator.
+
+[#]{.pnum} *Returns*: Equivalent to: `return x op y.$current_$ $op$;`
 
 ```cpp
 friend constexpr basic_const_iterator operator+(const basic_const_iterator& i, difference_type n)
