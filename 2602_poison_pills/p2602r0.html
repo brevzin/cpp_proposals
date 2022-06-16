@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-06-11" />
+  <meta name="dcterms.date" content="2022-06-12" />
   <title>Poison Pills are Too Toxic</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-06-11</td>
+    <td>2022-06-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -549,6 +549,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
     <td>
       LEWG<br>
     </td>
+  </tr>
+<tr>
+    <td>Latest: </td>
+    <td><a href="https://wg21.link/p2602">p2602</a></td>
   </tr>
   <tr>
     <td style="vertical-align:top">Reply-to:</td>
@@ -642,25 +646,40 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>In order for this to compile, the <code class="sourceCode cpp">size</code> function must take a <code class="sourceCode cpp">Test<span class="op">&amp;</span></code> (or a <code class="sourceCode cpp">Test</code>) and not a <code class="sourceCode cpp"><span class="kw">const</span> Test<span class="op">&amp;</span></code>, even if no mutation is necessary. A member function <code class="sourceCode cpp">size<span class="op">()</span> <span class="kw">const</span></code> would’ve also sufficed, but this somewhat defeats the purpose of allowing both member and non-member opt-in. Notice that here we’re not even dealing with rvalue ranges - we’re trying to invoke <code class="sourceCode cpp">size</code> with an lvalue, but it still won’t work.</p>
 <p>With the status quo, the poison pills prevent reasonable code from working and it’s entirely unclear whether they prevent unreasonable code from working.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>There are two things we could do to improve the situation:</p>
-<ol type="1">
-<li><p>We could refine the poison pills further by ensuring that they only exist to ensure ADL-only lookup, by simply dropping their arguments entirely. That is, instead of <code class="sourceCode cpp">ranges<span class="op">::</span>begin</code> considering the poison pills <code class="sourceCode cpp"><span class="dt">void</span> begin<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</code> and <code class="sourceCode cpp"><span class="dt">void</span> begin<span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</code>, we have the single poison pill <code class="sourceCode cpp"><span class="dt">void</span> begin<span class="op">()</span> <span class="op">=</span> <span class="kw">delete</span>;</code> This way, the poison pill is never the best (or even a viable) match - it simply enforces ADL lookup.</p></li>
-<li><p>We could remove the poison pills entirely.</p></li>
-</ol>
-<p>Given that there doesn’t seem to be a remaining reason for the poison pills to exist, this paper proposes #2. Note that both options here would also have fixed <span class="citation" data-cites="LWG3480">[<a href="#ref-LWG3480" role="doc-biblioref">LWG3480</a>]</span>. I’m happy to consider #1 if someone offers a still-valid reason to do this sort of thing, I’m simply unaware of such a reason and not for lack of searching.</p>
+<p>We can improve this situation by removing the poison aspect. That is, we no longer introduce names that might be better matches than user-declared ones. We still need to, however, prevent regular unqualified lookup from happening and ensure that non-member lookup only happens in an argument-dependent lookup context. We need this both to prevent the CPO from finding itself (which would defeat the purpose of a non-member opt-in) and also to avoid looking up random nonsense in the global namespace. This matches what the language range-based for statement does, where <span>8.6.5 <a href="https://wg21.link/stmt.ranged">[stmt.ranged]</a></span>/1.3.3 says:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">(1.3.3)</a></span> otherwise, <code class="sourceCode cpp"><em>begin-expr</em></code> and <code class="sourceCode cpp"><em>end-expr</em></code> are <code class="sourceCode cpp">begin<span class="op">(</span>range<span class="op">)</span></code> and <code class="sourceCode cpp">end<span class="op">(</span>range<span class="op">)</span></code>, respectively, where <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> undergo argument-dependent lookup ([basic.lookup.argdep]). [<em>Note 1</em>: Ordinary unqualified lookup ([basic.lookup.unqual]) is not performed. — <em>end note</em>]</p>
+</blockquote>
+<p>The library implementation of this would be to effectively replace all the existing poison pills with nullary functions, as in:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a><span class="st">- void begin(auto&amp;) = delete;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="st">- void begin(const auto&amp;) = delete;</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="va">+ void begin() = delete;</span></span></code></pre></div>
+</div>
+</blockquote>
 <h2 data-number="4.1" id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>16.3.3.3.6 <a href="https://wg21.link/customization.point.object">[customization.point.object]</a></span>, since this note is describing the idea of a poison pill which is now going away:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> [Note 1: Many of the customization point objects in the library evaluate function call expressions with an unqualified name which results in a call to a program-defined function found by argument dependent name lookup ([basic.lookup.argdep]). To preclude such an expression resulting in a call to unconstrained functions with the same name in namespace std, customization point objects specify that lookup for these expressions is performed in a context that includes deleted overloads matching the signatures of overloads defined in namespace std. When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used by a customization point object. — end note]</p>
+</div>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">7</a></span> When a customization point object is specified to use an expression with an unqualified name that undergoes argument-dependent lookup, ordinary unqualified lookup is not performed for that name.</p>
+</div>
+</blockquote>
 <p>Change <span>26.3.2 <a href="https://wg21.link/range.access.begin">[range.access.begin]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb6"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1"></a>void begin(auto&amp;) = delete;</span>
-<span id="cb6-2"><a href="#cb6-2"></a>void begin(const auto&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1"></a>void begin(auto&amp;) = delete;</span>
+<span id="cb7-2"><a href="#cb7-2"></a>void begin(const auto&amp;) = delete;</span></code></pre></div>
 
 </div>
-<p>then <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in the above context</del></span>.</p>
+<p><span class="addu">where <code class="sourceCode cpp">begin</code> undergoes argument dependent lookup</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(begin(t))</code></span> with overload resolution performed in the above context</del></span>. <span class="addu">[<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></p>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">

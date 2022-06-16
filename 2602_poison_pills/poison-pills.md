@@ -8,6 +8,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 tags: ranges
+latest: p2602
 ---
 
 # Introduction
@@ -121,15 +122,39 @@ With the status quo, the poison pills prevent reasonable code from working and i
 
 # Proposal
 
-There are two things we could do to improve the situation:
+We can improve this situation by removing the poison aspect. That is, we no longer introduce names that might be better matches than user-declared ones. We still need to, however, prevent regular unqualified lookup from happening and ensure that non-member lookup only happens in an argument-dependent lookup context. We need this both to prevent the CPO from finding itself (which would defeat the purpose of a non-member opt-in) and also to avoid looking up random nonsense in the global namespace. This matches what the language range-based for statement does, where [stmt.ranged]{.sref}/1.3.3 says:
 
-1. We could refine the poison pills further by ensuring that they only exist to ensure ADL-only lookup, by simply dropping their arguments entirely. That is, instead of `ranges::begin` considering the poison pills `void begin(auto&) = delete;` and `void begin(auto const&) = delete;`, we have the single poison pill `void begin() = delete;` This way, the poison pill is never the best (or even a viable) match - it simply enforces ADL lookup.
+::: bq
+[1.3.3]{.pnum} otherwise, `$begin-expr$` and `$end-expr$` are `begin(range)` and `end(range)`, respectively, where `begin` and `end` undergo argument-dependent lookup ([basic.lookup.argdep]). [*Note 1*: Ordinary unqualified lookup ([basic.lookup.unqual]) is not performed. — *end note*]
+:::
 
-2. We could remove the poison pills entirely.
+The library implementation of this would be to effectively replace all the existing poison pills with nullary functions, as in:
 
-Given that there doesn't seem to be a remaining reason for the poison pills to exist, this paper proposes #2. Note that both options here would also have fixed [@LWG3480]. I'm happy to consider #1 if someone offers a still-valid reason to do this sort of thing, I'm simply unaware of such a reason and not for lack of searching.
+::: bq
+```diff
+- void begin(auto&) = delete;
+- void begin(const auto&) = delete;
++ void begin() = delete;
+```
+:::
+
 
 ## Wording
+
+Change [customization.point.object]{.sref}, since this note is describing the idea of a poison pill which is now going away:
+
+::: bq
+::: rm
+[7]{.pnum} [Note 1: Many of the customization point objects in the library evaluate function call expressions with an unqualified name which results in a call to a program-defined function found by argument dependent name lookup ([basic.lookup.argdep]).
+To preclude such an expression resulting in a call to unconstrained functions with the same name in namespace std, customization point objects specify that lookup for these expressions is performed in a context that includes deleted overloads matching the signatures of overloads defined in namespace std.
+When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used by a customization point object.
+— end note]
+:::
+
+::: addu
+[7]{.pnum} When a customization point object is specified to use an expression with an unqualified name that undergoes argument-dependent lookup, ordinary unqualified lookup is not performed for that name.
+:::
+:::
 
 Change [range.access.begin]{.sref}:
 
@@ -143,7 +168,7 @@ void begin(const auto&) = delete;
 ```
 :::
 
-then `ranges​::​begin(E)` is expression-equivalent to `auto(begin(t))` [with overload resolution performed in the above context]{.rm}.
+[where `begin` undergoes argument dependent lookup]{.addu} then `ranges​::​begin(E)` is expression-equivalent to [that expression]{.addu} [`auto(begin(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
 :::
 
 ---
