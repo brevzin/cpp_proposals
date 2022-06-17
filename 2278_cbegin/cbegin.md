@@ -1614,7 +1614,7 @@ namespace std::ranges {
 [#]{.pnum} The name `views::as_const` denotes a range adaptor object ([range.adaptor.object]). Let `E` be an expression, let `T` be `decltype((E))`, and let `U` be `remove_cvref_t<T>`. The expression `views::as_const(E)` is expression-equivalent to:
 
 * [#.#]{.pnum} If `views::all_t<T>` models `constant_range`, then `views::all(E)`.
-* [#.#]{.pnum} Otherwise, if `U` denotes `span<X, Extent>` for some type `X` and some extent `Extent`, then `span<const X, Extent>(E)`. [Y'all should take a look at this carefully, suggested during LWG small group review.]{.draftnote}
+* [#.#]{.pnum} Otherwise, if `U` denotes `span<X, Extent>` for some type `X` and some extent `Extent`, then `span<const X, Extent>(E)`.
 * [#.#]{.pnum} Otherwise, if `E` is an lvalue, `const U` models `constant_range`, and `U` does not model `view`, then `ref_view(static_cast<const U&>(E))`.
 * [#.#]{.pnum} Otherwise, `as_const_view(E)`.
 
