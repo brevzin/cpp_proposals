@@ -997,7 +997,7 @@ Some generic algorithms can be called with constant iterators to avoid mutation.
 
 ```cpp
 template <indirectly_readable It>
-  using iter_const_reference_t = common_reference_t<iter_value_t<It> const&&, iter_reference_t<It>>;
+  using iter_const_reference_t = common_reference_t<const iter_value_t<It>&&, iter_reference_t<It>>;
 
 template <class It>
 concept $constant-iterator$ = input_iterator<It>
@@ -1044,8 +1044,8 @@ public:
 
     constexpr $reference$ operator*() const;
     constexpr const value_type* operator->() const
-       requires is_lvalue_reference_v<iter_reference_t<Iterator>
-            && same_as<remove_cvref_t<iter_reference_t<Iterator>, value_type>;
+       requires is_lvalue_reference_v<iter_reference_t<Iterator>>
+            && same_as<remove_cvref_t<iter_reference_t<Iterator>>, value_type>;
 
     constexpr basic_const_iterator& operator++();
     constexpr void operator++(int);
@@ -1165,10 +1165,10 @@ constexpr $reference$ operator*() const;
 [#]{.pnum} *Effects*: Equivalent to: `return static_cast<$reference$>(*$current_$);`
 ```cpp
 constexpr const value_type* operator->() const
-  requires is_lvalue_reference_v<iter_reference_t<Iterator>
+  requires is_lvalue_reference_v<iter_reference_t<Iterator>>
        && same_as<remove_cvref_t<iter_reference_t<Iterator>>, value_type>;
 ```
-[#]{.pnum} *Returns*: If `Iterator` models `contiguous_iterator`, `to_address($current_$)`; otherwise, `addressof(*current_)`.
+[#]{.pnum} *Returns*: If `Iterator` models `contiguous_iterator`, `to_address($current_$)`; otherwise, `addressof(*$current_$)`.
 ```cpp
 constexpr basic_const_iterator& operator++();
 ```
@@ -1289,7 +1289,7 @@ template <$not-a-const-iterator$ I>
 
 [#]{.pnum} Let `$op$` be the operator.
 
-[#]{.pnum} *Returns*: Equivalent to: `return x op y.$current_$;`
+[#]{.pnum} *Returns*: Equivalent to: `return x $op$ y.$current_$;`
 
 ```cpp
 friend constexpr basic_const_iterator operator+(const basic_const_iterator& i, difference_type n)
@@ -1646,7 +1646,7 @@ namespace std::ranges {
     constexpr explicit as_const_view(V base);
 
     constexpr V base() const& requires copy_constructible<V> { return base_; }
-    constexpr V base() && { return std::move(base_); }
+    constexpr V base() && { return std::move($base_$); }
 
     constexpr auto begin() requires (!$simple-view$<V>) { return ranges::cbegin($base_$); }
     constexpr auto begin() const requires range<const V> { return ranges::cbegin($base_$); }
