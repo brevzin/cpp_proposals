@@ -177,6 +177,17 @@ Change [iterator.cust.move]{.sref} [This isn't a behavior change, simply alignin
 * [1.1]{.pnum} `iter_­move(E)`, if `E` has class or enumeration type and `iter_­move(E)` is a well-formed expression when treated as an unevaluated operand, [with overload resolution performed in a context that does not include a declaration of `ranges​::​iter_­move` but does include the declaration `void iter_move();`]{.rm} [where `iter_move` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
 :::
 
+Add part of the old note into [iterator.cust.swap]{.sref}:
+
+::: bq
+* [4.1]{.pnum} `(void)iter_­swap(E1, E2)`, if either `E1` or `E2` has class or enumeration type and `iter_­swap(E1, E2)` is a well-formed expression with overload resolution performed in a context that includes the declaration
+```
+template<class I1, class I2>
+  void iter_swap(I1, I2) = delete;
+```
+and does not include a declaration of `ranges​::​iter_­swap`. If the function selected by overload resolution does not exchange the values denoted by `E1` and `E2`, the program is ill-formed, no diagnostic required. [[*Note*: This precludes calling unconstrained `std::iter_swap`. When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used. - *end note*]]{.addu}
+:::
+
 Change [range.access.begin]{.sref}:
 
 ::: bq

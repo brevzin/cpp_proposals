@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-06-16" />
+  <meta name="dcterms.date" content="2022-06-17" />
   <title>Poison Pills are Too Toxic</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-06-16</td>
+    <td>2022-06-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -683,15 +683,24 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(1.1)</a></span> <code class="sourceCode cpp">iter_­move<span class="op">(</span>E<span class="op">)</span></code>, if <code class="sourceCode cpp">E</code> has class or enumeration type and <code class="sourceCode cpp">iter_­move<span class="op">(</span>E<span class="op">)</span></code> is a well-formed expression when treated as an unevaluated operand, <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that does not include a declaration of <span><code class="sourceCode default">ranges​::​iter_­move</code></span> but does include the declaration <span><code class="sourceCode default">void iter_move();</code></span></del></span> <span class="addu">where <code class="sourceCode cpp">iter_move</code> undergoes argument dependent lookup. [<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></li>
 </ul>
 </blockquote>
+<p>Add part of the old note into <span>25.3.3.2 <a href="https://wg21.link/iterator.cust.swap">[iterator.cust.swap]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(4.1)</a></span> <code class="sourceCode cpp"><span class="op">(</span><span class="dt">void</span><span class="op">)</span>iter_­swap<span class="op">(</span>E1, E2<span class="op">)</span></code>, if either <code class="sourceCode cpp">E1</code> or <code class="sourceCode cpp">E2</code> has class or enumeration type and <code class="sourceCode cpp">iter_­swap<span class="op">(</span>E1, E2<span class="op">)</span></code> is a well-formed expression with overload resolution performed in a context that includes the declaration</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>template&lt;class I1, class I2&gt;</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  void iter_swap(I1, I2) = delete;</span></code></pre></div>
+<p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​iter_­swap</code>. If the function selected by overload resolution does not exchange the values denoted by <code class="sourceCode cpp">E1</code> and <code class="sourceCode cpp">E2</code>, the program is ill-formed, no diagnostic required. <span class="addu">[<em>Note</em>: This precludes calling unconstrained <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>. When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used. - <em>end note</em>]</span></p>
+</blockquote>
 <p>Change <span>26.3.2 <a href="https://wg21.link/range.access.begin">[range.access.begin]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb8"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>void begin(auto&amp;) = delete;</span>
-<span id="cb8-2"><a href="#cb8-2"></a>void begin(const auto&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>void begin(auto&amp;) = delete;</span>
+<span id="cb9-2"><a href="#cb9-2"></a>void begin(const auto&amp;) = delete;</span></code></pre></div>
 
 </div>
 <p><span class="addu">where <code class="sourceCode cpp">begin</code> undergoes argument dependent lookup</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(begin(t))</code></span> with overload resolution performed in the above context</del></span>. <span class="addu">[<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></p>
@@ -699,12 +708,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.3 <a href="https://wg21.link/range.access.end">[range.access.end]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(2.6)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>end<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span>iterator_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for end finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.6)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>end<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span>iterator_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for end finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb9"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>void end(auto&amp;) = delete;</span>
-<span id="cb9-2"><a href="#cb9-2"></a>void end(const auto&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>void end(auto&amp;) = delete;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>void end(const auto&amp;) = delete;</span></code></pre></div>
 
 </div>
 <p><span class="addu">where <code class="sourceCode cpp">end</code> undergoes argument dependent lookup</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(end(t))</code></span> with overload resolution performed in the above context</del></span>. <span class="addu">[<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></p>
@@ -712,12 +721,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.6 <a href="https://wg21.link/range.access.rbegin">[range.access.rbegin]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rbegin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rbegin</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rbegin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rbegin</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb10"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>void rbegin(auto&amp;) = delete;</span>
-<span id="cb10-2"><a href="#cb10-2"></a>void rbegin(const auto&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>void rbegin(auto&amp;) = delete;</span>
+<span id="cb11-2"><a href="#cb11-2"></a>void rbegin(const auto&amp;) = delete;</span></code></pre></div>
 
 </div>
 <p><span class="addu">where <code class="sourceCode cpp">rbegin</code> undergoes argument dependent lookup</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>r​begin<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(rbegin(t))</code></span> with overload resolution performed in the above context</del></span>. <span class="addu">[<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></p>
@@ -725,12 +734,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.7 <a href="https://wg21.link/range.access.rend">[range.access.rend]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rend<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rend</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rend<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rend</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb11"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>void rend(auto&amp;) = delete;</span>
-<span id="cb11-2"><a href="#cb11-2"></a>void rend(const auto&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>void rend(auto&amp;) = delete;</span>
+<span id="cb12-2"><a href="#cb12-2"></a>void rend(const auto&amp;) = delete;</span></code></pre></div>
 
 </div>
 <p><span class="addu">where <code class="sourceCode cpp">rend</code> undergoes argument dependent lookup</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​rend<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(rend(t))</code></span> with overload resolution performed in the above context</del></span>. <span class="addu">[<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></p>
@@ -738,12 +747,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.10 <a href="https://wg21.link/range.prim.size">[range.prim.size]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type, <code class="sourceCode cpp">disable_­sized_­range<span class="op">&lt;</span>remove_­cv_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code> and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>size<span class="op">(</span>t<span class="op">))</span></code> is a valid expression of integer-like type <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for size finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type, <code class="sourceCode cpp">disable_­sized_­range<span class="op">&lt;</span>remove_­cv_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code> and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>size<span class="op">(</span>t<span class="op">))</span></code> is a valid expression of integer-like type <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for size finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb12"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>void size(auto&amp;) = delete;</span>
-<span id="cb12-2"><a href="#cb12-2"></a>void size(const auto&amp;) = delete;</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>void size(auto&amp;) = delete;</span>
+<span id="cb13-2"><a href="#cb13-2"></a>void size(const auto&amp;) = delete;</span></code></pre></div>
 
 </div>
 <p><span class="addu">where <code class="sourceCode cpp">size</code> undergoes argument dependent lookup</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​size<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(size(t))</code></span> with overload resolution performed in the above context</del></span>. <span class="addu">[<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></p>
