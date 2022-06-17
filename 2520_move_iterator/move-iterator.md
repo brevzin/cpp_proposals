@@ -1,6 +1,6 @@
 ---
 title: "`move_iterator<T*>` should be a random access iterator"
-document: P2520R0
+document: P2520R1
 date: today
 audience: LEWG
 author:
@@ -166,7 +166,7 @@ Add a new feature-test macro to [version.syn]{.sref}:
 ::: bq
 ::: addu
 ```
-#define __cpp_lib_move_iterator_concept 20XXXXL // also in <iterators>
+#define __cpp_lib_move_iterator_concept 20XXXXL // also in <iterator>
 ```
 :::
 :::
