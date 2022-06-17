@@ -49,26 +49,27 @@ make all of my papers.
 
 - [p1169r4 - `static operator()`](1169_static_call/p1169r4.html), with Casey Carter.
 - ![][~constexpr] [p2280r4 - Using unknown references in constant expressions](2280_unknown_reference/p2280r4.html).
-- ![][~ranges] [p2286r8 - Formatting Ranges](2286_fmt_ranges/p2286r8.html).
+- ![][~ranges] [p2278r4 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r4.html).
+- ![][~ranges] [p2286r8 - Formatting Ranges](2286_fmt_ranges/p2286r8.html).-
 - ![][~ranges] [p2322r6 - `ranges::fold`](2322_fold/p2322r6.html).
+- ![][~ranges] [p2446r2 - `views::as_rvalue`](2446_move_view/p2446r2.html).
 - ![][~constexpr] [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
 - [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
 
 ### Pending CWG/LWG Review
 
-- ![][~ranges] [p2278r4 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r4.html).
-- ![][~ranges] [p2446r2 - `views::as_rvalue`](2446_move_view/p2446r2.html).
+- None.
 
 ### Pending EWG/LEWG Voting
 
 - ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
+- ![][~ranges] [p2585r0 - Improve default container formatting](2585_fmt_container/p2585r0.html).
 
 ### Pending EWG/LEWG Review
 
 - ![][~constexpr] [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
-- ![][~ranges] [p2550r1 - `ranges::copy` should say `output_iterator` somewhere](2550_algo_output_iterator/p2550r1.html).
 - ![][~constexpr] [p2564r0 - `consteval` needs to propagate up](2564_consteval_patch/p2564r0.html).
-- ![][~ranges] [p2585r0 - Improve default container formatting](2585_fmt_container/p2585r0.html).
+- ![][~ranges] [p2602r0 - Poison Pills are Too Toxic](2602_poison_pills/p2602r0.html).
 
 ### Ongoing Plans
 
@@ -102,6 +103,7 @@ make all of my papers.
 ### On Hold
 - [p1170r0 - Overload sets as function parameters](1170_overload_sets/p1170r0.html), with Andrew Sutton. Need to reconsider the design.
 - [p2089r0 - Function parameter constraints are fragile](2089_param_constraints/p2089r0.html). The proposal this responds to was tabled.
+- ![][~ranges] [p2550r1 - `ranges::copy` should say `output_iterator` somewhere](2550_algo_output_iterator/p2550r1.html).
 
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
