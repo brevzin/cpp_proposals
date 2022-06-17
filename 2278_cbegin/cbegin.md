@@ -12,7 +12,7 @@ tag: ranges
 
 # Revision History
 
-Since [@P2278R3], wording updates and having `views::as_const(s)` for a `span<T>` return a `span<T const>`. This ensures that, for instance, `s | views::take(n) | views::as_const` and `s | views::as_const | views::take(n)` both produce the same type.
+Since [@P2278R3], wording updates (including a revamp of all the comparison operators) and having `views::as_const(s)` for a `span<T>` return a `span<T const>`. This ensures that, for instance, `s | views::take(n) | views::as_const` and `s | views::as_const | views::take(n)` both produce the same type.
 
 Since [@P2278R2], renamed `views::all_const` back to `views::as_const`, see [naming](#naming). Wording fixes.
 
@@ -1016,6 +1016,9 @@ template<class S>
 [#]{.pnum} *Result*: If `S` models `input_iterator`, `const_iterator<S>`. Otherwise, `S`.
 
 ```cpp
+template <class I>
+  concept $not-a-const-iterator$ = $see below$;
+
 template <input_iterator Iterator>
 class basic_const_iterator
 {
@@ -1070,31 +1073,31 @@ public:
     friend constexpr auto operator<=>(const basic_const_iterator& x, const basic_const_iterator& y)
       requires random_access_iterator<Iterator> && three_way_comparable<Iterator>;
 
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator<(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator>(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator<=(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator>=(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator<(const I& x, const basic_const_iterator& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator>(const I& x, const basic_const_iterator& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator<=(const I& x, const basic_const_iterator& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr bool operator>=(const I& x, const basic_const_iterator& y)
         requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-    template <$different-from$<basic_const_iterator> I>
+    template <$not-a-const-iterator$ I>
       friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
         requires random_access_iterator<Iterator>
               && totally_ordered_with<Iterator, I>
@@ -1113,6 +1116,8 @@ public:
       friend constexpr difference_type operator-(const S& x, const basic_const_iterator& y);
 };
 ```
+
+[#]{.pnum} Given some type `I`, the concept `$not-a-const-iterator$` is defined as `false` if `I` is a specialization of `basic_const_iterator` and `true` otherwise.
 
 [#]{.pnum} `basic_const_iterator<Iterator>::iterator_concept` is defined as follows:
 
@@ -1244,19 +1249,19 @@ friend constexpr auto operator<=>(const basic_const_iterator& x, const basic_con
 [#]{.pnum} *Effects*: Equivalent to: `return x.$current_$ $op$ y.$current_$;`
 
 ```cpp
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator<(const basic_const_iterator& x, const I& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator>(const basic_const_iterator& x, const I& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator<=(const basic_const_iterator& x, const I& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator>=(const basic_const_iterator& x, const I& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr auto operator<=>(const basic_const_iterator& x, const I& y)
     requires random_access_iterator<Iterator>
           && totally_ordered_with<Iterator, I>
@@ -1268,16 +1273,16 @@ template <$different-from$<basic_const_iterator> I>
 [#]{.pnum} *Returns*: Equivalent to: `return x.$current_$ $op$ y;`
 
 ```cpp
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator<(const I& x, const basic_const_iterator& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator>(const I& x, const basic_const_iterator& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator<=(const I& x, const basic_const_iterator& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
-template <$different-from$<basic_const_iterator> I>
+template <$not-a-const-iterator$ I>
   friend constexpr bool operator>=(const I& x, const basic_const_iterator& y)
     requires random_access_iterator<Iterator> && totally_ordered_with<Iterator, I>;
 ```
@@ -1687,7 +1692,7 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2020
-    URL: https://godbolt.org/z/Wzv156z8K
+    URL: https://godbolt.org/z/435n61471
   - id: coerce-const
     citation-label: coerce-const
     title: "Coercing deep const-ness"
