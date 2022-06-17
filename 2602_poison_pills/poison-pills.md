@@ -171,6 +171,12 @@ When the deleted overloads are viable, program-defined overloads need to be more
 :::
 :::
 
+Change [iterator.cust.move]{.sref} [This isn't a behavior change, simply aligning the wording for all the customization point objects]{.draftnote}:
+
+::: bq
+* [1.1]{.pnum} `iter_­move(E)`, if `E` has class or enumeration type and `iter_­move(E)` is a well-formed expression when treated as an unevaluated operand, [with overload resolution performed in a context that does not include a declaration of `ranges​::​iter_­move` but does include the declaration `void iter_move();`]{.rm} [where `iter_move` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+:::
+
 Change [range.access.begin]{.sref}:
 
 ::: bq

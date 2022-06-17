@@ -574,7 +574,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#wording"><span class="toc-section-number">4.1</span> Wording<span></span></a></li>
 <li><a href="#implementation-experience"><span class="toc-section-number">4.2</span> Implementation Experience<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">5</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -676,10 +677,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">7</a></span> When a customization point object is specified to use an expression with an unqualified name that undergoes argument-dependent lookup, ordinary unqualified lookup is not performed for that name.</p>
 </div>
 </blockquote>
+<p>Change <span>25.3.3.1 <a href="https://wg21.link/iterator.cust.move">[iterator.cust.move]</a></span> <span class="draftnote" style="color: #01796F">[ Drafting note: This isn’t a behavior change, simply aligning the wording for all the customization point objects ]</span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(1.1)</a></span> <code class="sourceCode cpp">iter_­move<span class="op">(</span>E<span class="op">)</span></code>, if <code class="sourceCode cpp">E</code> has class or enumeration type and <code class="sourceCode cpp">iter_­move<span class="op">(</span>E<span class="op">)</span></code> is a well-formed expression when treated as an unevaluated operand, <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that does not include a declaration of <span><code class="sourceCode default">ranges​::​iter_­move</code></span> but does include the declaration <span><code class="sourceCode default">void iter_move();</code></span></del></span> <span class="addu">where <code class="sourceCode cpp">iter_move</code> undergoes argument dependent lookup. [<em>Note</em>: Ordinary unqualified lookup is not performed. - <em>end note</em>]</span></li>
+</ul>
+</blockquote>
 <p>Change <span>26.3.2 <a href="https://wg21.link/range.access.begin">[range.access.begin]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
@@ -692,7 +699,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.3 <a href="https://wg21.link/range.access.end">[range.access.end]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(2.6)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>end<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span>iterator_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for end finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(2.6)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>end<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span>iterator_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for end finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
@@ -705,7 +712,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.6 <a href="https://wg21.link/range.access.rbegin">[range.access.rbegin]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rbegin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rbegin</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rbegin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rbegin</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
@@ -718,7 +725,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.7 <a href="https://wg21.link/range.access.rend">[range.access.rend]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rend<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rend</code></span> finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rend<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rend</code></span> finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
@@ -731,7 +738,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>26.3.10 <a href="https://wg21.link/range.prim.size">[range.prim.size]</a></span>:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type, <code class="sourceCode cpp">disable_­sized_­range<span class="op">&lt;</span>remove_­cv_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code> and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>size<span class="op">(</span>t<span class="op">))</span></code> is a valid expression of integer-like type <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for size finds only the declarations</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type, <code class="sourceCode cpp">disable_­sized_­range<span class="op">&lt;</span>remove_­cv_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code> and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>size<span class="op">(</span>t<span class="op">))</span></code> is a valid expression of integer-like type <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for size finds only the declarations</del></span></li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
@@ -743,7 +750,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <h2 data-number="4.2" id="implementation-experience"><span class="header-section-number">4.2</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>This has been implemented in both libstdc++ and MSVC’s standard library.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Tim Song for help navigating everything, Casey Carter for the wording suggestions, and Jonathan Wakely for helping with libstdc++ testing.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-LWG3480">
 <p>[LWG3480] Barry Revzin. directory_iterator and recursive_directory_iterator are not C++20 ranges. <br />
