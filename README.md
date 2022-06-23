@@ -50,7 +50,7 @@ make all of my papers.
 - [p1169r4 - `static operator()`](1169_static_call/p1169r4.html), with Casey Carter.
 - ![][~constexpr] [p2280r4 - Using unknown references in constant expressions](2280_unknown_reference/p2280r4.html).
 - ![][~ranges] [p2278r4 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r4.html).
-- ![][~ranges] [p2286r8 - Formatting Ranges](2286_fmt_ranges/p2286r8.html).-
+- ![][~ranges] [p2286r8 - Formatting Ranges](2286_fmt_ranges/p2286r8.html).
 - ![][~ranges] [p2322r6 - `ranges::fold`](2322_fold/p2322r6.html).
 - ![][~ranges] [p2446r2 - `views::as_rvalue`](2446_move_view/p2446r2.html).
 - ![][~constexpr] [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
@@ -58,11 +58,10 @@ make all of my papers.
 
 ### Pending CWG/LWG Review
 
-- None.
+- ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
 
 ### Pending EWG/LEWG Voting
 
-- ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
 - ![][~ranges] [p2585r0 - Improve default container formatting](2585_fmt_container/p2585r0.html).
 
 ### Pending EWG/LEWG Review
