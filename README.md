@@ -54,11 +54,12 @@ make all of my papers.
 - ![][~ranges] [p2322r6 - `ranges::fold`](2322_fold/p2322r6.html).
 - ![][~ranges] [p2446r2 - `views::as_rvalue`](2446_move_view/p2446r2.html).
 - ![][~constexpr] [p2448r2 - Relaxing some `constexpr` restrictions](2448_relax_constexpr/p2448r2.html).
-- [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html)
+- [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html).
+- ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
 
 ### Pending CWG/LWG Review
 
-- ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
+None.
 
 ### Pending EWG/LEWG Voting
 
