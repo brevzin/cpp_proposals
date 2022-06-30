@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2021-05-31" />
+  <meta name="dcterms.date" content="2022-06-29" />
   <title>Exploring Placeholders</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2021-05-31</td>
+    <td>2022-06-29</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -570,7 +570,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#alias-or-constraint"><span class="toc-section-number">4.1</span> Alias or Constraint<span></span></a></li>
 <li><a href="#how-many-autos"><span class="toc-section-number">4.2</span> How many <code class="sourceCode cpp"><span class="kw">auto</span></code>s<span></span></a></li>
-<li><a href="#what-about-non-type-template-parameters"><span class="toc-section-number">4.3</span> What about non-type template parameters?<span></span></a></li>
+<li><a href="#concept-template-parameters"><span class="toc-section-number">4.3</span> Concept template parameters<span></span></a></li>
+<li><a href="#what-about-non-type-template-parameters"><span class="toc-section-number">4.4</span> What about non-type template parameters?<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
@@ -831,18 +832,22 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <td>Scala</td>
 </tr>
 <tr class="even">
-<td><code class="sourceCode cpp"><span class="pp">#</span><span class="er">(&lt; % 0)</span></code></td>
-<td>Clojure</td>
+<td><code class="sourceCode cpp">_1 <span class="op">&lt;</span> <span class="dv">0</span></code></td>
+<td>Boost.Lambda (and other Boost libraries)</td>
 </tr>
 <tr class="odd">
+<td><code class="x">#(&lt; % 0)</code></td>
+<td>Clojure</td>
+</tr>
+<tr class="even">
 <td><code class="sourceCode cpp"><span class="op">&amp;(&amp;</span><span class="dv">1</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></code></td>
 <td>Elixir</td>
 </tr>
-<tr class="even">
-<td><code class="sourceCode cpp"><span class="op">{</span> <span class="er">$</span><span class="dv">0</span> <span class="op">&lt;</span> <span class="dv">0</span> <span class="op">}</span></code></td>
+<tr class="odd">
+<td><code class="x">{ $0 &lt; 0 }</code></td>
 <td>Swift</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp"><span class="op">{</span> it <span class="op">&lt;</span> <span class="dv">0</span> <span class="op">}</span></code></td>
 <td>Kotlin</td>
 </tr>
@@ -850,7 +855,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </table>
 <p>There’s a lot of variety in these placeholder lambdas. Some languages number their parameters and let you write whatever you want (Swift starts numbering at <code class="sourceCode cpp"><span class="dv">0</span></code>, Elixir at <code class="sourceCode cpp"><span class="dv">1</span></code>, Clojure also at <code class="sourceCode cpp"><span class="dv">1</span></code> but also provides <code class="sourceCode cpp"><span class="op">%</span></code> as a shorthand), Kotlin only provides the special variable <code class="sourceCode cpp">it</code> to be the first parameter.</p>
 <p>Scala is unique in that it only provides <code class="sourceCode cpp">_</code>, but that placeholder refers to a different parameter on each use. So <code class="sourceCode cpp">_ <span class="op">&gt;</span> _</code> is a binary predicate that checks if the first parameter is greater than the second.</p>
-<p>Now, for this particular example, we also have library solutions available to us, and have for quite some time. There are several libraries <em>just in Boost</em> that allow for either <code class="sourceCode cpp">_1 <span class="op">&lt;</span> <span class="dv">0</span></code> or <code class="sourceCode cpp">_ <span class="op">&lt;</span> <span class="dv">0</span></code> to mean the same thing as illustrated above. Having placeholder lambdas is quite popular precisely because there’s no noise; when writing a simple expression, having to deal with the ceremony of introducing names and dealing with the return type is excessive. For instance, to implement <span class="citation" data-cites="P2321R1">[<a href="#ref-P2321R1" role="doc-biblioref">P2321R1</a>]</span>’s <code class="sourceCode cpp">zip</code>, you need to dereference all the iterators in a tuple:</p>
+<p>Now, for this particular example, we also have library solutions available to us, and have for quite some time. There are several libraries <em>just in Boost</em> that allow for either <code class="sourceCode cpp">_1 <span class="op">&lt;</span> <span class="dv">0</span></code> or <code class="sourceCode cpp">_ <span class="op">&lt;</span> <span class="dv">0</span></code> to mean the same thing as illustrated above (Boost.HOF’s <code class="sourceCode cpp">_</code> behaves similar to Scala - at least to the extent that is possible in a library). Having placeholder lambdas is quite popular precisely because there’s no noise; when writing a simple expression, having to deal with the ceremony of introducing names and dealing with the return type is excessive. For instance, to implement <span class="citation" data-cites="P2321R1">[<a href="#ref-P2321R1" role="doc-biblioref">P2321R1</a>]</span>’s <code class="sourceCode cpp">zip</code>, you need to dereference all the iterators in a tuple:</p>
 <table>
 <thead>
 <tr class="header">
@@ -864,7 +869,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a>tuple_transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;</span> it<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span>it; <span class="op">}</span>, current_<span class="op">)</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a>tuple_transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;</span> it<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="cf">return</span> <span class="op">*</span>it;</span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="op">}</span>, current_<span class="op">)</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a>tuple_transform<span class="op">(*</span>_, current_<span class="op">)</span></span></code></pre></div></td>
 </tr>
 </tbody>
@@ -918,7 +925,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a>std<span class="op">::</span>tuple<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">)</span> <span class="op">|&gt;</span> std<span class="op">::</span>apply<span class="op">(</span>std<span class="op">::</span>plus<span class="op">()</span>, <span class="er">$</span><span class="op">)</span></span></code></pre></div>
 </blockquote>
-<p>And now we’re saying that perhaps:</p>
+<p>And now I’m saying that perhaps:</p>
 <blockquote>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> apply_plus <span class="op">=</span> <span class="op">[]:</span> std<span class="op">::</span>apply<span class="op">(</span>std<span class="op">::</span>plus<span class="op">()</span>, <span class="er">$</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
@@ -929,14 +936,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="march-of-the-placeholders"><span class="header-section-number">3</span> March of the Placeholders<a href="#march-of-the-placeholders" class="self-link"></a></h1>
 <p>One of the library features that the Ranges library provides is the ability to do partial function composition, as a library feature. Let’s say, for instance, that we want to send some swag to all of our employees named Tim. We could find their locations like so:</p>
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a>employees <span class="op">|</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> e<span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span>; <span class="op">})</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>          <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> e<span class="op">.</span>address<span class="op">()</span>; <span class="op">})</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a>employees</span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="op">|</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> e<span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span>; <span class="op">})</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> e<span class="op">.</span>address<span class="op">()</span>; <span class="op">})</span></span></code></pre></div>
 </blockquote>
 <p>But maybe we actually frequently need to locate the Tims. So we can produce a new range adaptor closure object to hold onto and use for future compositions like so:</p>
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">auto</span> tim_locations <span class="op">=</span> views<span class="op">::</span>filter<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> e<span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span>; <span class="op">})</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a>                   <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> e<span class="op">.</span>address<span class="op">()</span>; <span class="op">})</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>employees <span class="op">|</span> tim_locations</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">auto</span> tim_locations <span class="op">=</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>    views<span class="op">::</span>filter<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">){</span> <span class="cf">return</span> e<span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span>; <span class="op">})</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>    <span class="op">|</span> views<span class="op">::</span>transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> e<span class="op">.</span>address<span class="op">()</span>; <span class="op">})</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>employees <span class="op">|</span> tim_locations</span></code></pre></div>
 </blockquote>
 <p>Part of the goal of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> as a language feature is to obviate the need for any library <code class="sourceCode cpp"><span class="op">|</span></code> machinery. So the question is, how do we do this partial function with <code class="sourceCode cpp"><span class="op">|&gt;</span></code>? Let’s start with just getting all the Tims. We start out by writing:</p>
 <blockquote>
@@ -960,7 +969,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>But if we then add the <code class="sourceCode cpp">transform</code> on top of these to find the locations of all of our Tims, that would end up being:</p>
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">auto</span> tims_locations <span class="op">=</span> <span class="op">[]:</span> views<span class="op">::</span>filter<span class="op">(</span><span class="er">$</span><sub>a</sub>, <span class="op">[]:</span> <span class="er">$</span><sub>c</sub><span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span><span class="op">)</span> <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span><span class="er">$</span><sub>d</sub>, <span class="op">[]:</span> <span class="er">$</span><sub>e</sub><span class="op">.</span>address<span class="op">())</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">auto</span> tims_locations <span class="op">=</span> <span class="op">[]:</span> views<span class="op">::</span>filter<span class="op">(</span><span class="er">$</span><sub>ab</sub>, <span class="op">[]:</span> <span class="er">$</span><sub>c</sub><span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span><span class="op">)</span> <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span><span class="er">$</span><sub>d</sub>, <span class="op">[]:</span> <span class="er">$</span><sub>e</sub><span class="op">.</span>address<span class="op">())</span>;</span></code></pre></div>
 </blockquote>
 <p>Where, to add clarity:</p>
 <ul>
@@ -971,7 +980,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>As described in the original pipeline paper, this also easily extends to arbitrary algorithms without any additional library work:</p>
 <blockquote>
 <div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">auto</span> tims_salaries <span class="op">=</span> <span class="op">[]:</span> views<span class="op">::</span>filter<span class="op">(</span><span class="er">$</span>, <span class="op">[]:</span> <span class="er">$</span><span class="op">.</span>name<span class="op">()</span> <span class="op">==</span> <span class="st">&quot;Tim&quot;</span><span class="op">)</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a>                      <span class="op">|&gt;</span> ranges<span class="op">::</span>foldl<span class="op">(</span><span class="er">$</span>, <span class="fl">0.0</span>, std<span class="op">::</span>plus<span class="op">()</span>, <span class="op">[]:</span> <span class="er">$</span><span class="op">.</span>salary<span class="op">())</span></span></code></pre></div>
+<span id="cb19-2"><a href="#cb19-2"></a>                      <span class="op">|&gt;</span> ranges<span class="op">::</span>fold_left<span class="op">(</span><span class="er">$</span>, <span class="fl">0.0</span>, std<span class="op">::</span>plus<span class="op">()</span>, <span class="op">[]:</span> <span class="er">$</span><span class="op">.</span>salary<span class="op">())</span></span></code></pre></div>
 </blockquote>
 <p>Now, if we adopted placeholder lambdas along the lines presented here, but instead kept the non-placeholder pipelines, the above would look like:</p>
 <blockquote>
@@ -1069,17 +1078,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>And the class template argument deduction rules we already have kick in and have the desired behavior. This is a frequently desired extension. For instance, some of <span class="citation" data-cites="P1021R1">[<a href="#ref-P1021R1" role="doc-biblioref">P1021R1</a>]</span>’s examples could be written as:</p>
 <blockquote>
 <div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="kw">using</span> <span class="kw">namespace</span> ba <span class="op">=</span> boost<span class="op">::</span>algorithm;</span>
-<span id="cb37-2"><a href="#cb37-2"></a> </span>
+<span id="cb37-2"><a href="#cb37-2"></a></span>
 <span id="cb37-3"><a href="#cb37-3"></a>set<span class="op">&lt;</span>string, <span class="er">$</span><span class="op">&gt;</span> case_insensitive_strings<span class="op">(</span>ba<span class="op">::</span>ilexicographic_compare<span class="op">)</span>;</span>
-<span id="cb37-4"><a href="#cb37-4"></a> </span>
+<span id="cb37-4"><a href="#cb37-4"></a></span>
 <span id="cb37-5"><a href="#cb37-5"></a><span class="co">// Lambda comparators are great for algorithms like sort</span></span>
 <span id="cb37-6"><a href="#cb37-6"></a><span class="co">// Now with associative containers, too!</span></span>
-<span id="cb37-7"><a href="#cb37-7"></a>set<span class="op">&lt;</span><span class="dt">int</span>, <span class="er">$</span><span class="op">&gt;</span> s<span class="op">([](</span><span class="dt">int</span> i, <span class="dt">int</span> j<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb37-7"><a href="#cb37-7"></a>set<span class="op">&lt;</span><span class="dt">int</span>, <span class="er">$</span><span class="op">&gt;</span> s<span class="op">([](</span><span class="dt">int</span> i, <span class="dt">int</span> j<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb37-8"><a href="#cb37-8"></a>                 <span class="cf">return</span> std<span class="op">::</span>popcount<span class="op">(</span>i<span class="op">)</span> <span class="op">&lt;</span> std<span class="op">::</span>popcount<span class="op">(</span>j<span class="op">)</span>;</span>
-<span id="cb37-9"><a href="#cb37-9"></a>               <span class="op">})</span>; </span>
-<span id="cb37-10"><a href="#cb37-10"></a> </span>
+<span id="cb37-9"><a href="#cb37-9"></a>               <span class="op">})</span>;</span>
+<span id="cb37-10"><a href="#cb37-10"></a></span>
 <span id="cb37-11"><a href="#cb37-11"></a><span class="co">// and container adaptors!</span></span>
-<span id="cb37-12"><a href="#cb37-12"></a>priority_queue<span class="op">&lt;</span>Task, <span class="er">$</span><span class="op">&gt;</span> tasks<span class="op">([](</span>Task a, Task b<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb37-12"><a href="#cb37-12"></a>priority_queue<span class="op">&lt;</span>Task, <span class="er">$</span><span class="op">&gt;</span> tasks<span class="op">([](</span>Task a, Task b<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb37-13"><a href="#cb37-13"></a>                                 <span class="cf">return</span> a<span class="op">.</span>priority <span class="op">&lt;</span> b<span class="op">.</span>priority;</span>
 <span id="cb37-14"><a href="#cb37-14"></a>                              <span class="op">})</span>;</span></code></pre></div>
 </blockquote>
@@ -1090,7 +1099,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>But there’s a few interesting questions around this usage:</p>
 <h2 data-number="4.1" id="alias-or-constraint"><span class="header-section-number">4.1</span> Alias or Constraint<a href="#alias-or-constraint" class="self-link"></a></h2>
-<p>Should a <em>template-id</em> with a placeholder be a constraint or an alias template? The interesting example might be <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span> x <span class="op">=</span> <span class="dv">7</span>;</code> If <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span></code> is a constraint, then this is ill-formed because <code class="sourceCode cpp"><span class="dv">7</span></code> is not some kind of <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. If it’s just an alias template, then this is fine and behaves the same as <code class="sourceCode cpp">optional x <span class="op">=</span> <span class="dv">7</span>;</code>, which wraps the <code class="sourceCode cpp"><span class="dv">7</span></code>, declaring <code class="sourceCode cpp">x</code> to be an <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>. Both forms are useful - while the constraint <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span></code> is easy enough to write (as <code class="sourceCode cpp">specializes<span class="op">&lt;</span>optional<span class="op">&gt;</span></code>), the constraint <code class="sourceCode cpp">pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="kw">auto</span><span class="op">&gt;</span></code> is substantitively harder.</p>
+<p>Should a <em>template-id</em> with a placeholder be a constraint or an alias template? The interesting example might be <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span> x <span class="op">=</span> <span class="dv">7</span>;</code> If <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span></code> is a constraint, then this is ill-formed because <code class="sourceCode cpp"><span class="dv">7</span></code> is not some kind of <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. If it’s just an alias template, then this is fine and behaves the same as <code class="sourceCode cpp">optional x <span class="op">=</span> <span class="dv">7</span>;</code>, which wraps the <code class="sourceCode cpp"><span class="dv">7</span></code>, declaring <code class="sourceCode cpp">x</code> to be an <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>. Both forms are useful: it’s just a question of whether the intent is to do pattern matching or to do class template argument deduction.</p>
 <p>However, if <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span></code> <em>were</em> a constraint, how would you use it in a <em>requires-clause</em>? What would that syntax be? There doesn’t really seem to be an obvious choice here (<code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;&lt;</span>T<span class="op">&gt;</span></code>? Nope.) This is a separate problem that’s also important to consider, since this does come up: we need a way to unpack types. Perhaps the right way here is to allow a <code class="sourceCode cpp"><span class="kw">using</span></code> declaration in the middle of a template parameter list:</p>
 <blockquote>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> F,</span>
@@ -1107,12 +1116,34 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp">auto<sub>1</sub></code> is very likely necessary. <code class="sourceCode cpp">invocable<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> is a valid expression in its own right (that evaluates to <code class="sourceCode cpp"><span class="kw">false</span></code>) so you have to know if this is a <em>concept-id</em> or a <em>type-constraint</em>. The <code class="sourceCode cpp"><span class="kw">auto</span></code> would signal that this is clearly a <em>type-constraint</em> and thus a placeholder.</li>
 <li><code class="sourceCode cpp">auto<sub>2</sub></code>, given the necessity of <code class="sourceCode cpp">auto<sub>1</sub></code>, may not be necessary. Perhaps it could be used to differentiate the alias vs constraint cases, where <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span> a <span class="op">=</span> <span class="dv">7</span>;</code> is an alias with a placeholder but <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span> <span class="kw">auto</span> b <span class="op">=</span> <span class="dv">7</span>;</code> (which is the syntax we use for constrained variable declarations) is a constraint (that fails because <code class="sourceCode cpp"><span class="dv">7</span></code> is not an <code class="sourceCode cpp">optional<span class="op">&lt;</span><span class="kw">auto</span><span class="op">&gt;</span></code>). But this seems a bit subtle and, if anything, is an argument <em>against</em> using <code class="sourceCode cpp">auto<sub>2</sub></code> to avoid the association with constrained variable declarations.</li>
 </ul>
-<h2 data-number="4.3" id="what-about-non-type-template-parameters"><span class="header-section-number">4.3</span> What about non-type template parameters?<a href="#what-about-non-type-template-parameters" class="self-link"></a></h2>
+<p>Alternatively, <code class="sourceCode cpp"><span class="kw">auto</span></code> might be the wrong choice of placeholder for the concept case, and we may want a placeholder for the hole:</p>
+<blockquote>
+<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a>pair<span class="op">&lt;</span><span class="dt">int</span>, invocable<span class="op">&lt;</span><span class="er">$</span>, <span class="dt">int</span><span class="op">&gt;&gt;</span> <span class="kw">auto</span> p <span class="op">=</span> <span class="co">/* ... */</span>;</span></code></pre></div>
+</blockquote>
+<p>One reason for that might be …</p>
+<h2 data-number="4.3" id="concept-template-parameters"><span class="header-section-number">4.3</span> Concept template parameters<a href="#concept-template-parameters" class="self-link"></a></h2>
+<p>One related idea is the desire to have concept template parameters. One example might be <code class="sourceCode cpp">RangeOf</code>: there’s a lot of additional things you might want to check about a range, so a general concept that can check whatever you ask seems pretty valuable (since sometimes you want a <code class="sourceCode cpp">same_as</code>, sometimes a <code class="sourceCode cpp">convertible_to</code>, sometimes a completely different concept). Let’s say we can declare such a thing this way:</p>
+<blockquote>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">concept</span> C<span class="op">&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2"></a><span class="kw">concept</span> range_of <span class="op">=</span> ranges<span class="op">::</span>input_range<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="op">&amp;&amp;</span> C<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span>;</span></code></pre></div>
+</blockquote>
+<p>This would fairly straightforward allow something like <code class="sourceCode cpp">range_of<span class="op">&lt;</span>R, ranges<span class="op">::</span>input_range<span class="op">&gt;</span></code>, since <code class="sourceCode cpp">input_range</code> is already itself a unary concept.</p>
+<p>But sometimes we’d want to partially apply a binary concept, like <code class="sourceCode cpp">range_of<span class="op">&lt;</span>R, same_as<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code>. This has the same potential issue I showed with <code class="sourceCode cpp">invocable</code>: <code class="sourceCode cpp">C<span class="op">&lt;</span>T<span class="op">&gt;</span></code> may itself be a valid expression, so we need to be clear that we want to synthesize something. A placeholder could work here too:</p>
+<blockquote>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1"></a><span class="kw">template</span> <span class="op">&lt;</span>range_of<span class="op">&lt;</span>convertible_to<span class="op">&lt;</span><span class="er">$</span>, <span class="dt">int</span><span class="op">&gt;&gt;</span> R<span class="op">&gt;</span></span>
+<span id="cb43-2"><a href="#cb43-2"></a><span class="dt">void</span> algo<span class="op">(</span>R<span class="op">&amp;&amp;)</span>;</span></code></pre></div>
+</blockquote>
+<p>Where the base case would be to just provide a placeholder where today we don’t actually need one:</p>
+<blockquote>
+<div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>range<span class="op">&lt;</span><span class="er">$</span><span class="op">&gt;</span> R<span class="op">&gt;</span></span>
+<span id="cb44-2"><a href="#cb44-2"></a><span class="dt">void</span> algo<span class="op">(</span>R<span class="op">&amp;&amp;)</span>;</span></code></pre></div>
+</blockquote>
+<h2 data-number="4.4" id="what-about-non-type-template-parameters"><span class="header-section-number">4.4</span> What about non-type template parameters?<a href="#what-about-non-type-template-parameters" class="self-link"></a></h2>
 <p>What about this case:</p>
 <blockquote>
-<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a>std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="kw">auto</span><span class="op">&gt;</span> x <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1"></a>std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="er">$</span><span class="op">&gt;</span> x <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>Can this deduce <code class="sourceCode cpp">x</code> as an <code class="sourceCode cpp">array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">5</span><span class="op">&gt;</span></code>? It would mean that <code class="sourceCode cpp"><span class="kw">auto</span></code> would have to be a placeholder for both types and values. That’d be an unfortunate case of applying different meanings to the same syntax. But at least, we can’t overload template names like this anyway (there’s no case where <code class="sourceCode cpp">Z<span class="op">&lt;</span><span class="dt">int</span>, <span class="kw">auto</span><span class="op">&gt;</span></code> is sometimes two types and sometimes a type and a value), so do we really need two different placeholders for the type and value cases?</p>
+<p>Can this deduce <code class="sourceCode cpp">x</code> as an <code class="sourceCode cpp">array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">5</span><span class="op">&gt;</span></code>? I’d expect so - this is just another example of the limitation of class template argument deduction of not being able to provide some of the arguments.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0973R0">
