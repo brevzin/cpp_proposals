@@ -79,7 +79,7 @@ here [@Calabrese.Argot].
 
 
 This paper attempts to provide a solution to these problems, building on the work
-of prior paper authors. The goal of this paper is to provide a better
+of prior paper authors. The goal of this paper is to provide better
 implementations for a library `tuple` and `variant`, ones that ends up being
 much easier to
 implement, more compiler friendly, and more ergonomic. The paper will piecewise
@@ -1682,7 +1682,7 @@ If reflection can produce something much closer to what is being proposed here,
 I would happily table this proposal. But it seems to me that it's fairly far
 off, and the functionality presented herein would be very useful. 
 
-# What about `std:pair`?
+# What about `std::pair`?
 
 As shocking as it might be to hear, there are in fact other types in the
 standard library that are neither `std::tuple<Ts...>` nor `std::variant<Ts...>`.
