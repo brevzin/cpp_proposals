@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-03-14" />
+  <meta name="dcterms.date" content="2022-07-09" />
   <title>operator??</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-03-14</td>
+    <td>2022-07-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -569,7 +569,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#syntax-for-c"><span class="toc-section-number">3.1</span> Syntax for C++<span></span></a>
 <ul>
-<li><a href="#in-other-languages"><span class="toc-section-number">3.1.1</span> <code class="sourceCode cpp"><span class="op">??</span></code> in other languages<span></span></a></li>
+<li><a href="#why-not-try"><span class="toc-section-number">3.1.1</span> Why not <code class="sourceCode cpp"><span class="cf">try</span></code>?<span></span></a></li>
+<li><a href="#in-other-languages"><span class="toc-section-number">3.1.2</span> <code class="sourceCode cpp"><span class="op">??</span></code> in other languages<span></span></a></li>
 </ul></li>
 <li><a href="#semantics"><span class="toc-section-number">3.2</span> Semantics<span></span></a>
 <ul>
@@ -637,7 +638,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>we’re giving a name, <code class="sourceCode cpp">f</code>, to the <code class="sourceCode cpp">expected</code> object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as <code class="sourceCode cpp"><span class="op">*</span>f</code></li>
 <li>the “nice” syntax for propagation is inefficient - if <code class="sourceCode cpp">E</code> is something more involved than <code class="sourceCode cpp">std<span class="op">::</span>error_code</code>, we really should <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span>f<span class="op">).</span>error<span class="op">()</span></code> into that. And even then, we’re moving the error twice when we optimally could move it just once.</li>
 </ul>
-<p>In an effort to avoid… that… many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this (<a href="https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN">Boost.LEAF</a>, <a href="https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html">Boost.Outcome</a>, <a href="https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h">mediapipe</a>, etc. Although not all do, neither <code class="sourceCode cpp">folly</code>’s <code class="sourceCode cpp">fb<span class="op">::</span>Expected</code> nor <code class="sourceCode cpp">tl<span class="op">::</span>expected</code> nor <code class="sourceCode cpp">llvm<span class="op">::</span>Expected</code> provide such):</p>
+<p>In an effort to avoid… that… many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this (<a href="https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN">Boost.LEAF</a>, <a href="https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html">Boost.Outcome</a>, <a href="https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h">mediapipe</a>, <a href="https://github.com/SerenityOS/serenity/blob/50642f85ac547a3caee353affcb08872cac49456/Documentation/Patterns.md#try-error-handling">SerenityOS</a>, etc. Although not all do, neither <code class="sourceCode cpp">folly</code>’s <code class="sourceCode cpp">fb<span class="op">::</span>Expected</code> nor <code class="sourceCode cpp">tl<span class="op">::</span>expected</code> nor <code class="sourceCode cpp">llvm<span class="op">::</span>Expected</code> provide such):</p>
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="op">{</span></span>
@@ -768,8 +769,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>What if you assume that a <code class="sourceCode cpp"><span class="op">?</span></code> is a conditional operator and try to parse that until it fails, then back up and try again to parse a postfix <code class="sourceCode cpp"><span class="op">?</span></code> operator? Is that really a viable strategy? If we assume both <code class="sourceCode cpp"><span class="op">?</span></code>s are the beginning of a conditional, then that will eventually fail since we hit a <code class="sourceCode cpp">;</code> before a second <code class="sourceCode cpp"><span class="op">:</span></code> - but it’s the outer <code class="sourceCode cpp"><span class="op">?</span></code> that failed, not the inner - do we retry the inner first (which would lead to the <code class="sourceCode cpp">res1</code> parse eventually) or the outer first (which would lead to the <code class="sourceCode cpp">res2</code> one)?</p>
 <p>Maybe this is doable with parsing heroics, but at some point I have to ask if it’s worth it. Especially since we can just pick something else: <code class="sourceCode cpp"><span class="op">??</span></code></p>
-<p>This is only one character longer, and just as questioning. It’s easily unambiguous by virtue of not even being a valid token sequence today. But it’s worth commenting on the usage of <code class="sourceCode cpp"><span class="op">??</span></code> in other languages.</p>
-<h3 data-number="3.1.1" id="in-other-languages"><span class="header-section-number">3.1.1</span> <code class="sourceCode cpp"><span class="op">??</span></code> in other languages<a href="#in-other-languages" class="self-link"></a></h3>
+<p>This is only one character longer, and just as questioning. It’s easily unambiguous by virtue of not even being a valid token sequence today. But it’s worth commenting further on this choice of syntax.</p>
+<h3 data-number="3.1.1" id="why-not-try"><span class="header-section-number">3.1.1</span> Why not <code class="sourceCode cpp"><span class="cf">try</span></code>?<a href="#why-not-try" class="self-link"></a></h3>
+<p>For those libraries that provide this operation as a macro, the name is usually <code class="sourceCode cpp">TRY</code> and <span class="citation" data-cites="P0779R0">[<a href="#ref-P0779R0" role="doc-biblioref">P0779R0</a>]</span> previously suggested this sort of facility under the name <code class="sourceCode cpp"><span class="kw">operator</span> <span class="cf">try</span></code>. As mentioned, Rust previously had an error propagation macro named <code class="sourceCode cpp"><span class="cf">try</span><span class="op">!</span></code> and multiple other languages have such an error propagation operator (<a href="https://ziglang.org/documentation/master/#try">Zig</a>, <a href="https://docs.swift.org/swift-book/LanguageGuide/ErrorHandling.html">Swift</a>, <a href="http://joeduffyblog.com/2016/02/07/the-error-model/">Midori</a>, etc.).</p>
+<p>The problem is, in C++, <code class="sourceCode cpp"><span class="cf">try</span></code> is strongly associated with <em>exceptions</em>. That’s what a <code class="sourceCode cpp"><span class="cf">try</span></code> block is for: to catch exceptions. In <span class="citation" data-cites="P0709R4">[<a href="#ref-P0709R4" role="doc-biblioref">P0709R4</a>]</span>, there was a proposal for a <code class="sourceCode cpp"><span class="cf">try</span></code> expression (in §4.5.1). That, too, was tied in with exceptions.</p>
+<p>Having a facility for error propagation in C++ which has nothing to do with exceptions still use the keyword <code class="sourceCode cpp"><span class="cf">try</span></code> would be, I think, quite misleading. And the goal here isn’t to interact with exceptions at all - it’s simply to provide automated error propagation for those error handling cases that <em>don’t</em> use exceptions.</p>
+<h3 data-number="3.1.2" id="in-other-languages"><span class="header-section-number">3.1.2</span> <code class="sourceCode cpp"><span class="op">??</span></code> in other languages<a href="#in-other-languages" class="self-link"></a></h3>
 <p><code class="sourceCode cpp"><span class="op">??</span></code> is called a “null (or nil) coalescing operator” in some languages (like C# or JavaScript or Swift) where <code class="sourceCode cpp">x <span class="op">??</span> y</code> is roughly equivalent to what C++ would spell as <code class="sourceCode cpp">x <span class="op">?</span> <span class="op">*</span>x <span class="op">:</span> y</code> except that <code class="sourceCode cpp">x</code> is only evaluated once. Kotlin spells this operator <code class="sourceCode cpp"><span class="op">?:</span></code>, but it behaves differently from the gcc extension since <code class="sourceCode cpp">x <span class="op">?:</span> y</code> in gcc evaluates as <code class="sourceCode cpp">x <span class="op">?</span> x <span class="op">:</span> y</code> rather than <code class="sourceCode cpp">x <span class="op">?</span> <span class="op">*</span>x <span class="op">:</span> y</code>.</p>
 <p>For <code class="sourceCode cpp">x</code> being some kind of <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>, this can <em>mostly</em> already be spelled <code class="sourceCode cpp">x<span class="op">.</span>value_or<span class="op">(</span>y<span class="op">)</span></code>. The difference is that here <code class="sourceCode cpp">y</code> is unconditionally evaluated, which is why <span class="citation" data-cites="P2218R0">[<a href="#ref-P2218R0" role="doc-biblioref">P2218R0</a>]</span> proposes a separate <code class="sourceCode cpp">opt<span class="op">.</span>value_or_else<span class="op">(</span>f<span class="op">)</span></code> which invokes <code class="sourceCode cpp">f</code>. Which would make a proper equivalence be spelled <code class="sourceCode cpp">x<span class="op">.</span>value_or_else<span class="op">([&amp;]{</span> <span class="cf">return</span> y; <span class="op">})</span></code>.</p>
 <p>I’m not aware of any proposals to add this particular operator in C++, but because we already have two types that directly provide that functionality (as would many other non-<code class="sourceCode cpp">std</code> flavors thereof), and because it’s fairly straightforward to write such an algorithm generically, it wouldn’t seem especially valuable to have a dedicated operator for this functionality – so it’s probably safe to take for this use-case.</p>
@@ -806,7 +811,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-25"><a href="#cb11-25"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> strcat<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a><span class="op">{</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>    <span class="kw">using</span> <em>_Return</em> <span class="op">=</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="kw">using</span> <em>_Return</em> <span class="op">=</span> std<span class="op">::</span>f_traits<span class="op">&lt;</span></span>
 <span id="cb12-4"><a href="#cb12-4"></a>        std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>string, E<span class="op">&gt;&gt;</span>;</span>
 <span id="cb12-5"><a href="#cb12-5"></a></span>
 <span id="cb12-6"><a href="#cb12-6"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__f</em> <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
@@ -1087,7 +1092,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<p>But this doesn’t seem as valuable as <code class="sourceCode cpp"><span class="op">??</span></code> or even <code class="sourceCode cpp"><span class="op">?.</span></code> since this case is easy to add as a member function. Indeed, that’s what <code class="sourceCode cpp">x<span class="op">.</span>value<span class="op">()</span></code> and <code class="sourceCode cpp"><span class="op">*</span>x</code> do for <code class="sourceCode cpp">optional</code> and <code class="sourceCode cpp">expected</code>.</p>
+<p>But this doesn’t seem as valuable as <code class="sourceCode cpp"><span class="op">??</span></code> or even <code class="sourceCode cpp"><span class="op">?.</span></code> since this case is easy to add as a member function. Indeed, that’s what <code class="sourceCode cpp">x<span class="op">.</span>value<span class="op">()</span></code> and <code class="sourceCode cpp"><span class="op">*</span>x</code> do for <code class="sourceCode cpp">optional</code> and <code class="sourceCode cpp">expected</code> (throw and undefined behavior, respectively).</p>
 <p>Moreover, any of the kinds of behavior you want can be written as a free function:</p>
 <blockquote>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, Try U <span class="op">=</span> std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></span>
@@ -1112,6 +1117,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P0323R12">
 <p>[P0323R12] Vicente Botet, JF Bastien, Jonathan Wakely. 2022-01-07. std::expected. <br />
 <a href="https://wg21.link/p0323r12">https://wg21.link/p0323r12</a></p>
+</div>
+<div id="ref-P0709R4">
+<p>[P0709R4] Herb Sutter. 2019-08-04. Zero-overhead deterministic exceptions: Throwing values. <br />
+<a href="https://wg21.link/p0709r4">https://wg21.link/p0709r4</a></p>
+</div>
+<div id="ref-P0779R0">
+<p>[P0779R0] Niall Douglas. 2017-10-15. Proposing operator try() (with added native C++ macro functions!). <br />
+<a href="https://wg21.link/p0779r0">https://wg21.link/p0779r0</a></p>
 </div>
 <div id="ref-P2218R0">
 <p>[P2218R0] Marc Mutz. 2020-09-15. More flexible optional::value_or(). <br />

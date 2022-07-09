@@ -80,7 +80,7 @@ This is significantly longer and more tedious because we have to do manual error
 * we're giving a name, `f`, to the `expected` object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as `*f`
 * the "nice" syntax for propagation is inefficient - if `E` is something more involved than `std::error_code`, we really should `std::move(f).error()` into that. And even then, we're moving the error twice when we optimally could move it just once.
 
-In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
+In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), [SerenityOS](https://github.com/SerenityOS/serenity/blob/50642f85ac547a3caee353affcb08872cac49456/Documentation/Patterns.md#try-error-handling), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
 
 ::: bq
 ```cpp
@@ -239,7 +239,15 @@ What if you assume that a `?` is a conditional operator and try to parse that un
 
 Maybe this is doable with parsing heroics, but at some point I have to ask if it's worth it. Especially since we can just pick something else: `??`
 
-This is only one character longer, and just as questioning. It's easily unambiguous by virtue of not even being a valid token sequence today. But it's worth commenting on the usage of `??` in other languages.
+This is only one character longer, and just as questioning. It's easily unambiguous by virtue of not even being a valid token sequence today. But it's worth commenting further on this choice of syntax.
+
+### Why not `try`?
+
+For those libraries that provide this operation as a macro, the name is usually `TRY` and [@P0779R0] previously suggested this sort of facility under the name `operator try`. As mentioned, Rust previously had an error propagation macro named `try!` and multiple other languages have such an error propagation operator ([Zig](https://ziglang.org/documentation/master/#try), [Swift](https://docs.swift.org/swift-book/LanguageGuide/ErrorHandling.html), [Midori](http://joeduffyblog.com/2016/02/07/the-error-model/), etc.).
+
+The problem is, in C++, `try` is strongly associated with _exceptions_. That's what a `try` block is for: to catch exceptions. In [@P0709R4], there was a proposal for a `try` expression (in §4.5.1). That, too, was tied in with exceptions.
+
+Having a facility for error propagation in C++ which has nothing to do with exceptions still use the keyword `try` would be, I think, quite misleading. And the goal here isn't to interact with exceptions at all - it's simply to provide automated error propagation for those error handling cases that _don't_ use exceptions.
 
 ### `??` in other languages
 
@@ -287,7 +295,7 @@ auto strcat(int i) -> std::expected<std::string, E>
 ```cpp
 auto strcat(int i) -> std::expected<std::string, E>
 {
-    using $_Return$ = std::try_traits<
+    using $_Return$ = std::f_traits<
         std::expected<std::string, E>>;
 
     auto&& $__f$ = foo(i);
@@ -613,7 +621,7 @@ auto val = $_Traits$::extract_value(FWD($__val$));
 ```
 :::
 
-But this doesn't seem as valuable as `??` or even `?.` since this case is easy to add as a member function. Indeed, that's what `x.value()` and `*x` do for `optional` and `expected`.
+But this doesn't seem as valuable as `??` or even `?.` since this case is easy to add as a member function. Indeed, that's what `x.value()` and `*x` do for `optional` and `expected` (throw and undefined behavior, respectively).
 
 Moreover, any of the kinds of behavior you want can be written as a free function:
 
