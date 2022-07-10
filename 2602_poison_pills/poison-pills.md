@@ -1,6 +1,6 @@
 ---
 title: "Poison Pills are Too Toxic"
-document: P2602R0
+document: P2602R1
 date: today
 audience: LEWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tags: ranges
 ---
+
+# Revision History
+
+Since [@P2602R0], added feature-test macro and wording for the comparison objects, which was previously missing.
 
 # Introduction
 
@@ -171,6 +175,21 @@ When the deleted overloads are viable, program-defined overloads need to be more
 :::
 :::
 
+Change [cmp.alg]{.sref} (just the sub-bullets that refer to doing non-member customization points):
+
+::: bq
+* [1.2]{.pnum} Otherwise, `strong_­ordering(strong_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​strong_­order`]{.rm} [where `strong_order` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+
+...
+
+* [2.2]{.pnum} Otherwise, `weak_­ordering(weak_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​weak_­order`]{.rm} [where `weak_order` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+
+...
+
+* [3.2]{.pnum} Otherwise, `partial_­ordering(partial_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​partial_­order`]{.rm} [where `partial_order` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+
+:::
+
 Change [iterator.cust.move]{.sref} [This isn't a behavior change, simply aligning the wording for all the customization point objects]{.draftnote}:
 
 ::: bq
@@ -263,13 +282,27 @@ void size(const auto&) = delete;
 [where `size` undergoes argument dependent lookup]{.addu} then `ranges​::​size(E)` is expression-equivalent to [that expression]{.addu} [`auto(size(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
 :::
 
+## Feature-Test Macro
+
+Bump the value for `__cpp_lib_ranges` in [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_­lib_­ranges @[202202L]{.diffdel}@
++ #define __cpp_­lib_­ranges @[2022XXL]{.diffins}@
+  // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
+```
+:::
+
+This allows for only conditionally providing the additional overloads necessary to make mutable objects work.
+
 ## Implementation Experience
 
 This has been implemented in both libstdc++ and MSVC's standard library.
 
 # Acknowledgements
 
-Thanks to Tim Song for help navigating everything, Casey Carter for the wording suggestions, and Jonathan Wakely for helping with libstdc++ testing.
+Thanks to Tim Song for help navigating everything, Casey Carter for the wording suggestions, and Jonathan Wakely for helping with libstdc++ testing. Thanks to Hui Xie for pointing out the comparison objects.
 
 ---
 references:

@@ -57,7 +57,7 @@ make all of my papers.
 
 ### Pending CWG/LWG Review
 
-None.
+- ![][~ranges] [p2602r1 - Poison Pills are Too Toxic](2602_poison_pills/p2602r1.html).
 
 ### Pending EWG/LEWG Voting
 
@@ -69,7 +69,6 @@ None.
 
 - ![][~constexpr] [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
 - ![][~constexpr] [p2564r0 - `consteval` needs to propagate up](2564_consteval_patch/p2564r0.html).
-- ![][~ranges] [p2602r0 - Poison Pills are Too Toxic](2602_poison_pills/p2602r0.html).
 
 ### Ongoing Plans
 
