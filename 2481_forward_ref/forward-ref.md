@@ -1,6 +1,6 @@
 ---
 title: "Forwarding reference to specific type/template"
-document: P2481R0
+document: P2481R1
 date: today
 audience: EWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2481R0], added [Circle's approach](#circles-approach) and a choice implementor quote.
 
 # Introduction
 
@@ -128,7 +132,11 @@ struct optional {
 ```
 :::
 
-But this deduces too much! We don't want to deduce derived types (which in addition to unnecessary extra template instantiations, can also run into [shadowing issues](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0847r7.html#the-shadowing-mitigation-private-inheritance-problem)). We _just_ want to know what the `const`-ness and value category of the `optional` are.
+But this deduces too much! We don't want to deduce derived types (which in addition to unnecessary extra template instantiations, can also run into [shadowing issues](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0847r7.html#the-shadowing-mitigation-private-inheritance-problem)). We _just_ want to know what the `const`-ness and value category of the `optional` are. But the only solution at the moment is to C-style cast your way back down to your own type. And that's not a particular popular solution, even amongst [standard library implementors](https://discourse.llvm.org/t/std-pmr-maturity/62200/17):
+
+::: quote
+FWIW, we’re no longer using explicit object member functions for `std::expected`; STL couldn’t stomach the necessary C-style cast without which the feature is not fit for purpose.
+:::
 
 ## `view_interface` members
 
@@ -429,6 +437,81 @@ The significant advantage here is that applying the `const` and reference qualif
 The disadvantage is that this is _quite_ novel for C++, and extremely weird. Even more dramatically weird than the other two solutions. And that's even with using the nice name of `qualifiers`, which is probably untenable (although `cvrefquals` or `refqual` might be available?). Also `Q<T> x` does not look like a forwarding reference, but since `Q<T>& x` is the only meaningful way to deduce just `const` - this suggests that `Q<T>&& x` _also_ needs to deduce just `const` (even though why would anyone write this), which leaves `Q<T> x` alone.
 
 There's also the question of how we could provide an explicit template argument for `Q`. Perhaps that's spelled `qualifiers::rvalue` (to add `&&`) or `qualifiers::const_lvalue` (to add `const&`) and the like? There'd need to be some language magic way of spelling such a thing - since we probably wouldn't want to just allow an arbitrary alias template. `std::add_pointer_t`, for instance, would suddenly introduce a non-deduced context, and wouldn't make any sense anyway.
+
+## Circle's approach
+
+Sean Baxter implemented the following approach in Circle:
+
+::: bq
+```cpp
+template<typename T, typename... Args>
+void f(T&& y : std::tuple<Args...>);
+```
+:::
+
+In this syntax, we effectively are deducing some kind of `std::tuple<Args...>`. `T` here is always a (possibly reference to) (possibly const) `std::tuple`. This behaves the same way as the previous section's:
+
+::: bq
+```cpp
+template<qualifiers Q, typename... Args>
+void f(Q<std::tuple<Args...>> y);
+```
+:::
+
+with the only difference being what additional information you have available to you: whether that's the type of `y` (`T`, or really `T&&`) or an alias providing the appropriate qualifiers (`Q`). As such, their uses are broadly similar:
+
+::: cmptable
+### Qualifiers
+```cpp
+template <typename... Ts>
+struct tuple {
+  template <typename... Us, qualifiers Q>
+    requires sizeof...(Us) == sizeof...(Ts)
+          && (constructible_from<Ts, Q<Us>> && ...)
+  tuple(Q<tuple<Us...>> rhs);
+};
+```
+
+### Circle
+```cpp
+template <typename... Ts>
+struct tuple {
+  template <typename... Us, typename Rhs>
+    requires sizeof...(Us) == sizeof...(Ts)
+          && (constructible_from<Ts, copy_cvref_t<Rhs, Us>> && ...)
+  tuple(Rhs&& rhs : tuple<Us...>);
+};
+```
+
+---
+
+```cpp
+template <typename D>
+struct view_interface {
+    template <qualifiers Q>
+        requires forward_range<Q<D>>
+    constexpr bool empty(this Q<D>& self)
+    {
+        return ranges::begin(self) == ranges::end(self);
+    }
+};
+```
+
+```cpp
+template <typename D>
+struct view_interface {
+    template <class Self>
+        requires forward_range<Self>
+    constexpr bool empty(this Self& self : D)
+    {
+        return ranges::begin(self) == ranges::end(self);
+    }
+};
+```
+:::
+
+The Circle approach requires a bit more work to propagate the qualifiers as compared to the qualifiers approach (which exists to propagate qualifiers), but gives you an actual name for the actual type you end up with rather than having to re-spell it manually.
+
 
 ## Something else
 

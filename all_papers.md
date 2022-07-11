@@ -52,7 +52,7 @@
 - ![][~ranges] 2441 <code class="sourceCode cpp">views<span class="op">::</span>join_with</code>: [p2441r0](2441_join_with/p2441r0.html) [p2441r1](2441_join_with/p2441r1.html) [p2441r2](2441_join_with/p2441r2.html)
 - ![][~ranges] 2446 <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>: [p2446r0](2446_move_view/p2446r0.html) [p2446r1](2446_move_view/p2446r1.html) [p2446r2](2446_move_view/p2446r2.html)
 - ![][~constexpr] 2448 Relaxing some  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  restrictions: [p2448r0](2448_relax_constexpr/p2448r0.html) [p2448r1](2448_relax_constexpr/p2448r1.html) [p2448r2](2448_relax_constexpr/p2448r2.html)
-- 2481 Forwarding reference to specific type/template: [p2481r0](2481_forward_ref/p2481r0.html)
+- 2481 Forwarding reference to specific type/template: [p2481r0](2481_forward_ref/p2481r0.html) [p2481r1](2481_forward_ref/p2481r1.html)
 - ![][~constexpr] 2484 Extending support for class types as non-type template parameters: [p2484r0](2484_extend_cnttp/p2484r0.html)
 - 2493 Missing feature test macros for C++20 core papers: [p2493r0](2493_core_feature_test/p2493r0.html)
 - 2508 Expose  <code class="sourceCode cpp">std<span class="op">::</span><em>basic-format-string</em><span class="op">&lt;</span>charT, Args<span class="op">...&gt;</span></code>: [p2508r0](2508_expose_format_string/p2508r0.html) [p2508r1](2508_expose_format_string/p2508r1.html) [p2508r2](2508_expose_format_string/p2508r2.html)
