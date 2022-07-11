@@ -63,7 +63,7 @@ make all of my papers.
 
 - ![][~ranges] [p2278r4 - `cbegin` should always return a constant iterator](2278_cbegin/p2278r4.html) (LWG already approved).
 - ![][~ranges] [p2446r2 - `views::as_rvalue`](2446_move_view/p2446r2.html) (LWG already approved).
-- ![][~ranges] [p2585r0 - Improve default container formatting](2585_fmt_container/p2585r0.html).
+- ![][~ranges] [p2585r1 - Improve default container formatting](2585_fmt_container/p2585r1.html).
 
 ### Pending EWG/LEWG Review
 

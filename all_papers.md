@@ -60,7 +60,7 @@
 - ![][~ranges] 2550 <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code>  should say  <code class="sourceCode cpp">output_iterator</code>  somewhere: [p2550r0](2550_algo_output_iterator/p2550r0.html) [p2550r1](2550_algo_output_iterator/p2550r1.html)
 - 2561 <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">??</span></code>: [p2561r0](2561_operator_try/p2561r0.html)
 - ![][~constexpr] 2564 <code class="sourceCode cpp"><span class="kw">consteval</span></code>  needs to propagate up: [p2564r0](2564_consteval_patch/p2564r0.html)
-- ![][~ranges] 2585 Improve default container formatting: [p2585r0](2585_fmt_container/p2585r0.html)
+- ![][~ranges] 2585 Improve default container formatting: [p2585r0](2585_fmt_container/p2585r0.html) [p2585r1](2585_fmt_container/p2585r1.html)
 - 2593 Allowing  <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code>: [p2593r0](2593_static_assert/p2593r0.html)
 - 2602 Poison Pills are Too Toxic: [p2602r0](2602_poison_pills/p2602r0.html) [p2602r1](2602_poison_pills/p2602r1.html)
 

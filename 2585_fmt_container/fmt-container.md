@@ -1,6 +1,6 @@
 ---
 title: "Improve default container formatting"
-document: P2585R0
+document: P2585R1
 date: today
 audience: LEWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tag: ranges
 ---
+
+# Revision History
+
+Since [@P2585R0], updated wording.
 
 # Introduction
 
@@ -145,10 +149,10 @@ namespace std {
 + };
 +
 + template<class R>
-+   inline constexpr $unspecified$ format_kind = $unspecified$;
++   constexpr $unspecified$ format_kind = $unspecified$;
 +
 + template<ranges::input_range R>
-+   inline constexpr range_format_kind format_kind<R> = $see below$;
++   constexpr range_format_kind format_kind<R> = $see below$;
 
   template<class T, class charT = char>
       requires same_as<remove_cvref_t<T>, T> && formattable<T, charT>
@@ -174,8 +178,8 @@ Add to [format.range]:
 ::: bq
 ::: addu
 ```cpp
-template<input_range R>
-  inline constexpr range_format_kind format_kind<R> = $see below$;
+template<ranges::input_range R>
+  constexpr range_format_kind format_kind<R> = $see below$;
 ```
 
 [a]{.pnum} For a type `R`, `format_kind<R>` is defined as follows:
@@ -186,7 +190,7 @@ template<input_range R>
     * [a.#.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::set`.
   * [a.#]{.pnum} Otherwise, `format_kind<R>` is `range_format_kind::sequence`.
 
-[b]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `format_kind` for *cv*-unqualified program-defined types.
+[b]{.pnum} *Remarks*: Pursuant to [namespace.std], users may specialize `format_kind` for *cv*-unqualified program-defined types that model `ranges::input_range`.
 Such specializations shall be usable in constant expressions ([expr.const]) and have type `const range_format_kind`.
 :::
 :::
@@ -420,7 +424,7 @@ template <class FormatContext>
 
 [#]{.pnum} The type of `r` is `const R&` if `input_range<const R>` is `true` and `R&` otherwise.
 
-[#]{.pnum} *Effects*: Equivalent to `return $underlying_$.format(basic_string<charT>(from_range, r), ctx);`
+[#]{.pnum} *Effects*: Let `$s$` be a `basic_string<charT>` such that `ranges::equal($s$, r)` is `true`. Equivalent to: `return $underlying_$.format($s$, ctx);`
 :::
 :::
 
