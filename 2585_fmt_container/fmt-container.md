@@ -428,6 +428,17 @@ template <class FormatContext>
 :::
 :::
 
+## Feature-test Macro
+
+This paper hopefully just gets implemented together with [@P2286R8], in which case no feature-test macro would be necessary. However, given the way the timeline works out, that paper may end up being adopted before this one - in which case it would still be necessary. If these end up being moved in different plenaries, then Bump the feature-test macro for `__cpp_lib_format` in [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_lib_format  @[202110L]{.diffdel}@ // also in <format>
++ #define __cpp_lib_format  @[2022XXL]{.diffins}@ // also in <format>
+```
+:::
+
 # Acknowledgements
 
 Thanks to Jeff Garland for initially pointing out this distinction, Tomasz Kamiński for suggesting this approach, Victor Zverovich for having more or less already implemented it, and Tim Song for everything else.
