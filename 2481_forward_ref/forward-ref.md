@@ -512,6 +512,8 @@ struct view_interface {
 
 The Circle approach requires a bit more work to propagate the qualifiers as compared to the qualifiers approach (which exists to propagate qualifiers), but gives you an actual name for the actual type you end up with rather than having to re-spell it manually.
 
+As Circle's approach is conceptually similar to the qualifiers approach, it is weird for some of the same ways. The declaration `T&& t : tuple<U...>` may look like it's deducing `t` as a regular forwarding reference, but it's not - it additionally (potentially) undergoes a derived-to-base conversion at the call site. We now have two types attached to a given variable. For those coming from languages which put the type of a variable after a colon, it would look like the type of `t` is `tuple<U...>` - and that's kind of correct at least (the type of `remove_cvref_t<decltype(t)>` is `tuple<U...>`). It seems unlikely that we would ever move C++ into a direction with better declaration syntax, but if we did this would cut off that approach.
+
 
 ## Something else
 

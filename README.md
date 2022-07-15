@@ -90,7 +90,7 @@ make all of my papers.
 
 - [d2011r2 - A pipeline-rewrite operator](2011_pipeline/d2011r2.html), with Colby Pike.
 - [p2287r1 - Designated-initializers for Base Classes](2287_designated_base/p2287r1.html).
-- [p2481r0 - Forwarding reference to specific type/template](2481_forward_ref/forward-ref.md).
+- [p2481r1 - Forwarding reference to specific type/template](2481_forward_ref/p2481r1.html).
 
 ### Rejected
 

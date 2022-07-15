@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-07-11" />
+  <meta name="dcterms.date" content="2022-07-15" />
   <title>Forwarding reference to specific type/template</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-07-11</td>
+    <td>2022-07-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1013,6 +1013,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>The Circle approach requires a bit more work to propagate the qualifiers as compared to the qualifiers approach (which exists to propagate qualifiers), but gives you an actual name for the actual type you end up with rather than having to re-spell it manually.</p>
+<p>As Circle’s approach is conceptually similar to the qualifiers approach, it is weird for some of the same ways. The declaration <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span> t <span class="op">:</span> tuple<span class="op">&lt;</span>U<span class="op">...&gt;</span></code> may look like it’s deducing <code class="sourceCode cpp">t</code> as a regular forwarding reference, but it’s not - it additionally (potentially) undergoes a derived-to-base conversion at the call site. We now have two types attached to a given variable. For those coming from languages which put the type of a variable after a colon, it would look like the type of <code class="sourceCode cpp">t</code> is <code class="sourceCode cpp">tuple<span class="op">&lt;</span>U<span class="op">...&gt;</span></code> - and that’s kind of correct at least (the type of <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>t<span class="op">)&gt;</span></code> is <code class="sourceCode cpp">tuple<span class="op">&lt;</span>U<span class="op">...&gt;</span></code>). It seems unlikely that we would ever move C++ into a direction with better declaration syntax, but if we did this would cut off that approach.</p>
 <h2 data-number="3.6" id="something-else"><span class="header-section-number">3.6</span> Something else<a href="#something-else" class="self-link"></a></h2>
 <p>If there’s a different approach someone has, I’d love to hear it. But this is what I’ve got so far.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
