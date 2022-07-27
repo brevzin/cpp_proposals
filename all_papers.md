@@ -71,3 +71,5 @@
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
 - Exploring Placeholders: [dxxxxr0.html](xxxx_placeholders/dxxxxr0.html)
+- Various Designs for Pipelines: [pipelines.html](xxxx_placeholders/pipelines.html)
+- Exploring Placeholders: [placeholders.html](xxxx_placeholders/placeholders.html)
