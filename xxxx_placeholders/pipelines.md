@@ -318,6 +318,248 @@ But in the language bind model, this becomes a little fuzzier. If we say that `c
 
 Language bind is a more complex model than placeholders and requires a little hand-waving around what exactly we're doing, for a benefit of three characters per unary function call. Is it worth it?
 
+# Design Details
+
+At this point, I think it's clear that placeholders are superior to left-threading. Just significantly more flexibility. The questions are really what we want to do about no placeholders (should `x |> f` be valid, as per the language bind model, or invalid, as per the regular placeholder model) and whether we should do something the gain back the smaller syntax of the left-threading model (should `x \> f()` or something to that effect be valid and mean `f(x)`). Let's hold off on those for now and deal with a few other issues about placeholders that definitely need to be addressed.
+
+## Right-hand side restrictions
+
+Generally, the model for `A |> E` is that `E` is evaluated with `A` substituted into the `%` except that `A` is evaluated first. `A` is evaluated first largely because it clearly looks like it is - it's written first. This is similar to the argument made in [@P0145R3] for changing the evaluation order of expressions for C++17.
+
+There are a wide variety of expressions that we can use for `E` where this ends up not being a problem - either because the current evaluation order is unspecified or changing it doesn't cause problems. For instance:
+
+|Expression|Evaluated as|Notes|
+|-|-|---|
+|`A |> B + %`|`B + A`|Currently unspecified, okay to just evaluate `A` first|
+|`A |> B(%)`|`B(A)`|Currently `B` evaluated first, but it's okay to evaluate `A` first|
+|`A |> B[%]`|`B[A]`|Currently `B` evaluated first, but it's okay to evaluate `A` first|
+|`A |> B(%) |> C(%)`|`C(B(A))`|Currently, `C` then `B` then `A`, but here would be the reverse|
+
+But, there are several situations where changing the evaluation order like this would be, at best, very surprising. It's worth going over such cases.
+
+### Unevaluated Contexts
+
+If substituting into the placeholder gives you an unevaluated expression (exclusively unevaluated expressions, since there can be [multiple placeholders](#multiple-placeholders)), the expression is ill-formed. For instance:
+
+::: bq
+```cpp
+int f();
+
+auto v = f() |> std::vector<decltype(%)>{};
+```
+:::
+
+If we substitute into the placeholder, we get `std::vector<decltype(f())>{}`, which doesn't actually evaluate `f()`. But unlike this direct rewrite, where `f()` is clearly unevaluated by nature of lexically appearing inside of `decltype`, in the pipelined expression it sure looks like `f()` is actually evaluated.
+
+If all the placeholders are only used in unevaluated contexts, the pipeline expression is ill-formed. No `decltype`, `requires` (note that using a pipeline expression as part of the _expression_ of a _simple-requirement_ or _compound-requirement_ is fine - it's just that piping _into_ a requirement is not), `sizeof`, etc.
+
+### Conditionally-Evaluated Contexts
+
+Following the same theme, consider the following expressions:
+
+|Expression|
+|-|
+|`f() |> g() or %`|
+|`f() |> g() and %`|
+|`f() |> g() ? % : h()`|
+
+In these right-hand expressions, the placeholder is only sometimes evaluated. With `g() or f()`, we typically only evaluate `f()` is `g()` is `false`. Here, `f() |> g() or %` would have to unconditionally evaluate `f()` and then also unconditionally evaluate `g()`.
+
+Is that actually what the user wanted, or did they expect the typical short-circuiting behavior more typically associated with this operators?
+
+To avoid confusion, placeholders shall not appear exclusively as the second operand of logical or/and or as the second or third operand of the conditional operator. Of course, we need to handle arbitrary expressions there - `f() |> g() or (% + 1)` too, and so forth. This isn't really a huge loss of functionality, but it does seem like a big alleviation in potential confusion.
+
+### Even-more-conditionally-evaluated Contexts
+
+There are a few other expressions which are even more problematic than the above. Consider:
+
+::: bq
+```cpp
+auto g = f() |> [=]{ return %; };
+```
+:::
+
+What does this mean? Does it evaluate `f()` or not? If so, would invoking `g` call `f` again or is the result cached and invoking `g` just directly returns it?
+
+Arguably, this is simply meaningless. This isn't what the pipeline operator is for. If you want the invoke-and-cache functionality, that is directly expressable without any problem:
+
+::: bq
+```cpp
+auto g = f() |> [r=%]{ return r; };
+```
+:::
+
+Using placeholders in the body of a lambda is disallowed, but as part of the initializer in an init-capture is fine.
+
+The same principle will hold for pattern-matching when it's adopted [@P1371R3]. Piping into the _expression_ that `inspect` is inspecting is fine - any other part of an `inspect`-expression is off limits.
+
+### Nested Pipeline Expressions
+
+I expect the typical use of pipeline to be just chaining a bunch of operations together, linearly:
+
+::: bq
+```cpp
+A |> B(%) |> C(%, D) |> co_await %;
+```
+:::
+
+Which evaluates as follows (except that the evaluation order is definitely `A` then `B` then `C` then `D`):
+
+::: bq
+```cpp
+co_await C(B(A), D);
+```
+:::
+
+Now, what happens if we instead parenthesize part of the right-hand side:
+
+::: bq
+```cpp
+A |> (B(%) |> C(%, D));
+```
+:::
+
+Here, the right-hand side of the first pipeline operator is all of `B(%) |> C(%, D)`, which contains two placeholders. The question is: how do we substitute into this?
+
+Importantly, we _only_ substitute into the left-hand operand (and thus only the left-hand operand participates in the rule for a placeholder being required). An example to help motivate this decision can be seen in Conor's example earlier::
+
+::: bq
+```cpp
+sv
+    |> views::transform(%, [](char c){ return c == '<' or c == '>'; })
+    |> views::zip_transform(std::logical_or{}, %, % |> views::scan_left(%, std::not_equal_to{}))
+```
+:::
+
+The intent here is to `zip` two versions of the `transform`ed `sv`: by itself, and then a `scan_left` version of it. This is a pretty reasonable thing to want to do, and also seems like a reasonable interpretation of what this means syntactically.
+
+If I take a simpler version of the above:
+
+::: bq
+```cpp
+A |> B(%) |> C(%, % |> D(%, E))
+
+// ... evaluates as
+B(A) |> C(%, % |> D(%, E))
+
+// ... evaluates as (sort of, see discussion on multiple placeholders)
+// the substitution of B(A) *only* goes into the left-hand operand of
+// the other |>
+C(B(A), B(A) |> D(%, E))
+
+// ... evaluates as
+C(B(A), D(B(A), E))
+```
+:::
+
+For completeness, there are two other possible interpretations.
+
+Having a right-hand side use of `%` could be ill-formed, but this seems overly restrictive.
+
+Or we could substitute into _both_ sides. What would that look like? Consider the expression:
+
+::: bq
+```cpp
+x |> f(%, y |> g(%, z))
+```
+:::
+
+If we substitute just into the left-hand side, we get what is almost certainly the intended meaning of the above:
+
+::: bq
+```cpp
+f(x, g(y, z))
+```
+:::
+
+If we substitute into _both_ sides, the initial substitution becomes:
+
+::: bq
+```cpp
+f(x, y |> g(x, z))
+```
+:::
+
+In the placeholder model, this is ill-formed, since the remaining `|>` expression has no placeholder on the right-hand side. But in the language bind model, this would be valid and evaluate as:
+
+::: bq
+```cpp
+f(x, g(x, z)(y))
+```
+:::
+
+This seems... very unlikely to be the desired meaning. And if it were, it could be easily expressed in a less cryptic way:
+
+::: bq
+```cpp
+x |> f(%, g(%, z)(y))
+```
+:::
+
+In short, if the right-hand operand of a `|>` expression itself contains a placeholder, it is not substituted into. Effectively, it's a firewall. Only the left-hand operand is substituted into (if the left-hand operand has a placeholder, that is).
+
+
+### Everything else is okay
+
+Every other expression is fair game. All the unary and binary operators, the postfix expressions (including the named casts), `co_await`, `co_yield`, and `throw`.
+
+There's a question as to whether it's worth supporting this:
+
+::: bq
+```cpp
+int f() {
+    42 |> return %;
+}
+```
+:::
+
+It's easy enough to specify, but I doubt it's actually worthwhile to do, and having to write `return` (or `co_return`) first doesn't actually seem like that big a burden if the pipeline operator lets you go ahead and chain the entirety of the rest of the expression. Might even be good to explicitly _not_ support piping into `return`. In any case, this paper only deals with expressions. So the above is ill-formed.
+
+## Multiple Placeholders
+
+It's fairly clear what to do in the case of a single use of placeholder on the right hand side of `|>`: substitute. Doesn't matter whether the left-hand operand is an lvalue or rvalue, regardless of how complex the expression is. `x + y |> f(%)` is just `f(x + y)` (except that `x + y` is definitely evaluated before `f`)
+
+But with multiple placeholders, it's not that simple. What should this mean:
+
+::: bq
+```cpp
+auto fork = f() |> g(%, %);
+```
+:::
+
+Having it evaluate as `auto fork = g(f(), f());` would be pretty bad. At best, it's very surprising to have `f()` evaluate twice in code that only wrote it one time. At worst, this is just wrong. If the intent is to call `f()` twice, that should probably be more explicit in the code (even if sometimes it would be okay to do so).
+
+That leaves evaluating `f()` one time and using the result multiple times. If `f()` is an lvalue, this isn't a problem. Passing the same lvalue multiple times is fine
+
+But if `f()` is an rvalue, we have to make a choice for what to do. Let's call the result `r`. We could:
+
+1. Use `r` as an lvalue every time: `g(r, r)`
+2. Use `r` as an rvalue every time: `g(move(r), move(r))`
+3. Use `r` as an lvalue every time but one and as an rvalue for the last one: `g(r, move(r))` (if the implementation evaluates function arguments from left-to-right)
+4. Ill-formed if trying to substitute an rvalue multiple times.
+
+Moving twice is problematic if `g` takes both parameters by value - one of them will be moved-from. It's not even great if `g` takes both parameters by rvalue reference. Even if that's technically what the user wrote (`f()` _was_ an rvalue and they _did_ want to pipe it twice), I don't think it's what we should actually do.
+
+Moving just the last is more efficient and actually safe, but now you have no idea if you can call `g(T&, T&&)` since the viability of this expression depends on implementation-defined evaluation order of function arguments. That just seems inherently not great.
+
+Note that because the right-hand side need not be a call expression, the order of evaluation could well be defined. For instance, in `f() |> %(%)`, this would have to evaluate as `r(move(r))`. But in `f() |> % + %`, we have the same issue again.
+
+I think that basically leaves either passing the evaluated left-hand argument as an lvalue multiple times or ill-formed. It's certainly potentially surprising, as `f() |> g(%)` and `f() |> g(%, %)` end up being quite different, but I think it's a defensible and practical choice. Alternatively, if we say it's ill-formed to pipe an rvalue multiple times, the user could always themselves implement multiple lvalue passing:
+
+::: bq
+```cpp
+template <class T> auto as_lvalue(T&& t) -> T& { return (T&)t; }
+
+f() |> as_lvalue(%) |> g(%, %)
+```
+:::
+
+If `f()` were an lvalue, the `as_lvalue` "cast" is pointless, and we fork the result (as a single evaluation) to `g`. If `f()` were an rvalue, then it is lifted to an lvalue, and now the language rule would allow it to be forked (but now it's explicit in code, rather than implicit in the language).
+
+I'm not sure this explicitness is worthwhile. Such use won't necessarily be common, but I don't think it will end up being exceedingly rare either.
+
+In short, if there are multiple placeholders in the right-hand expression, then the left-hand expression is evaluated one time and substituted, as an lvalue, into each placeholder.
+
 # Placeholder Lambdas
 
 One reason I consider the language bind model attractive, despite the added complexity (both in having to handle `x |> f` in addition to `x |> f(%)` and also having to hand-wave around what `x |> co_yield %` means) is that it also offers a path towards placeholder lambdas. Allow me an aside.
@@ -395,14 +637,16 @@ Scala, which does not have bounded placeholder expressions, takes an interesting
 
 |Expression|Meaning|
 |-|-|
-|`f(_)`|`e => f(e)`|
-|`f(_, x)`|`e => f(e, x)`|
-|`f(_ + 2)`|`e => f(e + 2)`|
-|`f(1, 2, g(_))`|`f(1, 2, e => g(e))`|
-|`f(1, _)`|`e => f(1, e)`|
-|`f(1, _ + 1)`|`f(1, e => e + 1)`|
+|`f(_)`|`x => f(x)`|
+|`f(_, 1)`|`x => f(x, 1)`|
+|`f(_ + 2)`|`x => f(x + 2)`|
+|`f(1, 2, g(_))`|`f(1, 2, x => g(x))`|
+|`f(1, _)`|`x => f(1, x)`|
+|`f(1, _ + 1)`|`f(1, x => x + 1)`|
+|`f(g(_))`|`f(x => g(x))`|
+|`1 + f(_)`|`x => 1 + f(x)`|
 
-I'm pretty sure we wouldn't want to go that route in C++, where we come up with some rule for what constitutes the bounded expression around the placeholder.
+I'm pretty sure we wouldn't want to go that route in C++, where we come up with some rule for what constitutes the bounded expression around the placeholder. Plus there are limitations here in the kind of expressions that you can represent, which seems like people would run into fairly quickly.
 
 But also more to the point, when the placeholder expression refers to (odr-uses) a variable, we need to capture it, and we need to know _how_ to capture it.
 
