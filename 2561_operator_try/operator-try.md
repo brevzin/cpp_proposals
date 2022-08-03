@@ -1,6 +1,6 @@
 ---
 title: "`operator??`"
-document: P2561R0
+document: P2561R1
 date: today
 audience: EWG
 author:
@@ -295,7 +295,7 @@ auto strcat(int i) -> std::expected<std::string, E>
 ```cpp
 auto strcat(int i) -> std::expected<std::string, E>
 {
-    using $_Return$ = std::f_traits<
+    using $_Return$ = std::try_traits<
         std::expected<std::string, E>>;
 
     auto&& $__f$ = foo(i);
