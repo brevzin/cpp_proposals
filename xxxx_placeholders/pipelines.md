@@ -585,7 +585,7 @@ For the languages that provide abbreviated function declarations, we basically h
 |-|-|
 |`|e| e < 0`|Rust|
 |`e -> e < 0`|Java|
-|`e => e < 0`|C#, JavaScript, Scala|
+|`e => e < 0`|C# 3, JavaScript, Scala|
 |`\e -> e < 0`|Haskell|
 |`{ |e| e < 0 }`|Ruby|
 |`{ e in e < 0 }`|Swift|
@@ -595,8 +595,9 @@ For the languages that provide abbreviated function declarations, we basically h
 |`fn e -> e < 0 end`|Elixir|
 |`[](int e){ return e < 0; }`|C++|
 |`func(e int) bool { return e < 0 }`|Go|
+|`delegate (int e) { return e < 0; }`|C# 2|
 
-On the plus side, C++ is not the longest.
+On the plus side, C++ is not the longest (although note that C# 2's anonymous methods were very long and then they introduced the much terser lambdas in C# 3).
 
 But the interesting case I wanted to discuss here is those languages that support placeholder expressions:
 
