@@ -60,7 +60,7 @@ In the inverted invocation model (which is used by F#, Julia, Elm, and OCaml), `
 
 ## Placeholder
 
-In the placeholder model (which is used by Hack), the right-hand side of `|>` is an arbitrary expression that must contain at least one placeholder. In Hack, that placeholder is <code>$$</code>. But for the purposes of this paper, I'm going to use `%`. The pipeline operator evaluates as if replacing all instances of the placeholder with the left-hand argument:
+In the placeholder model (which is used by Hack), the right-hand side of `|>` is an arbitrary expression that must contain at least one placeholder. In Hack, that placeholder is <code>$$</code>. But for the purposes of this paper, I'm going to use `%` (see [here](#choice-of-placeholder) for discussion on placeholder choice). The pipeline operator evaluates as if replacing all instances of the placeholder with the left-hand argument:
 
 |Code|Evaluation|
 |-|-|
@@ -603,7 +603,7 @@ But the interesting case I wanted to discuss here is those languages that suppor
 
 |Expression|Language|
 |-|-|
-|`_ < 0`|Scala|
+|`_ < 0`|Scala (and Boost.HOF) |
 |`_1 < 0`|Boost.Lambda (and other Boost libraries)|
 |`#(< % 0)`{.x}|Clojure|
 |`&(&1 < 0)`|Elixir|
@@ -612,9 +612,9 @@ But the interesting case I wanted to discuss here is those languages that suppor
 
 There's a lot of variety in these placeholder lambdas. Some languages number their parameters and let you write whatever you want (Swift starts numbering at `0`, Elixir at `1`, Clojure also at `1` but also provides `%` as a shorthand), Kotlin only provides the special variable `it` to be the first parameter and has no support if you want others.
 
-Scala is unique in that it only provides `_`, but that placeholder refers to a different parameter on each use. So `_ > _` is a binary predicate that checks if the first parameter is greater than the second.
+Scala is unique in that it only provides `_`, but that placeholder refers to a different parameter on each use. So `_ > _` is a binary predicate that checks if the first parameter is greater than the second. Boost.HOF does the same with its unnamed placeholders [@boost.hof.unnamed].
 
-Now, for this particular example, we also have library solutions available to us, and have for quite some time. There are several libraries *just in Boost* that allow for either `_1 < 0` or `_ < 0` to mean the same thing as illustrated above (Boost.HOF's `_` behaves similar to Scala - at least to the extent that is possible in a library). Having placeholder lambdas is quite popular precisely because there's no noise; when writing a simple expression, having to deal with the ceremony of introducing names and dealing with the return type is excessive. For instance, to implement [@P2321R1]'s `zip`, you need to dereference all the iterators in a tuple:
+Now, for this particular example, we also have library solutions available to us, and have for quite some time. There are several libraries *just in Boost* that allow for either `_1 < 0` or `_ < 0` to mean the same thing as illustrated above. Having placeholder lambdas is quite popular precisely because there's no noise; when writing a simple expression, having to deal with the ceremony of introducing names and dealing with the return type is excessive. For instance, to implement [@P2321R1]'s `zip`, you need to dereference all the iterators in a tuple (this uses Boost.Lambda2 [@boost.lambda2]):
 
 ::: cmptable
 ### Regular Lambda
@@ -632,7 +632,7 @@ tuple_transform(*_, current_)
 
 The C++ library solutions are fundamentally limited to operators though. You can make `_1 == 0` work, but you can't really make `_1.id() == 0` or `f(_1)` work. As a language feature, having member functions work is trivial. But having non-member functions work is... not.
 
-In the table of languages that support placeholder lambdas, four of them have _bounded_ expressions: there is punctuation to mark where the lambda expression begins and ends. This is due to a fundamental ambiguity: what does `f(%)` mean? It could either mean invoking `f` with a unary lambda that returns its argument (i.e. `f(e => e)`) or it could mean a unary lambda that invokes `f` on its argument (i.e. `e => f(e)`). How do you know which one is which?
+In the table of languages that support placeholder lambdas, four of them have _bounded_ expressions: there is punctuation to mark where the lambda expression begins and ends. This is due to a fundamental ambiguity: what does `f(%)` mean? It could either mean invoking `f` with a unary lambda that returns its argument, i.e. `f(e => e)`, or it could mean a unary lambda that invokes `f` on its argument, i.e. `e => f(e)`. How do you know which one is which?
 
 Scala, which does not have bounded placeholder expressions, takes an interesting direction here:
 
@@ -682,6 +682,89 @@ fy(x)         // evaluates to f(y, x)
 
 Although note that with the lambda, you have to capture `y`, whereas with the pipeline expression, there was no intermediate step.
 
+To return to the table I showed earlier, a placeholder-lambda that checks if its parameter is negative would range from the shorter option of `[]: % < 0` (9 characters) to `[] %(% < 0)` (11 characters). This would put us right in line with Rust (9), Java, JavaScript, C#, Scala (all 10), and Haskell (11). Although admittedly being able to name the parameters would be ideal.
+
+# Choice of Placeholder
+
+This paper uses `%` as a placeholder choice of placeholder. This has prior art in Clojure, and you could also think of it as the placeholder syntax from `printf`. It's a fine choice of placeholder.
+
+But it runs into the problem that `%` is a valid binary operator. This means that you might have code like:
+
+::: bq
+```cpp
+// 10 % (x % 2)
+auto y = x |> % % 2 |> 10 % %;
+```
+:::
+
+While `%` is not a super common binary operator, this is still... not great. Using `%%` as a placeholder might avoid this issue a bit, since at least the uses of the placeholder (`%%`) and the operator (`%`) are visually distinct, at the cost of an extra character for all uses.
+
+An alternative token that is also pre-existing as a binary operator is `^` (or `^^`, for similar reasoning as above), which has the added benefit of being visually appealing. If your pipeline is written vertically:
+
+::: bq
+```cpp
+x |> views::transform(^, f)
+  |> views::filter(^, g)
+  |> views::chunk(^, 4)
+```
+:::
+
+Other characters that clash with binary operators are probably too commonly used as operators to even merit consideration (like `>` or `<`, which amusingly can't even be improved by duplication, since those are still operators).
+
+One non-operator character is `?`. This would only clash when piping into a conditional expression, which as described [earlier](#conditionally-evaluated-contexts), is only valid as:
+
+::: bq
+```cpp
+x |> ? ? y : z
+```
+:::
+
+This doesn't look great, but also is pointless to write since it doesn't buy you anything over `x ? y : z`. But even if this is viable, I question the aesthetics of using `?` as a placeholder like this. It's just not my favorite.
+
+The same problem would come up with using `^` as a choice of placeholder. A different binary operator, like `>`, would be even worse (both given that `>` is a much more common binary operator and also because it is used as a template bracket).
+
+Using `%%` as a placeholder might avoid this issue a bit, since at least with `x |> %% % 2` the two uses are visually distinct, at the cost of making all uses more verbose. `^^` is similarly viable as an option.
+
+Thi suggests that we should try to pick a placeholder that is outside of the realm of existing C++ operators.
+
+A potentially obvious choice is `_` (and then `_1` for a parameter for placeholder-lambdas). This is frequently used as a placeholder already, particularly `_1`, so users already have a familiarity with it and a (correct) expectation of what it might mean. [@P1110R0] also covers this thoroughly, but also points out the problem with [the `_` macro in gnu gettext](https://www.gnu.org/software/gettext/manual/html_node/Mark-Keywords.html). This wasn't a deal-breaker for using `_` as a placeholder in _declarations_ but does cause a problem here, since one potential place to use a placeholder would be:
+
+::: bq
+```cpp
+f |> _("text")
+```
+:::
+
+which would suddenly be translated instead and become invalid, rather than invoking `f("text")`.
+
+The follow-up to `_` is, of course, `__`. This is... fine. It'd be nice to have a single-character placeholder though.
+
+`#`{.x} would be an interesting choice, as it is technically available as long as you don't start a line with a placeholder. This is very easy to avoid doing, since the use of `|>` chaining practically begs for lines to start with `|>`.
+
+Another option is `$`{.x}. This character was recently added to the C basic character set for C23 [@C-N2701], there is a proposal to do the same for C++ [@P2558R1], with exploration of viability thereof [@P2342R0]. `$`{.x} would be an excellent choice for placeholder: it has no conflicts, it clearly stands out, and is usable in lambdas as well (`$1`{.x} for the first parameter, etc.). It also has prior art in similar positions (Hack's placeholder is `$$`{.x}, but also Bash and Awk use `$n`{.x} to refer to the `n`th parameter).
+
+`@`{.x} is similarly a potentially-new character to use here, that is just as viable. It doesn't clash with existing code (since such code can't even exist yet), though aesthetically it doesn't seem as good as `$`{.x}, particularly with the history.
+
+A completely different direction would be to introduce a context-sensitive keyword as that placeholder. Something like Kotlin's `it`: `x |> f(it, y) |> g(it, z)`. I'm not sure this is better than any of the above options, since the identifier fails to stand out (especially if we go down the [language bind](#language-bind) route, since it's critical that it's clear to the human whether the expression contains a placeholder or not).
+
+To summarize, I think a potential set of options is:
+
+<table style="text-align:center">
+<tr><th>Placeholder</th><th>Notes</th></tr>
+<tr><td>`%`</td><td>Prior art in Clojure, `printf`. Clashes with modulus</td></tr>
+<tr><td>`%%`</td><td>Clashes less with modulus</td></tr>
+<tr><td>`^`</td><td>Points up to the previous expression. Clashes with xor</td></tr>
+<tr><td>`^^`</td><td>Clashes less with xor</td></tr>
+<tr><td><code><span class="op">#</span></code></td><td>Not a C++ operator, but could have poor interaction with preprocessor</td></tr>
+<tr><td><code><span class="op">__</span></code></td><td>Reserved token, closest thing to `_`, which isn't viable</td></tr>
+<tr><td><code><span class="op"> $ </span></code></td><td>Prior art in Bash/Awk/etc, brand new (potential) token, no clashing</td></tr>
+<tr><td><code><span class="op">$$</span></code></td><td>Prior art in Hack, brand new (potential) token, no clashing</td></tr>
+<tr><td><code><span class="op">@</span></code></td><td>Brand new (potential) token, no clashing</td></tr>
+<tr><td><code><span class="op">@@</span></code></td><td>Brand new (potential) token, no clashing</td></tr>
+</table>
+
+My personal preference of these is <code><span class="op"> $ </span></code>. It's new, doesn't clash with anything, is a single character, stands out, and could have clear meaning. And I think a single-character placeholder would be better than a two-character one.
+
 ---
 references:
     - id: pipeline-minutes
@@ -716,4 +799,28 @@ references:
       issued:
           - year: 2019
       URL: https://github.com/tc39/proposal-pipeline-operator/
+    - id: boost.hof.unnamed
+      citation-label: boost.hof.unnamed
+      title: "Boost.HOF unnamed placeholder"
+      author:
+          - family: Paul Fultz II
+      issued:
+          - year: 2016
+      URL: https://www.boost.org/doc/libs/master/libs/hof/doc/html/include/boost/hof/placeholders.html#unamed-placeholder
+    - id: boost.lambda2
+      citation-label: boost.lambda2
+      title: "Lambda2: A C++14 Lambda Library"
+      author:
+          - family: Peter Dimov
+      issued:
+          - year: 2020
+      URL: https://www.boost.org/doc/libs/master/libs/lambda2/doc/html/lambda2.html
+    - id: C-N2701
+      citation-label: C-N2701
+      title: "`@` and `$` in source and execution character set"
+      author:
+          - family: Philipp Klaus Krause
+      issued:
+          - year: 2021
+      URL: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n2701.htm
 ---
