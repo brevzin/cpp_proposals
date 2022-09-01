@@ -709,6 +709,8 @@ x |> views::transform(^, f)
 ```
 :::
 
+then it looks like the placeholder is pointing to the expression that it refers to. Cute. Maybe the placeholder should be: `^_^`
+
 Other characters that clash with binary operators are probably too commonly used as operators to even merit consideration (like `>` or `<`, which amusingly can't even be improved by duplication, since those are still operators).
 
 One non-operator character is `?`. This would only clash when piping into a conditional expression, which as described [earlier](#conditionally-evaluated-contexts), is only valid as:
@@ -721,11 +723,7 @@ x |> ? ? y : z
 
 This doesn't look great, but also is pointless to write since it doesn't buy you anything over `x ? y : z`. But even if this is viable, I question the aesthetics of using `?` as a placeholder like this. It's just not my favorite.
 
-The same problem would come up with using `^` as a choice of placeholder. A different binary operator, like `>`, would be even worse (both given that `>` is a much more common binary operator and also because it is used as a template bracket).
-
-Using `%%` as a placeholder might avoid this issue a bit, since at least with `x |> %% % 2` the two uses are visually distinct, at the cost of making all uses more verbose. `^^` is similarly viable as an option.
-
-Thi suggests that we should try to pick a placeholder that is outside of the realm of existing C++ operators.
+This all suggests that we should try to pick a placeholder that is outside of the realm of existing C++ operators, to avoid clashes.
 
 A potentially obvious choice is `_` (and then `_1` for a parameter for placeholder-lambdas). This is frequently used as a placeholder already, particularly `_1`, so users already have a familiarity with it and a (correct) expectation of what it might mean. [@P1110R0] also covers this thoroughly, but also points out the problem with [the `_` macro in gnu gettext](https://www.gnu.org/software/gettext/manual/html_node/Mark-Keywords.html). This wasn't a deal-breaker for using `_` as a placeholder in _declarations_ but does cause a problem here, since one potential place to use a placeholder would be:
 
