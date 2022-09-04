@@ -79,6 +79,9 @@ def mermaid(elem, doc):
                 stdout=subprocess.DEVNULL)
         return pf.Para(pf.Image(pf.Str(caption), url=dst_img, title=caption))
 
+def op(elem, doc):
+    if isinstance(elem, pf.Code) and 'op' in elem.classes:
+        return pf.RawInline(f'<code><span class="op">{elem.text}</span></code>')
 
 if __name__ == '__main__':
-    pf.run_filters([h1hr, bq, graphviz, mermaid])
+    pf.run_filters([h1hr, bq, graphviz, mermaid, op])
