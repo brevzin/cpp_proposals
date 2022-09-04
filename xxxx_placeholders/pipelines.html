@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-08-31" />
+  <meta name="dcterms.date" content="2022-09-04" />
   <title>Various Designs for Pipelines</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-08-31</td>
+    <td>2022-09-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -586,11 +586,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#nested-pipeline-expressions"><span class="toc-section-number">3.1.4</span> Nested Pipeline Expressions<span></span></a></li>
 <li><a href="#everything-else-is-okay"><span class="toc-section-number">3.1.5</span> Everything else is okay<span></span></a></li>
 </ul></li>
-<li><a href="#multiple-placeholders"><span class="toc-section-number">3.2</span> Multiple Placeholders<span></span></a></li>
+<li><a href="#operator-precedence"><span class="toc-section-number">3.2</span> Operator Precedence<span></span></a></li>
+<li><a href="#multiple-placeholders"><span class="toc-section-number">3.3</span> Multiple Placeholders<span></span></a></li>
 </ul></li>
 <li><a href="#placeholder-lambdas"><span class="toc-section-number">4</span> Placeholder Lambdas<span></span></a></li>
 <li><a href="#choice-of-placeholder"><span class="toc-section-number">5</span> Choice of Placeholder<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#disposition"><span class="toc-section-number">6</span> Disposition<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="various-designs-for-pipelines"><span class="header-section-number">1</span> Various Designs for Pipelines<a href="#various-designs-for-pipelines" class="self-link"></a></h1>
@@ -1098,11 +1100,171 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb29-3"><a href="#cb29-3"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>It’s easy enough to specify, but I doubt it’s actually worthwhile to do, and having to write <code class="sourceCode cpp"><span class="cf">return</span></code> (or <code class="sourceCode cpp"><span class="kw">co_return</span></code>) first doesn’t actually seem like that big a burden if the pipeline operator lets you go ahead and chain the entirety of the rest of the expression. Might even be good to explicitly <em>not</em> support piping into <code class="sourceCode cpp"><span class="cf">return</span></code>. In any case, this paper only deals with expressions. So the above is ill-formed.</p>
-<h2 data-number="3.2" id="multiple-placeholders"><span class="header-section-number">3.2</span> Multiple Placeholders<a href="#multiple-placeholders" class="self-link"></a></h2>
+<h2 data-number="3.2" id="operator-precedence"><span class="header-section-number">3.2</span> Operator Precedence<a href="#operator-precedence" class="self-link"></a></h2>
+<p>One of the interesting things about this feature is how different the question of precedence is based on the choice of model.</p>
+<p>For the <a href="#left-threading">left-threading</a> and <a href="#inverted-invocation">inverted invocation</a> models, since <code class="sourceCode cpp"><span class="op">|&gt;</span></code> functions as just another function call, it makes a lot of sense to treat it as a <em><code class="sourceCode cpp">postfix<span class="op">-</span>expression</code></em>. That is how <span class="citation" data-cites="P2011R0">[<a href="#ref-P2011R0" role="doc-biblioref">P2011R0</a>]</span> <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2011r0.html#wording">defined it</a>, although there end up being potentially confusing interactions with unary operators that led to <span class="citation" data-cites="P2011R1">[<a href="#ref-P2011R1" role="doc-biblioref">P2011R1</a>]</span> moving it down a bit (see the <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2011r1.html#operator-precedence">operator precedence section</a> there).</p>
+<p>Either way, <code class="sourceCode cpp"><span class="op">|&gt;</span></code> in these models has very high precedence (either equal to function call, or just below the unary operators).</p>
+<p>But for the <a href="#placeholder">placeholder</a> or <a href="#language-bind">language bind</a> models, since <code class="sourceCode cpp"><span class="op">|&gt;</span></code> isn’t just a function call but rather a full expression rewrite, it makes sense to allow the right-hand “operand” to be any expression at all. That is, the precedence should be <em>extremely</em> low. Reprinting the precedence chart from <span class="citation" data-cites="P2011R1">[<a href="#ref-P2011R1" role="doc-biblioref">P2011R1</a>]</span>:</p>
+<table style="text-align:center">
+<tr>
+<th>
+Precedence
+</th>
+<th>
+Operator
+</th>
+</tr>
+<tr>
+<td>
+<b>1</b>
+<td>
+<code class="sourceCode cpp"><span class="op">::</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>2</b>
+<td>
+<code class="sourceCode cpp">a<span class="op">++</span></code> <code class="sourceCode cpp">a<span class="op">--</span></code><br /> <code class="sourceCode cpp">T<span class="op">()</span></code> <code class="sourceCode cpp">T<span class="op">{}</span></code><br /> <code class="sourceCode cpp">a<span class="op">()</span></code> <code class="sourceCode cpp">a<span class="op">[]</span></code><br /> <code class="sourceCode cpp"><span class="op">.</span></code> <code class="sourceCode cpp"><span class="op">-&gt;</span></code><br /> <span style="color:green">– P2011R0 –</span>
+</tr>
+<tr>
+<td>
+<b>3</b>
+<td>
+<code class="sourceCode cpp"><span class="op">++</span>a</code> <code class="sourceCode cpp"><span class="op">--</span>a</code><br /> <code class="sourceCode cpp"><span class="op">+</span>a</code> <code class="sourceCode cpp"><span class="op">-</span>a</code><br /><code class="sourceCode cpp"><span class="op">!</span></code> <code class="sourceCode cpp"><span class="op">~</span></code><br /><code class="sourceCode cpp"><span class="op">(</span>T<span class="op">)</span></code><br /><code class="sourceCode cpp"><span class="op">*</span>a</code> <code class="sourceCode cpp"><span class="op">&amp;</span>a</code><br /><code class="sourceCode cpp"><span class="kw">sizeof</span></code><br /><code class="sourceCode cpp"><span class="kw">co_await</span></code><br /><code class="sourceCode cpp"><span class="kw">new</span></code> <code class="sourceCode cpp"><span class="kw">new</span><span class="op">[]</span></code><br /><code class="sourceCode cpp"><span class="kw">delete</span></code> <code class="sourceCode cpp"><span class="kw">delete</span><span class="op">[]</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>4</b>
+<td>
+<code class="sourceCode cpp"><span class="op">.*</span></code> <code class="sourceCode cpp"><span class="op">-&gt;*</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>4.5</b>
+<td>
+<span style="color:green">– P2011R1 –</span>
+</td>
+</tr>
+<tr>
+<td>
+<b>5</b>
+<td>
+<code class="sourceCode cpp">a<span class="op">*</span>b</code> <code class="sourceCode cpp">a<span class="op">/</span>b</code> <code class="sourceCode cpp">a<span class="op">%</span>b</code>
+</td>
+</tr>
+<tr>
+<td>
+<b>6</b>
+<td>
+<code class="sourceCode cpp">a<span class="op">+</span>b</code> <code class="sourceCode cpp">a<span class="op">-</span>b</code>
+</td>
+</tr>
+<tr>
+<td>
+<b>7</b>
+<td>
+<code class="sourceCode cpp"><span class="op">&lt;&lt;</span></code> <code class="sourceCode cpp"><span class="op">&gt;&gt;</span></code><br /><span style="color:green">– Elixir, F#, OCaml –</span>
+</td>
+</tr>
+<tr>
+<td>
+<b>8</b>
+<td>
+<code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>9</b>
+<td>
+<code class="sourceCode cpp"><span class="op">&lt;</span></code> <code class="sourceCode cpp"><span class="op">&lt;=</span></code><br /><code class="sourceCode cpp"><span class="op">&gt;</span></code> <code class="sourceCode cpp"><span class="op">&gt;=</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>10</b>
+<td>
+<code class="sourceCode cpp"><span class="op">==</span></code> <code class="sourceCode cpp"><span class="op">!=</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>11</b>
+<td>
+<code class="sourceCode cpp"><span class="op">&amp;</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>12</b>
+<td>
+<code class="sourceCode cpp"><span class="op">^</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>13</b>
+<td>
+<code class="sourceCode cpp"><span class="op">|</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>14</b>
+<td>
+<code class="sourceCode cpp"><span class="op">&amp;&amp;</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>15</b>
+<td>
+<code class="sourceCode cpp"><span class="op">||</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>15.5</b>
+<td>
+<span style="color:green">– JavaScript, Hack, Elm –</span>
+</td>
+</tr>
+<tr>
+<td>
+<b>16</b>
+<td>
+<code class="sourceCode cpp">a<span class="op">?</span>b<span class="op">:</span>c</code><br /><code class="sourceCode cpp"><span class="cf">throw</span></code><br /><code class="sourceCode cpp"><span class="kw">co_yield</span></code><br /><code class="sourceCode cpp"><span class="op">=</span></code><br /><code class="sourceCode cpp"><em>op</em><span class="op">=</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<b>17</b>
+<td>
+<code class="sourceCode cpp">,</code>
+</td>
+</tr>
+</table>
+<p>That a placeholder <code class="sourceCode cpp"><span class="op">|&gt;</span></code> should go, at least, below the logical operators goes without saying. The only question to my mind is whether it should be above or below assignment. And here, I think other languages make the correct choice. If we write something like:</p>
+<blockquote>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a>v <span class="op">=</span> x <span class="op">|&gt;</span> f<span class="op">(%)</span> <span class="op">|&gt;</span> g<span class="op">(%)</span>;</span></code></pre></div>
+</blockquote>
+<p>I think there is a strong expectation that assignment has very low precedence and that the above evaluates as:</p>
+<blockquote>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a>v <span class="op">=</span> g<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>Rather than (if <code class="sourceCode cpp"><span class="op">|&gt;</span></code> was even lower than assignment) as:</p>
+<blockquote>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a>g<span class="op">(</span>f<span class="op">(</span>v <span class="op">=</span> x<span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>If the latter meaning was really intended, users can parenthesize <code class="sourceCode cpp"><span class="op">(</span>v <span class="op">=</span> x<span class="op">)</span></code> as usual.</p>
+<h2 data-number="3.3" id="multiple-placeholders"><span class="header-section-number">3.3</span> Multiple Placeholders<a href="#multiple-placeholders" class="self-link"></a></h2>
 <p>It’s fairly clear what to do in the case of a single use of placeholder on the right hand side of <code class="sourceCode cpp"><span class="op">|&gt;</span></code>: substitute. Doesn’t matter whether the left-hand operand is an lvalue or rvalue, regardless of how complex the expression is. <code class="sourceCode cpp">x <span class="op">+</span> y <span class="op">|&gt;</span> f<span class="op">(%)</span></code> is just <code class="sourceCode cpp">f<span class="op">(</span>x <span class="op">+</span> y<span class="op">)</span></code> (except that <code class="sourceCode cpp">x <span class="op">+</span> y</code> is definitely evaluated before <code class="sourceCode cpp">f</code>)</p>
 <p>But with multiple placeholders, it’s not that simple. What should this mean:</p>
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">auto</span> fork <span class="op">=</span> f<span class="op">()</span> <span class="op">|&gt;</span> g<span class="op">(%</span>, <span class="op">%)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">auto</span> fork <span class="op">=</span> f<span class="op">()</span> <span class="op">|&gt;</span> g<span class="op">(%</span>, <span class="op">%)</span>;</span></code></pre></div>
 </blockquote>
 <p>Having it evaluate as <code class="sourceCode cpp"><span class="kw">auto</span> fork <span class="op">=</span> g<span class="op">(</span>f<span class="op">()</span>, f<span class="op">())</span>;</code> would be pretty bad. At best, it’s very surprising to have <code class="sourceCode cpp">f<span class="op">()</span></code> evaluate twice in code that only wrote it one time. At worst, this is just wrong. If the intent is to call <code class="sourceCode cpp">f<span class="op">()</span></code> twice, that should probably be more explicit in the code (even if sometimes it would be okay to do so).</p>
 <p>That leaves evaluating <code class="sourceCode cpp">f<span class="op">()</span></code> one time and using the result multiple times. If <code class="sourceCode cpp">f<span class="op">()</span></code> is an lvalue, this isn’t a problem. Passing the same lvalue multiple times is fine</p>
@@ -1113,14 +1275,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Use <code class="sourceCode cpp">r</code> as an lvalue every time but one and as an rvalue for the last one: <code class="sourceCode cpp">g<span class="op">(</span>r, move<span class="op">(</span>r<span class="op">))</span></code> (if the implementation evaluates function arguments from left-to-right)</li>
 <li>Ill-formed if trying to substitute an rvalue multiple times.</li>
 </ol>
-<p>Moving twice is problematic if <code class="sourceCode cpp">g</code> takes both parameters by value - one of them will be moved-from. It’s not even great if <code class="sourceCode cpp">g</code> takes both parameters by rvalue reference. Even if that’s technically what the user wrote (<code class="sourceCode cpp">f<span class="op">()</span></code> <em>was</em> an rvalue and they <em>did</em> want to pipe it twice), I don’t think it’s what we should actually do.</p>
+<p>Moving twice is problematic if <code class="sourceCode cpp">g</code> takes both parameters by value - one of them will be moved-from. It’s not even great if <code class="sourceCode cpp">g</code> takes both parameters by rvalue reference. Even if that’s technically what the user wrote (<code class="sourceCode cpp">f<span class="op">()</span></code> <em>was</em> an rvalue and they <em>did</em> want to pipe it twice), and even if that’s the behavior that <code class="sourceCode cpp">std<span class="op">::</span>bind</code> has (<code class="sourceCode cpp">std<span class="op">::</span>bind<span class="op">(</span>f, _1, _1<span class="op">)(</span>rv<span class="op">)</span></code> will actually move from the rvalue twice), I don’t think it’s what we should actually do.</p>
 <p>Moving just the last is more efficient and actually safe, but now you have no idea if you can call <code class="sourceCode cpp">g<span class="op">(</span>T<span class="op">&amp;</span>, T<span class="op">&amp;&amp;)</span></code> since the viability of this expression depends on implementation-defined evaluation order of function arguments. That just seems inherently not great.</p>
 <p>Note that because the right-hand side need not be a call expression, the order of evaluation could well be defined. For instance, in <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">|&gt;</span> <span class="op">%(%)</span></code>, this would have to evaluate as <code class="sourceCode cpp">r<span class="op">(</span>move<span class="op">(</span>r<span class="op">))</span></code>. But in <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">|&gt;</span> <span class="op">%</span> <span class="op">+</span> <span class="op">%</span></code>, we have the same issue again.</p>
 <p>I think that basically leaves either passing the evaluated left-hand argument as an lvalue multiple times or ill-formed. It’s certainly potentially surprising, as <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">|&gt;</span> g<span class="op">(%)</span></code> and <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">|&gt;</span> g<span class="op">(%</span>, <span class="op">%)</span></code> end up being quite different, but I think it’s a defensible and practical choice. Alternatively, if we say it’s ill-formed to pipe an rvalue multiple times, the user could always themselves implement multiple lvalue passing:</p>
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">auto</span> as_lvalue<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">(</span>T<span class="op">&amp;)</span>t; <span class="op">}</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a></span>
-<span id="cb31-3"><a href="#cb31-3"></a>f<span class="op">()</span> <span class="op">|&gt;</span> as_lvalue<span class="op">(%)</span> <span class="op">|&gt;</span> g<span class="op">(%</span>, <span class="op">%)</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">auto</span> as_lvalue<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">(</span>T<span class="op">&amp;)</span>t; <span class="op">}</span></span>
+<span id="cb34-2"><a href="#cb34-2"></a></span>
+<span id="cb34-3"><a href="#cb34-3"></a>f<span class="op">()</span> <span class="op">|&gt;</span> as_lvalue<span class="op">(%)</span> <span class="op">|&gt;</span> g<span class="op">(%</span>, <span class="op">%)</span></span></code></pre></div>
 </blockquote>
 <p>If <code class="sourceCode cpp">f<span class="op">()</span></code> were an lvalue, the <code class="sourceCode cpp">as_lvalue</code> “cast” is pointless, and we fork the result (as a single evaluation) to <code class="sourceCode cpp">g</code>. If <code class="sourceCode cpp">f<span class="op">()</span></code> were an rvalue, then it is lifted to an lvalue, and now the language rule would allow it to be forked (but now it’s explicit in code, rather than implicit in the language).</p>
 <p>I’m not sure this explicitness is worthwhile. Such use won’t necessarily be common, but I don’t think it will end up being exceedingly rare either.</p>
@@ -1280,10 +1442,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a>tuple_transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;</span> it<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-2"><a href="#cb32-2"></a>    <span class="cf">return</span> <span class="op">*</span>it;</span>
-<span id="cb32-3"><a href="#cb32-3"></a><span class="op">}</span>, current_<span class="op">)</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a>tuple_transform<span class="op">(*</span>_, current_<span class="op">)</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a>tuple_transform<span class="op">([](</span><span class="kw">auto</span><span class="op">&amp;</span> it<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-2"><a href="#cb35-2"></a>    <span class="cf">return</span> <span class="op">*</span>it;</span>
+<span id="cb35-3"><a href="#cb35-3"></a><span class="op">}</span>, current_<span class="op">)</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a>tuple_transform<span class="op">(*</span>_, current_<span class="op">)</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1343,52 +1505,58 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>For more on the topic of placeholder lambdas in C++, consider <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code>’s blog posts “Now I Am Become Perl” <span class="citation" data-cites="vector-bool">[<a href="#ref-vector-bool" role="doc-biblioref">vector-bool</a>]</span> and his macro-based solution to the problem <span class="citation" data-cites="vector-bool-macro">[<a href="#ref-vector-bool-macro" role="doc-biblioref">vector-bool-macro</a>]</span>.</p>
 <p>Getting back to the topic, when I talked originally about:</p>
 <blockquote>
-<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a>x <span class="op">|&gt;</span> f<span class="op">(</span>y, <span class="op">%)</span>  <span class="co">// means f(y, x)</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a>x <span class="op">|&gt;</span> f<span class="op">(</span>y, <span class="op">%)</span>  <span class="co">// means f(y, x)</span></span></code></pre></div>
 </blockquote>
 <p>I noted that <code class="sourceCode cpp">f<span class="op">(</span>y, <span class="op">%)</span></code> kind of serves as language bind expression, which itself justifies having the model support <code class="sourceCode cpp">x <span class="op">|&gt;</span> f</code>. But it may also justify splitting the above expression in two:</p>
 <blockquote>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="co">// some version of lambda placeholder syntax</span></span>
-<span id="cb35-2"><a href="#cb35-2"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]</span> <span class="op">%(</span>f<span class="op">(</span>y, <span class="op">%</span><span class="dv">1</span><span class="op">))</span>;</span>
-<span id="cb35-3"><a href="#cb35-3"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]</span> <span class="op">%(</span>f<span class="op">(</span>y, <span class="op">%))</span>;</span>
-<span id="cb35-4"><a href="#cb35-4"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]:</span> f<span class="op">(</span>y, <span class="op">%</span><span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb35-5"><a href="#cb35-5"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]:</span> f<span class="op">(</span>y, <span class="op">%)</span>;</span>
-<span id="cb35-6"><a href="#cb35-6"></a></span>
-<span id="cb35-7"><a href="#cb35-7"></a><span class="co">// at which point it&#39;s just a lambda</span></span>
-<span id="cb35-8"><a href="#cb35-8"></a>fy<span class="op">(</span>x<span class="op">)</span>         <span class="co">// evaluates to f(y, x)</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a><span class="co">// some version of lambda placeholder syntax</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]</span> <span class="op">%(</span>f<span class="op">(</span>y, <span class="op">%</span><span class="dv">1</span><span class="op">))</span>;</span>
+<span id="cb38-3"><a href="#cb38-3"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]</span> <span class="op">%(</span>f<span class="op">(</span>y, <span class="op">%))</span>;</span>
+<span id="cb38-4"><a href="#cb38-4"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]:</span> f<span class="op">(</span>y, <span class="op">%</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb38-5"><a href="#cb38-5"></a><span class="kw">auto</span> fy <span class="op">=</span> <span class="op">[=]:</span> f<span class="op">(</span>y, <span class="op">%)</span>;</span>
+<span id="cb38-6"><a href="#cb38-6"></a></span>
+<span id="cb38-7"><a href="#cb38-7"></a><span class="co">// at which point it&#39;s just a lambda</span></span>
+<span id="cb38-8"><a href="#cb38-8"></a>fy<span class="op">(</span>x<span class="op">)</span>         <span class="co">// evaluates to f(y, x)</span></span></code></pre></div>
 </blockquote>
 <p>Although note that with the lambda, you have to capture <code class="sourceCode cpp">y</code>, whereas with the pipeline expression, there was no intermediate step.</p>
 <p>To return to the table I showed earlier, a placeholder-lambda that checks if its parameter is negative would range from the shorter option of <code class="sourceCode cpp"><span class="op">[]:</span> <span class="op">%</span> <span class="op">&lt;</span> <span class="dv">0</span></code> (9 characters) to <code class="sourceCode cpp"><span class="op">[]</span> <span class="op">%(%</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></code> (11 characters). This would put us right in line with Rust (9), Java, JavaScript, C#, Scala (all 10), and Haskell (11). Although admittedly being able to name the parameters would be ideal.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="choice-of-placeholder"><span class="header-section-number">5</span> Choice of Placeholder<a href="#choice-of-placeholder" class="self-link"></a></h1>
+<p>One of the important, and most readily visible, decisions in a placeholder-based design is choosing what token to use as the placeholder.</p>
+<p>There are a few important criteria for a placeholder:</p>
+<ul>
+<li>it needs to be sufficiently terse. While <code class="sourceCode cpp">__PLACEHOLDER__</code>, as a reserved identifier, is something that we could use without breaking any code (or, rather, without caring whether we break any code), it would be a terrible choice of placeholder. I would be very disappointed if I ever have to type that twice. Not twice per expression, twice… ever.</li>
+<li>it needs to be stand out as being clearly a placeholder, as the rules around placeholders are quite distinct from the rules around other language facilities. Readers need to recognize this distinction. Taking tokens that are already commonly used for multiple different operations (for instance, <code class="sourceCode cpp"><span class="op">*</span></code>, <code class="sourceCode cpp"><span class="op">&lt;</span></code>, <code class="sourceCode cpp"><span class="op">&gt;</span></code>, or <code class="sourceCode cpp"><span class="kw">static</span></code>) would inhibit the ability to readily recognize placeholders.</li>
+</ul>
 <p>This paper uses <code class="sourceCode cpp"><span class="op">%</span></code> as a placeholder choice of placeholder. This has prior art in Clojure, and you could also think of it as the placeholder syntax from <code class="sourceCode cpp">printf</code>. It’s a fine choice of placeholder.</p>
 <p>But it runs into the problem that <code class="sourceCode cpp"><span class="op">%</span></code> is a valid binary operator. This means that you might have code like:</p>
 <blockquote>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a><span class="co">// 10 % (x % 2)</span></span>
-<span id="cb36-2"><a href="#cb36-2"></a><span class="kw">auto</span> y <span class="op">=</span> x <span class="op">|&gt;</span> <span class="op">%</span> <span class="op">%</span> <span class="dv">2</span> <span class="op">|&gt;</span> <span class="dv">10</span> <span class="op">%</span> <span class="op">%</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="co">// 10 % (x % 2)</span></span>
+<span id="cb39-2"><a href="#cb39-2"></a><span class="kw">auto</span> y <span class="op">=</span> x <span class="op">|&gt;</span> <span class="op">%</span> <span class="op">%</span> <span class="dv">2</span> <span class="op">|&gt;</span> <span class="dv">10</span> <span class="op">%</span> <span class="op">%</span>;</span></code></pre></div>
 </blockquote>
 <p>While <code class="sourceCode cpp"><span class="op">%</span></code> is not a super common binary operator, this is still… not great. Using <code class="sourceCode cpp"><span class="op">%%</span></code> as a placeholder might avoid this issue a bit, since at least the uses of the placeholder (<code class="sourceCode cpp"><span class="op">%%</span></code>) and the operator (<code class="sourceCode cpp"><span class="op">%</span></code>) are visually distinct, at the cost of an extra character for all uses.</p>
 <p>An alternative token that is also pre-existing as a binary operator is <code class="sourceCode cpp"><span class="op">^</span></code> (or <code class="sourceCode cpp"><span class="op">^^</span></code>, for similar reasoning as above), which has the added benefit of being visually appealing. If your pipeline is written vertically:</p>
 <blockquote>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a>x <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(^</span>, f<span class="op">)</span></span>
-<span id="cb37-2"><a href="#cb37-2"></a>  <span class="op">|&gt;</span> views<span class="op">::</span>filter<span class="op">(^</span>, g<span class="op">)</span></span>
-<span id="cb37-3"><a href="#cb37-3"></a>  <span class="op">|&gt;</span> views<span class="op">::</span>chunk<span class="op">(^</span>, <span class="dv">4</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1"></a>x <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(^</span>, f<span class="op">)</span></span>
+<span id="cb40-2"><a href="#cb40-2"></a>  <span class="op">|&gt;</span> views<span class="op">::</span>filter<span class="op">(^</span>, g<span class="op">)</span></span>
+<span id="cb40-3"><a href="#cb40-3"></a>  <span class="op">|&gt;</span> views<span class="op">::</span>chunk<span class="op">(^</span>, <span class="dv">4</span><span class="op">)</span></span></code></pre></div>
 </blockquote>
 <p>then it looks like the placeholder is pointing to the expression that it refers to. Cute. Maybe the placeholder should be: <code class="sourceCode cpp"><span class="op">^</span>_<span class="op">^</span></code></p>
 <p>Other characters that clash with binary operators are probably too commonly used as operators to even merit consideration (like <code class="sourceCode cpp"><span class="op">&gt;</span></code> or <code class="sourceCode cpp"><span class="op">&lt;</span></code>, which amusingly can’t even be improved by duplication, since those are still operators).</p>
 <p>One non-operator character is <code class="sourceCode cpp"><span class="op">?</span></code>. This would only clash when piping into a conditional expression, which as described <a href="#conditionally-evaluated-contexts">earlier</a>, is only valid as:</p>
 <blockquote>
-<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a>x <span class="op">|&gt;</span> <span class="op">?</span> <span class="op">?</span> y <span class="op">:</span> z</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1"></a>x <span class="op">|&gt;</span> <span class="op">?</span> <span class="op">?</span> y <span class="op">:</span> z</span></code></pre></div>
 </blockquote>
 <p>This doesn’t look great, but also is pointless to write since it doesn’t buy you anything over <code class="sourceCode cpp">x <span class="op">?</span> y <span class="op">:</span> z</code>. But even if this is viable, I question the aesthetics of using <code class="sourceCode cpp"><span class="op">?</span></code> as a placeholder like this. It’s just not my favorite.</p>
 <p>This all suggests that we should try to pick a placeholder that is outside of the realm of existing C++ operators, to avoid clashes.</p>
-<p>A potentially obvious choice is <code class="sourceCode cpp">_</code> (and then <code class="sourceCode cpp">_1</code> for a parameter for placeholder-lambdas). This is frequently used as a placeholder already, particularly <code class="sourceCode cpp">_1</code>, so users already have a familiarity with it and a (correct) expectation of what it might mean. <span class="citation" data-cites="P1110R0">[<a href="#ref-P1110R0" role="doc-biblioref">P1110R0</a>]</span> also covers this thoroughly, but also points out the problem with <a href="https://www.gnu.org/software/gettext/manual/html_node/Mark-Keywords.html">the <code class="sourceCode cpp">_</code> macro in gnu gettext</a>. This wasn’t a deal-breaker for using <code class="sourceCode cpp">_</code> as a placeholder in <em>declarations</em> but does cause a problem here, since one potential place to use a placeholder would be:</p>
+<p>A potentially obvious choice is <code><span class="op">_</span></code> (and then <code><span class="op">_1</span></code> for a parameter for placeholder-lambdas). This is frequently used as a placeholder already, particularly <code><span class="op">_1</span></code>, so users already have a familiarity with it and a (correct) expectation of what it might mean. <span class="citation" data-cites="P1110R0">[<a href="#ref-P1110R0" role="doc-biblioref">P1110R0</a>]</span> also covers this thoroughly, but also points out the problem with <a href="https://www.gnu.org/software/gettext/manual/html_node/Mark-Keywords.html">the <code><span class="op">_</span></code> macro in gnu gettext</a>. This wasn’t a deal-breaker for using <code><span class="op">_</span></code> as a placeholder in <em>declarations</em> but does cause a problem here, since one potential place to use a placeholder would be:</p>
 <blockquote>
-<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a>f <span class="op">|&gt;</span> _<span class="op">(</span><span class="st">&quot;text&quot;</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1"></a>f <span class="op">|&gt;</span> _<span class="op">(</span><span class="st">&quot;text&quot;</span><span class="op">)</span></span></code></pre></div>
 </blockquote>
 <p>which would suddenly be translated instead and become invalid, rather than invoking <code class="sourceCode cpp">f<span class="op">(</span><span class="st">&quot;text&quot;</span><span class="op">)</span></code>.</p>
-<p>The follow-up to <code class="sourceCode cpp">_</code> is, of course, <code class="sourceCode cpp">__</code>. This is… fine. It’d be nice to have a single-character placeholder though.</p>
-<p><code class="x">#</code> would be an interesting choice, as it is technically available as long as you don’t start a line with a placeholder. This is very easy to avoid doing, since the use of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> chaining practically begs for lines to start with <code class="sourceCode cpp"><span class="op">|&gt;</span></code>.</p>
-<p>Another option is <code class="x">$</code>. This character was recently added to the C basic character set for C23 <span class="citation" data-cites="C-N2701">[<a href="#ref-C-N2701" role="doc-biblioref">C-N2701</a>]</span>, there is a proposal to do the same for C++ <span class="citation" data-cites="P2558R1">[<a href="#ref-P2558R1" role="doc-biblioref">P2558R1</a>]</span>, with exploration of viability thereof <span class="citation" data-cites="P2342R0">[<a href="#ref-P2342R0" role="doc-biblioref">P2342R0</a>]</span>. <code class="x">$</code> would be an excellent choice for placeholder: it has no conflicts, it clearly stands out, and is usable in lambdas as well (<code class="x">$1</code> for the first parameter, etc.). It also has prior art in similar positions (Hack’s placeholder is <code class="x">$$</code>, but also Bash and Awk use <code class="x">$n</code> to refer to the <code class="sourceCode cpp">n</code>th parameter).</p>
-<p><code class="x">@</code> is similarly a potentially-new character to use here, that is just as viable. It doesn’t clash with existing code (since such code can’t even exist yet), though aesthetically it doesn’t seem as good as <code class="x">$</code>, particularly with the history.</p>
+<p>The follow-up to <code><span class="op">_</span></code> is, of course, <code><span class="op">__</span></code>. This is… fine. It’d be nice to have a single-character placeholder though.</p>
+<p><code><span class="op">#</span></code> would be an interesting choice, as it is technically available as long as you don’t start a line with a placeholder. This is very easy to avoid doing, since the use of <code class="sourceCode cpp"><span class="op">|&gt;</span></code> chaining practically begs for lines to start with <code class="sourceCode cpp"><span class="op">|&gt;</span></code>.</p>
+<p>Another option is <code><span class="op">$</span></code>. This character was recently added to the C basic character set for C23 <span class="citation" data-cites="C-N2701">[<a href="#ref-C-N2701" role="doc-biblioref">C-N2701</a>]</span>, there is a proposal to do the same for C++ <span class="citation" data-cites="P2558R1">[<a href="#ref-P2558R1" role="doc-biblioref">P2558R1</a>]</span>, with exploration of viability thereof <span class="citation" data-cites="P2342R0">[<a href="#ref-P2342R0" role="doc-biblioref">P2342R0</a>]</span>. <code><span class="op">$</span></code> would be an excellent choice for placeholder: it has no conflicts, it clearly stands out, and is usable in lambdas as well (<code><span class="op">$1</span></code> for the first parameter, etc.). It also has prior art in similar positions (Hack’s placeholder is <code><span class="op">$$</span></code>, but also Bash and Awk use <code><span class="op">$n</span></code> to refer to the <code class="sourceCode cpp">n</code>th parameter).</p>
+<p><code><span class="op">@</span></code> is similarly a potentially-new character to use here, that is just as viable. It doesn’t clash with existing code (since such code can’t even exist yet), though aesthetically it doesn’t seem as good as <code><span class="op">$</span></code>, particularly with the history.</p>
 <p>A completely different direction would be to introduce a context-sensitive keyword as that placeholder. Something like Kotlin’s <code class="sourceCode cpp">it</code>: <code class="sourceCode cpp">x <span class="op">|&gt;</span> f<span class="op">(</span>it, y<span class="op">)</span> <span class="op">|&gt;</span> g<span class="op">(</span>it, z<span class="op">)</span></code>. I’m not sure this is better than any of the above options, since the identifier fails to stand out (especially if we go down the <a href="#language-bind">language bind</a> route, since it’s critical that it’s clear to the human whether the expression contains a placeholder or not).</p>
 <p>To summarize, I think a potential set of options is:</p>
 <table style="text-align:center">
@@ -1450,7 +1618,7 @@ Reserved token, closest thing to <code class="sourceCode cpp">_</code>, which is
 </tr>
 <tr>
 <td>
-<code><span class="op"> $ </span></code>
+<code><span class="op">$</span></code>
 </td>
 <td>
 Prior art in Bash/Awk/etc, brand new (potential) token, no clashing
@@ -1481,8 +1649,17 @@ Brand new (potential) token, no clashing
 </td>
 </tr>
 </table>
-<p>My personal preference of these is <code><span class="op"> $ </span></code>. It’s new, doesn’t clash with anything, is a single character, stands out, and could have clear meaning. And I think a single-character placeholder would be better than a two-character one.</p>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<p>My personal preference of these is <code><span class="op">$</span></code>. It’s new, doesn’t clash with anything, is a single character, stands out, and could have clear meaning. And I think a single-character placeholder would be better than a two-character one.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="disposition"><span class="header-section-number">6</span> Disposition<a href="#disposition" class="self-link"></a></h1>
+<p>My current view is that the best choice of design is:</p>
+<ul>
+<li>the <a href="#placeholder">placeholder</a> model (with mandatory placeholder)</li>
+<li>the <a href="#operator-precedence">precedence</a> show be very low: below the logical operators and just above assignment.</li>
+<li><a href="#multiple-placeholders">multiple uses</a> of placeholder should evaluate the left-hand argument once and provide it as an lvalue to each placeholder</li>
+<li>the <a href="#choice-of-placeholder">choice of placeholder</a> should be <code><span class="op">$</span></code>: it’s new, doesn’t clash with anything, is only a single character, stands out with clear meaning, and has prior art in this space.</li>
+</ul>
+<p>We should explore <a href="#placeholder-lambdas">placeholder lambdas</a> as an option for terser lambdas. There doesn’t seem to be a real direction for having terser lambdas, so this may be it.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-boost.hof.unnamed">
 <p>[boost.hof.unnamed] Paul Fultz II. 2016. Boost.HOF unnamed placeholder. <br />
@@ -1493,7 +1670,7 @@ Brand new (potential) token, no clashing
 <a href="https://www.boost.org/doc/libs/master/libs/lambda2/doc/html/lambda2.html">https://www.boost.org/doc/libs/master/libs/lambda2/doc/html/lambda2.html</a></p>
 </div>
 <div id="ref-C-N2701">
-<p>[C-N2701] Philipp Klaus Krause. 2021. <code class="sourceCode cpp"><span class="op">@</span></code> and <code class="sourceCode cpp"><span class="er">$</span></code> in source and execution character set. <br />
+<p>[C-N2701] Philipp Klaus Krause. 2021. <code><span class="op">@</span></code> and <code><span class="op">$</span></code> in source and execution character set. <br />
 <a href="https://www.open-std.org/jtc1/sc22/wg14/www/docs/n2701.htm">https://www.open-std.org/jtc1/sc22/wg14/www/docs/n2701.htm</a></p>
 </div>
 <div id="ref-javascript.pipeline">
@@ -1515,6 +1692,10 @@ Brand new (potential) token, no clashing
 <div id="ref-P2011R0">
 <p>[P2011R0] Barry Revzin, Colby Pike. 2020-01-07. A pipeline-rewrite operator. <br />
 <a href="https://wg21.link/p2011r0">https://wg21.link/p2011r0</a></p>
+</div>
+<div id="ref-P2011R1">
+<p>[P2011R1] Barry Revzin, Colby Pike. 2020-04-16. A pipeline-rewrite operator. <br />
+<a href="https://wg21.link/p2011r1">https://wg21.link/p2011r1</a></p>
 </div>
 <div id="ref-P2321R1">
 <p>[P2321R1] Tim Song. 2021-04-11. zip. <br />

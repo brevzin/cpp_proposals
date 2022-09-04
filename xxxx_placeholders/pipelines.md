@@ -515,6 +515,71 @@ int f() {
 
 It's easy enough to specify, but I doubt it's actually worthwhile to do, and having to write `return` (or `co_return`) first doesn't actually seem like that big a burden if the pipeline operator lets you go ahead and chain the entirety of the rest of the expression. Might even be good to explicitly _not_ support piping into `return`. In any case, this paper only deals with expressions. So the above is ill-formed.
 
+## Operator Precedence
+
+One of the interesting things about this feature is how different the question of precedence is based on the choice of model.
+
+For the [left-threading](#left-threading) and [inverted invocation](#inverted-invocation) models, since `|>` functions as just another function call, it makes a lot of sense to treat it as a _`postfix-expression`_. That is how [@P2011R0] [defined it](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2011r0.html#wording), although there end up being potentially confusing interactions with unary operators that led to [@P2011R1] moving it down a bit (see the [operator precedence section](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2011r1.html#operator-precedence) there).
+
+Either way, `|>` in these models has very high precedence (either equal to function call, or just below the unary operators).
+
+But for the [placeholder](#placeholder) or [language bind](#language-bind) models, since `|>` isn't just a function call but rather a full expression rewrite, it makes sense to allow the right-hand "operand" to be any expression at all. That is, the precedence should be _extremely_ low. Reprinting the precedence chart from [@P2011R1]:
+
+
+<table style="text-align:center">
+<tr><th>Precedence</th><th>Operator</th></tr>
+<tr><td><b>1</b><td>`::`</td></tr>
+<tr><td><b>2</b><td>`a++` `a--`<br/>
+`T()` `T{}`<br/>
+`a()` `a[]`<br/>
+`.` `->`<br/>
+<span style="color:green">-- P2011R0 --</span></tr>
+<tr><td><b>3</b><td>`++a` `--a`<br/>
+`+a` `-a`<br/>`!` `~`<br/>`(T)`<br/>`*a` `&a`<br/>`sizeof`<br/>`co_await`<br/>`new` `new[]`<br/>`delete` `delete[]`</td></tr>
+<tr><td><b>4</b><td>`.*` `->*`</td></tr>
+<tr><td><b>4.5</b><td><span style="color:green">-- P2011R1 --</span></td></tr>
+<tr><td><b>5</b><td>`a*b` `a/b` `a%b`</td></tr>
+<tr><td><b>6</b><td>`a+b` `a-b`</td></tr>
+<tr><td><b>7</b><td>`<<` `>>`<br/><span style="color:green">-- Elixir, F#, OCaml --</span></td></tr>
+<tr><td><b>8</b><td>`<=>`</td></tr>
+<tr><td><b>9</b><td>`<` `<=`<br/>`>` `>=`</td></tr>
+<tr><td><b>10</b><td>`==` `!=`</td></tr>
+<tr><td><b>11</b><td>`&`</td></tr>
+<tr><td><b>12</b><td>`^`</td></tr>
+<tr><td><b>13</b><td>`|`</td></tr>
+<tr><td><b>14</b><td>`&&`</td></tr>
+<tr><td><b>15</b><td>`||`</td></tr>
+<tr><td><b>15.5</b><td><span style="color:green">-- JavaScript, Hack, Elm --</span></td></tr>
+<tr><td><b>16</b><td>`a?b:c`<br/>`throw`<br/>`co_yield`<br/>`=`<br/>`$op$=`</td></tr>
+<tr><td><b>17</b><td>`,`</td></tr>
+</table>
+
+That a placeholder `|>` should go, at least, below the logical operators goes without saying. The only question to my mind is whether it should be above or below assignment. And here, I think other languages make the correct choice. If we write something like:
+
+::: bq
+```cpp
+v = x |> f(%) |> g(%);
+```
+:::
+
+I think there is a strong expectation that assignment has very low precedence and that the above evaluates as:
+
+::: bq
+```cpp
+v = g(f(x));
+```
+:::
+
+Rather than (if `|>` was even lower than assignment) as:
+
+::: bq
+```cpp
+g(f(v = x));
+```
+:::
+
+If the latter meaning was really intended, users can parenthesize `(v = x)` as usual.
+
 ## Multiple Placeholders
 
 It's fairly clear what to do in the case of a single use of placeholder on the right hand side of `|>`: substitute. Doesn't matter whether the left-hand operand is an lvalue or rvalue, regardless of how complex the expression is. `x + y |> f(%)` is just `f(x + y)` (except that `x + y` is definitely evaluated before `f`)
@@ -538,7 +603,7 @@ But if `f()` is an rvalue, we have to make a choice for what to do. Let's call t
 3. Use `r` as an lvalue every time but one and as an rvalue for the last one: `g(r, move(r))` (if the implementation evaluates function arguments from left-to-right)
 4. Ill-formed if trying to substitute an rvalue multiple times.
 
-Moving twice is problematic if `g` takes both parameters by value - one of them will be moved-from. It's not even great if `g` takes both parameters by rvalue reference. Even if that's technically what the user wrote (`f()` _was_ an rvalue and they _did_ want to pipe it twice), I don't think it's what we should actually do.
+Moving twice is problematic if `g` takes both parameters by value - one of them will be moved-from. It's not even great if `g` takes both parameters by rvalue reference. Even if that's technically what the user wrote (`f()` _was_ an rvalue and they _did_ want to pipe it twice), and even if that's the behavior that `std::bind` has (`std::bind(f, _1, _1)(rv)` will actually move from the rvalue twice), I don't think it's what we should actually do.
 
 Moving just the last is more efficient and actually safe, but now you have no idea if you can call `g(T&, T&&)` since the viability of this expression depends on implementation-defined evaluation order of function arguments. That just seems inherently not great.
 
@@ -686,6 +751,13 @@ To return to the table I showed earlier, a placeholder-lambda that checks if its
 
 # Choice of Placeholder
 
+One of the important, and most readily visible, decisions in a placeholder-based design is choosing what token to use as the placeholder.
+
+There are a few important criteria for a placeholder:
+
+* it needs to be sufficiently terse. While `__PLACEHOLDER__`, as a reserved identifier, is something that we could use without breaking any code (or, rather, without caring whether we break any code), it would be a terrible choice of placeholder. I would be very disappointed if I ever have to type that twice. Not twice per expression, twice... ever.
+* it needs to be stand out as being clearly a placeholder, as the rules around placeholders are quite distinct from the rules around other language facilities. Readers need to recognize this distinction. Taking tokens that are already commonly used for multiple different operations (for instance, `*`, `<`, `>`, or `static`) would inhibit the ability to readily recognize placeholders.
+
 This paper uses `%` as a placeholder choice of placeholder. This has prior art in Clojure, and you could also think of it as the placeholder syntax from `printf`. It's a fine choice of placeholder.
 
 But it runs into the problem that `%` is a valid binary operator. This means that you might have code like:
@@ -725,7 +797,7 @@ This doesn't look great, but also is pointless to write since it doesn't buy you
 
 This all suggests that we should try to pick a placeholder that is outside of the realm of existing C++ operators, to avoid clashes.
 
-A potentially obvious choice is `_` (and then `_1` for a parameter for placeholder-lambdas). This is frequently used as a placeholder already, particularly `_1`, so users already have a familiarity with it and a (correct) expectation of what it might mean. [@P1110R0] also covers this thoroughly, but also points out the problem with [the `_` macro in gnu gettext](https://www.gnu.org/software/gettext/manual/html_node/Mark-Keywords.html). This wasn't a deal-breaker for using `_` as a placeholder in _declarations_ but does cause a problem here, since one potential place to use a placeholder would be:
+A potentially obvious choice is `_`{.op} (and then `_1`{.op} for a parameter for placeholder-lambdas). This is frequently used as a placeholder already, particularly `_1`{.op}, so users already have a familiarity with it and a (correct) expectation of what it might mean. [@P1110R0] also covers this thoroughly, but also points out the problem with [the `_`{.op} macro in gnu gettext](https://www.gnu.org/software/gettext/manual/html_node/Mark-Keywords.html). This wasn't a deal-breaker for using `_`{.op} as a placeholder in _declarations_ but does cause a problem here, since one potential place to use a placeholder would be:
 
 ::: bq
 ```cpp
@@ -735,13 +807,13 @@ f |> _("text")
 
 which would suddenly be translated instead and become invalid, rather than invoking `f("text")`.
 
-The follow-up to `_` is, of course, `__`. This is... fine. It'd be nice to have a single-character placeholder though.
+The follow-up to `_`{.op} is, of course, `__`{.op}. This is... fine. It'd be nice to have a single-character placeholder though.
 
-`#`{.x} would be an interesting choice, as it is technically available as long as you don't start a line with a placeholder. This is very easy to avoid doing, since the use of `|>` chaining practically begs for lines to start with `|>`.
+`#`{.op} would be an interesting choice, as it is technically available as long as you don't start a line with a placeholder. This is very easy to avoid doing, since the use of `|>` chaining practically begs for lines to start with `|>`.
 
-Another option is `$`{.x}. This character was recently added to the C basic character set for C23 [@C-N2701], there is a proposal to do the same for C++ [@P2558R1], with exploration of viability thereof [@P2342R0]. `$`{.x} would be an excellent choice for placeholder: it has no conflicts, it clearly stands out, and is usable in lambdas as well (`$1`{.x} for the first parameter, etc.). It also has prior art in similar positions (Hack's placeholder is `$$`{.x}, but also Bash and Awk use `$n`{.x} to refer to the `n`th parameter).
+Another option is `$`{.op}. This character was recently added to the C basic character set for C23 [@C-N2701], there is a proposal to do the same for C++ [@P2558R1], with exploration of viability thereof [@P2342R0]. `$`{.op} would be an excellent choice for placeholder: it has no conflicts, it clearly stands out, and is usable in lambdas as well (`$1`{.op} for the first parameter, etc.). It also has prior art in similar positions (Hack's placeholder is `$$`{.op}, but also Bash and Awk use `$n`{.op} to refer to the `n`th parameter).
 
-`@`{.x} is similarly a potentially-new character to use here, that is just as viable. It doesn't clash with existing code (since such code can't even exist yet), though aesthetically it doesn't seem as good as `$`{.x}, particularly with the history.
+`@`{.op} is similarly a potentially-new character to use here, that is just as viable. It doesn't clash with existing code (since such code can't even exist yet), though aesthetically it doesn't seem as good as `$`{.op}, particularly with the history.
 
 A completely different direction would be to introduce a context-sensitive keyword as that placeholder. Something like Kotlin's `it`: `x |> f(it, y) |> g(it, z)`. I'm not sure this is better than any of the above options, since the identifier fails to stand out (especially if we go down the [language bind](#language-bind) route, since it's critical that it's clear to the human whether the expression contains a placeholder or not).
 
@@ -753,15 +825,26 @@ To summarize, I think a potential set of options is:
 <tr><td>`%%`</td><td>Clashes less with modulus</td></tr>
 <tr><td>`^`</td><td>Points up to the previous expression. Clashes with xor</td></tr>
 <tr><td>`^^`</td><td>Clashes less with xor</td></tr>
-<tr><td><code><span class="op">#</span></code></td><td>Not a C++ operator, but could have poor interaction with preprocessor</td></tr>
-<tr><td><code><span class="op">__</span></code></td><td>Reserved token, closest thing to `_`, which isn't viable</td></tr>
-<tr><td><code><span class="op"> $ </span></code></td><td>Prior art in Bash/Awk/etc, brand new (potential) token, no clashing</td></tr>
-<tr><td><code><span class="op">$$</span></code></td><td>Prior art in Hack, brand new (potential) token, no clashing</td></tr>
-<tr><td><code><span class="op">@</span></code></td><td>Brand new (potential) token, no clashing</td></tr>
-<tr><td><code><span class="op">@@</span></code></td><td>Brand new (potential) token, no clashing</td></tr>
+<tr><td>`#`{.op}</td><td>Not a C++ operator, but could have poor interaction with preprocessor</td></tr>
+<tr><td>`__`{.op}</td><td>Reserved token, closest thing to `_`, which isn't viable</td></tr>
+<tr><td>`$`{.op}</td><td>Prior art in Bash/Awk/etc, brand new (potential) token, no clashing</td></tr>
+<tr><td>`$$`{.op}</td><td>Prior art in Hack, brand new (potential) token, no clashing</td></tr>
+<tr><td>`@`{.op}</td><td>Brand new (potential) token, no clashing</td></tr>
+<tr><td>`@@`{.op}</td><td>Brand new (potential) token, no clashing</td></tr>
 </table>
 
-My personal preference of these is <code><span class="op"> $ </span></code>. It's new, doesn't clash with anything, is a single character, stands out, and could have clear meaning. And I think a single-character placeholder would be better than a two-character one.
+My personal preference of these is `$`{.op}. It's new, doesn't clash with anything, is a single character, stands out, and could have clear meaning. And I think a single-character placeholder would be better than a two-character one.
+
+# Disposition
+
+My current view is that the best choice of design is:
+
+* the [placeholder](#placeholder) model (with mandatory placeholder)
+* the [precedence](#operator-precedence) show be very low: below the logical operators and just above assignment.
+* [multiple uses](#multiple-placeholders) of placeholder should evaluate the left-hand argument once and provide it as an lvalue to each placeholder
+* the [choice of placeholder](#choice-of-placeholder) should be `$`{.op}: it's new, doesn't clash with anything, is only a single character, stands out with clear meaning, and has prior art in this space.
+
+We should explore [placeholder lambdas](#placeholder-lambdas) as an option for terser lambdas. There doesn't seem to be a real direction for having terser lambdas, so this may be it.
 
 ---
 references:
@@ -815,7 +898,7 @@ references:
       URL: https://www.boost.org/doc/libs/master/libs/lambda2/doc/html/lambda2.html
     - id: C-N2701
       citation-label: C-N2701
-      title: "`@` and `$` in source and execution character set"
+      title: "`@`{.op} and `$`{.op} in source and execution character set"
       author:
           - family: Philipp Klaus Krause
       issued:
