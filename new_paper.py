@@ -31,3 +31,5 @@ toc: true
 with open(f"{folder}/Makefile", "w") as f:
     f.write(f"p{args.number}r0.html : {md_file}\n")
     f.write("include ../md/mpark-wg21.mk\n")
+
+print(f"Created {folder}")
