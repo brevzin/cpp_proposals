@@ -351,7 +351,40 @@ auto v = f() |> std::vector<decltype(%)>{};
 
 If we substitute into the placeholder, we get `std::vector<decltype(f())>{}`, which doesn't actually evaluate `f()`. But unlike this direct rewrite, where `f()` is clearly unevaluated by nature of lexically appearing inside of `decltype`, in the pipelined expression it sure looks like `f()` is actually evaluated.
 
-If all the placeholders are only used in unevaluated contexts, the pipeline expression is ill-formed. No `decltype`, `requires` (note that using a pipeline expression as part of the _expression_ of a _simple-requirement_ or _compound-requirement_ is fine - it's just that piping _into_ a requirement is not), `sizeof`, etc.
+However, there is an interesting use-case for wanting to allow unevaluated contexts. Consider [Boost.Mp11](https://www.boost.org/doc/libs/master/libs/mp11/doc/html/mp11.html). It's a very useful metaprogramming library, that suffers only from syntax limitations. For instance, the reference has an example implementation of `tuple_cat` that does:
+
+::: bq
+```cpp
+// inner
+using list1 = mp_list<
+    mp_rename<typename std::remove_reference<Tp>::type, mp_list>...>;
+using list2 = mp_iota_c<N>;
+using list3 = mp_transform<mp_fill, list1, list2>;
+using inner = mp_apply<mp_append, list3>;
+
+// outer
+using list4 = mp_transform<F, list1>;
+using outer = mp_apply<mp_append, list4>;
+```
+:::
+
+But if we could use `|>` with a placeholder, even if these things aren't... entirely expressions, this could be:
+
+::: bq
+```cpp
+// inner
+using list1 = mp_list<
+    mp_rename<typename std::remove_reference<Tp>::type, mp_list>...>;
+using inner = mp_transform<mp_fill, list1, mp_iota_c<N>> |> mp_apply<mp_append, %>;
+
+// outer
+using outer = mp_transform<F, list1> |> mp_apply<mp_append, %>;
+```
+:::
+
+The same argument for the advantages of linearity for normal expressions apply just as well here. But this might be a bit too far, and would require rethinking probably too much of the grammar.
+
+I think the right rule here is: if all the placeholders are only used in unevaluated contexts, the pipeline expression is ill-formed. No `decltype`, `requires` (note that using a pipeline expression as part of the _expression_ of a _simple-requirement_ or _compound-requirement_ is fine - it's just that piping _into_ a requirement is not), `sizeof`, etc.
 
 ### Conditionally-Evaluated Contexts
 
@@ -840,8 +873,8 @@ My personal preference of these is `$`{.op}. It's new, doesn't clash with anythi
 My current view is that the best choice of design is:
 
 * the [placeholder](#placeholder) model (with mandatory placeholder)
-* the [precedence](#operator-precedence) show be very low: below the logical operators and just above assignment.
-* [multiple uses](#multiple-placeholders) of placeholder should evaluate the left-hand argument once and provide it as an lvalue to each placeholder
+* the [precedence](#operator-precedence) show be very low: just above assignment.
+* [multiple uses](#multiple-placeholders) of placeholder should evaluate the left-hand argument once and provide it as an lvalue to each placeholder, and [at least one use](#unevaluated-contexts) has to be evaluated.
 * the [choice of placeholder](#choice-of-placeholder) should be `$`{.op}: it's new, doesn't clash with anything, is only a single character, stands out with clear meaning, and has prior art in this space.
 
 We should explore [placeholder lambdas](#placeholder-lambdas) as an option for terser lambdas. There doesn't seem to be a real direction for having terser lambdas, so this may be it.
