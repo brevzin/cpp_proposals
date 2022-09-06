@@ -577,7 +577,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>The standard library currently has three free function templates: <code class="sourceCode cpp">std<span class="op">::</span>visit</code>, <code class="sourceCode cpp">std<span class="op">::</span>apply</code>, and <code class="sourceCode cpp">std<span class="op">::</span>visit_format_arg</code>. The goal of this paper is to add member function versions of each of them, simply for ergonomic reasons. This paper adds no new functionality that did not exist before.</p>
 <h2 data-number="1.1" id="stdvisit"><span class="header-section-number">1.1</span> <code class="sourceCode cpp">std<span class="op">::</span>visit</code><a href="#stdvisit" class="self-link"></a></h2>
-<p><code class="sourceCode cpp">std<span class="op">::</span>visit</code> is a variadic function template, which is the correct design since binary (and more) visitation is a useful and important piece of functionality. However, the common case is simply unary visitation. Even in that case, however, a non-member function was a superior implementation choice for forwarding const-ness and value category. But this decision logic changes in C++23 with the introduction of deducing <code class="sourceCode cpp"><span class="kw">this</span></code> <span class="citation" data-cites="P0847R7">[<a href="#ref-P0847R7" role="doc-biblioref">P0847R7</a>]</span>. Now, it is possible to implement unary <code class="sourceCode cpp">visit</code> as a member function without any loss of functionality. We simply gain better syntax:</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>visit</code> is a variadic function template, which is the correct design since binary (and more) visitation is a useful and important piece of functionality. However, the common case is simply unary visitation. Even in that case, however, a non-member function was a superior implementation choice for forwarding const-ness and value category.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>But this decision logic changes in C++23 with the introduction of deducing <code class="sourceCode cpp"><span class="kw">this</span></code> <span class="citation" data-cites="P0847R7">[<a href="#ref-P0847R7" role="doc-biblioref">P0847R7</a>]</span>. Now, it is possible to implement unary <code class="sourceCode cpp">visit</code> as a member function without any loss of functionality. We simply gain better syntax:</p>
 <table>
 <thead>
 <tr class="header">
@@ -604,7 +605,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </table>
 <h2 data-number="1.2" id="stdapply"><span class="header-section-number">1.2</span> <code class="sourceCode cpp">std<span class="op">::</span>apply</code><a href="#stdapply" class="self-link"></a></h2>
 <p><code class="sourceCode cpp">std<span class="op">::</span>apply</code>, also added in C++17, is also a non-member function template. It takes a single <em><code class="sourceCode cpp">tuple<span class="op">-</span>like</code></em> object and a callable, and its interface otherwise mirrors <code class="sourceCode cpp">std<span class="op">::</span>variant</code>. I am not sure why it takes the function first and the tuple second, even though the tuple is the subject of the operation.</p>
-<p><code class="sourceCode cpp">std<span class="op">::</span>apply</code> originally needed to be a member function for one of the same reasons as <code class="sourceCode cpp">std<span class="op">::</span>visit</code>: proper forwarding of const-ness and value category. But, as with <code class="sourceCode cpp">std<span class="op">::</span>visit</code>, this can now easily be made a member function template. It’s just that we have to add it to multiple types: <code class="sourceCode cpp">pair</code>, <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">array</code>, and <code class="sourceCode cpp">subrange</code>.</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>apply</code> originally needed to be a non-member function for one of the same reasons as <code class="sourceCode cpp">std<span class="op">::</span>visit</code>: proper forwarding of const-ness and value category. But, as with <code class="sourceCode cpp">std<span class="op">::</span>visit</code>, this can now easily be made a member function template. It’s just that we have to add it to multiple types: <code class="sourceCode cpp">pair</code>, <code class="sourceCode cpp">tuple</code>, <code class="sourceCode cpp">array</code>, and <code class="sourceCode cpp">subrange</code>.</p>
 <table>
 <thead>
 <tr class="header">
@@ -936,6 +937,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <a href="https://wg21.link/p0847r7">https://wg21.link/p0847r7</a></p>
 </div>
 </div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>A single non-member function template is still superior to four member function overloads due to proper handling of certain edge cases. See the section on <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0847r7.html#sfinae-friendly-callables">SFINAE-friendly</a> for more information.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
 </div>
 </div>
 </body>

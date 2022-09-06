@@ -15,7 +15,11 @@ The standard library currently has three free function templates: `std::visit`, 
 
 ## `std::visit`
 
-`std::visit` is a variadic function template, which is the correct design since binary (and more) visitation is a useful and important piece of functionality. However, the common case is simply unary visitation. Even in that case, however, a non-member function was a superior implementation choice for forwarding const-ness and value category. But this decision logic changes in C++23 with the introduction of deducing `this` [@P0847R7]. Now, it is possible to implement unary `visit` as a member function without any loss of functionality. We simply gain better syntax:
+`std::visit` is a variadic function template, which is the correct design since binary (and more) visitation is a useful and important piece of functionality. However, the common case is simply unary visitation. Even in that case, however, a non-member function was a superior implementation choice for forwarding const-ness and value category [^1].
+
+[^1]: A single non-member function template is still superior to four member function overloads due to proper handling of certain edge cases. See the section on [SFINAE-friendly](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0847r7.html#sfinae-friendly-callables) for more information.
+
+But this decision logic changes in C++23 with the introduction of deducing `this` [@P0847R7]. Now, it is possible to implement unary `visit` as a member function without any loss of functionality. We simply gain better syntax:
 
 ::: cmptable
 ### Existing
@@ -39,7 +43,7 @@ value.visit(overload{
 
 `std::apply`, also added in C++17, is also a non-member function template. It takes a single _`tuple-like`_ object and a callable, and its interface otherwise mirrors `std::variant`. I am not sure why it takes the function first and the tuple second, even though the tuple is the subject of the operation.
 
-`std::apply` originally needed to be a member function for one of the same reasons as `std::visit`: proper forwarding of const-ness and value category. But, as with `std::visit`, this can now easily be made a member function template. It's just that we have to add it to multiple types: `pair`, `tuple`, `array`, and `subrange`.
+`std::apply` originally needed to be a non-member function for one of the same reasons as `std::visit`: proper forwarding of const-ness and value category. But, as with `std::visit`, this can now easily be made a member function template. It's just that we have to add it to multiple types: `pair`, `tuple`, `array`, and `subrange`.
 
 ::: cmptable
 ### Existing
