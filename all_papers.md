@@ -58,13 +58,13 @@
 - 2508 Expose  <code class="sourceCode cpp">std<span class="op">::</span><em>basic-format-string</em><span class="op">&lt;</span>charT, Args<span class="op">...&gt;</span></code>: [p2508r0](2508_expose_format_string/p2508r0.html) [p2508r1](2508_expose_format_string/p2508r1.html) [p2508r2](2508_expose_format_string/p2508r2.html)
 - ![][~ranges] 2520 <code class="sourceCode cpp">move_iterator<span class="op">&lt;</span>T<span class="op">*&gt;</span></code>  should be a random access iterator: [p2520r0](2520_move_iterator/p2520r0.html) [p2520r1](2520_move_iterator/p2520r1.html)
 - ![][~ranges] 2550 <code class="sourceCode cpp">ranges<span class="op">::</span>copy</code>  should say  <code class="sourceCode cpp">output_iterator</code>  somewhere: [p2550r0](2550_algo_output_iterator/p2550r0.html) [p2550r1](2550_algo_output_iterator/p2550r1.html)
-- 2561 <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">??</span></code>: [p2561r0](2561_operator_try/p2561r0.html) [p2561r1](2561_operator_try/p2561r1.html)
+- 2561 An error propagation operator: [p2561r0](2561_operator_try/p2561r0.html) [p2561r1](2561_operator_try/p2561r1.html)
 - ![][~constexpr] 2564 <code class="sourceCode cpp"><span class="kw">consteval</span></code>  needs to propagate up: [p2564r0](2564_consteval_patch/p2564r0.html)
 - ![][~ranges] 2585 Improve default container formatting: [p2585r0](2585_fmt_container/p2585r0.html) [p2585r1](2585_fmt_container/p2585r1.html)
 - 2593 Allowing  <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code>: [p2593r0](2593_static_assert/p2593r0.html)
 - 2602 Poison Pills are Too Toxic: [p2602r0](2602_poison_pills/p2602r0.html) [p2602r1](2602_poison_pills/p2602r1.html)
 - 2637 Member  <code class="sourceCode cpp">visit</code>  and  <code class="sourceCode cpp">apply</code>: [p2637r0](2637_member_visit/p2637r0.html)
-- 2641 <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>  should be constrained: [p2641r0](2641_constrain_iter_swap/p2641r0.html)
+- 2641 Checking if a union alternative is active: [p2641r0](2641_active_union/p2641r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet

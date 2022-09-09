@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-09-08" />
-  <title>std::iter_swap should be constrained</title>
+  <meta name="dcterms.date" content="2022-09-09" />
+  <title>Checking if a union alternative is active</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center"><code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> should be constrained</h1>
+<h1 class="title" style="text-align:center">Checking if a union alternative is active</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-09-08</td>
+    <td>2022-09-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -547,7 +547,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      LEWG<br>
+      EWG, LEWG<br>
     </td>
   </tr>
   <tr>
@@ -563,104 +563,178 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
 <ul>
-<li><a href="#what-should-stditer_swaps-constraints-be"><span class="toc-section-number">1.1</span> What should <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>’s constraints be?<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">2.1</span> Implementation Experience<span></span></a></li>
 </ul></li>
-<li><a href="#wording"><span class="toc-section-number">2</span> Wording<span></span></a>
-<ul>
-<li><a href="#feature-test-macro"><span class="toc-section-number">2.1</span> Feature-Test Macro<span></span></a></li>
-</ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p><span class="citation" data-cites="P2602R1">[<a href="#ref-P2602R1" role="doc-biblioref">P2602R1</a>]</span> seeks to relax the poison pills that currently exist for the customization point objects in the standard library, since they fail to reject invalid code but succeed in rejecting valid code. In all cases save for one. That paper preserves the poison pill for <code class="sourceCode cpp">iter_swap</code> because <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> is unconstrained.</p>
-<p><code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> is currently specified as, in <span>27.7.3 <a href="https://wg21.link/alg.swap">[alg.swap]</a></span>/6-7:</p>
-<blockquote>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> ForwardIterator1, <span class="kw">class</span> ForwardIterator2<span class="op">&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> iter_swap<span class="op">(</span>ForwardIterator1 a, ForwardIterator2 b<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">6</a></span> <em>Preconditions</em>: <code class="sourceCode cpp">a</code> and <code class="sourceCode cpp">b</code> are dereferenceable. <code class="sourceCode cpp"><span class="op">*</span>a</code> is swappable with ([swappable.requirements]) <code class="sourceCode cpp"><span class="op">*</span>b</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> <em>Effects</em>: As if by <code class="sourceCode cpp">swap<span class="op">(*</span>a, <span class="op">*</span>b<span class="op">)</span></code>.</p>
-</blockquote>
-<p>But… why is <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> unconstrained?</p>
-<p><code class="sourceCode cpp">std<span class="op">::</span>swap</code> used to be unconstrained as well. It was <code class="sourceCode cpp">std<span class="op">::</span>swap</code> specifically being unconstrained that led to the design of poison pills to begin with <span class="citation" data-cites="P0370R3">[<a href="#ref-P0370R3" role="doc-biblioref">P0370R3</a>]</span>. Nevertheless, Ranges TS constrained <code class="sourceCode cpp">std<span class="op">::</span>swap</code> <span class="citation" data-cites="P0021R0">[<a href="#ref-P0021R0" role="doc-biblioref">P0021R0</a>]</span> and then it was constrained in the standard library <span class="citation" data-cites="P0185R1">[<a href="#ref-P0185R1" role="doc-biblioref">P0185R1</a>]</span>. But none of these papers so far as mention <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>, which is seems like it should have similar behavior. Indeed, the Ranges TS looks like it even at some point wanted to remove <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>.</p>
-<p>Is there a reason to avoid constraining <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>? Any code that currently checks for the validity of <code class="sourceCode cpp">std<span class="op">::</span>iter_swap<span class="op">(</span>a, b<span class="op">)</span></code> is meaningless, and would become meaningful. Code that currently calls <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> (qualified or not) would continue to work fine. It’s oddly inconsistent with <code class="sourceCode cpp">std<span class="op">::</span>swap</code> today.</p>
-<h2 data-number="1.1" id="what-should-stditer_swaps-constraints-be"><span class="header-section-number">1.1</span> What should <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>’s constraints be?<a href="#what-should-stditer_swaps-constraints-be" class="self-link"></a></h2>
-<p>Ranges brings with it a hierarchy of concepts for iterators. That library tends to be pretty picky in what it requires iterators to provide – too picky for what we can do for <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>, since we don’t want to reject valid code.</p>
-<p>For example:</p>
-<blockquote>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">struct</span> X <span class="op">{</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="co">/* not const */</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">&amp;</span>;</span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="op">}</span>;</span>
-<span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="dt">void</span> old_iter_swap<span class="op">(</span>X<span class="op">&amp;</span> a, X<span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>  std<span class="op">::</span>iter_swap<span class="op">(</span>a, b<span class="op">)</span>; <span class="co">// compiles and works</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="op">}</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a></span>
-<span id="cb2-9"><a href="#cb2-9"></a><span class="dt">void</span> new_iter_swap<span class="op">(</span>X<span class="op">&amp;</span> a, X<span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-10"><a href="#cb2-10"></a>  std<span class="op">::</span>ranges<span class="op">::</span>iter_swap<span class="op">(</span>a, b<span class="op">)</span>; <span class="co">// error</span></span>
-<span id="cb2-11"><a href="#cb2-11"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
-<p>The issue here is that <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>iter_swap</code> requires <code class="sourceCode cpp"><span class="op">*</span>x</code> to be a const operation. Which it probably should be, but iterators tend to not be <code class="sourceCode cpp"><span class="kw">const</span></code> (they are mutated and often passed by value) so it’s an easy <code class="sourceCode cpp"><span class="kw">const</span></code> to just forget. And that code needs to not suddenly break.</p>
-<p>But we don’t actually have to do anything fancy. <code class="sourceCode cpp">std<span class="op">::</span>iter_swap<span class="op">(</span>x, y<span class="op">)</span></code> just calls <code class="sourceCode cpp">swap<span class="op">(*</span>x, <span class="op">*</span>y<span class="op">)</span></code> (NB: unqualified). <code class="sourceCode cpp">std<span class="op">::</span>swap</code> is now properly constrained, so checking the validity of that expression is meaningful.</p>
-<p>Note that for the type <code class="sourceCode cpp">X</code> above, <code class="sourceCode cpp">std<span class="op">::</span>iter_swap<span class="op">(</span>a, b<span class="op">)</span></code> would remain valid (since <code class="sourceCode cpp">swap<span class="op">(*</span>a, <span class="op">*</span>b<span class="op">)</span></code> is valid) and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>iter_swap<span class="op">(</span>a, b<span class="op">)</span></code> would remain invalid (because argument dependent lookup for <code class="sourceCode cpp">iter_swap</code> wouldn’t find <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>, so the rest remains the same). But a hypothetical <code class="sourceCode cpp">X<span class="op">&lt;</span>std<span class="op">::</span>byte<span class="op">&gt;</span></code> (or <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>), with otherwise the same behavior, would suddenly allow <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>iter_swap<span class="op">(</span>a, b<span class="op">)</span></code> - because now <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> would be found by ADL without the poison pill to reject it.</p>
-<p>Does that… matter? Most of the code that uses <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>iter_swap</code> is in a context in the standard library where it is invoked with two <code class="sourceCode cpp">input_iterator</code>s. Types like <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> aren’t iterators, so they’d have been rejected long before we get to this point.</p>
-<p>If there’s harm in allowing this case, then this paper should be rejected. If it’s fine to allow, then this paper is fine.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">2</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>The wording of this paper is based on <span class="citation" data-cites="P2602R1">[<a href="#ref-P2602R1" role="doc-biblioref">P2602R1</a>]</span>.</p>
-<p>Add a constraint to <span>27.7.3 <a href="https://wg21.link/alg.swap">[alg.swap]</a></span>:</p>
-<blockquote>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> ForwardIterator1, <span class="kw">class</span> ForwardIterator2<span class="op">&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> iter_swap<span class="op">(</span>ForwardIterator1 a, ForwardIterator2 b<span class="op">)</span>;</span></code></pre></div>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">*</a></span> <em>Constraints</em>: <code class="sourceCode cpp">swap<span class="op">(*</span>a, <span class="op">*</span>b<span class="op">)</span></code> is well-formed.</p>
-</div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">6</a></span> <em>Preconditions</em>: <code class="sourceCode cpp">a</code> and <code class="sourceCode cpp">b</code> are dereferenceable. <code class="sourceCode cpp"><span class="op">*</span>a</code> is swappable with ([swappable.requirements]) <code class="sourceCode cpp"><span class="op">*</span>b</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">7</a></span> <em>Effects</em>: As if by <code class="sourceCode cpp">swap<span class="op">(*</span>a, <span class="op">*</span>b<span class="op">)</span></code>.</p>
-</blockquote>
-<p>Change <span>25.3.3.2 <a href="https://wg21.link/iterator.cust.swap">[iterator.cust.swap]</a></span>:</p>
-<blockquote>
+<p>Let’s say you want to implement an <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code> such that <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>Optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;)</span> <span class="op">==</span> <span class="dv">1</span></code>. This is conceptually doable since <code class="sourceCode cpp"><span class="dt">bool</span></code> only has 2 states, but takes up a whole byte anyway, which leaves 254 bit patterns to use to express other criteria (i.e. that the <code class="sourceCode cpp">Optional</code> is disengaged).</p>
+<p>There are two ways to do this, neither of which have undefined behavior:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Union</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Reinterpret</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">struct</span> OptBool <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">union</span> <span class="op">{</span> <span class="dt">bool</span> b; <span class="dt">char</span> c; <span class="op">}</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>  OptBool<span class="op">()</span> <span class="op">:</span> c<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>  OptBool<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">:</span> b<span class="op">(</span>b<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>  <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a></span>
+<span id="cb1-11"><a href="#cb1-11"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="cf">return</span> b;</span>
+<span id="cb1-13"><a href="#cb1-13"></a>  <span class="op">}</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">struct</span> OptBool <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="dt">char</span> c;</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>  OptBool<span class="op">()</span> <span class="op">:</span> c<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>  OptBool<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">{</span> <span class="kw">new</span> <span class="op">(&amp;</span>c<span class="op">)</span> <span class="dt">bool</span><span class="op">(</span>b<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>  <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
+<span id="cb2-9"><a href="#cb2-9"></a>  <span class="op">}</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="cf">return</span> <span class="op">(</span><span class="dt">bool</span><span class="op">&amp;)</span>c;</span>
+<span id="cb2-13"><a href="#cb2-13"></a>  <span class="op">}</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Both of these are fine: <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*</span></code> works because we are returning a reference to a very-much-live <code class="sourceCode cpp"><span class="dt">bool</span></code> in both cases, and <code class="sourceCode cpp">has_value<span class="op">()</span></code> works because we are allowed read through a <code class="sourceCode cpp"><span class="dt">char</span></code> (explicitly, per <a href="https://timsong-cpp.github.io/cppwp/n4868/basic.lval#11.3">[basic.lval]/11.3</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>).</p>
+<p>However, try to make this work in <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and we immediately run into problems.</p>
+<p>The union solution has a problem with <code class="sourceCode cpp">has_value<span class="op">()</span></code> because we’re not allowed to read the non-active member of a union (<a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.9">[expr.const]/5.9</a>). <code class="sourceCode cpp">c</code> isn’t the active member of that union, so we can’t read from it, even though it’s <code class="sourceCode cpp"><span class="dt">char</span></code>.</p>
+<p>The reinterpet solution has two problems:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(4.1)</a></span> <code class="sourceCode cpp"><span class="op">(</span><span class="dt">void</span><span class="op">)</span>iter_­swap<span class="op">(</span>E1, E2<span class="op">)</span></code>, if either <code class="sourceCode cpp">E1</code> or <code class="sourceCode cpp">E2</code> has class or enumeration type and <code class="sourceCode cpp">iter_­swap<span class="op">(</span>E1, E2<span class="op">)</span></code> is a well-formed expression <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that includes the declaration</del></span></li>
+<li>the placement new into <code class="sourceCode cpp"><span class="op">&amp;</span>c</code> doesn’t work. Placement-new is explicitly disallowed by <a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.17">[expr.const]/5.17</a>. While we have <code class="sourceCode cpp">std<span class="op">::</span>construct_at<span class="op">()</span></code> now to work around the lack of placement-new, that API is typed and would require a <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">*</span></code>, which we don’t have.</li>
+<li><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code> involves a <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span></code>, which is explicitly disallowed by <a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.15">[expr.const]/5.15</a>.</li>
 </ul>
-<div class="rm" style="color: #bf0303">
-
-<div class="sourceCode" id="cb4"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1"></a>template&lt;class I1, class I2&gt;</span>
-<span id="cb4-2"><a href="#cb4-2"></a>  void iter_swap(I1, I2) = delete;</span></code></pre></div>
-
-</div>
-<p><span class="rm" style="color: #bf0303"><del>and does not include a declaration of <span><code class="sourceCode default">ranges​::​iter_­swap</code></span></del></span> <span class="addu">where <code class="sourceCode cpp">iter_swap</code> undergoes argument dependent lookup</span>. If the function selected by overload resolution does not exchange the values denoted by <code class="sourceCode cpp">E1</code> and <code class="sourceCode cpp">E2</code>, the program is ill-formed, no diagnostic required. [<em>Note</em>: <span class="rm" style="color: #bf0303"><del>This precludes calling unconstrained <span><code class="sourceCode default">std::iter_swap</code></span>. When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used.</del></span> <span class="addu">Ordinary unqualified lookup is not performed.</span> - <em>end note</em>]</p>
+<p>This is unfortunate - we have a well-defined runtime solution that we cannot use during constant evaluation time. It’d be nice to do better.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>Supporting the reinterpret solution is expensive - since it requires the implementation to track multiple types for the same bytes. But supporting the union solution, because it’s more structured (and thus arguably better anyway), is very feasible. After all, our problem is localized to <code class="sourceCode cpp">has_value<span class="op">()</span></code>.</p>
+<p>During runtime, we do need to read from <code class="sourceCode cpp">c</code>. But during constant evaluation time, we actually don’t. What we need <code class="sourceCode cpp">c</code> for is to know whether <code class="sourceCode cpp">b</code> is the active member of the union or not. But the compiler already knows whether <code class="sourceCode cpp">b</code> is the active member or not. Indeed, that is precisely <em>why</em> it’s rejecting this implementation. What if we could simply ask the compiler this question?</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">struct</span> OptBool <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">union</span> <span class="op">{</span> <span class="dt">bool</span> b; <span class="dt">char</span> c; <span class="op">}</span>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a>  <span class="kw">constexpr</span> OptBool<span class="op">()</span> <span class="op">:</span> c<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>  <span class="kw">constexpr</span> OptBool<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">:</span> b<span class="op">(</span>b<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>      <span class="cf">return</span> std<span class="op">::</span>is_active_union_member<span class="op">(&amp;</span>b<span class="op">)</span>;</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>      <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
+<span id="cb3-12"><a href="#cb3-12"></a>    <span class="op">}</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a>  <span class="op">}</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a>    <span class="cf">return</span> b;</span>
+<span id="cb3-17"><a href="#cb3-17"></a>  <span class="op">}</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<h2 data-number="2.1" id="feature-test-macro"><span class="header-section-number">2.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
-<p>Bump the value for <code class="sourceCode cpp">__cpp_lib_ranges</code> in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<p>There’s no particular implementation burden here - the compiler already needs to know this information. No language change is necessary to support this change either.</p>
+<h2 data-number="2.1" id="implementation-experience"><span class="header-section-number">2.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>Daveed Vandevoorde has implemented this proposal in EDG.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Add to <span>21.3.3 <a href="https://wg21.link/meta.type.synop">[meta.type.synop]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a><span class="st">- #define __cpp_­lib_­ranges <span class="diffdel">202202L</span></span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="va">+ #define __cpp_­lib_­ranges <span class="diffins">2022XXL</span></span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>  // also in &lt;algorithm&gt;, &lt;functional&gt;, &lt;iterator&gt;, &lt;memory&gt;, &lt;ranges&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>// all freestanding</span>
+<span id="cb4-2"><a href="#cb4-2"></a>namespace std {</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  // ...</span>
+<span id="cb4-4"><a href="#cb4-4"></a></span>
+<span id="cb4-5"><a href="#cb4-5"></a>  // [meta.const.eval], constant evaluation context</span>
+<span id="cb4-6"><a href="#cb4-6"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="va">+   consteval bool is_active_union_member(T*);</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>}</span></code></pre></div>
 </div>
 </blockquote>
-<p>Ideally this paper is either passed together along with <span class="citation" data-cites="P2602R1">[<a href="#ref-P2602R1" role="doc-biblioref">P2602R1</a>]</span> or rejected entirely to make this easier.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
+<p>And add to <span>21.3.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span> (possibly this section should just change name, but it feels like these two should just go together):</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>  <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="op">}</span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> [<em>Example 1</em>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> f<span class="op">(</span><span class="dt">unsigned</span> <span class="dt">char</span> <span class="op">*</span>p, <span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span>           <span class="co">// should not be a constexpr if statement</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>; k<span class="op">&lt;</span>n; <span class="op">++</span>k<span class="op">)</span> p<span class="op">[</span>k<span class="op">]</span> <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    memset<span class="op">(</span>p, <span class="dv">0</span>, n<span class="op">)</span>;                            <span class="co">// not a core constant expression</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>  <span class="op">}</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="op">}</span></span></code></pre></div>
+<p>— <em>end example</em>]</p>
+<div class="addu">
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>template&lt;class T&gt;</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  consteval bool is_active_union_member(T* p);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">p</code> is a pointer to the active member of a union; otherwise, <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> <em>Remarks</em>: A call to this function is not a core constant expression ([expr.const]) unless <code class="sourceCode cpp">p</code> is a pointer to a variant member of a union.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">5</a></span> [<em>Example 2</em>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>struct OptBool {</span>
+<span id="cb9-2"><a href="#cb9-2"></a>  union { bool b; char c; };</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a>  constexpr OptBool() : c(2) { }</span>
+<span id="cb9-5"><a href="#cb9-5"></a>  constexpr OptBool(bool b) : b(b) { }</span>
+<span id="cb9-6"><a href="#cb9-6"></a></span>
+<span id="cb9-7"><a href="#cb9-7"></a>  constexpr auto has_value() const -&gt; bool {</span>
+<span id="cb9-8"><a href="#cb9-8"></a>    if consteval {</span>
+<span id="cb9-9"><a href="#cb9-9"></a>      return std::is_active_union_member(&amp;b);</span>
+<span id="cb9-10"><a href="#cb9-10"></a>    } else {</span>
+<span id="cb9-11"><a href="#cb9-11"></a>      return c != 2;</span>
+<span id="cb9-12"><a href="#cb9-12"></a>    }</span>
+<span id="cb9-13"><a href="#cb9-13"></a>  }</span>
+<span id="cb9-14"><a href="#cb9-14"></a></span>
+<span id="cb9-15"><a href="#cb9-15"></a>  constexpr auto operator*() -&gt; bool&amp; {</span>
+<span id="cb9-16"><a href="#cb9-16"></a>    return b;</span>
+<span id="cb9-17"><a href="#cb9-17"></a>  }</span>
+<span id="cb9-18"><a href="#cb9-18"></a>};</span>
+<span id="cb9-19"><a href="#cb9-19"></a></span>
+<span id="cb9-20"><a href="#cb9-20"></a>constexpr OptBool disengaged;</span>
+<span id="cb9-21"><a href="#cb9-21"></a>constexpr OptBool engaged(true);</span>
+<span id="cb9-22"><a href="#cb9-22"></a>static_assert(!disengaged.has_value());</span>
+<span id="cb9-23"><a href="#cb9-23"></a>static_assert(engaged.has_value());</span>
+<span id="cb9-24"><a href="#cb9-24"></a>static_assert(*engaged);</span></code></pre></div>
+<ul>
+<li><em>end example</em>]</li>
+</ul>
+</div>
+</blockquote>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
-<div id="ref-P0021R0">
-<p>[P0021R0] Eric Niebler, Casey Carter. 2015-09-28. Working Draft, C++ Extensions for Ranges. <br />
-<a href="https://wg21.link/p0021r0">https://wg21.link/p0021r0</a></p>
-</div>
-<div id="ref-P0185R1">
-<p>[P0185R1] Daniel Krugler. 2016-03-01. Adding [nothrow-]swappable traits, revision 3. <br />
-<a href="https://wg21.link/p0185r1">https://wg21.link/p0185r1</a></p>
-</div>
-<div id="ref-P0370R3">
-<p>[P0370R3] Casey Carter, Eric Niebler. 2016-11-17. Ranges TS Design Updates Omnibus. <br />
-<a href="https://wg21.link/p0370r3">https://wg21.link/p0370r3</a></p>
-</div>
-<div id="ref-P2602R1">
-<p>[P2602R1] Barry Revzin. 2022-07-11. Poison Pills are Too Toxic. <br />
-<a href="https://wg21.link/p2602r1">https://wg21.link/p2602r1</a></p>
+<div id="ref-N4868">
+<p>[N4868] Richard Smith. 2020-10-18. Working Draft, Standard for Programming Language C++. <br />
+<a href="https://wg21.link/n4868">https://wg21.link/n4868</a></p>
 </div>
 </div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>All references to this paper are to <span class="citation" data-cites="N4868">[<a href="#ref-N4868" role="doc-biblioref">N4868</a>]</span>, C++20 for convenient and stable linking.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
 </div>
 </div>
 </body>
