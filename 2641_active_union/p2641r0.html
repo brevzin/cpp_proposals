@@ -567,7 +567,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
 <li><a href="#proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
 <ul>
-<li><a href="#implementation-experience"><span class="toc-section-number">2.1</span> Implementation Experience<span></span></a></li>
+<li><a href="#interesting-cases"><span class="toc-section-number">2.1</span> Interesting Cases<span></span></a>
+<ul>
+<li><a href="#nested-anonymous-unions"><span class="toc-section-number">2.1.1</span> Nested Anonymous Unions<span></span></a></li>
+<li><a href="#subobject"><span class="toc-section-number">2.1.2</span> Subobject<span></span></a></li>
+<li><a href="#other-rules"><span class="toc-section-number">2.1.3</span> Other rules<span></span></a></li>
+</ul></li>
+<li><a href="#alternative-naming"><span class="toc-section-number">2.2</span> Alternative Naming<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">2.3</span> Implementation Experience<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -641,7 +648,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-6"><a href="#cb3-6"></a></span>
 <span id="cb3-7"><a href="#cb3-7"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
 <span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>      <span class="cf">return</span> std<span class="op">::</span>is_active_union_member<span class="op">(&amp;</span>b<span class="op">)</span>;</span>
+<span id="cb3-9"><a href="#cb3-9"></a>      <span class="cf">return</span> std<span class="op">::</span>is_active_member<span class="op">(&amp;</span>b<span class="op">)</span>;</span>
 <span id="cb3-10"><a href="#cb3-10"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
 <span id="cb3-11"><a href="#cb3-11"></a>      <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
 <span id="cb3-12"><a href="#cb3-12"></a>    <span class="op">}</span></span>
@@ -653,71 +660,122 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-18"><a href="#cb3-18"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>There’s no particular implementation burden here - the compiler already needs to know this information. No language change is necessary to support this change either.</p>
-<h2 data-number="2.1" id="implementation-experience"><span class="header-section-number">2.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="2.1" id="interesting-cases"><span class="header-section-number">2.1</span> Interesting Cases<a href="#interesting-cases" class="self-link"></a></h2>
+<p>Let’s go over some interesting cases to flesh out how this facility should behave</p>
+<h3 data-number="2.1.1" id="nested-anonymous-unions"><span class="header-section-number">2.1.1</span> Nested Anonymous Unions<a href="#nested-anonymous-unions" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">union</span> Outer <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="dt">int</span> x;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="dt">unsigned</span> <span class="dt">int</span> y;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="op">}</span>;</span>
+<span id="cb4-6"><a href="#cb4-6"></a>  <span class="dt">float</span> f;</span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="op">}</span>;</span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">consteval</span> <span class="dt">bool</span> f<span class="op">(</span>Outer <span class="op">*</span>p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>  <span class="cf">return</span> std<span class="op">::</span>is_consteval_active_member<span class="op">(&amp;</span>p<span class="op">-&gt;</span>x<span class="op">)</span>;</span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If the active member of <code class="sourceCode cpp">p</code> is actually <code class="sourceCode cpp">f</code>, then not only is <code class="sourceCode cpp">p<span class="op">-&gt;</span>x</code> not the active member of <em>its</em> union but the union that it’s a member of isn’t even itself an active member. What should happen in this case?</p>
+<p>Arguably, this should be valid and return <code class="sourceCode cpp"><span class="kw">false</span></code>. It doesn’t matter how many layers of inactivity there are - <code class="sourceCode cpp">p<span class="op">-&gt;</span>x</code> isn’t the active member and that’s what we’re asking about.</p>
+<h3 data-number="2.1.2" id="subobject"><span class="header-section-number">2.1.2</span> Subobject<a href="#subobject" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>      <span class="dt">int</span> i;</span>
+<span id="cb5-5"><a href="#cb5-5"></a>    <span class="op">}</span> n;</span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="op">}</span>;</span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="op">}</span>;</span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="kw">consteval</span> <span class="dt">bool</span> f<span class="op">(</span>S s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a>  <span class="cf">return</span> std<span class="op">::</span>is_consteval_active_member<span class="op">(&amp;</span>s<span class="op">.</span>n<span class="op">.</span>i<span class="op">)</span>;</span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, <code class="sourceCode cpp">s<span class="op">.</span>n<span class="op">.</span>i</code> is not a variant member of a union - it’s a subobject of <code class="sourceCode cpp">s<span class="op">.</span>n</code>. We could say this is ill-formed, requiring that the pointer into this function actually be a pointer to a variant member. But that’s seems overly strict. After all, the specific language rule is, emphasis mine:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">(5.9)</a></span> an lvalue-to-rvalue conversion that is applied to a glvalue that refers to a non-active member of a union <strong>or a subobject thereof;</strong></p>
+</blockquote>
+<p>The same rule that would reject using <code class="sourceCode cpp">s<span class="op">.</span>n</code> if that’s not an active member would reject <code class="sourceCode cpp">s<span class="op">.</span>n<span class="op">.</span>i</code> if it’s not the subobject of an active member. So we should just accept this case (returning true of <code class="sourceCode cpp"><span class="op">&amp;</span>s<span class="op">.</span>n</code> is the active member), rather than rejecting it.</p>
+<h3 data-number="2.1.3" id="other-rules"><span class="header-section-number">2.1.3</span> Other rules<a href="#other-rules" class="self-link"></a></h3>
+<p>There’s a similar rule in this space, <a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.8">[expr.const]/5.8</a></p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(5.8)</a></span> an lvalue-to-rvalue conversion unless it is applied to</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(5.8.1)</a></span> a non-volatile glvalue that refers to an object that is usable in constant expressions, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.8.2)</a></span> a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of E;</li>
+</ul>
+</blockquote>
+<p>Should the facility in this paper address this case as well? At this point, this would become a “is this a pointer that I can read during constant evaluation?” facility. Would that actually be useful? It’s not clear what you could do with this information.</p>
+<h2 data-number="2.2" id="alternative-naming"><span class="header-section-number">2.2</span> Alternative Naming<a href="#alternative-naming" class="self-link"></a></h2>
+<p>Should the name reflect that this facility can only be used during constant evaluation (<code class="sourceCode cpp">std<span class="op">::</span>is_consteval_active_member</code>) or not (<code class="sourceCode cpp">std<span class="op">::</span>is_active_member</code>)?</p>
+<p>It would help to make the name clearer from the call site that it has limited usage. But it is already a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function, so it’s not like you could misuse it.</p>
+<h2 data-number="2.3" id="implementation-experience"><span class="header-section-number">2.3</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Daveed Vandevoorde has implemented this proposal in EDG.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add to <span>21.3.3 <a href="https://wg21.link/meta.type.synop">[meta.type.synop]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1"></a>// all freestanding</span>
-<span id="cb4-2"><a href="#cb4-2"></a>namespace std {</span>
-<span id="cb4-3"><a href="#cb4-3"></a>  // ...</span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a>  // [meta.const.eval], constant evaluation context</span>
-<span id="cb4-6"><a href="#cb4-6"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="va">+   consteval bool is_active_union_member(T*);</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1"></a>// all freestanding</span>
+<span id="cb6-2"><a href="#cb6-2"></a>namespace std {</span>
+<span id="cb6-3"><a href="#cb6-3"></a>  // ...</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a>  // [meta.const.eval], constant evaluation context</span>
+<span id="cb6-6"><a href="#cb6-6"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="va">+   consteval bool is_active_member(T*);</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>And add to <span>21.3.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span> (possibly this section should just change name, but it feels like these two should just go together):</p>
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>  <span class="cf">return</span> <span class="kw">true</span>;</span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>  <span class="cf">return</span> <span class="kw">false</span>;</span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="op">}</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> [<em>Example 1</em>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> f<span class="op">(</span><span class="dt">unsigned</span> <span class="dt">char</span> <span class="op">*</span>p, <span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span>           <span class="co">// should not be a constexpr if statement</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>; k<span class="op">&lt;</span>n; <span class="op">++</span>k<span class="op">)</span> p<span class="op">[</span>k<span class="op">]</span> <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb7-4"><a href="#cb7-4"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb7-5"><a href="#cb7-5"></a>    memset<span class="op">(</span>p, <span class="dv">0</span>, n<span class="op">)</span>;                            <span class="co">// not a core constant expression</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>  <span class="op">}</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>  <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="op">}</span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span> [<em>Example 1</em>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> f<span class="op">(</span><span class="dt">unsigned</span> <span class="dt">char</span> <span class="op">*</span>p, <span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span>           <span class="co">// should not be a constexpr if statement</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>; k<span class="op">&lt;</span>n; <span class="op">++</span>k<span class="op">)</span> p<span class="op">[</span>k<span class="op">]</span> <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb9-4"><a href="#cb9-4"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>    memset<span class="op">(</span>p, <span class="dv">0</span>, n<span class="op">)</span>;                            <span class="co">// not a core constant expression</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>  <span class="op">}</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="op">}</span></span></code></pre></div>
 <p>— <em>end example</em>]</p>
 <div class="addu">
-<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>template&lt;class T&gt;</span>
-<span id="cb8-2"><a href="#cb8-2"></a>  consteval bool is_active_union_member(T* p);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">p</code> is a pointer to the active member of a union; otherwise, <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> <em>Remarks</em>: A call to this function is not a core constant expression ([expr.const]) unless <code class="sourceCode cpp">p</code> is a pointer to a variant member of a union.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">5</a></span> [<em>Example 2</em>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>struct OptBool {</span>
-<span id="cb9-2"><a href="#cb9-2"></a>  union { bool b; char c; };</span>
-<span id="cb9-3"><a href="#cb9-3"></a></span>
-<span id="cb9-4"><a href="#cb9-4"></a>  constexpr OptBool() : c(2) { }</span>
-<span id="cb9-5"><a href="#cb9-5"></a>  constexpr OptBool(bool b) : b(b) { }</span>
-<span id="cb9-6"><a href="#cb9-6"></a></span>
-<span id="cb9-7"><a href="#cb9-7"></a>  constexpr auto has_value() const -&gt; bool {</span>
-<span id="cb9-8"><a href="#cb9-8"></a>    if consteval {</span>
-<span id="cb9-9"><a href="#cb9-9"></a>      return std::is_active_union_member(&amp;b);   // during constant evaluation, cannot read from c</span>
-<span id="cb9-10"><a href="#cb9-10"></a>    } else {</span>
-<span id="cb9-11"><a href="#cb9-11"></a>      return c != 2;                            // during runtime, must read from c</span>
-<span id="cb9-12"><a href="#cb9-12"></a>    }</span>
-<span id="cb9-13"><a href="#cb9-13"></a>  }</span>
-<span id="cb9-14"><a href="#cb9-14"></a></span>
-<span id="cb9-15"><a href="#cb9-15"></a>  constexpr auto operator*() -&gt; bool&amp; {</span>
-<span id="cb9-16"><a href="#cb9-16"></a>    return b;</span>
-<span id="cb9-17"><a href="#cb9-17"></a>  }</span>
-<span id="cb9-18"><a href="#cb9-18"></a>};</span>
-<span id="cb9-19"><a href="#cb9-19"></a></span>
-<span id="cb9-20"><a href="#cb9-20"></a>constexpr OptBool disengaged;</span>
-<span id="cb9-21"><a href="#cb9-21"></a>constexpr OptBool engaged(true);</span>
-<span id="cb9-22"><a href="#cb9-22"></a>static_assert(!disengaged.has_value());</span>
-<span id="cb9-23"><a href="#cb9-23"></a>static_assert(engaged.has_value());</span>
-<span id="cb9-24"><a href="#cb9-24"></a>static_assert(*engaged);</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>template&lt;class T&gt;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  consteval bool is_active_member(T* p);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">p</code> is a pointer to the active member of a union or a subobject thereof; otherwise, <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span> <em>Remarks</em>: A call to this function is not a core constant expression ([expr.const]) unless <code class="sourceCode cpp">p</code> is a pointer to a variant member of a union or a subobject thereof.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span> [<em>Example 2</em>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>struct OptBool {</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  union { bool b; char c; };</span>
+<span id="cb11-3"><a href="#cb11-3"></a></span>
+<span id="cb11-4"><a href="#cb11-4"></a>  constexpr OptBool() : c(2) { }</span>
+<span id="cb11-5"><a href="#cb11-5"></a>  constexpr OptBool(bool b) : b(b) { }</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a>  constexpr auto has_value() const -&gt; bool {</span>
+<span id="cb11-8"><a href="#cb11-8"></a>    if consteval {</span>
+<span id="cb11-9"><a href="#cb11-9"></a>      return std::is_active_member(&amp;b);   // during constant evaluation, cannot read from c</span>
+<span id="cb11-10"><a href="#cb11-10"></a>    } else {</span>
+<span id="cb11-11"><a href="#cb11-11"></a>      return c != 2;                      // during runtime, must read from c</span>
+<span id="cb11-12"><a href="#cb11-12"></a>    }</span>
+<span id="cb11-13"><a href="#cb11-13"></a>  }</span>
+<span id="cb11-14"><a href="#cb11-14"></a></span>
+<span id="cb11-15"><a href="#cb11-15"></a>  constexpr auto operator*() -&gt; bool&amp; {</span>
+<span id="cb11-16"><a href="#cb11-16"></a>    return b;</span>
+<span id="cb11-17"><a href="#cb11-17"></a>  }</span>
+<span id="cb11-18"><a href="#cb11-18"></a>};</span>
+<span id="cb11-19"><a href="#cb11-19"></a></span>
+<span id="cb11-20"><a href="#cb11-20"></a>constexpr OptBool disengaged;</span>
+<span id="cb11-21"><a href="#cb11-21"></a>constexpr OptBool engaged(true);</span>
+<span id="cb11-22"><a href="#cb11-22"></a>static_assert(!disengaged.has_value());</span>
+<span id="cb11-23"><a href="#cb11-23"></a>static_assert(engaged.has_value());</span>
+<span id="cb11-24"><a href="#cb11-24"></a>static_assert(*engaged);</span></code></pre></div>
 <ul>
 <li><em>end example</em>]</li>
 </ul>

@@ -87,7 +87,7 @@ struct OptBool {
 
   constexpr auto has_value() const -> bool {
     if consteval {
-      return std::is_active_union_member(&b);
+      return std::is_active_member(&b);
     } else {
       return c != 2;
     }
@@ -101,6 +101,80 @@ struct OptBool {
 :::
 
 There's no particular implementation burden here - the compiler already needs to know this information. No language change is necessary to support this change either.
+
+## Interesting Cases
+
+Let's go over some interesting cases to flesh out how this facility should behave
+
+### Nested Anonymous Unions
+
+Consider:
+
+::: bq
+```cpp
+union Outer {
+  union {
+    int x;
+    unsigned int y;
+  };
+  float f;
+};
+consteval bool f(Outer *p) {
+  return std::is_consteval_active_member(&p->x);
+}
+```
+:::
+
+If the active member of `p` is actually `f`, then not only is `p->x` not the active member of _its_ union but the union that it's a member of isn't even itself an active member. What should happen in this case?
+
+Arguably, this should be valid and return `false`. It doesn't matter how many layers of inactivity there are - `p->x` isn't the active member and that's what we're asking about.
+
+### Subobject
+
+Consider:
+
+::: bq
+```cpp
+struct S {
+  union {
+    struct {
+      int i;
+    } n;
+  };
+};
+
+consteval bool f(S s) {
+  return std::is_consteval_active_member(&s.n.i);
+}
+```
+:::
+
+Here, `s.n.i` is not a variant member of a union - it's a subobject of `s.n`. We could say this is ill-formed, requiring that the pointer into this function actually be a pointer to a variant member. But that's seems overly strict. After all, the specific language rule is, emphasis mine:
+
+::: bq
+[5.9]{.pnum} an lvalue-to-rvalue conversion that is applied to a glvalue that refers to a non-active member of a union **or a subobject thereof;**
+:::
+
+The same rule that would reject using `s.n` if that's not an active member would reject `s.n.i` if it's not the subobject of an active member. So we should just accept this case (returning true of `&s.n` is the active member), rather than rejecting it.
+
+### Other rules
+
+There's a similar rule in this space, [\[expr.const\]/5.8](https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.8)
+
+::: bq
+[5.8]{.pnum} an lvalue-to-rvalue conversion unless it is applied to
+
+* [5.8.1]{.pnum} a non-volatile glvalue that refers to an object that is usable in constant expressions, or
+* [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of E;
+:::
+
+Should the facility in this paper address this case as well? At this point, this would become a "is this a pointer that I can read during constant evaluation?" facility. Would that actually be useful? It's not clear what you could do with this information.
+
+## Alternative Naming
+
+Should the name reflect that this facility can only be used during constant evaluation (`std::is_consteval_active_member`) or not (`std::is_active_member`)?
+
+It would help to make the name clearer from the call site that it has limited usage. But it is already a `consteval` function, so it's not like you could misuse it.
 
 ## Implementation Experience
 
@@ -119,7 +193,7 @@ namespace std {
   // [meta.const.eval], constant evaluation context
   constexpr bool is_constant_evaluated() noexcept;
 + template<class T>
-+   consteval bool is_active_union_member(T*);
++   consteval bool is_active_member(T*);
 }
 ```
 :::
@@ -154,12 +228,12 @@ constexpr void f(unsigned char *p, int n) {
 ::: addu
 ```
 template<class T>
-  consteval bool is_active_union_member(T* p);
+  consteval bool is_active_member(T* p);
 ```
 
-[3]{.pnum} *Returns*: `true` if `p` is a pointer to the active member of a union; otherwise, `false`.
+[3]{.pnum} *Returns*: `true` if `p` is a pointer to the active member of a union or a subobject thereof; otherwise, `false`.
 
-[4]{.pnum} *Remarks*: A call to this function is not a core constant expression ([expr.const]) unless `p` is a pointer to a variant member of a union.
+[4]{.pnum} *Remarks*: A call to this function is not a core constant expression ([expr.const]) unless `p` is a pointer to a variant member of a union or a subobject thereof.
 
 [5]{.pnum}
 [*Example 2*:
@@ -172,9 +246,9 @@ struct OptBool {
 
   constexpr auto has_value() const -> bool {
     if consteval {
-      return std::is_active_union_member(&b);   // during constant evaluation, cannot read from c
+      return std::is_active_member(&b);   // during constant evaluation, cannot read from c
     } else {
-      return c != 2;                            // during runtime, must read from c
+      return c != 2;                      // during runtime, must read from c
     }
   }
 
