@@ -6,6 +6,8 @@ audience: EWG, LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
+    - name: Daveed Vandevoorde
+      email: <daveed@edg.com>
 toc: true
 tags: constexpr
 ---
