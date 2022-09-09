@@ -702,9 +702,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-6"><a href="#cb9-6"></a></span>
 <span id="cb9-7"><a href="#cb9-7"></a>  constexpr auto has_value() const -&gt; bool {</span>
 <span id="cb9-8"><a href="#cb9-8"></a>    if consteval {</span>
-<span id="cb9-9"><a href="#cb9-9"></a>      return std::is_active_union_member(&amp;b);</span>
+<span id="cb9-9"><a href="#cb9-9"></a>      return std::is_active_union_member(&amp;b);   // during constant evaluation, cannot read from c</span>
 <span id="cb9-10"><a href="#cb9-10"></a>    } else {</span>
-<span id="cb9-11"><a href="#cb9-11"></a>      return c != 2;</span>
+<span id="cb9-11"><a href="#cb9-11"></a>      return c != 2;                            // during runtime, must read from c</span>
 <span id="cb9-12"><a href="#cb9-12"></a>    }</span>
 <span id="cb9-13"><a href="#cb9-13"></a>  }</span>
 <span id="cb9-14"><a href="#cb9-14"></a></span>

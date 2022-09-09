@@ -172,9 +172,9 @@ struct OptBool {
 
   constexpr auto has_value() const -> bool {
     if consteval {
-      return std::is_active_union_member(&b);
+      return std::is_active_union_member(&b);   // during constant evaluation, cannot read from c
     } else {
-      return c != 2;
+      return c != 2;                            // during runtime, must read from c
     }
   }
 
