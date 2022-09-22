@@ -65,6 +65,7 @@
 - 2602 Poison Pills are Too Toxic: [p2602r0](2602_poison_pills/p2602r0.html) [p2602r1](2602_poison_pills/p2602r1.html)
 - 2637 Member  <code class="sourceCode cpp">visit</code>  and  <code class="sourceCode cpp">apply</code>: [p2637r0](2637_member_visit/p2637r0.html)
 - 2641 Checking if a union alternative is active: [p2641r0](2641_active_union/p2641r0.html)
+- 2647 Permitting static constexpr variables in constexpr functions: [p2647r0](2647_static_constexpr/p2647r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet
