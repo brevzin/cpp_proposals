@@ -1,5 +1,5 @@
 ---
-title: "Permitting static constexpr variables in constexpr functions"
+title: "Permitting `static constexpr` variables in `constexpr` functions"
 document: P2647R0
 date: today
 audience: EWG
@@ -9,7 +9,7 @@ author:
     - name: Jonathan Wakely
       email: <cxx@kayari.org>
 toc: true
-tags: constexpr
+tag: constexpr
 ---
 
 # Introduction
