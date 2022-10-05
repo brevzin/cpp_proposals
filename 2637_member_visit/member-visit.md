@@ -114,14 +114,7 @@ public:
 ```
 :::
 
-`copy_cvref_t<A, B>` is a metafunction that simply pastes the const/ref qualifiers from `A` onto `B`. As in:
-
-|`A`|`B`|`copy_cvref_t<A, B>`|
-|-|-|-|
-|`T`|`U`|`U`|
-|`T&`|`U`|`U&`|
-|`T const&`|`U`|`U const&`|
-|`T&&`|`U`|`U&&`|
+`copy_cvref_t<A, B>` is a metafunction that simply pastes the const/ref qualifiers from `A` onto `B`. It will be added by [@P1450R3].
 
 The C-style cast here is deliberate because `variant` might be a private base of `Visitor`. This is a case that `std::visit` does not support, but LEWG preferred if member `visit` did.
 
@@ -172,15 +165,22 @@ Add to [variant.visit]{.sref}, after the definition of non-member `visit`:
 ```
 template<class Self, class Visitor>
   constexpr $see below$ visit(this Self&& self, Visitor&& vis);
-template<class R, class Self, class Visitor>
-  constexpr R visit(this Self&& self, Visitor&& vis);
 ```
 
 [9]{.pnum} Let `V` be `$OVERRIDE_REF$(Self&&, $COPY_CONST$(remove_reference_t<Self>, variant))` ([forward]).
 
-[#]{.pnum} *Constraints*: For the first overload, the call to `visit` does not use an explicit `$template-argument-list$` that begins with a type `$template-argument$`.
+[#]{.pnum} *Constraints*: the call to `visit` does not use an explicit `$template-argument-list$` that begins with a type `$template-argument$`.
 
-[#]{.pnum} *Effects*: Equivalent to `return std::visit(std::forward<Visitor>(vis), (V)self)` for the first form and `return std::visit<R>(std::forward<Visitor>(vis), (V)self)` for the second form.
+[#]{.pnum} *Effects*: Equivalent to `return std::visit(std::forward<Visitor>(vis), (V)self);`
+
+```
+template<class R, class Self, class Visitor>
+  constexpr R visit(this Self&& self, Visitor&& vis);
+```
+
+[#]{.pnum} Let `V` be `$OVERRIDE_REF$(Self&&, $COPY_CONST$(remove_reference_t<Self>, variant))` ([forward]).
+
+[#]{.pnum} *Effects*: Equivalent to `return std::visit<R>(std::forward<Visitor>(vis), (V)self);`
 :::
 :::
 
@@ -263,12 +263,16 @@ explicit operator bool() const noexcept;
 ```
 template<class Visitor>
   decltype(auto) visit(this basic_format_arg arg, Visitor&& vis);
+```
+[16]{.pnum} *Effects*: Equivalent to `return arg.value.visit(forward<Visitor>(vis));`
+
+```
 template<class R, class Visitor>
   R visit(this basic_format_arg arg, Visitor&& vis);
 
 ```
 
-[16]{.pnum} *Effects*: Equivalent to `return arg.value.visit(forward<Visitor>(vis));` for the first overload and `return arg.value.visit<R>(forward<Visitor>(vis));` for the second overload.
+[#]{.pnum} *Effects*: Equivalent to `return arg.value.visit<R>(forward<Visitor>(vis));`
 :::
 :::
 

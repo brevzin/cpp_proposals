@@ -669,44 +669,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-12"><a href="#cb6-12"></a>  <span class="op">}</span></span>
 <span id="cb6-13"><a href="#cb6-13"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p><code class="sourceCode cpp">copy_cvref_t<span class="op">&lt;</span>A, B<span class="op">&gt;</span></code> is a metafunction that simply pastes the const/ref qualifiers from <code class="sourceCode cpp">A</code> onto <code class="sourceCode cpp">B</code>. As in:</p>
-<table>
-<thead>
-<tr class="header">
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">A</code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">B</code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">copy_cvref_t<span class="op">&lt;</span>A, B<span class="op">&gt;</span></code></strong>
-</div></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code class="sourceCode cpp">T</code></td>
-<td><code class="sourceCode cpp">U</code></td>
-<td><code class="sourceCode cpp">U</code></td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">T<span class="op">&amp;</span></code></td>
-<td><code class="sourceCode cpp">U</code></td>
-<td><code class="sourceCode cpp">U<span class="op">&amp;</span></code></td>
-</tr>
-<tr class="odd">
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code></td>
-<td><code class="sourceCode cpp">U</code></td>
-<td><code class="sourceCode cpp">U <span class="kw">const</span><span class="op">&amp;</span></code></td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code></td>
-<td><code class="sourceCode cpp">U</code></td>
-<td><code class="sourceCode cpp">U<span class="op">&amp;&amp;</span></code></td>
-</tr>
-</tbody>
-</table>
+<p><code class="sourceCode cpp">copy_cvref_t<span class="op">&lt;</span>A, B<span class="op">&gt;</span></code> is a metafunction that simply pastes the const/ref qualifiers from <code class="sourceCode cpp">A</code> onto <code class="sourceCode cpp">B</code>. It will be added by <span class="citation" data-cites="P1450R3">[<a href="#ref-P1450R3" role="doc-biblioref">P1450R3</a>]</span>.</p>
 <p>The C-style cast here is deliberate because <code class="sourceCode cpp">variant</code> might be a private base of <code class="sourceCode cpp">Visitor</code>. This is a case that <code class="sourceCode cpp">std<span class="op">::</span>visit</code> does not support, but LEWG preferred if member <code class="sourceCode cpp">visit</code> did.</p>
 <p>There is also an extra leading <code class="sourceCode cpp"><span class="dt">int</span><span class="op">=</span><span class="dv">0</span></code> template parameter for the overload that just calls <code class="sourceCode cpp">std<span class="op">::</span>visit</code> (rather than <code class="sourceCode cpp">std<span class="op">::</span>visit<span class="op">&lt;</span>R<span class="op">&gt;</span></code>). This is because, unlike with the non-member functions, an ambiguity would otherwise arise if you attempted to do:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">using</span> State <span class="op">=</span> std<span class="op">::</span>variant<span class="op">&lt;</span>A, B, C<span class="op">&gt;</span>;</span>
@@ -744,87 +707,90 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>template&lt;class Self, class Visitor&gt;</span>
-<span id="cb9-2"><a href="#cb9-2"></a>  constexpr <em>see below</em> visit(this Self&amp;&amp; self, Visitor&amp;&amp; vis);</span>
-<span id="cb9-3"><a href="#cb9-3"></a>template&lt;class R, class Self, class Visitor&gt;</span>
-<span id="cb9-4"><a href="#cb9-4"></a>  constexpr R visit(this Self&amp;&amp; self, Visitor&amp;&amp; vis);</span></code></pre></div>
+<span id="cb9-2"><a href="#cb9-2"></a>  constexpr <em>see below</em> visit(this Self&amp;&amp; self, Visitor&amp;&amp; vis);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">9</a></span> Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp"><em>OVERRIDE_REF</em><span class="op">(</span>Self<span class="op">&amp;&amp;</span>, <em>COPY_CONST</em><span class="op">(</span>remove_reference_t<span class="op">&lt;</span>Self<span class="op">&gt;</span>, variant<span class="op">))</span></code> ([forward]).</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">10</a></span> <em>Constraints</em>: For the first overload, the call to <code class="sourceCode cpp">visit</code> does not use an explicit <code class="sourceCode cpp"><em>template-argument-list</em></code> that begins with a type <code class="sourceCode cpp"><em>template-argument</em></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">11</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>visit<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">)</span>, <span class="op">(</span>V<span class="op">)</span>self<span class="op">)</span></code> for the first form and <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>visit<span class="op">&lt;</span>R<span class="op">&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">)</span>, <span class="op">(</span>V<span class="op">)</span>self<span class="op">)</span></code> for the second form.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">10</a></span> <em>Constraints</em>: the call to <code class="sourceCode cpp">visit</code> does not use an explicit <code class="sourceCode cpp"><em>template-argument-list</em></code> that begins with a type <code class="sourceCode cpp"><em>template-argument</em></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">11</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>visit<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">)</span>, <span class="op">(</span>V<span class="op">)</span>self<span class="op">)</span>;</code></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>template&lt;class R, class Self, class Visitor&gt;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  constexpr R visit(this Self&amp;&amp; self, Visitor&amp;&amp; vis);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">12</a></span> Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp"><em>OVERRIDE_REF</em><span class="op">(</span>Self<span class="op">&amp;&amp;</span>, <em>COPY_CONST</em><span class="op">(</span>remove_reference_t<span class="op">&lt;</span>Self<span class="op">&gt;</span>, variant<span class="op">))</span></code> ([forward]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">13</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>visit<span class="op">&lt;</span>R<span class="op">&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">)</span>, <span class="op">(</span>V<span class="op">)</span>self<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 <p>Change the example in <span>22.14.6.6 <a href="https://wg21.link/format.context">[format.context]</a></span>/8:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>struct S { int value; };</span>
-<span id="cb10-2"><a href="#cb10-2"></a></span>
-<span id="cb10-3"><a href="#cb10-3"></a>template&lt;&gt; struct std::formatter&lt;S&gt; {</span>
-<span id="cb10-4"><a href="#cb10-4"></a>  size_t width_arg_id = 0;</span>
-<span id="cb10-5"><a href="#cb10-5"></a></span>
-<span id="cb10-6"><a href="#cb10-6"></a>  // Parses a width argument id in the format { digit }.</span>
-<span id="cb10-7"><a href="#cb10-7"></a>  constexpr auto parse(format_parse_context&amp; ctx) {</span>
-<span id="cb10-8"><a href="#cb10-8"></a>    auto iter = ctx.begin();</span>
-<span id="cb10-9"><a href="#cb10-9"></a>    auto get_char = [&amp;]() { return iter != ctx.end() ? *iter : 0; };</span>
-<span id="cb10-10"><a href="#cb10-10"></a>    if (get_char() != &#39;{&#39;)</span>
-<span id="cb10-11"><a href="#cb10-11"></a>      return iter;</span>
-<span id="cb10-12"><a href="#cb10-12"></a>    ++iter;</span>
-<span id="cb10-13"><a href="#cb10-13"></a>    char c = get_char();</span>
-<span id="cb10-14"><a href="#cb10-14"></a>    if (!isdigit(c) || (++iter, get_char()) != &#39;}&#39;)</span>
-<span id="cb10-15"><a href="#cb10-15"></a>      throw format_error(&quot;invalid format&quot;);</span>
-<span id="cb10-16"><a href="#cb10-16"></a>    width_arg_id = c - &#39;0&#39;;</span>
-<span id="cb10-17"><a href="#cb10-17"></a>    ctx.check_arg_id(width_arg_id);</span>
-<span id="cb10-18"><a href="#cb10-18"></a>    return ++iter;</span>
-<span id="cb10-19"><a href="#cb10-19"></a>  }</span>
-<span id="cb10-20"><a href="#cb10-20"></a></span>
-<span id="cb10-21"><a href="#cb10-21"></a>  // Formats an S with width given by the argument width_­arg_­id.</span>
-<span id="cb10-22"><a href="#cb10-22"></a>  auto format(S s, format_context&amp; ctx) {</span>
-<span id="cb10-23"><a href="#cb10-23"></a><span class="st">-   int width = visit_format_arg([](auto value) -&gt; int {</span></span>
-<span id="cb10-24"><a href="#cb10-24"></a><span class="va">+   int width = ctx.arg(width_arg_id).visit([](auto value) -&gt; int {</span></span>
-<span id="cb10-25"><a href="#cb10-25"></a>      if constexpr (!is_integral_v&lt;decltype(value)&gt;)</span>
-<span id="cb10-26"><a href="#cb10-26"></a>        throw format_error(&quot;width is not integral&quot;);</span>
-<span id="cb10-27"><a href="#cb10-27"></a>      else if (value &lt; 0 || value &gt; numeric_limits&lt;int&gt;::max())</span>
-<span id="cb10-28"><a href="#cb10-28"></a>        throw format_error(&quot;invalid width&quot;);</span>
-<span id="cb10-29"><a href="#cb10-29"></a>      else</span>
-<span id="cb10-30"><a href="#cb10-30"></a>        return value;</span>
-<span id="cb10-31"><a href="#cb10-31"></a><span class="st">-     }, ctx.arg(width_arg_id));</span></span>
-<span id="cb10-32"><a href="#cb10-32"></a><span class="va">+     });</span></span>
-<span id="cb10-33"><a href="#cb10-33"></a>    return format_to(ctx.out(), &quot;{0:x&lt;{1}}&quot;, s.value, width);</span>
-<span id="cb10-34"><a href="#cb10-34"></a>  }</span>
-<span id="cb10-35"><a href="#cb10-35"></a>};</span>
-<span id="cb10-36"><a href="#cb10-36"></a></span>
-<span id="cb10-37"><a href="#cb10-37"></a>std::string s = std::format(&quot;{0:{1}}&quot;, S{42}, 10);  // value of s is &quot;xxxxxxxx42&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>struct S { int value; };</span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a>template&lt;&gt; struct std::formatter&lt;S&gt; {</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  size_t width_arg_id = 0;</span>
+<span id="cb11-5"><a href="#cb11-5"></a></span>
+<span id="cb11-6"><a href="#cb11-6"></a>  // Parses a width argument id in the format { digit }.</span>
+<span id="cb11-7"><a href="#cb11-7"></a>  constexpr auto parse(format_parse_context&amp; ctx) {</span>
+<span id="cb11-8"><a href="#cb11-8"></a>    auto iter = ctx.begin();</span>
+<span id="cb11-9"><a href="#cb11-9"></a>    auto get_char = [&amp;]() { return iter != ctx.end() ? *iter : 0; };</span>
+<span id="cb11-10"><a href="#cb11-10"></a>    if (get_char() != &#39;{&#39;)</span>
+<span id="cb11-11"><a href="#cb11-11"></a>      return iter;</span>
+<span id="cb11-12"><a href="#cb11-12"></a>    ++iter;</span>
+<span id="cb11-13"><a href="#cb11-13"></a>    char c = get_char();</span>
+<span id="cb11-14"><a href="#cb11-14"></a>    if (!isdigit(c) || (++iter, get_char()) != &#39;}&#39;)</span>
+<span id="cb11-15"><a href="#cb11-15"></a>      throw format_error(&quot;invalid format&quot;);</span>
+<span id="cb11-16"><a href="#cb11-16"></a>    width_arg_id = c - &#39;0&#39;;</span>
+<span id="cb11-17"><a href="#cb11-17"></a>    ctx.check_arg_id(width_arg_id);</span>
+<span id="cb11-18"><a href="#cb11-18"></a>    return ++iter;</span>
+<span id="cb11-19"><a href="#cb11-19"></a>  }</span>
+<span id="cb11-20"><a href="#cb11-20"></a></span>
+<span id="cb11-21"><a href="#cb11-21"></a>  // Formats an S with width given by the argument width_­arg_­id.</span>
+<span id="cb11-22"><a href="#cb11-22"></a>  auto format(S s, format_context&amp; ctx) {</span>
+<span id="cb11-23"><a href="#cb11-23"></a><span class="st">-   int width = visit_format_arg([](auto value) -&gt; int {</span></span>
+<span id="cb11-24"><a href="#cb11-24"></a><span class="va">+   int width = ctx.arg(width_arg_id).visit([](auto value) -&gt; int {</span></span>
+<span id="cb11-25"><a href="#cb11-25"></a>      if constexpr (!is_integral_v&lt;decltype(value)&gt;)</span>
+<span id="cb11-26"><a href="#cb11-26"></a>        throw format_error(&quot;width is not integral&quot;);</span>
+<span id="cb11-27"><a href="#cb11-27"></a>      else if (value &lt; 0 || value &gt; numeric_limits&lt;int&gt;::max())</span>
+<span id="cb11-28"><a href="#cb11-28"></a>        throw format_error(&quot;invalid width&quot;);</span>
+<span id="cb11-29"><a href="#cb11-29"></a>      else</span>
+<span id="cb11-30"><a href="#cb11-30"></a>        return value;</span>
+<span id="cb11-31"><a href="#cb11-31"></a><span class="st">-     }, ctx.arg(width_arg_id));</span></span>
+<span id="cb11-32"><a href="#cb11-32"></a><span class="va">+     });</span></span>
+<span id="cb11-33"><a href="#cb11-33"></a>    return format_to(ctx.out(), &quot;{0:x&lt;{1}}&quot;, s.value, width);</span>
+<span id="cb11-34"><a href="#cb11-34"></a>  }</span>
+<span id="cb11-35"><a href="#cb11-35"></a>};</span>
+<span id="cb11-36"><a href="#cb11-36"></a></span>
+<span id="cb11-37"><a href="#cb11-37"></a>std::string s = std::format(&quot;{0:{1}}&quot;, S{42}, 10);  // value of s is &quot;xxxxxxxx42&quot;</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add to <span>22.14.8.1 <a href="https://wg21.link/format.arg">[format.arg]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1"></a>namespace std {</span>
-<span id="cb11-2"><a href="#cb11-2"></a>  template&lt;class Context&gt;</span>
-<span id="cb11-3"><a href="#cb11-3"></a>  class basic_format_arg {</span>
-<span id="cb11-4"><a href="#cb11-4"></a>    // ...</span>
-<span id="cb11-5"><a href="#cb11-5"></a>  public:</span>
-<span id="cb11-6"><a href="#cb11-6"></a>    basic_format_arg() noexcept;</span>
-<span id="cb11-7"><a href="#cb11-7"></a></span>
-<span id="cb11-8"><a href="#cb11-8"></a>    explicit operator bool() const noexcept;</span>
-<span id="cb11-9"><a href="#cb11-9"></a></span>
-<span id="cb11-10"><a href="#cb11-10"></a><span class="va">+   template&lt;class Visitor&gt;</span></span>
-<span id="cb11-11"><a href="#cb11-11"></a><span class="va">+     decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
-<span id="cb11-12"><a href="#cb11-12"></a><span class="va">+   template&lt;class R, class Visitor&gt;</span></span>
-<span id="cb11-13"><a href="#cb11-13"></a><span class="va">+     R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
-<span id="cb11-14"><a href="#cb11-14"></a></span>
-<span id="cb11-15"><a href="#cb11-15"></a>  };</span>
-<span id="cb11-16"><a href="#cb11-16"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>namespace std {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class Context&gt;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>  class basic_format_arg {</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    // ...</span>
+<span id="cb12-5"><a href="#cb12-5"></a>  public:</span>
+<span id="cb12-6"><a href="#cb12-6"></a>    basic_format_arg() noexcept;</span>
+<span id="cb12-7"><a href="#cb12-7"></a></span>
+<span id="cb12-8"><a href="#cb12-8"></a>    explicit operator bool() const noexcept;</span>
+<span id="cb12-9"><a href="#cb12-9"></a></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="va">+   template&lt;class Visitor&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a><span class="va">+     decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="va">+   template&lt;class R, class Visitor&gt;</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a><span class="va">+     R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a></span>
+<span id="cb12-15"><a href="#cb12-15"></a>  };</span>
+<span id="cb12-16"><a href="#cb12-16"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>And:</p>
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>explicit operator bool() const noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">15</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>holds_­alternative<span class="op">&lt;</span>monostate<span class="op">&gt;(</span>value<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>explicit operator bool() const noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">15</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="op">!</span>holds_­alternative<span class="op">&lt;</span>monostate<span class="op">&gt;(</span>value<span class="op">)</span></code>.</p>
 <div class="addu">
-<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>template&lt;class Visitor&gt;</span>
-<span id="cb13-2"><a href="#cb13-2"></a>  decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span>
-<span id="cb13-3"><a href="#cb13-3"></a>template&lt;class R, class Visitor&gt;</span>
-<span id="cb13-4"><a href="#cb13-4"></a>  R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">16</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> arg<span class="op">.</span>value<span class="op">.</span>visit<span class="op">(</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">))</span>;</code> for the first overload and <code class="sourceCode cpp"><span class="cf">return</span> arg<span class="op">.</span>value<span class="op">.</span>visit<span class="op">&lt;</span>R<span class="op">&gt;(</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">))</span>;</code> for the second overload.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>template&lt;class Visitor&gt;</span>
+<span id="cb14-2"><a href="#cb14-2"></a>  decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">16</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> arg<span class="op">.</span>value<span class="op">.</span>visit<span class="op">(</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">))</span>;</code></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1"></a>template&lt;class R, class Visitor&gt;</span>
+<span id="cb15-2"><a href="#cb15-2"></a>  R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">17</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> arg<span class="op">.</span>value<span class="op">.</span>visit<span class="op">&lt;</span>R<span class="op">&gt;(</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">))</span>;</code></p>
 </div>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
@@ -832,6 +798,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P0847R7">
 <p>[P0847R7] Barry Revzin, Gašper Ažman, Sy Brand, Ben Deane. 2021-07-14. Deducing this. <br />
 <a href="https://wg21.link/p0847r7">https://wg21.link/p0847r7</a></p>
+</div>
+<div id="ref-P1450R3">
+<p>[P1450R3] Vincent Reverdy. 2020-06-15. Enriching type modification traits. <br />
+<a href="https://wg21.link/p1450r3">https://wg21.link/p1450r3</a></p>
 </div>
 <div id="ref-P2637R0">
 <p>[P2637R0] Barry Revzin. 2022-09-17. Member <code class="sourceCode cpp">visit</code> and <code class="sourceCode cpp">apply</code>. <br />
