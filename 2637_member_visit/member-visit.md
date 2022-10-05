@@ -103,12 +103,12 @@ class variant {
 public:
   template <int=0, class Self, class Visitor>
   constexpr auto visit(this Self&& self, Visitor&& vis) -> decltype(auto) {
-    return std::visit((copy_cvref_t<Visitor, variant>&&)vis, std::forward<Self>(self));
+    return std::visit(std::forward<Visitor>(vis), (copy_cvref_t<Self, variant>&&)self);
   }
 
   template <class R, class Self, class Visitor>
   constexpr auto visit(this Self&& self, Visitor&& vis) -> decltype(auto) {
-    return std::visit<R>((copy_cvref_t<Visitor, variant>&&)vis, std::forward<Self>(self));
+    return std::visit<R>(std::forward<Visitor>(vis), (copy_cvref_t<Self, variant>&&)self);
   }
 };
 ```
@@ -116,7 +116,7 @@ public:
 
 `copy_cvref_t<A, B>` is a metafunction that simply pastes the const/ref qualifiers from `A` onto `B`. It will be added by [@P1450R3].
 
-The C-style cast here is deliberate because `variant` might be a private base of `Visitor`. This is a case that `std::visit` does not support, but LEWG preferred if member `visit` did.
+The C-style cast here is deliberate because `variant` might be a private base of `Self`. This is a case that `std::visit` does not support, but LEWG preferred if member `visit` did.
 
 There is also an extra leading `int=0` template parameter for the overload that just calls `std::visit` (rather than `std::visit<R>`). This is because, unlike with the non-member functions, an ambiguity would otherwise arise if you attempted to do:
 
@@ -275,6 +275,23 @@ template<class R, class Visitor>
 [#]{.pnum} *Effects*: Equivalent to `return arg.value.visit<R>(std::forward<Visitor>(vis));`
 :::
 :::
+
+## Feature-test macro
+
+There isn't much reason to provide one, since would anybody write this?
+
+::: bq
+```cpp
+auto result =
+  #ifdef __cpp_lib_member_visit // or whatever
+    var.visit(f);
+  #else
+    std::visit(f, var);
+  #endif
+```
+:::
+
+If you have to write the old code, the new code doesn't give you any benefit. Moreover, a lot of visits are more complicated than just `f` - at the very least the're a lambda, but potentially lots of lambdas.
 
 ---
 references:

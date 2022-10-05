@@ -570,7 +570,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#stdvisit_format_arg"><span class="toc-section-number">2.2</span> <code class="sourceCode cpp">std<span class="op">::</span>visit_format_arg</code><span></span></a></li>
 <li><a href="#implementation"><span class="toc-section-number">2.3</span> Implementation<span></span></a></li>
 </ul></li>
-<li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro"><span class="toc-section-number">3.1</span> Feature-test macro<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
@@ -660,17 +663,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb6-3"><a href="#cb6-3"></a><span class="kw">public</span><span class="op">:</span></span>
 <span id="cb6-4"><a href="#cb6-4"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span><span class="op">=</span><span class="dv">0</span>, <span class="kw">class</span> Self, <span class="kw">class</span> Visitor<span class="op">&gt;</span></span>
 <span id="cb6-5"><a href="#cb6-5"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span><span class="kw">this</span> Self<span class="op">&amp;&amp;</span> self, Visitor<span class="op">&amp;&amp;</span> vis<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a>    <span class="cf">return</span> std<span class="op">::</span>visit<span class="op">((</span>copy_cvref_t<span class="op">&lt;</span>Visitor, variant<span class="op">&gt;&amp;&amp;)</span>vis, std<span class="op">::</span>forward<span class="op">&lt;</span>Self<span class="op">&gt;(</span>self<span class="op">))</span>;</span>
+<span id="cb6-6"><a href="#cb6-6"></a>    <span class="cf">return</span> std<span class="op">::</span>visit<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">)</span>, <span class="op">(</span>copy_cvref_t<span class="op">&lt;</span>Self, variant<span class="op">&gt;&amp;&amp;)</span>self<span class="op">)</span>;</span>
 <span id="cb6-7"><a href="#cb6-7"></a>  <span class="op">}</span></span>
 <span id="cb6-8"><a href="#cb6-8"></a></span>
 <span id="cb6-9"><a href="#cb6-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> Self, <span class="kw">class</span> Visitor<span class="op">&gt;</span></span>
 <span id="cb6-10"><a href="#cb6-10"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span><span class="kw">this</span> Self<span class="op">&amp;&amp;</span> self, Visitor<span class="op">&amp;&amp;</span> vis<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-11"><a href="#cb6-11"></a>    <span class="cf">return</span> std<span class="op">::</span>visit<span class="op">&lt;</span>R<span class="op">&gt;((</span>copy_cvref_t<span class="op">&lt;</span>Visitor, variant<span class="op">&gt;&amp;&amp;)</span>vis, std<span class="op">::</span>forward<span class="op">&lt;</span>Self<span class="op">&gt;(</span>self<span class="op">))</span>;</span>
+<span id="cb6-11"><a href="#cb6-11"></a>    <span class="cf">return</span> std<span class="op">::</span>visit<span class="op">&lt;</span>R<span class="op">&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">)</span>, <span class="op">(</span>copy_cvref_t<span class="op">&lt;</span>Self, variant<span class="op">&gt;&amp;&amp;)</span>self<span class="op">)</span>;</span>
 <span id="cb6-12"><a href="#cb6-12"></a>  <span class="op">}</span></span>
 <span id="cb6-13"><a href="#cb6-13"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p><code class="sourceCode cpp">copy_cvref_t<span class="op">&lt;</span>A, B<span class="op">&gt;</span></code> is a metafunction that simply pastes the const/ref qualifiers from <code class="sourceCode cpp">A</code> onto <code class="sourceCode cpp">B</code>. It will be added by <span class="citation" data-cites="P1450R3">[<a href="#ref-P1450R3" role="doc-biblioref">P1450R3</a>]</span>.</p>
-<p>The C-style cast here is deliberate because <code class="sourceCode cpp">variant</code> might be a private base of <code class="sourceCode cpp">Visitor</code>. This is a case that <code class="sourceCode cpp">std<span class="op">::</span>visit</code> does not support, but LEWG preferred if member <code class="sourceCode cpp">visit</code> did.</p>
+<p>The C-style cast here is deliberate because <code class="sourceCode cpp">variant</code> might be a private base of <code class="sourceCode cpp">Self</code>. This is a case that <code class="sourceCode cpp">std<span class="op">::</span>visit</code> does not support, but LEWG preferred if member <code class="sourceCode cpp">visit</code> did.</p>
 <p>There is also an extra leading <code class="sourceCode cpp"><span class="dt">int</span><span class="op">=</span><span class="dv">0</span></code> template parameter for the overload that just calls <code class="sourceCode cpp">std<span class="op">::</span>visit</code> (rather than <code class="sourceCode cpp">std<span class="op">::</span>visit<span class="op">&lt;</span>R<span class="op">&gt;</span></code>). This is because, unlike with the non-member functions, an ambiguity would otherwise arise if you attempted to do:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">using</span> State <span class="op">=</span> std<span class="op">::</span>variant<span class="op">&lt;</span>A, B, C<span class="op">&gt;</span>;</span>
 <span id="cb7-2"><a href="#cb7-2"></a></span>
@@ -793,6 +796,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">17</a></span> <em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> arg<span class="op">.</span>value<span class="op">.</span>visit<span class="op">&lt;</span>R<span class="op">&gt;(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Visitor<span class="op">&gt;(</span>vis<span class="op">))</span>;</code></p>
 </div>
 </blockquote>
+<h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-test macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>There isn’t much reason to provide one, since would anybody write this?</p>
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">auto</span> result <span class="op">=</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>  <span class="pp">#ifdef __cpp_lib_member_visit </span><span class="co">// or whatever</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    var<span class="op">.</span>visit<span class="op">(</span>f<span class="op">)</span>;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>  <span class="pp">#else</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a>    std<span class="op">::</span>visit<span class="op">(</span>f, var<span class="op">)</span>;</span>
+<span id="cb16-6"><a href="#cb16-6"></a>  <span class="pp">#endif</span></span></code></pre></div>
+</blockquote>
+<p>If you have to write the old code, the new code doesn’t give you any benefit. Moreover, a lot of visits are more complicated than just <code class="sourceCode cpp">f</code> - at the very least the’re a lambda, but potentially lots of lambdas.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0847R7">
