@@ -169,7 +169,7 @@ template<class Self, class Visitor>
 
 [9]{.pnum} Let `V` be `$OVERRIDE_REF$(Self&&, $COPY_CONST$(remove_reference_t<Self>, variant))` ([forward]).
 
-[#]{.pnum} *Constraints*: the call to `visit` does not use an explicit `$template-argument-list$` that begins with a type `$template-argument$`.
+[#]{.pnum} *Constraints*: The call to `visit` does not use an explicit `$template-argument-list$` that begins with a type `$template-argument$`.
 
 [#]{.pnum} *Effects*: Equivalent to `return std::visit(std::forward<Visitor>(vis), (V)self);`
 
@@ -264,7 +264,7 @@ explicit operator bool() const noexcept;
 template<class Visitor>
   decltype(auto) visit(this basic_format_arg arg, Visitor&& vis);
 ```
-[16]{.pnum} *Effects*: Equivalent to `return arg.value.visit(forward<Visitor>(vis));`
+[16]{.pnum} *Effects*: Equivalent to `return arg.value.visit(std::forward<Visitor>(vis));`
 
 ```
 template<class R, class Visitor>
@@ -272,7 +272,7 @@ template<class R, class Visitor>
 
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return arg.value.visit<R>(forward<Visitor>(vis));`
+[#]{.pnum} *Effects*: Equivalent to `return arg.value.visit<R>(std::forward<Visitor>(vis));`
 :::
 :::
 
