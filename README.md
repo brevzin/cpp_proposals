@@ -71,7 +71,7 @@ None.
 
 - ![][~constexpr] [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
 - ![][~constexpr] [p2564r0 - `consteval` needs to propagate up](2564_consteval_patch/p2564r0.html).
-- [p2637r0 - Member `visit` and `apply`](2637_member_visit/p2637r0.html).
+- [p2637r1 - Member `visit` and `apply`](2637_member_visit/p2637r1.html).
 - ![][~constexpr] [p2641r0 - Checking if a union alternative is active](2641_active_union/p2641r0.html).
 
 ### Ongoing Plans
