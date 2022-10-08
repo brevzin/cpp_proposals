@@ -42,7 +42,7 @@ auto strcat(int i) -> std::string {
 
 There's a lot to like about exceptions. One nice advantage is the zero syntactic overhead necessary for propagating errors. Errors just propagate. You don't even have to know which functions can fail.
 
-We don't even need to declare variables to hold the results of `foo` and `bar`, we can even use those expressions inline:
+We don't even need to declare variables to hold the results of `foo` and `bar`, we can even use those expressions inline, knowing that we'll only call `format` if neither function throws an exception:
 
 ::: bq
 ```cpp
@@ -81,8 +81,8 @@ auto strcat(int i) -> std::expected<std::string, E>
 
 This is significantly longer and more tedious because we have to do manual error propagation. This manual error propagation is most of the code in this short example, and is bad not just because of the lengthy boilerplate, but also because:
 
-* we're giving a name, `f`, to the `expected` object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as `*f`
-* the "nice" syntax for propagation is inefficient - if `E` is something more involved than `std::error_code`, we really should `std::move(f).error()` into that. And even then, we're moving the error twice when we optimally could move it just once.
+* we're giving a name, `f`, to the `expected` object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as `*f` (which is pretty weird for something that is decidedly not a pointer or even, unlike iterators, a generalization of pointer) or `f.value()`
+* the "nice" syntax for propagation - `return std::unexpected(e)` - is inefficient - if `E` is something more involved than `std::error_code`, we really should `std::move(f).error()` into that. And even then, we're moving the error twice when we optimally could move it just once. The ideal would be: `return {std::unexpect, std::move(f).error()};`, which is something I don't expect a lot of people to actually write.
 
 In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), [SerenityOS](https://github.com/SerenityOS/serenity/blob/50642f85ac547a3caee353affcb08872cac49456/Documentation/Patterns.md#try-error-handling), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
 
@@ -114,7 +114,9 @@ auto strcat(int i) -> std::expected<std::string, E>
 
 And thus also write both macros inline. But this relies on compiler extensions, and this particular extension isn't quite as efficient as it could be - and in particular it doesn't move when it should.
 
-Both macros also suffer when the function in question returns `expected<void, E>`, since you cannot declare (or assign to) a variable to hold that value, so the macro needs to emit different code to handle this case ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_CHECK), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/tryv.html), etc.)
+Both macros also suffer when the function in question returns `expected<void, E>`, since you cannot declare (or assign to) a variable to hold that value, so the macro needs to emit different code to handle this case ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_CHECK), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/tryv.html) [^outcome], etc.)
+
+[^outcome]: Outcome's `TRY` macro uses preprocessor overloading so void results don't get assigned e.g. `TRY(auto x, expr)` sets `x` to `expr.value()` while `TRY(expr)` ignores `expr.value()`. `TRVA` and `TRYV` *require* `expr` to have a value or for the value to be ignored respectively. One of them gets called by `TRY()`depending on argument count supplied.
 
 To that end, in search for nice syntax, some people turn to coroutines:
 
@@ -252,6 +254,43 @@ For those libraries that provide this operation as a macro, the name is usually 
 The problem is, in C++, `try` is strongly associated with _exceptions_. That's what a `try` block is for: to catch exceptions. In [@P0709R4], there was a proposal for a `try` expression (in §4.5.1). That, too, was tied in with exceptions. Not only for us is it tied into exceptions, but it's used to _not_ propagate the exception - `try` blocks are for handling errors.
 
 Having a facility for error propagation in C++ which has nothing to do with exceptions still use the keyword `try`  and do the opposite of a what a `try` block does today (i.e. propagate the error, instead of handling it) would be, I think, quite misleading. And the goal here isn't to interact with exceptions at all - it's simply to provide automated error propagation for those error handling cases that _don't_ use exceptions.
+
+### Why not prefix?
+
+Once we settle on some punctuator, there's the question of whether this punctuator should be used as a prefix operator or a postfix operator. As prefix, there is no ambiguity with `?` at least, so we could use a more straightforward token. But I think postfix is quite a bit better. Consider the following example:
+
+::: bq
+```cpp
+struct U { ... };
+
+struct T {
+    auto next() -> std::expected<U, E>;
+};
+
+auto lookup() -> std::expected<T, E>;
+
+auto func() -> std::expected<U, E> {
+    // as postfix
+    U u = lookup()??.next()??;
+
+    // using the monadic operations
+    U u = lookup().and_then(&T::next);
+
+    // as prefix
+    U u = ?(?lookup()).next();
+
+    do_something_with(u);
+
+    return u;
+}
+```
+:::
+
+The postfix version chains in a way that is quite easy to read.
+
+Using the monadic operations ([@P2505R4]) is fine, they're nice in this case (which is basically optimal for them) but they tend to be quite tedious once you stray from this exact formulation (e.g. if `T::next()` took another argument).
+
+The prefix version is borderline illegible.
 
 ### `??` in other languages
 
@@ -402,7 +441,7 @@ This also helps demonstrate the requirements for what `error_propagation_traits<
 
 In the above case, `error_propagation_traits<expected<T, E>>::extract_error` will always give some kind of reference to `E` (either `E&`, `E const&`, `E&&`, or `E const&&`, depending on the value category of the argument), while `error_propagation_traits<optional<T>>::extract_error` will always be `std::nullopt_t`, by value. Both are fine, it simply depends on the type.
 
-Since the extractors are only invoked on an `O` directly, you can safely assume that the object passed in is basically a forwarding reference to `O`, so `auto&&` is fine (at least pending something like [@P2481R0]). The extractors have the implicit precondition that the object is in the state specified (e.g. `extract_value(o)` should only be called if `has_value(o)`, with the converse for `extract_error(o)`) The factories can accept anything though, and should probably be constrained.
+Since the extractors are only invoked on an `O` directly, you can safely assume that the object passed in is basically a forwarding reference to `O`, so `auto&&` is fine (at least pending something like [@P2481R1]). The extractors have the implicit precondition that the object is in the state specified (e.g. `extract_value(o)` should only be called if `has_value(o)`, with the converse for `extract_error(o)`) The factories can accept anything though, and should probably be constrained.
 
 The choice of desugaring based specifically on the return type (rather than relying on each object to produce some kind of construction disambiguator like `nullopt_t` or `unexpected<E>`) is not only that we can be more performant, but also we can allow conversions between different kinds of error types, which is useful when joining various libraries together:
 
@@ -476,7 +515,9 @@ auto&& b = quux()??;
 ```
 :::
 
-Here, extracting the value from `quux()` will give us a `U&&` that `b` binds to. This does not do lifetime extension. And then the `std::expected<U, E>` is destroyed at the end of the statement. Once again, a dangling reference. Note that this problem shows up either either of the macro propagation versions, all for the same reasons:
+Here, extracting the value from `quux()` will give us a `U&&` that `b` binds to.
+
+If this does not do lifetime extension, then the `std::expected<U, E>` is destroyed at the end of the statement. And we, once again, get a dangling reference. Note that this problem shows up either either of the macro propagation versions, all for the same reasons:
 
 ::: bq
 ```cpp
@@ -485,7 +526,21 @@ auto&& b = TRY(quux()); // dangles
 ```
 :::
 
-The only real way to avoid this issue is to have `extract_value`, when given an rvalue, return a temporary instead of an rvalue reference. This has performance implications though - you get an extra move that may not be necessary.
+One way to avoid this issue is to have `extract_value`, when given an rvalue, return a temporary instead of an rvalue reference. This has performance implications though - you get an extra move that may not be necessary.
+
+But a better way would be to recognize this pattern in the language itself, and allow lifetime extension for this case. Because we can recognize this situation (binding a reference to the result of `E??`), we probably should.
+
+That is:
+
+::: bq
+```cpp
+TRY(U&& a, quux());  // dangles
+U&& b = TRY(quux()); // dangles
+U&& c = quux()??;    // lifetime-extends the temporary quux()
+```
+:::
+
+Yet another advantage of the language feature.
 
 ### `decltype`
 
@@ -499,7 +554,7 @@ decltype(std::error_propagation_traits<std::remove_cvref_t<decltype(E)>>::extrac
 ```
 :::
 
-As such, while `decltype(co_await E)` is ill-formed, `decltype(E??)` is fine.
+As such, while `decltype(co_await E)` is ill-formed, `decltype(E??)` should be fine.
 
 ### `requires`
 
@@ -603,6 +658,15 @@ auto sequence(R&& r) -> Result
 ```
 :::
 
+### Naming
+
+Because we don't have a proper language customization mechanism, we need to have two distinct things:
+
+* a class template that contains all the functionality (which I'm naming here `std::error_propagation_traits`)
+* a `concept` that checks if this class template is (a) specialized (b) correctly (which I'm naming here... `PropagatingError`, but I'm not sure that this name actually makes sense)
+
+I think it's unfortunate that we need two different names for this, but that's the way of things at the moment. Also I have no idea what a good name for this `concept` is. Rust calls this `Try`, which [we wouldn't want](#why-not-try). I'm open to suggestion.
+
 ## Potential directions to go from here
 
 This paper is proposing just `??` and the machinery necessary to make that work (including a `concept`, opt-ins for `optional` and `expected`, but not the short-circuiting fold algorithm).
@@ -620,7 +684,7 @@ Given a `std::optional<std::string>` named `opt`, what that operator -- spelled 
 |`opt?.size()`|`opt.transform(&std::string::size) // technically UB`|
 |`opt?.substr(from, to)`|`opt.transform([&](auto& s){ return s.substr(from, to); })`|
 
-Like the null coalescing meaning of `??` described above, the semantics of `opt?.f()` can be achieved using library facilities today. The expression `E1?.E2`, if `E1` is an `optional`, basically means `E1.transform([&](auto&& e){ return FWD(e).E2; })`
+Like the null coalescing meaning of `??` [described above](#in-other-languages), the semantics of `opt?.f()` can be achieved using library facilities today. The expression `E1?.E2`, if `E1` is an `optional`, basically means `E1.transform([&](auto&& e){ return FWD(e).E2; })`
 
 Quite unlike `??`, there is a significant drop in readability and just the general nice-ness of the syntax.
 
