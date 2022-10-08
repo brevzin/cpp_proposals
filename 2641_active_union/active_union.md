@@ -1,6 +1,6 @@
 ---
 title: "Checking if a union alternative is active"
-document: P2641R0
+document: P2641R1
 date: today
 audience: EWG, LEWG
 author:
@@ -179,6 +179,8 @@ It would help to make the name clearer from the call site that it has limited us
 ## Implementation Experience
 
 Daveed Vandevoorde has implemented this proposal in EDG.
+
+As pointed out by Johel Ernesto Guerrero Peña and Ed Catmur, this facility basically already works in [gcc and clang](https://godbolt.org/z/n4za9KzPr), which has a builtin function ([`__builtin_constant_p`](https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fconstant_005fp)) that be used to achieve the same behavior.
 
 # Wording
 

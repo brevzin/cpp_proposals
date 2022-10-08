@@ -74,7 +74,7 @@ None.
 - [p2593r0 - Allowing `static_assert(false)`](2593_static_assert/p2593r0.html)
 - [p2561r1 - An error propagation operator](2561_operator_try/p2561r1.html)
 - [p2637r1 - Member `visit` and `apply`](2637_member_visit/p2637r1.html).
-- ![][~constexpr] [p2641r0 - Checking if a union alternative is active](2641_active_union/p2641r0.html).
+- ![][~constexpr] [p2641r1 - Checking if a union alternative is active](2641_active_union/p2641r1.html).
 
 ### Ongoing Plans
 

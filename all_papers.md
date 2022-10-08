@@ -64,7 +64,7 @@
 - 2593 Allowing  <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code>: [p2593r0](2593_static_assert/p2593r0.html)
 - 2602 Poison Pills are Too Toxic: [p2602r0](2602_poison_pills/p2602r0.html) [p2602r1](2602_poison_pills/p2602r1.html)
 - 2637 Member  <code class="sourceCode cpp">visit</code>: [p2637r0](2637_member_visit/p2637r0.html) [p2637r1](2637_member_visit/p2637r1.html)
-- ![][~constexpr] 2641 Checking if a union alternative is active: [p2641r0](2641_active_union/p2641r0.html)
+- ![][~constexpr] 2641 Checking if a union alternative is active: [p2641r0](2641_active_union/p2641r0.html) [p2641r1](2641_active_union/p2641r1.html)
 - ![][~constexpr] 2647 Permitting  <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>  variables in  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  functions: [p2647r0](2647_static_constexpr/p2647r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
