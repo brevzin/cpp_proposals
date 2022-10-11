@@ -1,5 +1,5 @@
 ---
-title: "Persistent `constexpr` allocation"
+title: "Non-transient `constexpr` allocation"
 document: P2670R0
 date: today
 audience: EWG
