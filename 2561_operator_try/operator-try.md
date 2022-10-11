@@ -243,7 +243,11 @@ auto res2 = ((a?) * b) ? (*c) : d;
 
 What if you assume that a `?` is a conditional operator and try to parse that until it fails, then back up and try again to parse a postfix `?` operator? Is that really a viable strategy? If we assume both `?`s are the beginning of a conditional, then that will eventually fail since we hit a `;` before a second `:` - but it's the outer `?` that failed, not the inner - do we retry the inner first (which would lead to the `res1` parse eventually) or the outer first (which would lead to the `res2` one)?
 
-Maybe this is doable with parsing heroics, but at some point I have to ask if it's worth it. Especially since we can just pick something else: `??`
+Maybe this is doable with parsing heroics, but at some point I have to ask if it's worth it.
+
+Another reason that a single `?` might not be a good idea, even if it were possible to parse, would be [optional chaining](#error-continuations). With that facility, if `o` were an `optional<string>`, `o?.size()` would be an `optional<size_t>` (that is either engaged with the original string's size, or empty). But if `o?` propagated the error, then `o?.size()` would itself be a valid expression that is a `size_t` (the string's size, and if we didn't have a string we would have returned). So if we want to support error continuations, we'd need distinct syntax for these cases.
+
+This paper proposes an alternative token that isn't valid in C++ today, requires no parsing heroics, and doesn't conflict with a potential optional chaining operator: `??`
 
 This is only one character longer, and just as questioning. It's easily unambiguous by virtue of not even being a valid token sequence today. But it's worth commenting further on this choice of syntax.
 
@@ -292,6 +296,13 @@ Using the monadic operations ([@P2505R4]) is fine, they're nice in this case (wh
 
 The prefix version is borderline illegible.
 
+Even if we consider only one or the other side of the member access as needing propagation:
+
+* Accessing a member after propagating: `x??.y` vs `(?x).y`
+* Propagating after accessing a member: `x.y??` vs `?x.y` or `?(x.y)`
+
+The postfix operator is quite a bit easier to understand, since it's always right next to the expression that is potentially the error.
+
 ### `??` in other languages
 
 `??` is called a "null (or nil) coalescing operator" in some languages (like C# or JavaScript or Swift) where `x ?? y` is roughly equivalent to what C++ would spell as `x ? *x : y` except that `x` is only evaluated once. Kotlin spells this operator `?:`, but it behaves differently from the gcc extension since `x ?: y` in gcc evaluates as `x ? x : y` rather than `x ? *x : y`.
@@ -300,11 +311,13 @@ For `x` being some kind of `std::optional<T>` or `std::expected<T, E>`, this can
 
 I'm not aware of any proposals to add this particular operator in C++, but because we already have two types that directly provide that functionality (as would many other non-`std` flavors thereof), and because it's fairly straightforward to write such an algorithm generically, it wouldn't seem especially valuable to have a dedicated operator for this functionality -- so it's probably safe to take for this use-case.
 
+It certainly would be nice to have both, but given a choice between a null coalescing operator and an error propagation one, I'd choose the latter.`
+
 Of course, now we have to talk about semantics.
 
 ## Semantics
 
-This paper suggests that `??` evaluate as follows:
+This paper suggests that `??` evaluate roughly as follows:
 
 ::: cmptable
 ```cpp
@@ -372,6 +385,8 @@ The functionality here is driven by a new traits type called `std::error_propaga
 
 Note that this does not support deducing return type, since we need the return type in order to know how construct it - the above desugaring uses the return type of `std::expected<std::string, E>` to know how to re-wrap the potential error that `foo(i)` or `bar(i)` could return. This is important because it avoids the overhead that nicer syntax like `std::unexpected` or `outcome::failure` introduces (neither of which allow for deducing return type anyway, at least unless the function unconditionally fails), while still allowing nicer syntax.
 
+This isn't really a huge loss, since in these contexts, you can't really deduce the return type anyway - since you'll have some error type and some value type. So this restriction isn't actually restrictive in practice.
+
 These functions are all very easy to implement for the kinds of types that would want to support a facility like `??`. Here are examples for `optional` and `expected` (with `constexpr` omitted to fit):
 
 ::: cmptable
@@ -437,11 +452,11 @@ This also helps demonstrate the requirements for what `error_propagation_traits<
 * `has_value` is invoked on an lvalue of type `O` and returns `bool`
 * `extract_value` takes some kind of `O` and returns a type that, after stripping qualifiers, is `value_type`
 * `extract_error` takes some kind of `O` and returns a type that, after stripping qualifiers, is `error_type`
-* `from_value` and `from_error` return `O`.
+* `from_value` and `from_error` each returns an `O` (though their arguments need not be specifically a `value_type` or an `error_type`)
 
 In the above case, `error_propagation_traits<expected<T, E>>::extract_error` will always give some kind of reference to `E` (either `E&`, `E const&`, `E&&`, or `E const&&`, depending on the value category of the argument), while `error_propagation_traits<optional<T>>::extract_error` will always be `std::nullopt_t`, by value. Both are fine, it simply depends on the type.
 
-Since the extractors are only invoked on an `O` directly, you can safely assume that the object passed in is basically a forwarding reference to `O`, so `auto&&` is fine (at least pending something like [@P2481R1]). The extractors have the implicit precondition that the object is in the state specified (e.g. `extract_value(o)` should only be called if `has_value(o)`, with the converse for `extract_error(o)`) The factories can accept anything though, and should probably be constrained.
+Since the extractors are only invoked on an `O` directly, you can safely assume that the object passed in is basically a forwarding reference to `O`, so `auto&&` is fine (at least pending something like [@P2481R1]). The extractors have the implicit precondition that the object is in the state specified (e.g. `extract_value(o)` should only be called if `has_value(o)`, with the converse for `extract_error(o)`). The factories can accept anything though, and should probably be constrained.
 
 The choice of desugaring based specifically on the return type (rather than relying on each object to produce some kind of construction disambiguator like `nullopt_t` or `unexpected<E>`) is not only that we can be more performant, but also we can allow conversions between different kinds of error types, which is useful when joining various libraries together:
 
@@ -480,9 +495,9 @@ auto a = foo(bar()??);
 ```
 :::
 
-The lifetime implications here should follow from the rest of the rules of the languages. Temporaries are destroyed at the end of the full-expression, temporaries bound to references do lifetime extension. In this case, `bar()` is a temporary of type `std::expected<T, E>`, which lasts until the end of the statement, `bar()?` gives you a `T&&` which refers into that temporary - which will be bound to the parameter of `foo()` - but that's safe because the `T` itself isn't going to be destroyed until the `std::expected<T, E>` is destroyed, which is after the call to `foo()` ends.
+The lifetime implications here should follow from the rest of the rules of the languages. Temporaries are destroyed at the end of the full-expression, temporaries bound to references do lifetime extension. In this case, `bar()` is a temporary of type `std::expected<T, E>`, which lasts until the end of the statement, `bar()??` gives you a `T&&` which refers into that temporary - which will be bound to the parameter of `foo()` - but that's safe because the `T` itself isn't going to be destroyed until the `std::expected<T, E>` is destroyed, which is after the call to `foo()` ends.
 
-Note that this behavior is not really possible to express today using a statement rewrite. The inline macros for `bar()?` would do something like this:
+Note that this behavior is not really possible to express today using a statement rewrite. The inline macros for `bar()??` would do something like this:
 
 ::: bq
 ```cpp
@@ -499,7 +514,7 @@ auto a = foo(
 
 Using the statement-expression extension, the `std::expected<T, E>` will actually be destroyed _before_ the call to `foo`, which means we have a dangling reference.
 
-The coroutine rewrite wouldn't have this problem, for the same reason the suggested `bar()??` approach doesn't. Although the coroutine approach isn't ideal for other reasons:
+The coroutine rewrite wouldn't have this problem, for the same reason the suggested `bar()??` approach doesn't:
 
 ::: bq
 ```cpp
