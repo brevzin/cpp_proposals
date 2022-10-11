@@ -3,7 +3,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--number', required=True)
-parser.add_argument('--name', required=True)
+parser.add_argument('--name', required=True, help="e.g. 'constexpr allocation'")
 args = parser.parse_args()
 
 name = args.name.lower().split()

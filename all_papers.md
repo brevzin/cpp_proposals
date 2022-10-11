@@ -67,6 +67,7 @@
 - ![][~constexpr] 2641 Checking if a union alternative is active: [p2641r0](2641_active_union/p2641r0.html) [p2641r1](2641_active_union/p2641r1.html)
 - ![][~constexpr] 2647 Permitting  <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>  variables in  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  functions: [p2647r0](2647_static_constexpr/p2647r0.html)
 - ![][~constexpr] 2670 Non-transient  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  allocation: [p2670r0](2670_constexpr_allocation/p2670r0.html)
+- 2672 Exploring the Design Space for a Pipeline Operator: [p2672r0](2672_pipeline_designs/p2672r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet
