@@ -5,7 +5,7 @@
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="dcterms.date" content="2022-10-11" />
-  <title>Non-transient constexpr allocation</title>
+  <title>Persistent constexpr allocation</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center">Non-transient <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation</h1>
+<h1 class="title" style="text-align:center">Persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -563,17 +563,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
+<li><a href="#the-problem-case"><span class="toc-section-number">2</span> The Problem Case<span></span></a>
 <ul>
-<li><a href="#the-problem-cases"><span class="toc-section-number">1.1</span> The Problem Cases<span></span></a></li>
-<li><a href="#proposed-solutions"><span class="toc-section-number">1.2</span> Proposed Solutions<span></span></a>
+<li><a href="#mutable-allocation"><span class="toc-section-number">2.1</span> Mutable Allocation<span></span></a></li>
+<li><a href="#mutable-reads-during-constant-destruction"><span class="toc-section-number">2.2</span> Mutable Reads During Constant Destruction<span></span></a></li>
+<li><a href="#proposed-solutions"><span class="toc-section-number">2.3</span> Proposed Solutions<span></span></a>
 <ul>
-<li><a href="#stdmark_immutable_if_constexpr"><span class="toc-section-number">1.2.1</span> <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code><span></span></a></li>
-<li><a href="#t-propconst"><span class="toc-section-number">1.2.2</span> <code class="sourceCode cpp">T propconst<span class="op">*</span></code><span></span></a></li>
-<li><a href="#disposition"><span class="toc-section-number">1.2.3</span> Disposition<span></span></a></li>
+<li><a href="#stdmark_immutable_if_constexpr"><span class="toc-section-number">2.3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code><span></span></a></li>
+<li><a href="#t-propconst"><span class="toc-section-number">2.3.2</span> <code class="sourceCode cpp">T propconst<span class="op">*</span></code><span></span></a></li>
 </ul></li>
+<li><a href="#disposition"><span class="toc-section-number">2.4</span> Disposition<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">2</span> References<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -591,114 +593,235 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb2-2"><a href="#cb2-2"></a><span class="kw">static_assert</span><span class="op">(</span>v<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>Because <code class="sourceCode cpp">v</code>’s allocation persists, that is not yet allowed.</p>
-<h2 data-number="1.1" id="the-problem-cases"><span class="header-section-number">1.1</span> The Problem Cases<a href="#the-problem-cases" class="self-link"></a></h2>
-<p>The problems with persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation can be demonstrated with this example:</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="the-problem-case"><span class="header-section-number">2</span> The Problem Case<a href="#the-problem-case" class="self-link"></a></h1>
+<p>The problem with persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation can be demonstrated with this example:</p>
 <blockquote>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> pi<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> pvec<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">})</span>;</span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>    <span class="op">*</span>pi <span class="op">=</span> <span class="dv">2</span>;</span>
-<span id="cb3-6"><a href="#cb3-6"></a></span>
-<span id="cb3-7"><a href="#cb3-7"></a>    pvec<span class="op">-&gt;</span>push_back<span class="op">(</span><span class="dv">4</span><span class="op">)</span>;</span>
-<span id="cb3-8"><a href="#cb3-8"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">// simplified version of unique_ptr</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">class</span> unique_ptr <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    T<span class="op">*</span> ptr;</span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="kw">explicit</span> <span class="kw">constexpr</span> unique_ptr<span class="op">(</span>T<span class="op">*</span> p<span class="op">)</span> <span class="op">:</span> ptr<span class="op">(</span>p<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>    <span class="kw">constexpr</span> <span class="op">~</span>unique_ptr<span class="op">()</span> <span class="op">{</span> <span class="kw">delete</span> ptr; <span class="op">}</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a></span>
+<span id="cb3-9"><a href="#cb3-9"></a>    <span class="co">// unique_ptr is shallow-const</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span>ptr; <span class="op">}</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">-&gt;()</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> ptr; <span class="op">}</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a></span>
+<span id="cb3-13"><a href="#cb3-13"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> reset<span class="op">(</span>T<span class="op">*</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>        <span class="kw">delete</span> ptr;</span>
+<span id="cb3-15"><a href="#cb3-15"></a>        ptr <span class="op">=</span> p;</span>
+<span id="cb3-16"><a href="#cb3-16"></a>    <span class="op">}</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a><span class="op">}</span>;</span>
+<span id="cb3-18"><a href="#cb3-18"></a></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> ppi<span class="op">(</span><span class="kw">new</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)))</span>;</span>
+<span id="cb3-20"><a href="#cb3-20"></a></span>
+<span id="cb3-21"><a href="#cb3-21"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>    <span class="co">// this call would be a compile error, because ppi is a const</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a>    <span class="co">// object, so we cannot call reset() on it</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a>    <span class="co">// ppi.reset(new unique_ptr&lt;int&gt;(new int(2)));</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a></span>
+<span id="cb3-26"><a href="#cb3-26"></a>    <span class="co">// but this call would compile fine</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a>    ppi<span class="op">-&gt;</span>reset<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">))</span>;</span>
+<span id="cb3-28"><a href="#cb3-28"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>If constexpr allocation could persist through runtime, it could presumably be put in read-only memory. This would be quite useful for programmers. But it introduces new restrictions that haven’t previously had in the language.</p>
-<p>While <code class="sourceCode cpp">pi</code> above is a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> (and thus <code class="sourceCode cpp"><span class="kw">const</span></code>) object, dereferencing it still gives us a mutable <code class="sourceCode cpp"><span class="dt">int</span></code>, so that assignment would compile. But if <code class="sourceCode cpp">pi</code>’s allocation is put into read-only memory, this write could lead to a page fault.</p>
-<p>The situation with <code class="sourceCode cpp">pvec</code> is worse. Again, <code class="sourceCode cpp">pvec</code> dereferences to a mutable <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>, which we can <code class="sourceCode cpp">push_back</code> onto. Since that <code class="sourceCode cpp">vector</code> is likely at capacity, this <code class="sourceCode cpp">push_back</code> would trigger a reallocation. The new allocation is not an issue, but the deallocation of the initial storage is: it wasn’t allocated at runtime, it was allocated at compile time, so the allocator is… unlikely to be able to gracefully handle this situation, to say the least.</p>
-<p>Both of these uses are, despite being highly problematic, perfectly valid C++ code today, and we get into these problems without even any <code class="sourceCode cpp"><span class="kw">const_cast</span></code> shenanigans or really even doing anything especially weird. It’s not like we’re digging ourselves a hole, it’s more that we just took a step and fell.</p>
-<h2 data-number="1.2" id="proposed-solutions"><span class="header-section-number">1.2</span> Proposed Solutions<a href="#proposed-solutions" class="self-link"></a></h2>
-<p>There have been two proposed solutions to this problem, both with the goal of making the above ill-formed. Specifically, rejecting the construction of a <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> object (for non-<code class="sourceCode cpp"><span class="kw">const</span></code> <code class="sourceCode cpp">T</code>). The concrete problem here is that <code class="sourceCode cpp">std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is shallow-const. <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is structurally a similar type (both have a <code class="sourceCode cpp">T<span class="op">*</span></code> member), but <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is deep-const, and so doesn’t expose the kinds of mutable accesses that would be harmful. How can the compiler distinguish between a “good” <code class="sourceCode cpp">T<span class="op">*</span></code> member and a “bad” <code class="sourceCode cpp">T<span class="op">*</span></code> member?</p>
-<h3 data-number="1.2.1" id="stdmark_immutable_if_constexpr"><span class="header-section-number">1.2.1</span> <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code><a href="#stdmark_immutable_if_constexpr" class="self-link"></a></h3>
-<p>The initial design in <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span>, before it was removed, was a new function <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> that would mark an allocation as being immutable. A persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation thus had to be either:</p>
+<p>In order for constexpr allocation to persist to runtime, we first need to ensure that all of the allocation is cleaned up properly. We can check that our allocation (stored in <code class="sourceCode cpp">ppi<span class="op">.</span>ptr</code>) is properly deallocated in its destructor (which it is). And so on , recursively - so <code class="sourceCode cpp">ppi<span class="op">.</span>ptr<span class="op">-&gt;</span>ptr</code> is properly cleaned up in <code class="sourceCode cpp"><span class="op">*(</span>ppi<span class="op">.</span>ptr<span class="op">)</span></code>’s destructor.</p>
+<p>Once we verify that constexpr destruction properly deallocates all of the memory, no actual destructor is run during runtime. In order for this to be valid, it is important that the destruction that would happen at run-time is actually the same as the destruction that was synthesized during compile-time.</p>
+<p>In the above example though, that is not the case.</p>
+<p><code class="sourceCode cpp">ppi</code> is a <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> <span class="kw">const</span></code>, so its member <code class="sourceCode cpp">ppi<span class="op">.</span>ptr</code> is a <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;*</span> <span class="kw">const</span></code>. The pointer itself is <code class="sourceCode cpp"><span class="kw">const</span></code> (top-level), which means that we cannot change what pointer it owns. This means that destroying <code class="sourceCode cpp">ppi</code> at runtime would definitely <code class="sourceCode cpp"><span class="kw">delete</span></code> the same pointer that it was instantiated with at compile time (short of <code class="sourceCode cpp"><span class="kw">const_cast</span></code> shenanigans, which we can’t do much about and are clearly UB anyway). So far so good.</p>
+<p>But <code class="sourceCode cpp"><span class="op">*</span>ppi</code> gives me a <em>mutable</em> <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>, which means I can change it. In particular, while <code class="sourceCode cpp">ppi<span class="op">.</span>reset<span class="op">(~)</span></code> would be invalid, <code class="sourceCode cpp"><span class="op">(*</span>ppi<span class="op">).</span>reset<span class="op">(~)</span></code> would compile fine. Our tentative evaluation of the destructor of <code class="sourceCode cpp"><span class="op">*(</span>ppi<span class="op">.</span>ptr<span class="op">)</span></code> would try to delete the pointer which was initialized with <code class="sourceCode cpp"><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, but now it would point to <code class="sourceCode cpp"><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)</span></code>. That’s something different, which means that our synthetic destructor evaluation was meaningless.</p>
+<p>More to the point - the <code class="sourceCode cpp"><span class="kw">delete</span> ptr;</code> call would end up attempting to delete memory that wasn’t allocated at runtime - it was allocated at compile time and promoted to static storage. That’s going to fail at runtime. This is highly problematic: the above use looks like perfectly valid C++ code, and we got into this problem without any <code class="sourceCode cpp"><span class="kw">const_cast</span></code> shenanigans or really even doing anything especially weird. It’s not like we’re digging ourselves a hole, it’s more that we just took a step and fell.</p>
+<h2 data-number="2.1" id="mutable-allocation"><span class="header-section-number">2.1</span> Mutable Allocation<a href="#mutable-allocation" class="self-link"></a></h2>
+<p>The problem isn’t that the allocation is mutable. It’s much more subtle than that. There are no problems allowing this:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> pi<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">4</span><span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>While the data <code class="sourceCode cpp">pi</code> points to is mutable, it can be mutated at runtime without any issue. The important part of this is that the allocation is pointed to by a const pointer (<code class="sourceCode cpp">pi<span class="op">.</span>ptr</code> here is an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span></code>), so there is no way to change <em>which</em> pointer is the allocation. Just what its data is.</p>
+<p>The expectation would be that the above program would basically be translated into something like:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="dt">int</span> __backing_storage <span class="op">=</span> <span class="dv">4</span>;</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">constexpr</span> <span class="dt">int</span><span class="op">*</span> pi <span class="op">=</span> <span class="op">&amp;</span>__backing_storage;</span></code></pre></div>
+</blockquote>
+<p>That is perfectly valid code today - it’s the value of the pointer that is a constant, not what it is pointing to.</p>
+<h2 data-number="2.2" id="mutable-reads-during-constant-destruction"><span class="header-section-number">2.2</span> Mutable Reads During Constant Destruction<a href="#mutable-reads-during-constant-destruction" class="self-link"></a></h2>
+<p>The problem is specifically when a <em>mutable</em> variable is <em>read</em> during <em>constant destruction</em>.</p>
+<p>In the previous section, <code class="sourceCode cpp">pi<span class="op">.</span>ptr</code> (an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span></code>) is read during constant destruction, but it is not mutable . <code class="sourceCode cpp"><span class="op">*(</span>pi<span class="op">.</span>ptr<span class="op">)</span></code> is mutable (an <code class="sourceCode cpp"><span class="dt">int</span></code>), but wasn’t read.</p>
+<p>In the original example, <code class="sourceCode cpp">ppi<span class="op">.</span>ptr</code> (a <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;*</span> <span class="kw">const</span></code>) is read during constant destruction , but it is not mutable. But <code class="sourceCode cpp">ppi<span class="op">.</span>ptr<span class="op">-&gt;</span>ptr</code> <em>is</em> mutable (it’s just an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span></code>) and was read during <code class="sourceCode cpp"><span class="op">*(</span>ppi<span class="op">.</span>ptr<span class="op">)</span></code>’s constant destruction, which is the problem.</p>
+<p>While <code class="sourceCode cpp"><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> might not seem like a particularly interesting example, consider instead the case of <code class="sourceCode cpp"><span class="kw">constexpr</span> vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> (or, generally speaking, any kind of nested containers - like a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>). Both <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> have a <code class="sourceCode cpp">T<span class="op">*</span></code> member, so they’re structurally similar - it’s just that <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> has a shallow const API while <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> has a deep const API.</p>
+<p>But this is purely a convention. How can the compiler distinguish between the two? How can we disallow the bad <code class="sourceCode cpp">T<span class="op">*</span></code> case (<code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>) while allowing the good <code class="sourceCode cpp">T<span class="op">*</span></code> case (<code class="sourceCode cpp">vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> or <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>)?</p>
+<h2 data-number="2.3" id="proposed-solutions"><span class="header-section-number">2.3</span> Proposed Solutions<a href="#proposed-solutions" class="self-link"></a></h2>
+<p>There have been two proposed solutions to this problem, both of which had the goal of rejecting the nested <code class="sourceCode cpp">unique_ptr</code> case:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> pi<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;                                   <span class="co">// ok</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> ppi<span class="op">(</span><span class="kw">new</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)))</span>; <span class="co">// error</span></span></code></pre></div>
+</blockquote>
+<p>While allowing the <code class="sourceCode cpp">vector</code> cases:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> vi <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;                             <span class="co">// ok</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vvi <span class="op">=</span> <span class="op">{{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, <span class="op">{</span><span class="dv">3</span> <span class="dv">4</span><span class="op">}</span>, <span class="op">{</span><span class="dv">5</span>, <span class="dv">6</span><span class="op">}}</span>; <span class="co">// ok</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;&gt;</span> vs <span class="op">=</span> <span class="op">{</span><span class="st">&quot;this&quot;</span>, <span class="st">&quot;should&quot;</span>, <span class="st">&quot;work&quot;</span><span class="op">}</span>;   <span class="co">// ok</span></span></code></pre></div>
+</blockquote>
+<h3 data-number="2.3.1" id="stdmark_immutable_if_constexpr"><span class="header-section-number">2.3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code><a href="#stdmark_immutable_if_constexpr" class="self-link"></a></h3>
+<p>The initial design in <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span>, before it was removed, was a new function <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> that would mark an allocation as being immutable. That is, rather then rejecting any variable that is mutable and read during constant destruction, the new rule would be any variable read during constant destruction must be either:</p>
 <ul>
-<li>marked as immutable, or</li>
-<li>be a pointer to <code class="sourceCode cpp"><span class="kw">const</span></code></li>
+<li>constant, or</li>
+<li>marked as immutable</li>
 </ul>
-<p><code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would mark its allocation as immutable, but <code class="sourceCode cpp">std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would not. That way:</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would mark its allocation as immutable (e.g. at the end of its constructor), but <code class="sourceCode cpp">std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would not (because it’s only shallow const).</p>
+<p>That way:</p>
 <blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">// error: mutable allocation persists</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
-<span id="cb4-3"><a href="#cb4-3"></a></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="co">// ok: allocation isn&#39;t marked immutable, but is const</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">))</span>;</span>
-<span id="cb4-6"><a href="#cb4-6"></a></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="co">// ok: allocation is marked immutable</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">// ok: this is fine (no mutable variable is read during constant destruction)</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="co">// error: allocation isn&#39;t marked immutable, but is read as mutable during constant destruction</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> b<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)))</span>;</span>
+<span id="cb8-6"><a href="#cb8-6"></a></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">// ok: allocation isn&#39;t marked immutable, but is read as constant</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;</span> c<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)))</span>;</span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="co">// ok: allocation isn&#39;t read as mutable</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span>
+<span id="cb8-12"><a href="#cb8-12"></a></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="co">// ok: allocation is read as mutable but is marked immutable</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vv <span class="op">=</span> <span class="op">{{</span><span class="dv">6</span><span class="op">}</span>, <span class="op">{</span><span class="dv">7</span><span class="op">}</span>, <span class="op">{</span><span class="dv">8</span><span class="op">}}</span>;</span></code></pre></div>
 </blockquote>
-<p>In this way, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_as_constexpr<span class="op">(</span>p<span class="op">)</span></code> is basically saying: I promise my type is actually properly deep-<code class="sourceCode cpp"><span class="kw">const</span></code>.</p>
-<h3 data-number="1.2.2" id="t-propconst"><span class="header-section-number">1.2.2</span> <code class="sourceCode cpp">T propconst<span class="op">*</span></code><a href="#t-propconst" class="self-link"></a></h3>
+<p>In this way, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_as_constexpr<span class="op">(</span>p<span class="op">)</span></code> is basically saying: I promise my type is actually properly deep-<code class="sourceCode cpp"><span class="kw">const</span></code>. Note that there’s no real enforcement mechanism here - if the user did mark their <code class="sourceCode cpp">unique_ptr</code> member immutable, then the original example in this paper would compile fine (and fail at runtime). It’s just a promise to the compiler that your type is actually deep-<code class="sourceCode cpp"><span class="kw">const</span></code>, it’s up to the user to properly ensure that it is.</p>
+<h3 data-number="2.3.2" id="t-propconst"><span class="header-section-number">2.3.2</span> <code class="sourceCode cpp">T propconst<span class="op">*</span></code><a href="#t-propconst" class="self-link"></a></h3>
 <p><span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> proposed something different: a new qualifier that would propagate <code class="sourceCode cpp"><span class="kw">const</span></code>-ness off the object through the pointer. A persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation would thus have to have only <code class="sourceCode cpp"><span class="kw">const</span></code> access, after adjusting through <code class="sourceCode cpp">propconst</code>.</p>
 <p><code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would change to have members of type <code class="sourceCode cpp">T propconst<span class="op">*</span></code> instead of <code class="sourceCode cpp">T<span class="op">*</span></code>, so that a <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> would effectively have members of type <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span></code>, while <code class="sourceCode cpp">std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would remain unchanged, still having a <code class="sourceCode cpp">T<span class="op">*</span></code>. That way:</p>
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">// error: mutable allocation persists</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
-<span id="cb5-3"><a href="#cb5-3"></a></span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="co">// ok: only access to the allocation is via int const*</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;</span> b<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">))</span>;</span>
-<span id="cb5-6"><a href="#cb5-6"></a></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="co">// ok: now we have a deep const unique_ptr&lt;int&gt;</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a><span class="co">// since &#39;c&#39; is a const object, this behaves basically like &#39;b&#39;</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span> propconst<span class="op">&gt;</span> c<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">))</span>;</span>
-<span id="cb5-10"><a href="#cb5-10"></a></span>
-<span id="cb5-11"><a href="#cb5-11"></a><span class="co">// ok: only access to the allocation is via int const*</span></span>
-<span id="cb5-12"><a href="#cb5-12"></a><span class="co">// (by way of int propconst* member)</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="co">// ok: this is fine (no mutable variable is read during constant destruction)</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">// error: b&#39;s pointer member has mutable access to a std::unique_ptr&lt;int&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="co">// which is a mutable read during constant destruction</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> b<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)))</span>;</span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co">// ok: each allocation is read as constant</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;</span> c<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)))</span>;</span>
+<span id="cb9-10"><a href="#cb9-10"></a></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="co">// ok: allocation isn&#39;t read as mutable</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span>
+<span id="cb9-13"><a href="#cb9-13"></a></span>
+<span id="cb9-14"><a href="#cb9-14"></a><span class="co">// ok: allocation isn&#39;t read as mutable, because the member is now a vector&lt;int&gt; propconst* rather</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a><span class="co">// than a vector&lt;int&gt;*, so behaves as if it were a vector&lt;int&gt; const*</span></span>
+<span id="cb9-16"><a href="#cb9-16"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vv <span class="op">=</span> <span class="op">{{</span><span class="dv">6</span><span class="op">}</span>, <span class="op">{</span><span class="dv">7</span><span class="op">}</span>, <span class="op">{</span><span class="dv">8</span><span class="op">}}</span>;</span></code></pre></div>
 </blockquote>
-<h3 data-number="1.2.3" id="disposition"><span class="header-section-number">1.2.3</span> Disposition<a href="#disposition" class="self-link"></a></h3>
-<p>Both of these proposals have similar shape, in that they attempt to reject the same bad thing (persistent mutable allocation, like <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code>) by way of having to add annotations to the good thing (allowing <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> to work, by either annotating the pointers or the allocation).</p>
+<p>The distinction between the two proposals for a simple <code class="sourceCode cpp">vector</code> implementation:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">mark_immutable_if_constexpr</code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">T propconst<span class="op">*</span></code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    T<span class="op">*</span> ptr_;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="dt">size_t</span> size_;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    <span class="dt">size_t</span> capacity_;</span>
+<span id="cb10-6"><a href="#cb10-6"></a></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="kw">constexpr</span> vector<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>        ptr_ <span class="op">=</span> <span class="kw">new</span> T<span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
+<span id="cb10-10"><a href="#cb10-10"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb10-11"><a href="#cb10-11"></a>        capacity_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb10-12"><a href="#cb10-12"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, ptr_<span class="op">)</span>;</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>        std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>ptr_<span class="op">)</span>; <span class="co">// &lt;==</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>    <span class="op">}</span></span>
+<span id="cb10-16"><a href="#cb10-16"></a></span>
+<span id="cb10-17"><a href="#cb10-17"></a>    <span class="kw">constexpr</span> <span class="op">~</span>vector<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb10-18"><a href="#cb10-18"></a>        <span class="kw">delete</span> <span class="op">[]</span> ptr_;</span>
+<span id="cb10-19"><a href="#cb10-19"></a>    <span class="op">}</span></span>
+<span id="cb10-20"><a href="#cb10-20"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>    T propconst<span class="op">*</span> ptr_; <span class="co">// &lt;==</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="dt">size_t</span> size_;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="dt">size_t</span> capacity_;</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>    <span class="kw">constexpr</span> vector<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>        ptr_ <span class="op">=</span> <span class="kw">new</span> T<span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
+<span id="cb11-10"><a href="#cb11-10"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb11-11"><a href="#cb11-11"></a>        capacity_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb11-12"><a href="#cb11-12"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, ptr_<span class="op">)</span>;</span>
+<span id="cb11-13"><a href="#cb11-13"></a>    <span class="op">}</span></span>
+<span id="cb11-14"><a href="#cb11-14"></a></span>
+<span id="cb11-15"><a href="#cb11-15"></a></span>
+<span id="cb11-16"><a href="#cb11-16"></a></span>
+<span id="cb11-17"><a href="#cb11-17"></a>    <span class="kw">constexpr</span> <span class="op">~</span>vector<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb11-18"><a href="#cb11-18"></a>        <span class="kw">delete</span> <span class="op">[]</span> ptr_;</span>
+<span id="cb11-19"><a href="#cb11-19"></a>    <span class="op">}</span></span>
+<span id="cb11-20"><a href="#cb11-20"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>On the left, we have to mark the result of every allocation immutable. On the right, we have to declare every member that refers to an allocation with this new qualifier.</p>
+<h2 data-number="2.4" id="disposition"><span class="header-section-number">2.4</span> Disposition<a href="#disposition" class="self-link"></a></h2>
+<p>Both of these proposals have similar shape, in that they attempt to reject the same bad thing (e.g. <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code>) by way of having to add annotations to the good thing (allowing <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> to work, by either annotating the pointers or the allocation). Same end goal of which sets of programs would be allowed.</p>
 <p>Importantly, both require types opt-in, somehow, to persistent allocation. <code class="sourceCode cpp">T propconst<span class="op">*</span></code> is more sound, in that the compiler <em>ensures</em> that there is no mutable persistent allocation possible, while <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is simply a promise that the user did their due diligence and properly made their type deep-<code class="sourceCode cpp"><span class="kw">const</span></code>.</p>
 <p>What I mean is that, using <code class="sourceCode cpp">propconst</code>, this error won’t compile - we can’t accidentally expose mutable access (not without <code class="sourceCode cpp"><span class="kw">const_cast</span></code>):</p>
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">class</span> bad_vector_pc <span class="op">{</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>    <span class="dt">int</span> propconst<span class="op">*</span> data_;</span>
-<span id="cb6-3"><a href="#cb6-3"></a>    <span class="dt">int</span> size_;</span>
-<span id="cb6-4"><a href="#cb6-4"></a>    <span class="dt">int</span> capacity_;</span>
-<span id="cb6-5"><a href="#cb6-5"></a></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a>    <span class="co">// oops, int&amp; instead of int const&amp;</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a>        <span class="co">// error: data_[idx] is an int const&amp; here</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a>        <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">]</span>;</span>
-<span id="cb6-11"><a href="#cb6-11"></a>    <span class="op">}</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">class</span> bad_vector_pc <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>    T propconst<span class="op">*</span> data_;</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="dt">int</span> size_;</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    <span class="dt">int</span> capacity_;</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>    <span class="co">// oops, int&amp; instead of int const&amp;</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a>        <span class="co">// error: data_[idx] is an T const&amp; here</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a>        <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">]</span>;</span>
+<span id="cb12-12"><a href="#cb12-12"></a>    <span class="op">}</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>But this would work just fine (until it explodes at runtime):</p>
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">class</span> bad_vector_miic <span class="op">{</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>    <span class="dt">int</span><span class="op">*</span> data_;</span>
-<span id="cb7-3"><a href="#cb7-3"></a>    <span class="dt">int</span> size_;</span>
-<span id="cb7-4"><a href="#cb7-4"></a>    <span class="dt">int</span> capacity_;</span>
-<span id="cb7-5"><a href="#cb7-5"></a></span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>    <span class="kw">constexpr</span> bad_vector_miic<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>        data_ <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span><span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
-<span id="cb7-9"><a href="#cb7-9"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, data_<span class="op">)</span>;</span>
-<span id="cb7-10"><a href="#cb7-10"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
-<span id="cb7-11"><a href="#cb7-11"></a>        capacity <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
-<span id="cb7-12"><a href="#cb7-12"></a></span>
-<span id="cb7-13"><a href="#cb7-13"></a>        std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>data_<span class="op">)</span>;</span>
-<span id="cb7-14"><a href="#cb7-14"></a>    <span class="op">}</span></span>
-<span id="cb7-15"><a href="#cb7-15"></a></span>
-<span id="cb7-16"><a href="#cb7-16"></a>    <span class="kw">constexpr</span> <span class="op">~</span>bad_vector_miic<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb7-17"><a href="#cb7-17"></a>        <span class="kw">delete</span> <span class="op">[]</span> data_;</span>
-<span id="cb7-18"><a href="#cb7-18"></a>    <span class="op">}</span></span>
-<span id="cb7-19"><a href="#cb7-19"></a></span>
-<span id="cb7-20"><a href="#cb7-20"></a>    <span class="co">// oops, int&amp; instead of int const&amp;</span></span>
-<span id="cb7-21"><a href="#cb7-21"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb7-22"><a href="#cb7-22"></a>        <span class="co">// this still compiles though</span></span>
-<span id="cb7-23"><a href="#cb7-23"></a>        <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">]</span>;</span>
-<span id="cb7-24"><a href="#cb7-24"></a>    <span class="op">}</span></span>
-<span id="cb7-25"><a href="#cb7-25"></a><span class="op">}</span>;</span>
-<span id="cb7-26"><a href="#cb7-26"></a></span>
-<span id="cb7-27"><a href="#cb7-27"></a><span class="kw">constexpr</span> bad_vector_miic v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
-<span id="cb7-28"><a href="#cb7-28"></a></span>
-<span id="cb7-29"><a href="#cb7-29"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb7-30"><a href="#cb7-30"></a>    v<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="dv">4</span>; <span class="co">// ok: compiles?</span></span>
-<span id="cb7-31"><a href="#cb7-31"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">class</span> bad_vector_miic <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    T<span class="op">*</span> data_;</span>
+<span id="cb13-4"><a href="#cb13-4"></a>    <span class="dt">int</span> size_;</span>
+<span id="cb13-5"><a href="#cb13-5"></a>    <span class="dt">int</span> capacity_;</span>
+<span id="cb13-6"><a href="#cb13-6"></a></span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a>    <span class="kw">constexpr</span> bad_vector_miic<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a>        data_ <span class="op">=</span> <span class="kw">new</span> T<span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
+<span id="cb13-10"><a href="#cb13-10"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, data_<span class="op">)</span>;</span>
+<span id="cb13-11"><a href="#cb13-11"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb13-12"><a href="#cb13-12"></a>        capacity <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb13-13"><a href="#cb13-13"></a></span>
+<span id="cb13-14"><a href="#cb13-14"></a>        std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>data_<span class="op">)</span>;</span>
+<span id="cb13-15"><a href="#cb13-15"></a>    <span class="op">}</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a></span>
+<span id="cb13-17"><a href="#cb13-17"></a>    <span class="kw">constexpr</span> <span class="op">~</span>bad_vector_miic<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a>        <span class="kw">delete</span> <span class="op">[]</span> data_;</span>
+<span id="cb13-19"><a href="#cb13-19"></a>    <span class="op">}</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a></span>
+<span id="cb13-21"><a href="#cb13-21"></a>    <span class="co">// oops, T&amp; instead of T const&amp;</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a>        <span class="co">// this still compiles though</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a>        <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">]</span>;</span>
+<span id="cb13-25"><a href="#cb13-25"></a>    <span class="op">}</span></span>
+<span id="cb13-26"><a href="#cb13-26"></a><span class="op">}</span>;</span>
+<span id="cb13-27"><a href="#cb13-27"></a></span>
+<span id="cb13-28"><a href="#cb13-28"></a><span class="kw">constexpr</span> bad_vector_miic<span class="op">&lt;</span>bad_vector_miic<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> v <span class="op">=</span> <span class="op">{{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">{</span><span class="dv">2</span><span class="op">}</span>, <span class="op">{</span><span class="dv">3</span><span class="op">}}</span>;</span>
+<span id="cb13-29"><a href="#cb13-29"></a></span>
+<span id="cb13-30"><a href="#cb13-30"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb13-31"><a href="#cb13-31"></a>    v<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>; <span class="co">// ok: compiles?</span></span>
+<span id="cb13-32"><a href="#cb13-32"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>However, <code class="sourceCode cpp">T propconst<span class="op">*</span></code> has the downside that it’s fairly pervasive throughout the language - where a significant amount of library machinery would have to account for it somehow. On the other hand, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is extremely limited. No language machinery needs to consider its existence, and the only library machinery that does are those deep-const types that perform allocation that would have to use it.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">2</span> References<a href="#bibliography" class="self-link"></a></h1>
+<p>However, <code class="sourceCode cpp">T propconst<span class="op">*</span></code> has the downside that it’s fairly pervasive throughout the language - where a significant amount of library machinery would have to account for it somehow. Whereas, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is extremely limited. No language machinery needs to consider its existence, and the only library machinery that does are those deep-const types that perform allocation that would have to use it, in only a few places.</p>
+<p>On the other hand, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code> has the problem that users might not understand where and why to use it and, just as importantly, when <em>not</em> to use it. If some marks an allocation immutable on a shallow-const type, that more or less defeats the entire purpose of the exercise, since now they’ve just allowed themselves to do exactly the thing that wanted to avoid allowing.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0784R7">
 <p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
