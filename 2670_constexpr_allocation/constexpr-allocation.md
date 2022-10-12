@@ -135,7 +135,7 @@ While allowing the `vector` cases:
 ::: bq
 ```cpp
 constexpr std::vector<int> vi = {1, 2, 3};                             // ok
-constexpr std::vector<std::vector<int>> vvi = {{1, 2}, {3 4}, {5, 6}}; // ok
+constexpr std::vector<std::vector<int>> vvi = {$${1, 2}, {3 4}, {5, 6}}; // ok
 constexpr std::vector<std::string>> vs = {"this", "should", "work"};   // ok
 ```
 :::
@@ -166,7 +166,7 @@ constexpr std::unique_ptr<std::unique_ptr<int> const> c(new std::unique_ptr<int>
 constexpr std::vector<int> v = {3, 4, 5};
 
 // ok: allocation is read as mutable but is marked immutable
-constexpr std::vector<std::vector<int>> vv = {{6}, {7}, {8}};
+constexpr std::vector<std::vector<int>> vv = {$${6}, {7}, {8}};
 ```
 :::
 
@@ -195,7 +195,7 @@ constexpr std::vector<int> v = {3, 4, 5};
 
 // ok: allocation isn't read as mutable, because the member is now a vector<int> propconst* rather
 // than a vector<int>*, so behaves as if it were a vector<int> const*
-constexpr std::vector<std::vector<int>> vv = {{6}, {7}, {8}};
+constexpr std::vector<std::vector<int>> vv = {$${6}, {7}, {8}};
 ```
 :::
 
@@ -310,7 +310,7 @@ public:
     }
 };
 
-constexpr bad_vector_miic<bad_vector_miic<int>> v = {{1}, {2}, {3}};
+constexpr bad_vector_miic<bad_vector_miic<int>> v = {$${1}, {2}, {3}};
 
 int main() {
     v[0] = {4, 5}; // ok: compiles?
