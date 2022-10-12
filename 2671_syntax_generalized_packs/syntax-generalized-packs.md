@@ -203,6 +203,8 @@ The advantage of the latter is that it's probably more viable to in a for loop (
 
 [^dslice]: D's slice overloading is [fairly involved](https://dlang.org/spec/operatoroverloading.html#slice), and also supports adding multiple groups. Like `x[1, 2, 8..20]`. On the one hand, this is interesting, but on the other hand with the adoption of multi-dimensional subscript operators, we're establishing a meaning for `x[1, 2]` in C++ that is at odds with interpreting this as a slice of the 2nd and 3rd elements.
 
+However, the issue with `0..10` is this is currently parses as a single _`pp-number`_, so there might need to be a bit more work to have this functional. I think it's a better syntax overall, so hopefully this doesn't prove too problematic.
+
 Regardless of which syntax to choose, the arguments about [indexing from the back](#indexing-from-the-back) still apply, as well as the syntax for how to slice a pack. If we're going to index into a pack via `$pack$...[0]` then we should likewise slice a pack via `$pack$...[1:]` (or `$pack$...[1..]`). And what we end up with, at this point is... still a pack. So it would need to be expanded.
 
 For instance, one (not-great) way of writing `sum` might be (demonstrated using both indexing syntax options):
