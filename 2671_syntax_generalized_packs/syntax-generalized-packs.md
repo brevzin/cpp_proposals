@@ -197,7 +197,7 @@ Sometimes you want one element from a pack, sometimes you want multiple. That's 
 
 In both cases, `from` can be omitted (implicitly meaning `0`) and `to` can be omitted (implicitly meaning the end). That is, `[:]` or `[..]` would mean to take the entire pack.
 
-The advantage of the former is that it uses less dots. And also that it also can be extended by another argument as `x[from:to:stride]` (e.g. `[::2]` would be taking every other element, starting from the first).
+The advantage of the former is that it uses fewer dots. And also that it also can be extended by another argument as `x[from:to:stride]` (e.g. `[::2]` would be taking every other element, starting from the first).
 
 The advantage of the latter is that it's probably more viable to in a for loop (e.g. `for (int i : 0..10)`, since having the extra colon would be fairly awkward) and it simply looks more like we're presenting a range [^dslice].
 
@@ -236,7 +236,7 @@ auto sum(Ts... ts) -> int {
 
 Slicing, while not as important as indexing, still is an operation that regularly comes up, so I think it would be important to support. Whichever syntax we choose for slicing a pack could also be used to slice other objects as well. If I have some `s` that is a `span<T>`, `s[1..]` could conceivably be made to work (and evaluate basically as `s.subspan(1)`, which we have today).
 
-Slicing also presents a good motivation for choosing `$pack$![0]` as the choice fo indexing, because if slicing a pack involves ellipsis and then expanding that pack involves another ellipsis _and also_ the slicing involves `..`, that's a tremendous amount of `.`s for a single expression.
+Slicing also presents a good motivation for choosing `$pack$![0]` as the choice for indexing, because if slicing a pack involves ellipsis and then expanding that pack involves another ellipsis _and also_ the slicing involves `..`, that's a tremendous amount of `.`s for a single expression.
 
 ## Summary
 
