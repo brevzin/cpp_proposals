@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R2
+document: P1061R3
 date: today
 audience: EWG
 author:
@@ -12,6 +12,8 @@ toc: true
 ---
 
 # Revision History
+
+R3 removes the exclusion of namespace-scope per [EWG guidance](https://github.com/cplusplus/papers/issues/294#issuecomment-1234578812).
 
 R2 adds a section about implementation complexity, implementation experience, and wording.
 
@@ -443,17 +445,15 @@ Change [dcl.pre]{.sref} paragraph 8:
 [_sb-identifier-list_]{.addu} is called a structured binding declaration (
 [dcl.struct.bind]). The _decl-specifier-seq_ shall contain only the
 _type-specifier_ `auto` and _cv-qualifiers_. The _initializer_ shall be of the
- form "= _assignment-expression_", of the form "{ _assignment-expression_ }",
-or of the form "( _assignment-expression_ )", where the
+ form "`= $assignment-expression$`", of the form "`{ $assignment-expression$ }`",
+or of the form "`( $assignment-expression$ )`", where the
 _assignment-expression_ is of array or non-union class type.
 
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
 A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) of <i>structured bindings</i>.
-[The declaration shall contain at most one _sb-pack-identifier_. If the declaration
-contains an _sb-identifier_, the declaration shall not appear at namespace scope and introduces a _structured binding
-pack_ ([temp.variadic]).]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+[The declaration shall contain at most one _sb-pack-identifier_.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
