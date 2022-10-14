@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-10-11" />
+  <meta name="dcterms.date" content="2022-10-13" />
   <title>Syntax Choices for Generalized Pack Declaration and Usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-10-11</td>
+    <td>2022-10-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -567,6 +567,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#packs-in-more-places"><span class="toc-section-number">2</span> Packs in More Places<span></span></a>
 <ul>
 <li><a href="#disambiguating-nested-packs"><span class="toc-section-number">2.1</span> Disambiguating Nested Packs<span></span></a></li>
+<li><a href="#packs-outside-of-templates"><span class="toc-section-number">2.2</span> Packs Outside of Templates<span></span></a></li>
 </ul></li>
 <li><a href="#more-functionality-for-packs"><span class="toc-section-number">3</span> More Functionality for Packs<span></span></a>
 <ul>
@@ -574,9 +575,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#type-indexing"><span class="toc-section-number">3.1.1</span> Type Indexing<span></span></a></li>
 <li><a href="#indexing-from-the-back"><span class="toc-section-number">3.1.2</span> Indexing from the Back<span></span></a></li>
+<li><a href="#reflection"><span class="toc-section-number">3.1.3</span> Reflection<span></span></a></li>
 </ul></li>
 <li><a href="#slicing"><span class="toc-section-number">3.2</span> Slicing<span></span></a></li>
-<li><a href="#summary"><span class="toc-section-number">3.3</span> Summary<span></span></a></li>
+<li><a href="#pack-object"><span class="toc-section-number">3.3</span> Pack Object<span></span></a>
+<ul>
+<li><a href="#slicing-a-pack-object"><span class="toc-section-number">3.3.1</span> Slicing a Pack Object<span></span></a></li>
+</ul></li>
+<li><a href="#summary"><span class="toc-section-number">3.4</span> Summary<span></span></a></li>
 </ul></li>
 <li><a href="#more-functionality-for-tuples"><span class="toc-section-number">4</span> More Functionality for Tuples<span></span></a>
 <ul>
@@ -637,14 +643,103 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-3"><a href="#cb3-3"></a>    <span class="cf">return</span> <span class="op">(</span>tuple<span class="op">.</span> <span class="op">...</span>elems <span class="op">+</span> <span class="op">...)</span>;  <span class="co">// ok</span></span>
 <span id="cb3-4"><a href="#cb3-4"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>There aren’t too many other options here - we need some marker to either put in front or behind <code class="sourceCode cpp">elems</code>. Using the word <code class="sourceCode cpp">pack</code> might be nice, as in <code class="sourceCode cpp">tuple<span class="op">.</span>pack elems<span class="op">...</span></code> - that’s probably a viable context-sensitive parse, since that is currently nonsense. Something longer like <code class="sourceCode cpp">tuple<span class="op">.</span>packname elems<span class="op">...</span></code> seems a bit much, or perhaps something like <code class="sourceCode cpp">tuple<span class="op">.</span>pack<span class="op">!(</span>elems<span class="op">)...</span></code>?</p>
+<p>There aren’t too many other options here - we need some marker to either put in front or behind <code class="sourceCode cpp">elems</code>. Using the word <code class="sourceCode cpp">pack</code> might be nice, as in <code class="sourceCode cpp">tuple<span class="op">.</span>pack elems<span class="op">...</span></code> - that’s probably a viable context-sensitive parse, since that is currently nonsense. Something longer like <code class="sourceCode cpp">tuple<span class="op">.</span>packname elems<span class="op">...</span></code> seems a bit much.</p>
+<h2 data-number="2.2" id="packs-outside-of-templates"><span class="header-section-number">2.2</span> Packs Outside of Templates<a href="#packs-outside-of-templates" class="self-link"></a></h2>
+<p>As <span class="citation" data-cites="P2277R0">[<a href="#ref-P2277R0" role="doc-biblioref">P2277R0</a>]</span> points out, once you allow a member pack declaration, you can get packs outside of templates:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">struct</span> simple_tuple <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  Ts<span class="op">...</span> elems;</span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="op">}</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="dt">int</span> sum<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>  <span class="cf">return</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...</span> <span class="op">+</span> <span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This proves concerning for implementations and led to the desire for some kind of prefix to indicate that somewhere a pack expansion follows. The question of course is… what prefix?</p>
+<p>If we went back in time and made pack expansion a <em>prefix</em> <code class="sourceCode cpp"><span class="op">...</span></code> rather than a postfix <code class="sourceCode cpp"><span class="op">...</span></code>, this wouldn’t have been a problem. For instance:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="dt">int</span> call_f_with_squares<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="cf">return</span> f<span class="op">(...(</span>xs<span class="op">.</span>elems <span class="op">*</span> xs<span class="op">.</span>elems<span class="op">))</span>;</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This isn’t sufficient for fold-expressions though, particularly since in <code class="sourceCode cpp"><span class="op">(</span><em>E</em> <em>op</em> <span class="op">...)</span></code>, you don’t get to the <code class="sourceCode cpp"><span class="op">...</span></code> again until the very end. <code class="sourceCode cpp"><span class="op">(...</span> <em>op</em> <em>E</em><span class="op">)</span></code> would be fine, but you can’t just rewrite right folds into left folds - depending on the operator and the expression, those could evaluate very differently.</p>
+<p>One option is to introduce a “pack expansion block” (credit to Davis Herring for this specific idea) - something like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span> sum<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="cf">return</span> <span class="op">...{</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...</span> <span class="op">+</span> <span class="dv">0</span><span class="op">)</span> <span class="op">}</span>;</span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="op">}</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="dt">int</span> call_f_with_squares<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>  <span class="cf">return</span> <span class="op">...</span> <span class="op">{</span> f<span class="op">((</span>xs<span class="op">.</span>elems <span class="op">*</span> xs<span class="op">.</span>elems<span class="op">)...)</span> <span class="op">}</span>;</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Might be easier to see the distinctions if I line them up vertically:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">// expansions</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>f<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>;           <span class="co">// status quo</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>f<span class="op">(...</span>xs<span class="op">.</span>elems<span class="op">)</span>;           <span class="co">// prefix expansion</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="op">...{</span> f<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span> <span class="op">}</span>     <span class="co">// expansion block (with ... introducer)</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>expand <span class="op">{</span> f<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span> <span class="op">}</span> <span class="co">// expansion block (with keyword introducer)</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="co">// fold-expressions</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span>             <span class="co">// status quo</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="op">...(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span>          <span class="co">// prefix expansion??</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>foldexpr <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span>    <span class="co">// fold-expression-specific introducer</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="op">...</span> <span class="op">{</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...</span> <span class="op">)</span> <span class="op">}</span>    <span class="co">// expansion block (with ... introducer)</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>expand <span class="op">{</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...</span> <span class="op">)</span> <span class="op">}</span> <span class="co">// expansion block (with keyword introducer)</span></span></code></pre></div>
+</blockquote>
+<p>The nice thing about prefix expansion is that I think it’s a boon not just to parsers but also to humans, and it also doesn’t add additional characters. But there’s no simple notion of prefix expansion for fold-expressions, the closest thing might be to just slap an extra <code class="sourceCode cpp"><span class="op">...</span></code> in front of the parentheses?</p>
+<p>The expansion blocks (whether introduced with <code class="sourceCode cpp"><span class="op">...</span></code> or a hypothetical keyword that can’t be as simple as <code class="sourceCode cpp">expand</code>) do add quite a bit of noise.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> <a href="https://github.com/cplusplus/papers/issues/970#issuecomment-926129121">EWG</a> wasn’t a fan of using the <code class="sourceCode cpp"><span class="op">...</span></code> in particular, which isn’t surprising, because the last thing that variadic code needs are <em>more</em> ellipses.</p>
+<p>The advantage of the <code class="sourceCode cpp">expand</code> block though is that since the goal is just to, basically, turn on pack expansions, one such block can include arbitrarily expansions:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="dt">int</span> f<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="cf">return</span> expand <span class="op">{</span> g<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>  <span class="op">+</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span> <span class="op">}</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Nevertheless, it seems like the right approach is to prefix-expand pack expansions and to come up with some introducer for fold-expressions. The former is <em>much</em> more common than the latter, so having to a pay a syntax penalty for the latter but not the former seems like a good tradeoff. I’m going to suggest <code class="sourceCode cpp">foldexpr</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="dt">void</span> func<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>  <span class="dt">int</span> a <span class="op">=</span> call<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>;          <span class="co">// error</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>  <span class="dt">int</span> b <span class="op">=</span> call<span class="op">(...</span>xs<span class="op">.</span>elems<span class="op">)</span>;          <span class="co">// ok</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>  <span class="dt">int</span> c <span class="op">=</span> <span class="op">(...</span> <span class="op">+</span> xs<span class="op">.</span>elems<span class="op">)</span>;           <span class="co">// ok</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>  <span class="dt">int</span> d <span class="op">=</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span>;           <span class="co">// error</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>  <span class="dt">int</span> e <span class="op">=</span> foldexpr <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span>;  <span class="co">// ok</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>There’s also a different approach. The difference between variadic templates (which have no idea for a prefix) and non-variadic contexts (which do) is precisely the fact that you don’t know that somewhere a pack might appear. With a variadic template, you know this at the point of declaration. You see the <code class="sourceCode cpp"><span class="op">...</span></code>, but with a regular function, you don’t. What if we just added a marker for to signal to the compiler that pack expansions are coming in this scope? That is, we don’t touch any of the existing syntax for expansion - it’s just that we require that any expansion is preceded in scope by a visible declaration of a pack:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="dt">void</span> func<span class="op">(</span>simple_tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>  <span class="dt">int</span> a <span class="op">=</span> call<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>;          <span class="co">// error</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>  <span class="dt">int</span> b <span class="op">=</span> call<span class="op">(...</span>xs<span class="op">.</span>elems<span class="op">)</span>;          <span class="co">// error (pack prefix isn&#39;t a thing)</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>  <span class="dt">int</span> c <span class="op">=</span> <span class="op">(...</span> <span class="op">+</span> xs<span class="op">.</span>elems<span class="op">)</span>;           <span class="co">// error</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a></span>
+<span id="cb10-6"><a href="#cb10-6"></a>  <span class="op">{</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="kw">using</span> <span class="op">...</span>;                        <span class="co">// the packs are coming!</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="dt">int</span> d <span class="op">=</span> <span class="op">(</span>xs<span class="op">.</span>elems <span class="op">+</span> <span class="op">...)</span>;         <span class="co">// ok</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>    <span class="dt">int</span> e <span class="op">=</span> call<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>;        <span class="co">// ok</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="dt">int</span> f <span class="op">=</span> call<span class="op">(...</span>xs<span class="op">.</span>elems<span class="op">)</span>;        <span class="co">// error (pack prefix still isn&#39;t a thing)</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a>  <span class="op">}</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a></span>
+<span id="cb10-13"><a href="#cb10-13"></a>  <span class="dt">int</span> g <span class="op">=</span> call<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>;          <span class="co">// error (still)</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a>  <span class="kw">auto</span> <span class="op">[...</span>ys<span class="op">]</span> <span class="op">=</span> xs;                  <span class="co">// assuming P1061</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>  <span class="dt">int</span> h <span class="op">=</span> call<span class="op">(</span>ys<span class="op">...)</span>;                <span class="co">// ok (we&#39;ve seen a pack declaration)</span></span>
+<span id="cb10-16"><a href="#cb10-16"></a>  <span class="dt">int</span> i <span class="op">=</span> call<span class="op">(</span>xs<span class="op">.</span>elems<span class="op">...)</span>;          <span class="co">// ok (we&#39;ve seen a pack declaration)</span></span>
+<span id="cb10-17"><a href="#cb10-17"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The <code class="sourceCode cpp"><span class="kw">using</span> <span class="op">...</span></code> bit is a bit awkward and novel - but it allows us to retain existing rules for pack expansions and fold-expressions, and this rule would also limit potential changes once we get structured bindings in here too <span class="citation" data-cites="P1061R2">[<a href="#ref-P1061R2" role="doc-biblioref">P1061R2</a>]</span>. Worth considering.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="more-functionality-for-packs"><span class="header-section-number">3</span> More Functionality for Packs<a href="#more-functionality-for-packs" class="self-link"></a></h1>
-<p>There are three things that we can’t easily do with packs, but should be able to:</p>
+<p>There are four primitive operations for packs:</p>
 <ol type="1">
+<li>expanding</li>
 <li>indexing</li>
 <li>slicing (i.e. producing another pack out of the original one)</li>
-<li>iterating (covered separately by <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>)</li>
+<li>iterating</li>
 </ol>
+<p>Today, we can only do one of them. <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span> originally proposed handling iteration, but has had to walk away from that after ambiguity issues, and that paper has stalled too.</p>
+<p>To explain why these are the primitives, we can go over what you can actually do with a pack.</p>
+<p>You can consume it immediately, whether via <code class="sourceCode cpp">f<span class="op">(</span>xs<span class="op">...)</span></code> or <code class="sourceCode cpp"><span class="op">(</span>xs <span class="op">&amp;&amp;</span> <span class="op">...)</span></code>, that’s expansion. You can perform an operation on every element in a pack. You can’t do this directly yet, but you can get a decent approximation by way of creating a lambda that defines the operation you want to do and then folding over a comma: <code class="sourceCode cpp"><span class="op">(</span>f<span class="op">(</span>xs<span class="op">)</span>, <span class="op">...)</span></code>. I guess the comma is useful after all.</p>
+<p>Or, you can pop one element off and then handle the rest separately - similar to how in Haskell you would do <code class="sourceCode cpp">x<span class="op">:</span>xs</code> in an overload. Imagine wanting to print a pack, comma-delimited. You can’t really do that with a fold-expression - since you want to do one operation for the first element and then a different operation for the rest of the elements. That’s indexing (for the head) and slicing (for the tail). A similar story holds for wanting to implement <code class="sourceCode cpp">visit</code> except putting the function last instead of first: the language gives us an easy way to split off the first element, but not so much for the last element. That’s again indexing and slicing. Other situations might call for taking the first or last half of a pack to recurse.</p>
 <h2 data-number="3.1" id="indexing"><span class="header-section-number">3.1</span> Indexing<a href="#indexing" class="self-link"></a></h2>
 <p>The issue with indexing is largely a choice of syntax. We can’t use <code class="sourceCode cpp"><em>pack</em><span class="op">[</span><span class="dv">0</span><span class="op">]</span></code> because of potential ambiguity if this appears in a pack expansion: <code class="sourceCode cpp">call<span class="op">(</span>x<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> x<span class="op">...)</span></code> is valid syntax today, but this isn’t asking for the first element of the pack <code class="sourceCode cpp">x</code>, it’s indexing into every element of the pack <code class="sourceCode cpp">x</code>.</p>
 <p>That leaves introducing some new syntax that is distinct. I think the options are here <code class="sourceCode cpp"><em>pack</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></code> (as <span class="citation" data-cites="N4235">[<a href="#ref-N4235" role="doc-biblioref">N4235</a>]</span> suggested) or <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> (as <span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span> suggested). Between <code class="sourceCode cpp"><em>pack</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></code> and <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code>, I think the latter is better for two reasons:</p>
@@ -652,46 +747,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>It does seem like operations with packs should just use <code class="sourceCode cpp"><span class="op">...</span></code>, this one is no different</li>
 <li>It looks like shorthand for <code class="sourceCode cpp">tuple<span class="op">(</span><em>pack</em><span class="op">...)[</span><span class="dv">0</span><span class="op">]</span></code>. The latter isn’t valid yet (would require constexpr function parameters to be valid), but the similarity between the two expressions seems compelling to me anyway.</li>
 </ol>
-<p>An alternative would be some way to annotate <code class="sourceCode cpp"><em>pack</em></code> as being a pack to avoid the above ambiguity. Like <code class="sourceCode cpp"><em>OBJECT</em><span class="op">(</span><em>pack</em><span class="op">)</span></code> or <code class="sourceCode cpp"><em>pack</em><span class="op">.</span><em>into_object</em><span class="op">()</span></code>. But we need some kind of syntax to be <em>definitely</em> unambiguous and also <em>distinct</em> grammatically, which neither of those really allow for. We would need some sort of token.</p>
-<p>One option that does work is <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>. The <code class="sourceCode cpp"><span class="op">!</span></code> cannot appear after an identifier today. This could be a postfix operator that can only follow the name of a pack, and must precede an indexing operation. There are a few other tokens that could be used here as well, but there’s something kind of nice about <code class="sourceCode cpp">elems<span class="op">!</span></code> meaning “no, actually, this <code class="sourceCode cpp">elems</code> thing as a whole!” that I kind of like. This also provides an answer for expansion statements: we always expand an object, and if we want to expand a pack we have to first turn it into an object - that’s <code class="sourceCode cpp"><em>pack</em><span class="op">!</span></code>.</p>
-<p>Between <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> and <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>, the former has the benefit of (some kind of) consistency with existing pack facilities, while the latter has the benefit of using fewer dots. There are a lot of dots when dealing with packs and it would be nice to have fewer of them. The downside though is that introducing more tokens pushes us further on the path to Perl, so there’s no free lunch here either.</p>
-<p>Lastly, there could hypothetically be some named reflection function which probably would look like <code class="sourceCode cpp">std<span class="op">::</span>pack_index<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span><em>pack</em><span class="op">...)</span></code>. But this is just a guess, as <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span> doesn’t mention anything related. I think there’s a lot of value in using indexing syntax to do indexing, so I would strongly prefer a dedicated language feature for this case.</p>
-<p>Note that this is a frequently desired utility, and there is a whole talk at CppNow specifically about how to efficiently index into a pack: <a href="https://www.youtube.com/watch?v=LfOh0DwTP00">The Nth Element: A Case Study</a>.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> Also note that Circle implements the <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> syntax.</p>
+<p>Note that this is a frequently desired utility, and there is a whole talk at CppNow specifically about how to efficiently index into a pack: <a href="https://www.youtube.com/watch?v=LfOh0DwTP00">The Nth Element: A Case Study</a>.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> Also note that Circle implements the <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> syntax.</p>
 <h3 data-number="3.1.1" id="type-indexing"><span class="header-section-number">3.1.1</span> Type Indexing<a href="#type-indexing" class="self-link"></a></h3>
-<p>Pack indexing shouldn’t just work for a pack of values, it should also work for a pack of types. That is:</p>
-<table>
-<thead>
-<tr class="header">
-<th><div style="text-align:center">
-<strong>Indexing as <code class="sourceCode cpp"><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong>Indexing as <code class="sourceCode cpp"><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code></strong>
-</div></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">auto</span> first<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">{</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>  <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">auto</span> first<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span> <span class="op">{</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>  <span class="cf">return</span> ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="op">}</span></span></code></pre></div></td>
-</tr>
-</tbody>
-</table>
+<p>Pack indexing shouldn’t just work for a pack of values, it should also work for a pack of types. That would allow:</p>
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a>```cpp</span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="kw">auto</span> first<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>  <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb11-5"><a href="#cb11-5"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
 <p>Packs of types follow the same principle as packs of values.</p>
 <h3 data-number="3.1.2" id="indexing-from-the-back"><span class="header-section-number">3.1.2</span> Indexing from the Back<a href="#indexing-from-the-back" class="self-link"></a></h3>
 <p>Once we have indexing in general, a lot of the rules more or less follow. The index needs to be within the range of the size of the pack, and if not, that’s an immediate-context error (<code class="sourceCode cpp">first<span class="op">()</span></code> above is ill-formed, since there is no first type, but it’s ill-formed in a SFINAE-friendly way).</p>
 <p>But there’s still an interesting question here: how do you return the <em>last</em> element? Well, you could write this:</p>
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">auto</span> last<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">{</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>  <span class="cf">return</span> ts<span class="op">...[</span><span class="kw">sizeof</span><span class="op">...(</span>ts<span class="op">)</span> <span class="op">-</span> <span class="dv">1</span><span class="op">]</span>;</span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">auto</span> last<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>  <span class="cf">return</span> ts<span class="op">...[</span><span class="kw">sizeof</span><span class="op">...(</span>ts<span class="op">)</span> <span class="op">-</span> <span class="dv">1</span><span class="op">]</span>;</span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This is… fine. This is fine. It works, it does the right thing. But it’s a bit tedious.</p>
 <p>Other languages provide a dedicated facility for counting backwards from the last element:</p>
@@ -714,12 +788,34 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>The D and C# approaches don’t have this issue. But <code><span class="op">$</span></code> seems like a waste of that token, which can be put to more interesting uses (although it has prior art in regex as well, also meaning the end). The C# approach is pretty interesting. In both cases, this syntax can <em>only</em> appear inside of indexing (or slicing) expressions. But I think such a restriction would be fine. In both cases, had the Python code used these alternate syntaxes (returning either <code class="sourceCode cpp">xs<span class="op">[</span><span class="er">$</span><span class="op">-</span>n<span class="op">:]</span></code> or <code class="sourceCode cpp">xs<span class="op">[^</span>n<span class="op">:]</span></code>, as appropriate), then the first three calls would be equivalent while the last call, <code class="sourceCode cpp">last_n_items<span class="op">(</span>range<span class="op">(</span><span class="dv">10</span><span class="op">)</span>, <span class="dv">0</span><span class="op">)</span></code>, would return an empty list – which would be the correct answer.</p>
 <p>I personally like the C# approach:</p>
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">auto</span> last<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[^</span><span class="dv">1</span><span class="op">]</span> <span class="op">{</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>  <span class="cf">return</span> ts<span class="op">...[^</span><span class="dv">1</span><span class="op">]</span>;</span>
-<span id="cb7-4"><a href="#cb7-4"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">auto</span> last<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[^</span><span class="dv">1</span><span class="op">]</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>  <span class="cf">return</span> ts<span class="op">...[^</span><span class="dv">1</span><span class="op">]</span>;</span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Circle implements Python’s approach.</p>
+<h3 data-number="3.1.3" id="reflection"><span class="header-section-number">3.1.3</span> Reflection<a href="#reflection" class="self-link"></a></h3>
+<p>Reflection <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span> does provide the facilities to do pack indexing, it would look something like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">auto</span> first<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>  <span class="kw">constexpr</span> std<span class="op">::</span>vector infos <span class="op">=</span> <span class="op">{^</span>ts<span class="op">...}</span>;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>  <span class="cf">return</span> <span class="op">[:</span> infos<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That is: can take the pack, produce a range of <code class="sourceCode cpp">meta<span class="op">::</span>info</code> from it, and then splice the first one. This works,<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> and it’s great that we will have such a facility. But it’s a bit verbose for what I would consider to be a primitive. If we want to annotate the return type as well:</p>
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="kw">auto</span> first<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="op">[:</span> std<span class="op">::</span>vector<span class="op">{^</span>Ts<span class="op">...}[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span> <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>  <span class="cf">return</span> <span class="op">[:</span> std<span class="op">::</span>vector<span class="op">{^</span>ts<span class="op">...}[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This could be another function in the <code class="sourceCode cpp">std<span class="op">::</span>meta</code> namespace, which would have to take its parameters by <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> (so as to work for both packs of types and packs of values), but that doesn’t actually end up being any shorter, and loses the <code class="sourceCode cpp"><span class="op">[]</span></code> part of the indexing, which I think is quite valuable:</p>
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="op">-&gt;</span> <span class="op">[:</span> std<span class="op">::</span>vector<span class="op">{^</span>Ts<span class="op">...}[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>          <span class="co">// directly</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="op">-&gt;</span> <span class="op">[:</span> std<span class="op">::</span>meta<span class="op">::</span>select<span class="op">(</span><span class="dv">0</span>, <span class="op">{^</span>Ts<span class="op">...})</span> <span class="op">:]</span>  <span class="co">// with a function</span></span></code></pre></div>
+</blockquote>
+<p>I would personally always write the <code class="sourceCode cpp">vector</code> version directly.</p>
 <h2 data-number="3.2" id="slicing"><span class="header-section-number">3.2</span> Slicing<a href="#slicing" class="self-link"></a></h2>
 <p>Sometimes you want one element from a pack, sometimes you want multiple. That’s slicing. There are basically two syntax I’ve seen languages use for slicing:</p>
 <ul>
@@ -727,10 +823,67 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp"><span class="op">[</span>from<span class="op">..</span>to<span class="op">]</span></code></li>
 </ul>
 <p>In both cases, <code class="sourceCode cpp">from</code> can be omitted (implicitly meaning <code class="sourceCode cpp"><span class="dv">0</span></code>) and <code class="sourceCode cpp">to</code> can be omitted (implicitly meaning the end). That is, <code class="sourceCode cpp"><span class="op">[:]</span></code> or <code class="sourceCode cpp"><span class="op">[..]</span></code> would mean to take the entire pack.</p>
-<p>The advantage of the former is that it uses fewer dots. And also that it also can be extended by another argument as <code class="sourceCode cpp">x<span class="op">[</span>from<span class="op">:</span>to<span class="op">:</span>stride<span class="op">]</span></code> (e.g. <code class="sourceCode cpp"><span class="op">[::</span><span class="dv">2</span><span class="op">]</span></code> would be taking every other element, starting from the first).</p>
-<p>The advantage of the latter is that it’s probably more viable to in a for loop (e.g. <code class="sourceCode cpp"><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">:</span> <span class="fl">0.</span><span class="er">.10</span><span class="op">)</span></code>, since having the extra colon would be fairly awkward) and it simply looks more like we’re presenting a range.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> However, the issue with <code class="sourceCode cpp"><span class="fl">0.</span><span class="er">.10</span></code> is this is currently parses as a single <em><code class="sourceCode cpp">pp<span class="op">-</span>number</code></em>, so there might need to be a bit more work to have this functional.</p>
-<p>Regardless of which syntax to choose, the arguments about <a href="#indexing-from-the-back">indexing from the back</a> still apply, as well as the syntax for how to slice a pack. If we’re going to index into a pack via <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> then we should likewise slice a pack via <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">1</span><span class="op">:]</span></code> (or <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code>). And what we end up with, at this point is… still a pack. So it would need to be expanded.</p>
-<p>For instance, one (not-great) way of writing <code class="sourceCode cpp">sum</code> might be (demonstrated using both indexing syntax options):</p>
+<p>The advantage of the former is that it uses fewer dots. And also that it also can be extended by another argument as <code class="sourceCode cpp">x<span class="op">[</span>from<span class="op">:</span>to<span class="op">:</span>stride<span class="op">]</span></code> (e.g. <code class="sourceCode cpp"><span class="op">[::</span><span class="dv">2</span><span class="op">]</span></code> would be taking every other element, starting from the first), although while slicing a pack does come up regularly, striding doesn’t feel like it’s that common.</p>
+<p>The advantage of the latter is that it’s probably more viable to in a for loop (e.g. <code class="sourceCode cpp"><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">:</span> <span class="fl">0.</span><span class="er">.10</span><span class="op">)</span></code>, since having the extra colon would be fairly awkward) and it simply looks more like we’re presenting a range.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<p>However, the issue with <code class="sourceCode cpp"><span class="fl">0.</span><span class="er">.10</span></code> is this is currently parses as a single <em><code class="sourceCode cpp">pp<span class="op">-</span>number</code></em>, so there might need to be a bit more work to have this functional. I think it’s a better syntax overall, so hopefully this doesn’t prove too problematic.</p>
+<p>Regardless of which syntax to choose, the arguments about <a href="#indexing-from-the-back">indexing from the back</a> still apply, as well as the syntax for how to slice a pack.</p>
+<p>If we’re going to index into a pack via <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> then we should slice a pack via <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">1</span><span class="op">:]</span></code> (or <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code>). And what we end up with, at this point is… still a pack. So it would need to be expanded.</p>
+<p>For instance, one (not-great) way of writing <code class="sourceCode cpp">sum</code> might be:</p>
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb17-5"><a href="#cb17-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a>    <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...)</span>;</span>
+<span id="cb17-7"><a href="#cb17-7"></a>  <span class="op">}</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Or the comma-delimited print example I mentioned earlier:</p>
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="dt">void</span> print<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>    <span class="co">// print the first element</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">...[</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb18-6"><a href="#cb18-6"></a></span>
+<span id="cb18-7"><a href="#cb18-7"></a>    <span class="co">// then print every other element with preceding space</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a>    <span class="kw">auto</span> f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> e<span class="op">){</span> fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot; {}&quot;</span>, e<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb18-9"><a href="#cb18-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">])</span>, <span class="op">...)</span>;</span>
+<span id="cb18-10"><a href="#cb18-10"></a>  <span class="op">}</span></span>
+<span id="cb18-11"><a href="#cb18-11"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>That’s a lot of dots in the last case, but it does work pretty well.</p>
+<p>Slicing, while not as important as indexing, still is an operation that regularly comes up, so I think it would be important to support. Whichever syntax we choose for slicing a pack could also be used to slice other objects as well. If I have some <code class="sourceCode cpp">s</code> that is a <code class="sourceCode cpp">span<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, <code class="sourceCode cpp">s<span class="op">[</span><span class="fl">2.</span><span class="er">.4</span><span class="op">]</span></code> could conceivably be made to work (and evaluate basically as <code class="sourceCode cpp">s<span class="op">.</span>subspan<span class="op">(</span><span class="dv">2</span>, <span class="dv">2</span><span class="op">)</span></code>, which we have today).</p>
+<h2 data-number="3.3" id="pack-object"><span class="header-section-number">3.3</span> Pack Object<a href="#pack-object" class="self-link"></a></h2>
+<p>The syntax I’m suggesting for pack indexing is <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code>. The reflection solution looks similar to that, just with a few more characters: <code class="sourceCode cpp"><span class="op">[:</span> std<span class="op">::</span>vector<span class="op">{^</span><em>pack</em><span class="op">...}[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span></code>. But what if we could take what the reflection approach is doing and come up with something that gets there more directly?</p>
+<p>Today, the only way to use a pack is to expand it immediately. But we know we need a way to do other things - iterate, index, slice. All things we can do with an object pretty easily. If we could annotate <code class="sourceCode cpp"><em>pack</em></code> in such a way to make it clear that we’re referring to the pack <em>itself</em>, as an entity, that could be interesting. Like <code class="sourceCode cpp"><em>OBJECT</em><span class="op">(</span><em>pack</em><span class="op">)</span></code> or <code class="sourceCode cpp"><em>pack</em><span class="op">.</span><em>into_object</em><span class="op">()</span></code>. But we need some kind of syntax to be <em>definitely</em> unambiguous and also <em>distinct</em> grammatically, which neither of those really allow for. We would need some sort of token.</p>
+<p>One option that does work is <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>. The <code class="sourceCode cpp"><span class="op">!</span></code> cannot appear after an identifier today. This could be a postfix operator that can only follow the name of a pack, that gives you an object that behaves somewhat similarly to <code class="sourceCode cpp">vector<span class="op">{^</span><em>pack</em><span class="op">...}</span></code>, except instead of a container of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, it behaves more like a container of expressions. Thus, <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> would be the first expression in the pack.</p>
+<p>There are a few other tokens that could be used here as well, but there’s something kind of nice about <code class="sourceCode cpp">elems<span class="op">!</span></code> meaning “no, actually, this <code class="sourceCode cpp">elems</code> thing as a whole!” that I kind of like.</p>
+<p>This also provides an answer for expansion statements: an expansion statement only traverses an object, so if we want to expand a pack we have to first turn it into an object… via <code class="sourceCode cpp"><em>pack</em><span class="op">!</span></code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>  <span class="co">// P1306: error, can&#39;t use a pack here</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> ts<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a></span>
+<span id="cb19-6"><a href="#cb19-6"></a>  <span class="co">// P1306: ok, tuple is fine (though wasteful)</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> std<span class="op">::</span>tuple<span class="op">(</span>ts<span class="op">...))</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a></span>
+<span id="cb19-9"><a href="#cb19-9"></a>  <span class="co">// P1306 with P1240: okay, but requires an extra step</span></span>
+<span id="cb19-10"><a href="#cb19-10"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> i <span class="op">:</span> std<span class="op">::</span>vector<span class="op">{^</span>ts<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb19-11"><a href="#cb19-11"></a>    <span class="kw">auto</span> elem <span class="op">=</span> <span class="op">[:</span>i<span class="op">:]</span>;</span>
+<span id="cb19-12"><a href="#cb19-12"></a>    <span class="op">...</span></span>
+<span id="cb19-13"><a href="#cb19-13"></a>  <span class="op">}</span></span>
+<span id="cb19-14"><a href="#cb19-14"></a></span>
+<span id="cb19-15"><a href="#cb19-15"></a>  <span class="co">// This paper: use a pack object to iterate over the pack</span></span>
+<span id="cb19-16"><a href="#cb19-16"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> ts<span class="op">!)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb19-17"><a href="#cb19-17"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Between <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> and <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>, the former has the benefit of (some kind of) consistency with existing pack facilities, while the latter has the benefit of using fewer dots. There are a lot of dots when dealing with packs and it would be nice to have fewer of them. The downside though is that introducing more tokens pushes us further on the path to Perl, so there’s no free lunch here either.</p>
+<h3 data-number="3.3.1" id="slicing-a-pack-object"><span class="header-section-number">3.3.1</span> Slicing a Pack Object<a href="#slicing-a-pack-object" class="self-link"></a></h3>
+<p>If we go with a pack object, then slicing might look a bit different. If <code class="sourceCode cpp"><em>pack</em><span class="op">!</span></code> is an object, such that <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> is the first element, what would <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> be? Whereas <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> would have to be an unexpanded pack, <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> makes more sense to be… another pack object.</p>
+<p>That pack object would need to be expanded. So in the same way that we need a token to treat a pack as an object, we’d need a token to treat an object as pack. Unpacking a pack object is the same kind of operation as unpacking a <code class="sourceCode cpp">std<span class="op">::</span>tuple</code> - an inline <code class="sourceCode cpp">std<span class="op">::</span>apply</code>. Let’s take <code class="sourceCode cpp"><span class="op">~</span></code> and reconsider the previous examples with slicing:</p>
 <table>
 <thead>
 <tr class="header">
@@ -738,35 +891,57 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <strong>Indexing with <code class="sourceCode cpp"><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code></strong>
 </div></th>
 <th><div style="text-align:center">
-<strong>Indexing with <code class="sourceCode cpp"><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code></strong>
+<strong>Indexing with a pack object</strong>
 </div></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
-<span id="cb8-3"><a href="#cb8-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb8-4"><a href="#cb8-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
-<span id="cb8-5"><a href="#cb8-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb8-6"><a href="#cb8-6"></a>    <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...)</span>;</span>
-<span id="cb8-7"><a href="#cb8-7"></a>  <span class="op">}</span></span>
-<span id="cb8-8"><a href="#cb8-8"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
-<span id="cb9-5"><a href="#cb9-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a>    <span class="cf">return</span> ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...)</span>;</span>
-<span id="cb9-7"><a href="#cb9-7"></a>  <span class="op">}</span></span>
-<span id="cb9-8"><a href="#cb9-8"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb20-5"><a href="#cb20-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a>    <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...)</span>;</span>
+<span id="cb20-7"><a href="#cb20-7"></a>  <span class="op">}</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb21-5"><a href="#cb21-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a>    <span class="cf">return</span> ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...)</span>;</span>
+<span id="cb21-7"><a href="#cb21-7"></a>  <span class="op">}</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+<tr class="even">
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="dt">void</span> print<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>    <span class="co">// print the first element</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">...[</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb22-6"><a href="#cb22-6"></a></span>
+<span id="cb22-7"><a href="#cb22-7"></a>    <span class="co">// then print every other element with preceding space</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>    <span class="kw">auto</span> f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> e<span class="op">){</span> fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot; {}&quot;</span>, e<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb22-9"><a href="#cb22-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">])</span>, <span class="op">...)</span>;</span>
+<span id="cb22-10"><a href="#cb22-10"></a>  <span class="op">}</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="dt">void</span> print<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a>    <span class="co">// print the first element</span></span>
+<span id="cb23-5"><a href="#cb23-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">![</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb23-6"><a href="#cb23-6"></a></span>
+<span id="cb23-7"><a href="#cb23-7"></a>    <span class="co">// then print every other element with preceding space</span></span>
+<span id="cb23-8"><a href="#cb23-8"></a>    <span class="kw">auto</span> f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> e<span class="op">){</span> fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot; {}&quot;</span>, e<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb23-9"><a href="#cb23-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~)</span>, <span class="op">...)</span>;</span>
+<span id="cb23-10"><a href="#cb23-10"></a>  <span class="op">}</span></span>
+<span id="cb23-11"><a href="#cb23-11"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
-<p><code class="sourceCode cpp">ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> (or <code class="sourceCode cpp">ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>) is the first element of the pack. Then, <code class="sourceCode cpp">ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> (or <code class="sourceCode cpp">ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code>) is a slice that starts from the second element and goes to the end - which is still a pack, so it is then expanded into <code class="sourceCode cpp">sum</code>.</p>
-<p>Slicing, while not as important as indexing, still is an operation that regularly comes up, so I think it would be important to support. Whichever syntax we choose for slicing a pack could also be used to slice other objects as well. If I have some <code class="sourceCode cpp">s</code> that is a <code class="sourceCode cpp">span<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, <code class="sourceCode cpp">s<span class="op">[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> could conceivably be made to work (and evaluate basically as <code class="sourceCode cpp">s<span class="op">.</span>subspan<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, which we have today).</p>
 <p>Slicing also presents a good motivation for choosing <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> as the choice for indexing, because if slicing a pack involves ellipsis and then expanding that pack involves another ellipsis <em>and also</em> the slicing involves <code class="sourceCode cpp"><span class="op">..</span></code>, that’s a tremendous amount of <code class="sourceCode cpp"><span class="op">.</span></code>s for a single expression.</p>
-<h2 data-number="3.3" id="summary"><span class="header-section-number">3.3</span> Summary<a href="#summary" class="self-link"></a></h2>
+<h2 data-number="3.4" id="summary"><span class="header-section-number">3.4</span> Summary<a href="#summary" class="self-link"></a></h2>
 <p>The two pack operations suggested here both have similar syntax. Either we expand the pack and index into it:</p>
 <ul>
 <li><code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> gives me the first element</li>
@@ -775,7 +950,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>or we have a special syntax to identify that the pack should be treated as a distinct object and index into that:</p>
 <ul>
 <li><code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> gives me the first element</li>
-<li><code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> gives me every element starting with the second, and is still a pack</li>
+<li><code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]</span></code> gives me every element starting with the second, as a new pack object</li>
+<li><code class="sourceCode cpp"><em>pack</em><span class="op">!~</span></code> is the same pack as <code class="sourceCode cpp"><em>pack</em><span class="op">!</span></code></li>
 </ul>
 <p>I think both syntax options work pretty well, and are consistent with how both packs and indexing work today.</p>
 <p>Importantly, <code class="sourceCode cpp"><em>pack</em></code> in the above should be an identifier that denotes a pack, not an arbitrary expression. Partially this avoids the question of: in <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)...[</span><span class="dv">0</span><span class="op">]</span></code>, how many times is <code class="sourceCode cpp">f</code> invoked? But also because it’s not strictly necessary anyway. If I want to invoke <code class="sourceCode cpp">f</code> on the first element, I could do <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">...[</span><span class="dv">0</span><span class="op">])</span></code>. If I wanted to invoke <code class="sourceCode cpp">f</code> on all the elements starting from the second, I don’t need <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></code>, I can just <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">])...</span></code> It’s the same amount of characters in both cases anyway, so there’s really no reason to have to get complicated here.</p>
@@ -802,33 +978,25 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb10-2"><a href="#cb10-2"></a><em>pack</em><span class="op">...[..]...</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a><em>tuple</em><span class="op">.[..]...</span>;</span>
-<span id="cb11-3"><a href="#cb11-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><em>pack</em><span class="op">...[..]...</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><em>tuple</em><span class="op">.[..]...</span>;</span>
+<span id="cb25-3"><a href="#cb25-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span>;</span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a><em>pack</em><span class="op">...[:]...</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a><em>pack</em><span class="op">...[</span><span class="dv">1</span><span class="op">:]...</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb13-2"><a href="#cb13-2"></a><em>tuple</em><span class="op">.[:]...</span>;</span>
-<span id="cb13-3"><a href="#cb13-3"></a><em>tuple</em><span class="op">.[</span><span class="dv">1</span><span class="op">:]...</span>;</span></code></pre></div></td>
-</tr>
-<tr class="odd">
-<td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a><em>pack</em><span class="op">![..]...</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb15-2"><a href="#cb15-2"></a><em>tuple</em><span class="op">~...</span>;</span>
-<span id="cb15-3"><a href="#cb15-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><em>pack</em><span class="op">![..]~...</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb27-2"><a href="#cb27-2"></a><em>tuple</em><span class="op">~...</span>;</span>
+<span id="cb27-3"><a href="#cb27-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
 <p>A few things to note here. While the slicing syntax for the “whole slice” (whether <code class="sourceCode cpp"><span class="op">[..]</span></code> or <code class="sourceCode cpp"><span class="op">[:]</span></code>) is not especially useful if you’re starting from a pack, it is, on the other hand, the most useful thing when dealing with a tuple. Since, when you’re unpacking a tuple into a function, typically you’ll want to unpack the entire tuple.</p>
-<p>Given a syntax for unpacking a tuple, like <code class="sourceCode cpp"><em>tuple</em><span class="op">.[..]...</span></code>, there doesn’t need to be another syntax on top of that to index into a tuple. Since, once we have a pack, we can index into the pack with <code class="sourceCode cpp"><em>tuple</em><span class="op">.[..]...[</span><span class="dv">0</span><span class="op">]</span></code>. But that feels a bit excessive,<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> so having a shorthand for this case seems justified.</p>
+<p>Given a syntax for unpacking a tuple, like <code class="sourceCode cpp"><em>tuple</em><span class="op">.[..]...</span></code>, there doesn’t need to be another syntax on top of that to index into a tuple. Since, once we have a pack, we can index into the pack with <code class="sourceCode cpp"><em>tuple</em><span class="op">.[..]...[</span><span class="dv">0</span><span class="op">]</span></code>. But that feels a bit excessive,<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> so having a shorthand for this case seems justified.</p>
 <p>Now, if we have a dedicated postfix operator (<code class="sourceCode cpp"><span class="op">!</span></code>) to treat a pack as an object, then it might make sense to have a mirrored postfix operator (<code class="sourceCode cpp"><span class="op">~</span></code>) to treat an object as a pack. The same pros and cons here apply: this reduces the number of dots you have to write (which themselves hinder comprehension), but it increases the amount of punctuation required and brings us closer to Perl (which itself hinders comprehension). But if <code class="sourceCode cpp"><em>tuple</em><span class="op">~</span></code> gives us a pack (which would be quite useful, as the common case of wanting to unpack a tuple is indeed to unpack the <em>entire</em> tuple, so having a short marker for this is quite nice), then how would you index into that resulting pack? Well, that would have to be <code class="sourceCode cpp"><em>tuple</em><span class="op">~![</span><span class="dv">0</span><span class="op">]</span></code> and <code class="sourceCode cpp"><em>tuple</em><span class="op">~![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></code>. But that’s just awkward (we take our tuple, turn it into a pack, then turn it back into an object?), so I think it’s worth still resorting to <code class="sourceCode cpp"><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></code> in this case anyway. But <code class="sourceCode cpp"><em>tuple</em><span class="op">~</span></code> is worth considering nevertheless.</p>
 <p>Here’s a concrete example of the difference between the <code class="sourceCode cpp"><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> and <code class="sourceCode cpp"><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> indexing syntaxes for a tuple implementation that also does unpacking (imagine a <code class="sourceCode cpp">product</code> function taking a pack of integers and returning its product), using the terser <code class="sourceCode cpp"><em>tuple</em><span class="op">~</span></code> form to unpack a tuple:</p>
 <table>
@@ -838,72 +1006,72 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <strong>Indexing with <code class="sourceCode cpp"><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code></strong>
 </div></th>
 <th><div style="text-align:center">
-<strong>Indexing with <code class="sourceCode cpp"><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code></strong>
+<strong>Indexing with a pack object</strong>
 </div></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>  Ts<span class="op">...</span> elems;</span>
-<span id="cb16-4"><a href="#cb16-4"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb16-5"><a href="#cb16-5"></a>  tuple<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">:</span> elems<span class="op">(</span>ts<span class="op">)...</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb16-6"><a href="#cb16-6"></a></span>
-<span id="cb16-7"><a href="#cb16-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
-<span id="cb16-8"><a href="#cb16-8"></a></span>
-<span id="cb16-9"><a href="#cb16-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
-<span id="cb16-10"><a href="#cb16-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb16-11"><a href="#cb16-11"></a>    <span class="cf">return</span> elems<span class="op">...[</span>I<span class="op">]</span>;</span>
-<span id="cb16-12"><a href="#cb16-12"></a>  <span class="op">}</span></span>
-<span id="cb16-13"><a href="#cb16-13"></a><span class="op">}</span>;</span>
-<span id="cb16-14"><a href="#cb16-14"></a></span>
-<span id="cb16-15"><a href="#cb16-15"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb16-16"><a href="#cb16-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
-<span id="cb16-17"><a href="#cb16-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
-<span id="cb16-18"><a href="#cb16-18"></a></span>
-<span id="cb16-19"><a href="#cb16-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[..]...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
-<span id="cb16-20"><a href="#cb16-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
-<span id="cb16-21"><a href="#cb16-21"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
-<span id="cb17-3"><a href="#cb17-3"></a>  Ts<span class="op">...</span> elems;</span>
-<span id="cb17-4"><a href="#cb17-4"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb17-5"><a href="#cb17-5"></a>  tuple<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">:</span> elems<span class="op">(</span>ts<span class="op">)...</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb17-6"><a href="#cb17-6"></a></span>
-<span id="cb17-7"><a href="#cb17-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
-<span id="cb17-8"><a href="#cb17-8"></a></span>
-<span id="cb17-9"><a href="#cb17-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
-<span id="cb17-10"><a href="#cb17-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">![</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb17-11"><a href="#cb17-11"></a>    <span class="cf">return</span> elems<span class="op">![</span>I<span class="op">]</span>;</span>
-<span id="cb17-12"><a href="#cb17-12"></a>  <span class="op">}</span></span>
-<span id="cb17-13"><a href="#cb17-13"></a><span class="op">}</span>;</span>
-<span id="cb17-14"><a href="#cb17-14"></a></span>
-<span id="cb17-15"><a href="#cb17-15"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb17-16"><a href="#cb17-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
-<span id="cb17-17"><a href="#cb17-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
-<span id="cb17-18"><a href="#cb17-18"></a></span>
-<span id="cb17-19"><a href="#cb17-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">~...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
-<span id="cb17-20"><a href="#cb17-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
-<span id="cb17-21"><a href="#cb17-21"></a></span>
-<span id="cb17-22"><a href="#cb17-22"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
+<span id="cb28-3"><a href="#cb28-3"></a>  Ts<span class="op">...</span> elems;</span>
+<span id="cb28-4"><a href="#cb28-4"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>  tuple<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">:</span> elems<span class="op">(</span>ts<span class="op">)...</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb28-6"><a href="#cb28-6"></a></span>
+<span id="cb28-7"><a href="#cb28-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
+<span id="cb28-8"><a href="#cb28-8"></a></span>
+<span id="cb28-9"><a href="#cb28-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
+<span id="cb28-10"><a href="#cb28-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb28-11"><a href="#cb28-11"></a>    <span class="cf">return</span> elems<span class="op">...[</span>I<span class="op">]</span>;</span>
+<span id="cb28-12"><a href="#cb28-12"></a>  <span class="op">}</span></span>
+<span id="cb28-13"><a href="#cb28-13"></a><span class="op">}</span>;</span>
+<span id="cb28-14"><a href="#cb28-14"></a></span>
+<span id="cb28-15"><a href="#cb28-15"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-16"><a href="#cb28-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb28-17"><a href="#cb28-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
+<span id="cb28-18"><a href="#cb28-18"></a></span>
+<span id="cb28-19"><a href="#cb28-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[..]...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
+<span id="cb28-20"><a href="#cb28-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
+<span id="cb28-21"><a href="#cb28-21"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a>  Ts<span class="op">...</span> elems;</span>
+<span id="cb29-4"><a href="#cb29-4"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb29-5"><a href="#cb29-5"></a>  tuple<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">:</span> elems<span class="op">(</span>ts<span class="op">)...</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb29-6"><a href="#cb29-6"></a></span>
+<span id="cb29-7"><a href="#cb29-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
+<span id="cb29-8"><a href="#cb29-8"></a></span>
+<span id="cb29-9"><a href="#cb29-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
+<span id="cb29-10"><a href="#cb29-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">![</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a>    <span class="cf">return</span> elems<span class="op">![</span>I<span class="op">]</span>;</span>
+<span id="cb29-12"><a href="#cb29-12"></a>  <span class="op">}</span></span>
+<span id="cb29-13"><a href="#cb29-13"></a><span class="op">}</span>;</span>
+<span id="cb29-14"><a href="#cb29-14"></a></span>
+<span id="cb29-15"><a href="#cb29-15"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb29-16"><a href="#cb29-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb29-17"><a href="#cb29-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
+<span id="cb29-18"><a href="#cb29-18"></a></span>
+<span id="cb29-19"><a href="#cb29-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">~...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
+<span id="cb29-20"><a href="#cb29-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]~...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
+<span id="cb29-21"><a href="#cb29-21"></a></span>
+<span id="cb29-22"><a href="#cb29-22"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
 <h2 data-number="4.2" id="unified-operations"><span class="header-section-number">4.2</span> Unified Operations<a href="#unified-operations" class="self-link"></a></h2>
 <p>Treating a tuple as a pack is closely tied in with slicing a pack, so considering these operations together makes a lot of sense. I don’t think they are meaningfully separable, as they have to inform each other.</p>
-<p>And part of the value of having a dedicated syntax for pack/tuple indexing, pack slicing, and tuple unpacking, is precisely that these syntaxes can mirror each other… and the indexing operations for packs and tuples share a syntax with the indexing operations for other kinds. The slice syntax could be used in other contexts (perhaps <code class="sourceCode cpp"><span class="fl">1.</span><span class="er">.3</span></code> can be an expression of value <code class="sourceCode cpp">std<span class="op">::</span>slice<span class="op">(</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">1</span><span class="op">)</span></code>?<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>).</p>
+<p>And part of the value of having a dedicated syntax for pack/tuple indexing, pack slicing, and tuple unpacking, is precisely that these syntaxes can mirror each other… and the indexing operations for packs and tuples share a syntax with the indexing operations for other kinds. The slice syntax could be used in other contexts (perhaps <code class="sourceCode cpp"><span class="fl">1.</span><span class="er">.3</span></code> can be an expression of value <code class="sourceCode cpp">std<span class="op">::</span>slice<span class="op">(</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">1</span><span class="op">)</span></code>?<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a>).</p>
 <p>One of the push-backs against these facilities is that a hypothetical reflection facility could address these use-cases. And that’s probably true, we could add different functions for each of these cases. But then we’d end up with differently named functions - losing the symmetry. I think that would be unfortunate.</p>
 <h2 data-number="4.3" id="nested-packs"><span class="header-section-number">4.3</span> Nested Packs<a href="#nested-packs" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span> had a whole section on <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1858r2.html#nested-pack-expansions">nested pack expansions</a>. The model that paper suggested was that the <code class="sourceCode cpp"><span class="op">.[:]</span></code> operator, when applied to a tuple, would add a layer of packness. In the normal case, we go from “not a pack” to “a pack,” but if we have a pack of tuples, we could then go to a pack of packs. The paper contained this example:</p>
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> e<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a>    bar<span class="op">(</span>e<span class="op">.[:]...</span> <span class="op">...)</span>;</span>
-<span id="cb18-4"><a href="#cb18-4"></a><span class="op">}</span></span>
-<span id="cb18-5"><a href="#cb18-5"></a></span>
-<span id="cb18-6"><a href="#cb18-6"></a><span class="co">// what does this do?</span></span>
-<span id="cb18-7"><a href="#cb18-7"></a>foo<span class="op">(</span>xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">2</span>, <span class="dv">3</span><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> e<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-3"><a href="#cb30-3"></a>    bar<span class="op">(</span>e<span class="op">.[:]...</span> <span class="op">...)</span>;</span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="op">}</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a></span>
+<span id="cb30-6"><a href="#cb30-6"></a><span class="co">// what does this do?</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a>foo<span class="op">(</span>xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">2</span>, <span class="dv">3</span><span class="op">})</span>;</span></code></pre></div>
 </blockquote>
 <p>And suggested that this calls <code class="sourceCode cpp">bar<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">)</span></code>.</p>
 <p>That’s… cool. But it adds an unbelievable level of complexity that I don’t think is really worth it, and surely necessitates a better syntax. Like having proper list comprehensions? So I don’t think the above example should be valid, just for the forseeable future.</p>
@@ -965,7 +1133,7 @@ not possible
 <code class="sourceCode cpp">foo<span class="op">(</span>e<span class="op">.</span>f<span class="op">)</span>;</code>
 </td>
 </table>
-<p>If we use <code class="sourceCode cpp"><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> for pack indexing and <code class="sourceCode cpp"><span class="op">~</span></code> for tuple unpacking:</p>
+<p>If we use a pack object for pack indexing and <code class="sourceCode cpp"><span class="op">~</span></code> for tuple unpacking:</p>
 <table>
 <tr>
 <th></th>
@@ -1070,7 +1238,7 @@ Pack Slicing
 <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></code>
 </td>
 <td>
-<code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></code>
+<code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span></code>
 </td>
 </tr>
 <tr>
@@ -1092,7 +1260,7 @@ Tuple Unpacking
 <code class="sourceCode cpp"><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></code>
 </td>
 <td>
-<code class="sourceCode cpp"><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></code>
+<code class="sourceCode cpp"><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span></code>
 </td>
 </tr>
 <tr>
@@ -1106,18 +1274,13 @@ Full Tuple Unpacking
 <code class="sourceCode cpp"><em>tuple</em><span class="op">~...</span></code>
 </td>
 </tr>
-<tr>
-<th>
-Dependent Member Pack
-</th>
-<td>
-<code class="sourceCode cpp">obj<span class="op">.</span> <span class="op">...</span>elems</code>
-</td>
-<td>
-<code class="sourceCode cpp">obj<span class="op">.</span>pack<span class="op">!(</span>elems<span class="op">)</span></code>
-</td>
-</tr>
 </table>
+<p>And then two good choices for disambiguation for dependent nested packs:</p>
+<ul>
+<li><code class="sourceCode cpp">obj<span class="op">.</span> <span class="op">...</span>elems</code>, or</li>
+<li><code class="sourceCode cpp">obj<span class="op">.</span>pack elems</code>.</li>
+</ul>
+<p>And lastly I think the question of packs outside of templates could be best solved by requiring a preceding pack declaration in scope - where <code class="sourceCode cpp"><span class="kw">using</span> <span class="op">...</span>;</code> could be a no-op pack declaration that counts for that rule.</p>
 <p>This proposal deals exclusively with syntax. The semantics of what some of these options mean (in particular, how does tuple indexing evaluate) was discussed in <span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span>.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
@@ -1128,6 +1291,10 @@ Dependent Member Pack
 <div id="ref-P0780R2">
 <p>[P0780R2] Barry Revzin. 2018-03-14. Allow pack expansion in lambda init-capture. <br />
 <a href="https://wg21.link/p0780r2">https://wg21.link/p0780r2</a></p>
+</div>
+<div id="ref-P1061R2">
+<p>[P1061R2] Barry Revzin, Jonathan Wakely. 2022-04-22. Structured Bindings can introduce a Pack. <br />
+<a href="https://wg21.link/p1061r2">https://wg21.link/p1061r2</a></p>
 </div>
 <div id="ref-P1240R2">
 <p>[P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali. 2022-01-14. Scalable Reflection. <br />
@@ -1141,15 +1308,21 @@ Dependent Member Pack
 <p>[P1858R2] Barry Revzin. 2020-03-01. Generalized pack declaration and usage. <br />
 <a href="https://wg21.link/p1858r2">https://wg21.link/p1858r2</a></p>
 </div>
+<div id="ref-P2277R0">
+<p>[P2277R0] Barry Revzin. 2021-01-03. Packs outside of Templates. <br />
+<a href="https://wg21.link/p2277r0">https://wg21.link/p2277r0</a></p>
+</div>
 </div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>There, the facility was trying to support iterating over both packs and tuples, but it can be ambiguous in some contexts. If the direction were to iterate over <code class="sourceCode cpp">tuple</code> as a tuple and <code class="sourceCode cpp"><span class="op">{</span>pack<span class="op">...}</span></code> as a pack, we could get both pieces of functionality with any ambiguity and without having to construct a tuple out of the pack.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>Spoiler alert, having a dedicated language feature doesn’t just look much better, it also compiles tremendously faster.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3" role="doc-endnote"><p>D’s slice overloading is <a href="https://dlang.org/spec/operatoroverloading.html#slice">fairly involved</a>, and also supports adding multiple groups. Like <code class="sourceCode cpp">x<span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="fl">8.</span><span class="er">.20</span><span class="op">]</span></code>. On the one hand, this is interesting, but on the other hand with the adoption of multi-dimensional subscript operators, we’re establishing a meaning for <code class="sourceCode cpp">x<span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">]</span></code> in C++ that is at odds with interpreting this as a slice of the 2nd and 3rd elements.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4" role="doc-endnote"><p>Six dots to pull one element of a tuple? That’s more than a little excessive.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn5" role="doc-endnote"><p>Yeah, <code class="sourceCode cpp">std<span class="op">::</span>slice</code> exists.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>But they <em>do</em> use more braces, so we can advertise it as uniform pack expansion.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>Spoiler alert, having a dedicated language feature doesn’t just look much better, it also compiles tremendously faster.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>This implementation requires non-transient constexpr allocation, which currently doesn’t work, but can be rewritten to avoid it. And besides, the whole reflection part doesn’t currently work either.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5" role="doc-endnote"><p>D’s slice overloading is <a href="https://dlang.org/spec/operatoroverloading.html#slice">fairly involved</a>, and also supports adding multiple groups. Like <code class="sourceCode cpp">x<span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="fl">8.</span><span class="er">.20</span><span class="op">]</span></code>. On the one hand, this is interesting, but on the other hand with the adoption of multi-dimensional subscript operators, we’re establishing a meaning for <code class="sourceCode cpp">x<span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">]</span></code> in C++ that is at odds with interpreting this as a slice of the 2nd and 3rd elements.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6" role="doc-endnote"><p>Six dots to pull one element of a tuple? That’s more than a little excessive.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7" role="doc-endnote"><p>Yeah, <code class="sourceCode cpp">std<span class="op">::</span>slice</code> exists.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 </div>
