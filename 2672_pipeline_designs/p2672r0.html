@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-10-11" />
+  <meta name="dcterms.date" content="2022-10-13" />
   <title>Exploring the Design Space for a Pipeline Operator</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-10-11</td>
+    <td>2022-10-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -594,7 +594,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#partial-application"><span class="toc-section-number">4.1</span> Partial Application<span></span></a></li>
 </ul></li>
 <li><a href="#choice-of-placeholder"><span class="toc-section-number">5</span> Choice of Placeholder<span></span></a></li>
-<li><a href="#disposition"><span class="toc-section-number">6</span> Disposition<span></span></a></li>
+<li><a href="#disposition"><span class="toc-section-number">6</span> Disposition<span></span></a>
+<ul>
+<li><a href="#is-this-worth-it"><span class="toc-section-number">6.1</span> Is This Worth It?<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
@@ -1720,6 +1723,23 @@ Brand new (potential) token, no clashing
 <li>the <a href="#choice-of-placeholder">choice of placeholder</a> should be <code><span class="op">$</span></code>: it’s new, doesn’t clash with anything, is only a single character, stands out with clear meaning, and has prior art in this space.</li>
 </ul>
 <p>We should explore <a href="#placeholder-lambdas">placeholder lambdas</a> as an option for terser lambdas. There doesn’t seem to be a real direction for having terser lambdas, so this may be it.</p>
+<h2 data-number="6.1" id="is-this-worth-it"><span class="header-section-number">6.1</span> Is This Worth It?<a href="#is-this-worth-it" class="self-link"></a></h2>
+<p>This paper, like the <code class="sourceCode cpp"><span class="op">|&gt;</span></code> paper before it, focused on Ranges for its examples. The goal was to take code like this (which today relies on involved library machinery, which has costs in compile time and poor diagnostics):</p>
+<blockquote>
+<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1"></a>r <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>filter<span class="op">(</span>g<span class="op">)</span></span></code></pre></div>
+</blockquote>
+<p>and replace it with a version that doesn’t require any library machinery, will compile faster, and will be able to provide better diagnostics (since adapters could be written to <em>just</em> be binary functions, rather than have to deal with partial application):</p>
+<blockquote>
+<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1"></a>r <span class="op">|&gt;</span> views<span class="op">::</span>transform<span class="op">(</span><span class="er">$</span>, f<span class="op">)</span> <span class="op">|&gt;</span> views<span class="op">::</span>filter<span class="op">(</span><span class="er">$</span>, g<span class="op">)</span></span></code></pre></div>
+</blockquote>
+<p>Ranges isn’t the only motivation of course, such a general expression-rewrite facility would be broadly useful.</p>
+<p>But this isn’t the only way to solve this problem. Other languages approach this differently. In Rust (or Swift), we would define a trait (or protocol) named <code class="sourceCode cpp">viewable_range</code>, which would have, as associated functions, all of the adaptors. The benefit of doing so would once a type is a <code class="sourceCode cpp">viewable_range</code>, that this would work:</p>
+<blockquote>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1"></a>r<span class="op">.</span>transform<span class="op">(</span>f<span class="op">).</span>filter<span class="op">(</span>g<span class="op">)</span></span></code></pre></div>
+</blockquote>
+<p>At multiple points in this paper, I’ve commented about a few characters extra here and there between the different designs. But the above is only 24 characters, while the actual Ranges code is 42 (and would be 52 if I wrote the namespaces as <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span></code> instead). With a facility like Rust traits (or Swift protocols), getting the above to work would also take no machinery and have all of the other benefits I’m describing here.</p>
+<p>Now, a pipeline operator with placeholders is more <em>flexible</em> - it allows all sorts of interesting possibilities, particularly when it comes to piping into somewhere other than the first parameter, or simply being used to express evaluation order in a way that is clearer than uses parentheses. But the question is: if we had traits, would I have even written this paper? After all, there’s a difference between being annoyed at the entirety of Ranges and… being annoyed at, specifically, <code class="sourceCode cpp">zip_transform</code>.</p>
+<p>I think that thought is a good one with which to end this paper.</p>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-boost.hof.unnamed">

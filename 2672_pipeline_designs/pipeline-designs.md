@@ -944,6 +944,40 @@ My current view is that the best choice of design is:
 
 We should explore [placeholder lambdas](#placeholder-lambdas) as an option for terser lambdas. There doesn't seem to be a real direction for having terser lambdas, so this may be it.
 
+## Is This Worth It?
+
+This paper, like the `|>` paper before it, focused on Ranges for its examples. The goal was to take code like this (which today relies on involved library machinery, which has costs in compile time and poor diagnostics):
+
+::: bq
+```cpp
+r | views::transform(f) | views::filter(g)
+```
+:::
+
+and replace it with a version that doesn't require any library machinery, will compile faster, and will be able to provide better diagnostics (since adapters could be written to _just_ be binary functions, rather than have to deal with partial application):
+
+::: bq
+```cpp
+r |> views::transform($, f) |> views::filter($, g)
+```
+:::
+
+Ranges isn't the only motivation of course, such a general expression-rewrite facility would be broadly useful.
+
+But this isn't the only way to solve this problem. Other languages approach this differently. In Rust (or Swift), we would define a trait (or protocol) named `viewable_range`, which would have, as associated functions, all of the adaptors. The benefit of doing so would once a type is a `viewable_range`, that this would work:
+
+::: bq
+```cpp
+r.transform(f).filter(g)
+```
+:::
+
+At multiple points in this paper, I've commented about a few characters extra here and there between the different designs. But the above is only 24 characters, while the actual Ranges code is 42 (and would be 52 if I wrote the namespaces as `std::views::` instead). With a facility like Rust traits (or Swift protocols), getting the above to work would also take no machinery and have all of the other benefits I'm describing here.
+
+Now, a pipeline operator with placeholders is more _flexible_ - it allows all sorts of interesting possibilities, particularly when it comes to piping into somewhere other than the first parameter, or simply being used to express evaluation order in a way that is clearer than uses parentheses. But the question is: if we had traits, would I have even written this paper? After all, there's a difference between being annoyed at the entirety of Ranges and... being annoyed at, specifically, `zip_transform`.
+
+I think that thought is a good one with which to end this paper.
+
 ---
 references:
     - id: pipeline-minutes
