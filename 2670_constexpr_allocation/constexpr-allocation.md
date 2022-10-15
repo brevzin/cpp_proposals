@@ -109,7 +109,7 @@ That is perfectly valid code today - it's the value of the pointer that is a con
 
 ## Mutable Reads During Constant Destruction
 
-The problem is specifically when a _mutable_ variable is _read_ during _constant destruction_.
+The problem is specifically when a _mutable_ object is _read_ during _constant destruction_.
 
 In the previous section, `pi.ptr` (an `int* const`) is read during constant destruction, but it is not mutable . `*(pi.ptr)` is mutable (an `int`), but wasn't read.
 
@@ -117,7 +117,7 @@ In the original example, `ppi.ptr` (a `unique_ptr<int>* const`) is read during c
 
 While `constexpr unique_ptr<unique_ptr<T>>` might not seem like a particularly interesting example, consider instead the case of `constexpr vector<vector<T>>` (or, generally speaking, any kind of nested containers - like a `vector<string>`). Both `unique_ptr<T>` and `vector<T>` have a `T*` member, so they're structurally similar - it's just that `unique_ptr<T>` has a shallow const API while `vector<T>` has a deep const API.
 
-But this is purely a convention. How can the compiler distinguish between the two? How can we disallow the bad `T*` case (`unique_ptr<unique_ptr<T>>`) while allowing the good `T*` case (`vector<vector<T>>` or `vector<string>`)?
+But this is purely a convention. How can the compiler distinguish between the two? How can we disallow the bad `T*` case (`unique_ptr<unique_ptr<T>>` or `unique_ptr<string>` or `unique_ptr<vector<T>>`) while allowing the good `T*` case (`vector<vector<T>>` or `vector<string>`)?
 
 # Proposed Solutions
 
@@ -142,7 +142,7 @@ constexpr std::vector<std::string>> vs = {"this", "should", "work"};   // ok
 
 ## `std::mark_immutable_if_constexpr`
 
-The initial design in [@P0784R7], before it was removed, was a new function `std::mark_immutable_if_constexpr(p)` that would mark an allocation as being immutable. That is, rather then rejecting any variable that is mutable and read during constant destruction, the new rule would be any variable read during constant destruction must be either:
+The initial design in [@P0784R7], before it was removed, was a new function `std::mark_immutable_if_constexpr(p)` that would mark an allocation as being immutable. That is, rather than rejecting any object that is mutable and read during constant destruction, the new rule would be any object read during constant destruction must be either:
 
 * constant, or
 * marked as immutable
@@ -153,7 +153,7 @@ That way:
 
 ::: bq
 ```cpp
-// ok: this is fine (no mutable variable is read during constant destruction)
+// ok: this is fine (no mutable object is read during constant destruction)
 constexpr std::unique_ptr<int> a(new int(1));
 
 // error: allocation isn't marked immutable, but is read as mutable during constant destruction
@@ -180,7 +180,7 @@ In this way, `std::mark_immutable_as_constexpr(p)` is basically saying: I promis
 
 ::: bq
 ```cpp
-// ok: this is fine (no mutable variable is read during constant destruction)
+// ok: this is fine (no mutable object is read during constant destruction)
 constexpr std::unique_ptr<int> a(new int(1));
 
 // error: b's pointer member has mutable access to a std::unique_ptr<int>
@@ -333,9 +333,9 @@ struct vector propconst { ... };
 ```
 :::
 
-This could potentially be made to have the same effect as the `propconst` member annotations without having to have such a large effect on the type system. On the one hand, this means that we can't have a type like `unique_ptr<int propconst>` or `observer_ptr<int propconst>`. On the other hand, it means that we don't have to add further language complexity to make such things work (see sections 7 and 8 from [@P1974R0]). Perhaps this is a reasonable compromise?
+It is possible that this could be made to have the same effect as the `propconst` member annotations without having to have such a large effect on the type system. On the one hand, this means that we can't have a type like `unique_ptr<int propconst>` or `observer_ptr<int propconst>`. On the other hand, it means that we don't have to add further language complexity to make such things work (see sections 7 and 8 from [@P1974R0]). Perhaps this is a reasonable compromise?
 
-An entirely different approach would be to eschew annotations altogether. That is - just allow all of these examples to compile, and make clear that it's undefined behavior to mutate persistent constexpr allocations (the allocation itself, not what's written in it). If the downside of `std::mark_immutable_if_constexpr)p)` is that users just eagerly add it to all allocations, even if they shouldn't, then why even bother having such a thing? It's hard to say how often such a facility would be misused - and at least it's not overly difficult to provide good guidance for exactly when one should use it: on types that own allocations such that a constant object only provides constant access through that allocation. Perhaps a longer name like `std::allocation_is_deep_constant(p)` might convey this better, or `std::i_solemnly_swear_that_i_am_up_to_no_mutation(p)`.
+An entirely different approach would be to eschew annotations altogether. That is - just allow all of these examples to compile, and make clear that it's undefined behavior to mutate persistent constexpr allocations (the allocation itself, not what's written in it) if they're read by the elided destructor. One downside of `std::mark_immutable_if_constexpr(p)` is that users might just eagerly add it to all allocations, even if they shouldn't - and if such a thing happens, then why even bother adding such a function? It's hard to say how often such a facility would be misused - and at least it's not overly difficult to provide good guidance for exactly when one should use it: on types that own allocations such that a constant object only provides constant access through that allocation. Perhaps a longer name like `std::allocation_is_deep_constant(p)` might convey this better, or `std::i_solemnly_swear_that_i_am_up_to_no_mutation(p)`. But also, having a facility such as `std::mark_immutable_if_constexpr(p)` gives users of correctly-written libraries (like `std` and `boost`) protection against accidentally writing `constexpr unique_ptr<string>` or `constexpr unique_ptr<vector<T>>`.
 
 I'm not sure that either of these alternatives are better than the two we already have on the table.
 
@@ -343,6 +343,8 @@ I'm not sure that either of these alternatives are better than the two we alread
 
 Between `T propconst*` and `std::mark_immutable_if_constexpr(p)`, the former provides a sound solution to the problem with neither false positives nor false negatives. The latter is unsafe and, like Rust's `unsafe`, needs to be carefully reviewed, and can easily provide false negatives (accepted code that really should've been rejected). But, like Rust's `unsafe`, it should only appear in a very small number of places anyway, and making sure those uses are correct doesn't seem like an outrageous burden. After all, of all the types that own an allocation - there are probably way more containers (deep const) than smart pointers (shallow const) [^ratio], so a random use is more likely to be correct than not.
 
+[^ratio]: This might suggest that we should mark shallow const allocations as shallow const, rather than marking deep const allocations as deep const. The problem is that this requires users to take active action to reject bad code, rather than active action to allow good code -- which makes it more likely that the bad code will persist. On the other hand, how many smart pointers are there really?
+
 Given the clear need for persistent constexpr allocation, we need to solve this problem one way or another. I think the right way to do that is `std::mark_immutable_if_constexpr(p)`, except probably renamed in such a way as to clarify the proper intent of its use.
 
-[^ratio]: This might suggest that actually we should mark shallow const allocations as shallow const, rather than marking deep const allocations as deep const. The problem is that this requires users to take active action to reject bad code, rather than active action to allow good code -- which makes it more likely that the bad code will persist. On the other hand, how many smart pointers are there really?
+Lastly, adopting `std::mark_immutable_if_constexpr(p)` would not preclude against adding `propconst` later on if we get better implementation experience with it.
