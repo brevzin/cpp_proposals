@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-10-13" />
+  <meta name="dcterms.date" content="2022-10-15" />
   <title>Syntax Choices for Generalized Pack Declaration and Usage</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-10-13</td>
+    <td>2022-10-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -785,14 +785,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-7"><a href="#cb1-7"></a>last_n_items(<span class="bu">range</span>(<span class="dv">10</span>), <span class="dv">0</span>) <span class="co"># [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span></span></code></pre></div>
 </blockquote>
 <p>Not to mention that if you do some math to determine an index, it’d be nice if overflowing past zero would be treated as an error rather than some wildly different meaning.</p>
-<p>The D and C# approaches don’t have this issue. But <code><span class="op">$</span></code> seems like a waste of that token, which can be put to more interesting uses (although it has prior art in regex as well, also meaning the end). The C# approach is pretty interesting. In both cases, this syntax can <em>only</em> appear inside of indexing (or slicing) expressions. But I think such a restriction would be fine. In both cases, had the Python code used these alternate syntaxes (returning either <code class="sourceCode cpp">xs<span class="op">[</span><span class="er">$</span><span class="op">-</span>n<span class="op">:]</span></code> or <code class="sourceCode cpp">xs<span class="op">[^</span>n<span class="op">:]</span></code>, as appropriate), then the first three calls would be equivalent while the last call, <code class="sourceCode cpp">last_n_items<span class="op">(</span>range<span class="op">(</span><span class="dv">10</span><span class="op">)</span>, <span class="dv">0</span><span class="op">)</span></code>, would return an empty list – which would be the correct answer.</p>
-<p>I personally like the C# approach:</p>
+<p>The D and C# approaches don’t have this issue. But <code><span class="op">$</span></code> seems like a waste of that token, which can be put to more interesting uses (although it has prior art in regex as well, also meaning the end). The C# approach clashes with reflection using <code class="sourceCode cpp"><span class="op">^</span></code> as the reflection operator (and, even if it didn’t, seems like a waste of that token too). In both cases, this syntax can <em>only</em> appear inside of indexing (or slicing) expressions. But I think such a restriction would be fine. In both cases, had the Python code used these alternate syntaxes (returning either <code class="sourceCode cpp">xs<span class="op">[</span><span class="er">$</span><span class="op">-</span>n<span class="op">:]</span></code> or <code class="sourceCode cpp">xs<span class="op">[^</span>n<span class="op">:]</span></code>, as appropriate), then the first three calls would be equivalent while the last call, <code class="sourceCode cpp">last_n_items<span class="op">(</span>range<span class="op">(</span><span class="dv">10</span><span class="op">)</span>, <span class="dv">0</span><span class="op">)</span></code>, would return an empty list – which would be the correct answer.</p>
+<p>A more C++ approach would be to introduce a new type that means from the end:</p>
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">auto</span> last<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[^</span><span class="dv">1</span><span class="op">]</span> <span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>  <span class="cf">return</span> ts<span class="op">...[^</span><span class="dv">1</span><span class="op">]</span>;</span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">auto</span> last<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span>std<span class="op">::</span>from_end<span class="op">{</span><span class="dv">1</span><span class="op">}]</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>  <span class="cf">return</span> ts<span class="op">...[</span>std<span class="op">::</span>from_end<span class="op">{</span><span class="dv">1</span><span class="op">}]</span>;</span>
 <span id="cb13-4"><a href="#cb13-4"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+<p>This doesn’t have either the issue with negative indexing or the issue with requiring a dedicated token.</p>
 <p>Circle implements Python’s approach.</p>
 <h3 data-number="3.1.3" id="reflection"><span class="header-section-number">3.1.3</span> Reflection<a href="#reflection" class="self-link"></a></h3>
 <p>Reflection <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span> does provide the facilities to do pack indexing, it would look something like this:</p>
@@ -858,27 +859,36 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 data-number="3.3" id="pack-object"><span class="header-section-number">3.3</span> Pack Object<a href="#pack-object" class="self-link"></a></h2>
 <p>The syntax I’m suggesting for pack indexing is <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code>. The reflection solution looks similar to that, just with a few more characters: <code class="sourceCode cpp"><span class="op">[:</span> std<span class="op">::</span>vector<span class="op">{^</span><em>pack</em><span class="op">...}[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span></code>. But what if we could take what the reflection approach is doing and come up with something that gets there more directly?</p>
 <p>Today, the only way to use a pack is to expand it immediately. But we know we need a way to do other things - iterate, index, slice. All things we can do with an object pretty easily. If we could annotate <code class="sourceCode cpp"><em>pack</em></code> in such a way to make it clear that we’re referring to the pack <em>itself</em>, as an entity, that could be interesting. Like <code class="sourceCode cpp"><em>OBJECT</em><span class="op">(</span><em>pack</em><span class="op">)</span></code> or <code class="sourceCode cpp"><em>pack</em><span class="op">.</span><em>into_object</em><span class="op">()</span></code>. But we need some kind of syntax to be <em>definitely</em> unambiguous and also <em>distinct</em> grammatically, which neither of those really allow for. We would need some sort of token.</p>
-<p>One option that does work is <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>. The <code class="sourceCode cpp"><span class="op">!</span></code> cannot appear after an identifier today. This could be a postfix operator that can only follow the name of a pack, that gives you an object that behaves somewhat similarly to <code class="sourceCode cpp">vector<span class="op">{^</span><em>pack</em><span class="op">...}</span></code>, except instead of a container of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, it behaves more like a container of expressions. Thus, <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> would be the first expression in the pack.</p>
-<p>There are a few other tokens that could be used here as well, but there’s something kind of nice about <code class="sourceCode cpp">elems<span class="op">!</span></code> meaning “no, actually, this <code class="sourceCode cpp">elems</code> thing as a whole!” that I kind of like.</p>
+<p>One option that does work is <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>. The <code class="sourceCode cpp"><span class="op">!</span></code> cannot appear after an identifier today. This could be a postfix operator that can only follow the name of a pack, that gives you an object that behaves somewhat similarly to <code class="sourceCode cpp">vector<span class="op">{^</span><em>pack</em><span class="op">...}</span></code>, except instead of a container of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, it behaves more like a container of expressions. There are a few other tokens that could be used here as well, but there’s something kind of nice about <code class="sourceCode cpp">elems<span class="op">!</span></code> meaning “no, actually, this <code class="sourceCode cpp">elems</code> thing as a whole!” that I kind of like.</p>
+<p>That is, it could give you an object that looks like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> V<span class="op">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="kw">struct</span> <em>PackObject</em> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span>std<span class="op">::</span><span class="dt">ptrdiff_t</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>    <span class="cf">return</span> <span class="op">[:</span> V<span class="op">[</span>idx<span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb19-5"><a href="#cb19-5"></a>  <span class="op">}</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>With that, <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code> would be the first expression in the pack.</p>
 <p>This also provides an answer for expansion statements: an expansion statement only traverses an object, so if we want to expand a pack we have to first turn it into an object… via <code class="sourceCode cpp"><em>pack</em><span class="op">!</span></code>:</p>
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-3"><a href="#cb19-3"></a>  <span class="co">// P1306: error, can&#39;t use a pack here</span></span>
-<span id="cb19-4"><a href="#cb19-4"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> ts<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a></span>
-<span id="cb19-6"><a href="#cb19-6"></a>  <span class="co">// P1306: ok, tuple is fine (though wasteful)</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> std<span class="op">::</span>tuple<span class="op">(</span>ts<span class="op">...))</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a></span>
-<span id="cb19-9"><a href="#cb19-9"></a>  <span class="co">// P1306 with P1240: okay, but requires an extra step</span></span>
-<span id="cb19-10"><a href="#cb19-10"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> i <span class="op">:</span> std<span class="op">::</span>vector<span class="op">{^</span>ts<span class="op">...})</span> <span class="op">{</span></span>
-<span id="cb19-11"><a href="#cb19-11"></a>    <span class="kw">auto</span> elem <span class="op">=</span> <span class="op">[:</span>i<span class="op">:]</span>;</span>
-<span id="cb19-12"><a href="#cb19-12"></a>    <span class="op">...</span></span>
-<span id="cb19-13"><a href="#cb19-13"></a>  <span class="op">}</span></span>
-<span id="cb19-14"><a href="#cb19-14"></a></span>
-<span id="cb19-15"><a href="#cb19-15"></a>  <span class="co">// This paper: use a pack object to iterate over the pack</span></span>
-<span id="cb19-16"><a href="#cb19-16"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> ts<span class="op">!)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb19-17"><a href="#cb19-17"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>  <span class="co">// P1306: error, can&#39;t use a pack here</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> ts<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a></span>
+<span id="cb20-6"><a href="#cb20-6"></a>  <span class="co">// P1306: ok, tuple is fine (though wasteful)</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> std<span class="op">::</span>tuple<span class="op">(</span>ts<span class="op">...))</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a></span>
+<span id="cb20-9"><a href="#cb20-9"></a>  <span class="co">// P1306 with P1240: okay, but requires an extra step</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> i <span class="op">:</span> std<span class="op">::</span>vector<span class="op">{^</span>ts<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb20-11"><a href="#cb20-11"></a>    <span class="kw">auto</span> elem <span class="op">=</span> <span class="op">[:</span>i<span class="op">:]</span>;</span>
+<span id="cb20-12"><a href="#cb20-12"></a>    <span class="op">...</span></span>
+<span id="cb20-13"><a href="#cb20-13"></a>  <span class="op">}</span></span>
+<span id="cb20-14"><a href="#cb20-14"></a></span>
+<span id="cb20-15"><a href="#cb20-15"></a>  <span class="co">// This paper: use a pack object to iterate over the pack</span></span>
+<span id="cb20-16"><a href="#cb20-16"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> ts<span class="op">!)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb20-17"><a href="#cb20-17"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Between <code class="sourceCode cpp"><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code> and <code class="sourceCode cpp"><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></code>, the former has the benefit of (some kind of) consistency with existing pack facilities, while the latter has the benefit of using fewer dots. There are a lot of dots when dealing with packs and it would be nice to have fewer of them. The downside though is that introducing more tokens pushes us further on the path to Perl, so there’s no free lunch here either.</p>
 <h3 data-number="3.3.1" id="slicing-a-pack-object"><span class="header-section-number">3.3.1</span> Slicing a Pack Object<a href="#slicing-a-pack-object" class="self-link"></a></h3>
@@ -897,46 +907,46 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
-<span id="cb20-3"><a href="#cb20-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb20-4"><a href="#cb20-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
-<span id="cb20-5"><a href="#cb20-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb20-6"><a href="#cb20-6"></a>    <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...)</span>;</span>
-<span id="cb20-7"><a href="#cb20-7"></a>  <span class="op">}</span></span>
-<span id="cb20-8"><a href="#cb20-8"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb21-2"><a href="#cb21-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
 <span id="cb21-3"><a href="#cb21-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb21-4"><a href="#cb21-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
 <span id="cb21-5"><a href="#cb21-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb21-6"><a href="#cb21-6"></a>    <span class="cf">return</span> ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...)</span>;</span>
+<span id="cb21-6"><a href="#cb21-6"></a>    <span class="cf">return</span> ts<span class="op">...[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...)</span>;</span>
 <span id="cb21-7"><a href="#cb21-7"></a>  <span class="op">}</span></span>
 <span id="cb21-8"><a href="#cb21-8"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">auto</span> sum<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb22-5"><a href="#cb22-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>    <span class="cf">return</span> ts<span class="op">![</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> sum<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...)</span>;</span>
+<span id="cb22-7"><a href="#cb22-7"></a>  <span class="op">}</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a><span class="dt">void</span> print<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb22-4"><a href="#cb22-4"></a>    <span class="co">// print the first element</span></span>
-<span id="cb22-5"><a href="#cb22-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">...[</span><span class="dv">0</span><span class="op">])</span>;</span>
-<span id="cb22-6"><a href="#cb22-6"></a></span>
-<span id="cb22-7"><a href="#cb22-7"></a>    <span class="co">// then print every other element with preceding space</span></span>
-<span id="cb22-8"><a href="#cb22-8"></a>    <span class="kw">auto</span> f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> e<span class="op">){</span> fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot; {}&quot;</span>, e<span class="op">)</span>; <span class="op">}</span>;</span>
-<span id="cb22-9"><a href="#cb22-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">])</span>, <span class="op">...)</span>;</span>
-<span id="cb22-10"><a href="#cb22-10"></a>  <span class="op">}</span></span>
-<span id="cb22-11"><a href="#cb22-11"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb23-2"><a href="#cb23-2"></a><span class="dt">void</span> print<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb23-3"><a href="#cb23-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb23-4"><a href="#cb23-4"></a>    <span class="co">// print the first element</span></span>
-<span id="cb23-5"><a href="#cb23-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">![</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb23-5"><a href="#cb23-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">...[</span><span class="dv">0</span><span class="op">])</span>;</span>
 <span id="cb23-6"><a href="#cb23-6"></a></span>
 <span id="cb23-7"><a href="#cb23-7"></a>    <span class="co">// then print every other element with preceding space</span></span>
 <span id="cb23-8"><a href="#cb23-8"></a>    <span class="kw">auto</span> f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> e<span class="op">){</span> fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot; {}&quot;</span>, e<span class="op">)</span>; <span class="op">}</span>;</span>
-<span id="cb23-9"><a href="#cb23-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~)</span>, <span class="op">...)</span>;</span>
+<span id="cb23-9"><a href="#cb23-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">])</span>, <span class="op">...)</span>;</span>
 <span id="cb23-10"><a href="#cb23-10"></a>  <span class="op">}</span></span>
 <span id="cb23-11"><a href="#cb23-11"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="dt">void</span> print<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a>    <span class="co">// print the first element</span></span>
+<span id="cb24-5"><a href="#cb24-5"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, ts<span class="op">![</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb24-6"><a href="#cb24-6"></a></span>
+<span id="cb24-7"><a href="#cb24-7"></a>    <span class="co">// then print every other element with preceding space</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a>    <span class="kw">auto</span> f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span> e<span class="op">){</span> fmt<span class="op">::</span>print<span class="op">(</span><span class="st">&quot; {}&quot;</span>, e<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb24-9"><a href="#cb24-9"></a>    <span class="op">(</span>f<span class="op">(</span>ts<span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~)</span>, <span class="op">...)</span>;</span>
+<span id="cb24-10"><a href="#cb24-10"></a>  <span class="op">}</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -978,20 +988,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb24-2"><a href="#cb24-2"></a><em>pack</em><span class="op">...[..]...</span></span>
-<span id="cb24-3"><a href="#cb24-3"></a><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a><em>tuple</em><span class="op">.[..]...</span>;</span>
-<span id="cb25-3"><a href="#cb25-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><em>pack</em><span class="op">...[</span><span class="dv">0</span><span class="op">]</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><em>pack</em><span class="op">...[..]...</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a><em>pack</em><span class="op">...[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><em>tuple</em><span class="op">.[..]...</span>;</span>
+<span id="cb26-3"><a href="#cb26-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]...</span>;</span></code></pre></div></td>
 </tr>
 <tr class="even">
-<td><div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></span>
-<span id="cb26-2"><a href="#cb26-2"></a><em>pack</em><span class="op">![..]~...</span></span>
-<span id="cb26-3"><a href="#cb26-3"></a><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb27-2"><a href="#cb27-2"></a><em>tuple</em><span class="op">~...</span>;</span>
-<span id="cb27-3"><a href="#cb27-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><em>pack</em><span class="op">![</span><span class="dv">0</span><span class="op">]</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a><em>pack</em><span class="op">![..]~...</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a><em>pack</em><span class="op">![</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><em>tuple</em><span class="op">.[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb28-2"><a href="#cb28-2"></a><em>tuple</em><span class="op">~...</span>;</span>
+<span id="cb28-3"><a href="#cb28-3"></a><em>tuple</em><span class="op">.[</span><span class="fl">1.</span><span class="er">.</span><span class="op">]~...</span>;</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1012,27 +1022,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb28-2"><a href="#cb28-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
-<span id="cb28-3"><a href="#cb28-3"></a>  Ts<span class="op">...</span> elems;</span>
-<span id="cb28-4"><a href="#cb28-4"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb28-5"><a href="#cb28-5"></a>  tuple<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">:</span> elems<span class="op">(</span>ts<span class="op">)...</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb28-6"><a href="#cb28-6"></a></span>
-<span id="cb28-7"><a href="#cb28-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
-<span id="cb28-8"><a href="#cb28-8"></a></span>
-<span id="cb28-9"><a href="#cb28-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
-<span id="cb28-10"><a href="#cb28-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb28-11"><a href="#cb28-11"></a>    <span class="cf">return</span> elems<span class="op">...[</span>I<span class="op">]</span>;</span>
-<span id="cb28-12"><a href="#cb28-12"></a>  <span class="op">}</span></span>
-<span id="cb28-13"><a href="#cb28-13"></a><span class="op">}</span>;</span>
-<span id="cb28-14"><a href="#cb28-14"></a></span>
-<span id="cb28-15"><a href="#cb28-15"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb28-16"><a href="#cb28-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
-<span id="cb28-17"><a href="#cb28-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
-<span id="cb28-18"><a href="#cb28-18"></a></span>
-<span id="cb28-19"><a href="#cb28-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[..]...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
-<span id="cb28-20"><a href="#cb28-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
-<span id="cb28-21"><a href="#cb28-21"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb29-2"><a href="#cb29-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
 <span id="cb29-3"><a href="#cb29-3"></a>  Ts<span class="op">...</span> elems;</span>
@@ -1042,8 +1031,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb29-7"><a href="#cb29-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
 <span id="cb29-8"><a href="#cb29-8"></a></span>
 <span id="cb29-9"><a href="#cb29-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
-<span id="cb29-10"><a href="#cb29-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">![</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb29-11"><a href="#cb29-11"></a>    <span class="cf">return</span> elems<span class="op">![</span>I<span class="op">]</span>;</span>
+<span id="cb29-10"><a href="#cb29-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">...[</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a>    <span class="cf">return</span> elems<span class="op">...[</span>I<span class="op">]</span>;</span>
 <span id="cb29-12"><a href="#cb29-12"></a>  <span class="op">}</span></span>
 <span id="cb29-13"><a href="#cb29-13"></a><span class="op">}</span>;</span>
 <span id="cb29-14"><a href="#cb29-14"></a></span>
@@ -1051,10 +1040,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb29-16"><a href="#cb29-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
 <span id="cb29-17"><a href="#cb29-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
 <span id="cb29-18"><a href="#cb29-18"></a></span>
-<span id="cb29-19"><a href="#cb29-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">~...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
-<span id="cb29-20"><a href="#cb29-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]~...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
-<span id="cb29-21"><a href="#cb29-21"></a></span>
-<span id="cb29-22"><a href="#cb29-22"></a><span class="op">}</span></span></code></pre></div></td>
+<span id="cb29-19"><a href="#cb29-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[..]...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
+<span id="cb29-20"><a href="#cb29-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
+<span id="cb29-21"><a href="#cb29-21"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2"></a><span class="kw">class</span> tuple <span class="op">{</span></span>
+<span id="cb30-3"><a href="#cb30-3"></a>  Ts<span class="op">...</span> elems;</span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a>  tuple<span class="op">(</span>Ts<span class="op">...</span> ts<span class="op">)</span> <span class="op">:</span> elems<span class="op">(</span>ts<span class="op">)...</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a></span>
+<span id="cb30-7"><a href="#cb30-7"></a>  <span class="kw">using</span> <span class="op">...</span>tuple_element <span class="op">=</span> Ts;</span>
+<span id="cb30-8"><a href="#cb30-8"></a></span>
+<span id="cb30-9"><a href="#cb30-9"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> I<span class="op">&gt;</span></span>
+<span id="cb30-10"><a href="#cb30-10"></a>  <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">-&gt;</span> Ts<span class="op">![</span>I<span class="op">]</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb30-11"><a href="#cb30-11"></a>    <span class="cf">return</span> elems<span class="op">![</span>I<span class="op">]</span>;</span>
+<span id="cb30-12"><a href="#cb30-12"></a>  <span class="op">}</span></span>
+<span id="cb30-13"><a href="#cb30-13"></a><span class="op">}</span>;</span>
+<span id="cb30-14"><a href="#cb30-14"></a></span>
+<span id="cb30-15"><a href="#cb30-15"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb30-16"><a href="#cb30-16"></a>  tuple vals<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb30-17"><a href="#cb30-17"></a>  <span class="ot">assert</span><span class="op">(</span>vals<span class="op">.[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">2</span><span class="op">]</span> <span class="op">+</span> vals<span class="op">.[</span><span class="dv">3</span><span class="op">]</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
+<span id="cb30-18"><a href="#cb30-18"></a></span>
+<span id="cb30-19"><a href="#cb30-19"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">~...)</span> <span class="op">==</span> <span class="dv">24</span><span class="op">)</span>;</span>
+<span id="cb30-20"><a href="#cb30-20"></a>  <span class="ot">assert</span><span class="op">(</span>product<span class="op">(</span>vals<span class="op">.[</span><span class="fl">2.</span><span class="er">.</span><span class="op">]~...)</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span>
+<span id="cb30-21"><a href="#cb30-21"></a></span>
+<span id="cb30-22"><a href="#cb30-22"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1065,13 +1075,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 data-number="4.3" id="nested-packs"><span class="header-section-number">4.3</span> Nested Packs<a href="#nested-packs" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P1858R2">[<a href="#ref-P1858R2" role="doc-biblioref">P1858R2</a>]</span> had a whole section on <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1858r2.html#nested-pack-expansions">nested pack expansions</a>. The model that paper suggested was that the <code class="sourceCode cpp"><span class="op">.[:]</span></code> operator, when applied to a tuple, would add a layer of packness. In the normal case, we go from “not a pack” to “a pack,” but if we have a pack of tuples, we could then go to a pack of packs. The paper contained this example:</p>
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb30-2"><a href="#cb30-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> e<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb30-3"><a href="#cb30-3"></a>    bar<span class="op">(</span>e<span class="op">.[:]...</span> <span class="op">...)</span>;</span>
-<span id="cb30-4"><a href="#cb30-4"></a><span class="op">}</span></span>
-<span id="cb30-5"><a href="#cb30-5"></a></span>
-<span id="cb30-6"><a href="#cb30-6"></a><span class="co">// what does this do?</span></span>
-<span id="cb30-7"><a href="#cb30-7"></a>foo<span class="op">(</span>xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">2</span>, <span class="dv">3</span><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="dt">void</span> foo<span class="op">(</span>Ts<span class="op">...</span> e<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-3"><a href="#cb31-3"></a>    bar<span class="op">(</span>e<span class="op">.[:]...</span> <span class="op">...)</span>;</span>
+<span id="cb31-4"><a href="#cb31-4"></a><span class="op">}</span></span>
+<span id="cb31-5"><a href="#cb31-5"></a></span>
+<span id="cb31-6"><a href="#cb31-6"></a><span class="co">// what does this do?</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a>foo<span class="op">(</span>xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, xstd<span class="op">::</span>tuple<span class="op">{</span><span class="dv">2</span>, <span class="dv">3</span><span class="op">})</span>;</span></code></pre></div>
 </blockquote>
 <p>And suggested that this calls <code class="sourceCode cpp">bar<span class="op">(</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">)</span></code>.</p>
 <p>That’s… cool. But it adds an unbelievable level of complexity that I don’t think is really worth it, and surely necessitates a better syntax. Like having proper list comprehensions? So I don’t think the above example should be valid, just for the forseeable future.</p>
@@ -1224,10 +1234,10 @@ Pack Indexing (first element)
 Pack Indexing (last element)
 </th>
 <td>
-<code class="sourceCode cpp"><em>pack</em><span class="op">...[^</span><span class="dv">1</span><span class="op">]</span></code>
+<code class="sourceCode cpp"><em>pack</em><span class="op">...[</span>std<span class="op">::</span>from_end<span class="op">{</span><span class="dv">1</span><span class="op">}]</span></code>
 </td>
 <td>
-<code class="sourceCode cpp"><em>pack</em><span class="op">![^</span><span class="dv">1</span><span class="op">]</span></code>
+<code class="sourceCode cpp"><em>pack</em><span class="op">![</span>std<span class="op">::</span>from_end<span class="op">{</span><span class="dv">1</span><span class="op">}]</span></code>
 </td>
 </tr>
 <tr>

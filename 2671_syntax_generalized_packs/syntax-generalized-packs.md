@@ -287,18 +287,20 @@ last_n_items(range(10), 0) # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Not to mention that if you do some math to determine an index, it'd be nice if overflowing past zero would be treated as an error rather than some wildly different meaning.
 
-The D and C# approaches don't have this issue. But `$`{.op} seems like a waste of that token, which can be put to more interesting uses (although it has prior art in regex as well, also meaning the end). The C# approach is pretty interesting. In both cases, this syntax can _only_ appear inside of indexing (or slicing) expressions. But I think such a restriction would be fine. In both cases, had the Python code used these alternate syntaxes (returning either `xs[$-n:]` or `xs[^n:]`, as appropriate), then the first three calls would be equivalent while the last call, `last_n_items(range(10), 0)`, would return an empty list -- which would be the correct answer.
+The D and C# approaches don't have this issue. But `$`{.op} seems like a waste of that token, which can be put to more interesting uses (although it has prior art in regex as well, also meaning the end). The C# approach clashes with reflection using `^` as the reflection operator (and, even if it didn't, seems like a waste of that token too). In both cases, this syntax can _only_ appear inside of indexing (or slicing) expressions. But I think such a restriction would be fine. In both cases, had the Python code used these alternate syntaxes (returning either `xs[$-n:]` or `xs[^n:]`, as appropriate), then the first three calls would be equivalent while the last call, `last_n_items(range(10), 0)`, would return an empty list -- which would be the correct answer.
 
-I personally like the C# approach:
+A more C++ approach would be to introduce a new type that means from the end:
 
 ::: bq
 ```cpp
 template <typename... Ts>
-auto last(Ts... ts) -> Ts...[^1] {
-  return ts...[^1];
+auto last(Ts... ts) -> Ts...[std::from_end{1}] {
+  return ts...[std::from_end{1}];
 }
 ```
 :::
+
+This doesn't have either the issue with negative indexing or the issue with requiring a dedicated token.
 
 Circle implements Python's approach.
 
@@ -404,9 +406,22 @@ The syntax I'm suggesting for pack indexing is `$pack$...[0]`. The reflection so
 
 Today, the only way to use a pack is to expand it immediately. But we know we need a way to do other things - iterate, index, slice. All things we can do with an object pretty easily. If we could annotate `$pack$` in such a way to make it clear that we're referring to the pack _itself_, as an entity, that could be interesting. Like `$OBJECT$($pack$)` or `$pack$.$into_object$()`. But we need some kind of syntax to be _definitely_ unambiguous and also _distinct_ grammatically, which neither of those really allow for. We would need some sort of token.
 
-One option that does work is `$pack$![0]`. The `!` cannot appear after an identifier today. This could be a postfix operator that can only follow the name of a pack, that gives you an object that behaves somewhat similarly to `vector{^$pack$...}`, except instead of a container of `std::meta::info`, it behaves more like a container of expressions. Thus, `$pack$![0]` would be the first expression in the pack.
+One option that does work is `$pack$![0]`. The `!` cannot appear after an identifier today. This could be a postfix operator that can only follow the name of a pack, that gives you an object that behaves somewhat similarly to `vector{^$pack$...}`, except instead of a container of `std::meta::info`, it behaves more like a container of expressions. There are a few other tokens that could be used here as well, but there's something kind of nice about `elems!` meaning "no, actually, this `elems` thing as a whole!" that I kind of like.
 
-There are a few other tokens that could be used here as well, but there's something kind of nice about `elems!` meaning "no, actually, this `elems` thing as a whole!" that I kind of like.
+That is, it could give you an object that looks like this:
+
+::: bq
+```cpp
+template <std::vector<std::meta::info> V>
+struct $PackObject$ {
+  constexpr auto operator[](std::ptrdiff_t idx) const {
+    return [: V[idx] :];
+  }
+};
+```
+:::
+
+With that, `$pack$![0]` would be the first expression in the pack.
 
 This also provides an answer for expansion statements: an expansion statement only traverses an object, so if we want to expand a pack we have to first turn it into an object... via `$pack$!`:
 
@@ -716,7 +731,7 @@ I think there are two good choices of syntax here for indexing, slicing, and unp
 <table>
 <tr><th/><th>Option 1</th><th>Option 2</th></tr>
 <tr><th>Pack Indexing (first element)</th><td>`$pack$...[0]`</td><td>`$pack$![0]`</td></tr>
-<tr><th>Pack Indexing (last element)</th><td>`$pack$...[^1]`</td><td>`$pack$![^1]`</td></tr>
+<tr><th>Pack Indexing (last element)</th><td>`$pack$...[std::from_end{1}]`</td><td>`$pack$![std::from_end{1}]`</td></tr>
 <tr><th>Pack Slicing</th><td>`$pack$...[1..]...`</td><td>`$pack$![1..]~...`</td></tr>
 <tr><th>Tuple Indexing</th><td>`$tuple$.[0]`</td><td>`$tuple$.[0]`</td></tr>
 <tr><th>Tuple Unpacking</th><td>`$tuple$.[1..]...`</td><td>`$tuple$.[1..]~...`</td></tr>
