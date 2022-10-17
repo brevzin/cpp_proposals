@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-The title of [@P2561R0] was `operator??`, but isn't actually proposing that token, so it's not the best title. Likewise, `error_propagation_traits` is a bad name for the collection of functionality for the same reason that the paper described `try` as being a bad spelling for the operator. `has_value` has been renamed to `has_value`, since that's actually what we name that facility everywhere. A few other details added in addition to the two renames.
+The title of [@P2561R0] was `operator??`, but isn't actually proposing that token, so it's not the best title. Likewise, `try_traits` is a bad name for the collection of functionality for the same reason that the paper described `try` as being a bad spelling for the operator. `is_ok` has been renamed to `has_value`, since that's actually what we name that facility everywhere. A few other details added in addition to the two renames.
 
 # Preface
 
