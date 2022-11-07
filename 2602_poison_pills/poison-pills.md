@@ -1,8 +1,8 @@
 ---
 title: "Poison Pills are Too Toxic"
-document: P2602R1
+document: P2602R2
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -11,6 +11,8 @@ tags: ranges
 ---
 
 # Revision History
+
+Since [@P2602R1], different wording strategy.
 
 Since [@P2602R0], added feature-test macro and wording for the comparison objects, which was previously missing.
 
@@ -169,31 +171,27 @@ To preclude such an expression resulting in a call to unconstrained functions wi
 When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used by a customization point object.
 — end note]
 :::
-
-::: addu
-[7]{.pnum} When a customization point object is specified to use an expression with an unqualified name that undergoes argument-dependent lookup, ordinary unqualified lookup is not performed for that name.
-:::
 :::
 
 Change [cmp.alg]{.sref} (just the sub-bullets that refer to doing non-member customization points):
 
 ::: bq
-* [1.2]{.pnum} Otherwise, `strong_­ordering(strong_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​strong_­order`]{.rm} [where `strong_order` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+* [1.2]{.pnum} Otherwise, `strong_­ordering(strong_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​strong_­order`]{.rm} [where the meaning of `strong_order` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).]{.addu}
 
 ...
 
-* [2.2]{.pnum} Otherwise, `weak_­ordering(weak_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​weak_­order`]{.rm} [where `weak_order` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+* [2.2]{.pnum} Otherwise, `weak_­ordering(weak_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​weak_­order`]{.rm} [where the meaning of `weak_order` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).]{.addu}
 
 ...
 
-* [3.2]{.pnum} Otherwise, `partial_­ordering(partial_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​partial_­order`]{.rm} [where `partial_order` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+* [3.2]{.pnum} Otherwise, `partial_­ordering(partial_­order(E, F))` if it is a well-formed expression [with overload resolution performed in a context that does not include a declaration of `std​::​partial_­order`]{.rm} [where the meaning of `partial_order` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).]{.addu}
 
 :::
 
 Change [iterator.cust.move]{.sref} [This isn't a behavior change, simply aligning the wording for all the customization point objects]{.draftnote}:
 
 ::: bq
-* [1.1]{.pnum} `iter_­move(E)`, if `E` has class or enumeration type and `iter_­move(E)` is a well-formed expression when treated as an unevaluated operand, [with overload resolution performed in a context that does not include a declaration of `ranges​::​iter_­move` but does include the declaration `void iter_move();`]{.rm} [where `iter_move` undergoes argument dependent lookup. [*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+* [1.1]{.pnum} `iter_­move(E)`, if `E` has class or enumeration type and `iter_­move(E)` is a well-formed expression when treated as an unevaluated operand, [with overload resolution performed in a context that does not include a declaration of `ranges​::​iter_­move` but does include the declaration `void iter_move();`]{.rm} [where the meaning of `iter_move` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).]{.addu}
 :::
 
 Add part of the old note into [iterator.cust.swap]{.sref}:
@@ -204,7 +202,7 @@ Add part of the old note into [iterator.cust.swap]{.sref}:
 template<class I1, class I2>
   void iter_swap(I1, I2) = delete;
 ```
-and does not include a declaration of `ranges​::​iter_­swap`. If the function selected by overload resolution does not exchange the values denoted by `E1` and `E2`, the program is ill-formed, no diagnostic required. [[*Note*: This precludes calling unconstrained `std::iter_swap`. When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used. - *end note*]]{.addu}
+and does not include a declaration of `ranges​::​iter_­swap`. If the function selected by overload resolution does not exchange the values denoted by `E1` and `E2`, the program is ill-formed, no diagnostic required. [[*Note*: This precludes calling unconstrained `std::iter_swap`. When the deleted overload is viable, program-defined overloads need to be more specialized ([temp.func.order]) to be selected. - *end note*]]{.addu}
 :::
 
 Change [range.access.begin]{.sref}:
@@ -219,7 +217,7 @@ void begin(const auto&) = delete;
 ```
 :::
 
-[where `begin` undergoes argument dependent lookup]{.addu} then `ranges​::​begin(E)` is expression-equivalent to [that expression]{.addu} [`auto(begin(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+[where the meaning of `begin` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])]{.addu} then `ranges​::​begin(E)` is expression-equivalent to [that expression]{.addu} [`auto(begin(t))` with overload resolution performed in the above context]{.rm}.
 :::
 
 Change [range.access.end]{.sref}:
@@ -234,7 +232,7 @@ void end(const auto&) = delete;
 ```
 :::
 
-[where `end` undergoes argument dependent lookup]{.addu} then `ranges​::​end(E)` is expression-equivalent to [that expression]{.addu} [`auto(end(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+[where the meaning of `end` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])]{.addu} then `ranges​::​end(E)` is expression-equivalent to [that expression]{.addu} [`auto(end(t))` with overload resolution performed in the above context]{.rm}.
 :::
 
 Change [range.access.rbegin]{.sref}:
@@ -249,7 +247,7 @@ void rbegin(const auto&) = delete;
 ```
 :::
 
-[where `rbegin` undergoes argument dependent lookup]{.addu} then `ranges​::r​begin(E)` is expression-equivalent to [that expression]{.addu} [`auto(rbegin(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+[where the meaning of `rbegin` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])]{.addu} then `ranges​::r​begin(E)` is expression-equivalent to [that expression]{.addu} [`auto(rbegin(t))` with overload resolution performed in the above context]{.rm}.
 :::
 
 Change [range.access.rend]{.sref}:
@@ -264,7 +262,7 @@ void rend(const auto&) = delete;
 ```
 :::
 
-[where `rend` undergoes argument dependent lookup]{.addu} then `ranges​::​rend(E)` is expression-equivalent to [that expression]{.addu} [`auto(rend(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+[where the meaning of `rend` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])]{.addu} then `ranges​::​rend(E)` is expression-equivalent to [that expression]{.addu} [`auto(rend(t))` with overload resolution performed in the above context]{.rm}.
 :::
 
 Change [range.prim.size]{.sref}:
@@ -279,7 +277,7 @@ void size(const auto&) = delete;
 ```
 :::
 
-[where `size` undergoes argument dependent lookup]{.addu} then `ranges​::​size(E)` is expression-equivalent to [that expression]{.addu} [`auto(size(t))` with overload resolution performed in the above context]{.rm}. [[*Note*: Ordinary unqualified lookup is not performed. - *end note*]]{.addu}
+[where the meaning of `size` is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])]{.addu} then `ranges​::​size(E)` is expression-equivalent to [that expression]{.addu} [`auto(size(t))` with overload resolution performed in the above context]{.rm}.
 :::
 
 ## Feature-Test Macro

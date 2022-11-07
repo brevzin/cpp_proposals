@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2022-11-07" />
+  <title>Poison Pills are Too Toxic</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Poison Pills are Too Toxic</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2602R2</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2022-11-07</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#history"><span class="toc-section-number">3</span> History<span></span></a></li>
+<li><a href="#do-we-still-need-the-poison-pills"><span class="toc-section-number">4</span> Do we still need the poison pills?<span></span></a>
+<ul>
+<li><a href="#except-for-iter_swap"><span class="toc-section-number">4.1</span> … except for <code class="sourceCode cpp">iter_swap</code><span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording"><span class="toc-section-number">5.1</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro"><span class="toc-section-number">5.2</span> Feature-Test Macro<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">5.3</span> Implementation Experience<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">6</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2602R1">[<a href="#ref-P2602R1" role="doc-biblioref">P2602R1</a>]</span>, different wording strategy.</p>
+<p>Since <span class="citation" data-cites="P2602R0">[<a href="#ref-P2602R0" role="doc-biblioref">P2602R0</a>]</span>, added feature-test macro and wording for the comparison objects, which was previously missing.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Given the following declarations:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">friend</span> <span class="kw">auto</span> begin<span class="op">(</span>A <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">*</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">friend</span> <span class="kw">auto</span> end<span class="op">(</span>A <span class="kw">const</span><span class="op">&amp;)</span>   <span class="op">-&gt;</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">*</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="op">}</span>;</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">struct</span> B <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="kw">friend</span> <span class="kw">auto</span> begin<span class="op">(</span>B<span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">*</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="kw">friend</span> <span class="kw">auto</span> end<span class="op">(</span>B<span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">*</span>;</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p><code class="sourceCode cpp">B</code> and <code class="sourceCode cpp"><span class="kw">const</span> A</code> satisfy <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>range</code>, but <code class="sourceCode cpp">A</code> does not. The goal of this paper is that both of these should count as ranges.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="history"><span class="header-section-number">3</span> History<a href="#history" class="self-link"></a></h1>
+<p>During the design of Ranges, originally rvalues were prohibited entirely <span class="citation" data-cites="stl2.429">[<a href="#ref-stl2.429" role="doc-biblioref">stl2.429</a>]</span>. Then, there was a desire (<span class="citation" data-cites="stl2.547">[<a href="#ref-stl2.547" role="doc-biblioref">stl2.547</a>]</span>)</p>
+<blockquote>
+<p>to force range types to opt in to working with rvalues, thereby giving users a way to detect that, for a particular range type, iterator validity does not depend on the range’s lifetime.</p>
+</blockquote>
+<p>The problem is (as <span class="citation" data-cites="P0970R1">[<a href="#ref-P0970R1" role="doc-biblioref">P0970R1</a>]</span> demonstrates), when you have a construction like</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1"></a>struct Buffer { /* ... */ };</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>char* begin(Buffer&amp;);</span>
+<span id="cb2-4"><a href="#cb2-4"></a>const char* begin(const Buffer&amp;);</span>
+<span id="cb2-5"><a href="#cb2-5"></a>char* end(Buffer&amp;);</span>
+<span id="cb2-6"><a href="#cb2-6"></a>const char* end(const Buffer&amp;);</span></code></pre></div>
+</blockquote>
+<p>While <code class="sourceCode cpp">begin<span class="op">(</span>Buffer<span class="op">{})</span></code> is valid, it’s only valid because it binds to a const lvalue reference, and that doesn’t actually offer any information as to whether the iterator would remain valid after the range is destroyed. That paper addressed this problem by introducing the concept of poison pill overloads. <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">)</span></code>, for rvalues <code class="sourceCode cpp">E</code>, will never consider <code class="sourceCode cpp">E<span class="op">.</span>begin<span class="op">()</span></code> (since none of thoese are going to be ref-qualified) and will only consider overloads of <code class="sourceCode cpp">begin<span class="op">(</span>E<span class="op">)</span></code> looked up in a context that includes:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">// *Poison pill* overload:</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="dt">void</span> begin<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span></code></pre></div>
+</blockquote>
+<p>Here, <code class="sourceCode cpp">begin<span class="op">(</span>Buffer<span class="op">{})</span></code> would prefer the poison pill, so we avoid that particular problem. <code class="sourceCode cpp">Buffer</code> is not a <em>borrowed</em> range (this is not the term P0970 used, but in an effort to limit confusion, I’ll stick to the term we now have for this idea).</p>
+<p>One reason this poison pill is necessary is that without it, <code class="sourceCode cpp">begin<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;())</span></code> would happily find the <code class="sourceCode cpp">std<span class="op">::</span>begin</code> overload that invokes member <code class="sourceCode cpp">begin<span class="op">()</span></code>, which is something we’re trying to avoid.</p>
+<p>As <span class="citation" data-cites="P1870R1">[<a href="#ref-P1870R1" role="doc-biblioref">P1870R1</a>]</span> pointed out, this is a very subtle distinction which makes it difficult to even properly opt into this concept. That paper proposed what is now the current opt-in model for borrowed ranges: specializing a variable template. <code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>E<span class="op">)</span></code> still only ever invokes <code class="sourceCode cpp">begin</code> (member or non-member) on an lvalue, but it decides whether it is allowed to upgrade an rvalue to an lvalue based on <code class="sourceCode cpp">enable_borrowed_range</code>.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="do-we-still-need-the-poison-pills"><span class="header-section-number">4</span> Do we still need the poison pills?<a href="#do-we-still-need-the-poison-pills" class="self-link"></a></h1>
+<p>Given the existence of <code class="sourceCode cpp">enable_borrowed_range</code>, are the poison pills still useful? Well, we don’t need to prevent lookup for <code class="sourceCode cpp">begin<span class="op">(</span>Buffer<span class="op">{})</span></code> finding <code class="sourceCode cpp"><span class="op">::</span>begin</code> or lookup for <code class="sourceCode cpp">begin<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;())</span></code> from finding <code class="sourceCode cpp">std<span class="op">::</span>begin</code>, since these types aren’t borrowed ranges anyway.</p>
+<p>For types that are borrowed ranges, there isn’t any particular harm in finding <code class="sourceCode cpp">std<span class="op">::</span>begin</code>, since that simply forwards to member <code class="sourceCode cpp">begin</code> (the customization point for <code class="sourceCode cpp">begin</code> is defined in such a way that member <code class="sourceCode cpp">begin</code> takes priority to non-member <code class="sourceCode cpp">begin</code>, so had that one been valid we would have used it. Finding it doesn’t add any value, but it also doesn’t cause harm).</p>
+<p>The poison pills were modified from one function template that takes a forwarding reference to two that take a const and non-const lvalue reference by <span class="citation" data-cites="P2091R0">[<a href="#ref-P2091R0" role="doc-biblioref">P2091R0</a>]</span>, which contained this description:</p>
+<div class="quote">
+<p>While implementing this change, I realized that the forwarding-reference poison pills in the working draft are insufficiently poisonous. <code class="sourceCode cpp"><span class="dt">void</span> foo<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;)</span></code> is less-specialized than either <code class="sourceCode cpp"><span class="dt">void</span> foo<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span></code> or <code class="sourceCode cpp"><span class="dt">void</span> foo<span class="op">(</span><span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;)</span></code>, so a <code class="sourceCode cpp"><span class="dt">void</span> foo<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;)</span></code> poison pill fails to intercept/ambiguate calls to such overgeneric lvalue functions as intended. We should fix the poison pills by replacing them with two lvalue overloads. (I’m not certain the poison pills serve a useful design purpose anymore, and I’d like to remove them, but it’s too late in the cycle for even so small a design change.)</p>
+</div>
+<p>Like the parenthetical says, it’s not clear what we actually need the poison pills to poison anymore. It’s clear what we needed to poison originally, but that motivation no longer exists. Unfortunately, their current formulation does cause harm.</p>
+<p>First, consider <span class="citation" data-cites="LWG3480">[<a href="#ref-LWG3480" role="doc-biblioref">LWG3480</a>]</span>. In that issue, <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>directory_iterator</code> and <code class="sourceCode cpp">std<span class="op">::</span>filesystem<span class="op">::</span>recursive_directory_iterator</code> both opted into being ranges via non-member functions that looked like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a>directory_iterator begin<span class="op">(</span>directory_iterator iter<span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb4-2"><a href="#cb4-2"></a>directory_iterator end<span class="op">(</span><span class="kw">const</span> directory_iterator<span class="op">&amp;)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a></span>
+<span id="cb4-4"><a href="#cb4-4"></a>recursive_directory_iterator begin<span class="op">(</span>recursive_directory_iterator iter<span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>recursive_directory_iterator end<span class="op">(</span><span class="kw">const</span> recursive_directory_iterator<span class="op">&amp;)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+</blockquote>
+<p>The by-value overload was fine, but the reference-to-const one ends up being a worse match the <code class="sourceCode cpp"><span class="dt">void</span> end<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</code> overload, so you end up in this state where <code class="sourceCode cpp"><span class="kw">const</span> directory_iterator</code> satisfies <code class="sourceCode cpp">range</code> but <code class="sourceCode cpp">directory_iterator</code> does not. This issue was resolved by simply making <code class="sourceCode cpp">end</code> for both of these iterator types take by value.</p>
+<p>Second, consider <a href="https://stackoverflow.com/q/72548689/2069064">this example</a> from StackOverflow recently:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> Test <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">friend</span> <span class="dt">size_t</span> size<span class="op">(</span><span class="co">/*const*/</span> Test<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>        <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="op">}</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="op">}</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="dt">size_t</span> f<span class="op">(</span>Test t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>   <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>size<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>In order for this to compile, the <code class="sourceCode cpp">size</code> function must take a <code class="sourceCode cpp">Test<span class="op">&amp;</span></code> (or a <code class="sourceCode cpp">Test</code>) and not a <code class="sourceCode cpp"><span class="kw">const</span> Test<span class="op">&amp;</span></code>, even if no mutation is necessary. A member function <code class="sourceCode cpp">size<span class="op">()</span> <span class="kw">const</span></code> would’ve also sufficed, but this somewhat defeats the purpose of allowing both member and non-member opt-in. Notice that here we’re not even dealing with rvalue ranges - we’re trying to invoke <code class="sourceCode cpp">size</code> with an lvalue, but it still won’t work.</p>
+<p>With the status quo, the poison pills prevent reasonable code from working and it’s entirely unclear whether they prevent unreasonable code from working.</p>
+<h2 data-number="4.1" id="except-for-iter_swap"><span class="header-section-number">4.1</span> … except for <code class="sourceCode cpp">iter_swap</code><a href="#except-for-iter_swap" class="self-link"></a></h2>
+<p>I mentioned that there’s no harm in lookup for <code class="sourceCode cpp">begin<span class="op">(</span>e<span class="op">)</span></code> finding <code class="sourceCode cpp">std<span class="op">::</span>begin<span class="op">(</span>e<span class="op">)</span></code>, since that function template is constrained anyway to call <code class="sourceCode cpp">e<span class="op">.</span>begin<span class="op">()</span></code>, which the <code class="sourceCode cpp">begin</code> customization point object tries to do anyway. A similar idea holds for all the other customization point objects.</p>
+<p>Except for one: <code class="sourceCode cpp">iter_swap</code>. Having lookup for <code class="sourceCode cpp">iter_swap<span class="op">(</span>i, j<span class="op">)</span></code> find <code class="sourceCode cpp">std<span class="op">::</span>iter_swap<span class="op">(</span>i, j<span class="op">)</span></code> is actually problematic because <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> has no constraints (see <span>27.7.3 <a href="https://wg21.link/alg.swap">[alg.swap]</a></span>/6). As a result, <code class="sourceCode cpp">indirectly_swappable<span class="op">&lt;</span>I<span class="op">&gt;</span></code> would end up holding for <em>any</em> input iterator <code class="sourceCode cpp">I</code> which has <code class="sourceCode cpp">std</code> as an associated namespace (that concept merely checks that <code class="sourceCode cpp">ranges<span class="op">::</span>iter_swap<span class="op">(</span>i1, i2<span class="op">)</span></code> is a valid expression, which, if <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code> were found, would be the case). But not all such iterators are actually <code class="sourceCode cpp">indirectly_swappable</code> (e.g. <code class="sourceCode cpp">std<span class="op">::</span>istreambuf_iterator<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span></code>), so that needs to continue to be true.</p>
+<p>In order to preserve existing behavior, it is important to preserve the poison pill for <code class="sourceCode cpp">iter_swap</code>, which is basically:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">void</span> iter_swap<span class="op">(</span><span class="kw">auto</span>, <span class="kw">auto</span><span class="op">)</span> <span class="op">=</span> <span class="kw">delete</span>;</span></code></pre></div>
+</blockquote>
+<p>This problem does not arise for <code class="sourceCode cpp">swap</code> however, as <code class="sourceCode cpp">std<span class="op">::</span>swap</code> is properly constrained (<span>22.2.2 <a href="https://wg21.link/utility.swap">[utility.swap]</a></span>/1) and does the default thing anyway.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>We can improve this situation by removing the poison aspect for the customization point objects that don’t need them (i.e. all of them but <code class="sourceCode cpp">iter_swap</code>). We still need to, however, prevent regular unqualified lookup from happening and ensure that non-member lookup only happens in an argument-dependent lookup context. We need this both to prevent the CPO from finding itself (which would defeat the purpose of a non-member opt-in) and also to avoid looking up random nonsense in the global namespace. This matches what the language range-based for statement does, where <span>8.6.5 <a href="https://wg21.link/stmt.ranged">[stmt.ranged]</a></span>/1.3.3 says:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">(1.3.3)</a></span> otherwise, <code class="sourceCode cpp"><em>begin-expr</em></code> and <code class="sourceCode cpp"><em>end-expr</em></code> are <code class="sourceCode cpp">begin<span class="op">(</span>range<span class="op">)</span></code> and <code class="sourceCode cpp">end<span class="op">(</span>range<span class="op">)</span></code>, respectively, where <code class="sourceCode cpp">begin</code> and <code class="sourceCode cpp">end</code> undergo argument-dependent lookup ([basic.lookup.argdep]). [<em>Note 1</em>: Ordinary unqualified lookup ([basic.lookup.unqual]) is not performed. — <em>end note</em>]</p>
+</blockquote>
+<p>The library implementation of this would be to effectively replace all the existing poison pills with nullary functions, as in:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a><span class="st">- void begin(auto&amp;) = delete;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="st">- void begin(const auto&amp;) = delete;</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="va">+ void begin() = delete;</span></span></code></pre></div>
+</div>
+</blockquote>
+<h2 data-number="5.1" id="wording"><span class="header-section-number">5.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>16.3.3.3.6 <a href="https://wg21.link/customization.point.object">[customization.point.object]</a></span>, since this note is describing the idea of a poison pill which is now going away:</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> [Note 1: Many of the customization point objects in the library evaluate function call expressions with an unqualified name which results in a call to a program-defined function found by argument dependent name lookup ([basic.lookup.argdep]). To preclude such an expression resulting in a call to unconstrained functions with the same name in namespace std, customization point objects specify that lookup for these expressions is performed in a context that includes deleted overloads matching the signatures of overloads defined in namespace std. When the deleted overloads are viable, program-defined overloads need to be more specialized ([temp.func.order]) or more constrained ([temp.constr.order]) to be used by a customization point object. — end note]</p>
+</div>
+</blockquote>
+<p>Change <span>17.11.6 <a href="https://wg21.link/cmp.alg">[cmp.alg]</a></span> (just the sub-bullets that refer to doing non-member customization points):</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(1.2)</a></span> Otherwise, <code class="sourceCode cpp">strong_­ordering<span class="op">(</span>strong_­order<span class="op">(</span>E, F<span class="op">))</span></code> if it is a well-formed expression <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that does not include a declaration of <span><code class="sourceCode default">std​::​strong_­order</code></span></del></span> <span class="addu">where the meaning of <code class="sourceCode cpp">strong_order</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).</span></li>
+</ul>
+<p>…</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span> Otherwise, <code class="sourceCode cpp">weak_­ordering<span class="op">(</span>weak_­order<span class="op">(</span>E, F<span class="op">))</span></code> if it is a well-formed expression <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that does not include a declaration of <span><code class="sourceCode default">std​::​weak_­order</code></span></del></span> <span class="addu">where the meaning of <code class="sourceCode cpp">weak_order</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).</span></li>
+</ul>
+<p>…</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(3.2)</a></span> Otherwise, <code class="sourceCode cpp">partial_­ordering<span class="op">(</span>partial_­order<span class="op">(</span>E, F<span class="op">))</span></code> if it is a well-formed expression <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that does not include a declaration of <span><code class="sourceCode default">std​::​partial_­order</code></span></del></span> <span class="addu">where the meaning of <code class="sourceCode cpp">partial_order</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).</span></li>
+</ul>
+</blockquote>
+<p>Change <span>25.3.3.1 <a href="https://wg21.link/iterator.cust.move">[iterator.cust.move]</a></span> <span class="draftnote" style="color: #01796F">[ Drafting note: This isn’t a behavior change, simply aligning the wording for all the customization point objects ]</span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(1.1)</a></span> <code class="sourceCode cpp">iter_­move<span class="op">(</span>E<span class="op">)</span></code>, if <code class="sourceCode cpp">E</code> has class or enumeration type and <code class="sourceCode cpp">iter_­move<span class="op">(</span>E<span class="op">)</span></code> is a well-formed expression when treated as an unevaluated operand, <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context that does not include a declaration of <span><code class="sourceCode default">ranges​::​iter_­move</code></span> but does include the declaration <span><code class="sourceCode default">void iter_move();</code></span></del></span> <span class="addu">where the meaning of <code class="sourceCode cpp">iter_move</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]).</span></li>
+</ul>
+</blockquote>
+<p>Add part of the old note into <span>25.3.3.2 <a href="https://wg21.link/iterator.cust.swap">[iterator.cust.swap]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(4.1)</a></span> <code class="sourceCode cpp"><span class="op">(</span><span class="dt">void</span><span class="op">)</span>iter_­swap<span class="op">(</span>E1, E2<span class="op">)</span></code>, if either <code class="sourceCode cpp">E1</code> or <code class="sourceCode cpp">E2</code> has class or enumeration type and <code class="sourceCode cpp">iter_­swap<span class="op">(</span>E1, E2<span class="op">)</span></code> is a well-formed expression with overload resolution performed in a context that includes the declaration</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>template&lt;class I1, class I2&gt;</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  void iter_swap(I1, I2) = delete;</span></code></pre></div>
+<p>and does not include a declaration of <code class="sourceCode cpp">ranges​<span class="op">::</span>​iter_­swap</code>. If the function selected by overload resolution does not exchange the values denoted by <code class="sourceCode cpp">E1</code> and <code class="sourceCode cpp">E2</code>, the program is ill-formed, no diagnostic required. <span class="addu">[<em>Note</em>: This precludes calling unconstrained <code class="sourceCode cpp">std<span class="op">::</span>iter_swap</code>. When the deleted overload is viable, program-defined overloads need to be more specialized ([temp.func.order]) to be selected. - <em>end note</em>]</span></p>
+</blockquote>
+<p>Change <span>26.3.2 <a href="https://wg21.link/range.access.begin">[range.access.begin]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.5)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>begin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">begin</code></span> finds only the declarations</del></span></li>
+</ul>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb9"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>void begin(auto&amp;) = delete;</span>
+<span id="cb9-2"><a href="#cb9-2"></a>void begin(const auto&amp;) = delete;</span></code></pre></div>
+
+</div>
+<p><span class="addu">where the meaning of <code class="sourceCode cpp">begin</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​begin<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(begin(t))</code></span> with overload resolution performed in the above context</del></span>.</p>
+</blockquote>
+<p>Change <span>26.3.3 <a href="https://wg21.link/range.access.end">[range.access.end]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.6)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>end<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span>iterator_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for end finds only the declarations</del></span></li>
+</ul>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb10"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1"></a>void end(auto&amp;) = delete;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>void end(const auto&amp;) = delete;</span></code></pre></div>
+
+</div>
+<p><span class="addu">where the meaning of <code class="sourceCode cpp">end</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​end<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(end(t))</code></span> with overload resolution performed in the above context</del></span>.</p>
+</blockquote>
+<p>Change <span>26.3.6 <a href="https://wg21.link/range.access.rbegin">[range.access.rbegin]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rbegin<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">input_­or_­output_­iterator</code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rbegin</code></span> finds only the declarations</del></span></li>
+</ul>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb11"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>void rbegin(auto&amp;) = delete;</span>
+<span id="cb11-2"><a href="#cb11-2"></a>void rbegin(const auto&amp;) = delete;</span></code></pre></div>
+
+</div>
+<p><span class="addu">where the meaning of <code class="sourceCode cpp">rbegin</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>r​begin<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(rbegin(t))</code></span> with overload resolution performed in the above context</del></span>.</p>
+</blockquote>
+<p>Change <span>26.3.7 <a href="https://wg21.link/range.access.rend">[range.access.rend]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>rend<span class="op">(</span>t<span class="op">))</span></code> is a valid expression whose type models <code class="sourceCode cpp">sentinel_­for<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>ranges​<span class="op">::</span>​rbegin<span class="op">(</span>E<span class="op">))&gt;</span></code> <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for <span><code class="sourceCode default">rend</code></span> finds only the declarations</del></span></li>
+</ul>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb12"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>void rend(auto&amp;) = delete;</span>
+<span id="cb12-2"><a href="#cb12-2"></a>void rend(const auto&amp;) = delete;</span></code></pre></div>
+
+</div>
+<p><span class="addu">where the meaning of <code class="sourceCode cpp">rend</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​rend<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(rend(t))</code></span> with overload resolution performed in the above context</del></span>.</p>
+</blockquote>
+<p>Change <span>26.3.10 <a href="https://wg21.link/range.prim.size">[range.prim.size]</a></span>:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(2.4)</a></span> Otherwise, if <code class="sourceCode cpp">T</code> is a class or enumeration type, <code class="sourceCode cpp">disable_­sized_­range<span class="op">&lt;</span>remove_­cv_­t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code> and <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(</span>size<span class="op">(</span>t<span class="op">))</span></code> is a valid expression of integer-like type <span class="rm" style="color: #bf0303"><del>with overload resolution performed in a context in which unqualified lookup for size finds only the declarations</del></span></li>
+</ul>
+<div class="rm" style="color: #bf0303">
+
+<div class="sourceCode" id="cb13"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>void size(auto&amp;) = delete;</span>
+<span id="cb13-2"><a href="#cb13-2"></a>void size(const auto&amp;) = delete;</span></code></pre></div>
+
+</div>
+<p><span class="addu">where the meaning of <code class="sourceCode cpp">size</code> is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep])</span> then <code class="sourceCode cpp">ranges​<span class="op">::</span>​size<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <span class="addu">that expression</span> <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">auto(size(t))</code></span> with overload resolution performed in the above context</del></span>.</p>
+</blockquote>
+<h2 data-number="5.2" id="feature-test-macro"><span class="header-section-number">5.2</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Bump the value for <code class="sourceCode cpp">__cpp_lib_ranges</code> in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb14-1"><a href="#cb14-1"></a><span class="st">- #define __cpp_­lib_­ranges <span class="diffdel">202202L</span></span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="va">+ #define __cpp_­lib_­ranges <span class="diffins">2022XXL</span></span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>  // also in &lt;algorithm&gt;, &lt;functional&gt;, &lt;iterator&gt;, &lt;memory&gt;, &lt;ranges&gt;</span></code></pre></div>
+</div>
+</blockquote>
+<p>This allows for only conditionally providing the additional overloads necessary to make mutable objects work.</p>
+<h2 data-number="5.3" id="implementation-experience"><span class="header-section-number">5.3</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>This has been implemented in both libstdc++ and MSVC’s standard library.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">6</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Tim Song for help navigating everything, Casey Carter for the wording suggestions, and Jonathan Wakely for helping with libstdc++ testing. Thanks to Hui Xie for pointing out the comparison objects.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-LWG3480">
+<p>[LWG3480] Barry Revzin. directory_iterator and recursive_directory_iterator are not C++20 ranges. <br />
+<a href="https://wg21.link/lwg3480">https://wg21.link/lwg3480</a></p>
+</div>
+<div id="ref-P0970R1">
+<p>[P0970R1] Eric Niebler. 2018-05-06. Better, Safer Range Access Customization Points. <br />
+<a href="https://wg21.link/p0970r1">https://wg21.link/p0970r1</a></p>
+</div>
+<div id="ref-P1870R1">
+<p>[P1870R1] Barry Revzin. 2019-11-25. forwarding-range is too subtle. <br />
+<a href="https://wg21.link/p1870r1">https://wg21.link/p1870r1</a></p>
+</div>
+<div id="ref-P2091R0">
+<p>[P2091R0] Casey Carter. 2020-02-17. Issues with Range Access CPOs. <br />
+<a href="https://wg21.link/p2091r0">https://wg21.link/p2091r0</a></p>
+</div>
+<div id="ref-P2602R0">
+<p>[P2602R0] Barry Revzin. 2022-06-17. Poison Pills are Too Toxic. <br />
+<a href="https://wg21.link/p2602r0">https://wg21.link/p2602r0</a></p>
+</div>
+<div id="ref-P2602R1">
+<p>[P2602R1] Barry Revzin. 2022-07-11. Poison Pills are Too Toxic. <br />
+<a href="https://wg21.link/p2602r1">https://wg21.link/p2602r1</a></p>
+</div>
+<div id="ref-stl2.429">
+<p>[stl2.429] Casey Carter. 2018. Consider removing support for rvalue ranges from range access CPOs. <br />
+<a href="https://github.com/ericniebler/stl2/issues/429">https://github.com/ericniebler/stl2/issues/429</a></p>
+</div>
+<div id="ref-stl2.547">
+<p>[stl2.547] Eric Niebler. 2018. Redesign begin/end CPOs to eliminate deprecated behavior. <br />
+<a href="https://github.com/ericniebler/stl2/issues/547">https://github.com/ericniebler/stl2/issues/547</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
