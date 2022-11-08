@@ -1,7 +1,7 @@
 ---
 title: "`consteval` needs to propagate up"
-document: P2564R2
-date: 2022-11-09
+document: P2564R1
+date: 2022-11-08
 audience: CWG
 author:
     - name: Barry "Patch" Revzin
@@ -11,8 +11,6 @@ tag: constexpr
 ---
 
 # Revision History
-
-Since [P2564R1], updated wording to account for aggregate initialization.
 
 Since [@P2564R0], many wording changes and added lots of examples.
 
@@ -456,7 +454,7 @@ Extend [expr.const]{.sref}/13:
 * [#.#]{.pnum} [it is a subexpression of a manifestly constant-evaluated expression or conversion, or]{.addu}
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the _compound-statement_ of a consteval if statement ([stmt.if]).
 
-An expression or conversion is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. [An immediate invocation shall be a constant expression.]{.rm} [An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.]{.addu}
+An expression or conversion is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. [An immediate invocation shall be a constant expression.]{.rm}
 
 ::: addu
 [13a]{.pnum} An expression or conversion is _immediate-escalating_ if it is not initially in an immediate function context and it is either
@@ -522,16 +520,6 @@ constexpr T hh() {           // hh<int> is an immediate function
 
 int i = hh<int>(); // ill-formed: hh<int>() is an immediate-escalating expression
                    // outside of an immediate-escalating function
-
-struct A {
-  int x;
-  int y = id(x);
-};
-
-template <typename T>
-constexpr int k(int) {  // k<int> is not an immediate function
-  return A(42).y;       // because A(42) is a constant expression and thus not
-}                       // immediate-escalating
 ```
 -*end example*]
 :::
