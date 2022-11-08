@@ -1,6 +1,6 @@
 ---
 title: "Permitting `static constexpr` variables in `constexpr` functions"
-document: P2647R0
+document: P2647R1
 date: today
 audience: EWG
 author:
@@ -11,6 +11,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+Since [@P2647R0], updated wording, added an example and feature-test macro.
 
 # Introduction
 
@@ -100,6 +104,31 @@ Change [expr.const]{.sref}/5.2:
 
   * [5.1]{.pnum} ...
 
-  * [5.2]{.pnum} a control flow that passes through a declaration of a [non-`constexpr`]{.addu} variable with static ([basic.stc.static]) or thread ([basic.stc.thread]) storage duration;
+  * [5.2]{.pnum} a control flow that passes through a declaration of a variable with static ([basic.stc.static]) or thread ([basic.stc.thread]) storage duration[, unless that variable is usable in constant expressions]{.addu};
 
+::: addu
+[*Example*:
+```
+constexpr char test()
+{
+   static const int x = 5;
+   static constexpr char c[] = "Hello World";
+   return *(c+x);
+}
+static_assert(' ' == test());
+```
+-*end example*]
+:::
+
+:::
+
+## Feature-test macro
+
+Change [cpp.predefined]{.sref}:
+
+::: bq
+```diff
+- __cpp_­constexpr @[202207L]{.diffdel}@
++ __cpp_­constexpr @[20XXXXL]{.diffins}@
+```
 :::

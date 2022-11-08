@@ -1,14 +1,20 @@
 ---
 title: "`consteval` needs to propagate up"
-document: P2564R0
-date: today
-audience: EWG
+document: P2564R2
+date: 2022-11-09
+audience: CWG
 author:
     - name: Barry "Patch" Revzin
       email: <barry.revzin@gmail.com>
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+Since [P2564R1], updated wording to account for aggregate initialization.
+
+Since [@P2564R0], many wording changes and added lots of examples.
 
 # Introduction
 
@@ -441,7 +447,7 @@ Essentially, we have a flow of reasoning that starts with a function _not_ being
 
 # Wording
 
-This wording is known to be incomplete at this point, the primary goal in this revision is to at least set the stage so that people can understand the intent. The crux of the wording change is to extend [expr.const]{.sref}/13:
+Extend [expr.const]{.sref}/13:
 
 ::: bq
 [13]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
@@ -450,28 +456,88 @@ This wording is known to be incomplete at this point, the primary goal in this r
 * [#.#]{.pnum} [it is a subexpression of a manifestly constant-evaluated expression or conversion, or]{.addu}
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the _compound-statement_ of a consteval if statement ([stmt.if]).
 
+An expression or conversion is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. [An immediate invocation shall be a constant expression.]{.rm} [An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.]{.addu}
+
 ::: addu
 [13a]{.pnum} An expression or conversion is _immediate-escalating_ if it is not initially in an immediate function context and it is either
 
-* [13a.#]{.pnum} a potentially-evaluated _id-expression_ that denotes an immediate function, or
-* [13a.#]{.pnum} a potentially-evaluated explicit or implicit invocation of an immediate function that is not a constant expression.
+* [13a.#]{.pnum} a potentially-evaluated _id-expression_ that denotes an immediate function that is not a subexpression of an immediate invocation, or
+* [13a.#]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
 
 [13b]{.pnum} An _immediate-escalating_ function is:
 
-* [13b.#]{.pnum} the call operator of a lambda that is declared with neither the constexpr nor consteval specifiers,
-* [13b.#]{.pnum} a defaulted special member function that is declared with neither the constexpr nor consteval specifiers, or
+* [13b.#]{.pnum} the call operator of a lambda that is not declared with the consteval specifier,
+* [13b.#]{.pnum} a defaulted special member function that is not declared with the consteval specifier, or
 * [13b.#]{.pnum} a function that results from the instantiation of a templated entity defined with the constexpr specifier.
+
+An immediate-escalating expression shall appear only in an immediate-escalating function.
 
 [13c]{.pnum} An _immediate function_ is a function or constructor that is:
 
 * [13c.#]{.pnum} declared with the `consteval` specifier, or
-* [13c.#]{.pnum} an immediate-escalating function, F, that contains an immediate-escalating expression, E, such that E's innermost enclosing non-block scope is F's function parameter scope.
+* [13c.#]{.pnum} an immediate-escalating function F whose function body contains an immediate-escalating expression E such that E's innermost enclosing non-block scope is F's function parameter scope.
 :::
 
-An expression or conversion is an _immediate invocation_ if it is [a potentially-evaluated explicit or implicit invocation of an immediate function]{.rm} [immediate-escalating]{.addu} and is not in an immediate function context. An immediate invocation shall be a constant expression.
+::: addu
+[*Example*:
+```
+consteval int id(int i) { return i; }
+constexpr char id(char c) { return c; }
+
+template <typename T>
+constexpr int f(T t) {
+    return t + id(t);
+}
+
+auto a = &f<char>; // ok, f<char> is not an immediate function
+auto b = &f<int>;  // error: f<int> is an immediate function
+
+static_assert(f(3) == 6); // ok
+
+template <typename T>
+constexpr int g(T t) {    // g<int> is not an immediate function
+    return t + id(42);    // because id(42) is already a constant
+}
+
+template <typename T, typename F>
+constexpr bool is_not(T t, F f) {
+    return not f(t);
+}
+
+consteval bool is_even(int i) { return i % 2 == 0; }
+
+static_assert(is_not(5, is_even)); // ok
+
+int x = 0;
+
+template <typename T>
+constexpr T h(T t = id(x)) { // h<int> is not an immediate function
+    return t;
+}
+
+template <typename T>
+constexpr T hh() {           // hh<int> is an immediate function
+    return h<T>();
+}
+
+int i = hh<int>(); // ill-formed: hh<int>() is an immediate-escalating expression
+                   // outside of an immediate-escalating function
+
+struct A {
+  int x;
+  int y = id(x);
+};
+
+template <typename T>
+constexpr int k(int) {  // k<int> is not an immediate function
+  return A(42).y;       // because A(42) is a constant expression and thus not
+}                       // immediate-escalating
+```
+-*end example*]
+:::
 :::
 
-With which we can remove [expr.prim.id.general]{.sref}/4, which is now handled in the above:
+Remove [expr.prim.id.general]{.sref}/4 (it is handled above in the definition of immediate-escalating).
 
 ::: bq
 ::: rm

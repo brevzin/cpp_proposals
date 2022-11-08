@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2022-11-09" />
+  <title>consteval needs to propagate up</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="kw">consteval</span></code> needs to propagate up</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2564R2</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2022-11-09</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      CWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry “Patch” Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#consteval-is-a-color"><span class="toc-section-number">3</span> <code class="sourceCode cpp"><span class="kw">consteval</span></code> is a color<span></span></a>
+<ul>
+<li><a href="#some-code-is-already-multi-colored"><span class="toc-section-number">3.1</span> Some code is already multi-colored<span></span></a></li>
+<li><a href="#making-the-library-multi-colored"><span class="toc-section-number">3.2</span> Making the library multi-colored<span></span></a></li>
+<li><a href="#making-the-language-multi-colored"><span class="toc-section-number">3.3</span> Making the language multi-colored<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#implementation-experience"><span class="toc-section-number">4.1</span> Implementation Experience<span></span></a></li>
+<li><a href="#wording-circularity"><span class="toc-section-number">4.2</span> Wording Circularity<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">5</span> Wording<span></span></a></li>
+<li><a href="#acknowledgments"><span class="toc-section-number">6</span> Acknowledgments<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since [P2564R1], updated wording to account for aggregate initialization.</p>
+<p>Since <span class="citation" data-cites="P2564R0">[<a href="#ref-P2564R0" role="doc-biblioref">P2564R0</a>]</span>, many wording changes and added lots of examples.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p><span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span> proposes that we should use a monotype, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, as part of a value-based reflection. One argument here is that lots of operations return ranges of <code class="sourceCode cpp">meta<span class="op">::</span>info</code> and it would be valuable if we could simply reuse our plethora of existing range algorithms for these use-cases.</p>
+<p>Let’s investigate this claim.</p>
+<p>We don’t need a working implementation of P1240 to test this, it’s enough to have this very, very loose approximation:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">struct</span> info <span class="op">{</span> <span class="dt">int</span> value; <span class="op">}</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_invalid<span class="op">(</span>info i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        <span class="co">// we do not tolerate the cult of even here</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>        <span class="cf">return</span> i<span class="op">.</span>value <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span>;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="op">}</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>And let’s pick a simple problem. We start some sequence of… we’ll call them types:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info types<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>We want to ensure that none of them are invalid. This is a problem for which we have a direct algorithm: <code class="sourceCode cpp">none_of</code>. Let’s try using it:</p>
+<table>
+<tr>
+<th>
+Attempt
+</th>
+<th>
+Result
+</th>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    types,</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    std<span class="op">::</span>meta<span class="op">::</span>is_invalid</span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+<td>
+<p>❌. Ill-formed per <span>7.5.4.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">4</a></span> A potentially-evaluated id-expression that denotes an immediate function shall appear only</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(4.1)</a></span> as a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(4.2)</a></span> in an immediate function context.</li>
+</ul>
+</blockquote>
+Neither of those cases apply here.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    types,</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+<td>
+<p>❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">13</a></span> An expression or conversion is in an immediate function context if it is potentially evaluated and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(13.1)</a></span> its innermost enclosing non-block scope is a function parameter scope of an immediate function, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(13.2)</a></span> its enclosing statement is enclosed ([stmt.pre]) by the compound-statement of a consteval if statement ([stmt.if]).</li>
+</ul>
+<p>An expression or conversion is an immediate invocation if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An immediate invocation shall be a constant expression.</p>
+</blockquote>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is an immediate function, the call to it in the lambda is not in an immediate function context, so it’s an immediate invocation. But <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> isn’t a constant expression, because of the parameter <code class="sourceCode cpp">i</code> here.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    types,</span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb5-5"><a href="#cb5-5"></a>    <span class="op">}</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+<td>
+❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13 again. This time the lambda itself is fine, but now invoking the lambda from inside of <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>none_of</code> is the problem.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    types,</span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="op">+[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="op">}</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+</td>
+<td>
+<p>❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/11:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">11</a></span> A constant expression is either a glvalue core constant expression that refers to an entity that is a permitted result of a constant expression (as defined below), or a prvalue core constant expression whose value satisfies the following constraints:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(11.1)</a></span> if the value is an object of class type, each non-static data member of reference type refers to an entity that is a permitted result of a constant expression,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(11.2)</a></span> if the value is of pointer type, it contains the address of an object with static storage duration, the address past the end of such an object ([expr.add]), the address of a non-immediate function, or a null pointer value,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(11.3)</a></span> if the value is of pointer-to-member-function type, it does not designate an immediate function, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(11.4)</a></span> if the value is an object of class or array type, each subobject satisfies these constraints for the value.</li>
+</ul>
+<p>An entity is a permitted result of a constant expression if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function.</p>
+</blockquote>
+Here, explicitly converting the lambda to a function pointer isn’t a permitted result because it’s an immediate function.
+</td>
+</tr>
+</table>
+<p>That exhausts the options here. What if instead of trying to directly <code class="sourceCode cpp"><span class="kw">static_assert</span></code> the result of an algorithm (or, equivalently, use it as an initializer for a constexpr variable or as the condition of an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code> or as a non-type template argument), we did it inside of a new <code class="sourceCode cpp"><span class="kw">consteval</span></code> function?</p>
+<table>
+<tr>
+<th>
+Attempt
+</th>
+<th>
+Result
+</th>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> all_valid<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>        types,</span>
+<span id="cb7-4"><a href="#cb7-4"></a>        std<span class="op">::</span>meta<span class="op">::</span>is_invalid</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    <span class="op">)</span>;</span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="op">}</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="kw">static_assert</span><span class="op">(</span>all_valid<span class="op">())</span>;</span></code></pre></div>
+</td>
+<td>
+<p>✅. This one is actually valid per the language rules. Except, per the library rules, it’s unspecified per <span>16.4.5.2.1 <a href="https://wg21.link/namespace.std">[namespace.std]</a></span>/6:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">6</a></span> Let F denote a standard library function ([global.functions]), a standard library static member function, or an instantiation of a standard library function template. Unless F is designated an addressable function, the behavior of a C++ program is unspecified (possibly ill-formed) if it explicitly or implicitly attempts to form a pointer to F.</p>
+</blockquote>
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> all_valid<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>        types,</span>
+<span id="cb8-4"><a href="#cb8-4"></a>        <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb8-6"><a href="#cb8-6"></a>        <span class="op">}</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>    <span class="op">)</span>;</span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="op">}</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="kw">static_assert</span><span class="op">(</span>all_valid<span class="op">())</span>;</span></code></pre></div>
+</td>
+<td>
+❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13 still.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> all_valid<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>        types,</span>
+<span id="cb9-4"><a href="#cb9-4"></a>        <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb9-6"><a href="#cb9-6"></a>        <span class="op">}</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>    <span class="op">)</span>;</span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="op">}</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="kw">static_assert</span><span class="op">(</span>all_valid<span class="op">())</span>;</span></code></pre></div>
+</td>
+<td>
+❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13 still.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> all_valid<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>    <span class="cf">return</span> std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>        types,</span>
+<span id="cb10-4"><a href="#cb10-4"></a>        <span class="op">+[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>        <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="op">)</span>;</span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="kw">static_assert</span><span class="op">(</span>all_valid<span class="op">())</span>;</span></code></pre></div>
+</td>
+</td>
+<td>
+✅. Valid. Language and library both.
+</td>
+</tr>
+</table>
+<p>This leaves a lot to be desired. The only mechanism completely sanctioned by the language and library rules we have today is to write a bespoke consteval function which invokes the algorithm using a non-generic, consteval lambda that just wraps an existing library function and converts it to a function pointer.</p>
+<p>Put simply: algorithms are basically unusable with the consteval rules we have.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="consteval-is-a-color"><span class="header-section-number">3</span> <code class="sourceCode cpp"><span class="kw">consteval</span></code> is a color<a href="#consteval-is-a-color" class="self-link"></a></h1>
+<p>The problem is that <code class="sourceCode cpp"><span class="kw">consteval</span></code> is a color <span class="citation" data-cites="what-color">[<a href="#ref-what-color" role="doc-biblioref">what-color</a>]</span>. <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions and function templates can only be called by other <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions and function templates.</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>none_of</code>, like all the other algorithms in the standard library, and probably all the other algorithms outside of the standard library, are not <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions or function templates. Moreover, none of these algorithms are ever going to either become <code class="sourceCode cpp"><span class="kw">consteval</span></code> or be duplicated in order to gain a <code class="sourceCode cpp"><span class="kw">consteval</span></code> twin. Which means that none of these algorithms, including <code class="sourceCode cpp">none_of</code>, can ever invoke any of the facilities proposed by <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span>.</p>
+<h2 data-number="3.1" id="some-code-is-already-multi-colored"><span class="header-section-number">3.1</span> Some code is already multi-colored<a href="#some-code-is-already-multi-colored" class="self-link"></a></h2>
+<p>Almost.</p>
+<p>One of the new C++23 features is <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> <span class="citation" data-cites="P1938R3">[<a href="#ref-P1938R3" role="doc-biblioref">P1938R3</a>]</span>, which partially alleviates the <code class="sourceCode cpp"><span class="kw">consteval</span></code> color problem. That facility allows <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions to be called by <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions in a guarded context, largely in order to solve the same sort of problem that <code class="sourceCode cpp">std<span class="op">::</span>is_constant_evaluated<span class="op">()</span></code> <span class="citation" data-cites="P0595R2">[<a href="#ref-P0595R2" role="doc-biblioref">P0595R2</a>]</span> set out to solve except in a way that would now allow you to invoke <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions.</p>
+<p>The way it works is by establishing an immediate function context. This is important because the rule we were constantly running up against was that:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">13</a></span> An immediate invocation shall be a constant expression.</p>
+</blockquote>
+<p>And a call to an immediate function that is in an immediate function context is not an immediate invocation.</p>
+<p>In our case here, we’re not trying to choose between a compile-time friendly algorithm and a run-time efficient one. We’re only trying to write compile-time code. But that’s okay, there’s no rule that says you need an <code class="sourceCode cpp"><span class="cf">else</span></code>:</p>
+<table>
+<tr>
+<th>
+Attempt
+</th>
+<th>
+Result
+</th>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>    types,</span>
+<span id="cb11-3"><a href="#cb11-3"></a>    <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>        <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a>        <span class="op">}</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a>    <span class="op">}))</span>;</span></code></pre></div>
+</td>
+<td>
+✅. Valid.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    types,</span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>        <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb12-6"><a href="#cb12-6"></a>        <span class="op">}</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>    <span class="op">}))</span>;</span></code></pre></div>
+</td>
+<td>
+❌. Ill-formed per <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13. Still.
+</td>
+</tr>
+</table>
+<p>So… this is fine. We can still use <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions with lambdas, as long as we just wrap all of our lambda bodies in <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> (but definitely also not make them <code class="sourceCode cpp"><span class="kw">consteval</span></code> - they’re only kind of <code class="sourceCode cpp"><span class="kw">consteval</span></code>).</p>
+<h2 data-number="3.2" id="making-the-library-multi-colored"><span class="header-section-number">3.2</span> Making the library multi-colored<a href="#making-the-library-multi-colored" class="self-link"></a></h2>
+<p>We could avoid putting the burden of sprinkling their code with <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> by pushing all of these extra calls into the library.</p>
+<p>For instance, we could make this change to <code class="sourceCode cpp">none_of</code>:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Today</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Tomorrow?</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R, <span class="kw">class</span> Pred<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ranges<span class="op">::</span>none_of<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Pred pred<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    <span class="kw">auto</span> first <span class="op">=</span> ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb13-4"><a href="#cb13-4"></a>    <span class="kw">auto</span> last <span class="op">=</span> ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb13-5"><a href="#cb13-5"></a>    <span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>        <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(*</span>first<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>            <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb13-8"><a href="#cb13-8"></a>        <span class="op">}</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a>    <span class="op">}</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R, <span class="kw">class</span> Pred<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> my<span class="op">::</span>none_of<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Pred pred<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>    <span class="kw">auto</span> first <span class="op">=</span> ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="kw">auto</span> last <span class="op">=</span> ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>    <span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a>        <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a>            <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(*</span>first<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a>                <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb14-9"><a href="#cb14-9"></a>            <span class="op">}</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a>            <span class="cf">if</span> <span class="op">(</span>pred<span class="op">(*</span>first<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a>                <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb14-13"><a href="#cb14-13"></a>            <span class="op">}</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a>        <span class="op">}</span></span>
+<span id="cb14-15"><a href="#cb14-15"></a>    <span class="op">}</span></span>
+<span id="cb14-16"><a href="#cb14-16"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb14-17"><a href="#cb14-17"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>But unfortunately that doesn’t actually work. If <code class="sourceCode cpp">pred<span class="op">(*</span>first<span class="op">)</span></code> were actually a <code class="sourceCode cpp"><span class="kw">consteval</span></code> call, then even duplicating the check in both branches of an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> doesn’t help us. The call to <code class="sourceCode cpp">pred<span class="op">(*</span>first<span class="op">)</span></code> in the first sub-statement (the case where we are doing constant evluation) is fine, since now we’re in an immediate function context, but the call to <code class="sourceCode cpp">pred<span class="op">(*</span>first<span class="op">)</span></code> in the second sub-statement (the “runtime” case) is just as problematic as it was without the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>.</p>
+<p>So the attempted solution on the right isn’t just ridiculous looking, it also doesn’t help. The only library solution here (and I’m using the word solution fairly loosely) is to have one set of algorithms that are <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and a completely duplicate set of algorithms that are <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</p>
+<p>This has to be solved at the language level.</p>
+<h2 data-number="3.3" id="making-the-language-multi-colored"><span class="header-section-number">3.3</span> Making the language multi-colored<a href="#making-the-language-multi-colored" class="self-link"></a></h2>
+<p>Let’s consider the problem in a very local way, going back to the lambda example and presenting it instead as a function (in order to simplify things a bit):</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>ill-formed</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>ok</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> pred_bad<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>    <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> pred_good<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>    <span class="op">}</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>As mentioned multiple times, <code class="sourceCode cpp">pred_bad</code> is ill-formed today because it contains a call to an immediate function outside a consteval context and that call isn’t a constant expression. That is one way we achieve the goal of the <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions that they are only invoked during compile time. But <code class="sourceCode cpp">pred_good</code> is good because that call only appears in an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> branch (i.e. a consteval context), which makes the call safe.</p>
+<p>What’s interesting about <code class="sourceCode cpp">pred_good</code> is that while it’s marked <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, it’s actually <em>only</em> meaningful during compile time (in this case, it’s actually UB at runtime since we just flow off the end of the function). So this isn’t really a great solution either. We need to ensure that <code class="sourceCode cpp">pred_good</code> is only called at compile time.</p>
+<p>But we have a way to ensure that: <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</p>
+<p>Put differently, <code class="sourceCode cpp">pred_bad</code> is today ill-formed, but only because we need to ensure that it’s not called at runtime. If we could ensure that, then we calling it during compile time is otherwise totally fine. What if the language just did that ensuring for us? If such <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions, that are only ill-formed because of calls to <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions simply became <code class="sourceCode cpp"><span class="kw">consteval</span></code>, then we gain the ability to use them at compile time without actually losing anything - we couldn’t call them at runtime to begin with.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes avoiding the <code class="sourceCode cpp"><span class="kw">consteval</span></code> coloring problem (or, at least, mitigating its annoyances) by allowing certain existing <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions to implicitly become <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions when those functions can already only be invoked during compile time anyway.</p>
+<p>Specifically, these three rules:</p>
+<ol type="1">
+<li><p>If a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function contains a call to an immediate function outside of an immediate function context, and that call itself isn’t a constant expression, said <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function implicitly becomes a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function. This is intended to include lambdas, function template specializations, special member functions, and should cover member initializers as well.</p></li>
+<li><p>If an <em>expression-id</em> designates a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function without it being an immediate call in such a context, it also makes the context implicitly consteval. Such <em>expression-id</em>’s are also allowed in contexts that are manifestly constant evaluated.</p></li>
+<li><p>Other manifestly constant evaluated contexts (like <em>constant-expression</em> and the condition of a constexpr if statement) are now considered to be immediate function contexts.</p></li>
+</ol>
+<p>With these rule changes, no library changes are necessary, and any way we want to write the original call just works:</p>
+<table>
+<tr>
+<th>
+Attempt
+</th>
+<th>
+Proposed
+</th>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>    types,</span>
+<span id="cb17-3"><a href="#cb17-3"></a>    <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="op">}))</span>;</span></code></pre></div>
+</td>
+<td>
+✅. First, the lambda becomes implicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code> due to the non-constant call <code class="sourceCode cpp">is_invalid<span class="op">(</span>i<span class="op">)</span></code>. This, in turn, makes this instantiation of <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> implicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code>. And then everything else just works.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>    types,</span>
+<span id="cb18-3"><a href="#cb18-3"></a>    <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb18-5"><a href="#cb18-5"></a>    <span class="op">}))</span>;</span></code></pre></div>
+</td>
+<td>
+✅. Now, the lambda is explicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code> instead of implicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code>, which likewise also makes this instantiation of <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> implicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code>. Everything else just works.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>    types,</span>
+<span id="cb19-3"><a href="#cb19-3"></a>    std<span class="op">::</span>meta<span class="op">::</span>is_invalid</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+<td>
+✅. Still bad based on the library wording, but from the second proposed rule <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is usable in this context because it is manifestly constant evaluated. <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> does not become <code class="sourceCode cpp"><span class="kw">consteval</span></code> here, since it does not need to do so.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>    types,</span>
+<span id="cb20-3"><a href="#cb20-3"></a>    <span class="op">+[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb20-5"><a href="#cb20-5"></a>    <span class="op">}</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+<td>
+✅. Previously, this was ill-formed because the conversion to function pointer needed to be (in of itself) a constant expression, but with the third proposed rule this conversion would now occur in an immediate function context. The “permitted result” rule no longer has to apply, so this is fine. As above, <code class="sourceCode cpp">ranges<span class="op">:</span>none_of</code> here does not become <code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>none_of<span class="op">(</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>    types,</span>
+<span id="cb21-3"><a href="#cb21-3"></a>    <span class="op">[]{</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>        <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid;</span>
+<span id="cb21-5"><a href="#cb21-5"></a>    <span class="op">}()</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="op">))</span>;</span></code></pre></div>
+</td>
+<td>
+✅. The use of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> causes the lambda to be <code class="sourceCode cpp"><span class="kw">consteval</span></code>, through the second rule. And the third rule cases the invocation of the lambda to be in an immediate function context. This produces a function pointer which does not have to be a permitted result of a constant expression, because the invocation no longer needs to be constant expression. In this case too, <code class="sourceCode cpp">ranges<span class="op">::</span>none_of</code> does not become <code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+</td>
+</tr>
+</table>
+<h2 data-number="4.1" id="implementation-experience"><span class="header-section-number">4.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>This has been implemented in EDG by Daveed Vandevoorde. One interesting example he brings up:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">consteval</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> p<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> p; <span class="op">}</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span>T<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> g; <span class="op">}</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="dt">int</span> r <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)(</span><span class="dv">2</span><span class="op">)</span>;      <span class="co">// proposed ok</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="dt">int</span> s <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)(</span><span class="dv">2</span><span class="op">)</span> <span class="op">+</span> r;  <span class="co">// error</span></span></code></pre></div>
+</blockquote>
+<p>Today, even the call <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> is ill-formed, because naming <code class="sourceCode cpp">g</code> isn’t allowed in that context (it is neither a subexpression of an immediate invocation nor in an immediate function context).</p>
+<p>Per the proposal, the initialization of <code class="sourceCode cpp">r</code> becomes valid. <code class="sourceCode cpp">f</code> implicitly becomes a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function template due to use of <code class="sourceCode cpp">g</code>. Because <code class="sourceCode cpp">r</code> is at namespace scope, we tentatively try to perform constant initialization, which makes the initial parse manifestly constant evaluated. In such a context, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> does not have to be a constant expression, so the fact that we’re returning a pointer to consteval function is okay. The subsequent invocation <code class="sourceCode cpp">g<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> is fine, and initializes <code class="sourceCode cpp">r</code> to <code class="sourceCode cpp"><span class="dv">2</span></code>.</p>
+<p>But even with this proposal, the initialization of <code class="sourceCode cpp">s</code> is ill-formed. The tentative constant initialization fails (because <code class="sourceCode cpp">r</code> isn’t a constant), and in the subsequent dynamic initialization, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code> is now actually an immediate invocation (<code class="sourceCode cpp">f</code> still becomes implicitly <code class="sourceCode cpp"><span class="kw">consteval</span></code>, which now must be a constant expression, which now has the rule that its result must be a permitted result, in which context returning a pointer to consteval function is disallowed).</p>
+<h2 data-number="4.2" id="wording-circularity"><span class="header-section-number">4.2</span> Wording Circularity<a href="#wording-circularity" class="self-link"></a></h2>
+<p>One of the issues with actually wording this proposal is its chicken-and-egg nature. Let’s consider the main example again:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>    <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>And let’s work through both the status quo reasoning and the proposed reasoning.</p>
+<table>
+<tr>
+<th>
+Current Reasoning
+</th>
+<th>
+Proposed Reasoning
+</th>
+</tr>
+<tr>
+<td>
+<ol type="1">
+<li><code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is an <em>immediate function</em> because it is declared <code class="sourceCode cpp"><span class="kw">consteval</span></code> (these are synonyms).</li>
+<li>The lambda’s call operator is not an immediate function, because it is not declared <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
+<li>The expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is not in an <em>immediate function context</em> because of (2) and also it is not in an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code>.</li>
+<li>The combination of (1) and (3) make the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> an <em>immediate invocation</em>, which is required to be a constant expression.</li>
+<li>That expression isn’t a constant expression because of the use of the function parameter, <code class="sourceCode cpp">i</code>, so this is ill-formed.</li>
+</ol>
+</td>
+<td>
+<ol type="1">
+<li><code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid</code> is an <em>immediate function</em> because it is declared <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
+<li>The lambda’s call operator is not an immediate function, because it is not declared <code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
+<li>The expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is not in an <em>immediate function context</em> because of (2) and also it is not in an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> and also it is not manifestly-constant-evaluated.</li>
+<li>The combination of (1) and (3) make the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> an <em>immediate-escalating expression</em>.</li>
+<li>The lambda’s call operator is declared neither <code class="sourceCode cpp"><span class="kw">constexpr</span></code> nor <code class="sourceCode cpp"><span class="kw">consteval</span></code>, which makes it an <em>immediate-escalating function</em>.</li>
+<li>The combination of (4) and (5) cause the lambda’s call operator to become an <em>immediate function</em>.</li>
+<li>… which means that now the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is in an immediate function context.</li>
+<li>Which now means that the expression <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_invalid<span class="op">(</span>i<span class="op">)</span></code> is no longer an immediate invocation.</li>
+</ol>
+</td>
+</tr>
+</table>
+<p>Essentially, we have a flow of reasoning that starts with a function <em>not</em> being an immediate function and, because of that, becoming an immediate function. This is, admittedly, confusing. But I think it does make sense, and Daveed had less trouble implementing this than we had even attempting to try to reason about wording it.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Extend <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/13:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">13</a></span> An expression or conversion is in an <em>immediate function context</em> if it is potentially evaluated and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(13.1)</a></span> its innermost enclosing non-block scope is a function parameter scope of an immediate function, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(13.2)</a></span> <span class="addu">it is a subexpression of a manifestly constant-evaluated expression or conversion, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(13.3)</a></span> its enclosing statement is enclosed ([stmt.pre]) by the <em>compound-statement</em> of a consteval if statement ([stmt.if]).</li>
+</ul>
+<p>An expression or conversion is an <em>immediate invocation</em> if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. <span class="rm" style="color: #bf0303"><del>An immediate invocation shall be a constant expression.</del></span> <span class="addu">An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.</span></p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">13a</a></span> An expression or conversion is <em>immediate-escalating</em> if it is not initially in an immediate function context and it is either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(13a.1)</a></span> a potentially-evaluated <em>id-expression</em> that denotes an immediate function that is not a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(13a.2)</a></span> an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">13b</a></span> An <em>immediate-escalating</em> function is:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(13b.1)</a></span> the call operator of a lambda that is not declared with the consteval specifier,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(13b.2)</a></span> a defaulted special member function that is not declared with the consteval specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(13b.3)</a></span> a function that results from the instantiation of a templated entity defined with the constexpr specifier.</li>
+</ul>
+<p>An immediate-escalating expression shall appear only in an immediate-escalating function.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">13c</a></span> An <em>immediate function</em> is a function or constructor that is:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(13c.1)</a></span> declared with the <code class="sourceCode cpp"><span class="kw">consteval</span></code> specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(13c.2)</a></span> an immediate-escalating function F whose function body contains an immediate-escalating expression E such that E’s innermost enclosing non-block scope is F’s function parameter scope.</li>
+</ul>
+</div>
+<div class="addu">
+<p>[<em>Example</em>:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1"></a>consteval int id(int i) { return i; }</span>
+<span id="cb24-2"><a href="#cb24-2"></a>constexpr char id(char c) { return c; }</span>
+<span id="cb24-3"><a href="#cb24-3"></a></span>
+<span id="cb24-4"><a href="#cb24-4"></a>template &lt;typename T&gt;</span>
+<span id="cb24-5"><a href="#cb24-5"></a>constexpr int f(T t) {</span>
+<span id="cb24-6"><a href="#cb24-6"></a>    return t + id(t);</span>
+<span id="cb24-7"><a href="#cb24-7"></a>}</span>
+<span id="cb24-8"><a href="#cb24-8"></a></span>
+<span id="cb24-9"><a href="#cb24-9"></a>auto a = &amp;f&lt;char&gt;; // ok, f&lt;char&gt; is not an immediate function</span>
+<span id="cb24-10"><a href="#cb24-10"></a>auto b = &amp;f&lt;int&gt;;  // error: f&lt;int&gt; is an immediate function</span>
+<span id="cb24-11"><a href="#cb24-11"></a></span>
+<span id="cb24-12"><a href="#cb24-12"></a>static_assert(f(3) == 6); // ok</span>
+<span id="cb24-13"><a href="#cb24-13"></a></span>
+<span id="cb24-14"><a href="#cb24-14"></a>template &lt;typename T&gt;</span>
+<span id="cb24-15"><a href="#cb24-15"></a>constexpr int g(T t) {    // g&lt;int&gt; is not an immediate function</span>
+<span id="cb24-16"><a href="#cb24-16"></a>    return t + id(42);    // because id(42) is already a constant</span>
+<span id="cb24-17"><a href="#cb24-17"></a>}</span>
+<span id="cb24-18"><a href="#cb24-18"></a></span>
+<span id="cb24-19"><a href="#cb24-19"></a>template &lt;typename T, typename F&gt;</span>
+<span id="cb24-20"><a href="#cb24-20"></a>constexpr bool is_not(T t, F f) {</span>
+<span id="cb24-21"><a href="#cb24-21"></a>    return not f(t);</span>
+<span id="cb24-22"><a href="#cb24-22"></a>}</span>
+<span id="cb24-23"><a href="#cb24-23"></a></span>
+<span id="cb24-24"><a href="#cb24-24"></a>consteval bool is_even(int i) { return i % 2 == 0; }</span>
+<span id="cb24-25"><a href="#cb24-25"></a></span>
+<span id="cb24-26"><a href="#cb24-26"></a>static_assert(is_not(5, is_even)); // ok</span>
+<span id="cb24-27"><a href="#cb24-27"></a></span>
+<span id="cb24-28"><a href="#cb24-28"></a>int x = 0;</span>
+<span id="cb24-29"><a href="#cb24-29"></a></span>
+<span id="cb24-30"><a href="#cb24-30"></a>template &lt;typename T&gt;</span>
+<span id="cb24-31"><a href="#cb24-31"></a>constexpr T h(T t = id(x)) { // h&lt;int&gt; is not an immediate function</span>
+<span id="cb24-32"><a href="#cb24-32"></a>    return t;</span>
+<span id="cb24-33"><a href="#cb24-33"></a>}</span>
+<span id="cb24-34"><a href="#cb24-34"></a></span>
+<span id="cb24-35"><a href="#cb24-35"></a>template &lt;typename T&gt;</span>
+<span id="cb24-36"><a href="#cb24-36"></a>constexpr T hh() {           // hh&lt;int&gt; is an immediate function</span>
+<span id="cb24-37"><a href="#cb24-37"></a>    return h&lt;T&gt;();</span>
+<span id="cb24-38"><a href="#cb24-38"></a>}</span>
+<span id="cb24-39"><a href="#cb24-39"></a></span>
+<span id="cb24-40"><a href="#cb24-40"></a>int i = hh&lt;int&gt;(); // ill-formed: hh&lt;int&gt;() is an immediate-escalating expression</span>
+<span id="cb24-41"><a href="#cb24-41"></a>                   // outside of an immediate-escalating function</span>
+<span id="cb24-42"><a href="#cb24-42"></a></span>
+<span id="cb24-43"><a href="#cb24-43"></a>struct A {</span>
+<span id="cb24-44"><a href="#cb24-44"></a>  int x;</span>
+<span id="cb24-45"><a href="#cb24-45"></a>  int y = id(x);</span>
+<span id="cb24-46"><a href="#cb24-46"></a>};</span>
+<span id="cb24-47"><a href="#cb24-47"></a></span>
+<span id="cb24-48"><a href="#cb24-48"></a>template &lt;typename T&gt;</span>
+<span id="cb24-49"><a href="#cb24-49"></a>constexpr int k(int) {  // k&lt;int&gt; is not an immediate function</span>
+<span id="cb24-50"><a href="#cb24-50"></a>  return A(42).y;       // because A(42) is a constant expression and thus not</span>
+<span id="cb24-51"><a href="#cb24-51"></a>}                       // immediate-escalating</span></code></pre></div>
+<p>-<em>end example</em>]</p>
+</div>
+</blockquote>
+<p>Remove <span>7.5.4.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4 (it is handled above in the definition of immediate-escalating).</p>
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">4</a></span> A potentially-evaluated id-expression that denotes an immediate function shall appear only</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(4.1)</a></span> as a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(4.2)</a></span> in an immediate function context.</li>
+</ul>
+
+</div>
+</blockquote>
+<p>And removing the current definition of <em>immediate function</em> from <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/2, since it’s now defined (recursively) above.</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">2</a></span> A <code class="sourceCode cpp"><span class="kw">constexpr</span></code> or <code class="sourceCode cpp"><span class="kw">consteval</span></code> specifier used in the declaration of a function declares that function to be a <em>constexpr function</em>. <span class="addu">[<em>Note</em>:</span> A function or constructor declared with the consteval specifier is <span class="rm" style="color: #bf0303"><del>called</del></span> an immediate function <span class="addu">([expr.const]) <em>-end note</em> ]</span>. A destructor, an allocation function, or a deallocation function shall not be declared with the consteval specifier.</p>
+</blockquote>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">6</span> Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>Thanks to Daveed Vandevoorde and Tim Song for discussions around this issue and Daveed for implementing it.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P0595R2">
+<p>[P0595R2] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-09. std::is_constant_evaluated. <br />
+<a href="https://wg21.link/p0595r2">https://wg21.link/p0595r2</a></p>
+</div>
+<div id="ref-P1240R2">
+<p>[P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali. 2022-01-14. Scalable Reflection. <br />
+<a href="https://wg21.link/p1240r2">https://wg21.link/p1240r2</a></p>
+</div>
+<div id="ref-P1938R3">
+<p>[P1938R3] Barry Revzin, Daveed Vandevoorde, Richard Smith, Andrew Sutton. 2021-03-22. if consteval. <br />
+<a href="https://wg21.link/p1938r3">https://wg21.link/p1938r3</a></p>
+</div>
+<div id="ref-P2564R0">
+<p>[P2564R0] Barry Revzin. 2022-03-15. consteval needs to propagate up. <br />
+<a href="https://wg21.link/p2564r0">https://wg21.link/p2564r0</a></p>
+</div>
+<div id="ref-what-color">
+<p>[what-color] Bob Nystrom. 2015-02-01. What Color is Your Function? <br />
+<a href="https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/">https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
