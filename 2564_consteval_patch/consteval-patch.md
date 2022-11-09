@@ -1,7 +1,7 @@
 ---
 title: "`consteval` needs to propagate up"
-document: P2564R2
-date: 2022-11-09
+document: P2564R3
+date: 2022-11-11
 audience: CWG
 author:
     - name: Barry "Patch" Revzin
@@ -11,6 +11,8 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [P2564R2], added a feature-test macro.
 
 Since [P2564R1], updated wording to account for aggregate initialization.
 
@@ -553,6 +555,17 @@ And removing the current definition of _immediate function_ from [dcl.constexpr]
 ::: bq
 [2]{.pnum} A `constexpr` or `consteval` specifier used in the declaration of a function declares that function to be a _constexpr function_.
 [ \[*Note*: ]{.addu}    A function or constructor declared with the consteval specifier is [called]{.rm} an immediate function [(\[expr.const\]) *-end note* \]]{.addu}. A destructor, an allocation function, or a deallocation function shall not be declared with the consteval specifier.
+:::
+
+## Feature-test Macro
+
+Bump `__cpp_consteval` in [cpp.predefined]{.sref}:
+
+::: bq
+```diff
+- __cpp_­consteval @[201811L]{.diffdel}@
++ __cpp_­consteval @[20XXXXL]{.diffins}@
+```
 :::
 
 # Acknowledgments
