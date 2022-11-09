@@ -38,6 +38,7 @@ make all of my papers.
 - ![][~ranges] [p2325r3 - Views should not be required to be default constructible](2325_views_default/p2325r3.html).
 - ![][~ranges] [p2415r2 - What is a `view`?](2415_what_view/p2415r2.html)
 - [p2493r0 - Missing feature test macros for C++20 core papers](2493_core_feature_test/p2493r0.html)
+- ![][~constexpr] [p2564r3 - `consteval` needs to propagate up](2564_consteval_patch/p2564r3.html).
 
 #### C++23
 
@@ -54,6 +55,8 @@ make all of my papers.
 - [p2508r2 - Expose `std::basic-format-string<charT, Args...>`](2508_expose_format_string/p2508r2.html).
 - ![][~ranges] [p2520r0 - `move_iterator<T*>` should be a random access iterator](2520_move_iterator/p2520r0.html).
 - ![][~ranges] [p2585r1 - Improve default container formatting](2585_fmt_container/p2585r1.html).
+- ![][~ranges] [p2602r1 - Poison Pills are Too Toxic](2602_poison_pills/p2602r1.html).
+- ![][~constexpr] [p2647r1 - Permitting `static constexpr` variables in `constexpr` functions](2647_static_constexpr/p2647r1.html).
 
 ### Pending Plenary
 
@@ -61,7 +64,8 @@ None.
 
 ### Pending CWG/LWG Review
 
-- ![][~ranges] [p2602r1 - Poison Pills are Too Toxic](2602_poison_pills/p2602r1.html).
+- [p1061r3 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r3.html), with Jonathan Wakely.
+- [p2593r1 - Allowing `static_assert(false)`](2593_static_assert/p2593r1.html)
 
 ### Pending EWG/LEWG Voting
 
@@ -70,10 +74,8 @@ None.
 ### Pending EWG/LEWG Review
 
 - ![][~constexpr] [p2484r0 - Extending support for class types as non-type template parameters](2484_extend_cnttp/p2484r0.html)
-- ![][~constexpr] [p2564r0 - `consteval` needs to propagate up](2564_consteval_patch/p2564r0.html).
-- [p2593r0 - Allowing `static_assert(false)`](2593_static_assert/p2593r0.html)
 - [p2561r1 - An error propagation operator](2561_operator_try/p2561r1.html)
-- [p2637r1 - Member `visit` and `apply`](2637_member_visit/p2637r1.html).
+- [p2637r1 - Member `visit`](2637_member_visit/p2637r1.html).
 - ![][~constexpr] [p2641r1 - Checking if a union alternative is active](2641_active_union/p2641r1.html).
 
 ### Ongoing Plans
@@ -82,7 +84,6 @@ None.
 
 #### Figure out packs outside of templates?
 
-- [p1061r2 - Structured bindings can introduce a Pack](1061_sb_pack/p1061r2.html), with Jonathan Wakely.
 - [p1858r2 - Generalized pack declarations and usage](1858_generalized_packs/p1858r2.html).
 - [p2277r0 - Packs outside of templates](2277_packs_outside_of_templates/p2277r0.html).
 - [p2120r0 - Simplified structured bindings protocol with pack aliases](1858_generalized_packs/p2120r0.html). Splitting off the structured bindings part from p1858.
