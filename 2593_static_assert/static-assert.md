@@ -1,13 +1,17 @@
 ---
 title: "Allowing `static_assert(false)`"
-document: P2593R0
+document: P2593R1
 date: today
-audience: EWG
+audience: CWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2593R0], added some alternative approaches.
 
 # Introduction
 
@@ -145,6 +149,8 @@ This was followed up by a language proposal to make `static_assert` more depende
 
 The proposal here is quite simple. `static_assert(false)` should just work.
 
+## Wording
+
 Change [dcl.pre]{.sref}/10:
 
 ::: bq
@@ -193,6 +199,19 @@ If the condition is false, we're going to get a compiler error anyway. And that'
 ## Implementation Experience
 
 I implemented this in both EDG and Clang. In both compilers, it's basically a two line code change: simply don't try to diagnose `static_assert` declarations if we're still in a template dependent context. Wait until they're instantiated.
+
+## Alternative Designs
+
+While this proposal simply treats the condition of `static_assert` as always dependent, there were a few other potential approaches to this problem.
+
+The first is rather than treating _all_ conditions as dependent, simply allow `static_assert(false)` directly. Or maybe not just `false`, literally the token `false`, but maybe also the token `0`. Or some other specific subset of expressions that is extremely `false`. Perhaps then `static_assert(false)` and `static_assert(0)` would delay triggering until instantiation, but something like `static_assert(condition)` where `condition` is an `inline constexpr bool` variable would trigger immediately. Really just allowing `static_assert(false)` is the primary goal, so this would be good enough, but it's pretty weird to special-case certain expressions like this. And I'm not even sure what the right set of "falsey-enough" expressions would be, or how to specify it. So that doesn't seem like a better alternative.
+
+Another approach would be to treat `static_assert("error")` differently. This is technically a valid declaration today, although it is basically meaningless, equivalent to writing `static_assert(true)`. We could treat `static_assert($string-literal$)` as the kind of unconditional diagnostic on instantiation that I'm going for with `static_assert(false)`. This certainly seems interesting at first glance, but it has two problems with it:
+
+1. It's something people would have to be taught to do, whereas `static_assert(false)` is already what people initially try
+2. At some point, we will extend `static_assert` to allow richer messages. Not just a string-literal, maybe a full `std::string` that is a result of a call to `std::format`? If we ever do that, then `static_assert(std::format("error"))` wouldn't really be able to have this special behavior.
+
+The nice thing about simply allowing all conditions to be treated as dependent is that it's straightforward to understand, specify, and implement, doesn't cut off future evolution, and is already what people expect to work. I'm not sure that there's another design that satisfies all of these criteria.
 
 # Acknowledgements
 

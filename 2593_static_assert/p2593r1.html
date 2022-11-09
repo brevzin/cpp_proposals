@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2022-11-08" />
+  <title>Allowing static_assert(false)</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Allowing <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code></h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2593R1</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2022-11-08</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      CWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#the-actual-rule"><span class="toc-section-number">2.1</span> The Actual Rule<span></span></a></li>
+<li><a href="#workarounds"><span class="toc-section-number">2.2</span> Workarounds<span></span></a></li>
+<li><a href="#valid-workaround"><span class="toc-section-number">2.3</span> Valid Workaround<span></span></a></li>
+<li><a href="#history"><span class="toc-section-number">2.4</span> History<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording"><span class="toc-section-number">3.1</span> Wording<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">3.2</span> Implementation Experience<span></span></a></li>
+<li><a href="#alternative-designs"><span class="toc-section-number">3.3</span> Alternative Designs<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">4</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2593R0">[<a href="#ref-P2593R0" role="doc-biblioref">P2593R0</a>]</span>, added some alternative approaches.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Consider the two functions below:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Runtime</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Compile time</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="dt">void</span> do_something<span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  <span class="cf">if</span> <span class="op">(</span>is_widget<span class="op">(</span>t<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    use_widget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_gadget<span class="op">(</span>t<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    use_gadget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="ot">assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="dt">void</span> do_something<span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_widget<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    use_widget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb2-5"><a href="#cb2-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_gadget<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    use_gadget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb2-7"><a href="#cb2-7"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb2-9"><a href="#cb2-9"></a>  <span class="op">}</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>The code on the left is fairly unremarkable. Having a bunch of runtime conditions that are intended to be exhaustive with a trailing <code class="sourceCode cpp"><span class="ot">assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</code> is not an uncommon pattern, in C++ or in C. It’s just: if I get here, it’s a bug, so assert here.</p>
+<p>The code on the right is also fairly unremarkable, simply the compile-time version of the code on the left, where all the checks can be done statically. This is safer, since we can verify <em>at compile time</em> that we actually covered all the cases, ensuring that any bugs are compile errors rather than runtime errors. This is great. People expect the code on the right to do roughly the same as the code on the left, just reporting the error earlier.</p>
+<p>Except while the code on the left works, the code on the right is ill-formed, no diagnostic required. And, in practice, all compilers diagnose this case immediately.</p>
+<p>But users still want to write code using this structure. Sure, in this particular case, they can rewrite it:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Desired structure (IFNDR)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Working structure (✔️)</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="dt">void</span> do_something<span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_widget<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    use_widget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb3-5"><a href="#cb3-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_gadget<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    use_gadget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb3-7"><a href="#cb3-7"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb3-9"><a href="#cb3-9"></a>  <span class="op">}</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="dt">void</span> do_something<span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_widget<span class="op">&lt;</span>T<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    use_widget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    <span class="kw">static_assert</span><span class="op">(</span>is_gadget<span class="op">&lt;</span>T<span class="op">&gt;)</span>;</span>
+<span id="cb4-7"><a href="#cb4-7"></a>    use_gadget<span class="op">(</span>t<span class="op">)</span>;</span>
+<span id="cb4-8"><a href="#cb4-8"></a>  <span class="op">}</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>But in other cases that might not be possible. Such as wanting to ensure that the primary template is not instantiated - there’s no convenient, ready-made condition to put here:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">struct</span> should_be_specialized <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>  <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span>, <span class="st">&quot;this isn&#39;t the specialization you&#39;re looking for&quot;</span><span class="op">)</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<h2 data-number="2.1" id="the-actual-rule"><span class="header-section-number">2.1</span> The Actual Rule<a href="#the-actual-rule" class="self-link"></a></h2>
+<p>The actual rule that <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> runs afoul of is <span>13.8 <a href="https://wg21.link/temp.res">[temp.res]</a></span>/6:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">6</a></span> The validity of a template may be checked prior to any instantiation.</p>
+<p>[<em>Note 3</em>: Knowing which names are type names allows the syntax of every template to be checked in this way. — <em>end note</em>]</p>
+<p>The program is ill-formed, no diagnostic required, if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(6.1)</a></span> no valid specialization can be generated for a template or a substatement of a constexpr if statement within a template and the template is not instantiated, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(6.2)</a></span> …</li>
+</ul>
+</blockquote>
+<p>Since there is, indeed, no valid specialization that would case <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> to be valid, the program is ill-formed, no diagnostic required.</p>
+<p>But… that’s the goal of the code, to not have a valid specialization in this case! It’s just that the obvious solution to the goal happens to cause us to not even have a program.</p>
+<h2 data-number="2.2" id="workarounds"><span class="header-section-number">2.2</span> Workarounds<a href="#workarounds" class="self-link"></a></h2>
+<p>As a result of <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> not working, people turn to workarounds. Which are, basically: how can I write <code class="sourceCode cpp"><span class="kw">false</span></code> in a sufficiently complex way so as to confuse the compiler?</p>
+<p>Some of these workarounds actually still do run afoul of the above rule, but compilers aren’t smart enough to diagnose them, so they Just Happen To Work. Checks like:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>;</code></li>
+<li><code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">*)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>;</code></li>
+<li><code class="sourceCode cpp"><span class="op">[]&lt;</span><span class="dt">bool</span> flag<span class="op">=</span><span class="kw">false</span><span class="op">&gt;(){</span> <span class="kw">static_assert</span><span class="op">(</span>flag<span class="op">)</span>; <span class="op">}()</span>;</code> from <a href="https://stackoverflow.com/a/64354296/2069064">this answer</a>.</li>
+</ul>
+<p>These are all terrible. And also wrong. But they happen to get the job done so people use them.</p>
+<h2 data-number="2.3" id="valid-workaround"><span class="header-section-number">2.3</span> Valid Workaround<a href="#valid-workaround" class="self-link"></a></h2>
+<p>A more valid workaround is to have some template that is always false (e.g. from <a href="https://stackoverflow.com/a/14637534/2069064">this answer</a>):</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">static_assert</span><span class="op">(</span>always_false<span class="op">&lt;</span>T<span class="op">&gt;::</span>value<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>This is also terrible, but as long as the condition is dependent, there could hypothetically be some instantiation that is <code class="sourceCode cpp"><span class="kw">true</span></code>, and thus we don’t run afoul of the [temp.res] rule. So it is technically valid. This is really the only real workaround for this problem, and is something that people have to be taught explicitly as a workaround.</p>
+<h2 data-number="2.4" id="history"><span class="header-section-number">2.4</span> History<a href="#history" class="self-link"></a></h2>
+<p>There was a proposal to add this to the standard library <span class="citation" data-cites="P1830R1">[<a href="#ref-P1830R1" role="doc-biblioref">P1830R1</a>]</span>. The problem with having a library solution to this problem is that you have to handle various kinds. It’s not enough to have <code class="sourceCode cpp">always_false_v<span class="op">&lt;</span>Type<span class="op">&gt;</span></code> since that would require having to write <code class="sourceCode cpp">always_false_v<span class="op">&lt;</span>integral_constant<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>V<span class="op">)</span>, V<span class="op">&gt;&gt;</span></code> if what you happen to have is a value. And if all you have is a class template, this is even worse. You need <span class="citation" data-cites="P1985R1">[<a href="#ref-P1985R1" role="doc-biblioref">P1985R1</a>]</span> simply to even claim to be able to solve this problem in the library.</p>
+<p>This was followed up by a language proposal to make <code class="sourceCode cpp"><span class="kw">static_assert</span></code> more dependent <span class="citation" data-cites="P1936R0">[<a href="#ref-P1936R0" role="doc-biblioref">P1936R0</a>]</span> - which proposed <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">&lt;</span>T<span class="op">&gt;(</span><span class="kw">false</span><span class="op">)</span></code>. This has the same issues with kind as the library solution, but also is just adding more stuff to <code class="sourceCode cpp"><span class="kw">static_assert</span></code> that still needs to be taught. Sometimes you need this extra stuff, sometimes you don’t?</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The proposal here is quite simple. <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> should just work.</p>
+<h2 data-number="3.1" id="wording"><span class="header-section-number">3.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>/10:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">10</a></span> In a <em>static_assert-declaration</em>, the <em>constant-expression</em> is contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code> and the converted expression shall be a constant expression ([expr.const]). If the value of the expression when so converted is <code class="sourceCode cpp"><span class="kw">true</span></code> <span class="addu">or the expression is evaluated in a non-instantiated template</span>, the declaration has no effect. Otherwise, the program is ill-formed, and the resulting diagnostic message ([intro.compliance]) should include the text of the <em>string-literal</em>, if one is supplied.</p>
+<p>[<em>Example 3</em>:</p>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>  static_assert(sizeof(int) == sizeof(void*), &quot;wrong pointer size&quot;);</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  static_assert(sizeof(int[2]));          // OK, narrowing allowed</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="va">+ template &lt;class T&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="va">+ void f(T t) {</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="va">+   if constexpr (sizeof(T) == 4) {</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="va">+     use(t);</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="va">+   } else {</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="va">+     static_assert(false, &quot;must be size 4&quot;);</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="va">+   }</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="va">+ }</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="va">+</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="va">+ void g(char c) {</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="va">+   f(c); // error: must be size 4</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="va">+ }</span></span></code></pre></div>
+</div>
+<p>— <em>end example</em>]</p>
+</blockquote>
+<p>Change <span>13.8 <a href="https://wg21.link/temp.res">[temp.res]</a></span>/6:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">6</a></span> The validity of a template may be checked prior to any instantiation.</p>
+<p>[<em>Note 3</em>: Knowing which names are type names allows the syntax of every template to be checked in this way. — <em>end note</em>]</p>
+<p>The program is ill-formed, no diagnostic required, if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(6.1)</a></span> <span class="addu">ignoring all <i>static-assert-declaration</i>s,</span> no valid specialization can be generated for a template or a substatement of a constexpr if statement within a template and the template is not instantiated, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(6.2)</a></span> …</li>
+</ul>
+</blockquote>
+<p>This sidesteps the question of whether it’s <em>just</em> <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> that should be okay or <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></code> or <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="dv">1</span> <span class="op">-</span> <span class="dv">1</span><span class="op">)</span></code> or <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span>not_quite_dependent_false<span class="op">)</span></code>. anything else. Just, all <code class="sourceCode cpp"><span class="kw">static_assert</span></code> declarations should be delayed until the template (or appropriate specialization or constexpr if substatement thereof) is actually instantiated.</p>
+<p>If the condition is false, we’re going to get a compiler error anyway. And that’s fine! But let’s just actually fail the program when it’s actually broken, and not early.</p>
+<h2 data-number="3.2" id="implementation-experience"><span class="header-section-number">3.2</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>I implemented this in both EDG and Clang. In both compilers, it’s basically a two line code change: simply don’t try to diagnose <code class="sourceCode cpp"><span class="kw">static_assert</span></code> declarations if we’re still in a template dependent context. Wait until they’re instantiated.</p>
+<h2 data-number="3.3" id="alternative-designs"><span class="header-section-number">3.3</span> Alternative Designs<a href="#alternative-designs" class="self-link"></a></h2>
+<p>While this proposal simply treats the condition of <code class="sourceCode cpp"><span class="kw">static_assert</span></code> as always dependent, there were a few other potential approaches to this problem.</p>
+<p>The first is rather than treating <em>all</em> conditions as dependent, simply allow <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> directly. Or maybe not just <code class="sourceCode cpp"><span class="kw">false</span></code>, literally the token <code class="sourceCode cpp"><span class="kw">false</span></code>, but maybe also the token <code class="sourceCode cpp"><span class="dv">0</span></code>. Or some other specific subset of expressions that is extremely <code class="sourceCode cpp"><span class="kw">false</span></code>. Perhaps then <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> and <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></code> would delay triggering until instantiation, but something like <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span>condition<span class="op">)</span></code> where <code class="sourceCode cpp">condition</code> is an <code class="sourceCode cpp"><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">bool</span></code> variable would trigger immediately. Really just allowing <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> is the primary goal, so this would be good enough, but it’s pretty weird to special-case certain expressions like this. And I’m not even sure what the right set of “falsey-enough” expressions would be, or how to specify it. So that doesn’t seem like a better alternative.</p>
+<p>Another approach would be to treat <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="st">&quot;error&quot;</span><span class="op">)</span></code> differently. This is technically a valid declaration today, although it is basically meaningless, equivalent to writing <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">true</span><span class="op">)</span></code>. We could treat <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><em>string-literal</em><span class="op">)</span></code> as the kind of unconditional diagnostic on instantiation that I’m going for with <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code>. This certainly seems interesting at first glance, but it has two problems with it:</p>
+<ol type="1">
+<li>It’s something people would have to be taught to do, whereas <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code> is already what people initially try</li>
+<li>At some point, we will extend <code class="sourceCode cpp"><span class="kw">static_assert</span></code> to allow richer messages. Not just a string-literal, maybe a full <code class="sourceCode cpp">std<span class="op">::</span>string</code> that is a result of a call to <code class="sourceCode cpp">std<span class="op">::</span>format</code>? If we ever do that, then <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;error&quot;</span><span class="op">))</span></code> wouldn’t really be able to have this special behavior.</li>
+</ol>
+<p>The nice thing about simply allowing all conditions to be treated as dependent is that it’s straightforward to understand, specify, and implement, doesn’t cut off future evolution, and is already what people expect to work. I’m not sure that there’s another design that satisfies all of these criteria.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">4</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Daveed Vandevoorde for helping with the implementation.</p>
+<p>Thanks to all the people over the years to whom I’ve had to explain why <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</code> doesn’t work and what they have to write instead for not immediately destroying their computers and switching to Rust.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P1830R1">
+<p>[P1830R1] Ruslan Arutyunyan. 2019-10-07. std::dependent_false. <br />
+<a href="https://wg21.link/p1830r1">https://wg21.link/p1830r1</a></p>
+</div>
+<div id="ref-P1936R0">
+<p>[P1936R0] Ruslan Arutyunyan. 2019-10-07. Dependent Static Assertion. <br />
+<a href="https://wg21.link/p1936r0">https://wg21.link/p1936r0</a></p>
+</div>
+<div id="ref-P1985R1">
+<p>[P1985R1] Gašper Ažman, Mateusz Pusz, Colin MacLean, Bengt Gustafsonn. 2020-05-15. Universal template parameters. <br />
+<a href="https://wg21.link/p1985r1">https://wg21.link/p1985r1</a></p>
+</div>
+<div id="ref-P2593R0">
+<p>[P2593R0] Barry Revzin. 2022-05-21. Allowing static_assert(false). <br />
+<a href="https://wg21.link/p2593r0">https://wg21.link/p2593r0</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
