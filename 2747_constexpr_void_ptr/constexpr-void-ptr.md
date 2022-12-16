@@ -282,12 +282,14 @@ We'd still need it to be a union, because we need to avoid destruction, but at l
 
 # Proposal
 
-This paper proposes extending constant evaluation support to cover a lot more interesting cases by striking the rule about conversion from `$cv$ void*`. We still require that reading through a `T*` is only valid if actually points to a `T` - this doesn't open the door for various type punning shenanigans during constant evaluation time. These are all conversions that would only be allowed if they were actually valid.
+This paper proposes extending constant evaluation support to cover a lot more interesting cases by striking the rule about conversion from `$cv$ void*`. We still require that reading through a `T*` is only valid if actually points to a `T` (as in, the `void*` had to have been obtained by a `static_cast` from a `T*`) - this doesn't open the door for various type punning shenanigans during constant evaluation time. These are all conversions that would only be allowed if they were actually valid.
 
 Allowing converting from `$cv$ void*` to `$cv$ T*`, if there is actually a `T` there, should immediately allow placement-new to work, but this may require explicit permission for global placement new in the same place where we currently have explicit permission for `std::construct_at`.
 
 Lastly, this paper proposes that placement new on an array alternative of a union implicitly starts the lifetime of the whole array alternative. This seems consistent with the implicit-lifetime-type rule that we have for arrays, and is the minimal change required to allow `static_vector` to work and to allow user implementations of `uninitialized<T>`. I'm not proposing `std::uninitialized<T>` specifically because I don't think it's strictly necessary, and the shape of it will largely end up depending on the discussion around JF's paper - which is otherwise completely unrelated to this paper.
 
-## Implementation Experience
+Importantly, the changes proposed here allow code that people would already be writing today to simply work during compile time as well. Well, for uninitialized storage people probably use an aligned array of bytes rather than a union with an array of `T`, but least this isn't too far off, and the main point is that the proposal isn't inventing a new way of writing compile-time-friendly code.
+
+## Implementation Concerns
 
 One of the raised concerns against allowing conversion from `$cv$ void*` in the way proposed by this paper is the cost to certain implementations of tracking pointers - specifically in the cost of validating this conversion. However, while everyone would obviously prefer things to be as fast to compile as possible, we're not choosing here between a fast approach and a slow approach - the decision here is between a slow approach and *no approach at all*. The inability to convert from `$cv$ void*` means we can't have a certain class of type erasure, we can't do several kinds of placement new and other kinds efficiently, and we can't have a `constexpr static_vector` without introducing more special cases for magic library names. I don't think that's a good trade-off.

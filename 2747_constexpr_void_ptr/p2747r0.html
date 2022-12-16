@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2022-12-15" />
+  <meta name="dcterms.date" content="2022-12-16" />
   <title>Limited support for constexpr void*</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2022-12-15</td>
+    <td>2022-12-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -569,7 +569,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#uninitialized-objects"><span class="toc-section-number">4</span> Uninitialized objects<span></span></a></li>
 <li><a href="#proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
 <ul>
-<li><a href="#implementation-experience"><span class="toc-section-number">5.1</span> Implementation Experience<span></span></a></li>
+<li><a href="#implementation-concerns"><span class="toc-section-number">5.1</span> Implementation Concerns<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
@@ -824,10 +824,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>We’d still need it to be a union, because we need to avoid destruction, but at least this gives us an active union member that we could then safely use.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>This paper proposes extending constant evaluation support to cover a lot more interesting cases by striking the rule about conversion from <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span><span class="op">*</span></code>. We still require that reading through a <code class="sourceCode cpp">T<span class="op">*</span></code> is only valid if actually points to a <code class="sourceCode cpp">T</code> - this doesn’t open the door for various type punning shenanigans during constant evaluation time. These are all conversions that would only be allowed if they were actually valid.</p>
+<p>This paper proposes extending constant evaluation support to cover a lot more interesting cases by striking the rule about conversion from <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span><span class="op">*</span></code>. We still require that reading through a <code class="sourceCode cpp">T<span class="op">*</span></code> is only valid if actually points to a <code class="sourceCode cpp">T</code> (as in, the <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code> had to have been obtained by a <code class="sourceCode cpp"><span class="kw">static_cast</span></code> from a <code class="sourceCode cpp">T<span class="op">*</span></code>) - this doesn’t open the door for various type punning shenanigans during constant evaluation time. These are all conversions that would only be allowed if they were actually valid.</p>
 <p>Allowing converting from <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span><span class="op">*</span></code> to <code class="sourceCode cpp"><em>cv</em> T<span class="op">*</span></code>, if there is actually a <code class="sourceCode cpp">T</code> there, should immediately allow placement-new to work, but this may require explicit permission for global placement new in the same place where we currently have explicit permission for <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code>.</p>
 <p>Lastly, this paper proposes that placement new on an array alternative of a union implicitly starts the lifetime of the whole array alternative. This seems consistent with the implicit-lifetime-type rule that we have for arrays, and is the minimal change required to allow <code class="sourceCode cpp">static_vector</code> to work and to allow user implementations of <code class="sourceCode cpp">uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. I’m not proposing <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code> specifically because I don’t think it’s strictly necessary, and the shape of it will largely end up depending on the discussion around JF’s paper - which is otherwise completely unrelated to this paper.</p>
-<h2 data-number="5.1" id="implementation-experience"><span class="header-section-number">5.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>Importantly, the changes proposed here allow code that people would already be writing today to simply work during compile time as well. Well, for uninitialized storage people probably use an aligned array of bytes rather than a union with an array of <code class="sourceCode cpp">T</code>, but least this isn’t too far off, and the main point is that the proposal isn’t inventing a new way of writing compile-time-friendly code.</p>
+<h2 data-number="5.1" id="implementation-concerns"><span class="header-section-number">5.1</span> Implementation Concerns<a href="#implementation-concerns" class="self-link"></a></h2>
 <p>One of the raised concerns against allowing conversion from <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span><span class="op">*</span></code> in the way proposed by this paper is the cost to certain implementations of tracking pointers - specifically in the cost of validating this conversion. However, while everyone would obviously prefer things to be as fast to compile as possible, we’re not choosing here between a fast approach and a slow approach - the decision here is between a slow approach and <em>no approach at all</em>. The inability to convert from <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span><span class="op">*</span></code> means we can’t have a certain class of type erasure, we can’t do several kinds of placement new and other kinds efficiently, and we can’t have a <code class="sourceCode cpp"><span class="kw">constexpr</span> static_vector</code> without introducing more special cases for magic library names. I don’t think that’s a good trade-off.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
