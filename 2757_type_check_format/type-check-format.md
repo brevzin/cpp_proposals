@@ -240,9 +240,6 @@ namespace std {
     size_t next_arg_id_;                                // exposition only
     size_t num_args_;                                   // exposition only
 
-+   enum $format-type$;                                   // exposition only
-+   const $format-type$* $types_$;                          // exposition only
-
   public:
 -   constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
 -                                                 size_t num_args = 0) noexcept;
@@ -278,14 +275,6 @@ constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
 :::
 :::
 
-And add a note about what the `$types_$` are:
-
-::: bq
-::: addu
-[2]{.pnum} *Recommended Practice*: Implementations should only populate `$types_$` during constant evaluation time. For runtime parsing, this member can be initialized with `nullptr` because it will never be read from.
-:::
-:::
-
 And then add at the bottom:
 
 ::: bq
@@ -304,11 +293,11 @@ if (indexing_ == unknown)
 ::: addu
 ```cpp
 template<class... Ts>
-    constexpr void check_dynamic_spec(size_t id);
+  constexpr void check_dynamic_spec(size_t id);
 ```
 [#]{.pnum} *Mandates*: The types in `Ts...` are unique. Each type in `Ts...` is one of `bool`, `char_type`, `int`, `unsigned int`, `long long int`, `unsigned long long int`, `float`, `double`, `long double`, `const char_type*`, `basic_string_view<char_type>`, or `const void*`.
 
-[#]{.pnum} *Remarks*: Call expressions where `id >= num_args_` or `types_[id]` does not match one of the types in `Ts...` are not core constant expressions ([expr.const]).
+[#]{.pnum} *Remarks*: Call expressions where `id >= num_args_` or the type of the corresponding format argument (after conversion to `basic_format_arg<Context>`) is not one of the types in `Ts...` are not core constant expressions ([expr.const]).
 
 ```cpp
 constexpr void check_dynamic_spec_integral(size_t id);

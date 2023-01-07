@@ -796,29 +796,26 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-14"><a href="#cb8-14"></a>    size_t next_arg_id_;                                // exposition only</span>
 <span id="cb8-15"><a href="#cb8-15"></a>    size_t num_args_;                                   // exposition only</span>
 <span id="cb8-16"><a href="#cb8-16"></a></span>
-<span id="cb8-17"><a href="#cb8-17"></a><span class="va">+   enum <em>format-type</em>;                                   // exposition only</span></span>
-<span id="cb8-18"><a href="#cb8-18"></a><span class="va">+   const <em>format-type</em>* <em>types_</em>;                          // exposition only</span></span>
-<span id="cb8-19"><a href="#cb8-19"></a></span>
-<span id="cb8-20"><a href="#cb8-20"></a>  public:</span>
-<span id="cb8-21"><a href="#cb8-21"></a><span class="st">-   constexpr explicit basic_format_parse_context(basic_string_view&lt;charT&gt; fmt,</span></span>
-<span id="cb8-22"><a href="#cb8-22"></a><span class="st">-                                                 size_t num_args = 0) noexcept;</span></span>
-<span id="cb8-23"><a href="#cb8-23"></a>    basic_format_parse_context(const basic_format_parse_context&amp;) = delete;</span>
-<span id="cb8-24"><a href="#cb8-24"></a>    basic_format_parse_context&amp; operator=(const basic_format_parse_context&amp;) = delete;</span>
-<span id="cb8-25"><a href="#cb8-25"></a></span>
-<span id="cb8-26"><a href="#cb8-26"></a>    constexpr const_iterator begin() const noexcept;</span>
-<span id="cb8-27"><a href="#cb8-27"></a>    constexpr const_iterator end() const noexcept;</span>
-<span id="cb8-28"><a href="#cb8-28"></a>    constexpr void advance_to(const_iterator it);</span>
+<span id="cb8-17"><a href="#cb8-17"></a>  public:</span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="st">-   constexpr explicit basic_format_parse_context(basic_string_view&lt;charT&gt; fmt,</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a><span class="st">-                                                 size_t num_args = 0) noexcept;</span></span>
+<span id="cb8-20"><a href="#cb8-20"></a>    basic_format_parse_context(const basic_format_parse_context&amp;) = delete;</span>
+<span id="cb8-21"><a href="#cb8-21"></a>    basic_format_parse_context&amp; operator=(const basic_format_parse_context&amp;) = delete;</span>
+<span id="cb8-22"><a href="#cb8-22"></a></span>
+<span id="cb8-23"><a href="#cb8-23"></a>    constexpr const_iterator begin() const noexcept;</span>
+<span id="cb8-24"><a href="#cb8-24"></a>    constexpr const_iterator end() const noexcept;</span>
+<span id="cb8-25"><a href="#cb8-25"></a>    constexpr void advance_to(const_iterator it);</span>
+<span id="cb8-26"><a href="#cb8-26"></a></span>
+<span id="cb8-27"><a href="#cb8-27"></a>    constexpr size_t next_arg_id();</span>
+<span id="cb8-28"><a href="#cb8-28"></a>    constexpr void check_arg_id(size_t id);</span>
 <span id="cb8-29"><a href="#cb8-29"></a></span>
-<span id="cb8-30"><a href="#cb8-30"></a>    constexpr size_t next_arg_id();</span>
-<span id="cb8-31"><a href="#cb8-31"></a>    constexpr void check_arg_id(size_t id);</span>
-<span id="cb8-32"><a href="#cb8-32"></a></span>
-<span id="cb8-33"><a href="#cb8-33"></a><span class="va">+   template&lt;class... Ts&gt;</span></span>
-<span id="cb8-34"><a href="#cb8-34"></a><span class="va">+     constexpr void check_dynamic_spec(size_t id);</span></span>
-<span id="cb8-35"><a href="#cb8-35"></a><span class="va">+   constexpr void check_dynamic_spec_integral(size_t id);</span></span>
-<span id="cb8-36"><a href="#cb8-36"></a><span class="va">+   constexpr void check_dynamic_spec_arithmetic(size_t id);</span></span>
-<span id="cb8-37"><a href="#cb8-37"></a><span class="va">+   constexpr void check_dynamic_spec_string(size_t id);</span></span>
-<span id="cb8-38"><a href="#cb8-38"></a>  };</span>
-<span id="cb8-39"><a href="#cb8-39"></a>}</span></code></pre></div>
+<span id="cb8-30"><a href="#cb8-30"></a><span class="va">+   template&lt;class... Ts&gt;</span></span>
+<span id="cb8-31"><a href="#cb8-31"></a><span class="va">+     constexpr void check_dynamic_spec(size_t id);</span></span>
+<span id="cb8-32"><a href="#cb8-32"></a><span class="va">+   constexpr void check_dynamic_spec_integral(size_t id);</span></span>
+<span id="cb8-33"><a href="#cb8-33"></a><span class="va">+   constexpr void check_dynamic_spec_arithmetic(size_t id);</span></span>
+<span id="cb8-34"><a href="#cb8-34"></a><span class="va">+   constexpr void check_dynamic_spec_string(size_t id);</span></span>
+<span id="cb8-35"><a href="#cb8-35"></a>  };</span>
+<span id="cb8-36"><a href="#cb8-36"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Remove the constructor:</p>
@@ -830,36 +827,30 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span> <em>Effects</em>: Initializes <code class="sourceCode default">begin_­</code> with <code class="sourceCode default">fmt.begin()</code>, <code class="sourceCode default">end_­</code> with <code class="sourceCode default">fmt.end()</code>, <code class="sourceCode default">indexing_­</code> with <code class="sourceCode default">unknown</code>, <code class="sourceCode default">next_­arg_­id_­</code> with <code class="sourceCode default">0</code>, and <code class="sourceCode default">num_­args_­</code> with <code class="sourceCode default">num_­args</code>.</p>
 </div>
 </blockquote>
-<p>And add a note about what the <code class="sourceCode cpp"><em>types_</em></code> are:</p>
-<blockquote>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> <em>Recommended Practice</em>: Implementations should only populate <code class="sourceCode cpp"><em>types_</em></code> during constant evaluation time. For runtime parsing, this member can be initialized with <code class="sourceCode cpp"><span class="kw">nullptr</span></code> because it will never be read from.</p>
-</div>
-</blockquote>
 <p>And then add at the bottom:</p>
 <blockquote>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_arg_id<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">9</a></span> <em>Effects</em>: If <code class="sourceCode cpp">indexing_­ <span class="op">!=</span> automatic</code>, equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">9</a></span> <em>Effects</em>: If <code class="sourceCode cpp">indexing_­ <span class="op">!=</span> automatic</code>, equivalent to:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>if (indexing_ == unknown)</span>
 <span id="cb11-2"><a href="#cb11-2"></a>  indexing_ = manual;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">10</a></span> <em>Throws</em>: <code class="sourceCode cpp">format_­error</code> if <code class="sourceCode cpp">indexing_­ <span class="op">==</span> automatic</code> which indicates mixing of automatic and manual argument indexing.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">11</a></span> <em>Remarks</em>: Call expressions where <code class="sourceCode cpp">id <span class="op">&gt;=</span> num_­args_­</code> are not core constant expressions ([expr.const]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">10</a></span> <em>Throws</em>: <code class="sourceCode cpp">format_­error</code> if <code class="sourceCode cpp">indexing_­ <span class="op">==</span> automatic</code> which indicates mixing of automatic and manual argument indexing.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">11</a></span> <em>Remarks</em>: Call expressions where <code class="sourceCode cpp">id <span class="op">&gt;=</span> num_­args_­</code> are not core constant expressions ([expr.const]).</p>
 <div class="addu">
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">12</a></span> <em>Mandates</em>: The types in <code class="sourceCode cpp">Ts<span class="op">...</span></code> are unique. Each type in <code class="sourceCode cpp">Ts<span class="op">...</span></code> is one of <code class="sourceCode cpp"><span class="dt">bool</span></code>, <code class="sourceCode cpp">char_type</code>, <code class="sourceCode cpp"><span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">float</span></code>, <code class="sourceCode cpp"><span class="dt">double</span></code>, <code class="sourceCode cpp"><span class="dt">long</span> <span class="dt">double</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> char_type<span class="op">*</span></code>, <code class="sourceCode cpp">basic_string_view<span class="op">&lt;</span>char_type<span class="op">&gt;</span></code>, or <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">13</a></span> <em>Remarks</em>: Call expressions where <code class="sourceCode cpp">id <span class="op">&gt;=</span> num_args_</code> or <code class="sourceCode cpp">types_<span class="op">[</span>id<span class="op">]</span></code> does not match one of the types in <code class="sourceCode cpp">Ts<span class="op">...</span></code> are not core constant expressions ([expr.const]).</p>
+<span id="cb12-2"><a href="#cb12-2"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">12</a></span> <em>Mandates</em>: The types in <code class="sourceCode cpp">Ts<span class="op">...</span></code> are unique. Each type in <code class="sourceCode cpp">Ts<span class="op">...</span></code> is one of <code class="sourceCode cpp"><span class="dt">bool</span></code>, <code class="sourceCode cpp">char_type</code>, <code class="sourceCode cpp"><span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">float</span></code>, <code class="sourceCode cpp"><span class="dt">double</span></code>, <code class="sourceCode cpp"><span class="dt">long</span> <span class="dt">double</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> char_type<span class="op">*</span></code>, <code class="sourceCode cpp">basic_string_view<span class="op">&lt;</span>char_type<span class="op">&gt;</span></code>, or <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">13</a></span> <em>Remarks</em>: Call expressions where <code class="sourceCode cpp">id <span class="op">&gt;=</span> num_args_</code> or the type of the corresponding format argument (after conversion to <code class="sourceCode cpp">basic_format_arg<span class="op">&lt;</span>Context<span class="op">&gt;</span></code>) is not one of the types in <code class="sourceCode cpp">Ts<span class="op">...</span></code> are not core constant expressions ([expr.const]).</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec_integral<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">14</a></span> <em>Effects</em> Equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">14</a></span> <em>Effects</em> Equivalent to:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a>check_dynamic_spec<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">unsigned</span> <span class="dt">int</span>, <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span>, <span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span><span class="op">&gt;(</span>id<span class="op">)</span>;</span></code></pre></div>
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec_arithmetic<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">15</a></span> <em>Effects</em> Equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">15</a></span> <em>Effects</em> Equivalent to:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a>check_dynamic_spec<span class="op">&lt;</span></span>
 <span id="cb16-2"><a href="#cb16-2"></a>  <span class="dt">bool</span>, char_type,</span>
 <span id="cb16-3"><a href="#cb16-3"></a>  <span class="dt">int</span>, <span class="dt">unsigned</span> <span class="dt">int</span>, <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span>, <span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span>,</span>
 <span id="cb16-4"><a href="#cb16-4"></a>  <span class="dt">float</span>, <span class="dt">double</span>, <span class="dt">long</span> <span class="dt">double</span><span class="op">&gt;(</span>id<span class="op">)</span>;</span></code></pre></div>
 <div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec_string<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">16</a></span> <em>Effects</em> Equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">16</a></span> <em>Effects</em> Equivalent to:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a>check_dynamic_spec<span class="op">&lt;</span><span class="kw">const</span> char_type<span class="op">*</span>, basic_string_view<span class="op">&lt;</span>char_type<span class="op">&gt;&gt;(</span>id<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
