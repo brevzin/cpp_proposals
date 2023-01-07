@@ -71,7 +71,7 @@ The user facing logic here is divided into two parts:
 
 Note that the parse context here doesn't get access to the arguments themselves, it only knows how many arguments there are and, if doing automatic indexing, what the current argument index is. This portion of the API can be used to validate that dynamic arguments _exist_ (ensuring that two of the rows above fail) and, for automatic indexing, storing the argument index for future access in `formatter<T>::format`.
 
-The parse context doesn't get access to the arguments largely for code size reasons, and also because now that `parse()` is invoked during constant evaluation time, it's unlikely or simply impossible to provide the arguments that time anyway.
+The parse context doesn't get access to the arguments largely for code size reasons, and also because now that `parse()` is invoked during constant evaluation time, it's unlikely or simply impossible to provide the arguments at that time anyway.
 
 But this API has the limitation that it cannot currently allow diagnosing that last line:
 
@@ -85,7 +85,7 @@ Here, the issue is that we have a dynamic width (the `{}` part), which refers to
 
 ## Implementation in `{fmt}`
 
-The `{fmt}` library actually *does* reject this example at compile time. It does so by constructing a different kind of parse context that is only used at compile time: the appropriately-named`compile_parse_context`. This is a `basic_format_parse_context` that additionally stores information about what _types_ the arguments are, except type-erased to the set that of types that is correctly stored in the `variant` in `basic_format_context`.
+The `{fmt}` library actually *does* reject this example at compile time. It does so by constructing a different kind of parse context that is only used at compile time: the appropriately-named `compile_parse_context`. This is a `basic_format_parse_context` that additionally stores information about what _types_ the arguments are, except type-erased to the set that of types that is correctly stored in the `variant` in `basic_format_context`.
 
 The relevant API of `compile_parse_context` looks [like this](https://github.com/fmtlib/fmt/blob/9.1.0/include/fmt/core.h) (in `{fmt}`, `basic_format_parse_context` has a second template parameter that is the error handler. It's not relevant for this example. The rest of the code is slightly altered for paper-ness):
 
