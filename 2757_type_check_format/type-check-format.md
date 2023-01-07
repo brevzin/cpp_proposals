@@ -330,3 +330,7 @@ check_dynamic_spec<const char_type*, basic_string_view<char_type>>(id);
 ```
 :::
 :::
+
+# Acknowledgements
+
+Thanks to Tim Song for discussing the issues and helping with the wording. Thanks to Victor Zverovich for having already solved the problem.
