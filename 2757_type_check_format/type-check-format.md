@@ -240,8 +240,8 @@ namespace std {
     size_t next_arg_id_;                                // exposition only
     size_t num_args_;                                   // exposition only
 
-+   enum $format-type$;                                 // exposition only
-+   const $format-type$* $types_$;                      // exposition only
++   enum $format-type$;                                   // exposition only
++   const $format-type$* $types_$;                          // exposition only
 
   public:
 -   constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
@@ -316,7 +316,7 @@ constexpr void check_dynamic_spec_integral(size_t id);
 
 [#]{.pnum} *Effects* Equivalent to:
 ```cpp
-check_dynamic_specs<int, unsigned int, long long int, unsigned long long int>(id);
+check_dynamic_spec<int, unsigned int, long long int, unsigned long long int>(id);
 ```
 
 ```cpp
@@ -325,7 +325,7 @@ constexpr void check_dynamic_spec_arithmetic(size_t id);
 
 [#]{.pnum} *Effects* Equivalent to:
 ```cpp
-check_dynamic_specs<
+check_dynamic_spec<
   bool, char_type,
   int, unsigned int, long long int, unsigned long long int,
   float, double, long double>(id);
@@ -337,7 +337,7 @@ constexpr void check_dynamic_spec_string(size_t id);
 
 [#]{.pnum} *Effects* Equivalent to:
 ```cpp
-check_dynamic_specs<const char_type*, basic_string_view<char_type>>(id);
+check_dynamic_spec<const char_type*, basic_string_view<char_type>>(id);
 ```
 :::
 :::
