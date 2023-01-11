@@ -71,6 +71,7 @@
 - 2672 Exploring the Design Space for a Pipeline Operator: [p2672r0](2672_pipeline_designs/p2672r0.html)
 - ![][~constexpr] 2747 Limited support for  <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="dt">void</span><span class="op">*</span></code>: [p2747r0](2747_constexpr_void_ptr/p2747r0.html)
 - 2757 Type-checking format args: [p2757r0](2757_type_check_format/p2757r0.html)
+- ![][~constexpr] 2758 Emitting messages at compile time: [p2758r0](2758_compile_time_messages/p2758r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet
