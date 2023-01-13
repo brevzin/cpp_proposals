@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-01-10" />
+  <meta name="dcterms.date" content="2023-01-12" />
   <title>Emitting messages at compile time</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-01-10</td>
+    <td>2023-01-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -570,15 +570,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#general-compile-time-debugging"><span class="toc-section-number">1.3</span> General compile-time debugging<span></span></a></li>
 <li><a href="#prior-work"><span class="toc-section-number">1.4</span> Prior Work<span></span></a></li>
 </ul></li>
-<li><a href="#improving-static_assert"><span class="toc-section-number">2</span> Improving <code class="sourceCode cpp"><span class="kw">static_assert</span></code><span></span></a></li>
-<li><a href="#improving-compile-time-diagnostics"><span class="toc-section-number">3</span> Improving compile-time diagnostics<span></span></a>
+<li><a href="#to-stdformat-or-not-to-stdformat"><span class="toc-section-number">2</span> To <code class="sourceCode cpp">std<span class="op">::</span>format</code> or not to <code class="sourceCode cpp">std<span class="op">::</span>format</code>?<span></span></a></li>
+<li><a href="#improving-static_assert"><span class="toc-section-number">3</span> Improving <code class="sourceCode cpp"><span class="kw">static_assert</span></code><span></span></a></li>
+<li><a href="#improving-compile-time-diagnostics"><span class="toc-section-number">4</span> Improving compile-time diagnostics<span></span></a>
 <ul>
-<li><a href="#predictability"><span class="toc-section-number">3.1</span> Predictability<span></span></a></li>
-<li><a href="#predictability-of-errors"><span class="toc-section-number">3.2</span> Predictability of Errors<span></span></a></li>
-<li><a href="#error-handling-in-general"><span class="toc-section-number">3.3</span> Error-Handling in General<span></span></a></li>
+<li><a href="#predictability"><span class="toc-section-number">4.1</span> Predictability<span></span></a></li>
+<li><a href="#predictability-of-errors"><span class="toc-section-number">4.2</span> Predictability of Errors<span></span></a></li>
+<li><a href="#error-handling-in-general"><span class="toc-section-number">4.3</span> Error-Handling in General<span></span></a></li>
 </ul></li>
-<li><a href="#proposal"><span class="toc-section-number">4</span> Proposal<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">5</span> Proposal<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -730,7 +731,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="citation" data-cites="N4433">[<a href="#ref-N4433" role="doc-biblioref">N4433</a>]</span> previously proposed extending <code class="sourceCode cpp"><span class="kw">static_assert</span></code> to support arbitrary constant expressions. That paper was discussed in <a href="https://wiki.edg.com/bin/view/Wg21lenexa/N4433">Lenexa in 2015</a>. The minutes indicate that that there was concern about simply being able to implement a useful <code class="sourceCode cpp">format</code> in <code class="sourceCode cpp"><span class="kw">constexpr</span></code> (<code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> was just v1.1.0 at the time). Nevertheless, the paper was well received, with a vote of 12-3-9-1-0 to continue work on the proposal. Today, we know we can implement a useful <code class="sourceCode cpp">format</code> in <code class="sourceCode cpp"><span class="kw">constexpr</span></code>. We already have it!</p>
 <p><span class="citation" data-cites="P0596R1">[<a href="#ref-P0596R1" role="doc-biblioref">P0596R1</a>]</span> previously proposed adding <code class="sourceCode cpp">std<span class="op">::</span>constexpr_trace</code> and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_assert</code> facilities - the former as a useful compile-time print and the latter as a useful compile-time assertion to emit a useful message. That paper was discussed in <a href="https://wiki.edg.com/bin/view/Wg21belfast/SG7notesP0596R1">Belfast in 2019</a>, where these two facilities were very popular (16-8-1-0-0 for compile-time print and 6-14-2-0-0 for compile-time assertion). The rest of the discussion was about broader compilation models that isn’t strictly related to these two.</p>
 <p>In short, the kind of facility I’m reviving here were already previously discussed and received <em>extremely favorably</em>. 15-1, 24-0, and 20-0. It’s just that then the papers disappeared, so I’m bringing them back.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="improving-static_assert"><span class="header-section-number">2</span> Improving <code class="sourceCode cpp"><span class="kw">static_assert</span></code><a href="#improving-static_assert" class="self-link"></a></h1>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="to-stdformat-or-not-to-stdformat"><span class="header-section-number">2</span> To <code class="sourceCode cpp">std<span class="op">::</span>format</code> or not to <code class="sourceCode cpp">std<span class="op">::</span>format</code>?<a href="#to-stdformat-or-not-to-stdformat" class="self-link"></a></h1>
+<p>That is the question. Basically, when it comes to emitting some kind of text (via whichever mechanism - whether <code class="sourceCode cpp"><span class="kw">static_assert</span></code> or a compile-time print or a compile-time error), we have to decide whether or not to bake <code class="sourceCode cpp">std<span class="op">::</span>format</code> into the API. The advantage of doing so would be ergonomics, the disadvantage would be that it’s a complex library to potential bake into the language - and some people might want these facilities in a context where they’re not using <code class="sourceCode cpp">std<span class="op">::</span>format</code>, for hwatever reason.</p>
+<p>But there’s also a bigger issue: while I said above that we have a useful <code class="sourceCode cpp">format</code> in <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, that wasn’t <em>entirely</em> accurate. The parsing logic is completely <code class="sourceCode cpp"><span class="kw">constexpr</span></code> (to great effect), but the formatting logic currently is not. Neither <code class="sourceCode cpp">std<span class="op">::</span>format</code> nor <code class="sourceCode cpp">fmt<span class="op">::</span>format</code> are declared <code class="sourceCode cpp"><span class="kw">constexpr</span></code> today. In order to be able to even consider the question of using <code class="sourceCode cpp">std<span class="op">::</span>format</code> for generating compile-time strings, we have to first ask to what extent this is even feasible.</p>
+<p>I think there are currently two limitations (excluding just adding <code class="sourceCode cpp"><span class="kw">constexpr</span></code> everywhere and possibly dealing with some algorithms that happen to not be <code class="sourceCode cpp"><span class="kw">constexpr</span></code>-friendly):</p>
+<ol type="1">
+<li>formatting floating-point types is not possible right now (we made the integral part of <code class="sourceCode cpp">std<span class="op">::</span>to_chars<span class="op">()</span></code> <code class="sourceCode cpp"><span class="kw">constexpr</span></code> <span class="citation" data-cites="P2291R3">[<a href="#ref-P2291R3" role="doc-biblioref">P2291R3</a>]</span>, but not the floating point).</li>
+<li><code class="sourceCode cpp">fmt<span class="op">::</span>format</code> and <code class="sourceCode cpp">std<span class="op">::</span>format</code> rely on type erasing user-defined types, and that’s currently impossible to do at <code class="sourceCode cpp"><span class="kw">constexpr</span></code> time.</li>
+</ol>
+<p>I am not in a position to say how hard the first of the two is (it’s probably pretty hard?), but I have a separate paper addressing the second <span class="citation" data-cites="P2747R0">[<a href="#ref-P2747R0" role="doc-biblioref">P2747R0</a>]</span>. If we can do any kind of type erasure at all, then it’s probably not too much work to get the rest of format working - even if we ignore floating point entirely. Without compile-time type erasure, it’s still possible to write just a completely different consteval formatting API - but I doubt people would be too happy about having to redo all that work.</p>
+<p>We will eventually have <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code>, I’m just hoping that we can do so with as little overhead on the library implementation itself (in terms of lines of code) as possible.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="improving-static_assert"><span class="header-section-number">3</span> Improving <code class="sourceCode cpp"><span class="kw">static_assert</span></code><a href="#improving-static_assert" class="self-link"></a></h1>
 <p>There are basically two approaches we can take to generalizing the kinds of output <code class="sourceCode cpp"><span class="kw">static_assert</span></code> can produce.</p>
 <p>We can allow any constant expression that is some kind of range of <code class="sourceCode cpp"><span class="dt">char</span></code>, <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>, <code class="sourceCode cpp"><span class="dt">char8_t</span></code>, <code class="sourceCode cpp"><span class="dt">char16_t</span></code>, or <code class="sourceCode cpp"><span class="dt">char32_t</span></code>. Like this one:</p>
 <blockquote>
@@ -768,8 +779,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">static_assert</span><span class="op">(</span>cond, std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;The value is {}&quot;</span>, <span class="dv">42</span><span class="op">))</span>;</span></code></pre></div>
 </blockquote>
 <p>Tedious, but at least it makes a facility possible that currently is not. In order to specify this, we’d need to extend the definition of <code class="sourceCode cpp"><span class="kw">static_assert</span></code>. Currently, it only allows <code class="sourceCode cpp"><em>string-literal</em></code>, but we’d want it to be any range of some character type. We already have some language range wording in the standard, in <span>8.6.5 <a href="https://wg21.link/stmt.ranged">[stmt.ranged]</a></span>, so we’d just refer to that.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="improving-compile-time-diagnostics"><span class="header-section-number">3</span> Improving compile-time diagnostics<a href="#improving-compile-time-diagnostics" class="self-link"></a></h1>
-<p>To <code class="sourceCode cpp">std<span class="op">::</span>format</code> or not to <code class="sourceCode cpp">std<span class="op">::</span>format</code>, that is the question once again. But while in <code class="sourceCode cpp"><span class="kw">static_assert</span></code>, I don’t think we can, for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="improving-compile-time-diagnostics"><span class="header-section-number">4</span> Improving compile-time diagnostics<a href="#improving-compile-time-diagnostics" class="self-link"></a></h1>
+<p>While in <code class="sourceCode cpp"><span class="kw">static_assert</span></code>, I don’t think we can have a <code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">()</span></code>-based API, for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:</p>
 <blockquote>
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
 <span id="cb16-2"><a href="#cb16-2"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
@@ -789,7 +800,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>That is really the minimum necessary, and the nice <code class="sourceCode cpp">format</code> APIs can then trivially be implemented by invoking <code class="sourceCode cpp">std<span class="op">::</span>format</code> and then passing in the resulting <code class="sourceCode cpp">std<span class="op">::</span>string</code>.</p>
 <p>But in order to talk about what these APIs actually do and what their effects are, we need to talk about a fairly complex concept: predictability.</p>
-<h2 data-number="3.1" id="predictability"><span class="header-section-number">3.1</span> Predictability<a href="#predictability" class="self-link"></a></h2>
+<h2 data-number="4.1" id="predictability"><span class="header-section-number">4.1</span> Predictability<a href="#predictability" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P0596R1">[<a href="#ref-P0596R1" role="doc-biblioref">P0596R1</a>]</span> talks about predictability introducing this example:</p>
 <div class="quote">
 <div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
@@ -843,7 +854,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>WIthout the <code class="sourceCode cpp">constepr_print</code>, this variable is constant-initialized. WIth it, it should be also. It would be easier to deal with the language if we didn’t have all of these weird rules. For instance, if you want constant initialize, use <code class="sourceCode cpp"><span class="kw">constinit</span></code>, if you don’t, there’s no tentative evaluation. But we can’t change that, so this is the language we have.</p>
 <p>I think buffer-then-commit is right approach. But also for the first example, that tentative evaluation in a manifestly constant evaluated context is <em>still</em> manifestly constant evaluated. It’s just unspecified whether the call happens. That is: in the first example, the call <code class="sourceCode cpp">f<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;(</span><span class="kw">nullptr</span><span class="op">)</span></code> may or may not print <code class="sourceCode cpp"><span class="st">&quot;in g()</span><span class="sc">\n</span><span class="st">&quot;</span></code>. It’s unspecified. It may make constexpr output not completely portable, but I don’t think any of the alternatives are palatable.</p>
-<h2 data-number="3.2" id="predictability-of-errors"><span class="header-section-number">3.2</span> Predictability of Errors<a href="#predictability-of-errors" class="self-link"></a></h2>
+<h2 data-number="4.2" id="predictability-of-errors"><span class="header-section-number">4.2</span> Predictability of Errors<a href="#predictability-of-errors" class="self-link"></a></h2>
 <p>An interesting follow-on is what happens here:</p>
 <blockquote>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
@@ -873,7 +884,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb22-10"><a href="#cb22-10"></a><span class="dt">int</span> r <span class="op">=</span> f<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;(</span><span class="kw">nullptr</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>If <code class="sourceCode cpp">g<span class="op">&lt;</span>T<span class="op">&gt;(-</span><span class="dv">1</span><span class="op">)</span></code> is called, then it’ll hit the <code class="sourceCode cpp">constexpr_error_str</code> call. But it might not be called. I think saying that if it’s called, then the program is ill-formed, is probably fine. If necessary, we can further tighten the rules for substitution and actually specify one way or another (actually specify that <code class="sourceCode cpp">g</code> is <em>not</em> invoked because by the time we lexically get there we know that this whole type is ill-formed, or specify that <code class="sourceCode cpp">g</code> <em>is</em> invoked because we atomically substitute one type at a time), but it’s probably not worth the effort.</p>
-<h2 data-number="3.3" id="error-handling-in-general"><span class="header-section-number">3.3</span> Error-Handling in General<a href="#error-handling-in-general" class="self-link"></a></h2>
+<p>Additionally, we could take a leaf out of the book of speculative evaluation. I think of the tentative evaluation of <code class="sourceCode cpp">g<span class="op">&lt;</span>T<span class="op">&gt;(-</span><span class="dv">1</span><span class="op">)</span></code> is this second example <em>quite</em> differently from the tentative <em>constant</em> evaluation of <code class="sourceCode cpp">f<span class="op">(-</span><span class="dv">1</span><span class="op">)</span></code> in the first example. <code class="sourceCode cpp">f</code> is <em>always</em> evaluated, it’s just that we have this language hack that it ends up potentially being evaluated two different ways. <code class="sourceCode cpp">g</code> isn’t <em>necessarily</em> evaluated. So there is room to treat these different. If <code class="sourceCode cpp">g</code> is tentatively evaluated, then we buffer up our prints and errors - such that if it eventually <em>is</em> evaluated (that overload is selected), we then emit all the prints and errors. Otherwise, there is no output. That is, we specify <em>no</em> output if the function isn’t selected. Because the evaluation model is different here - that <code class="sourceCode cpp">f</code> is always constant-evaluated initially - I don’t think of these as inconsistent decisions.</p>
+<h2 data-number="4.3" id="error-handling-in-general"><span class="header-section-number">4.3</span> Error-Handling in General<a href="#error-handling-in-general" class="self-link"></a></h2>
 <p>Basically, in all contexts, you probably wouldn’t want to <em>just</em> <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code>. Well, in a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function, that’s all you’d have to do. But in a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function that might be evaluated at runtime, you probably still want to fail.</p>
 <p>But the question is, <em>how</em> do you want to fail? There are so many different ways of failing</p>
 <ul>
@@ -904,23 +916,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>So we should probably provide that as well (under whichever name).</p>
 <p>But that’s a format-specific solution. But a similar pattern works just fine for other error handling mechanisms, except for wanting to return an object (unless your return object happens to have a string part - since the two cases end up being very dfferent). I think that’s okay though - at least we have the utility.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes the following:</p>
 <ol type="1">
 <li>Extend <code class="sourceCode cpp"><span class="kw">static_assert</span></code> to take not just a <code class="sourceCode cpp"><em>string-literal</em></code> but any <code class="sourceCode cpp"><em>string-range</em></code> such that you can use a call to <code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">()</span></code> as the message</li>
-<li>Introduce new compile-time diagnostic APIs, that only have effect if manifestly constant evaluated (with the understanding that it may be unspecified in certain cases whether there is any output):
+<li>Introduce new compile-time diagnostic APIs, that only have effect if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">(</span>msg<span class="op">)</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">(</span>msg, len<span class="op">)</span></code>.</li>
+<li>Introduce new compile-time error APIs, that only have effect if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>msg<span class="op">)</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>msg, len<span class="op">)</span></code>.</li>
+<li>Pursue <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format<span class="op">(</span>fmt_str, args<span class="op">...)</span></code>, which would then allow us to extend the above API with:
 <ol type="a">
-<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">(</span>msg<span class="op">)</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">(</span>msg, len<span class="op">)</span></code> as the low-level primitive</li>
-<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_print<span class="op">(</span>fmt_str, args<span class="op">...)</span></code> as the higher level one with the <code class="sourceCode cpp">format</code> API</li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_print<span class="op">(</span>fmt_str, args<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_error<span class="op">(</span>fmt_str, args<span class="op">...)</span></code></li>
+<li>a <code class="sourceCode cpp">format</code>-specific helper <code class="sourceCode cpp">std<span class="op">::</span>format_parse_error<span class="op">(</span>fmt_str, args<span class="op">...)</span></code> that either calls <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code> or throws a <code class="sourceCode cpp">std<span class="op">::</span>format_error</code>, depending on context.</li>
 </ol></li>
-<li>Introduce new compile-time error APIs, that only have effect if manifestly constant evaluated:
-<ol type="a">
-<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>msg<span class="op">)</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>msg, len<span class="op">)</span></code> as the low-level primitive</li>
-<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_error<span class="op">(</span>fmt_str, args<span class="op">...)</span></code> as the higher level one with the <code class="sourceCode cpp">format</code> API</li>
-</ol></li>
-<li>Introduce a format-specific parse API error helper <code class="sourceCode cpp">std<span class="op">::</span>format_parse_error<span class="op">(</span>fmt_str, args<span class="op">...)</span></code> that either calls <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code> or throws a <code class="sourceCode cpp">std<span class="op">::</span>format_error</code>, depending on context.</li>
 </ol>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-N4433">
 <p>[N4433] Michael Price. 2015-04-09. Flexible static_assert messages. <br />
@@ -929,6 +938,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P0596R1">
 <p>[P0596R1] Daveed Vandevoorde. 2019-10-08. Side-effects in constant evaluation: Output and consteval variables. <br />
 <a href="https://wg21.link/p0596r1">https://wg21.link/p0596r1</a></p>
+</div>
+<div id="ref-P2291R3">
+<p>[P2291R3] Daniil Goncharov, Karaev Alexander. 2021-09-23. Add Constexpr Modifiers to Functions to_chars and from_chars for Integral Types in Header. <br />
+<a href="https://wg21.link/p2291r3">https://wg21.link/p2291r3</a></p>
+</div>
+<div id="ref-P2747R0">
+<p>[P2747R0] Barry Revzin. 2022-12-16. Limited support for <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="dt">void</span><span class="op">*</span></code>. <br />
+<a href="https://wg21.link/p2747r0">https://wg21.link/p2747r0</a></p>
 </div>
 </div>
 </div>

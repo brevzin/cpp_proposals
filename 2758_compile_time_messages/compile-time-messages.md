@@ -209,6 +209,21 @@ There's simply no way I'm aware of today to emit messages at compile-time other 
 
 In short, the kind of facility I'm reviving here were already previously discussed and received _extremely favorably_. 15-1, 24-0, and 20-0. It's just that then the papers disappeared, so I'm bringing them back.
 
+# To `std::format` or not to `std::format`?
+
+That is the question. Basically, when it comes to emitting some kind of text (via whichever mechanism - whether `static_assert` or a compile-time print or a compile-time error), we have to decide whether or not to bake `std::format` into the API. The advantage of doing so would be ergonomics, the disadvantage would be that it's a complex library to potential bake into the language - and some people might want these facilities in a context where they're not using `std::format`, for hwatever reason.
+
+But there's also a bigger issue: while I said above that we have a useful `format` in `constexpr`, that wasn't _entirely_ accurate. The parsing logic is completely `constexpr` (to great effect), but the formatting logic currently is not. Neither `std::format` nor `fmt::format` are declared `constexpr` today. In order to be able to even consider the question of using `std::format` for generating compile-time strings, we have to first ask to what extent this is even feasible.
+
+I think there are currently two limitations (excluding just adding `constexpr` everywhere and possibly dealing with some algorithms that happen to not be `constexpr`-friendly):
+
+1. formatting floating-point types is not possible right now (we made the integral part of `std::to_chars()` `constexpr` [@P2291R3], but not the floating point).
+2. `fmt::format` and `std::format` rely on type erasing user-defined types, and that's currently impossible to do at `constexpr` time.
+
+I am not in a position to say how hard the first of the two is (it's probably pretty hard?), but I have a separate paper addressing the second [@P2747R0]. If we can do any kind of type erasure at all, then it's probably not too much work to get the rest of format working - even if we ignore floating point entirely. Without compile-time type erasure, it's still possible to write just a completely different consteval formatting API - but I doubt people would be too happy about having to redo all that work.
+
+We will eventually have `constexpr std::format`, I'm just hoping that we can do so with as little overhead on the library implementation itself (in terms of lines of code) as possible.
+
 # Improving `static_assert`
 
 There are basically two approaches we can take to generalizing the kinds of output `static_assert` can produce.
@@ -280,7 +295,7 @@ Tedious, but at least it makes a facility possible that currently is not. In ord
 
 # Improving compile-time diagnostics
 
-To `std::format` or not to `std::format`, that is the question once again. But while in `static_assert`, I don't think we can, for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:
+While in `static_assert`, I don't think we can have a `std::format()`-based API, for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:
 
 ::: bq
 ```cpp
@@ -454,6 +469,8 @@ int r = f<void>(nullptr);
 
 If `g<T>(-1)` is called, then it'll hit the `constexpr_error_str` call. But it might not be called. I think saying that if it's called, then the program is ill-formed, is probably fine. If necessary, we can further tighten the rules for substitution and actually specify one way or another (actually specify that `g` is _not_ invoked because by the time we lexically get there we know that this whole type is ill-formed, or specify that `g` _is_ invoked because we atomically substitute one type at a time), but it's probably not worth the effort.
 
+Additionally, we could take a leaf out of the book of speculative evaluation. I think of the tentative evaluation of `g<T>(-1)` is this second example _quite_ differently from the tentative _constant_ evaluation of `f(-1)` in the first example. `f` is _always_ evaluated, it's just that we have this language hack that it ends up potentially being evaluated two different ways. `g` isn't _necessarily_ evaluated. So there is room to treat these different. If `g` is tentatively evaluated, then we buffer up our prints and errors - such that if it eventually _is_ evaluated (that overload is selected), we then emit all the prints and errors. Otherwise, there is no output. That is, we specify _no_ output if the function isn't selected. Because the evaluation model is different here - that `f` is always constant-evaluated initially - I don't think of these as inconsistent decisions.
+
 ## Error-Handling in General
 
 Basically, in all contexts, you probably wouldn't want to _just_ `std::constexpr_error`. Well, in a `consteval` function, that's all you'd have to do. But in a `constexpr` function that might be evaluated at runtime, you probably still want to fail.
@@ -502,11 +519,24 @@ But that's a format-specific solution. But a similar pattern works just fine for
 This paper proposes the following:
 
 1. Extend `static_assert` to take not just a `$string-literal$` but any `$string-range$` such that you can use a call to `std::format()` as the message
-2. Introduce new compile-time diagnostic APIs, that only have effect if manifestly constant evaluated (with the understanding that it may be unspecified in certain cases whether there is any output):
-   a. `std::constexpr_print_str(msg)` and `std::constexpr_print_str(msg, len)` as the low-level primitive
-   b. `std::constexpr_print(fmt_str, args...)` as the higher level one with the `format` API
-3. Introduce new compile-time error APIs, that only have effect if manifestly constant evaluated:
-   a. `std::constexpr_error_str(msg)` and `std::constexpr_error_str(msg, len)` as the low-level primitive
-   b. `std::constexpr_error(fmt_str, args...)` as the higher level one with the `format` API
-4. Introduce a format-specific parse API error helper `std::format_parse_error(fmt_str, args...)` that either calls `std::constexpr_error` or throws a `std::format_error`, depending on context.
+2. Introduce new compile-time diagnostic APIs, that only have effect if manifestly constant evaluated: `std::constexpr_print_str(msg)` and `std::constexpr_print_str(msg, len)`.
+3. Introduce new compile-time error APIs, that only have effect if manifestly constant evaluated: `std::constexpr_error_str(msg)` and `std::constexpr_error_str(msg, len)`.
+4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
+   a. `std::constexpr_print(fmt_str, args...)`
+   b. `std::constexpr_error(fmt_str, args...)`
+   c. a `format`-specific helper `std::format_parse_error(fmt_str, args...)` that either calls `std::constexpr_error` or throws a `std::format_error`, depending on context.
 
+---
+references:
+    - id: P2747R0
+      citation-label: P2747R0
+      title: Limited support for `constexpr void*`
+      author:
+        - family: Barry Revzin
+      issued:
+        date-parts:
+        - - 2022
+          - 12
+          - 16
+      URL: https://wg21.link/p2747r0
+---
