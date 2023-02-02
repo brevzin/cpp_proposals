@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-Added discussion of `propconst` specifier, as an alternative option to a `propconst` qualifier.
+Added discussion of [`propconst` specifier](#a-propconst-specifier), as an alternative option to a `propconst` qualifier, and proposing that as the correct choice instead.
 
 # Introduction
 
@@ -293,7 +293,59 @@ struct vector {
 ```
 :::
 
-A variable declared `propconst` would mean that access as `const` would add `const` to _every_ layer of pointer and reference. On a `vector<T> const`, `begin_` would behave like a `T const*`. If we had a member `T**`, it would behave like a `T const* const*`. If we had a member `T&`, that behaves like `T const&`, and so forth.
+But if we consider the real implementation of `vector` (which has an allocator which specifies the `pointer` type), it would look more like this:
+
+::: cmptable
+### Qualifier (P1947R0)
+```cpp
+template <typename T>
+struct propagating_type {
+    using type = T;
+};
+
+template <typename T>
+struct propagating_type<T*> {
+    using type = T propconst*;
+};
+
+template <typename T>
+using propagating = propagating_type<T>::type;
+
+template <typename T, typename Alloc>
+struct vector {
+    using pointer =
+        propagating<allocator_traits<Alloc>::pointer>;
+
+    pointer begin_;
+    pointer end_;
+    pointer capactity_;
+};
+```
+
+### Specifier
+```cpp
+template <typename T>
+struct vector {
+    using pointer = allocator_traits<Alloc>::pointer;
+
+    propconst pointer begin_;
+    propconst pointer end_;
+    propconst pointer capactity_;
+};
+```
+:::
+
+Now, with the `propconst` qualifier, we can choose at which level(s) to add the qualifier if we have a multi-layered pointer type. With the `propconst` specifier, the language has to make a singular choice for all contexts. For instance, the user can write `int propconst**` or `int propconst* propconst*` or `int* propconst*` if `propconst` is a qualifier. But what should `propconst int** p;` mean as a declaration, when `p` is accessed as `const`? It could mean:
+
+* `int const* const*` (`const` at every level)
+* `int const**` (`const` only at inner level)
+* `int* const*` (`const` only at outer level)
+
+Immediately we can reject the choice of `int const**`. An `int const**` is actually not convertible to `int**`, since such a conversion would open a whole in the type system allowing you to inadvertently modify a const object (see the example in [conv.qual]{.sref}/3). So the choice is every level or outer-only.
+
+Here, the use-case of `vector<T>` answers this question for us. `vector<T>::data() const` returns a `T const*`, for all `T`. If `T` is, itself, a pointer type, then `vector<int*>::data() const` returns an `int* const*`. It's only one level of `const`-ness: the user cannot mutate the pointers themselves, but they can mutate through the pointer. If `propconst` applied `const` at every level, then the `propconst T*`  or `propconst pointer` declarations above would end up giving us an `int const* const*` instead, which cannot be converted to the `int* const*` that we need. The consequence of this is basically that `vector<U*> const` becomes unusable as a type, even outside of `constexpr`. That's clearly unacceptable.
+
+So the only possible answer is: `const` only at outer level. The declaration `propconst int** p;` behaves like an `int* const*` when accessed as `const`. Note that applying `const` only at the outer level is precisely what the `propconst` qualifier solution did anyway (whether we directly wrote `T propconst*` or used the `propagating` trait on the allocator's `pointer` type).
 
 This approach gives us all the same benefits as using a `propconst` qualifier does, it's just that rather it being part of the data member's _type_, it's part of the member's specifier: we keep `propconst` out of the type system.
 
@@ -326,6 +378,56 @@ But it's not clear how much of a benefit writing `unique_ptr<int propconst>` rea
 
 The specifier approach seems to give you really the bulk of the benefit of the facility (the ability to permit non-transient constexpr allocation) with a very small loss (the ability to declare a const-propagating `unique_ptr`) with significantly less complexity.
 
+There is one interesting downside to the `propconst` specifier approach, pointed out by Tim Song. As described in the previous section, `propconst int** p;` would behave as adding `const` only at the top level, so you get an `int* const*`. There would be no room to add _more_ `const`s, even if the user wanted to, since as a specifier, you just don't get that kind of flexibility. Consider the scenario of trying to implement a matrix class using multiple layers of pointers:
+
+::: cmptable
+### 2D Matrix
+```cpp
+struct Matrix2D {
+    propconst int** p;
+    int n;
+
+    constexpr ~Matrix2D() {
+        for (int i = 0; i != n; ++i) {
+            delete [] p[i];
+        }
+        delete [] p;
+    }
+};
+```
+
+### 3D Matrix
+```cpp
+struct Matrix3D {
+    propconst int*** p;
+    int n;
+
+    constexpr ~Matrix3D() {
+        for (int i = 0; i != n; ++i) {
+            for (int j = 0; j != n; ++j) {
+                delete [] p[i][j];
+            }
+            delete [] p[i];
+        }
+        delete [] p;
+    }
+};
+```
+:::
+
+Do these types work with non-transient constexpr allocation? `Matrix2D` does, but `Matrix3D` does not. We get _one_ layer of added `const`-ness, so `Matrix2D::p` is treated as an `int* const*`. That means that you can mutate the underlying values (you can change `p[0][0] = 42;`), but those values aren't read in the destructor, so their mutation doesn't matter. What you can't mutate are any of the pointers, so this is fine. Similarly, in `Matrix3D`, we get _one_ layer of added `const`-ness, so `Matrix3D::p` is treated as an `int** const*`. While you can't mutate `p`, or any of the pointers `p[i]`, you now _can_ mutate the pointers the next layer down (e.g. `p[0][0] = new int(42);`). Because that mutation isn't protected, this allocation can't be allowed.
+
+This suggests that perhaps the right rule for the `propconst` specifier isn't "outer only" but rather "all but the inner (if more than one)". For example, consider the following declarations of variables (omitting the name), and how those variables types would present as `const` under these two models:
+
+|declaration|outer only|all but inner (if more than one)|
+|-|-|-|
+|`propconst int*`|`int const*`|`int const*`|
+|`propconst int**`|`int* const*`|`int* const*`|
+|`propconst int***`|`int** const*`|`int* const* const*`|
+|`propconst int****`|`int*** const*`|`int* const* const* const*`|
+
+
+Those mean the same thing for a two-dimensional pointer (`int* const*`), but would make the three-dimension pointer behave like `int* const* const*`, and thus `Matrix3D` would now work as well as `Matrix2D` (and likewise `Matrix4D`, etc.). The question here would be: is there a case where you actually wanted `int** const*`, in the same way that we saw with `std::vector<T>` that we actually wanted specified `int* const*` and not `int const* const*`? I don't know. This is ultimately the problem with the specifier: we have to make one, global choice.
 
 ## Disposition
 
@@ -402,7 +504,7 @@ A previous revision had suggested adding a `propconst` _class_ annotation, that 
 
 An entirely different approach would be to eschew annotations altogether. That is - just allow all of these examples to compile, and make clear that it's undefined behavior to mutate persistent constexpr allocations (the allocation itself, not what's written in it) if they're read by the elided destructor. One downside of `std::mark_immutable_if_constexpr(p)` is that users might just eagerly add it to all allocations, even if they shouldn't - and if such a thing happens, then why even bother adding such a function? It's hard to say how often such a facility would be misused - and at least it's not overly difficult to provide good guidance for exactly when one should use it: on types that own allocations such that a constant object only provides constant access through that allocation. Perhaps a longer name like `std::allocation_is_deep_constant(p)` might convey this better, or `std::i_solemnly_swear_that_i_am_up_to_no_mutation(p)`. But also, having a facility such as `std::mark_immutable_if_constexpr(p)` gives users of correctly-written libraries (like `std` and `boost`) protection against accidentally writing `constexpr unique_ptr<string>` or `constexpr unique_ptr<vector<T>>`.
 
-I'm not sure that either of these alternatives are better than the two we already have on the table.
+I'm not sure this is better than the three options on the table, but it's at least worth mentioning.
 
 # Proposal
 
@@ -412,4 +514,4 @@ Between `std::mark_immutable_if_constexpr(p)`, `T propconst*` (the qualifier), a
 
 In [@P2670R0], I had argued that that `std::mark_immutable_if_constexpr(p)` was a better approach than `T propconst*` (the qualifier) on the basis of the complexity of the latter and the ultimately limited use of the former. But with the introduction of the `propconst T*` (the specifier) idea, I think it might be the right one: it's a sound solution to the problem, that is still limited in scope as far as language and library creep is concerned, while also being easier to explain and understand: we need to ensure that this const object's allocation only has const access, and we need to propagate const to ensure that is the case. I think that's more straightforward to understand than `std::mark_immutable_if_constexpr` and, importantly, it's also safer: the facility can ensure correctness.
 
-Thus, I'm proposing that the right approach to solving the non-transient constexpr allocation problem is modify [@P1974R0] by changing `propconst` from a type qualifier to a storage class specifier, whose effect is to add `const` at every level of pointer/reference-ness. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.
+Thus, I'm proposing that the right approach to solving the non-transient constexpr allocation problem is modify [@P1974R0] by changing `propconst` from a type qualifier to a storage class specifier, whose effect is to add `const` at all but the inner-most level of pointer/reference-ness. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.
