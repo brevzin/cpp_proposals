@@ -925,7 +925,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>Do these types work with non-transient constexpr allocation? <code class="sourceCode cpp">Matrix2D</code> does, but <code class="sourceCode cpp">Matrix3D</code> does not. We get <em>one</em> layer of added <code class="sourceCode cpp"><span class="kw">const</span></code>-ness, so <code class="sourceCode cpp">Matrix2D<span class="op">::</span>p</code> is treated as an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>. That means that you can mutate the underlying values (you can change <code class="sourceCode cpp">p<span class="op">[</span><span class="dv">0</span><span class="op">][</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="dv">42</span>;</code>), but those values aren’t read in the destructor, so their mutation doesn’t matter. What you can’t mutate are any of the pointers, so this is fine. Similarly, in <code class="sourceCode cpp">Matrix3D</code>, we get <em>one</em> layer of added <code class="sourceCode cpp"><span class="kw">const</span></code>-ness, so <code class="sourceCode cpp">Matrix3D<span class="op">::</span>p</code> is treated as an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">**</span> <span class="kw">const</span><span class="op">*</span></code>. While you can’t mutate <code class="sourceCode cpp">p</code>, or any of the pointers <code class="sourceCode cpp">p<span class="op">[</span>i<span class="op">]</span></code>, you now <em>can</em> mutate the pointers the next layer down (e.g. <code class="sourceCode cpp">p<span class="op">[</span><span class="dv">0</span><span class="op">][</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">42</span><span class="op">)</span>;</code>). Because that mutation isn’t protected, this allocation can’t be allowed.</p>
-<p>This suggests that perhaps the right rule for the <code class="sourceCode cpp">propconst</code> specifier isn’t “outer only” but rather “all but the inner (if more than one)”. For example, consider the following declarations of variables (omitting the name), and how those variables types would present as <code class="sourceCode cpp"><span class="kw">const</span></code> under these two models:</p>
+<p>In this case, we don’t want <em>just</em> the outer layer, we actually wanted all but the inner layer: we need <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>, not <code class="sourceCode cpp"><span class="dt">int</span><span class="op">**</span> <span class="kw">const</span><span class="op">*</span></code>. That is, the <code class="sourceCode cpp">Matrix</code> types need “all but inner (if more than one)” not “outer only”:</p>
 <table>
 <thead>
 <tr class="header">
@@ -963,7 +963,73 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<p>Those mean the same thing for a two-dimensional pointer (<code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>), but would make the three-dimension pointer behave like <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>, and thus <code class="sourceCode cpp">Matrix3D</code> would now work as well as <code class="sourceCode cpp">Matrix2D</code> (and likewise <code class="sourceCode cpp">Matrix4D</code>, etc.). The question here would be: is there a case where you actually wanted <code class="sourceCode cpp"><span class="dt">int</span><span class="op">**</span> <span class="kw">const</span><span class="op">*</span></code>, in the same way that we saw with <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> that we actually wanted specified <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code> and not <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>? I don’t know. This is ultimately the problem with the specifier: we have to make one, global choice.</p>
+<p>We already know that the right-most column breaks for <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>: if we had a <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">**&gt;</span></code>, we need to produce an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">**</span> <span class="kw">const</span><span class="op">*</span></code> (as described earlier), not an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code> (as would occur int he right-most column).</p>
+<p>There simply isn’t one correct choice for all use-cases, which is kind of a problem with trying to solve this case with a facility (specifier) that requires picking just one.</p>
+<p>But we could actually have our cake and eat it too here: we could have a <code class="sourceCode cpp">propconst</code> specifier, but also specify how many layers of <code class="sourceCode cpp"><span class="kw">const</span></code> we’re adding, where by default it applies to every layer:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>declaration</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>meaning</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">propconst <span class="dt">int</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">propconst <span class="dt">int</span><span class="op">*</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="dt">int</span><span class="op">*</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="dt">int</span><span class="op">*</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">propconst <span class="dt">int</span><span class="op">**</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="dt">int</span><span class="op">**</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="dt">int</span><span class="op">**</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">3</span><span class="op">)</span> <span class="dt">int</span><span class="op">**</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">propconst <span class="dt">int</span><span class="op">***</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="dt">int</span><span class="op">***</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span><span class="op">**</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="dt">int</span><span class="op">***</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">3</span><span class="op">)</span> <span class="dt">int</span><span class="op">***</span></code></td>
+<td><code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>With that rule, <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would have a <code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">1</span><span class="op">)</span> T<span class="op">*</span> begin_</code> or <code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">1</span><span class="op">)</span> pointer begin_</code> and the <code class="sourceCode cpp">N</code>-dimension <code class="sourceCode cpp">Matrix</code> class would probably use either <code class="sourceCode cpp">propconst</code> or <code class="sourceCode cpp">propconst<span class="op">(</span>N<span class="op">)</span></code> (it could potentially use <code class="sourceCode cpp">propconst<span class="op">(</span>N<span class="op">-</span><span class="dv">1</span><span class="op">)</span></code>, but that probably doesn’t make sense for that use-case).</p>
+<p>Note that it’s important that <code class="sourceCode cpp">propconst <span class="dt">int</span></code> and <code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="dt">int</span><span class="op">*</span></code> aren’t ill-formed because of use in dependent contexts. The <code class="sourceCode cpp">pointer</code> type in <code class="sourceCode cpp">std<span class="op">::</span>vector</code> might not actually be a language pointer, if could be a fancy pointer, and <code class="sourceCode cpp">propconst<span class="op">(</span><span class="dv">1</span><span class="op">)</span> pointer</code> still needs to be a valid - otherwise there’s no way to spell this without putting all the storage into its own type and specializing for language pointers.</p>
 <h2 data-number="4.5" id="disposition"><span class="header-section-number">4.5</span> Disposition<a href="#disposition" class="self-link"></a></h2>
 <p>All of these proposals have similar shape, in that they attempt to reject the same bad thing (e.g. <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code>) by way of having to add annotations to the good thing (allowing <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> to work, by either annotating the pointers or the allocation). Same end goal of which sets of programs would be allowed.</p>
 <p>Importantly, both require types opt-in, somehow, to persistent allocation. The approaches with <code class="sourceCode cpp">propconst</code> are more sound, in that the compiler <em>ensures</em> that there is no mutable persistent allocation possible, while <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is simply a promise that the user did their due diligence and properly made their type deep-<code class="sourceCode cpp"><span class="kw">const</span></code>.</p>
@@ -1027,7 +1093,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Between <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code>, <code class="sourceCode cpp">T propconst<span class="op">*</span></code> (the qualifier), and <code class="sourceCode cpp">propconst T<span class="op">*</span></code> (the specifier), the latter two provide a sound solution to the problem with neither false positives nor false negatives. The magic function is unsafe and, like Rust’s <code class="sourceCode cpp">unsafe</code>, needs to be carefully reviewed, and can easily provide false negatives (accepted code that really should’ve been rejected). But, like Rust’s <code class="sourceCode cpp">unsafe</code>, it should only appear in a very small number of places anyway, and making sure those uses are correct doesn’t seem like an outrageous burden. After all, of all the types that own an allocation - there are probably way more containers (deep const) than smart pointers (shallow const),<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> so a random use is more likely to be correct than not.</p>
 <p>In <span class="citation" data-cites="P2670R0">[<a href="#ref-P2670R0" role="doc-biblioref">P2670R0</a>]</span>, I had argued that that <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> was a better approach than <code class="sourceCode cpp">T propconst<span class="op">*</span></code> (the qualifier) on the basis of the complexity of the latter and the ultimately limited use of the former. But with the introduction of the <code class="sourceCode cpp">propconst T<span class="op">*</span></code> (the specifier) idea, I think it might be the right one: it’s a sound solution to the problem, that is still limited in scope as far as language and library creep is concerned, while also being easier to explain and understand: we need to ensure that this const object’s allocation only has const access, and we need to propagate const to ensure that is the case. I think that’s more straightforward to understand than <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code> and, importantly, it’s also safer: the facility can ensure correctness.</p>
-<p>Thus, I’m proposing that the right approach to solving the non-transient constexpr allocation problem is modify <span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> by changing <code class="sourceCode cpp">propconst</code> from a type qualifier to a storage class specifier, whose effect is to add <code class="sourceCode cpp"><span class="kw">const</span></code> at all but the inner-most level of pointer/reference-ness. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.</p>
+<p>Thus, I’m proposing that the right approach to solving the non-transient constexpr allocation problem is modify <span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> by changing <code class="sourceCode cpp">propconst</code> from a type qualifier to a storage class specifier, with two forms: <code class="sourceCode cpp">propconst</code> and <code class="sourceCode cpp">propconst<span class="op">(</span>N<span class="op">)</span></code>. The former adds <code class="sourceCode cpp"><span class="kw">const</span></code> at every layer of pointer/reference-ness, while the latter adds <code class="sourceCode cpp"><span class="kw">const</span></code> only at the <em>outer</em> <code class="sourceCode cpp">N</code> layers. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0784R7">

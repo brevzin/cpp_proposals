@@ -417,7 +417,7 @@ struct Matrix3D {
 
 Do these types work with non-transient constexpr allocation? `Matrix2D` does, but `Matrix3D` does not. We get _one_ layer of added `const`-ness, so `Matrix2D::p` is treated as an `int* const*`. That means that you can mutate the underlying values (you can change `p[0][0] = 42;`), but those values aren't read in the destructor, so their mutation doesn't matter. What you can't mutate are any of the pointers, so this is fine. Similarly, in `Matrix3D`, we get _one_ layer of added `const`-ness, so `Matrix3D::p` is treated as an `int** const*`. While you can't mutate `p`, or any of the pointers `p[i]`, you now _can_ mutate the pointers the next layer down (e.g. `p[0][0] = new int(42);`). Because that mutation isn't protected, this allocation can't be allowed.
 
-This suggests that perhaps the right rule for the `propconst` specifier isn't "outer only" but rather "all but the inner (if more than one)". For example, consider the following declarations of variables (omitting the name), and how those variables types would present as `const` under these two models:
+In this case, we don't want _just_ the outer layer, we actually wanted all but the inner layer: we need `int* const* const*`, not `int** const*`. That is, the `Matrix` types need "all but inner (if more than one)" not "outer only":
 
 |declaration|outer only|all but inner (if more than one)|
 |-|-|-|
@@ -426,8 +426,30 @@ This suggests that perhaps the right rule for the `propconst` specifier isn't "o
 |`propconst int***`|`int** const*`|`int* const* const*`|
 |`propconst int****`|`int*** const*`|`int* const* const* const*`|
 
+We already know that the right-most column breaks for `std::vector<T>`: if we had a `std::vector<int**>`, we need to produce an `int** const*` (as described earlier), not an `int* const* const*` (as would occur int he right-most column).
 
-Those mean the same thing for a two-dimensional pointer (`int* const*`), but would make the three-dimension pointer behave like `int* const* const*`, and thus `Matrix3D` would now work as well as `Matrix2D` (and likewise `Matrix4D`, etc.). The question here would be: is there a case where you actually wanted `int** const*`, in the same way that we saw with `std::vector<T>` that we actually wanted specified `int* const*` and not `int const* const*`? I don't know. This is ultimately the problem with the specifier: we have to make one, global choice.
+There simply isn't one correct choice for all use-cases, which is kind of a problem with trying to solve this case with a facility (specifier) that requires picking just one.
+
+But we could actually have our cake and eat it too here: we could have a `propconst` specifier, but also specify how many layers of `const` we're adding, where by default it applies to every layer:
+
+|declaration|meaning|
+|-|-|
+|`propconst int`|`int`|
+|`propconst int*`|`int const*`|
+|`propconst(1) int*`|`int const*`|
+|`propconst(2) int*`|`int const*`|
+|`propconst int**`|`int const* const*`|
+|`propconst(1) int**`|`int* const*`|
+|`propconst(2) int**`|`int const* const*`|
+|`propconst(3) int**`|`int const* const*`|
+|`propconst int***`|`int const* const* const*`|
+|`propconst(1) int***`|`int** const*`|
+|`propconst(2) int***`|`int* const* const*`|
+|`propconst(3) int***`|`int const* const* const*`|
+
+With that rule, `vector<T>` would have a `propconst(1) T* begin_` or `propconst(1) pointer begin_` and the `N`-dimension `Matrix` class would probably use either `propconst` or `propconst(N)` (it could potentially use `propconst(N-1)`, but that probably doesn't make sense for that use-case).
+
+Note that it's important that `propconst int` and `propconst(2) int*` aren't ill-formed because of use in dependent contexts. The `pointer` type in `std::vector` might not actually be a language pointer, if could be a fancy pointer, and `propconst(1) pointer` still needs to be a valid - otherwise there's no way to spell this without putting all the storage into its own type and specializing for language pointers.
 
 ## Disposition
 
@@ -514,4 +536,4 @@ Between `std::mark_immutable_if_constexpr(p)`, `T propconst*` (the qualifier), a
 
 In [@P2670R0], I had argued that that `std::mark_immutable_if_constexpr(p)` was a better approach than `T propconst*` (the qualifier) on the basis of the complexity of the latter and the ultimately limited use of the former. But with the introduction of the `propconst T*` (the specifier) idea, I think it might be the right one: it's a sound solution to the problem, that is still limited in scope as far as language and library creep is concerned, while also being easier to explain and understand: we need to ensure that this const object's allocation only has const access, and we need to propagate const to ensure that is the case. I think that's more straightforward to understand than `std::mark_immutable_if_constexpr` and, importantly, it's also safer: the facility can ensure correctness.
 
-Thus, I'm proposing that the right approach to solving the non-transient constexpr allocation problem is modify [@P1974R0] by changing `propconst` from a type qualifier to a storage class specifier, whose effect is to add `const` at all but the inner-most level of pointer/reference-ness. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.
+Thus, I'm proposing that the right approach to solving the non-transient constexpr allocation problem is modify [@P1974R0] by changing `propconst` from a type qualifier to a storage class specifier, with two forms: `propconst` and `propconst(N)`. The former adds `const` at every layer of pointer/reference-ness, while the latter adds `const` only at the _outer_ `N` layers. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.
