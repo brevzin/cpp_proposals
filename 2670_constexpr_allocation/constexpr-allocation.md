@@ -1,6 +1,6 @@
 ---
 title: "Non-transient `constexpr` allocation"
-document: P2670R0
+document: P2670R1
 date: today
 audience: EWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+Added discussion of `propconst` specifier, as an alternative option to a `propconst` qualifier.
 
 # Introduction
 
@@ -34,6 +38,14 @@ static_assert(v.size() == 3);
 :::
 
 Because `v`'s allocation persists, that is not yet allowed.
+
+Similarly, whether this is valid or not depends entirely on what small string optimization implementation strategy a standard library implementation took years ago:
+
+::: bq
+```cpp
+constexpr std::string s = "hello";
+```
+:::
 
 # The Problem Case
 
@@ -253,13 +265,75 @@ public:
 
 On the left, we have to mark the result of every allocation immutable. On the right, we have to declare every member that refers to an allocation with this new qualifier.
 
+## A `propconst` specifier
+
+The previous section was what Jeff Snyder actually proposed: a `propconst` _qualifier_, to be used in the same position as `const` is used today. An alternative approach, suggested to me recently by Matt Calabrese, would be instead to have a `propconst` _specifier_ - used in the same way that the `mutable` keyword is used today.
+
+The usage would differ a bit in the `vector<T>` implementation:
+
+::: cmptable
+### Qualifier (P1947R0)
+```cpp
+template <typename T>
+struct vector {
+    T propconst* begin_;
+    T propconst* end_;
+    T propconst* capactity_;
+};
+```
+
+### Specifier
+```cpp
+template <typename T>
+struct vector {
+    propconst T* begin_;
+    propconst T* end_;
+    propconst T* capactity_;
+};
+```
+:::
+
+A variable declared `propconst` would mean that access as `const` would add `const` to _every_ layer of pointer and reference. On a `vector<T> const`, `begin_` would behave like a `T const*`. If we had a member `T**`, it would behave like a `T const* const*`. If we had a member `T&`, that behaves like `T const&`, and so forth.
+
+This approach gives us all the same benefits as using a `propconst` qualifier does, it's just that rather it being part of the data member's _type_, it's part of the member's specifier: we keep `propconst` out of the type system.
+
+## `propconst` qualifier vs `propconst` specifier
+
+Both approaches are similar - ultimately the goal is to have a member whose type is `T*` but, when the object is const, behave as if it were `T const*`, so that the compiler can ensure no mutable access.
+
+Having a `propconst` qualifier means it's in the type system. This is fairly pervasive through the language and library. Have a `propconst` specifier limits the scope pretty dramatically.
+
+One of the interesting aspects of `propconst` as a qualifier is having language facility that can propagate const through pointers and references: it is possible to make `unique_ptr<int propconst>` give you a `int*` or `int const*` based on the const-ness of the `unique_ptr` object. But in order to do so, we'd have to change the implementation to be:
+
+```diff
+  template <typename T>
+  struct unique_ptr {
+-   auto get() const -> T*;
++   auto get() -> T*;
++   auto get() const -> T* const;
+  };
+```
+
+This is discussed in section 7 of the paper ("Extension: function return types"). The extension here is to allow `T* const` as the return type, which is otherwise a fairly silly thing to do, but in this case if `T` is `U propconst` for some `U`, would become `U const*`. This is possible to write with a type trait, but proper language support seems much better to me.
+
+A similar approach could make `std::tuple<Ts propconst...>` a const-propagating tuple if any of the `Ts` are pointers or references. Well, not _exactly_ that since we need to have types like `T propconst*` and not `T* propconst`, so this would have to be a type trait of some sort. But given that type trait, we could change the overload of `std::get` on a `tuple<Us...> const&` to return `tuple_element<I, tuple> const& const`. Or something to that effect.
+
+That benefit wouldn't be possible with a `propconst` specifier, since it wouldn't allow you to write `unique_ptr<int propconst>` or `tuple<int propconst*>` to begin with.
+
+The `propconst` specifier is also much more of a blunt instrument. If you have a member declared `propconst T***`, that's a `T const* const* const*`. You don't have any way of controlling which `const`s you want to propagate. It's not clear whether this is actually a problem though - perhaps it's actually a benefit that you don't have to write `T propconst* propconst* propconst*` (although an exceedingly tiny benefit, since how often do people write `T***` to begin with).
+
+But it's not clear how much of a benefit writing `unique_ptr<int propconst>` really is, given that there's a bunch of library work necessary to even take advantage of this possibility, not to mention all the other language complexity to consider - especially when it is fairly straightforward to write `propagate_const<unique_ptr<int>>` if that is really desired.
+
+The specifier approach seems to give you really the bulk of the benefit of the facility (the ability to permit non-transient constexpr allocation) with a very small loss (the ability to declare a const-propagating `unique_ptr`) with significantly less complexity.
+
+
 ## Disposition
 
-Both of these proposals have similar shape, in that they attempt to reject the same bad thing (e.g. `constexpr std::unique_ptr<std::unique_ptr<int>>`) by way of having to add annotations to the good thing (allowing `constexpr std::vector<std::vector<T>>` to work, by either annotating the pointers or the allocation). Same end goal of which sets of programs would be allowed.
+All of these proposals have similar shape, in that they attempt to reject the same bad thing (e.g. `constexpr std::unique_ptr<std::unique_ptr<int>>`) by way of having to add annotations to the good thing (allowing `constexpr std::vector<std::vector<T>>` to work, by either annotating the pointers or the allocation). Same end goal of which sets of programs would be allowed.
 
-Importantly, both require types opt-in, somehow, to persistent allocation. `T propconst*` is more sound, in that the compiler _ensures_ that there is no mutable persistent allocation possible, while `std::mark_immutable_if_constexpr(p)` is simply a promise that the user did their due diligence and properly made their type deep-`const`.
+Importantly, both require types opt-in, somehow, to persistent allocation. The approaches with `propconst` are more sound, in that the compiler _ensures_ that there is no mutable persistent allocation possible, while `std::mark_immutable_if_constexpr(p)` is simply a promise that the user did their due diligence and properly made their type deep-`const`.
 
-What I mean is that, using `propconst`, this error won't compile - we can't accidentally expose mutable access (not without `const_cast`):
+What I mean is that, using `propconst` (in either form) this error won't compile - we can't accidentally expose mutable access (not without `const_cast`):
 
 ::: bq
 ```cpp
@@ -318,22 +392,13 @@ int main() {
 ```
 :::
 
-However, `T propconst*` has the downside that it's fairly pervasive throughout the language - where a significant amount of library machinery would have to account for it somehow. Whereas, `std::mark_immutable_if_constexpr(p)` is extremely limited. No language machinery needs to consider its existence, and the only library machinery that does are those deep-const types that perform allocation that would have to use it, in only a few places.
+The `propconst` qualifier approach has the downside that it's fairly pervasive throughout the language - where a significant amount of library machinery would have to account for it somehow. Whereas the `propconst` specifier approach is extremely limited, and `std::mark_immutable_if_constexpr(p)` is even more so. No language machinery needs to consider their existence, and the only library machinery that does are those deep-const types that perform allocation that would have to use it, in only a few places.
 
 On the other hand, `std::mark_immutable_if_constexpr` has the problem that users might not understand where and why to use it and, just as importantly, when _not_ to use it. If some marks an allocation immutable on a shallow-const type, that more or less defeats the entire purpose of the exercise, since now they've just allowed themselves to do exactly the thing that wanted to avoid allowing.
 
+A previous revision had suggested adding a `propconst` _class_ annotation, that would apply to all of the class's members - effectively like the `propconst` _variable_ annotation Matt had suggested here. Having a `propconst` variable specifier strikes me as superior - the annotation belongs on the variables, and having it at that point seems like the most valuable spot for it.
+
 ## Alternatives
-
-The `propconst` proposal adds annotation to the members. The `mark_immutable_if_constexpr` proposal adds annotation to the allocations. The only real other place to add an annotation to would be the class:
-
-::: bq
-```cpp
-template <typename T>
-struct vector propconst { ... };
-```
-:::
-
-It is possible that this could be made to have the same effect as the `propconst` member annotations without having to have such a large effect on the type system. On the one hand, this means that we can't have a type like `unique_ptr<int propconst>` or `observer_ptr<int propconst>`. On the other hand, it means that we don't have to add further language complexity to make such things work (see sections 7 and 8 from [@P1974R0]). Perhaps this is a reasonable compromise?
 
 An entirely different approach would be to eschew annotations altogether. That is - just allow all of these examples to compile, and make clear that it's undefined behavior to mutate persistent constexpr allocations (the allocation itself, not what's written in it) if they're read by the elided destructor. One downside of `std::mark_immutable_if_constexpr(p)` is that users might just eagerly add it to all allocations, even if they shouldn't - and if such a thing happens, then why even bother adding such a function? It's hard to say how often such a facility would be misused - and at least it's not overly difficult to provide good guidance for exactly when one should use it: on types that own allocations such that a constant object only provides constant access through that allocation. Perhaps a longer name like `std::allocation_is_deep_constant(p)` might convey this better, or `std::i_solemnly_swear_that_i_am_up_to_no_mutation(p)`. But also, having a facility such as `std::mark_immutable_if_constexpr(p)` gives users of correctly-written libraries (like `std` and `boost`) protection against accidentally writing `constexpr unique_ptr<string>` or `constexpr unique_ptr<vector<T>>`.
 
@@ -341,10 +406,10 @@ I'm not sure that either of these alternatives are better than the two we alread
 
 # Proposal
 
-Between `T propconst*` and `std::mark_immutable_if_constexpr(p)`, the former provides a sound solution to the problem with neither false positives nor false negatives. The latter is unsafe and, like Rust's `unsafe`, needs to be carefully reviewed, and can easily provide false negatives (accepted code that really should've been rejected). But, like Rust's `unsafe`, it should only appear in a very small number of places anyway, and making sure those uses are correct doesn't seem like an outrageous burden. After all, of all the types that own an allocation - there are probably way more containers (deep const) than smart pointers (shallow const) [^ratio], so a random use is more likely to be correct than not.
+Between `std::mark_immutable_if_constexpr(p)`, `T propconst*` (the qualifier), and `propconst T*` (the specifier), the latter two provide a sound solution to the problem with neither false positives nor false negatives. The magic function is unsafe and, like Rust's `unsafe`, needs to be carefully reviewed, and can easily provide false negatives (accepted code that really should've been rejected). But, like Rust's `unsafe`, it should only appear in a very small number of places anyway, and making sure those uses are correct doesn't seem like an outrageous burden. After all, of all the types that own an allocation - there are probably way more containers (deep const) than smart pointers (shallow const) [^ratio], so a random use is more likely to be correct than not.
 
 [^ratio]: This might suggest that we should mark shallow const allocations as shallow const, rather than marking deep const allocations as deep const. The problem is that this requires users to take active action to reject bad code, rather than active action to allow good code -- which makes it more likely that the bad code will persist. On the other hand, how many smart pointers are there really?
 
-Given the clear need for persistent constexpr allocation, we need to solve this problem one way or another. I think the right way to do that is `std::mark_immutable_if_constexpr(p)`, except probably renamed in such a way as to clarify the proper intent of its use.
+In [@P2670R0], I had argued that that `std::mark_immutable_if_constexpr(p)` was a better approach than `T propconst*` (the qualifier) on the basis of the complexity of the latter and the ultimately limited use of the former. But with the introduction of the `propconst T*` (the specifier) idea, I think it might be the right one: it's a sound solution to the problem, that is still limited in scope as far as language and library creep is concerned, while also being easier to explain and understand: we need to ensure that this const object's allocation only has const access, and we need to propagate const to ensure that is the case. I think that's more straightforward to understand than `std::mark_immutable_if_constexpr` and, importantly, it's also safer: the facility can ensure correctness.
 
-Lastly, adopting `std::mark_immutable_if_constexpr(p)` would not preclude against adding `propconst` later on if we get better implementation experience with it.
+Thus, I'm proposing that the right approach to solving the non-transient constexpr allocation problem is modify [@P1974R0] by changing `propconst` from a type qualifier to a storage class specifier, whose effect is to add `const` at every level of pointer/reference-ness. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.

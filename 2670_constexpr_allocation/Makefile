@@ -1,2 +1,2 @@
-p2670r0.html : constexpr-allocation.md
+p2670r1.html : constexpr-allocation.md
 include ../md/mpark-wg21.mk

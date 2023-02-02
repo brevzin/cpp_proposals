@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-02-01" />
+  <title>Non-transient constexpr allocation</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Non-transient <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2670R1</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-02-01</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#the-problem-case"><span class="toc-section-number">3</span> The Problem Case<span></span></a>
+<ul>
+<li><a href="#mutable-allocation"><span class="toc-section-number">3.1</span> Mutable Allocation<span></span></a></li>
+<li><a href="#mutable-reads-during-constant-destruction"><span class="toc-section-number">3.2</span> Mutable Reads During Constant Destruction<span></span></a></li>
+</ul></li>
+<li><a href="#proposed-solutions"><span class="toc-section-number">4</span> Proposed Solutions<span></span></a>
+<ul>
+<li><a href="#stdmark_immutable_if_constexpr"><span class="toc-section-number">4.1</span> <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code><span></span></a></li>
+<li><a href="#t-propconst"><span class="toc-section-number">4.2</span> <code class="sourceCode cpp">T propconst<span class="op">*</span></code><span></span></a></li>
+<li><a href="#a-propconst-specifier"><span class="toc-section-number">4.3</span> A <code class="sourceCode cpp">propconst</code> specifier<span></span></a></li>
+<li><a href="#propconst-qualifier-vs-propconst-specifier"><span class="toc-section-number">4.4</span> <code class="sourceCode cpp">propconst</code> qualifier vs <code class="sourceCode cpp">propconst</code> specifier<span></span></a></li>
+<li><a href="#disposition"><span class="toc-section-number">4.5</span> Disposition<span></span></a></li>
+<li><a href="#alternatives"><span class="toc-section-number">4.6</span> Alternatives<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">5</span> Proposal<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Added discussion of <code class="sourceCode cpp">propconst</code> specifier, as an alternative option to a <code class="sourceCode cpp">propconst</code> qualifier.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>For C++20, <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span> introduced the notion of transient <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation. That is, we can allocate during compile time - but only as long as the allocation is completely cleaned up by the end of the evaluation. With that, we can do this:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="cf">return</span> v<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="op">}</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>But not yet this:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">static_assert</span><span class="op">(</span>v<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Because <code class="sourceCode cpp">v</code>’s allocation persists, that is not yet allowed.</p>
+<p>Similarly, whether this is valid or not depends entirely on what small string optimization implementation strategy a standard library implementation took years ago:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>string s <span class="op">=</span> <span class="st">&quot;hello&quot;</span>;</span></code></pre></div>
+</blockquote>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="the-problem-case"><span class="header-section-number">3</span> The Problem Case<a href="#the-problem-case" class="self-link"></a></h1>
+<p>The problem with persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation can be demonstrated with this example:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">// simplified version of unique_ptr</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">class</span> unique_ptr <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    T<span class="op">*</span> ptr;</span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    <span class="kw">explicit</span> <span class="kw">constexpr</span> unique_ptr<span class="op">(</span>T<span class="op">*</span> p<span class="op">)</span> <span class="op">:</span> ptr<span class="op">(</span>p<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">constexpr</span> <span class="op">~</span>unique_ptr<span class="op">()</span> <span class="op">{</span> <span class="kw">delete</span> ptr; <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a></span>
+<span id="cb4-9"><a href="#cb4-9"></a>    <span class="co">// unique_ptr is shallow-const</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span>ptr; <span class="op">}</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">-&gt;()</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> ptr; <span class="op">}</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a></span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> reset<span class="op">(</span>T<span class="op">*</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>        <span class="kw">delete</span> ptr;</span>
+<span id="cb4-15"><a href="#cb4-15"></a>        ptr <span class="op">=</span> p;</span>
+<span id="cb4-16"><a href="#cb4-16"></a>    <span class="op">}</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="op">}</span>;</span>
+<span id="cb4-18"><a href="#cb4-18"></a></span>
+<span id="cb4-19"><a href="#cb4-19"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> ppi<span class="op">(</span><span class="kw">new</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)))</span>;</span>
+<span id="cb4-20"><a href="#cb4-20"></a></span>
+<span id="cb4-21"><a href="#cb4-21"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a>    <span class="co">// this call would be a compile error, because ppi is a const</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a>    <span class="co">// object, so we cannot call reset() on it</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a>    <span class="co">// ppi.reset(new unique_ptr&lt;int&gt;(new int(2)));</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a></span>
+<span id="cb4-26"><a href="#cb4-26"></a>    <span class="co">// but this call would compile fine</span></span>
+<span id="cb4-27"><a href="#cb4-27"></a>    ppi<span class="op">-&gt;</span>reset<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">))</span>;</span>
+<span id="cb4-28"><a href="#cb4-28"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>In order for constexpr allocation to persist to runtime, we first need to ensure that all of the allocation is cleaned up properly. We can check that our allocation (stored in <code class="sourceCode cpp">ppi<span class="op">.</span>ptr</code>) is properly deallocated in its destructor (which it is). And so on , recursively - so <code class="sourceCode cpp">ppi<span class="op">.</span>ptr<span class="op">-&gt;</span>ptr</code> is properly cleaned up in <code class="sourceCode cpp"><span class="op">*(</span>ppi<span class="op">.</span>ptr<span class="op">)</span></code>’s destructor.</p>
+<p>Once we verify that constexpr destruction properly deallocates all of the memory, no actual destructor is run during runtime. In order for this to be valid, it is important that the destruction that would happen at run-time is actually the same as the destruction that was synthesized during compile-time.</p>
+<p>In the above example though, that is not the case.</p>
+<p><code class="sourceCode cpp">ppi</code> is a <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> <span class="kw">const</span></code>, so its member <code class="sourceCode cpp">ppi<span class="op">.</span>ptr</code> is a <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;*</span> <span class="kw">const</span></code>. The pointer itself is <code class="sourceCode cpp"><span class="kw">const</span></code> (top-level), which means that we cannot change what pointer it owns. This means that destroying <code class="sourceCode cpp">ppi</code> at runtime would definitely <code class="sourceCode cpp"><span class="kw">delete</span></code> the same pointer that it was instantiated with at compile time (short of <code class="sourceCode cpp"><span class="kw">const_cast</span></code> shenanigans, which we can’t do much about and are clearly UB anyway). So far so good.</p>
+<p>But <code class="sourceCode cpp"><span class="op">*</span>ppi</code> gives me a <em>mutable</em> <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>, which means I can change it. In particular, while <code class="sourceCode cpp">ppi<span class="op">.</span>reset<span class="op">(~)</span></code> would be invalid, <code class="sourceCode cpp"><span class="op">(*</span>ppi<span class="op">).</span>reset<span class="op">(~)</span></code> would compile fine. Our tentative evaluation of the destructor of <code class="sourceCode cpp"><span class="op">*(</span>ppi<span class="op">.</span>ptr<span class="op">)</span></code> would try to delete the pointer which was initialized with <code class="sourceCode cpp"><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, but now it would point to <code class="sourceCode cpp"><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)</span></code>. That’s something different, which means that our synthetic destructor evaluation was meaningless.</p>
+<p>More to the point - the <code class="sourceCode cpp"><span class="kw">delete</span> ptr;</code> call (on line 14) would end up attempting to delete memory that wasn’t allocated at runtime - it was allocated at compile time and promoted to static storage. That’s going to fail at runtime. This is highly problematic: the above use looks like perfectly valid C++ code, and we got into this problem without any <code class="sourceCode cpp"><span class="kw">const_cast</span></code> shenanigans or really even doing anything especially weird. It’s not like we’re digging ourselves a hole, it’s more that we just took a step and fell.</p>
+<h2 data-number="3.1" id="mutable-allocation"><span class="header-section-number">3.1</span> Mutable Allocation<a href="#mutable-allocation" class="self-link"></a></h2>
+<p>The problem isn’t that the allocation is mutable. It’s much more subtle than that. There are no problems allowing this:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> pi<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">4</span><span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>While the data <code class="sourceCode cpp">pi</code> points to is mutable, it can be mutated at runtime without any issue. The important part of this is that the allocation is pointed to by a const pointer (<code class="sourceCode cpp">pi<span class="op">.</span>ptr</code> here is an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span></code>), so there is no way to change <em>which</em> pointer is the allocation. Just what its data is.</p>
+<p>The expectation would be that the above program would basically be translated into something like:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span> __backing_storage <span class="op">=</span> <span class="dv">4</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">constexpr</span> <span class="dt">int</span><span class="op">*</span> pi <span class="op">=</span> <span class="op">&amp;</span>__backing_storage;</span></code></pre></div>
+</blockquote>
+<p>That is perfectly valid code today - it’s the value of the pointer that is a constant, not what it is pointing to.</p>
+<h2 data-number="3.2" id="mutable-reads-during-constant-destruction"><span class="header-section-number">3.2</span> Mutable Reads During Constant Destruction<a href="#mutable-reads-during-constant-destruction" class="self-link"></a></h2>
+<p>The problem is specifically when a <em>mutable</em> object is <em>read</em> during <em>constant destruction</em>.</p>
+<p>In the previous section, <code class="sourceCode cpp">pi<span class="op">.</span>ptr</code> (an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span> <span class="kw">const</span></code>) is read during constant destruction, but it is not mutable . <code class="sourceCode cpp"><span class="op">*(</span>pi<span class="op">.</span>ptr<span class="op">)</span></code> is mutable (an <code class="sourceCode cpp"><span class="dt">int</span></code>), but wasn’t read.</p>
+<p>In the original example, <code class="sourceCode cpp">ppi<span class="op">.</span>ptr</code> (a <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;*</span> <span class="kw">const</span></code>) is read during constant destruction , but it is not mutable. But <code class="sourceCode cpp">ppi<span class="op">.</span>ptr<span class="op">-&gt;</span>ptr</code> <em>is</em> mutable (it’s just an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span></code>) and was read during <code class="sourceCode cpp"><span class="op">*(</span>ppi<span class="op">.</span>ptr<span class="op">)</span></code>’s constant destruction, which is the problem.</p>
+<p>While <code class="sourceCode cpp"><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> might not seem like a particularly interesting example, consider instead the case of <code class="sourceCode cpp"><span class="kw">constexpr</span> vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> (or, generally speaking, any kind of nested containers - like a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>). Both <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> and <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> have a <code class="sourceCode cpp">T<span class="op">*</span></code> member, so they’re structurally similar - it’s just that <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> has a shallow const API while <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> has a deep const API.</p>
+<p>But this is purely a convention. How can the compiler distinguish between the two? How can we disallow the bad <code class="sourceCode cpp">T<span class="op">*</span></code> case (<code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> or <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>string<span class="op">&gt;</span></code> or <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>) while allowing the good <code class="sourceCode cpp">T<span class="op">*</span></code> case (<code class="sourceCode cpp">vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> or <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>)?</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposed-solutions"><span class="header-section-number">4</span> Proposed Solutions<a href="#proposed-solutions" class="self-link"></a></h1>
+<p>There have been two proposed solutions to this problem, both of which had the goal of rejecting the nested <code class="sourceCode cpp">unique_ptr</code> case:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> pi<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;                                   <span class="co">// ok</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> ppi<span class="op">(</span><span class="kw">new</span> unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)))</span>; <span class="co">// error</span></span></code></pre></div>
+</blockquote>
+<p>While allowing the <code class="sourceCode cpp">vector</code> cases:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> vi <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;                             <span class="co">// ok</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vvi <span class="op">=</span> <span class="op">{</span><span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, <span class="op">{</span><span class="dv">3</span> <span class="dv">4</span><span class="op">}</span>, <span class="op">{</span><span class="dv">5</span>, <span class="dv">6</span><span class="op">}}</span>; <span class="co">// ok</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;&gt;</span> vs <span class="op">=</span> <span class="op">{</span><span class="st">&quot;this&quot;</span>, <span class="st">&quot;should&quot;</span>, <span class="st">&quot;work&quot;</span><span class="op">}</span>;   <span class="co">// ok</span></span></code></pre></div>
+</blockquote>
+<h2 data-number="4.1" id="stdmark_immutable_if_constexpr"><span class="header-section-number">4.1</span> <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code><a href="#stdmark_immutable_if_constexpr" class="self-link"></a></h2>
+<p>The initial design in <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span>, before it was removed, was a new function <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> that would mark an allocation as being immutable. That is, rather than rejecting any object that is mutable and read during constant destruction, the new rule would be any object read during constant destruction must be either:</p>
+<ul>
+<li>constant, or</li>
+<li>marked as immutable</li>
+</ul>
+<p><code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would mark its allocation as immutable (e.g. at the end of its constructor), but <code class="sourceCode cpp">std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would not (because it’s only shallow const).</p>
+<p>That way:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="co">// ok: this is fine (no mutable object is read during constant destruction)</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">// error: allocation isn&#39;t marked immutable, but is read as mutable during constant destruction</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> b<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)))</span>;</span>
+<span id="cb9-6"><a href="#cb9-6"></a></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="co">// ok: allocation isn&#39;t marked immutable, but is read as constant</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;</span> c<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)))</span>;</span>
+<span id="cb9-9"><a href="#cb9-9"></a></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="co">// ok: allocation isn&#39;t read as mutable</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span>
+<span id="cb9-12"><a href="#cb9-12"></a></span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="co">// ok: allocation is read as mutable but is marked immutable</span></span>
+<span id="cb9-14"><a href="#cb9-14"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vv <span class="op">=</span> <span class="op">{</span><span class="op">{</span><span class="dv">6</span><span class="op">}</span>, <span class="op">{</span><span class="dv">7</span><span class="op">}</span>, <span class="op">{</span><span class="dv">8</span><span class="op">}}</span>;</span></code></pre></div>
+</blockquote>
+<p>In this way, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_as_constexpr<span class="op">(</span>p<span class="op">)</span></code> is basically saying: I promise my type is actually properly deep-<code class="sourceCode cpp"><span class="kw">const</span></code>. Note that there’s no real enforcement mechanism here - if the user did mark their <code class="sourceCode cpp">unique_ptr</code> member immutable, then the original example in this paper would compile fine (and fail at runtime). It’s just a promise to the compiler that your type is actually deep-<code class="sourceCode cpp"><span class="kw">const</span></code>, it’s up to the user to properly ensure that it is.</p>
+<h2 data-number="4.2" id="t-propconst"><span class="header-section-number">4.2</span> <code class="sourceCode cpp">T propconst<span class="op">*</span></code><a href="#t-propconst" class="self-link"></a></h2>
+<p><span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> proposed something different: a new qualifier that would propagate <code class="sourceCode cpp"><span class="kw">const</span></code>-ness off the object through the pointer. A persistent <code class="sourceCode cpp"><span class="kw">constexpr</span></code> allocation would thus have to have only <code class="sourceCode cpp"><span class="kw">const</span></code> access, after adjusting through <code class="sourceCode cpp">propconst</code>.</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would change to have members of type <code class="sourceCode cpp">T propconst<span class="op">*</span></code> instead of <code class="sourceCode cpp">T<span class="op">*</span></code>, so that a <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> would effectively have members of type <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span></code>, while <code class="sourceCode cpp">std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>T<span class="op">&gt;</span></code> would remain unchanged, still having a <code class="sourceCode cpp">T<span class="op">*</span></code>. That way:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">// ok: this is fine (no mutable object is read during constant destruction)</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">))</span>;</span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="co">// error: b&#39;s pointer member has mutable access to a std::unique_ptr&lt;int&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="co">// which is a mutable read during constant destruction</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> b<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)))</span>;</span>
+<span id="cb10-7"><a href="#cb10-7"></a></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="co">// ok: each allocation is read as constant</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&gt;</span> c<span class="op">(</span><span class="kw">new</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)))</span>;</span>
+<span id="cb10-10"><a href="#cb10-10"></a></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="co">// ok: allocation isn&#39;t read as mutable</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="co">// ok: allocation isn&#39;t read as mutable, because the member is now a vector&lt;int&gt; propconst* rather</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a><span class="co">// than a vector&lt;int&gt;*, so behaves as if it were a vector&lt;int&gt; const*</span></span>
+<span id="cb10-16"><a href="#cb10-16"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vv <span class="op">=</span> <span class="op">{</span><span class="op">{</span><span class="dv">6</span><span class="op">}</span>, <span class="op">{</span><span class="dv">7</span><span class="op">}</span>, <span class="op">{</span><span class="dv">8</span><span class="op">}}</span>;</span></code></pre></div>
+</blockquote>
+<p>The distinction between the two proposals for a simple <code class="sourceCode cpp">vector</code> implementation:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">mark_immutable_if_constexpr</code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">T propconst<span class="op">*</span></code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>    T<span class="op">*</span> ptr_;</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="dt">size_t</span> size_;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="dt">size_t</span> capacity_;</span>
+<span id="cb11-6"><a href="#cb11-6"></a></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>    <span class="kw">constexpr</span> vector<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>        ptr_ <span class="op">=</span> <span class="kw">new</span> T<span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
+<span id="cb11-10"><a href="#cb11-10"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb11-11"><a href="#cb11-11"></a>        capacity_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb11-12"><a href="#cb11-12"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, ptr_<span class="op">)</span>;</span>
+<span id="cb11-13"><a href="#cb11-13"></a></span>
+<span id="cb11-14"><a href="#cb11-14"></a>        std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>ptr_<span class="op">)</span>; <span class="co">// &lt;==</span></span>
+<span id="cb11-15"><a href="#cb11-15"></a>    <span class="op">}</span></span>
+<span id="cb11-16"><a href="#cb11-16"></a></span>
+<span id="cb11-17"><a href="#cb11-17"></a>    <span class="kw">constexpr</span> <span class="op">~</span>vector<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb11-18"><a href="#cb11-18"></a>        <span class="kw">delete</span> <span class="op">[]</span> ptr_;</span>
+<span id="cb11-19"><a href="#cb11-19"></a>    <span class="op">}</span></span>
+<span id="cb11-20"><a href="#cb11-20"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>    T propconst<span class="op">*</span> ptr_; <span class="co">// &lt;==</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="dt">size_t</span> size_;</span>
+<span id="cb12-5"><a href="#cb12-5"></a>    <span class="dt">size_t</span> capacity_;</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>    <span class="kw">constexpr</span> vector<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span>T<span class="op">&gt;</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>        ptr_ <span class="op">=</span> <span class="kw">new</span> T<span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
+<span id="cb12-10"><a href="#cb12-10"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb12-11"><a href="#cb12-11"></a>        capacity_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb12-12"><a href="#cb12-12"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, ptr_<span class="op">)</span>;</span>
+<span id="cb12-13"><a href="#cb12-13"></a>    <span class="op">}</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a></span>
+<span id="cb12-15"><a href="#cb12-15"></a></span>
+<span id="cb12-16"><a href="#cb12-16"></a></span>
+<span id="cb12-17"><a href="#cb12-17"></a>    <span class="kw">constexpr</span> <span class="op">~</span>vector<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb12-18"><a href="#cb12-18"></a>        <span class="kw">delete</span> <span class="op">[]</span> ptr_;</span>
+<span id="cb12-19"><a href="#cb12-19"></a>    <span class="op">}</span></span>
+<span id="cb12-20"><a href="#cb12-20"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>On the left, we have to mark the result of every allocation immutable. On the right, we have to declare every member that refers to an allocation with this new qualifier.</p>
+<h2 data-number="4.3" id="a-propconst-specifier"><span class="header-section-number">4.3</span> A <code class="sourceCode cpp">propconst</code> specifier<a href="#a-propconst-specifier" class="self-link"></a></h2>
+<p>The previous section was what Jeff Snyder actually proposed: a <code class="sourceCode cpp">propconst</code> <em>qualifier</em>, to be used in the same position as <code class="sourceCode cpp"><span class="kw">const</span></code> is used today. An alternative approach, suggested to me recently by Matt Calabrese, would be instead to have a <code class="sourceCode cpp">propconst</code> <em>specifier</em> - used in the same way that the <code class="sourceCode cpp"><span class="kw">mutable</span></code> keyword is used today.</p>
+<p>The usage would differ a bit in the <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code> implementation:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Qualifier (P1947R0)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Specifier</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">struct</span> vector <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    T propconst<span class="op">*</span> begin_;</span>
+<span id="cb13-4"><a href="#cb13-4"></a>    T propconst<span class="op">*</span> end_;</span>
+<span id="cb13-5"><a href="#cb13-5"></a>    T propconst<span class="op">*</span> capactity_;</span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="kw">struct</span> vector <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>    propconst T<span class="op">*</span> begin_;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>    propconst T<span class="op">*</span> end_;</span>
+<span id="cb14-5"><a href="#cb14-5"></a>    propconst T<span class="op">*</span> capactity_;</span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>A variable declared <code class="sourceCode cpp">propconst</code> would mean that access as <code class="sourceCode cpp"><span class="kw">const</span></code> would add <code class="sourceCode cpp"><span class="kw">const</span></code> to <em>every</em> layer of pointer and reference. On a <code class="sourceCode cpp">vector<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span></code>, <code class="sourceCode cpp">begin_</code> would behave like a <code class="sourceCode cpp">T <span class="kw">const</span><span class="op">*</span></code>. If we had a member <code class="sourceCode cpp">T<span class="op">**</span></code>, it would behave like a <code class="sourceCode cpp">T <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>. If we had a member <code class="sourceCode cpp">T<span class="op">&amp;</span></code>, that behaves like <code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>, and so forth.</p>
+<p>This approach gives us all the same benefits as using a <code class="sourceCode cpp">propconst</code> qualifier does, it’s just that rather it being part of the data member’s <em>type</em>, it’s part of the member’s specifier: we keep <code class="sourceCode cpp">propconst</code> out of the type system.</p>
+<h2 data-number="4.4" id="propconst-qualifier-vs-propconst-specifier"><span class="header-section-number">4.4</span> <code class="sourceCode cpp">propconst</code> qualifier vs <code class="sourceCode cpp">propconst</code> specifier<a href="#propconst-qualifier-vs-propconst-specifier" class="self-link"></a></h2>
+<p>Both approaches are similar - ultimately the goal is to have a member whose type is <code class="sourceCode cpp">T<span class="op">*</span></code> but, when the object is const, behave as if it were <code class="sourceCode cpp">T <span class="kw">const</span><span class="op">*</span></code>, so that the compiler can ensure no mutable access.</p>
+<p>Having a <code class="sourceCode cpp">propconst</code> qualifier means it’s in the type system. This is fairly pervasive through the language and library. Have a <code class="sourceCode cpp">propconst</code> specifier limits the scope pretty dramatically.</p>
+<p>One of the interesting aspects of <code class="sourceCode cpp">propconst</code> as a qualifier is having language facility that can propagate const through pointers and references: it is possible to make <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span> propconst<span class="op">&gt;</span></code> give you a <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span></code> or <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span><span class="op">*</span></code> based on the const-ness of the <code class="sourceCode cpp">unique_ptr</code> object. But in order to do so, we’d have to change the implementation to be:</p>
+<div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a>  template &lt;typename T&gt;</span>
+<span id="cb15-2"><a href="#cb15-2"></a>  struct unique_ptr {</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="st">-   auto get() const -&gt; T*;</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="va">+   auto get() -&gt; T*;</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="va">+   auto get() const -&gt; T* const;</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a>  };</span></code></pre></div>
+</div>
+<p>This is discussed in section 7 of the paper (“Extension: function return types”). The extension here is to allow <code class="sourceCode cpp">T<span class="op">*</span> <span class="kw">const</span></code> as the return type, which is otherwise a fairly silly thing to do, but in this case if <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">U propconst</code> for some <code class="sourceCode cpp">U</code>, would become <code class="sourceCode cpp">U <span class="kw">const</span><span class="op">*</span></code>. This is possible to write with a type trait, but proper language support seems much better to me.</p>
+<p>A similar approach could make <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>Ts propconst<span class="op">...&gt;</span></code> a const-propagating tuple if any of the <code class="sourceCode cpp">Ts</code> are pointers or references. Well, not <em>exactly</em> that since we need to have types like <code class="sourceCode cpp">T propconst<span class="op">*</span></code> and not <code class="sourceCode cpp">T<span class="op">*</span> propconst</code>, so this would have to be a type trait of some sort. But given that type trait, we could change the overload of <code class="sourceCode cpp">std<span class="op">::</span>get</code> on a <code class="sourceCode cpp">tuple<span class="op">&lt;</span>Us<span class="op">...&gt;</span> <span class="kw">const</span><span class="op">&amp;</span></code> to return <code class="sourceCode cpp">tuple_element<span class="op">&lt;</span>I, tuple<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="kw">const</span></code>. Or something to that effect.</p>
+<p>That benefit wouldn’t be possible with a <code class="sourceCode cpp">propconst</code> specifier, since it wouldn’t allow you to write <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span> propconst<span class="op">&gt;</span></code> or <code class="sourceCode cpp">tuple<span class="op">&lt;</span><span class="dt">int</span> propconst<span class="op">*&gt;</span></code> to begin with.</p>
+<p>The <code class="sourceCode cpp">propconst</code> specifier is also much more of a blunt instrument. If you have a member declared <code class="sourceCode cpp">propconst T<span class="op">***</span></code>, that’s a <code class="sourceCode cpp">T <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span> <span class="kw">const</span><span class="op">*</span></code>. You don’t have any way of controlling which <code class="sourceCode cpp"><span class="kw">const</span></code>s you want to propagate. It’s not clear whether this is actually a problem though - perhaps it’s actually a benefit that you don’t have to write <code class="sourceCode cpp">T propconst<span class="op">*</span> propconst<span class="op">*</span> propconst<span class="op">*</span></code> (although an exceedingly tiny benefit, since how often do people write <code class="sourceCode cpp">T<span class="op">***</span></code> to begin with).</p>
+<p>But it’s not clear how much of a benefit writing <code class="sourceCode cpp">unique_ptr<span class="op">&lt;</span><span class="dt">int</span> propconst<span class="op">&gt;</span></code> really is, given that there’s a bunch of library work necessary to even take advantage of this possibility, not to mention all the other language complexity to consider - especially when it is fairly straightforward to write <code class="sourceCode cpp">propagate_const<span class="op">&lt;</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code> if that is really desired.</p>
+<p>The specifier approach seems to give you really the bulk of the benefit of the facility (the ability to permit non-transient constexpr allocation) with a very small loss (the ability to declare a const-propagating <code class="sourceCode cpp">unique_ptr</code>) with significantly less complexity.</p>
+<h2 data-number="4.5" id="disposition"><span class="header-section-number">4.5</span> Disposition<a href="#disposition" class="self-link"></a></h2>
+<p>All of these proposals have similar shape, in that they attempt to reject the same bad thing (e.g. <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span></code>) by way of having to add annotations to the good thing (allowing <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> to work, by either annotating the pointers or the allocation). Same end goal of which sets of programs would be allowed.</p>
+<p>Importantly, both require types opt-in, somehow, to persistent allocation. The approaches with <code class="sourceCode cpp">propconst</code> are more sound, in that the compiler <em>ensures</em> that there is no mutable persistent allocation possible, while <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is simply a promise that the user did their due diligence and properly made their type deep-<code class="sourceCode cpp"><span class="kw">const</span></code>.</p>
+<p>What I mean is that, using <code class="sourceCode cpp">propconst</code> (in either form) this error won’t compile - we can’t accidentally expose mutable access (not without <code class="sourceCode cpp"><span class="kw">const_cast</span></code>):</p>
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">class</span> bad_vector_pc <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    T propconst<span class="op">*</span> data_;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>    <span class="dt">int</span> size_;</span>
+<span id="cb16-5"><a href="#cb16-5"></a>    <span class="dt">int</span> capacity_;</span>
+<span id="cb16-6"><a href="#cb16-6"></a></span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>    <span class="co">// oops, int&amp; instead of int const&amp;</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>        <span class="co">// error: data_[idx] is an T const&amp; here</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>        <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">]</span>;</span>
+<span id="cb16-12"><a href="#cb16-12"></a>    <span class="op">}</span></span>
+<span id="cb16-13"><a href="#cb16-13"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>But this would work just fine (until it explodes at runtime):</p>
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">class</span> bad_vector_miic <span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>    T<span class="op">*</span> data_;</span>
+<span id="cb17-4"><a href="#cb17-4"></a>    <span class="dt">int</span> size_;</span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="dt">int</span> capacity_;</span>
+<span id="cb17-6"><a href="#cb17-6"></a></span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a>    <span class="kw">constexpr</span> bad_vector_miic<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-9"><a href="#cb17-9"></a>        data_ <span class="op">=</span> <span class="kw">new</span> T<span class="op">[</span>xs<span class="op">.</span>size<span class="op">()]</span>;</span>
+<span id="cb17-10"><a href="#cb17-10"></a>        std<span class="op">::</span>copy<span class="op">(</span>xs<span class="op">.</span>begin<span class="op">()</span>, xs<span class="op">.</span>end<span class="op">()</span>, data_<span class="op">)</span>;</span>
+<span id="cb17-11"><a href="#cb17-11"></a>        size_ <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb17-12"><a href="#cb17-12"></a>        capacity <span class="op">=</span> xs<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb17-13"><a href="#cb17-13"></a></span>
+<span id="cb17-14"><a href="#cb17-14"></a>        std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>data_<span class="op">)</span>;</span>
+<span id="cb17-15"><a href="#cb17-15"></a>    <span class="op">}</span></span>
+<span id="cb17-16"><a href="#cb17-16"></a></span>
+<span id="cb17-17"><a href="#cb17-17"></a>    <span class="kw">constexpr</span> <span class="op">~</span>bad_vector_miic<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb17-18"><a href="#cb17-18"></a>        <span class="kw">delete</span> <span class="op">[]</span> data_;</span>
+<span id="cb17-19"><a href="#cb17-19"></a>    <span class="op">}</span></span>
+<span id="cb17-20"><a href="#cb17-20"></a></span>
+<span id="cb17-21"><a href="#cb17-21"></a>    <span class="co">// oops, T&amp; instead of T const&amp;</span></span>
+<span id="cb17-22"><a href="#cb17-22"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb17-23"><a href="#cb17-23"></a>        <span class="co">// this still compiles though</span></span>
+<span id="cb17-24"><a href="#cb17-24"></a>        <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">]</span>;</span>
+<span id="cb17-25"><a href="#cb17-25"></a>    <span class="op">}</span></span>
+<span id="cb17-26"><a href="#cb17-26"></a><span class="op">}</span>;</span>
+<span id="cb17-27"><a href="#cb17-27"></a></span>
+<span id="cb17-28"><a href="#cb17-28"></a><span class="kw">constexpr</span> bad_vector_miic<span class="op">&lt;</span>bad_vector_miic<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">{</span><span class="dv">2</span><span class="op">}</span>, <span class="op">{</span><span class="dv">3</span><span class="op">}}</span>;</span>
+<span id="cb17-29"><a href="#cb17-29"></a></span>
+<span id="cb17-30"><a href="#cb17-30"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb17-31"><a href="#cb17-31"></a>    v<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>; <span class="co">// ok: compiles?</span></span>
+<span id="cb17-32"><a href="#cb17-32"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The <code class="sourceCode cpp">propconst</code> qualifier approach has the downside that it’s fairly pervasive throughout the language - where a significant amount of library machinery would have to account for it somehow. Whereas the <code class="sourceCode cpp">propconst</code> specifier approach is extremely limited, and <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is even more so. No language machinery needs to consider their existence, and the only library machinery that does are those deep-const types that perform allocation that would have to use it, in only a few places.</p>
+<p>On the other hand, <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code> has the problem that users might not understand where and why to use it and, just as importantly, when <em>not</em> to use it. If some marks an allocation immutable on a shallow-const type, that more or less defeats the entire purpose of the exercise, since now they’ve just allowed themselves to do exactly the thing that wanted to avoid allowing.</p>
+<p>A previous revision had suggested adding a <code class="sourceCode cpp">propconst</code> <em>class</em> annotation, that would apply to all of the class’s members - effectively like the <code class="sourceCode cpp">propconst</code> <em>variable</em> annotation Matt had suggested here. Having a <code class="sourceCode cpp">propconst</code> variable specifier strikes me as superior - the annotation belongs on the variables, and having it at that point seems like the most valuable spot for it.</p>
+<h2 data-number="4.6" id="alternatives"><span class="header-section-number">4.6</span> Alternatives<a href="#alternatives" class="self-link"></a></h2>
+<p>An entirely different approach would be to eschew annotations altogether. That is - just allow all of these examples to compile, and make clear that it’s undefined behavior to mutate persistent constexpr allocations (the allocation itself, not what’s written in it) if they’re read by the elided destructor. One downside of <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> is that users might just eagerly add it to all allocations, even if they shouldn’t - and if such a thing happens, then why even bother adding such a function? It’s hard to say how often such a facility would be misused - and at least it’s not overly difficult to provide good guidance for exactly when one should use it: on types that own allocations such that a constant object only provides constant access through that allocation. Perhaps a longer name like <code class="sourceCode cpp">std<span class="op">::</span>allocation_is_deep_constant<span class="op">(</span>p<span class="op">)</span></code> might convey this better, or <code class="sourceCode cpp">std<span class="op">::</span>i_solemnly_swear_that_i_am_up_to_no_mutation<span class="op">(</span>p<span class="op">)</span></code>. But also, having a facility such as <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> gives users of correctly-written libraries (like <code class="sourceCode cpp">std</code> and <code class="sourceCode cpp">boost</code>) protection against accidentally writing <code class="sourceCode cpp"><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>string<span class="op">&gt;</span></code> or <code class="sourceCode cpp"><span class="kw">constexpr</span> unique_ptr<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>.</p>
+<p>I’m not sure that either of these alternatives are better than the two we already have on the table.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>Between <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code>, <code class="sourceCode cpp">T propconst<span class="op">*</span></code> (the qualifier), and <code class="sourceCode cpp">propconst T<span class="op">*</span></code> (the specifier), the latter two provide a sound solution to the problem with neither false positives nor false negatives. The magic function is unsafe and, like Rust’s <code class="sourceCode cpp">unsafe</code>, needs to be carefully reviewed, and can easily provide false negatives (accepted code that really should’ve been rejected). But, like Rust’s <code class="sourceCode cpp">unsafe</code>, it should only appear in a very small number of places anyway, and making sure those uses are correct doesn’t seem like an outrageous burden. After all, of all the types that own an allocation - there are probably way more containers (deep const) than smart pointers (shallow const),<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> so a random use is more likely to be correct than not.</p>
+<p>In <span class="citation" data-cites="P2670R0">[<a href="#ref-P2670R0" role="doc-biblioref">P2670R0</a>]</span>, I had argued that that <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr<span class="op">(</span>p<span class="op">)</span></code> was a better approach than <code class="sourceCode cpp">T propconst<span class="op">*</span></code> (the qualifier) on the basis of the complexity of the latter and the ultimately limited use of the former. But with the introduction of the <code class="sourceCode cpp">propconst T<span class="op">*</span></code> (the specifier) idea, I think it might be the right one: it’s a sound solution to the problem, that is still limited in scope as far as language and library creep is concerned, while also being easier to explain and understand: we need to ensure that this const object’s allocation only has const access, and we need to propagate const to ensure that is the case. I think that’s more straightforward to understand than <code class="sourceCode cpp">std<span class="op">::</span>mark_immutable_if_constexpr</code> and, importantly, it’s also safer: the facility can ensure correctness.</p>
+<p>Thus, I’m proposing that the right approach to solving the non-transient constexpr allocation problem is modify <span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> by changing <code class="sourceCode cpp">propconst</code> from a type qualifier to a storage class specifier, whose effect is to add <code class="sourceCode cpp"><span class="kw">const</span></code> at every level of pointer/reference-ness. But otherwise, with the same requirements on when non-transient allocation is allowed to persist.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P0784R7">
+<p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
+<a href="https://wg21.link/p0784r7">https://wg21.link/p0784r7</a></p>
+</div>
+<div id="ref-P1974R0">
+<p>[P1974R0] Jeff Snyder, Louis Dionne, Daveed Vandevoorde. 2020-05-15. Non-transient constexpr allocation using propconst. <br />
+<a href="https://wg21.link/p1974r0">https://wg21.link/p1974r0</a></p>
+</div>
+<div id="ref-P2670R0">
+<p>[P2670R0] Barry Revzin. 2022-10-15. Non-transient constexpr allocation. <br />
+<a href="https://wg21.link/p2670r0">https://wg21.link/p2670r0</a></p>
+</div>
+</div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>This might suggest that we should mark shallow const allocations as shallow const, rather than marking deep const allocations as deep const. The problem is that this requires users to take active action to reject bad code, rather than active action to allow good code – which makes it more likely that the bad code will persist. On the other hand, how many smart pointers are there really?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</div>
+</div>
+</body>
+</html>
