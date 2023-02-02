@@ -269,7 +269,7 @@ On the left, we have to mark the result of every allocation immutable. On the ri
 
 The previous section was what Jeff Snyder actually proposed: a `propconst` _qualifier_, to be used in the same position as `const` is used today. An alternative approach, suggested to me recently by Matt Calabrese, would be instead to have a `propconst` _specifier_ - used in the same way that the `mutable` keyword is used today.
 
-The usage would differ a bit in the `vector<T>` implementation:
+The usage would differ a bit in the `vector<T>` implementation (but only if you would write `const`/`propconst` on the right side):
 
 ::: cmptable
 ### Qualifier (P1947R0)
