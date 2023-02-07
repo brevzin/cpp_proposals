@@ -257,7 +257,7 @@ template<class T>
 
 [3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]); otherwise, `false`.
 
-[4]{.pnum} *Remarks*: A call to this function is not a core constant expression ([expr.const]) unless `p` is a pointer to an object ([basic.compound]).
+[4]{.pnum} *Remarks*: During the evaluation of an expression `E` as a core constant expression, a call to this function is not a core constant expression if `p` points to an object whose lifetime did not begin within `E` and is not usable in constant expressions.
 
 [5]{.pnum}
 [*Example 2*:
