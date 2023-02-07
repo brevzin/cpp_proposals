@@ -1,6 +1,6 @@
 ---
 title: "Checking if a union alternative is active"
-document: P2641R1
+document: P2641R2
 date: today
 audience: EWG, LEWG
 author:
@@ -11,6 +11,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+After discussion in Issaquah, generalizing the proposed facility to check for object lifetime, instead of just active member of union.
 
 # Introduction
 
@@ -87,7 +91,7 @@ struct OptBool {
 
   constexpr auto has_value() const -> bool {
     if consteval {
-      return std::is_active_member(&b);
+      return std::is_within_lifetime(&b);
     } else {
       return c != 2;
     }
@@ -102,9 +106,33 @@ struct OptBool {
 
 There's no particular implementation burden here - the compiler already needs to know this information. No language change is necessary to support this change either.
 
+## Active Member of a Union, or Something More?
+
+R0 and R1 of this paper [@P2641R1] originally proposed a facility spelled `std::is_active_member(p)`, which asked if `p` was the active member of a union (or a subobject thereof). That is a sufficient question to solve the motivating example, but it's also a very narrow one. Can we generalize further?
+
+To start with, asking if an object is the active member of a union is just a specific case of asking if an object is within its lifetime (as noted by Richard Smith). We see no need to be so specific with this facility, the more general question seems more useful.
+
+But then the question becomes: do we go further? The most broad question would be to ask if evaluating an expression, any expression, as a constant would actually succeed. Perhaps such a (language) facility could be spelled as follows (mirroring the `requires` expression that we already have):
+
+::: bq
+```cpp
+if (constexpr { e; }) {
+    // evaluating e as a constant succeeds
+}
+```
+:::
+
+This is probably useful, specifiable, and implementable. Would this be the right shape for this facility? One issue here might be that if `e` is expensive to evaluate, you probably don't want to first check if you can evaluate it and then, if you _can_ evaluate it, actually evaluate it - this may require the compiler to actually evaluate it twice (not ideal) and definitely requires the user to type it twice (also not ideal).
+
+The closest parallel to the desired semantics might be (as Nat Goodspeed pointed out) exceptions: you `try` to evaluate an expression, but allowing yourself to `constexpr catch` evaluation failures. That seems like the right semantic, and is actually a really interesting thing to consider. But that's... a large thing to think about, with a lot of implications. It may be something we may want to pursue, and I'm sure sufficiently clever people can come up with interesting use-cases.
+
+But for this problem, we have a fairly simple solution that involves no change in language semantics, simply exposing to the user something the compiler already knows. I think the tiny library facility is the right approach here. At least for now.
+
 ## Interesting Cases
 
-Let's go over some interesting cases to flesh out how this facility should behave
+Let's go over some interesting cases to flesh out how this facility should behave. With the older revisions of this paper, where the facility was specifically asking the question "is this an active member of a union?", these questions ended up being potentially subtle.
+
+But with generalizing the facility to simply asking if an object is within its lifetime, they become more straightforward to answer.
 
 ### Nested Anonymous Unions
 
@@ -120,14 +148,14 @@ union Outer {
   float f;
 };
 consteval bool f(Outer *p) {
-  return std::is_consteval_active_member(&p->x);
+  return std::is_within_lifetime(&p->x);
 }
 ```
 :::
 
 If the active member of `p` is actually `f`, then not only is `p->x` not the active member of _its_ union but the union that it's a member of isn't even itself an active member. What should happen in this case?
 
-Arguably, this should be valid and return `false`. It doesn't matter how many layers of inactivity there are - `p->x` isn't the active member and that's what we're asking about.
+This should be valid and return `false`. It doesn't matter how many layers of inactivity there are - `p->x` isn't the active member of a union, and thus is not within its lifetime, and that's what we're asking about.
 
 ### Subobject
 
@@ -144,18 +172,12 @@ struct S {
 };
 
 consteval bool f(S s) {
-  return std::is_consteval_active_member(&s.n.i);
+  return std::is_within_lifetime(&s.n.i);
 }
 ```
 :::
 
-Here, `s.n.i` is not a variant member of a union - it's a subobject of `s.n`. We could say this is ill-formed, requiring that the pointer into this function actually be a pointer to a variant member. But that's seems overly strict. After all, the specific language rule is, emphasis mine:
-
-::: bq
-[5.9]{.pnum} an lvalue-to-rvalue conversion that is applied to a glvalue that refers to a non-active member of a union **or a subobject thereof;**
-:::
-
-The same rule that would reject using `s.n` if that's not an active member would reject `s.n.i` if it's not the subobject of an active member. So we should just accept this case (returning true of `&s.n` is the active member), rather than rejecting it.
+Here, `s.n.i` is not a variant member of a union - it's a subobject of `s.n`. But that no longer matters - if `s.n` is within its lifetime, then `s.n.i` here would be too.
 
 ### Other rules
 
@@ -168,17 +190,17 @@ There's a similar rule in this space, [\[expr.const\]/5.8](https://timsong-cpp.g
 * [5.8.2]{.pnum} a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of E;
 :::
 
-Should the facility in this paper address this case as well? At this point, this would become a "is this a pointer that I can read during constant evaluation?" facility. Would that actually be useful? It's not clear what you could do with this information.
+With this revision, the facility exactly matches this bullet: "is this a pointer that I can read during constant evaluation?"
 
 ## Alternative Naming
 
-Should the name reflect that this facility can only be used during constant evaluation (`std::is_consteval_active_member`) or not (`std::is_active_member`)?
+Should the name reflect that this facility can only be used during constant evaluation (`std::is_consteval_within_lifetime`) or not (`std::is_within_lifetime`)?
 
 It would help to make the name clearer from the call site that it has limited usage. But it is already a `consteval` function, so it's not like you could misuse it.
 
 ## Implementation Experience
 
-Daveed Vandevoorde has implemented this proposal in EDG.
+Daveed Vandevoorde has implemented R1 of this proposal in EDG. There's no real implementation burden difference between R1 and R2.
 
 As pointed out by Johel Ernesto Guerrero Peña and Ed Catmur, this facility basically already works in [gcc and clang](https://godbolt.org/z/n4za9KzPr), which has a builtin function ([`__builtin_constant_p`](https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fconstant_005fp)) that be used to achieve the same behavior.
 
@@ -195,7 +217,7 @@ namespace std {
   // [meta.const.eval], constant evaluation context
   constexpr bool is_constant_evaluated() noexcept;
 + template<class T>
-+   consteval bool is_active_member(T*);
++   consteval bool is_within_lifetime(T*);
 }
 ```
 :::
@@ -230,12 +252,12 @@ constexpr void f(unsigned char *p, int n) {
 ::: addu
 ```
 template<class T>
-  consteval bool is_active_member(T* p);
+  consteval bool is_within_lifetime(T* p);
 ```
 
-[3]{.pnum} *Returns*: `true` if `p` is a pointer to the active member of a union or a subobject thereof; otherwise, `false`.
+[3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]); otherwise, `false`.
 
-[4]{.pnum} *Remarks*: A call to this function is not a core constant expression ([expr.const]) unless `p` is a pointer to a variant member of a union or a subobject thereof.
+[4]{.pnum} *Remarks*: A call to this function is not a core constant expression ([expr.const]) unless `p` is a pointer to an object ([basic.compound]).
 
 [5]{.pnum}
 [*Example 2*:
@@ -248,9 +270,9 @@ struct OptBool {
 
   constexpr auto has_value() const -> bool {
     if consteval {
-      return std::is_active_member(&b);   // during constant evaluation, cannot read from c
+      return std::is_within_lifetime(&b);   // during constant evaluation, cannot read from c
     } else {
-      return c != 2;                      // during runtime, must read from c
+      return c != 2;                        // during runtime, must read from c
     }
   }
 
