@@ -217,7 +217,7 @@ namespace std {
   // [meta.const.eval], constant evaluation context
   constexpr bool is_constant_evaluated() noexcept;
 + template<class T>
-+   consteval bool is_within_lifetime(T*);
++   consteval bool is_within_lifetime(T*) noexcept;
 }
 ```
 :::
@@ -252,12 +252,12 @@ constexpr void f(unsigned char *p, int n) {
 ::: addu
 ```
 template<class T>
-  consteval bool is_within_lifetime(T* p);
+  consteval bool is_within_lifetime(T* p) noexcept;
 ```
 
 [3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]); otherwise, `false`.
 
-[4]{.pnum} *Remarks*: During the evaluation of an expression `E` as a core constant expression, a call to this function is not a core constant expression if `p` points to an object whose lifetime did not begin within `E` and is not usable in constant expressions.
+[4]{.pnum} *Remarks*: During the evaluation of an expression `E` as a core constant expression, a call to this function is not a core constant expression if `p` points to an object whose complete object's lifetime did not begin within `E` and is not usable in constant expressions.
 
 [5]{.pnum}
 [*Example 2*:

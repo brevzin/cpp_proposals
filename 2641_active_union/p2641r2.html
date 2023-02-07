@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-02-06" />
+  <meta name="dcterms.date" content="2023-02-07" />
   <title>Checking if a union alternative is active</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-02-06</td>
+    <td>2023-02-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -738,7 +738,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-5"><a href="#cb7-5"></a>  // [meta.const.eval], constant evaluation context</span>
 <span id="cb7-6"><a href="#cb7-6"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
 <span id="cb7-7"><a href="#cb7-7"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a><span class="va">+   consteval bool is_within_lifetime(T*);</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="va">+   consteval bool is_within_lifetime(T*) noexcept;</span></span>
 <span id="cb7-9"><a href="#cb7-9"></a>}</span></code></pre></div>
 </div>
 </blockquote>
@@ -762,9 +762,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>— <em>end example</em>]</p>
 <div class="addu">
 <div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>template&lt;class T&gt;</span>
-<span id="cb11-2"><a href="#cb11-2"></a>  consteval bool is_within_lifetime(T* p);</span></code></pre></div>
+<span id="cb11-2"><a href="#cb11-2"></a>  consteval bool is_within_lifetime(T* p) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">p</code> is a pointer to an object that is within its lifetime ([basic.life]); otherwise, <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">4</a></span> <em>Remarks</em>: During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, a call to this function is not a core constant expression if <code class="sourceCode cpp">p</code> points to an object whose lifetime did not begin within <code class="sourceCode cpp">E</code> and is not usable in constant expressions.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">4</a></span> <em>Remarks</em>: During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, a call to this function is not a core constant expression if <code class="sourceCode cpp">p</code> points to an object whose complete object’s lifetime did not begin within <code class="sourceCode cpp">E</code> and is not usable in constant expressions.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">5</a></span> [<em>Example 2</em>:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>struct OptBool {</span>
 <span id="cb12-2"><a href="#cb12-2"></a>  union { bool b; char c; };</span>
