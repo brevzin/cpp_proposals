@@ -1,8 +1,8 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R3
+document: D1061R4
 date: today
-audience: EWG
+audience: CWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -398,7 +398,7 @@ the current instantiation, permitting name lookup without typename.
 :::
 
 I think the best rule would be to follow the suggested answer in this core issue:
-a structured bindings pack is dependent if: the type of its initializer
+a structured binding pack is dependent if: the type of its initializer
 (the `E` in [dcl.struct.bind]{.sref}) is dependent and it is not a member of the
 current instantiaton. This would make neither of the `...v` packs dependent,
 which seems conceptually correct.
@@ -414,8 +414,7 @@ auto [... parts] = Point{1, 2};
 ```
 :::
 
-Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity. For now, this paper simply rejects such a declaration since we are now very far removed from the primary motivation of the paper, and this only serves to add additional complexity.
-
+Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity. However, rejecting it would be a very odd kind of restriction that would be surprising. If users want to do this, they should be able to. EWG also explicitly polled this question in a telecon, with a strong preference for allowing such namespace-scope declarations.
 
 # Wording
 
@@ -449,11 +448,43 @@ _type-specifier_ `auto` and _cv-qualifiers_. The _initializer_ shall be of the
 or of the form "`( $assignment-expression$ )`", where the
 _assignment-expression_ is of array or non-union class type.
 
+Extend [dcl.fct]{.sref}/5:
+
+::: bq
+[5]{.pnum} The type of a function is determined using the following rules. The type of each parameter (including function parameter packs[, after immediately expanding structured binding packs ([temp.variadic])]{.addu}) is determined from its own _parameter-declaration_ ([dcl.decl]). After determining the type of each parameter, any parameter of type “array of T” or of function type T is adjusted to be “pointer to T”. After producing the list of parameter types, any top-level cv-qualifiers modifying a parameter type are deleted when forming the function type. The resulting list of transformed parameter types and the presence or absence of the ellipsis or a function parameter pack is the function's parameter-type-list.
+
+[Note 3: This transformation does not affect the types of the parameters. For example, `int(*)(const int p, decltype(p)*)` and `int(*)(int, const int*)` are identical types. — end note]
+[Example 2:
+```diff
+  void f(char*);                  // #1
+  void f(char[]) {}               // defines #1
+  void f(const char*) {}          // OK, another overload
+  void f(char *const) {}          // error: redefines #1
+
+  void g(char(*)[2]);             // #2
+  void g(char[3][2]) {}           // defines #2
+  void g(char[3][3]) {}           // OK, another overload
+
+  void h(int x(const int));       // #3
+  void h(int (*)(int)) {}         // defines #3
+
++ struct C {
++   int i;
++   long l;
++ };
++ auto [...v] = C{ 1, 0 };
++ C k(int, long);              // #4
++ C k(decltype(v)... p) {      // defines #4
++   return C{p...};
++ }
+```
+— end example]
+:::
+
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
-A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ... of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) of <i>structured bindings</i>.
-[The declaration shall contain at most one _sb-pack-identifier_.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [The declaration shall contain at most one _sb-pack-identifier_.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
@@ -467,12 +498,14 @@ number of names that need to be introduced by the structured binding
 declaration, as defined below. If there is no structured binding pack, then
 the number of elements in the _sb-identifier-list_ shall be equal to the
 structured binding size. Otherwise, the number of elements of the structured
-binding pack is the structured binding size less the number of elements in the
- _sb-identifier-list_.
+binding pack is the structured binding size less the number of non-pack elements in the
+ _sb-identifier-list_ and the number of non-pack elements shall be no more than the structured binding size.
 
-Let SB~_i_~ denote _i_^th^ _identifier_ in the structured binding declaration after
-expanding the structured binding pack, if any [ _Note_: if there is no
-structured binding pack, then the SB~_i_~ denotes v~_i_~. - _end note_ ] [ _Example_:
+The _structured bindings_ of a structured binding declaration are lvalues that refer to the elements of something.
+
+Let SB~_i_~ denote the _i_^th^ structured binding in the structured binding declaration after
+expanding the structured binding pack, if any. [ _Note_: If there is no
+structured binding pack, then SB~_i_~ denotes v~_i_~. - _end note_ ] [ _Example_:
 
 ```
 struct C { int x, y, z; };
@@ -480,6 +513,7 @@ struct C { int x, y, z; };
 auto [a, b, c] = C(); // SB@~0~@ is a, SB@~1~@ is b, and SB@~2~@ is c
 auto [d, ...e] = C(); // SB@~0~@ is d, the pack e (v@~1~@) contains two identifiers: SB@~1~@ and SB@~2~@
 auto [...f, g] = C(); // the pack f (v@~0~@) contains two identifiers: SB@~0~@ and SB@~1~@, and SB@~2~@ is g
+auto [h, i, j, k, ...l] = C(); // error: structured binding size is too small
 ```
 
 - _end example_ ]
@@ -490,7 +524,7 @@ Change [dcl.struct.bind]{.sref} paragraph 3 to define a structured binding size 
 extend the example:
 
 ::: bq
-If <code>E</code> is an array type with element type <code>T</code>, [the number of elements in the <i>identifier-list</i>]{.rm} [the structured binding size of <code>E</code>]{.addu} shall be equal to the number of elements of <code>E</code>. Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
+If `E` is an array type with element type <code>T</code>, [the number of elements in the <i>identifier-list</i> shall be]{.rm} [the structured binding size of `E` is]{.addu} equal to the number of elements of `E`. Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
 [_Note_: The top-level _cv_-qualifiers of `T` are _cv_. — _end note_] [_Example_:
 
 ```diff
@@ -510,13 +544,13 @@ auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array refe
 Change [dcl.struct.bind]{.sref} paragraph 4 to define a structured binding size:
 
 ::: bq
-Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the [number of elements in the <i>identifier-list</i>]{.rm} [structured binding size of <code>E</code>]{.addu} shall be equal to the value of that expression. [...] Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
+Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the value of that expression. [...] Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
 :::
 
 Change [dcl.struct.bind]{.sref} paragraph 5 to define a structured binding size:
 
 ::: bq
-Otherwise, all of <code>E</code>'s non-static data members shall be direct members of <code>E</code> or of the same base class of <code>E</code>, well-formed when named as <code>e.name</code> in the context of the structured binding, <code>E</code> shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i>]{.rm} [structured binding size of <code>E</code>]{.addu} shall be equal to the number of non-static data members of <code>E</code>. Designating the non-static data members of <code>E</code> as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of <code>e</code> and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
+Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
 :::
 
 Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
@@ -529,7 +563,6 @@ A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or
 auto foo() -> int(&)[2];
 auto [...a] = foo();          // a is a structured binding pack containing 2 elements
 auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements
-auto [e, f, g, ...h] = foo(); // error: too many identifiers
 ```
 
 - _end example]_
@@ -560,54 +593,67 @@ Add a new paragraph after [temp.variadic]{.sref}
 
 ::: bq
 ::: addu
-A structured bindings pack is dependent if, letting `E` denote the type of its
-initializer:
-
-- `E` is dependent ([temp.dep.type]), and
-- `E` is not a member of the current instantiation, and
-- either `E` is not a local class or `E` has a dependent base class.
+If all of the packs expanded by a pack expansion are structured binding packs which were initialized with non-dependent <i>brace-or-equal-initializer</i>s, the pack expansion is expanded immediately.
 
 [ *Example:*
-
 ```
-struct B { int i; };
+struct C { };
 
-template <typeanme T>
-struct C { T t; };
+void g(...); // #1
 
 template <typename T>
-void f(T t) {
-   auto [...a] = t;        // a is dependent
-   auto [...b] = B{1};     // b is not dependent
-   auto [...c] = C<T>{t};  // c is dependent
-
-   struct D { T t; };
-   auto [...d] = D{t};     // d is not dependent
-
-   struct E : T {};
-   auto [...e] = E{t};     // e is dependent
-
-}
-```
-- *end example* ]
-
-If all of the packs expanded by a pack expansion are structured bindings packs
-that are not dependent, the pack expansion is instantiated immediately.
-
-[ *Example:*
-```
-struct E { int i, j; };
-
-constexpr int sum(E e) {
-    auto [...v] = e;
-    return (... + v);
+void f() {
+    C arr[1];
+    auto [...e] = arr;
+    g(e...); // calls #1
 }
 
-static_assert(sum({.i=1, .j=2}) == 3); // ok
+void g(C); // #2
+
+int main() {
+    f<int>();
+}
 ```
 - *end example* ]
 :::
 :::
+
+Add a bullet to [temp.dep.expr]{.sref}/3:
+
+::: bq
+[3]{.pnum} An _id-expression_ is type-dependent if it is a _template-id_ that is not a concept-id and is dependent; or if its terminal name is
+
+* [3.1]{.pnum} associated by name lookup with one or more declarations declared with a dependent type,
+* [3.2]{.pnum} associated by name lookup with a non-type template-parameter declared with a type that contains a placeholder type,
+* [3.3]{.pnum} associated by name lookup with a variable declared with a type that contains a placeholder type ([dcl.spec.auto]) where the initializer is type-dependent,
+* [3.4]{.pnum} associated by name lookup with one or more declarations of member functions of a class that is the current instantiation declared with a return type that contains a placeholder type,
+* [3.5]{.pnum} associated by name lookup with a structured binding declaration ([dcl.struct.bind]) whose brace-or-equal-initializer is type-dependent,
+* [3.5b]{.pnum} [associated by name lookup with a pack, unless that pack is a non-type template parameter pack whose types are non-dependent,]{.addu}
+* [3.6]{.pnum} associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a lambda-expression that has an explicit object parameter whose type is dependent ([dcl.fct]),
+* [3.7]{.pnum} the identifier __func__ ([dcl.fct.def.general]), where any enclosing function is a template, a member of a class template, or a generic lambda,
+* [3.8]{.pnum} a conversion-function-id that specifies a dependent type, or
+* [3.9]{.pnum} dependent
+:::
+
+Add a carve-out for in [temp.dep.constexpr]{.sref}/4:
+
+::: bq
+[4]{.pnum} Expressions of the following form are value-dependent:
+```
+sizeof ... ( identifier )
+fold-expression
+```
+[unless the *identifier* is a structured binding pack initialized with a non-dependent <i>brace-or-equal-initializer</i>, or all of the packs expanded in the *fold-expression* are structured binding packs initialized with a non-dependent <i>brace-or-equal-initializer</i>.]{.addu}
+:::
+
+## Feature-Test Macro
+
+Bump `__cpp_structured_bindings` in [cpp.predefined]{.sref}:
+
+```diff
+- __cpp_­structured_­bindings 201606L
++ __cpp_­structured_­bindings 2023XXL
+```
 
 # Acknowledgements
 
