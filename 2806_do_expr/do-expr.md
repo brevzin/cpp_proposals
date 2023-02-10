@@ -49,7 +49,7 @@ auto f() -> std::pair<int, int> {
 ```
 :::
 
-There's no way to make that work, because `{` starts a statement. So the choice in that paper lacks orthogonality: we have a hack to support multiple expressions (which are very important to support!) that is inventing such support on the fly, in a novel way, that throws other useful syntax under the bus.
+There's no way to make that work, because `{` starts a statement. So the choice in that paper lacks orthogonality: we have a hack to support multiple expressions (which are very important to support) that is inventing such support on the fly, in a novel way that is very narrow (only supports `void`), that throws other useful syntax under the bus.
 
 What pattern matching really needs here is a statement-expression syntax. But it's not just pattern matching that has a strong desire for statement-expressions, this would be a broadly useful facility, so we should have an orthogonal language feature that supports statement-expressions in a way that would allow pattern matching to simplify its grammar to:
 
@@ -73,9 +73,17 @@ int x = do { do_yield 42; };
 
 A `do` statement-expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). There are a lot of interesting rules that we need to discuss about how those statements behave.
 
+## Scope
+
+A `do` statement-expression does introduce a new block scope - as the braces might suggest. But it does _not_ introduce a new function scope. There is no new stack frame. Which is what allows external control flow to work (see below).
+
+## `do_yield` statement
+
+The new `do_yield` statement has the same form as the `return` statement we have today: `do_yield $expr-or-braced-init-list$@~opt~@;`. It's behavior corresponds closely to that `return`, in unsurprising ways - `do_yield` yields from a `do` statement-expression in the same way that `return` returns from a function.
+
 ## Type and Value Category
 
-In the above, `do { do_yield 42; }` is a prvalue of type `int`. We deduce the type from all of the `do_yield` statements, in the same way that `auto` return type deduction works for functions and lambdas.
+The expression `do { do_yield 42; }` is a prvalue of type `int`. We deduce the type from all of the `do_yield` statements, in the same way that `auto` return type deduction works for functions and lambdas.
 
 An explicit `$trailing-return-type$` can be provided to override this:
 
@@ -86,6 +94,8 @@ do -> long { do_yield 42; }
 :::
 
 If no `do_yield` statement appears in the body of the `do` statement-expression, or every `do_yield` statement is of the form `do_yield;`, then the expression is a prvalue of type `void`.
+
+Falling off the end of a `do` statement-expression behaves like an implicit `do_yield;` - if this is incompatible the type of the `do` statement-expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
 
 This makes the pattern matching cases [@P2688R0] work pretty naturally:
 
@@ -107,9 +117,14 @@ x match {
     _ => do { cout << "don't care"; };
 }
 ```
+:::
 
----
+Here, the whole `match` expression has type `void` because each arm has type `void` because none of the `do` statement-expressions have a `do_yield` statement.
 
+Yes, this requires an extra `do` for each arm, but it means we have a language that's much easier to explain because it's consistent - `do { cout << "don't care"; }` is a `void` expression in _any_ context. We don't have a `$compound-statement$` that happens to be a `void` expression just in this one spot.
+
+::: cmptable
+### P2688R0
 ```cpp
 auto f(int i) {
     return i match -> std::pair<int, int> {
@@ -119,6 +134,7 @@ auto f(int i) {
 }
 ```
 
+### Proposed
 ```cpp
 auto f(int i) {
     return i match -> std::pair<int, int> {
@@ -129,13 +145,7 @@ auto f(int i) {
 ```
 :::
 
-Here, the whole `match` expression has type `void` because each arm has type `void` because none of the `do` statement-expressions have a `do_yield` statement.
-
-Yes, this requires an extra `do` for each arm, but it means we have a language that's much easier to explain because it's consistent - `do { cout << "don't care"; }` is a `void` expression in _any_ context. We don't have a `$compound-statement$` that happens to be a `void` expression just in this one spot.
-
-## Scope
-
-A `do` statement-expression does introduce a new block scope - as the braces might suggest. But it does _not_ introduce a new function scope. There is no new stack frame. Which is what allows [external control flow](#external-control-flow) to work.
+Here, the existing pattern matching cannot support a `$braced-init-list$` because `{` is used for the special `void`-statement-case. But if we had `do` statement-expressions, the grammar of pattern matching can use `$expr-or-braced-init-list$` in the same way that we already do in many other places in the C++ grammar. This example just works.
 
 ## Copy Elision
 
@@ -155,115 +165,209 @@ Note that automatic storage variables declared within the function that the `do`
 
 ## Control Flow
 
-There are two kinds of control flow to be considered: the kinds _internal_ to a `do` statement-expression and the kinds _external_ to the expression.
+In a regular function, there are four ways to escape the function scope:
 
-### Internal Control Flow
+1. a `return` statement
+2. `throw`ing an exception
+3. invoking a `[[noreturn]]` function (e.g. `std::abort()`)
+4. falling off the end of the function (undefined behavior if the return type is not `void`)
 
-There are two kinds of internal control flow: conditions and loops. If the conditions and loops don't contain a `do_yield` statement, there's nothing else interesting to say about them. But what if they do? Should that be allowed?
+The same is true for coroutines, except substituting `return` for `co_return` (and likewise falling off the end is undefined behavior if there is no `return_void()` function on the promise type).
 
-The rule for `if` is that an `if` statement that contains a `do_yield` statement (in any branch) has to have the same type in every branch:
+For a `do` statement expression, we have two different directions where we can escape (in a non-exception, non-`[[noreturn]]` case): we either yield an expression, or we escape the _outer_ scope. That is, we can also:
 
-::: bq
+5. `return` from the enclosing function (or `co_return` from the enclosing coroutine)
+6. `break` or `continue` from the innermost enclosing loop (if any, ill-formed otherwise)
+
+Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.
+
+That is, the rule we propose that the implementation form a control flow graph of the `do` statement-expression and consider each one of the six escaping kinds described above. All `do_yield` statements (including the implicit `do_yield;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
+
+Let's go through some examples.
+
+<table>
+<tr><th>Example</th><th>Discussion</th></tr>
+<tr><td>
 ```cpp
-// ok
 auto a = do {
-    if (true) {
+    if ($cond$) {
         do_yield 1;
     } else {
         do_yield 2;
     }
 };
-
-// error: type mismatch
+```
+</td><td>OK: All yielding control paths have the same type. There's no falling off the end.</td></tr>
+<tr><td>
+```cpp
 auto b = do {
-    if (true) {
+    if ($cond$) {
         do_yield 1;
     } else {
         do_yield 2.0;
     }
 };
-
-// ok: same type (implicit else)
+```
+</td><td>Error: The yielding control paths have different types and there is no provided `$trailing-return-type$`. This would be okay if it were `do -> int { ... }` or `do -> double { ... }` or `do -> float { ... }`, etc.</td></tr>
+<tr><td>
+```cpp
 auto c = do {
-    if (true) {
+    if ($cond$) {
         do_yield 1;
     }
 
     do_yield 2;
 };
-
-// error: type mismatch (implicit else has type void)
+```
+</td><td>OK: Similar to `a`, all yielding control paths yield the same type. There is no falling off the end here, it is not important that a yielding `if` has an `else`.</td></tr>
+<tr><td>
+```cpp
 auto d = do {
-    if (true) {
+    if ($cond$) {
         do_yield 1;
     }
 };
-
-// ok: both branches have type void
+```
+</td><td>Error: There are two yielding control paths here: the `do_yield 1;` and the implicit `do_yield;` from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if `$cond$` is `false`.</td></tr>
+<tr><td>
+```cpp
 int e = do {
-    if (true) {
+    if ($cond$) {
         do_yield;
     }
 }, 1;
 ```
-:::
-
-`if constexpr` count as a control flow in the same way in this context, since the instantiated branch is the only one that is considered. `if consteval`, though, does count as an `if`.
-
-The rule for loops is actually similar - except the two "branches" of a loop are the inside and the outside of the loop. If there is a `do_yield` statement inside of the loop, then the outside of the loop also needs to yield the same type:
-
-::: bq
+</td><td>OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are `do_yield;` which are compatible.</tr>
+<tr><td>
 ```cpp
-// error: the inside of the loop yields int but the outside is void
 int f = do {
-    while (get()) {
-        do_yield 42;
+    if ($cond$) {
+        do_yield 1;
     }
+
+    throw 2;
+};
+```
+</td><td>OK: We no longer fall off the end here, since we always escape. There is only one yielding path.</td></tr>
+<tr><td>
+```cpp
+int outer() {
+    int g = do {
+        if ($cond$) {
+            do_yield 1;
+        }
+
+        return 3;
+    };
+}
+```
+</td><td>OK: Similar to the above, it's just that we're escaping by returning from the outer function instead of throwing. Still not falling off the end.</td></tr>
+<tr><td>
+```cpp
+int h = do {
+    if ($cond$) {
+        do_yield 1;
+    }
+
+    std::abort();
+};
+```
+</td><td>Unclear: This is a very interesting case to consider, see discussion on `[[noreturn]]` below.</td></tr>
+<tr><td>
+```cpp
+enum Color {
+    Red,
+    Green,
+    Blue
 };
 
-// ok: inside and outside are both bool.
-// Here, the else condition of the if is implicitly the
-bool g = do {
-    for (int i : r) {
-        if (i == 0) {
-            do_yield false;
+void func(Color c) {
+    std::string_view name = do {
+        switch (c) {
+        case Red:   do_yield "Red"sv;
+        case Green: do_yield "Green"sv;
+        case Blue:  do_yield "Blue"sv;
         }
-    }
-    std::print("cool");
-    do_yield true;
+    };
 }
 ```
-:::
+</td><td>Error: This is probably the most interesting case when it comes to falling off the end. Here, the user knows that `c` only has three values, but the implementation does not, so it could still fall off the end. gcc does warn on the equivalent function form of this, clang does not. The typical solution here might be to add `__builtin_unreachable()`, now `std::unreachable()`, to the end of the function, but for this to work we have to discuss `[[noreturn]]` below. Barring that, the user would have to add either some default value or some other kind of control flow (like an exception, etc).</td></tr>
+<tr><td>
+```cpp
+void func() {
+    for (;;) {
+        int j = do {
+            if ($cond$) {
+                break;
+            }
 
-### External Control Flow
+            for ($something$) {
+                if ($cond$) {
+                    do_yield 1;
+                }
+            }
 
-External control flow, which is one of the main motivations for this facility, escape the statement-expression entirely. For example:
+            do_yield 2;
+        };
+    }
+}
+```
+</td><td>OK: The first `break` escapes the `do` statement-expression and breaks from the outer loop. Otherwise, we have two yielding statements which both yield `int`. If the `do_yield 2;` statement did not exist, this would be ill-formed unless the compiler could prove that the loop itself did not terminate.
+
+If the loop were `for (;;)`, then the lack of `do_yield 2;` would be fine - but anything more complicated than that would require some kind of final yield (or `throw`, etc.)</td></tr>
+</table>
+
+To reiterate: the implementation produces a control flow graph of the `do` statement-expression and considers all yielding statements (*including* the implicit `do_yield;` on falling off the end, if the implementation considers that to be a possible path) in order to determine correctness of the statement-expression. The kinds of control flow that escape the statement entirely (exceptions, `return`, `break`, `continue`, `co_return`) do not need to be considered for purposes of consistency of yields (since they do not yield values).
+
+### `noreturn` functions
+
+The language currently has several kinds of escaping control flow that it recognizes. As mentioned, exceptions, `return`, `continue`, `break`, and `co_return`. And, allegedly, `goto`.
+
+But there's one kind of escaping control flow that it _does not_ currently recognize: functions marked `[[noreturn]]`. A call to `std::abort()` or `std::terminate()` or `std::unreachable()` escapes control flow, for sure, but the because this is just an attribute, the language cannot add semantic meaning to it. In particular, it is not feasible at the moment for us to call this necessarily well-formed:
 
 ::: bq
 ```cpp
-auto f() -> std::expected<int, E>;
+int i = do {
+    if ($cond$) {
+        do_yield 5;
+    }
 
-auto g() -> std::expected<int, E> {
-    int i = do {
-        auto r = f();
-        if (not r) {
-            return std::unexpected(r.error());
-        }
-        do_yield *r;
-    };
-
-    return i * i;
-}
+    std::abort();
+};
 ```
 :::
 
-The `return` statement there escapes out of the `do` statement-expression, it does not initialize `i`. In the same way that an exception would do, except we're just returning.
+By the rules laid out above, this is still falling off the end, and would require adding a `do_yield` statement that yields an `int` or to have some other language-recognized escaping control flow. We're not allowed to recognize `std::abort()` itself as escaping control flow.
 
-The same is true for `continue`, `break`, and `co_return` - the entire expression is escaped entirely.
+Pattern Matching has this same problem - it needs to support arms that might `std::terminate()` or are `std::unreachable()`, but because it cannot recognize these functions in any way, it needs dedicated syntax to do this. Currently, the paper spells it `!{ std::terminate(); }`. Which is... less than ideal.
 
-`co_await` and `co_yield` suspend from the outer coroutine, which would then resume back into the middle of this expression, but the expression would then actually continue.
+There are three solutions to this problem.
 
-Note that the above example does not break the `if` rule we articulated above: the branch that returns doesn't `do_yield`, so there's no type mismatch. This is actually similar to something we already have in the language: `false ? throw 42 : 5` is a valid expression, because we know that the exception escapes the expression - it's just that we happen to not support `return`, `continue`, `break`, or `co_return` in this context.
+The first solution would be not do anything special about `[[noreturn]]` functions, but have all the implementations simply agree to Do The Right Thing here. We all know that `[[noreturn]]` functions don't return, so even though the rules would say that this example leads to an incompatible yield, implementations just accept anyway because they know that it's perfectly valid. Perhaps there's a way to word this sufficiently loosely that it doesn't end up seeming like the implementations just aren't implementing what's in the standard.
+
+The second, narrow solution would be to simply enumerate all the `[[noreturn]]` functions in the standard library (they are `abort`, `exit`, `_Exit`, `quick_exit`, `terminate`, `rethrow_exception`, `throw_with_nested`, `longjmp`, and `unreachable`) and recognize them. This solves the problem for standard library non-returning functions, but doesn't help any user-defined functions. That's a bit unsatisfying, but at least it does solve a significant subset of the problem. Users would end up having to write something like:
+
+::: bq
+```cpp
+int i = do {
+    if ($cond$) {
+        do_yield 5;
+    }
+
+    my::abort(); // doesn't count as escaping
+    std::abort(); // counts, but utterly pointless
+                  // and may cause compiler warnings for unreachable code
+};
+```
+:::
+
+The last solution would be introduce a new function specifier to replace `[[noreturn]]` with something that the language _can_ add semantics to. C already has such a specifier, spelled `_Noreturn`, which is already reserved keyword. That's an ugly and unfamiliar keyword for C++ purposes, but there are a lot of advantages to specifically this choice of keyword:
+
+* there are so few non-returning functions that the value of consistency with C seems more important than trying to come up with any other keyword
+* consistency with C in this case means that implementations already support it, and allowing it for C++ is largely flipping a switch
+* for how rare non-returning functions should be, having an ugly keyword seems like a benefit in its own right
+
+Of these, the last approach seems like the right one. Elevate `[[noreturn]]` to be a first-class language feature, which allows us to ascribe language semantics to it, which means that `do` statement-expressions and pattern matching arms can recognize non-returning functions properly as actually escaping control flow.
 
 ## Grammar Disambiguation
 
@@ -309,9 +413,20 @@ The reason we're not simply proposing to standardize the existing extension is t
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
-## Lifetimes and Lifetime-Extension
+### Namespace Scope
 
-TODO
+Note that gcc's statement-expressions are not usable at namespace-scope. This is due to the question of where the implementation would put any local variables:
+
+::: bq
+```cpp
+int i = ({
+    int j = 2; // where does this get allocated?
+    j;
+});
+```
+:::
+
+At namespace scope, there is a much smaller difference than a statement-expression and an immediately invoked lambda since you don't have any other interesting control flow that you can do - the expression either yields a value or the program terminates. But if we're going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Perhaps it simply behaves as a function scope in such a context?
 
 # Wording
 
@@ -339,7 +454,7 @@ Add a new clause [expr.prim.do]:
 
 ```
 $do-statement-expression$:
-  do $trailing-return-type$@~opt~@ { $statement-seq$ }
+  do $trailing-return-type$@~opt~@ { $statement$ }
 ```
 :::
 :::
