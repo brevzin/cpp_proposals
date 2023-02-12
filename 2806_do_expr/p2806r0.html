@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-02-10" />
-  <title>do statement-expressions</title>
+  <meta name="dcterms.date" content="2023-02-11" />
+  <title>do expressions</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -529,7 +529,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="cf">do</span></code> statement-expressions</h1>
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="cf">do</span></code> expressions</h1>
 
 <table style="border:none;float:right">
   <tr>
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-02-10</td>
+    <td>2023-02-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -567,21 +567,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#do-statement-expressions"><span class="toc-section-number">2</span> <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expressions<span></span></a>
+<li><a href="#do-expressions"><span class="toc-section-number">2</span> <code class="sourceCode cpp"><span class="cf">do</span></code> expressions<span></span></a>
 <ul>
 <li><a href="#scope"><span class="toc-section-number">2.1</span> Scope<span></span></a></li>
-<li><a href="#do_yield-statement"><span class="toc-section-number">2.2</span> <code class="sourceCode cpp">do_yield</code> statement<span></span></a></li>
+<li><a href="#do-return-statement"><span class="toc-section-number">2.2</span> <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement<span></span></a></li>
 <li><a href="#type-and-value-category"><span class="toc-section-number">2.3</span> Type and Value Category<span></span></a></li>
 <li><a href="#copy-elision"><span class="toc-section-number">2.4</span> Copy Elision<span></span></a></li>
 <li><a href="#control-flow"><span class="toc-section-number">2.5</span> Control Flow<span></span></a>
 <ul>
 <li><a href="#noreturn-functions"><span class="toc-section-number">2.5.1</span> <code class="sourceCode cpp">noreturn</code> functions<span></span></a></li>
+<li><a href="#always-escaping-expressions"><span class="toc-section-number">2.5.2</span> Always-escaping expressions<span></span></a></li>
 </ul></li>
 <li><a href="#grammar-disambiguation"><span class="toc-section-number">2.6</span> Grammar Disambiguation<span></span></a></li>
-<li><a href="#prior-art"><span class="toc-section-number">2.7</span> Prior Art<span></span></a>
-<ul>
-<li><a href="#namespace-scope"><span class="toc-section-number">2.7.1</span> Namespace Scope<span></span></a></li>
-</ul></li>
+<li><a href="#prior-art"><span class="toc-section-number">2.7</span> Prior Art<span></span></a></li>
+<li><a href="#where-can-do-expressions-appear"><span class="toc-section-number">2.8</span> Where can <code class="sourceCode cpp"><span class="cf">do</span></code> expressions appear<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -613,25 +612,33 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1"></a><em>pattern</em> =&gt; <em>expr-or-braced-init-list</em>;</span></code></pre></div>
 </blockquote>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="do-statement-expressions"><span class="header-section-number">2</span> <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expressions<a href="#do-statement-expressions" class="self-link"></a></h1>
-<p>Our proposal is the addition of a new kind of expression, called a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="do-expressions"><span class="header-section-number">2</span> <code class="sourceCode cpp"><span class="cf">do</span></code> expressions<a href="#do-expressions" class="self-link"></a></h1>
+<p>Our proposal is the addition of a new kind of expression, called a <code class="sourceCode cpp"><span class="cf">do</span></code> expression.</p>
 <p>In its simplest form:</p>
 <blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> do_yield <span class="dv">42</span>; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="cf">do</span> <span class="cf">return</span> <span class="dv">42</span>; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>A <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). There are a lot of interesting rules that we need to discuss about how those statements behave.</p>
+<p>A <code class="sourceCode cpp"><span class="cf">do</span></code> expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). There are a lot of interesting rules that we need to discuss about how those statements behave.</p>
 <h2 data-number="2.1" id="scope"><span class="header-section-number">2.1</span> Scope<a href="#scope" class="self-link"></a></h2>
-<p>A <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression does introduce a new block scope - as the braces might suggest. But it does <em>not</em> introduce a new function scope. There is no new stack frame. Which is what allows external control flow to work (see below).</p>
-<h2 data-number="2.2" id="do_yield-statement"><span class="header-section-number">2.2</span> <code class="sourceCode cpp">do_yield</code> statement<a href="#do_yield-statement" class="self-link"></a></h2>
-<p>The new <code class="sourceCode cpp">do_yield</code> statement has the same form as the <code class="sourceCode cpp"><span class="cf">return</span></code> statement we have today: <code class="sourceCode cpp">do_yield <em>expr-or-braced-init-list</em><sub>opt</sub>;</code>. It’s behavior corresponds closely to that <code class="sourceCode cpp"><span class="cf">return</span></code>, in unsurprising ways - <code class="sourceCode cpp">do_yield</code> yields from a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression in the same way that <code class="sourceCode cpp"><span class="cf">return</span></code> returns from a function.</p>
+<p>A <code class="sourceCode cpp"><span class="cf">do</span></code> expression does introduce a new block scope - as the braces might suggest. But it does <em>not</em> introduce a new function scope. There is no new stack frame. Which is what allows external control flow to work (see below).</p>
+<h2 data-number="2.2" id="do-return-statement"><span class="header-section-number">2.2</span> <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement<a href="#do-return-statement" class="self-link"></a></h2>
+<p>The new <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement has the same form as the <code class="sourceCode cpp"><span class="cf">return</span></code> statement we have today: <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span> <em>expr-or-braced-init-list</em><sub>opt</sub>;</code>. It’s behavior corresponds closely to that <code class="sourceCode cpp"><span class="cf">return</span></code>, in unsurprising ways - <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> yields from a <code class="sourceCode cpp"><span class="cf">do</span></code> expression in the same way that <code class="sourceCode cpp"><span class="cf">return</span></code> returns from a function.</p>
+<p>While <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span> <em>value</em>;</code> and <code class="sourceCode cpp"><span class="cf">return</span> <em>value</em>;</code> do look quite close together and mean fairly different things, the leading <code class="sourceCode cpp"><span class="cf">do</span></code> we think should be sufficiently clear, and we think it is a good spelling for this statement.</p>
+<p>Other alternative spellings we’ve considered:</p>
+<ul>
+<li><code class="sourceCode cpp">do_return</code></li>
+<li><code class="sourceCode cpp">do_yield</code> (presented to EWG in Issaquah as the initial pre-publication draft of this proposal)</li>
+<li><code class="sourceCode cpp"><span class="cf">do</span> yield</code></li>
+<li><code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">break</span></code> (similarly to <code class="sourceCode cpp"><span class="cf">return</span></code>, we are breaking out of this expression, but is less likely to conflict since <code class="sourceCode cpp"><span class="cf">break</span></code> is less likely to be used than <code class="sourceCode cpp"><span class="cf">return</span></code> and also the corresponding <code class="sourceCode cpp"><span class="cf">break</span> <em>value</em>;</code> is invalid today)</li>
+</ul>
 <h2 data-number="2.3" id="type-and-value-category"><span class="header-section-number">2.3</span> Type and Value Category<a href="#type-and-value-category" class="self-link"></a></h2>
-<p>The expression <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> do_yield <span class="dv">42</span>; <span class="op">}</span></code> is a prvalue of type <code class="sourceCode cpp"><span class="dt">int</span></code>. We deduce the type from all of the <code class="sourceCode cpp">do_yield</code> statements, in the same way that <code class="sourceCode cpp"><span class="kw">auto</span></code> return type deduction works for functions and lambdas.</p>
+<p>The expression <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> <span class="cf">do</span> <span class="cf">return</span> <span class="dv">42</span>; <span class="op">}</span></code> is a prvalue of type <code class="sourceCode cpp"><span class="dt">int</span></code>. We deduce the type from all of the <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statements, in the same way that <code class="sourceCode cpp"><span class="kw">auto</span></code> return type deduction works for functions and lambdas.</p>
 <p>An explicit <code class="sourceCode cpp"><em>trailing-return-type</em></code> can be provided to override this:</p>
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> do_yield <span class="dv">42</span>; <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> <span class="cf">do</span> <span class="cf">return</span> <span class="dv">42</span>; <span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>If no <code class="sourceCode cpp">do_yield</code> statement appears in the body of the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression, or every <code class="sourceCode cpp">do_yield</code> statement is of the form <code class="sourceCode cpp">do_yield;</code>, then the expression is a prvalue of type <code class="sourceCode cpp"><span class="dt">void</span></code>.</p>
-<p>Falling off the end of a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression behaves like an implicit <code class="sourceCode cpp">do_yield;</code> - if this is incompatible the type of the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.</p>
+<p>If no <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement appears in the body of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression, or every <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement is of the form <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span>;</code>, then the expression is a prvalue of type <code class="sourceCode cpp"><span class="dt">void</span></code>.</p>
+<p>Falling off the end of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression behaves like an implicit <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span>;</code> - if this is incompatible the type of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.</p>
 <p>This makes the pattern matching cases <span class="citation" data-cites="P2688R0">[<a href="#ref-P2688R0" role="doc-biblioref">P2688R0</a>]</span> work pretty naturally:</p>
 <table>
 <thead>
@@ -659,7 +666,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<p>Here, the whole <code class="sourceCode cpp">match</code> expression has type <code class="sourceCode cpp"><span class="dt">void</span></code> because each arm has type <code class="sourceCode cpp"><span class="dt">void</span></code> because none of the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expressions have a <code class="sourceCode cpp">do_yield</code> statement.</p>
+<p>Here, the whole <code class="sourceCode cpp">match</code> expression has type <code class="sourceCode cpp"><span class="dt">void</span></code> because each arm has type <code class="sourceCode cpp"><span class="dt">void</span></code> because none of the <code class="sourceCode cpp"><span class="cf">do</span></code> expressions have a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement.</p>
 <p>Yes, this requires an extra <code class="sourceCode cpp"><span class="cf">do</span></code> for each arm, but it means we have a language that’s much easier to explain because it’s consistent - <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span></code> is a <code class="sourceCode cpp"><span class="dt">void</span></code> expression in <em>any</em> context. We don’t have a <code class="sourceCode cpp"><em>compound-statement</em></code> that happens to be a <code class="sourceCode cpp"><span class="dt">void</span></code> expression just in this one spot.</p>
 <table>
 <thead>
@@ -689,32 +696,32 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tr>
 </tbody>
 </table>
-<p>Here, the existing pattern matching cannot support a <code class="sourceCode cpp"><em>braced-init-list</em></code> because <code class="sourceCode cpp"><span class="op">{</span></code> is used for the special <code class="sourceCode cpp"><span class="dt">void</span></code>-statement-case. But if we had <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expressions, the grammar of pattern matching can use <code class="sourceCode cpp"><em>expr-or-braced-init-list</em></code> in the same way that we already do in many other places in the C++ grammar. This example just works.</p>
+<p>Here, the existing pattern matching cannot support a <code class="sourceCode cpp"><em>braced-init-list</em></code> because <code class="sourceCode cpp"><span class="op">{</span></code> is used for the special <code class="sourceCode cpp"><span class="dt">void</span></code>-statement-case. But if we had <code class="sourceCode cpp"><span class="cf">do</span></code> expressions, the grammar of pattern matching can use <code class="sourceCode cpp"><em>expr-or-braced-init-list</em></code> in the same way that we already do in many other places in the C++ grammar. This example just works.</p>
 <h2 data-number="2.4" id="copy-elision"><span class="header-section-number">2.4</span> Copy Elision<a href="#copy-elision" class="self-link"></a></h2>
-<p>All the rules for initializing from <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression, and the way the expression that appears in a <code class="sourceCode cpp">do_yield</code> statement is treated, are the same as what the rules are for <code class="sourceCode cpp"><span class="cf">return</span></code>.</p>
-<p>Implicit move applies, for variables declared within the body of the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression. In the following example, <code class="sourceCode cpp">r</code> is an unparenthesized <code class="sourceCode cpp"><em>id-expression</em></code> that names an automatic storage variable declared within the statement, so it’s implicitly moved:</p>
+<p>All the rules for initializing from <code class="sourceCode cpp"><span class="cf">do</span></code> expression, and the way the expression that appears in a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement is treated, are the same as what the rules are for <code class="sourceCode cpp"><span class="cf">return</span></code>.</p>
+<p>Implicit move applies, for variables declared within the body of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression. In the following example, <code class="sourceCode cpp">r</code> is an unparenthesized <code class="sourceCode cpp"><em>id-expression</em></code> that names an automatic storage variable declared within the statement, so it’s implicitly moved:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a>std<span class="op">::</span>string s <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb10-2"><a href="#cb10-2"></a>    std<span class="op">::</span>string r <span class="op">=</span> <span class="st">&quot;hello&quot;</span>;</span>
 <span id="cb10-3"><a href="#cb10-3"></a>    r <span class="op">+=</span> <span class="st">&quot;world&quot;</span>;</span>
-<span id="cb10-4"><a href="#cb10-4"></a>    do_yield r;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="cf">do</span> <span class="cf">return</span> r;</span>
 <span id="cb10-5"><a href="#cb10-5"></a><span class="op">}</span>;</span></code></pre></div>
-<p>Note that automatic storage variables declared within the function that the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression appears, but not declared within the statement-expression itself, are <em>not</em> implicitly moved (since they can be used later).</p>
+<p>Note that automatic storage variables declared within the function that the <code class="sourceCode cpp"><span class="cf">do</span></code> expression appears, but not declared within the statement-expression itself, are <em>not</em> implicitly moved (since they can be used later).</p>
 <h2 data-number="2.5" id="control-flow"><span class="header-section-number">2.5</span> Control Flow<a href="#control-flow" class="self-link"></a></h2>
 <p>In a regular function, there are four ways to escape the function scope:</p>
 <ol type="1">
 <li>a <code class="sourceCode cpp"><span class="cf">return</span></code> statement</li>
 <li><code class="sourceCode cpp"><span class="cf">throw</span></code>ing an exception</li>
-<li>invoking a <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> function (e.g. <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code>)</li>
+<li>invoking a <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> function, <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code></li>
 <li>falling off the end of the function (undefined behavior if the return type is not <code class="sourceCode cpp"><span class="dt">void</span></code>)</li>
 </ol>
 <p>The same is true for coroutines, except substituting <code class="sourceCode cpp"><span class="cf">return</span></code> for <code class="sourceCode cpp"><span class="kw">co_return</span></code> (and likewise falling off the end is undefined behavior if there is no <code class="sourceCode cpp">return_void<span class="op">()</span></code> function on the promise type).</p>
-<p>For a <code class="sourceCode cpp"><span class="cf">do</span></code> statement expression, we have two different directions where we can escape (in a non-exception, non-<code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> case): we either yield an expression, or we escape the <em>outer</em> scope. That is, we can also:</p>
-<ol start="5" type="1">
+<p>For a <code class="sourceCode cpp"><span class="cf">do</span></code> expression, we have two different directions where we can escape (in a non-exception, non-<code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> case): we either yield an expression, or we escape the <em>outer</em> scope. That is, we can also:</p>
+<ol type="1">
 <li><code class="sourceCode cpp"><span class="cf">return</span></code> from the enclosing function (or <code class="sourceCode cpp"><span class="kw">co_return</span></code> from the enclosing coroutine)</li>
 <li><code class="sourceCode cpp"><span class="cf">break</span></code> or <code class="sourceCode cpp"><span class="cf">continue</span></code> from the innermost enclosing loop (if any, ill-formed otherwise)</li>
 </ol>
 <p>Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.</p>
-<p>That is, the rule we propose that the implementation form a control flow graph of the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression and consider each one of the six escaping kinds described above. All <code class="sourceCode cpp">do_yield</code> statements (including the implicit <code class="sourceCode cpp">do_yield;</code> introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no <code class="sourceCode cpp"><em>trailing-return-type</em></code>) or be compatible with the provided return type (if provided). Anything else is ill-formed.</p>
+<p>That is, the rule we propose that the implementation form a control flow graph of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and consider each one of the six escaping kinds described above. All <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statements (including the implicit <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span>;</code> introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no <code class="sourceCode cpp"><em>trailing-return-type</em></code>) or be compatible with the provided return type (if provided). Anything else is ill-formed.</p>
 <p>Let’s go through some examples.</p>
 <table>
 <tr>
@@ -729,9 +736,9 @@ Discussion
 <td>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb11-2"><a href="#cb11-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a>        do_yield <span class="dv">1</span>;</span>
+<span id="cb11-3"><a href="#cb11-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb11-4"><a href="#cb11-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb11-5"><a href="#cb11-5"></a>        do_yield <span class="dv">2</span>;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">2</span>;</span>
 <span id="cb11-6"><a href="#cb11-6"></a>    <span class="op">}</span></span>
 <span id="cb11-7"><a href="#cb11-7"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
@@ -743,9 +750,9 @@ OK: All yielding control paths have the same type. There’s no falling off the 
 <td>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>        do_yield <span class="dv">1</span>;</span>
+<span id="cb12-3"><a href="#cb12-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb12-5"><a href="#cb12-5"></a>        do_yield <span class="fl">2.0</span>;</span>
+<span id="cb12-5"><a href="#cb12-5"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="fl">2.0</span>;</span>
 <span id="cb12-6"><a href="#cb12-6"></a>    <span class="op">}</span></span>
 <span id="cb12-7"><a href="#cb12-7"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
@@ -757,10 +764,10 @@ Error: The yielding control paths have different types and there is no provided 
 <td>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">auto</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb13-2"><a href="#cb13-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>        do_yield <span class="dv">1</span>;</span>
+<span id="cb13-3"><a href="#cb13-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb13-4"><a href="#cb13-4"></a>    <span class="op">}</span></span>
 <span id="cb13-5"><a href="#cb13-5"></a></span>
-<span id="cb13-6"><a href="#cb13-6"></a>    do_yield <span class="dv">2</span>;</span>
+<span id="cb13-6"><a href="#cb13-6"></a>    <span class="cf">do</span> <span class="cf">return</span> <span class="dv">2</span>;</span>
 <span id="cb13-7"><a href="#cb13-7"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
 <td>
@@ -771,30 +778,30 @@ OK: Similar to <code class="sourceCode cpp">a</code>, all yielding control paths
 <td>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">auto</span> d <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb14-2"><a href="#cb14-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>        do_yield <span class="dv">1</span>;</span>
+<span id="cb14-3"><a href="#cb14-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb14-4"><a href="#cb14-4"></a>    <span class="op">}</span></span>
 <span id="cb14-5"><a href="#cb14-5"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
 <td>
-Error: There are two yielding control paths here: the <code class="sourceCode cpp">do_yield <span class="dv">1</span>;</code> and the implicit <code class="sourceCode cpp">do_yield;</code> from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if <code class="sourceCode cpp"><em>cond</em></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>.
+Error: There are two yielding control paths here: the <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</code> and the implicit <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span>;</code> from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if <code class="sourceCode cpp"><em>cond</em></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>.
 </td>
 </tr>
 <tr>
 <td>
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="dt">int</span> e <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb15-3"><a href="#cb15-3"></a>        do_yield;</span>
+<span id="cb15-3"><a href="#cb15-3"></a>        <span class="cf">do</span> <span class="cf">return</span>;</span>
 <span id="cb15-4"><a href="#cb15-4"></a>    <span class="op">}</span></span>
 <span id="cb15-5"><a href="#cb15-5"></a><span class="op">}</span>, <span class="dv">1</span>;</span></code></pre></div>
 </td>
 <td>
-OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are <code class="sourceCode cpp">do_yield;</code> which are compatible.
+OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span>;</code> which are compatible.
 </tr>
 <tr>
 <td>
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="dt">int</span> f <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb16-2"><a href="#cb16-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>        do_yield <span class="dv">1</span>;</span>
+<span id="cb16-3"><a href="#cb16-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb16-4"><a href="#cb16-4"></a>    <span class="op">}</span></span>
 <span id="cb16-5"><a href="#cb16-5"></a></span>
 <span id="cb16-6"><a href="#cb16-6"></a>    <span class="cf">throw</span> <span class="dv">2</span>;</span>
@@ -809,7 +816,7 @@ OK: We no longer fall off the end here, since we always escape. There is only on
 <div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="dt">int</span> outer<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb17-2"><a href="#cb17-2"></a>    <span class="dt">int</span> g <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb17-3"><a href="#cb17-3"></a>        <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb17-4"><a href="#cb17-4"></a>            do_yield <span class="dv">1</span>;</span>
+<span id="cb17-4"><a href="#cb17-4"></a>            <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb17-5"><a href="#cb17-5"></a>        <span class="op">}</span></span>
 <span id="cb17-6"><a href="#cb17-6"></a></span>
 <span id="cb17-7"><a href="#cb17-7"></a>        <span class="cf">return</span> <span class="dv">3</span>;</span>
@@ -824,14 +831,14 @@ OK: Similar to the above, it’s just that we’re escaping by returning from th
 <td>
 <div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="dt">int</span> h <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb18-2"><a href="#cb18-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a>        do_yield <span class="dv">1</span>;</span>
+<span id="cb18-3"><a href="#cb18-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb18-4"><a href="#cb18-4"></a>    <span class="op">}</span></span>
 <span id="cb18-5"><a href="#cb18-5"></a></span>
 <span id="cb18-6"><a href="#cb18-6"></a>    std<span class="op">::</span>abort<span class="op">()</span>;</span>
 <span id="cb18-7"><a href="#cb18-7"></a><span class="op">}</span>;</span></code></pre></div>
 </td>
 <td>
-Unclear: This is a very interesting case to consider, see discussion on <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> below.
+OK: <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> means that we cannot fall off the end, see discussion on <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> below.
 </td>
 </tr>
 <tr>
@@ -845,9 +852,9 @@ Unclear: This is a very interesting case to consider, see discussion on <code cl
 <span id="cb19-7"><a href="#cb19-7"></a><span class="dt">void</span> func<span class="op">(</span>Color c<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb19-8"><a href="#cb19-8"></a>    std<span class="op">::</span>string_view name <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb19-9"><a href="#cb19-9"></a>        <span class="cf">switch</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-10"><a href="#cb19-10"></a>        <span class="cf">case</span> Red<span class="op">:</span>   do_yield <span class="st">&quot;Red&quot;</span><span class="bu">sv</span>;</span>
-<span id="cb19-11"><a href="#cb19-11"></a>        <span class="cf">case</span> Green<span class="op">:</span> do_yield <span class="st">&quot;Green&quot;</span><span class="bu">sv</span>;</span>
-<span id="cb19-12"><a href="#cb19-12"></a>        <span class="cf">case</span> Blue<span class="op">:</span>  do_yield <span class="st">&quot;Blue&quot;</span><span class="bu">sv</span>;</span>
+<span id="cb19-10"><a href="#cb19-10"></a>        <span class="cf">case</span> Red<span class="op">:</span>   <span class="cf">do</span> <span class="cf">return</span> <span class="st">&quot;Red&quot;</span><span class="bu">sv</span>;</span>
+<span id="cb19-11"><a href="#cb19-11"></a>        <span class="cf">case</span> Green<span class="op">:</span> <span class="cf">do</span> <span class="cf">return</span> <span class="st">&quot;Green&quot;</span><span class="bu">sv</span>;</span>
+<span id="cb19-12"><a href="#cb19-12"></a>        <span class="cf">case</span> Blue<span class="op">:</span>  <span class="cf">do</span> <span class="cf">return</span> <span class="st">&quot;Blue&quot;</span><span class="bu">sv</span>;</span>
 <span id="cb19-13"><a href="#cb19-13"></a>        <span class="op">}</span></span>
 <span id="cb19-14"><a href="#cb19-14"></a>    <span class="op">}</span>;</span>
 <span id="cb19-15"><a href="#cb19-15"></a><span class="op">}</span></span></code></pre></div>
@@ -867,61 +874,62 @@ Error: This is probably the most interesting case when it comes to falling off t
 <span id="cb20-7"><a href="#cb20-7"></a></span>
 <span id="cb20-8"><a href="#cb20-8"></a>            <span class="cf">for</span> <span class="op">(</span><em>something</em><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb20-9"><a href="#cb20-9"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb20-10"><a href="#cb20-10"></a>                    do_yield <span class="dv">1</span>;</span>
+<span id="cb20-10"><a href="#cb20-10"></a>                    <span class="cf">do</span> <span class="cf">return</span> <span class="dv">1</span>;</span>
 <span id="cb20-11"><a href="#cb20-11"></a>                <span class="op">}</span></span>
 <span id="cb20-12"><a href="#cb20-12"></a>            <span class="op">}</span></span>
 <span id="cb20-13"><a href="#cb20-13"></a></span>
-<span id="cb20-14"><a href="#cb20-14"></a>            do_yield <span class="dv">2</span>;</span>
+<span id="cb20-14"><a href="#cb20-14"></a>            <span class="cf">do</span> <span class="cf">return</span> <span class="dv">2</span>;</span>
 <span id="cb20-15"><a href="#cb20-15"></a>        <span class="op">}</span>;</span>
 <span id="cb20-16"><a href="#cb20-16"></a>    <span class="op">}</span></span>
 <span id="cb20-17"><a href="#cb20-17"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
-<p>OK: The first <code class="sourceCode cpp"><span class="cf">break</span></code> escapes the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression and breaks from the outer loop. Otherwise, we have two yielding statements which both yield <code class="sourceCode cpp"><span class="dt">int</span></code>. If the <code class="sourceCode cpp">do_yield <span class="dv">2</span>;</code> statement did not exist, this would be ill-formed unless the compiler could prove that the loop itself did not terminate.</p>
-If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span class="op">(</span>;;<span class="op">)</span></code>, then the lack of <code class="sourceCode cpp">do_yield <span class="dv">2</span>;</code> would be fine - but anything more complicated than that would require some kind of final yield (or <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc.)
+<p>OK: The first <code class="sourceCode cpp"><span class="cf">break</span></code> escapes the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and breaks from the outer loop. Otherwise, we have two yielding statements which both yield <code class="sourceCode cpp"><span class="dt">int</span></code>. If the <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span> <span class="dv">2</span>;</code> statement did not exist, this would be ill-formed unless the compiler could prove that the loop itself did not terminate.</p>
+If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span class="op">(</span>;;<span class="op">)</span></code>, then the lack of <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span> <span class="dv">2</span>;</code> would be fine - but anything more complicated than that would require some kind of final yield (or <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc.)
 </td>
 </tr>
 </table>
-<p>To reiterate: the implementation produces a control flow graph of the <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression and considers all yielding statements (<em>including</em> the implicit <code class="sourceCode cpp">do_yield;</code> on falling off the end, if the implementation considers that to be a possible path) in order to determine correctness of the statement-expression. The kinds of control flow that escape the statement entirely (exceptions, <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, <code class="sourceCode cpp"><span class="kw">co_return</span></code>) do not need to be considered for purposes of consistency of yields (since they do not yield values).</p>
+<p>To reiterate: the implementation produces a control flow graph of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and considers all yielding statements (<em>including</em> the implicit <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span>;</code> on falling off the end, if the implementation considers that to be a possible path) in order to determine correctness of the statement-expression. The kinds of control flow that escape the statement entirely (exceptions, <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, <code class="sourceCode cpp"><span class="kw">co_return</span></code>) do not need to be considered for purposes of consistency of yields (since they do not yield values).</p>
 <h3 data-number="2.5.1" id="noreturn-functions"><span class="header-section-number">2.5.1</span> <code class="sourceCode cpp">noreturn</code> functions<a href="#noreturn-functions" class="self-link"></a></h3>
 <p>The language currently has several kinds of escaping control flow that it recognizes. As mentioned, exceptions, <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, and <code class="sourceCode cpp"><span class="kw">co_return</span></code>. And, allegedly, <code class="sourceCode cpp"><span class="cf">goto</span></code>.</p>
-<p>But there’s one kind of escaping control flow that it <em>does not</em> currently recognize: functions marked <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>. A call to <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code> escapes control flow, for sure, but the because this is just an attribute, the language cannot add semantic meaning to it. In particular, it is not feasible at the moment for us to call this necessarily well-formed:</p>
+<p>But there’s one kind of escaping control flow that it <em>does not</em> currently recognize: functions marked <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>. A call to <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code> escapes control flow, for sure, but today this is just an attribute:</p>
 <blockquote>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb21-2"><a href="#cb21-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-3"><a href="#cb21-3"></a>        do_yield <span class="dv">5</span>;</span>
+<span id="cb21-3"><a href="#cb21-3"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="dv">5</span>;</span>
 <span id="cb21-4"><a href="#cb21-4"></a>    <span class="op">}</span></span>
 <span id="cb21-5"><a href="#cb21-5"></a></span>
 <span id="cb21-6"><a href="#cb21-6"></a>    std<span class="op">::</span>abort<span class="op">()</span>;</span>
-<span id="cb21-7"><a href="#cb21-7"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb21-7"><a href="#cb21-7"></a></span>
+<span id="cb21-8"><a href="#cb21-8"></a>    <span class="co">// we know control flow never gets here, so we should not need to</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>    <span class="co">// insert an implicit &quot;do return;&quot;</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>By the rules laid out above, this is still falling off the end, and would require adding a <code class="sourceCode cpp">do_yield</code> statement that yields an <code class="sourceCode cpp"><span class="dt">int</span></code> or to have some other language-recognized escaping control flow. We’re not allowed to recognize <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> itself as escaping control flow.</p>
-<p>Pattern Matching has this same problem - it needs to support arms that might <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or are <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>, but because it cannot recognize these functions in any way, it needs dedicated syntax to do this. Currently, the paper spells it <code class="sourceCode cpp"><span class="op">!{</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="op">}</span></code>. Which is… less than ideal.</p>
-<p>There are three solutions to this problem.</p>
-<p>The first solution would be not do anything special about <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> functions, but have all the implementations simply agree to Do The Right Thing here. We all know that <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> functions don’t return, so even though the rules would say that this example leads to an incompatible yield, implementations just accept anyway because they know that it’s perfectly valid. Perhaps there’s a way to word this sufficiently loosely that it doesn’t end up seeming like the implementations just aren’t implementing what’s in the standard.</p>
-<p>The second, narrow solution would be to simply enumerate all the <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> functions in the standard library (they are <code class="sourceCode cpp">abort</code>, <code class="sourceCode cpp">exit</code>, <code class="sourceCode cpp">_Exit</code>, <code class="sourceCode cpp">quick_exit</code>, <code class="sourceCode cpp">terminate</code>, <code class="sourceCode cpp">rethrow_exception</code>, <code class="sourceCode cpp">throw_with_nested</code>, <code class="sourceCode cpp">longjmp</code>, and <code class="sourceCode cpp">unreachable</code>) and recognize them. This solves the problem for standard library non-returning functions, but doesn’t help any user-defined functions. That’s a bit unsatisfying, but at least it does solve a significant subset of the problem. Users would end up having to write something like:</p>
+<p>Pattern Matching has this same problem - it needs to support arms that might <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or are <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>, so it that proposal currently is introducing a dedicated syntax to mark an arm as non-returning: <code class="sourceCode cpp"><span class="op">!{</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="op">}</span></code>. Which is… less than ideal.</p>
+<p>However, the rule in <span>9.12.10 <a href="https://wg21.link/dcl.attr.noreturn">[dcl.attr.noreturn]</a></span>/2 is:</p>
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>        do_yield <span class="dv">5</span>;</span>
-<span id="cb22-4"><a href="#cb22-4"></a>    <span class="op">}</span></span>
-<span id="cb22-5"><a href="#cb22-5"></a></span>
-<span id="cb22-6"><a href="#cb22-6"></a>    my<span class="op">::</span>abort<span class="op">()</span>; <span class="co">// doesn&#39;t count as escaping</span></span>
-<span id="cb22-7"><a href="#cb22-7"></a>    std<span class="op">::</span>abort<span class="op">()</span>; <span class="co">// counts, but utterly pointless</span></span>
-<span id="cb22-8"><a href="#cb22-8"></a>                  <span class="co">// and may cause compiler warnings for unreachable code</span></span>
-<span id="cb22-9"><a href="#cb22-9"></a><span class="op">}</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span> If a function <code class="sourceCode cpp">f</code> is called where <code class="sourceCode cpp">f</code> was previously declared with the <code class="sourceCode cpp">noreturn</code> attribute and <code class="sourceCode cpp">f</code> eventually returns, the behavior is undefined.</p>
 </blockquote>
-<p>The last solution would be introduce a new function specifier to replace <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> with something that the language <em>can</em> add semantics to. C already has such a specifier, spelled <code class="sourceCode cpp">_Noreturn</code>, which is already reserved keyword. That’s an ugly and unfamiliar keyword for C++ purposes, but there are a lot of advantages to specifically this choice of keyword:</p>
-<ul>
-<li>there are so few non-returning functions that the value of consistency with C seems more important than trying to come up with any other keyword</li>
-<li>consistency with C in this case means that implementations already support it, and allowing it for C++ is largely flipping a switch</li>
-<li>for how rare non-returning functions should be, having an ugly keyword seems like a benefit in its own right</li>
-</ul>
-<p>Of these, the last approach seems like the right one. Elevate <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> to be a first-class language feature, which allows us to ascribe language semantics to it, which means that <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expressions and pattern matching arms can recognize non-returning functions properly as actually escaping control flow.</p>
+<p>That is normative wording which we can rely on. The above <code class="sourceCode cpp"><span class="cf">do</span></code> expression can only fall off the end if <code class="sourceCode cpp">std<span class="op">::</span>abort</code> returns, which is <em>already</em> undefined behavior. We can avoid introducing any new undefined behavior ourselves as part of this feature.</p>
+<p>That is: invoking a function marked <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> can be considering an escaping control flow in exactly the same way that <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc., are already.</p>
+<h3 data-number="2.5.2" id="always-escaping-expressions"><span class="header-section-number">2.5.2</span> Always-escaping expressions<a href="#always-escaping-expressions" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>    <span class="cf">throw</span> <span class="dv">42</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code>) actually had <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statements in them. So it needs to be allowed.</p>
 <h2 data-number="2.6" id="grammar-disambiguation"><span class="header-section-number">2.6</span> Grammar Disambiguation<a href="#grammar-disambiguation" class="self-link"></a></h2>
-<p>We have to disambiguate between a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression and a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop.</p>
+<p>We have to disambiguate between a <code class="sourceCode cpp"><span class="cf">do</span></code> expression and a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop.</p>
 <p>In an expression-only context, the latter isn’t possible, so we’re fine there.</p>
-<p>In a statement context, a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression is completely pointless - you can just write statements. So we disambiguate in favor of the <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop. If somebody really, for some reason, wants to write a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression statement, they can parenthesize it: <code class="sourceCode cpp"><span class="op">(</span><span class="cf">do</span> <span class="op">{</span> do_yield <span class="dv">42</span>; <span class="op">})</span>;</code>. A statement that begins with a <code class="sourceCode cpp"><span class="op">(</span></code> has to then be an expression, so we’re now in an expression-only context.</p>
+<p>In a statement context, a <code class="sourceCode cpp"><span class="cf">do</span></code> expression is completely pointless - you can just write statements. So we disambiguate in favor of the <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop. If somebody really, for some reason, wants to write a <code class="sourceCode cpp"><span class="cf">do</span></code> expression statement, they can parenthesize it: <code class="sourceCode cpp"><span class="op">(</span><span class="cf">do</span> <span class="op">{</span> <span class="cf">do</span> <span class="cf">return</span> <span class="dv">42</span>; <span class="op">})</span>;</code>. A statement that begins with a <code class="sourceCode cpp"><span class="op">(</span></code> has to then be an expression, so we’re now in an expression-only context.</p>
+<p>We also have to disambiguate between a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement (if that is the chosen spelling) and a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop whose <code class="sourceCode cpp"><em>statement</em></code> is a <code class="sourceCode cpp"><span class="cf">return</span></code> statement:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em>; <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>This could be parsed as a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement followed by an infinite loop (that would never be executed because we’ve already returned out of the expression) or as a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop containing a single, unbraced, return statement.</p>
+<p>The latter interpretation is valid code today, but is completely useless as it is exactly equivalent to having written <code class="sourceCode cpp"><span class="cf">return</span> <em>value</em>;</code> to begin with, so we think it’s reasonable to disambiguate in favor of the former interpretation. This isn’t a silent change in meaning, since all such code would become ill-formed by way of not appearing in a <code class="sourceCode cpp"><span class="cf">do</span></code> expression - and the new meaning would almost surely lead to a compiler warning due to the unreachable code.</p>
 <h2 data-number="2.7" id="prior-art"><span class="header-section-number">2.7</span> Prior Art<a href="#prior-art" class="self-link"></a></h2>
 <p>GCC has an extension called <a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html">statement-expressions</a>, which look very similar to what we’re proposing here:</p>
 <table>
@@ -937,21 +945,21 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="op">({</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
-<span id="cb23-3"><a href="#cb23-3"></a>    <span class="dt">int</span> z;</span>
-<span id="cb23-4"><a href="#cb23-4"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> z <span class="op">=</span> y;</span>
-<span id="cb23-5"><a href="#cb23-5"></a>    <span class="cf">else</span> z <span class="op">=</span> <span class="op">-</span>y;</span>
-<span id="cb23-6"><a href="#cb23-6"></a>    z;</span>
-<span id="cb23-7"><a href="#cb23-7"></a><span class="op">})</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<td><div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="op">({</span></span>
 <span id="cb24-2"><a href="#cb24-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
-<span id="cb24-3"><a href="#cb24-3"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a>        do_yield y;</span>
-<span id="cb24-5"><a href="#cb24-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb24-6"><a href="#cb24-6"></a>        do_yield <span class="op">-</span>y;</span>
-<span id="cb24-7"><a href="#cb24-7"></a>    <span class="op">}</span></span>
-<span id="cb24-8"><a href="#cb24-8"></a><span class="op">}</span></span></code></pre></div></td>
+<span id="cb24-3"><a href="#cb24-3"></a>    <span class="dt">int</span> z;</span>
+<span id="cb24-4"><a href="#cb24-4"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> z <span class="op">=</span> y;</span>
+<span id="cb24-5"><a href="#cb24-5"></a>    <span class="cf">else</span> z <span class="op">=</span> <span class="op">-</span>y;</span>
+<span id="cb24-6"><a href="#cb24-6"></a>    z;</span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="op">})</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
+<span id="cb25-3"><a href="#cb25-3"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-4"><a href="#cb25-4"></a>        <span class="cf">do</span> <span class="cf">return</span> y;</span>
+<span id="cb25-5"><a href="#cb25-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a>        <span class="cf">do</span> <span class="cf">return</span> <span class="op">-</span>y;</span>
+<span id="cb25-7"><a href="#cb25-7"></a>    <span class="op">}</span></span>
+<span id="cb25-8"><a href="#cb25-8"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -961,61 +969,75 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <li>The ability to support yielding out of different branches of <code class="sourceCode cpp"><span class="cf">if</span></code>, due the implicit nature of the yield.</li>
 </ol>
 <p>For (1), there is simply no obvious place to put the <code class="sourceCode cpp"><em>trailing-return-type</em></code>. For (2), you can’t turn <code class="sourceCode cpp"><span class="cf">if</span></code>s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.</p>
-<h3 data-number="2.7.1" id="namespace-scope"><span class="header-section-number">2.7.1</span> Namespace Scope<a href="#namespace-scope" class="self-link"></a></h3>
-<p>Note that gcc’s statement-expressions are not usable at namespace-scope. This is due to the question of where the implementation would put any local variables:</p>
+<h2 data-number="2.8" id="where-can-do-expressions-appear"><span class="header-section-number">2.8</span> Where can <code class="sourceCode cpp"><span class="cf">do</span></code> expressions appear<a href="#where-can-do-expressions-appear" class="self-link"></a></h2>
+<p>gcc’s statement-expressions are not usable in all expression contexts. Trying to use them at namespace-scope, or in a default member initializer, etc, fails:</p>
 <blockquote>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">({</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="dv">2</span>; <span class="co">// where does this get allocated?</span></span>
-<span id="cb25-3"><a href="#cb25-3"></a>    j;</span>
-<span id="cb25-4"><a href="#cb25-4"></a><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">({</span>      <span class="co">// error: statement-expressions are not allowed outside functions</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="dv">2</span>;  <span class="co">//        nor in template-argument lists</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a>    j;</span>
+<span id="cb26-4"><a href="#cb26-4"></a><span class="op">})</span>;</span></code></pre></div>
 </blockquote>
-<p>At namespace scope, there is a much smaller difference than a statement-expression and an immediately invoked lambda since you don’t have any other interesting control flow that you can do - the expression either yields a value or the program terminates. But if we’re going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Perhaps it simply behaves as a function scope in such a context?</p>
+<p>In such contexts, there is a much smaller difference than a statement-expression and an immediately invoked lambda since you don’t have any other interesting control flow that you can do - the expression either yields a value or the program terminates.</p>
+<p>But if we’re going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Especially since if we’re adding a feature to subsume immediately invoked lambdas, it would be preferable to subsume <em>all</em> immediately invoked lambdas, not just some or most.</p>
+<p>Perhaps it simply behaves as a function scope in such a context?</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add to <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1"></a><em>primary-expression</em>:</span>
-<span id="cb26-2"><a href="#cb26-2"></a>  <em>literal</em></span>
-<span id="cb26-3"><a href="#cb26-3"></a>  this</span>
-<span id="cb26-4"><a href="#cb26-4"></a>  ( <em>expression</em> )</span>
-<span id="cb26-5"><a href="#cb26-5"></a>  <em>id-expression</em></span>
-<span id="cb26-6"><a href="#cb26-6"></a>  <em>lambda-expression</em></span>
-<span id="cb26-7"><a href="#cb26-7"></a>  <em>fold-expression</em></span>
-<span id="cb26-8"><a href="#cb26-8"></a>  <em>requires-expression</em></span>
-<span id="cb26-9"><a href="#cb26-9"></a><span class="va">+ <em>do-statement-expression</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1"></a><em>primary-expression</em>:</span>
+<span id="cb27-2"><a href="#cb27-2"></a>  <em>literal</em></span>
+<span id="cb27-3"><a href="#cb27-3"></a>  this</span>
+<span id="cb27-4"><a href="#cb27-4"></a>  ( <em>expression</em> )</span>
+<span id="cb27-5"><a href="#cb27-5"></a>  <em>id-expression</em></span>
+<span id="cb27-6"><a href="#cb27-6"></a>  <em>lambda-expression</em></span>
+<span id="cb27-7"><a href="#cb27-7"></a>  <em>fold-expression</em></span>
+<span id="cb27-8"><a href="#cb27-8"></a>  <em>requires-expression</em></span>
+<span id="cb27-9"><a href="#cb27-9"></a><span class="va">+ <em>do-expression</em></span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new clause [expr.prim.do]:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> A <em>do-statement-expression</em> provides a way to combine multiple statements into a single expression without introducing a new function scope.</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a><em>do-statement-expression</em>:</span>
-<span id="cb27-2"><a href="#cb27-2"></a>  do <em>trailing-return-type</em><sub>opt</sub> { <em>statement</em> }</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">1</a></span> A <em>do-expression</em> provides a way to combine multiple statements into a single expression without introducing a new function scope.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a><em>do-expression</em>:</span>
+<span id="cb28-2"><a href="#cb28-2"></a>  do <em>trailing-return-type</em><sub>opt</sub> { <em>statement</em> }</span></code></pre></div>
 </div>
 </blockquote>
-<p>Add to [stmt.pre]:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">1</a></span> Except as indicated, statements are executed in sequence.</p>
-<div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb28-1"><a href="#cb28-1"></a><em>statement</em>:</span>
-<span id="cb28-2"><a href="#cb28-2"></a>  <em>labeled-statement</em></span>
-<span id="cb28-3"><a href="#cb28-3"></a>  <em>attribute-specifier-seq</em><sub>opt</sub> <em>expression-statement</em></span>
-<span id="cb28-4"><a href="#cb28-4"></a>  <em>attribute-specifier-seq</em><sub>opt</sub> <em>compound-statement</em></span>
-<span id="cb28-5"><a href="#cb28-5"></a>  <em>attribute-specifier-seq</em><sub>opt</sub> <em>selection-statement</em></span>
-<span id="cb28-6"><a href="#cb28-6"></a>  <em>attribute-specifier-seq</em><sub>opt</sub> <em>iteration-statement</em></span>
-<span id="cb28-7"><a href="#cb28-7"></a>  <em>attribute-specifier-seq</em><sub>opt</sub> <em>jump-statement</em></span>
-<span id="cb28-8"><a href="#cb28-8"></a>  <em>declaration-statement</em></span>
-<span id="cb28-9"><a href="#cb28-9"></a>  <em>attribute-specifier-seq</em><sub>opt</sub> <em>try-block</em></span>
-<span id="cb28-10"><a href="#cb28-10"></a><span class="va">+ <em>attribute-specifier-seq</em><sub>opt</sub> <em>do-yield-statement</em></span></span></code></pre></div>
-</div>
-</blockquote>
-<p>Change <span>8.3 <a href="https://wg21.link/stmt.expr">[stmt.expr]</a></span> to disambugate a <code class="sourceCode cpp"><span class="cf">do</span></code> statement-expression from a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop:</p>
+<p>Change <span>8.3 <a href="https://wg21.link/stmt.expr">[stmt.expr]</a></span> to disambugate a <code class="sourceCode cpp"><span class="cf">do</span></code> expression from a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">1</a></span> Expression statements have the form</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a><em>expression-statement</em>:</span>
 <span id="cb29-2"><a href="#cb29-2"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
-<p>The expression is a <em>discarded-value</em> expression. All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a <em>null statement</em>. <span class="addu">The expression shall not be a <em>do-statement-expression</em>.</span></p>
+<p>The expression is a <em>discarded-value</em> expression. All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a <em>null statement</em>. <span class="addu">The expression shall not be a <em>do-expression</em>.</span></p>
 <p>[Note 1: Most statements are expression statements — usually assignments or function calls. A null statement is useful to supply a null body to an iteration statement such as a while statement ([stmt.while]). — end note]</p>
+</blockquote>
+<p>Insert a disambiguation to <span>8.6.3 <a href="https://wg21.link/stmt.do">[stmt.do]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span> The expression is contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code>; if that conversion is ill-formed, the program is ill-formed.</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1a</a></span> The <code class="sourceCode cpp">statement</code> in the <code class="sourceCode cpp"><span class="cf">do</span></code> statement shall not be a <code class="sourceCode cpp"><span class="cf">return</span></code> statement.</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span> In the <code class="sourceCode cpp"><span class="cf">do</span></code> statement the substatement is executed repeatedly until the value of the expression becomes <code class="sourceCode cpp"><span class="kw">false</span></code>. The test takes place after each execution of the statement.</p>
+</blockquote>
+<p>Add to <span>8.7.1 <a href="https://wg21.link/stmt.jump.general">[stmt.jump.general]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">1</a></span> Jump statements unconditionally transfer control.</p>
+<div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb30-1"><a href="#cb30-1"></a><em>jump-statement</em>:</span>
+<span id="cb30-2"><a href="#cb30-2"></a>  break ;</span>
+<span id="cb30-3"><a href="#cb30-3"></a>  continue ;</span>
+<span id="cb30-4"><a href="#cb30-4"></a>  return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span>
+<span id="cb30-5"><a href="#cb30-5"></a><span class="va">+ do return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>  <em>coroutine-return-statement</em></span>
+<span id="cb30-7"><a href="#cb30-7"></a>  goto <em>identifier</em> ;</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add a new clause introducing a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement after <span>8.7.4 <a href="https://wg21.link/stmt.return">[stmt.return]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">1</a></span> The <code class="sourceCode cpp"><span class="cf">do</span></code> expression’s is produced by the <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">2</a></span> A <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement shall appear only within the <code class="sourceCode cpp"><em>statement</em></code> of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression.</p>
+</div>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
