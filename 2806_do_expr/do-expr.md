@@ -1,15 +1,15 @@
 ---
 title: "`do` expressions"
-document: PxxxxR0
+document: P2806R0
 date: today
 audience: EWG
 author:
     - name: Bruno Cardoso Lopes
-      email: <x@y.z>
+      email: <bruno.cardoso@gmail.com>
     - name: Zach Laine
-      email: <x@y.z>
+      email: <whatwasthataddress@gmail.com>
     - name: Michael Park
-      email: <x@y.z>
+      email: <mcypark@gmail.com>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
@@ -89,6 +89,7 @@ Other alternative spellings we've considered:
 * `do_yield` (presented to EWG in Issaquah as the initial pre-publication draft of this proposal)
 * `do yield`
 * `do break` (similarly to `return`, we are breaking out of this expression, but is less likely to conflict since `break` is less likely to be used than `return` and also the corresponding `break $value$;` is invalid today)
+* `=>` (or some other arrow, like `<-` or `<=`)
 
 ## Type and Value Category
 
@@ -375,6 +376,24 @@ int i = do -> int {
 
 This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an `if constexpr`) actually had `do return` statements in them. So it needs to be allowed.
 
+### Should falling off the end be undefined behavior?
+
+Consider:
+
+::: bq
+```cpp
+int i = do {
+    if ($cond$) {
+        do return 0;
+    }
+};
+```
+:::
+
+Is this statement ill-formed (because there is a control path that falls off the end of the `do` expression, as discussed in this section) or should this statement be undefined behavior? The latter would be consistent with functions, lambdas, and coroutines (and not a if-you-squint-enough kind of consistency either, this would be exactly identical).
+
+It would make for a simpler design if we adopted undefined behavior here, but we think it's a better design to force the user to cover all control paths themselves.
+
 ## Grammar Disambiguation
 
 We have to disambiguate between a `do` expression and a `do`-`while` loop.
@@ -452,6 +471,8 @@ Perhaps it simply behaves as a function scope in such a context?
 
 # Wording
 
+This wording is quite incomplete, but is intended at this point to simply be a sketch to help understand the contour of the proposal.
+
 Add to [expr.prim]{.sref}:
 
 ::: bq
@@ -478,6 +499,8 @@ Add a new clause [expr.prim.do]:
 $do-expression$:
   do $trailing-return-type$@~opt~@ { $statement$ }
 ```
+
+[2]{.pnum} The `$statement$` of a *do-expression* is a control-flow-limited statement ([stmt.label]).
 :::
 :::
 
@@ -526,7 +549,7 @@ Add a new clause introducing a `do return` statement after [stmt.return]{.sref}:
 
 ::: bq
 ::: addu
-[1]{.pnum} The `do` expression's is produced by the `do return` statement.
+[1]{.pnum} The `do` expression's value is produced by the `do return` statement.
 
 [2]{.pnum} A `do return` statement shall appear only within the `$statement$` of a `do` expression.
 :::
