@@ -376,6 +376,65 @@ int i = do -> int {
 
 This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an `if constexpr`) actually had `do return` statements in them. So it needs to be allowed.
 
+### `goto`
+
+Using `goto` in a `do` expression has some unique problems.
+
+Jumping *within* a `do` expression should follow whatever restrictions we already have (see [stmt.dcl]{.sref}). Jumping *into* a `do` expression should be completely disallowed (we would call the `$statement$` of a `do` expression a control-flow limited statement).
+
+Jumping *out* of a `do` expression is potentially useful though, in the same way that `break`, `continue`, and `return` are:
+
+::: bq
+```cpp
+    for (@*loop*~1~@) {
+        for (@*loop*~2~@) {
+            int i = do {
+                if ($cond$) {
+                    goto done;
+                }
+
+                do return $value$;
+            };
+        }
+    }
+done:
+```
+:::
+
+Breaking out of multiple loops is one of the uses of `goto` that has no real substitute today. The above example should be fine. But referring to any label that is in scope of the variable we're initializing needs to be disallowed - since we wouldn't have actually initialized the variable. We need to ensure that the [stmt.dcl]{.sref} rule is extended to cover this case.
+
+Also, while computed goto is not a standard C++ feature, it would be nice to disallow this example, courtesy of (of course) JF Bastien (in this case, we are referring to a label that is within `v`'s scope. We're not jumping to it directly, but the ability to jump to it indirectly is still problematic):
+
+```cpp
+#include <stdio.h>
+
+struct label {
+    static inline void* e;
+    int v;
+
+    label()
+    try
+        : v(({
+            fprintf(stderr, "oh\n");
+            e = &&awesome;
+            throw 1;
+            42;
+        }))
+    {
+        fprintf(stderr, "no\n");
+        awesome:
+        fprintf(stderr, "you\n");
+    } catch(...) {
+        fprintf(stderr, "don't\n");
+        goto *e;
+    }
+};
+
+int main() {
+    label l;
+}
+```
+
 ### Should falling off the end be undefined behavior?
 
 Consider:
@@ -416,7 +475,7 @@ The latter interpretation is valid code today, but is completely useless as it i
 
 ## Prior Art
 
-GCC has an extension called [statement-expressions](https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html), which look very similar to what we're proposing here:
+GCC has had an extension called [statement-expressions](https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html) for decades, which look very similar to what we're proposing here:
 
 ::: cmptable
 ### gcc
@@ -467,7 +526,9 @@ In such contexts, there is a much smaller difference than a statement-expression
 
 But if we're going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Especially since if we're adding a feature to subsume immediately invoked lambdas, it would be preferable to subsume _all_ immediately invoked lambdas, not just some or most.
 
-Perhaps it simply behaves as a function scope in such a context?
+We can think of a `do` expression as simply behaving like an immediately invoked lambda in such contexts. Not in the sense of allowing `return` statements (there's still no enclosing function to return out of), but the sense that any local variables declared would exist in a function stack. But this is probably more of a compiler implementation detail rather than a language design detail.
+
+In short: `do` expressions should be usable in any expression context.
 
 # Wording
 
