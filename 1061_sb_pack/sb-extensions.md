@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: D1061R4
+document: P1061R4
 date: today
 audience: CWG
 author:
@@ -12,6 +12,8 @@ toc: true
 ---
 
 # Revision History
+
+R4 significantly improves the wording after review in Issaquah.
 
 R3 removes the exclusion of namespace-scope per [EWG guidance](https://github.com/cplusplus/papers/issues/294#issuecomment-1234578812).
 
