@@ -8,7 +8,7 @@
 - 848 Conditionally Trivial Special Member Functions: [p0848r0](0848_special_members/p0848r0.html) [p0848r1](0848_special_members/p0848r1.html) [p0848r2](0848_special_members/p0848r2.html) [p0848r3](0848_special_members/p0848r3.html)
 - 892 explicit(bool): [p0892r0](0892_explicit_bool/p0892r0.html) [p0892r1](0892_explicit_bool/p0892r1.html) [p0892r2](0892_explicit_bool/p0892r2.html)
 - 893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)
-- 1061 Structured Bindings can introduce a Pack: [p1061r0](1061_sb_pack/p1061r0.html) [p1061r1](1061_sb_pack/p1061r1.html) [p1061r2](1061_sb_pack/p1061r2.html) [p1061r3](1061_sb_pack/p1061r3.html) [p1061r4](1061_sb_pack/p1061r4.html)
+- ![][~CWG] 1061 Structured Bindings can introduce a Pack: [p1061r0](1061_sb_pack/p1061r0.html) [p1061r1](1061_sb_pack/p1061r1.html) [p1061r2](1061_sb_pack/p1061r2.html) [p1061r3](1061_sb_pack/p1061r3.html) [p1061r4](1061_sb_pack/p1061r4.html)
 - 1065 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>   <em><code class="sourceCode cpp">INVOKE</code></em>: [p1065r0](1065_constexpr_invoke/p1065r0.html) [p1065r1](1065_constexpr_invoke/p1065r1.html) [p1065r2](1065_constexpr_invoke/p1065r2.html)
 - 1169 static  <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code>: [p1169r0](1169_static_call/p1169r0.html) [p1169r1](1169_static_call/p1169r1.html) [p1169r2](1169_static_call/p1169r2.html) [p1169r3](1169_static_call/p1169r3.html) [p1169r4](1169_static_call/p1169r4.html)
 - 1170 Overload sets as function parameters: [p1170r0](1170_overload_sets/p1170r0.html)
@@ -61,7 +61,7 @@
 - 2561 An error propagation operator: [p2561r0](2561_operator_try/p2561r0.html) [p2561r1](2561_operator_try/p2561r1.html)
 - ![][~constexpr] 2564 <code class="sourceCode cpp"><span class="kw">consteval</span></code>  needs to propagate up: [p2564r0](2564_consteval_patch/p2564r0.html) [p2564r1](2564_consteval_patch/p2564r1.html) [p2564r2](2564_consteval_patch/p2564r2.html) [p2564r3](2564_consteval_patch/p2564r3.html)
 - ![][~ranges] 2585 Improve default container formatting: [p2585r0](2585_fmt_container/p2585r0.html) [p2585r1](2585_fmt_container/p2585r1.html)
-- 2593 Allowing  <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code>: [p2593r0](2593_static_assert/p2593r0.html) [p2593r1](2593_static_assert/p2593r1.html)
+- ![][~C++23] 2593 Allowing  <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span></code>: [p2593r0](2593_static_assert/p2593r0.html) [p2593r1](2593_static_assert/p2593r1.html)
 - 2602 Poison Pills are Too Toxic: [p2602r0](2602_poison_pills/p2602r0.html) [p2602r1](2602_poison_pills/p2602r1.html) [p2602r2](2602_poison_pills/p2602r2.html)
 - 2637 Member  <code class="sourceCode cpp">visit</code>: [p2637r0](2637_member_visit/p2637r0.html) [p2637r1](2637_member_visit/p2637r1.html)
 - ![][~constexpr] 2641 Checking if a union alternative is active: [p2641r0](2641_active_union/p2641r0.html) [p2641r1](2641_active_union/p2641r1.html) [p2641r2](2641_active_union/p2641r2.html)
@@ -73,11 +73,18 @@
 - 2757 Type-checking format args: [p2757r0](2757_type_check_format/p2757r0.html)
 - ![][~constexpr] 2758 Emitting messages at compile time: [p2758r0](2758_compile_time_messages/p2758r0.html)
 - 2760 Breaking Source Compatibility: [p2760r0](2760_breaking_source_compat/p2760r0.html)
-- 2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html)
+- ![][~EWG] 2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet
 [~spaceship]: https://img.shields.io/badge/-%3C%3D%3E-yellow
+
+[~C++20]: https://img.shields.io/badge/-c++20-success
+[~C++23]: https://img.shields.io/badge/-c++23-ff69b4
+[~CWG]: https://img.shields.io/badge/-CWG-blue
+[~LWG]: https://img.shields.io/badge/-LWG-blue
+[~EWG]: https://img.shields.io/badge/-EWG-yellow
+[~LEWG]: https://img.shields.io/badge/-LEWG-yellow
 
 # Other Papers
 - Concepts, v2: [concepts_v2.html](concepts_v2/concepts_v2.html)
