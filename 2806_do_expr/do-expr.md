@@ -13,7 +13,6 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
-status: EWG
 ---
 
 # Introduction

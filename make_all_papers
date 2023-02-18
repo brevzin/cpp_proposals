@@ -13,7 +13,7 @@ def get_title(filename):
         text = ' '.join(map(str,html.h1.children))
         return text.replace('<p>', '').replace('</p>','')
 
-def get_frontmatter_from_md(path, num):
+def get_tag_from_md(path, num):
     makefile = f'{path}/Makefile'
     if not os.path.exists(makefile):
         return
@@ -26,11 +26,10 @@ def get_frontmatter_from_md(path, num):
                 src = src.strip()
 
                 if dst.startswith(f'p{num}r'):
-                    return frontmatter.load(open(f'{path}/{src}'))
+                    paper = frontmatter.load(open(f'{path}/{src}'))
+                    return paper.get('tag', None)
             except ValueError:
                 pass
-
-Paper = collections.namedtuple('Paper', 'rev pd tag status filename')
 
 iso = re.compile('([pd])(\d{4})r(\d+).html')
 papers = collections.defaultdict(list)
@@ -46,14 +45,7 @@ for filename in glob.glob(f'*/*.html'):
         pd, num, rev = m.groups()
         num = int(num)
         rev = int(rev)
-        fm = get_frontmatter_from_md(path, num)
-
-        papers[num].append(Paper(
-            rev=rev,
-            pd=pd,
-            tag=fm.get('tag') if fm else None,
-            status=fm.get('status') if fm else None,
-            filename=filename))
+        papers[num].append((rev, pd, get_tag_from_md(path, num), filename))
     else:
         others.append((base, filename))
 
@@ -63,27 +55,21 @@ titles = {847: "Deducing `this`"}
 for num in sorted(papers):
     vals = sorted(papers[num])
     title = titles.get(num)
-    recent = vals[-1]
-
     if title is None:
-        title = get_title(recent.filename)
-    all_revs = ' '.join(f'[{paper.pd}{num:04d}r{paper.rev}]({paper.filename})' for paper in vals)
+        title = get_title(vals[-1][-1])
+    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, _, filename) in vals)
 
-    tag_str = f'![][~{recent.tag}] ' if recent.tag else ''
-    status_str = f'![][~{recent.status}] ' if recent.status else ''
-    print(f'- {status_str}{tag_str}{num} {title}: {all_revs}', file=out)
+    tag = vals[-1][2]
+    if tag is None:
+        tag_str = ''
+    else:
+        tag_str = f'![][~{tag}] '
+    print(f'- {tag_str}{num} {title}: {all_revs}', file=out)
 
 print(file=out)
 print('[~ranges]: https://img.shields.io/badge/-ranges-brightgreen', file=out)
 print('[~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet', file=out)
 print('[~spaceship]: https://img.shields.io/badge/-%3C%3D%3E-yellow', file=out)
-print(file=out)
-print('[~C++20]: https://img.shields.io/badge/-c++20-success', file=out)
-print('[~C++23]: https://img.shields.io/badge/-c++23-ff69b4', file=out)
-print('[~CWG]: https://img.shields.io/badge/-CWG-blue', file=out)
-print('[~LWG]: https://img.shields.io/badge/-LWG-blue', file=out)
-print('[~EWG]: https://img.shields.io/badge/-EWG-yellow', file=out)
-print('[~LEWG]: https://img.shields.io/badge/-LEWG-yellow', file=out)
 print(file=out)
 print('# Other Papers', file=out)
 for (base, filename) in sorted(others):

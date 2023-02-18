@@ -7,7 +7,6 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
-status: C++23
 ---
 
 # Revision History

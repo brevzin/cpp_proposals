@@ -9,7 +9,6 @@ author:
     - name: Jonathan Wakely
       email: <cxx@kayari.org>
 toc: true
-status: CWG
 ---
 
 # Revision History
