@@ -255,3 +255,14 @@ Aggregate initialization is performed ([dcl.init.aggr]).
 ```
 — *end example*]
 :::
+
+## Feature-test Macro
+
+Bump `__cpp_­designated_­initializers` in [cpp.predef]{.sref}:
+
+::: bq
+```diff
+- __cpp_­designated_­initializers @[201707L]{.diffdel}@
++ __cpp_­designated_­initializers @[2023XXL]{.diffins}@
+```
+:::
