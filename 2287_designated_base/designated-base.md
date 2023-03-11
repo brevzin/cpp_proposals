@@ -156,13 +156,15 @@ struct B : A { int b; };
 ```
 :::
 
-In the current wording, `B` has two elements (the `A` direct base class and then the `b` member). The initialization `B{.b=2}` is considered to have one explicitly initialized element (the `b`, initialized with `2`) and then the `A` is not expliictly initialized and cannot have a default member initializer, so it is copy-initialized from `{}`.
+In the current wording, `B` has two elements (the `A` direct base class and then the `b` member). The initialization `B{.b=2}` is considered to have one explicitly initialized element (the `b`, initialized with `2`) and then the `A` is not explicitly initialized and cannot have a default member initializer, so it is copy-initialized from `{}`.
 
 The strategy to handle `B{.a=1, .b=2}` is to group the indirect non-static data members under their corresponding direct base class and to treat those base class elements as being explicitly initialized. So here, the `A` element is explicitly initialized from `{.a=1}` and the `b` element continues to be explicitly initialized from `2`. And then this applies recursively, so given:
 
+::: bq
 ```cpp
 struct C : B { int c; };
 ```
+:::
 
 With `C{.a=1, .c=2}`, we have:
 
