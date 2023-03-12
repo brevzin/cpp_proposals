@@ -8,7 +8,7 @@
 - P0848 Conditionally Trivial Special Member Functions: [p0848r0](0848_special_members/p0848r0.html) [p0848r1](0848_special_members/p0848r1.html) [p0848r2](0848_special_members/p0848r2.html) [p0848r3](0848_special_members/p0848r3.html)
 - P0892 explicit(bool): [p0892r0](0892_explicit_bool/p0892r0.html) [p0892r1](0892_explicit_bool/p0892r1.html) [p0892r2](0892_explicit_bool/p0892r2.html)
 - P0893 Chaining Comparisons: [p0893r0](0893_chain_comparisons/p0893r0.html) [p0893r1](0893_chain_comparisons/p0893r1.html) [d0893r2](0893_chain_comparisons/d0893r2.html)
-- P1061 Structured Bindings can introduce a Pack: [p1061r0](1061_sb_pack/p1061r0.html) [p1061r1](1061_sb_pack/p1061r1.html) [p1061r2](1061_sb_pack/p1061r2.html) [p1061r3](1061_sb_pack/p1061r3.html) [p1061r4](1061_sb_pack/p1061r4.html)
+- P1061 Structured Bindings can introduce a Pack: [p1061r0](1061_sb_pack/p1061r0.html) [p1061r1](1061_sb_pack/p1061r1.html) [p1061r2](1061_sb_pack/p1061r2.html) [p1061r3](1061_sb_pack/p1061r3.html) [p1061r4](1061_sb_pack/p1061r4.html) [d1061r5](1061_sb_pack/d1061r5.html)
 - P1065 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>   <em><code class="sourceCode cpp">INVOKE</code></em>: [p1065r0](1065_constexpr_invoke/p1065r0.html) [p1065r1](1065_constexpr_invoke/p1065r1.html) [p1065r2](1065_constexpr_invoke/p1065r2.html)
 - P1169 static  <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code>: [p1169r0](1169_static_call/p1169r0.html) [p1169r1](1169_static_call/p1169r1.html) [p1169r2](1169_static_call/p1169r2.html) [p1169r3](1169_static_call/p1169r3.html) [p1169r4](1169_static_call/p1169r4.html)
 - P1170 Overload sets as function parameters: [p1170r0](1170_overload_sets/p1170r0.html)
@@ -73,7 +73,7 @@
 - P2757 Type-checking format args: [p2757r0](2757_type_check_format/p2757r0.html)
 - ![][~constexpr] P2758 Emitting messages at compile time: [p2758r0](2758_compile_time_messages/p2758r0.html)
 - P2760 Breaking Source Compatibility: [p2760r0](2760_breaking_source_compat/p2760r0.html)
-- P2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html)
+- P2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html) [p2806r1](2806_do_expr/p2806r1.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet

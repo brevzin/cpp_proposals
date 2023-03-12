@@ -1,2 +1,2 @@
-p1061r4.html : sb-extensions.md
+d1061r5.html : sb-extensions.md
 include ../md/mpark-wg21.mk

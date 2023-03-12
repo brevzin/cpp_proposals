@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R4
+document: D1061R5
 date: today
 audience: CWG
 author:
@@ -12,6 +12,8 @@ toc: true
 ---
 
 # Revision History
+
+R5 has minor wording changes,
 
 R4 significantly improves the wording after review in Issaquah.
 
@@ -442,13 +444,15 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 
 Change [dcl.pre]{.sref} paragraph 8:
 
-> A _simple-declaration_ with an [_identifier-list_]{.rm}
+::: bq
+[8]{.pnum} A _simple-declaration_ with an [_identifier-list_]{.rm}
 [_sb-identifier-list_]{.addu} is called a structured binding declaration (
 [dcl.struct.bind]). The _decl-specifier-seq_ shall contain only the
 _type-specifier_ `auto` and _cv-qualifiers_. The _initializer_ shall be of the
  form "`= $assignment-expression$`", of the form "`{ $assignment-expression$ }`",
 or of the form "`( $assignment-expression$ )`", where the
 _assignment-expression_ is of array or non-union class type.
+:::
 
 Extend [dcl.fct]{.sref}/5:
 
@@ -486,7 +490,7 @@ Extend [dcl.fct]{.sref}/5:
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
-A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [The declaration shall contain at most one _sb-pack-identifier_.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [A *structured binding* is either an *identifier* of the *sb-identifier-list* or an element of the pack introduced by an *sb-pack-identifier*. The declaration shall contain at most one _sb-pack-identifier_.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
@@ -495,7 +499,7 @@ the terms "structured binding size" and SB~_i_~:
 
 ::: bq
 ::: addu
-The _structured binding size_ of a type `E` is the required
+[1+1]{.pnum} The _structured binding size_ of a type `E` is the required
 number of names that need to be introduced by the structured binding
 declaration, as defined below. If there is no structured binding pack, then
 the number of elements in the _sb-identifier-list_ shall be equal to the
@@ -503,9 +507,7 @@ structured binding size. Otherwise, the number of elements of the structured
 binding pack is the structured binding size less the number of non-pack elements in the
  _sb-identifier-list_ and the number of non-pack elements shall be no more than the structured binding size.
 
-The _structured bindings_ of a structured binding declaration are lvalues that refer to the elements of something.
-
-Let SB~_i_~ denote the _i_^th^ structured binding in the structured binding declaration after
+[1+2]{.pnum} Let SB~_i_~ denote the _i_^th^ structured binding in the structured binding declaration after
 expanding the structured binding pack, if any. [ _Note_: If there is no
 structured binding pack, then SB~_i_~ denotes v~_i_~. - _end note_ ] [ _Example_:
 
@@ -526,7 +528,7 @@ Change [dcl.struct.bind]{.sref} paragraph 3 to define a structured binding size 
 extend the example:
 
 ::: bq
-If `E` is an array type with element type <code>T</code>, [the number of elements in the <i>identifier-list</i> shall be]{.rm} [the structured binding size of `E` is]{.addu} equal to the number of elements of `E`. Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
+[3]{.pnum} If `E` is an array type with element type <code>T</code>, [the number of elements in the <i>identifier-list</i> shall be]{.rm} [the structured binding size of `E` is]{.addu} equal to the number of elements of `E`. Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
 [_Note_: The top-level _cv_-qualifiers of `T` are _cv_. — _end note_] [_Example_:
 
 ```diff
@@ -546,20 +548,20 @@ auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array refe
 Change [dcl.struct.bind]{.sref} paragraph 4 to define a structured binding size:
 
 ::: bq
-Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the value of that expression. [...] Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
+[4]{.pnum} Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the value of that expression. [...] Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
 :::
 
 Change [dcl.struct.bind]{.sref} paragraph 5 to define a structured binding size:
 
 ::: bq
-Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
+[5]{.pnum} Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
 :::
 
 Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
 
 ::: bq
 ::: addu
-A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i>
+[3+]{.pnum} A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i>
 
 ```
 auto foo() -> int(&)[2];
@@ -574,7 +576,7 @@ auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 ele
 In [temp.variadic]{.sref}, change paragraph 4:
 
 ::: bq
-A *pack* is a template parameter pack, a function parameter pack, [or]{.rm} an *init-capture* pack[, or a structured binding pack]{.addu}. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an *init-capture* pack is the number of elements in the pack expansion of its *initializer*.
+[4]{.pnum} A *pack* is a template parameter pack, a function parameter pack, [or]{.rm} an *init-capture* pack[, or a structured binding pack]{.addu}. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an *init-capture* pack is the number of elements in the pack expansion of its *initializer*.
 :::
 
 In [temp.variadic]{.sref}, paragraph 5 (describing pack expansions) remains unchanged.
@@ -582,20 +584,20 @@ In [temp.variadic]{.sref}, paragraph 5 (describing pack expansions) remains unch
 In [temp.variadic]{.sref}, add a bullet to paragraph 8:
 
 ::: bq
-Such an element, in the context of the instantiation, is interpreted as follows:
+[8]{.pnum} Such an element, in the context of the instantiation, is interpreted as follows:
 
-* if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the
+* [8.1]{.pnum} if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the
 <i>i</i><sup>th</sup> corresponding type or value template argument;
-* if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the  <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; [otherwise]{.rm}
-* if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack[.]{.rm} [; otherwise]{.addu}
-* [ if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.]{.addu}
+* [8.2]{.pnum} if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the  <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; [otherwise]{.rm}
+* [8.3]{.pnum} if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack[.]{.rm} [; otherwise]{.addu}
+* [8.4]{.pnum} [ if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.]{.addu}
 :::
 
 Add a new paragraph after [temp.variadic]{.sref}
 
 ::: bq
 ::: addu
-If all of the packs expanded by a pack expansion are structured binding packs which were initialized with non-dependent <i>brace-or-equal-initializer</i>s, the pack expansion is expanded immediately.
+[12]{.pnum} If all of the packs expanded by a pack expansion are structured binding packs which were initialized with non-dependent <i>brace-or-equal-initializer</i>s, the pack expansion is expanded immediately.
 
 [ *Example:*
 ```
