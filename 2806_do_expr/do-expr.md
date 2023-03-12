@@ -1,6 +1,6 @@
 ---
 title: "`do` expressions"
-document: P2806R0
+document: P2806R1
 date: today
 audience: EWG
 author:
@@ -14,6 +14,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2806R0], some more discussion about implicit last value vs explicit return, reflection, and a grammar fix to the still-incomplete wording.
 
 # Introduction
 
@@ -473,6 +477,17 @@ This could be parsed as a `do return` statement followed by an infinite loop (th
 
 The latter interpretation is valid code today, but is completely useless as it is exactly equivalent to having written `return $value$;` to begin with, so we think it's reasonable to disambiguate in favor of the former interpretation. This isn't a silent change in meaning, since all such code would become ill-formed by way of not appearing in a `do` expression - and the new meaning would almost surely lead to a compiler warning due to the unreachable code.
 
+Also because we would unconditionally parse a statement as beginning with `do` as a `do`-`while` loop, code like this would not work:
+
+::: bq
+```cpp
+do { do return X{}; }.foo();
+```
+:::
+
+Such code would also have to be parenthesized to disambiguate, which doesn't seem like a huge burden on the user.
+
+
 ## Prior Art
 
 GCC has had an extension called [statement-expressions](https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html) for decades, which look very similar to what we're proposing here:
@@ -508,6 +523,86 @@ The reason we're not simply proposing to standardize the existing extension is t
 2. The ability to support yielding out of different branches of `if`, due the implicit nature of the yield.
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
+
+Let's also take the example motivating case from [@P2561R1] and compare implicit last expression to explicit return:
+
+::: cmptable
+### Implicit Last Value
+```cpp
+auto foo(int i) -> std::expected<int, E>
+
+auto bar(int i) -> std::expected<int, E> {
+    int j = do {
+        auto r = foo(i);
+        if (not r) {
+            return std::unexpected(r.error());
+        }
+        *r // <== NB: no semicolon
+    };
+
+    return j * j;
+}
+```
+
+### Explicit Return
+```cpp
+auto foo(int i) -> std::expected<int, E>
+
+auto bar(int i) -> std::expected<int, E> {
+    int j = do {
+        auto r = foo(i);
+        if (not r) {
+            return std::unexpected(r.error());
+        }
+        do return *r;
+    };
+
+    return j * j;
+}
+```
+:::
+
+In the simple cases, explicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
+
+There's also the question of `void` expressions - which are where many of the pattern matching examples come from. In Rust, for instance, there is a differentiation based on the presence of a semicolon:
+
+::: bq
+```rust
+let a: i32 = { 1; 2 };
+let b: () = { 1; 2; };
+```
+:::
+
+This is a simple (if silly) example of a block expression in Rust. The value of the block is the value of the last expression of the block (Rust has both `if` expressions and `loop` expressions) - in the first case the last example is `2`, so `a` is an `i32`, while in the second example `2;` is a statement, so the last value is the... nothing... after the `;`, which is `()` (Rust's unit type). This seems like too subtle a distinction, and one that's very easy to get wrong (although typically the types are far enough apart such that if you get it wrong it's a compiler error, rather than a runtime one):
+
+::: bq
+```cpp
+auto a = do { 1; 2 };   // ok, a is an int
+auto b = do { 1; 2; };  // ill-formed, b would be void (unless Regular Void is adopted)
+```
+:::
+
+But this would mean that our original example would work, just for a very different reason (rather than being `void` expressions due to the lack of `do return`, they become `void` expressions due to not having a final expression):
+
+::: bq
+```cpp
+x match {
+    0 => do { cout << "got zero"; };
+    1 => do { cout << "got one"; };
+    _ => do { cout << "don't care"; };
+}
+```
+:::
+
+Ultimately, we feel that the simplicity of the proposed design and its consistency and uniformity with other parts of the language outweigh the added verbosity in the simple (though typical) cases.
+
+## What About Reflection?
+
+A question that often comes up, for any language feature: if we had reflection and, in particular, code injection: would we need this facility?
+
+The answer is not only yes, but reflection is a good motivating use-case for this facility. Because the language does not have any kind of block expression today, adding support for one would increase the amount of ways that code injection could work.
+
+One example might be, again, the error propagation proposal in [@P2561R1]. If reflection allows me to write a hygienic macro that does code injection, perhaps we could write a library such that `try_(E)` would inject an expression that would evaluate in the way that that paper proposes. But in order to do such a thing, we would need to be able to have a block expression to inject. This paper provides such a block expression.
 
 ## Where can `do` expressions appear
 
@@ -558,10 +653,10 @@ Add a new clause [expr.prim.do]:
 
 ```
 $do-expression$:
-  do $trailing-return-type$@~opt~@ { $statement$ }
+  do $trailing-return-type$@~opt~@ $compound-statement$
 ```
 
-[2]{.pnum} The `$statement$` of a *do-expression* is a control-flow-limited statement ([stmt.label]).
+[2]{.pnum} The `$compound-statement$` of a *do-expression* is a control-flow-limited statement ([stmt.label]).
 :::
 :::
 
@@ -612,6 +707,6 @@ Add a new clause introducing a `do return` statement after [stmt.return]{.sref}:
 ::: addu
 [1]{.pnum} The `do` expression's value is produced by the `do return` statement.
 
-[2]{.pnum} A `do return` statement shall appear only within the `$statement$` of a `do` expression.
+[2]{.pnum} A `do return` statement shall appear only within the `$compound-statement$` of a `do` expression.
 :::
 :::
