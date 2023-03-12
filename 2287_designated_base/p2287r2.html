@@ -569,6 +569,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#naming-the-base-classes"><span class="toc-section-number">3.1</span> Naming the base classes<span></span></a></li>
 <li><a href="#naming-all-the-subobjects"><span class="toc-section-number">3.2</span> Naming all the subobjects<span></span></a></li>
+<li><a href="#impact-on-existing-code"><span class="toc-section-number">3.3</span> Impact on Existing Code<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a>
 <ul>
@@ -663,17 +664,32 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb8-3"><a href="#cb8-3"></a><span class="kw">struct</span> Z <span class="op">:</span> X, Y <span class="op">{</span> <span class="op">}</span>;</span>
 <span id="cb8-4"><a href="#cb8-4"></a>Z<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// error:: ambiguous which X</span></span></code></pre></div>
 <p>would be ill-formed on the basis that <code class="sourceCode cpp">Z<span class="op">::</span>x</code> is ambiguous.</p>
+<h2 data-number="3.3" id="impact-on-existing-code"><span class="header-section-number">3.3</span> Impact on Existing Code<a href="#impact-on-existing-code" class="self-link"></a></h2>
+<p>There is one case I can think of where code would change meaning:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="dt">void</span> f<span class="op">(</span>A<span class="op">)</span>; <span class="co">// #1</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="dt">void</span> f<span class="op">(</span>B<span class="op">)</span>; <span class="co">// #2</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>    f<span class="op">({.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">})</span>;</span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>In C++23, <code class="sourceCode cpp">f<span class="op">({.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">})</span></code> calls <code class="sourceCode cpp"><span class="pp">#1</span></code>, as it’s the only viable candidate. But with this change, <code class="sourceCode cpp"><span class="pp">#2</span></code> also becomes a viable candidate, so this call becomes ambiguous. I have no idea how much such code exists. This is, at least, easy to fix.</p>
+<p>I don’t think there’s a case where code would change from one valid meaning to a different valid meaning - just from valid to ambiguous.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <h2 data-number="4.1" id="strategy"><span class="header-section-number">4.1</span> Strategy<a href="#strategy" class="self-link"></a></h2>
 <p>The wording strategy here is as follows. Let’s say we have this simple case:</p>
 <blockquote>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
-<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>In the current wording, <code class="sourceCode cpp">B</code> has two elements (the <code class="sourceCode cpp">A</code> direct base class and then the <code class="sourceCode cpp">b</code> member). The initialization <code class="sourceCode cpp">B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code> is considered to have one explicitly initialized element (the <code class="sourceCode cpp">b</code>, initialized with <code class="sourceCode cpp"><span class="dv">2</span></code>) and then the <code class="sourceCode cpp">A</code> is not explicitly initialized and cannot have a default member initializer, so it is copy-initialized from <code class="sourceCode cpp"><span class="op">{}</span></code>.</p>
 <p>The strategy to handle <code class="sourceCode cpp">B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code> is to group the indirect non-static data members under their corresponding direct base class and to treat those base class elements as being explicitly initialized. So here, the <code class="sourceCode cpp">A</code> element is explicitly initialized from <code class="sourceCode cpp"><span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span></code> and the <code class="sourceCode cpp">b</code> element continues to be explicitly initialized from <code class="sourceCode cpp"><span class="dv">2</span></code>. And then this applies recursively, so given:</p>
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">struct</span> C <span class="op">:</span> B <span class="op">{</span> <span class="dt">int</span> c; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">struct</span> C <span class="op">:</span> B <span class="op">{</span> <span class="dt">int</span> c; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>With <code class="sourceCode cpp">C<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>c<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>, we have:</p>
 <ul>
@@ -701,21 +717,21 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <blockquote>
 <p>[<em>Example</em></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>struct A { int a; };</span>
-<span id="cb11-2"><a href="#cb11-2"></a>struct B : A { int b; };</span>
-<span id="cb11-3"><a href="#cb11-3"></a>struct C : B { int c; };</span>
-<span id="cb11-4"><a href="#cb11-4"></a></span>
-<span id="cb11-5"><a href="#cb11-5"></a>// the A element is intialized from {.a=1}</span>
-<span id="cb11-6"><a href="#cb11-6"></a>B x = B{.a=1};</span>
-<span id="cb11-7"><a href="#cb11-7"></a></span>
-<span id="cb11-8"><a href="#cb11-8"></a>// the B element is initialized from {.a=2, .b=3}</span>
-<span id="cb11-9"><a href="#cb11-9"></a>// which leads to its A element being initialized from {.a=2}</span>
-<span id="cb11-10"><a href="#cb11-10"></a>C y = C{.a=2, .b=3, .c=4};</span>
-<span id="cb11-11"><a href="#cb11-11"></a></span>
-<span id="cb11-12"><a href="#cb11-12"></a>struct A2 : A { int a; };</span>
-<span id="cb11-13"><a href="#cb11-13"></a></span>
-<span id="cb11-14"><a href="#cb11-14"></a>// the A element is not explicitly initialized</span>
-<span id="cb11-15"><a href="#cb11-15"></a>A2 z = {.a=1};</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>struct A { int a; };</span>
+<span id="cb12-2"><a href="#cb12-2"></a>struct B : A { int b; };</span>
+<span id="cb12-3"><a href="#cb12-3"></a>struct C : B { int c; };</span>
+<span id="cb12-4"><a href="#cb12-4"></a></span>
+<span id="cb12-5"><a href="#cb12-5"></a>// the A element is intialized from {.a=1}</span>
+<span id="cb12-6"><a href="#cb12-6"></a>B x = B{.a=1};</span>
+<span id="cb12-7"><a href="#cb12-7"></a></span>
+<span id="cb12-8"><a href="#cb12-8"></a>// the B element is initialized from {.a=2, .b=3}</span>
+<span id="cb12-9"><a href="#cb12-9"></a>// which leads to its A element being initialized from {.a=2}</span>
+<span id="cb12-10"><a href="#cb12-10"></a>C y = C{.a=2, .b=3, .c=4};</span>
+<span id="cb12-11"><a href="#cb12-11"></a></span>
+<span id="cb12-12"><a href="#cb12-12"></a>struct A2 : A { int a; };</span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a>// the A element is not explicitly initialized</span>
+<span id="cb12-15"><a href="#cb12-15"></a>A2 z = {.a=1};</span></code></pre></div>
 <p><em>-end example</em>]</p>
 </blockquote>
 </div>
@@ -735,31 +751,46 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 <p>Aggregate initialization is performed ([dcl.init.aggr]). [<em>Example 2</em>:</p>
 <div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1"></a>    struct A { int x; int y; int z; };</span>
-<span id="cb12-2"><a href="#cb12-2"></a>    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
-<span id="cb12-3"><a href="#cb12-3"></a>    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
-<span id="cb12-4"><a href="#cb12-4"></a></span>
-<span id="cb12-5"><a href="#cb12-5"></a><span class="va">+   struct B : A { int q; };</span></span>
-<span id="cb12-6"><a href="#cb12-6"></a><span class="va">+   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0</span></span>
-<span id="cb12-7"><a href="#cb12-7"></a><span class="va">+   B f{.q = 3, .x = 1};                // error: designator order does not match declaration order</span></span>
-<span id="cb12-8"><a href="#cb12-8"></a></span>
-<span id="cb12-9"><a href="#cb12-9"></a><span class="va">+   struct C { int p; int x; };</span></span>
-<span id="cb12-10"><a href="#cb12-10"></a><span class="va">+   struct D : A, C { };</span></span>
-<span id="cb12-11"><a href="#cb12-11"></a><span class="va">+   D g{.y=1, .p=2};                    // OK</span></span>
-<span id="cb12-12"><a href="#cb12-12"></a><span class="va">+   D h{.x=2};                          // error: x is not a designatable member</span></span>
-<span id="cb12-13"><a href="#cb12-13"></a></span>
-<span id="cb12-14"><a href="#cb12-14"></a><span class="va">+   struct NonAggr { int na; NonAggr(int); };</span></span>
-<span id="cb12-15"><a href="#cb12-15"></a><span class="va">+   struct E : NonAggr { int e; };</span></span>
-<span id="cb12-16"><a href="#cb12-16"></a><span class="va">+   E i{.na=1, .e=2};                   // error: na is not a designatable member</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>    struct A { int x; int y; int z; };</span>
+<span id="cb13-2"><a href="#cb13-2"></a>    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
+<span id="cb13-3"><a href="#cb13-3"></a>    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0</span>
+<span id="cb13-4"><a href="#cb13-4"></a></span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="va">+   struct B : A { int q; };</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="va">+   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="va">+   B f{.q = 3, .x = 1};                // error: designator order does not match declaration order</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="va">+   struct C { int p; int x; };</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="va">+   struct D : A, C { };</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="va">+   D g{.y=1, .p=2};                    // OK</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="va">+   D h{.x=2};                          // error: x is not a designatable member</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a></span>
+<span id="cb13-14"><a href="#cb13-14"></a><span class="va">+   struct NonAggr { int na; NonAggr(int); };</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="va">+   struct E : NonAggr { int e; };</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="va">+   E i{.na=1, .e=2};                   // error: na is not a designatable member</span></span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
+<p>Add an Annex C entry:</p>
+<div class="addu">
+<blockquote>
+<p><strong>Affected sublcause</strong>: [dcl.init] <br /> <strong>Change</strong>: Support for designated initialization of base classes of aggregates. <br /> <strong>Rationale</strong>: New functionality. <br /> <strong>Effect on original feature</strong>: Some valid C++23 code may fail to compile. For example:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>struct A { int a; };</span>
+<span id="cb14-2"><a href="#cb14-2"></a>struct B : A { int b; };</span>
+<span id="cb14-3"><a href="#cb14-3"></a></span>
+<span id="cb14-4"><a href="#cb14-4"></a>void f(A); // #1</span>
+<span id="cb14-5"><a href="#cb14-5"></a>void f(B); // #2</span>
+<span id="cb14-6"><a href="#cb14-6"></a></span>
+<span id="cb14-7"><a href="#cb14-7"></a>void g() {</span>
+<span id="cb14-8"><a href="#cb14-8"></a>    f({.a=1}); // OK (calls #1) in C++23, now ill-formed (ambiguous)</span>
+<span id="cb14-9"><a href="#cb14-9"></a>}</span></code></pre></div>
+</blockquote>
+</div>
 <h2 data-number="4.3" id="feature-test-macro"><span class="header-section-number">4.3</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Bump <code class="sourceCode cpp">__cpp_­designated_­initializers</code> in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a><span class="st">- __cpp_­designated_­initializers <span class="diffdel">201707L</span></span></span>
-<span id="cb13-2"><a href="#cb13-2"></a><span class="va">+ __cpp_­designated_­initializers <span class="diffins">2023XXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1"></a><span class="st">- __cpp_­designated_­initializers <span class="diffdel">201707L</span></span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="va">+ __cpp_­designated_­initializers <span class="diffins">2023XXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>

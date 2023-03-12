@@ -143,6 +143,28 @@ Z{.x=1}; // error:: ambiguous which X
 
 would be ill-formed on the basis that `Z::x` is ambiguous.
 
+## Impact on Existing Code
+
+There is one case I can think of where code would change meaning:
+
+::: bq
+```cpp
+struct A { int a; };
+struct B : A { int b; };
+
+void f(A); // #1
+void f(B); // #2
+
+void g() {
+    f({.a=1});
+}
+```
+:::
+
+In C++23, `f({.a=1})` calls `#1`, as it's the only viable candidate. But with this change, `#2` also becomes a viable candidate, so this call becomes ambiguous. I have no idea how much such code exists. This is, at least, easy to fix.
+
+I don't think there's a case where code would change from one valid meaning to a different valid meaning - just from valid to ambiguous.
+
 # Wording
 
 ## Strategy
@@ -251,6 +273,29 @@ Aggregate initialization is performed ([dcl.init.aggr]).
 +   E i{.na=1, .e=2};                   // error: na is not a designatable member
 ```
 — *end example*]
+:::
+
+Add an Annex C entry:
+
+::: addu
+::: bq
+**Affected sublcause**: [dcl.init] <br/>
+**Change**: Support for designated initialization of base classes of aggregates. <br/>
+**Rationale**: New functionality. <br/>
+**Effect on original feature**: Some valid C++23 code may fail to compile. For example:
+
+```
+struct A { int a; };
+struct B : A { int b; };
+
+void f(A); // #1
+void f(B); // #2
+
+void g() {
+    f({.a=1}); // OK (calls #1) in C++23, now ill-formed (ambiguous)
+}
+```
+:::
 :::
 
 ## Feature-test Macro
