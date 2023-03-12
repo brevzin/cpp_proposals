@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-03-11" />
+  <meta name="dcterms.date" content="2023-03-12" />
   <title>Designated-initializers for Base Classes</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-03-11</td>
+    <td>2023-03-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -576,7 +576,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#actual-wording"><span class="toc-section-number">4.2</span> Actual Wording<span></span></a></li>
 <li><a href="#feature-test-macro"><span class="toc-section-number">4.3</span> Feature-test Macro<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">5</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
@@ -637,7 +638,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(3.1)</a></span> If the <em>braced-init-list</em> contains a <em>designated-initializer-list</em>, <code class="sourceCode cpp">T</code> shall be an aggregate class. The ordered identifiers in the designators of the <em>designated-initializer-list</em> shall form a subsequence of the ordered identifiers in the direct non-static data members of <code class="sourceCode cpp">T</code>. Aggregate initialization is performed ([dcl.init.aggr]).</p>
 </blockquote>
-<p>The proposal here is to extend both of these rules to cover not just the direct non-static data members of <code class="sourceCode cpp">T</code> but also all indirect members, such that every interleaving bae class is also an aggregate class. That is:</p>
+<p>The proposal here is to extend both of these rules to cover not just the direct non-static data members of <code class="sourceCode cpp">T</code> but also all indirect members, such that every interleaving base class is also an aggregate class. That is:</p>
 <blockquote>
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
 <span id="cb6-2"><a href="#cb6-2"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span>
@@ -689,18 +690,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 data-number="4.2" id="actual-wording"><span class="header-section-number">4.2</span> Actual Wording<a href="#actual-wording" class="self-link"></a></h2>
 <p>Extend <span>9.4.2 <a href="https://wg21.link/dcl.init.aggr">[dcl.init.aggr]</a></span>/3.1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(3.1)</a></span> If the initializer list is a brace-enclosed <em>designated-initializer-list</em>, <span class="addu">then</span> the aggregate shall be of class type<span class="rm" style="color: #bf0303"><del>,</del></span> <span class="addu">and</span> the <em>identifier</em> in each <em>designator</em> shall name <span class="addu">either</span> a direct non-static data member of the class <span class="addu">or an indirect non-static data member in which every interleaving derived class is an aggregate.</span> <span class="rm" style="color: #bf0303"><del>, and the</del></span> <span class="addu">The</span> explicitly initialized elements of the aggregate are<span class="addu">:</span></p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(3.1.1)</a></span> <span class="addu">if any of the <em>identifier</em>s name an indirect non-static data member, then those direct base classes which have any direct or indirect non-static data member named, and</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(3.1.2)</a></span> <span class="addu">those</span> <span class="rm" style="color: #bf0303"><del>the</del></span> elements that are, or contain <span class="addu">(in the case of a member of an anonymous union)</span>, <span class="rm" style="color: #bf0303"><del>those members</del></span> <span class="addu">the named direct non-static data members</span>.</li>
-</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(3.1)</a></span> If the initializer list is a brace-enclosed <em>designated-initializer-list</em>, <span class="addu">then</span> the aggregate shall be of class type<span class="rm" style="color: #bf0303"><del>,</del></span> <span class="addu">and</span> the <em>identifier</em> in each <em>designator</em> shall name a <span class="rm" style="color: #bf0303"><del>direct non-static data member</del></span> <span class="addu">designatable member ([dcl.init.list])</span> of the class<span class="addu">.</span> <span class="rm" style="color: #bf0303"><del>, and the</del></span> <span class="addu">The</span> explicitly initialized elements of the aggregate are the elements that are, or contain <span class="addu">(in the case of a member of an anonymous union or of a base class)</span>, those members.</p>
 </blockquote>
 <p>And extend <span>9.4.2 <a href="https://wg21.link/dcl.init.aggr">[dcl.init.aggr]</a></span>/4 to cover base class elements:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">4</a></span> For each explicitly initialized element:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> For each explicitly initialized element:</p>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(4.0)</a></span> If the the initializer list is a brace-enclosed <em>designated-initializer-list</em> and element is a direct base class, then let <code class="sourceCode cpp">C</code> denote that direct base class. The element is initialized from a synthesized brace-enclosed <em>designated-initializer-list</em> containing each designator that names a direct or indirect non-static data member of <code class="sourceCode cpp">C</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(4.0)</a></span> If the the initializer list is a brace-enclosed <em>designated-initializer-list</em> and element is a direct base class, then let <code class="sourceCode cpp">C</code> denote that direct base class and let <code class="sourceCode cpp">T</code> denote the class. The element is initialized from a synthesized brace-enclosed <em>designated-initializer-list</em> containing each <em>designator</em> for which lookup in <code class="sourceCode cpp">T</code> names a direct or indirect non-static data member of <code class="sourceCode cpp">C</code> in the same order as in the original <em>designated-initializer-list</em>.</li>
 </ul>
 <blockquote>
 <p>[<em>Example</em></p>
@@ -723,17 +720,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(4.1)</a></span> <span class="rm" style="color: #bf0303"><del>If</del></span> <span class="addu">Otherwise, if</span> the element is an anonymous union […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(4.2)</a></span> Otherwise, the element is copy-initialized from the corresponding <em>initializer-clause</em> or is initialized with the <em>brace-or-equal-initializer</em> of the corresponding <em>designated-initializer-clause</em>. […]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(4.1)</a></span> <span class="rm" style="color: #bf0303"><del>If</del></span> <span class="addu">Otherwise, if</span> the element is an anonymous union […]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(4.2)</a></span> Otherwise, the element is copy-initialized from the corresponding <em>initializer-clause</em> or is initialized with the <em>brace-or-equal-initializer</em> of the corresponding <em>designated-initializer-clause</em>. […]</li>
 </ul>
 </blockquote>
 <p>Extend <span>9.4.5 <a href="https://wg21.link/dcl.init.list">[dcl.init.list]</a></span>/3.1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.1)</a></span> If the <em>braced-init-list</em> contains a <em>designated-initializer-list</em>, <code class="sourceCode cpp">T</code> shall be an aggregate class. The ordered <em>identifier</em>s in the designators of the <em>designated-initializer-list</em> shall form a subsequence of <span class="addu"><em>designatable members</em> of <code class="sourceCode cpp">T</code>, defined as follows:</span> <span class="rm" style="color: #bf0303"><del>the ordered <em>identifier</em>s in the direct non-static data members of <span><code class="sourceCode default">T</code></span>.</del></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(3.1)</a></span> If the <em>braced-init-list</em> contains a <em>designated-initializer-list</em>, <code class="sourceCode cpp">T</code> shall be an aggregate class. The ordered <em>identifier</em>s in the designators of the <em>designated-initializer-list</em> shall form a subsequence of <span class="addu"><em>designatable members</em> of <code class="sourceCode cpp">T</code>, defined as follows:</span> <span class="rm" style="color: #bf0303"><del>the ordered <em>identifier</em>s in the direct non-static data members of <span><code class="sourceCode default">T</code></span>.</del></span></p>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.1.1)</a></span> For each direct base class <code class="sourceCode cpp">C</code> of <code class="sourceCode cpp">T</code> that is an aggregate class, the designatable members of <code class="sourceCode cpp">C</code> that can be denoted by direct class member access ([expr.ref]) from an object of type <code class="sourceCode cpp">T</code> , followed by</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1.2)</a></span> The ordered <em>identifiers</em> in the direct non-static members of <code class="sourceCode cpp">T</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.1.1)</a></span> For each direct base class <code class="sourceCode cpp">C</code> of <code class="sourceCode cpp">T</code> that is an aggregate class, the designatable members of <code class="sourceCode cpp">C</code> for which lookup for that member in <code class="sourceCode cpp">T</code> finds the member of <code class="sourceCode cpp">C</code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.1.2)</a></span> The ordered <em>identifiers</em> in the direct non-static members of <code class="sourceCode cpp">T</code>.</li>
 </ul>
 </div>
 <p>Aggregate initialization is performed ([dcl.init.aggr]). [<em>Example 2</em>:</p>
@@ -758,14 +755,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>— <em>end example</em>]</p>
 </blockquote>
 <h2 data-number="4.3" id="feature-test-macro"><span class="header-section-number">4.3</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
-<p>Bump <code class="sourceCode cpp">__cpp_­designated_­initializers</code> in <a href="https://wg21.link/cpp.predef">[cpp.predef]</a>:</p>
+<p>Bump <code class="sourceCode cpp">__cpp_­designated_­initializers</code> in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a><span class="st">- __cpp_­designated_­initializers <span class="diffdel">201707L</span></span></span>
 <span id="cb13-2"><a href="#cb13-2"></a><span class="va">+ __cpp_­designated_­initializers <span class="diffins">2023XXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Matthias Stearn for, basically, the proposal. Thanks to Tim Song for helping with design questions and wording.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0017R1">
 <p>[P0017R1] Oleg Smolsky. 2015-10-24. Extension to aggregate initialization. <br />

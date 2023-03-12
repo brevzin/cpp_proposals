@@ -104,7 +104,7 @@ And, from [dcl.init.list]{.sref}/3.1 (conveniently, it's 3.1 in both cases):
 [3.1]{.pnum} If the *braced-init-list* contains a *designated-initializer-list*, `T` shall be an aggregate class. The ordered identifiers in the designators of the *designated-initializer-list* shall form a subsequence of the ordered identifiers in the direct non-static data members of `T`. Aggregate initialization is performed ([dcl.init.aggr]).
 :::
 
-The proposal here is to extend both of these rules to cover not just the direct non-static data members of `T` but also all indirect members, such that every interleaving bae class is also an aggregate class. That is:
+The proposal here is to extend both of these rules to cover not just the direct non-static data members of `T` but also all indirect members, such that every interleaving base class is also an aggregate class. That is:
 
 ::: bq
 ```cpp
@@ -181,10 +181,7 @@ With `C{.a=1, .c=2}`, we have:
 Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: bq
-[3.1]{.pnum} If the initializer list is a brace-enclosed *designated-initializer-list*, [then]{.addu} the aggregate shall be of class type[,]{.rm} [and]{.addu} the *identifier* in each *designator* shall name [either]{.addu} a direct non-static data member of the class [ or an indirect non-static data member in which every interleaving derived class is an aggregate.]{.addu} [, and the]{.rm} [The]{.addu} explicitly initialized elements of the aggregate are[:]{.addu}
-
-* [3.1.1]{.pnum} [if any of the *identifier*s name an indirect non-static data member, then those direct base classes which have any direct or indirect non-static data member named, and]{.addu}
-* [3.1.2]{.pnum} [those]{.addu} [the]{.rm} elements that are, or contain [(in the case of a member of an anonymous union)]{.addu}, [those members]{.rm} [the named direct non-static data members]{.addu}.
+[3.1]{.pnum} If the initializer list is a brace-enclosed *designated-initializer-list*, [then]{.addu} the aggregate shall be of class type[,]{.rm} [and]{.addu} the *identifier* in each *designator* shall name a [direct non-static data member]{.rm} [designatable member ([dcl.init.list])]{.addu} of the class[.]{.addu} [, and the]{.rm} [The]{.addu} explicitly initialized elements of the aggregate are the elements that are, or contain [(in the case of a member of an anonymous union or of a base class)]{.addu}, those members.
 :::
 
 And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
@@ -193,7 +190,7 @@ And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
 [4]{.pnum} For each explicitly initialized element:
 
 ::: addu
-* [4.0]{.pnum} If the the initializer list is a brace-enclosed *designated-initializer-list* and element is a direct base class, then let `C` denote that direct base class. The element is initialized from a synthesized brace-enclosed *designated-initializer-list* containing each designator that names a direct or indirect non-static data member of `C`.
+* [4.0]{.pnum} If the the initializer list is a brace-enclosed *designated-initializer-list* and element is a direct base class, then let `C` denote that direct base class and let `T` denote the class. The element is initialized from a synthesized brace-enclosed *designated-initializer-list* containing each *designator* for which lookup in `T` names a direct or indirect non-static data member of `C` in the same order as in the original *designated-initializer-list*.
 
 ::: bq
 [*Example*
@@ -229,7 +226,7 @@ Extend [dcl.init.list]{.sref}/3.1:
 The ordered *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of [*designatable members* of `T`, defined as follows:]{.addu} [the ordered *identifier*s in the direct non-static data members of `T`.]{.rm}
 
 :::addu
-* [3.1.1]{.pnum} For each direct base class `C` of `T` that is an aggregate class, the designatable members of `C` that can be denoted by direct class member access ([expr.ref]) from an object of type `T` , followed by
+* [3.1.1]{.pnum} For each direct base class `C` of `T` that is an aggregate class, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`,
 * [3.1.2]{.pnum} The ordered *identifiers* in the direct non-static members of `T`.
 :::
 
@@ -258,7 +255,7 @@ Aggregate initialization is performed ([dcl.init.aggr]).
 
 ## Feature-test Macro
 
-Bump `__cpp_­designated_­initializers` in [cpp.predef]{.sref}:
+Bump `__cpp_­designated_­initializers` in [cpp.predefined]{.sref}:
 
 ::: bq
 ```diff
@@ -266,3 +263,7 @@ Bump `__cpp_­designated_­initializers` in [cpp.predef]{.sref}:
 + __cpp_­designated_­initializers @[2023XXL]{.diffins}@
 ```
 :::
+
+# Acknowledgements
+
+Thanks to Matthias Stearn for, basically, the proposal. Thanks to Tim Song for helping with design questions and wording.
