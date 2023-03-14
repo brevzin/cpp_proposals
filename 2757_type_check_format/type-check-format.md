@@ -1,6 +1,6 @@
 ---
 title: "Type-checking format args"
-document: P2757R0
+document: P2757R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2757R0], reverted `basic_format_parse_context` constructor and removed `check_dynamic_spec_arithmetic` - "arithmetic" types technically include `bool` and `char` per the language wording, but those are very unlikely to be actually desired in the context where you're asking for something that could also be an `int` or a `double`. Can always be added back in some form if dynamic floating point argument use-cases surface.
 
 # Introduction
 
@@ -18,8 +22,8 @@ toc: true
 |`format("{:d}", "I am not a number")`|compile error (invalid specifier for strings)|
 |`format("{:7^*}", "hello")`|compile error (should be `*^7`)|
 |`format("{:>10}", "hello")`|ok|
-|`format("{0:>1}", "hello", 10)`|ok|
-|`format("{0:>2}", "hello", 10)`|compile error (argument `2` is out of bounds)|
+|`format("{0:>{1}}", "hello", 10)`|ok|
+|`format("{0:>{2}}", "hello", 10)`|compile error (argument `2` is out of bounds)|
 |`format("{:>{}}", "hello")`|compile error (missing an argument for dynamic width)|
 |`format("{:>{}}", "hello", "10")`|<span style="color:#bf0303">runtime error</span>|
 
@@ -168,7 +172,58 @@ Note that even here, `compile_parse_context` doesn't have the _actual_ format ar
 
 ## The constructor for `basic_format_parse_context`
 
-Currently, we specify a constructor for `basic_format_parse_context`, though we don't do the same for `basic_format_context`. Only the implementation should be constructing a `basic_format_parse_context` anyway - the constructor we do specify doesn't let us propagate the state properly, and the thing isn't copyable or movable. So rather than figuring out how to specify how the type information in the context is constructed, we should just remove the unnecessary specification.
+Currently, we specify a constructor for `basic_format_parse_context`, though we don't do the same for `basic_format_context`. Only the implementation should be constructing a `basic_format_parse_context` anyway - the constructor we do specify doesn't let us propagate the state properly, and the thing isn't copyable or movable. The constructor is a bit problematic in that its presence would seem to require specifying just how all this type information from the arguments is encoded.
+
+However, actually using this constructor in a way that requires reading arguments is inherently problematic - as the user has no way of providing those arguments in the future. Using this constructor _just_ to parse a format string is at least potentially usable:
+
+::: cmptable
+### Parse during `format`
+```cpp
+template <>
+struct std::formatter<PointHex> {
+  constexpr auto parse(auto& ctx) {
+    return ctx.begin();
+  }
+
+  auto format(PointHex p, auto& ctx) const {
+    return std::format_to(
+      ctx.out(),
+      "(x={:x}, y={:x})",
+      p.x,
+      p.y
+    );
+  }
+};
+```
+
+### Parse during `parse`
+```cpp
+template <>
+struct std::formatter<PointHex> {
+  std::formatter<int> f;
+
+  constexpr auto parse(auto& ctx) {
+    std::format_parse_context c("x");
+    if (f.parse(c) != c.end()) {
+      throw std::format_error("wat");
+    }
+
+    return ctx.begin();
+  }
+
+  auto format(PointHex p, auto& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "(x="));
+    ctx.advance_to(f.format(p.x, ctx));
+    ctx.advance_to(std::format_to(ctx.out(), ", y="));
+    ctx.advance_to(f.format(p.y, ctx));
+    ctx.advance_to(std::format_to(ctx.out(), ")"));
+    return ctx.out();
+  }
+};
+```
+:::
+
+The latter implementation is significantly more tedious, but only requires parsing the format string for the `int` once. This is something that somebody might actually write, so it needs to stay supported. But this is really only useful in the case where the "fake" parse context has no arguments - which is happily the case where we also don't have to worry about how to propagate type information for those arguments, since there aren't any.
 
 # Proposal
 
@@ -184,7 +239,7 @@ constexpr auto check_dynamic_spec(int, std::initializer_list<format_type>) -> vo
 ```
 :::
 
-1. Don't expose an `enum`, instead make this a function template (the implementation would then convert those types into the corresponding enum anyway):
+2. Don't expose an `enum`, instead make this a function template (the implementation would then convert those types into the corresponding enum anyway):
 
 ::: bq
 ```cpp
@@ -199,12 +254,12 @@ In both cases, this function only has effects during constant evaluation time - 
 ```cpp
 // for int, unsigned int, long long int, unsigned long long int
 constexpr auto check_dynamic_spec_integral(int) -> void;
-// for the above plus bool, char, float, double, and long double
-constexpr auto check_dynamic_spec_arithmetic(int) -> void;
 // for const char_type* and basic_string_view<char_type>
 constexpr auto check_dynamic_spec_string(int) -> void;
 ```
 :::
+
+These both have clear use-cases: dynamic width or precision for the former, dynamic delimiter for the latter.
 
 The enum approach requires specifying an enum. The template approach, if users make their `formatter<T>::parse` a function template (which is going to be the common case, especially since you can just write `auto&`), requires writing `.template` (which is... still shorter, but also awful):
 
@@ -243,6 +298,7 @@ namespace std {
   public:
 -   constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
 -                                                 size_t num_args = 0) noexcept;
++   constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt) noexcept;
     basic_format_parse_context(const basic_format_parse_context&) = delete;
     basic_format_parse_context& operator=(const basic_format_parse_context&) = delete;
 
@@ -256,7 +312,6 @@ namespace std {
 +   template<class... Ts>
 +     constexpr void check_dynamic_spec(size_t id);
 +   constexpr void check_dynamic_spec_integral(size_t id);
-+   constexpr void check_dynamic_spec_arithmetic(size_t id);
 +   constexpr void check_dynamic_spec_string(size_t id);
   };
 }
@@ -266,13 +321,11 @@ namespace std {
 Remove the constructor:
 
 ::: bq
-::: rm
 ```
-constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt,
-                                              size_t num_args = 0) noexcept;
+constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt@[,]{.rm}@
+                                              @[size_t num_args = 0]{.rm}@) noexcept;
 ```
-[2]{.pnum} *Effects*: Initializes `begin_­` with `fmt.begin()`, `end_­` with `fmt.end()`, `indexing_­` with `unknown`, `next_­arg_­id_­` with `0`, and `num_­args_­` with `num_­args`.
-:::
+[2]{.pnum} *Effects*: Initializes `begin_­` with `fmt.begin()`, `end_­` with `fmt.end()`, `indexing_­` with `unknown`, `next_­arg_­id_­` with `0`, and `num_­args_­` with [`num_­args`]{.rm} [0]{.addu}. [Any call to `next_arg_id`, `check_arg_id`, or `check_dynamic_spec` on an instance of `basic_format_parse_context` initialized using this constructor is not a core constant expression.]{.note .addu}
 :::
 
 And then add at the bottom:
@@ -303,28 +356,16 @@ template<class... Ts>
 constexpr void check_dynamic_spec_integral(size_t id);
 ```
 
-[#]{.pnum} *Effects* Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 ```cpp
 check_dynamic_spec<int, unsigned int, long long int, unsigned long long int>(id);
-```
-
-```cpp
-constexpr void check_dynamic_spec_arithmetic(size_t id);
-```
-
-[#]{.pnum} *Effects* Equivalent to:
-```cpp
-check_dynamic_spec<
-  bool, char_type,
-  int, unsigned int, long long int, unsigned long long int,
-  float, double, long double>(id);
 ```
 
 ```cpp
 constexpr void check_dynamic_spec_string(size_t id);
 ```
 
-[#]{.pnum} *Effects* Equivalent to:
+[#]{.pnum} *Effects*: Equivalent to:
 ```cpp
 check_dynamic_spec<const char_type*, basic_string_view<char_type>>(id);
 ```
