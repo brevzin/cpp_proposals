@@ -68,7 +68,7 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `adjacent_transform` | C++23 | -- |
 | `adjacent_filter` | range-v3 | [Tier 2]{.yellow} |
 | `adjacent_remove_if` | range-v3 | [Tier 2]{.yellow} |
-| `all` | C++20 | C++20 |
+| `all` | C++20 | -- |
 | `any_view<T>` | range-v3 | Not proposed |
 | `c_str` | range-v3 | [Tier 2]{.yellow} |
 | `cache1` | range-v3 | [Tier 1. Possibly renamed as `cache_last` or `cache_latest`]{.addu} |
@@ -76,21 +76,20 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `chunk` | C++23 | -- |
 | `chunk_by` | C++23 | -- |
 | `chunk_on` | (not in range-v3) | [Tier 1]{.addu} |
-| `common` | C++20 | C++20 |
+| `common` | C++20 | -- |
 | `concat` | range-v3 | [Tier 1 [@P2542R2]]{.addu} |
 | `const_` | C++23 (as `as_const`) | -- |
-| `counted` | C++20 | C++20 |
+| `counted` | C++20 | -- |
 | `cycle` | range-v3 | [Tier 1]{.addu} |
 | `delimit` | range-v3 | [Tier 1]{.addu} |
-| `drop` | C++20 | C++20 |
+| `drop` | C++20 | -- |
 | `drop_last` | range-v3 | [Tier 1]{.addu} |
 | `drop_last_while` | (not in range-v3) | [Tier 1]{.addu} |
 | `drop_exactly` | range-v3 | [Tier 2]{.yellow} |
-| `drop_while` | C++20 | C++20 |
-| `empty` | C++20 | C++20 |
+| `drop_while` | C++20 | -- |
+| `empty` | C++20 | -- |
 | `enumerate` | C++23 | -- |
-| `filter` | C++20 | C++20 |
-| `filter_transform` | (not in range-v3) | [Tier 1, related to `views::maybe` [@P1255R9] ]{.addu} |
+| `filter` | C++20 | -- |
 | `for_each` | range-v3 | [Tier 1. Most languages call this `flat_map`, but we probably need to call it `transform_join`.]{.addu} |
 | `generate` | range-v3 | [Tier 1]{.addu} |
 | `generate_n` | range-v3 | [Tier 1]{.addu} |
@@ -99,9 +98,9 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `indirect` | range-v3 | Not proposed |
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
-| `iota` | C++20 | C++20 |
+| `iota` | C++20 | -- |
 | `join` | C++20 and C++23 | -- |
-| `keys` | C++20 | C++20 |
+| `keys` | C++20 | -- |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R9] | ??? |
 | `move` | C++23 (as `as_rvalue`) | -- |
@@ -112,29 +111,30 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `repeat_n` | C++23 (under the name `repeat`) | -- |
 | `replace` | range-v3 | [Tier 1]{.addu} |
 | `replace_if` | range-v3 | [Tier 1]{.addu} |
-| `reverse` | C++20 | C++20 |
+| `reverse` | C++20 | -- |
 | `sample` | range-v3 | [Tier 3]{.diffdel} |
 | `scan` | (not in range-v3) | [Tier 1, as a rename of what is `partial_sum` in range-v3]{.addu} |
 | `set_difference` | range-v3 | [Tier 3]{.diffdel} |
 | `set_intersection` | range-v3 | [Tier 3]{.diffdel} |
 | `set_union` | range-v3 | [Tier 3]{.diffdel} |
 | `set_symmetric_difference` | range-v3 | [Tier 3]{.diffdel} |
-| `single` | C++20 | C++20 |
+| `single` | C++20 | -- |
 | `slice` | range-v3 | [Tier 2]{.addu} |
 | `sliding` | C++23 (as `slide`) | -- |
 | `split` | C++20 (improved) | -- |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
 | `stride` | C++23 | -- |
 | `tail` | range-v3 | [Tier 2]{.yellow} |
-| `take` | C++20 | C++20 |
+| `take` | C++20 | -- |
 | `take_exactly` | range-v3 | [Tier 2]{.yellow} |
 | `take_last` | range-v3 | [Tier 1]{.addu} |
 | `take_last_while` | (not in range-v3) | [Tier 1]{.addu} |
-| `take_while` | C++20 | C++20 |
+| `take_while` | C++20 | -- |
 | `tokenize` | range-v3 | Not proposed |
+| `transform_filter` | (not in range-v3) | [Tier 1, related to `views::maybe` [@P1255R9] ]{.addu} |
 | `trim` | range-v3 | [Tier 1]{.addu} |
 | `unbounded` | range-v3 | Not proposed |
 | `unique` | range-v3 | [Tier 1]{.addu} |
-| `values` | C++20 | C++20 |
+| `values` | C++20 | -- |
 | `zip` | C++23 | -- |
 | `zip_with` | C++23 | -- |
