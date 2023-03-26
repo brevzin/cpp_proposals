@@ -119,7 +119,7 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `set_union` | range-v3 | [Tier 3]{.diffdel} |
 | `set_symmetric_difference` | range-v3 | [Tier 3]{.diffdel} |
 | `single` | C++20 | -- |
-| `slice` | range-v3 | [Tier 2]{.addu} |
+| `slice` | range-v3 | [Tier 1]{.addu} |
 | `sliding` | C++23 (as `slide`) | -- |
 | `split` | C++20 (improved) | -- |
 | `split_when` | range-v3 | [Tier 2]{.yellow} |
