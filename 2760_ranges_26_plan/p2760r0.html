@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-03-26" />
+  <meta name="dcterms.date" content="2023-04-01" />
   <title>A Plan for C++26 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-03-26</td>
+    <td>2023-04-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -566,8 +566,22 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#views"><span class="toc-section-number">2</span> Views<span></span></a></li>
-<li><a href="#bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
+<li><a href="#views"><span class="toc-section-number">2</span> Views<span></span></a>
+<ul>
+<li><a href="#cache_last"><span class="toc-section-number">2.1</span> <code class="sourceCode cpp">cache_last</code><span></span></a></li>
+<li><a href="#scan"><span class="toc-section-number">2.2</span> <code class="sourceCode cpp">scan</code><span></span></a></li>
+<li><a href="#generate"><span class="toc-section-number">2.3</span> <code class="sourceCode cpp">generate</code><span></span></a></li>
+</ul></li>
+<li><a href="#view-adjuncts"><span class="toc-section-number">3</span> View Adjuncts<span></span></a>
+<ul>
+<li><a href="#more-function-objects"><span class="toc-section-number">3.1</span> More Function Objects<span></span></a></li>
+<li><a href="#more-function-adapters"><span class="toc-section-number">3.2</span> More Function Adapters<span></span></a></li>
+</ul></li>
+<li><a href="#algorithms"><span class="toc-section-number">4</span> Algorithms<span></span></a>
+<ul>
+<li><a href="#reduce"><span class="toc-section-number">4.1</span> <code class="sourceCode cpp">reduce</code><span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <style type="text/css">
@@ -1013,8 +1027,179 @@ span.yellow {
 </tr>
 </tbody>
 </table>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h2 data-number="2.1" id="cache_last"><span class="header-section-number">2.1</span> <code class="sourceCode cpp">cache_last</code><a href="#cache_last" class="self-link"></a></h2>
+<p>One of the adapters that we considered for C++23 but ended up not pursuing was what range-v3 calls <code class="sourceCode cpp">cache1</code> and what we’d instead like to call something like <code class="sourceCode cpp">cache_last</code>. This is an adapter which, as the name suggests, caches the last element. The reason for this is efficiency - specifically avoiding extra work that has to be done by iterator dereferencing.</p>
+<p>The canonical example of this is <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> filter<span class="op">(</span>g<span class="op">)</span></code>, where if you then iterate over the subsequent range, <code class="sourceCode cpp">f</code> will be invoked twice for every element that satisfies <code class="sourceCode cpp">g</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">int</span> main<span class="op">()</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">auto</span> even_squares <span class="op">=</span> v</span>
+<span id="cb1-6"><a href="#cb1-6"></a>        <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>                std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;transform: {}</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>                <span class="cf">return</span> i <span class="op">*</span> i;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>            <span class="op">})</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>        <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>                std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;filter: {}</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb1-12"><a href="#cb1-12"></a>                <span class="cf">return</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span>;</span>
+<span id="cb1-13"><a href="#cb1-13"></a>            <span class="op">})</span>;</span>
+<span id="cb1-14"><a href="#cb1-14"></a></span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">:</span> even_squares<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a>        std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;Got: {}</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    <span class="op">}</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>prints the following (note that there are 7 invocations of <code class="sourceCode cpp">transform</code>):</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1"></a>transform: 1</span>
+<span id="cb2-2"><a href="#cb2-2"></a>filter: 1</span>
+<span id="cb2-3"><a href="#cb2-3"></a>transform: 2</span>
+<span id="cb2-4"><a href="#cb2-4"></a>filter: 4</span>
+<span id="cb2-5"><a href="#cb2-5"></a>transform: 2</span>
+<span id="cb2-6"><a href="#cb2-6"></a>Got: 4</span>
+<span id="cb2-7"><a href="#cb2-7"></a>transform: 3</span>
+<span id="cb2-8"><a href="#cb2-8"></a>filter: 9</span>
+<span id="cb2-9"><a href="#cb2-9"></a>transform: 4</span>
+<span id="cb2-10"><a href="#cb2-10"></a>filter: 16</span>
+<span id="cb2-11"><a href="#cb2-11"></a>transform: 4</span>
+<span id="cb2-12"><a href="#cb2-12"></a>Got: 16</span>
+<span id="cb2-13"><a href="#cb2-13"></a>transform: 5</span>
+<span id="cb2-14"><a href="#cb2-14"></a>filter: 25</span></code></pre></div>
+</blockquote>
+<p>The solution here is to add a layer of caching:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">auto</span> even_squares <span class="op">=</span> v</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>square<span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="op">|</span> views<span class="op">::</span>cache_last</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="op">|</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Which will ensure that <code class="sourceCode cpp">square</code> will only be called once per element.</p>
+<p>The tricky part here is: how do you implement <code class="sourceCode cpp">cache_last</code>? Specifically: in what member function do you perform the caching?</p>
+<p>The range-v3 implementation looks roughly like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>view V<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">struct</span> cache_last_view <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    V base_;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="dt">bool</span> dirty_ <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <em>non-propagating-cache</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> cache_;</span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">struct</span> <em>iterator</em> <span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>        cache_last_view<span class="op">*</span> parent_;</span>
+<span id="cb4-9"><a href="#cb4-9"></a>        iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> cur_;</span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>            <span class="cf">if</span> <span class="op">(</span>parent_<span class="op">-&gt;</span>dirty_<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>                parent_<span class="op">-&gt;</span>cache_<span class="op">.</span>emplace<span class="op">(</span>iter_move<span class="op">(</span>cur_<span class="op">))</span>;</span>
+<span id="cb4-14"><a href="#cb4-14"></a>                parent_<span class="op">-&gt;</span>dirty_ <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb4-15"><a href="#cb4-15"></a>            <span class="op">}</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>            <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(*</span>parent_<span class="op">-&gt;</span>cache_<span class="op">)</span>;</span>
+<span id="cb4-17"><a href="#cb4-17"></a>        <span class="op">}</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a></span>
+<span id="cb4-19"><a href="#cb4-19"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> <em>iterator</em><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a>            <span class="op">++</span>cur_;</span>
+<span id="cb4-21"><a href="#cb4-21"></a>            parent_<span class="op">-&gt;</span>dirty_ <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb4-22"><a href="#cb4-22"></a>        <span class="op">}</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a>    <span class="op">}</span>;</span>
+<span id="cb4-24"><a href="#cb4-24"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>But there’s a problem here: <span>16.4.6.10 <a href="https://wg21.link/res.on.data.races">[res.on.data.races]</a></span> says that <code class="sourceCode cpp"><span class="kw">const</span></code> member functions are not allowed to introduce data races. While everything here is <code class="sourceCode cpp"><span class="kw">const</span></code>-correct (there isn’t even a <code class="sourceCode cpp"><span class="kw">mutable</span></code>), iterator dereference here <em>does</em> introduce a data race: two threads were both dereferencing an iterator into a dirty <code class="sourceCode cpp">cache_last_view</code>.</p>
+<p>There are four potential solutions to this problem, presented in our order of preference:</p>
+<ol type="1">
+<li>We could carve out an exception to [res.on.data.races] for all input iterators. Even some standard library implementations of input iterators (like <code class="sourceCode cpp">std<span class="op">::</span>istreambuf_iterator<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span></code>) already don’t satisfy this, and using input iterators in multi-threaded contexts is already kind of interesting. This makes the above implementation valid.</li>
+<li>We could require synchronization on <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span></code>. This probably isn’t terrible expensive in this context, but adding synchronization to an adaptor whose primary purpose is to improve performance seems a bit heavy-handed, especially since that synchronization will almost never be actually necessary.</li>
+<li>We could move the updating of the cached value from <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span></code> to <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++()</span></code>, which is already a mutable member function. This has the downside of requiring calculating more elements than necessary - since <code class="sourceCode cpp">r <span class="op">|</span> cache_last <span class="op">|</span> stride<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> will still have to cache every element, even if only every other one is necessary.</li>
+<li>We could allow input iterators to have <em>mutable</em> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code>, since some of them clearly need it. A mutable <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code> makes the concepts even more awkward, and adds more work for every range adaptor. It theoretically is sensible, but seems extremely impractical.</li>
+</ol>
+<p>The other issue is what the reference type of the range should be. range-v3 uses <code class="sourceCode cpp">range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&amp;&amp;</span></code>, but this somewhat defeats the purpose of caching if you can so easily invalidate it. <code class="sourceCode cpp">range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&amp;</span></code> is probably a better choice.</p>
+<h2 data-number="2.2" id="scan"><span class="header-section-number">2.2</span> <code class="sourceCode cpp">scan</code><a href="#scan" class="self-link"></a></h2>
+<p>If you want to take a range of elements and get a new range that is applying <code class="sourceCode cpp">f</code> to every element, that’s <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span></code>. But there are many cases where you need a <code class="sourceCode cpp">transform</code> to that is <em>stateful</em>. That is, rather than have the input to <code class="sourceCode cpp">f</code> be the current element (and require that <code class="sourceCode cpp">f</code> be <code class="sourceCode cpp">regular_invocable</code>), have the input to <code class="sourceCode cpp">f</code> be both the current element <em>and</em> the current state.</p>
+<p>For instance, given the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">]</span></code>, if you want to produce the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span><span class="op">]</span></code> - you can’t get there with <code class="sourceCode cpp">transform</code>. Instead, you need to use <code class="sourceCode cpp">scan</code> using <code class="sourceCode cpp"><span class="op">+</span></code> as the binary operator. The special case of <code class="sourceCode cpp">scan</code> over <code class="sourceCode cpp"><span class="op">+</span></code> is <code class="sourceCode cpp">partial_sum</code>.</p>
+<p>One consideration here is how to process the first element. You might want <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span><span class="op">]</span></code> and you might want <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span><span class="op">]</span></code> (with one extra element), the latter could be called a <code class="sourceCode cpp">prescan</code>.</p>
+<h2 data-number="2.3" id="generate"><span class="header-section-number">2.3</span> <code class="sourceCode cpp">generate</code><a href="#generate" class="self-link"></a></h2>
+<p>C++23 has <code class="sourceCode cpp">std<span class="op">::</span>generator<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. There are two very closely related range factories in range-v3, which are basically:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">requires</span> std<span class="op">::</span>invocable<span class="op">&lt;</span>F<span class="op">&amp;&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">auto</span> generate<span class="op">(</span>F f<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span>std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="cf">while</span> <span class="op">(</span><span class="kw">true</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>        <span class="kw">co_yield</span> f<span class="op">()</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="op">}</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="op">}</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a>    <span class="kw">requires</span> std<span class="op">::</span>invocable<span class="op">&lt;</span>F<span class="op">&amp;&gt;</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">auto</span> generate_n<span class="op">(</span>F f, <span class="dt">int</span> n<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span>std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">!=</span> n; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>        <span class="kw">co_yield</span> f<span class="op">()</span>;</span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="op">}</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Note that the constraint here is <code class="sourceCode cpp">invocable</code>, not <code class="sourceCode cpp">regular_invocable</code>. The latter wouldn’t be very interesting - that’s <code class="sourceCode cpp">views<span class="op">::</span>repeat<span class="op">(</span>f<span class="op">())</span></code>. These factories are somewhat related to <code class="sourceCode cpp">scan</code> (in the sense that we have a mutable function that we’re repeatedly invoking) and also somewhat related to <code class="sourceCode cpp">cache_latest</code> (in the sense that the range-v3 implementation of both also violate [res.on.data.races]).</p>
+<p>Since with <code class="sourceCode cpp">views<span class="op">::</span>repeat</code>, we just used the same name for the infinite and finite versions, we should probably end up with just the one name for <code class="sourceCode cpp">views<span class="op">::</span>generate</code>.</p>
+<p>A similar factory in this vein is one that Haskell calls <code class="sourceCode cpp">iterate</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">auto</span> iterate<span class="op">(</span>F f, T x<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="cf">while</span> <span class="op">(</span><span class="kw">true</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>        <span class="kw">co_yield</span> x;</span>
+<span id="cb6-5"><a href="#cb6-5"></a>        x <span class="op">=</span> f<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb6-6"><a href="#cb6-6"></a>    <span class="op">}</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Whereas <code class="sourceCode cpp">generate<span class="op">(</span>f<span class="op">)</span></code> is the sequence <code class="sourceCode cpp"><span class="op">[</span>f<span class="op">()</span>, f<span class="op">()</span>, f<span class="op">()</span>, f<span class="op">()</span>, <span class="op">...]</span></code>, <code class="sourceCode cpp">iterate<span class="op">(</span>f, x<span class="op">)</span></code> is the sequence <code class="sourceCode cpp"><span class="op">[</span>x, f<span class="op">(</span>x<span class="op">)</span>, f<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span>, f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>x<span class="op">)))</span>, <span class="op">...]</span></code></p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="view-adjuncts"><span class="header-section-number">3</span> View Adjuncts<a href="#view-adjuncts" class="self-link"></a></h1>
+<p>In the C++23 plan, we listed several facilities that would greatly improve the usability of views: the ability for users to define first class pipe support, the ability to collect into a container (<code class="sourceCode cpp">ranges<span class="op">::</span>to</code>), and formatting.</p>
+<p>There are some other operations that we’ve seen come up regularly - operations that are not themselves views or algorithms, but would improve the quality of life around using the standard library (and other) range adpators.</p>
+<h2 data-number="3.1" id="more-function-objects"><span class="header-section-number">3.1</span> More Function Objects<a href="#more-function-objects" class="self-link"></a></h2>
+<p>The standard library has a lot of function objects, but there are still plenty of common ones that are missing.</p>
+<p>Some unary operators have no associated function object:</p>
+<ul>
+<li>indirection: <code class="sourceCode cpp"><span class="op">*</span>_1</code></li>
+<li>addressof: <code class="sourceCode cpp"><span class="op">&amp;</span>_1</code> (except if we add a function object for this, it should do <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>)</li>
+<li>prefix and postfix increment: <code class="sourceCode cpp"><span class="op">++</span>_1</code> or <code class="sourceCode cpp">_1<span class="op">++</span></code></li>
+<li>prefix and postfix decrement: <code class="sourceCode cpp"><span class="op">--</span>_1</code> or <code class="sourceCode cpp">_1<span class="op">--</span></code></li>
+</ul>
+<p>range-v3 has <code class="sourceCode cpp">views<span class="op">::</span>indirect</code>, for instance, which is basically an over-constrained <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(*</span>_1<span class="op">)</span></code>.</p>
+<p>Some binary operators have no associated function object:</p>
+<ul>
+<li>the shifts: <code class="sourceCode cpp">_1 <span class="op">&lt;&lt;</span> _2</code> and <code class="sourceCode cpp">_1 <span class="op">&gt;&gt;</span> _2</code></li>
+<li>all the compound assignments: <code class="sourceCode cpp">_1 <span class="op">+=</span> _2</code>, etc.</li>
+</ul>
+<p>The various language cases also have no associated function object. The most common of these is <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">&gt;(</span>_1<span class="op">)</span></code>.</p>
+<p>It is also worth considering whether we should actually add function objects for these, like <code class="sourceCode cpp">std<span class="op">::</span>indirect</code> (or <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>indirect</code>?) or whether we should try to bring back one of the earlier proposals that added nicer syntax for passing operators as function objects:</p>
+<ul>
+<li><span class="citation" data-cites="P0119R2">[<a href="#ref-P0119R2" role="doc-biblioref">P0119R2</a>]</span>: <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">((*))</span></code></li>
+<li><span class="citation" data-cites="P0834R0">[<a href="#ref-P0834R0" role="doc-biblioref">P0834R0</a>]</span>: <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">([]</span> <span class="op">*)</span></code></li>
+<li>use backticks: <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>`<span class="op">*</span>`<span class="op">)</span></code></li>
+</ul>
+<h2 data-number="3.2" id="more-function-adapters"><span class="header-section-number">3.2</span> More Function Adapters<a href="#more-function-adapters" class="self-link"></a></h2>
+<p>The standard library doesn’t have very many function adapters. There are two particularly notable ones that seem to come up frequently.</p>
+<ul>
+<li>function composition: an adapter <code class="sourceCode cpp">compose</code> such that <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>g<span class="op">(</span>x<span class="op">...))</span></code></li>
+<li>function projection: an adapter <code class="sourceCode cpp">proj</code> such that <code class="sourceCode cpp">proj<span class="op">(</span>p, f<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>p<span class="op">(</span>x<span class="op">)...)</span></code></li>
+</ul>
+<p>If we had a <code class="sourceCode cpp">proj</code> adapter, people wouldn’t need to ask for range adapters to support projections - they could just provide one.</p>
+<p>The difficulty with these is that both are syntactically heavy in C++, because our lambdas are verbose and we have difficulties passing functions around (see the two papers noted in the previous section).</p>
+<p>The other problem is that these adapters don’t really have obvious ordering. Should <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">)</span></code> mean <code class="sourceCode cpp">f<span class="op">(</span>g<span class="op">(</span>x<span class="op">))</span></code> or <code class="sourceCode cpp">g<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>? There’s good arguments for either. The same is true for <code class="sourceCode cpp">proj</code> (which is sometimes also called <code class="sourceCode cpp">on</code>).</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="algorithms"><span class="header-section-number">4</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
+<p>We improved the Ranges story on algorithms quite a bit in C++23 - both in terms of new and existing algorithms. But there’s a few more pretty interesting ones left on the table.</p>
+<h2 data-number="4.1" id="reduce"><span class="header-section-number">4.1</span> <code class="sourceCode cpp">reduce</code><a href="#reduce" class="self-link"></a></h2>
+<p>We talked about <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2214r2.html#rangesreduce"><code class="sourceCode cpp">reduce</code></a> in <span class="citation" data-cites="P2214R2">[<a href="#ref-P2214R2" role="doc-biblioref">P2214R2</a>]</span>. <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> is a version of <code class="sourceCode cpp">ranges<span class="op">::</span>fold_left</code> (<span class="citation" data-cites="P2322R6">[<a href="#ref-P2322R6" role="doc-biblioref">P2322R6</a>]</span>) that is parallelizable. It requires the binary operation to be associative (to allow chunks of the range to be reduced in praallel) and commutative (to allow those chunks to be arbitrarily combined). So we will need to figure out what constraints to add on this algorithm (see <span class="citation" data-cites="P1813R0">[<a href="#ref-P1813R0" role="doc-biblioref">P1813R0</a>]</span>) as well as how we determine what the return type is (see <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2322r6.html#return-type">this section</a> discussing the same problem for <code class="sourceCode cpp">ranges<span class="op">::</span>fold_left</code>).</p>
+<p>One thing is clear: <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> should <em>not</em> take a default binary operation <em>nor</em> a default initial parameter. The user needs to supply both.</p>
+<p>However, for convenience, we do propose providing <code class="sourceCode cpp">ranges<span class="op">::</span>sum<span class="op">(</span>r<span class="op">)</span></code> as <code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">(</span>r, plus<span class="op">{}</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;())</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>product<span class="op">(</span>r<span class="op">)</span></code> as <code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">(</span>r, multiplies<span class="op">{}</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;(</span><span class="dv">1</span><span class="op">))</span></code>.</p>
+<p>Note that naming is a problem here: some languages (Rust, Scala, Kotlin) have an algorithm that takes an initial value named <code class="sourceCode cpp">fold</code> and an algorithm that takes no initial value and returns and optional <code class="sourceCode cpp">reduce</code>. In C++23, we called these <code class="sourceCode cpp">fold_left</code> and <code class="sourceCode cpp">fold_left_first</code> since we’ve already had <code class="sourceCode cpp">std<span class="op">::</span>reduce</code> since C++17.</p>
+<p>But since our <code class="sourceCode cpp">reduce</code> differs from our <code class="sourceCode cpp">fold</code> not based on initial element but rather on operation requirements, it also leaves open the question for whether there should be a <code class="sourceCode cpp">reduce_first</code>. A good example there might be using <code class="sourceCode cpp">std<span class="op">::</span>max</code> as the reduction operator - which is both associative and commutative, but for some types may not have an obvious choice for the minimum.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P0119R2">
+<p>[P0119R2] Andrew Sutton. 2016-05-28. Overload sets as function arguments. <br />
+<a href="https://wg21.link/p0119r2">https://wg21.link/p0119r2</a></p>
+</div>
+<div id="ref-P0834R0">
+<p>[P0834R0] Michael Dominiak. 2017-10-16. Lifting overload sets into objects. <br />
+<a href="https://wg21.link/p0834r0">https://wg21.link/p0834r0</a></p>
+</div>
 <div id="ref-P1206R7">
 <p>[P1206R7] Corentin Jabot, Eric Niebler, Casey Carter. 2022-01-21. Conversions from ranges to containers. <br />
 <a href="https://wg21.link/p1206r7">https://wg21.link/p1206r7</a></p>
@@ -1022,6 +1207,10 @@ span.yellow {
 <div id="ref-P1255R9">
 <p>[P1255R9] Steve Downey. 2022-08-16. A view of 0 or 1 elements: views::maybe. <br />
 <a href="https://wg21.link/p1255r9">https://wg21.link/p1255r9</a></p>
+</div>
+<div id="ref-P1813R0">
+<p>[P1813R0] Christopher Di Bella. 2019-08-02. A Concept Design for the Numeric Algorithms. <br />
+<a href="https://wg21.link/p1813r0">https://wg21.link/p1813r0</a></p>
 </div>
 <div id="ref-P1899R3">
 <p>[P1899R3] Christopher Di Bella, Tim Song. 2022-07-11. stride_view. <br />
