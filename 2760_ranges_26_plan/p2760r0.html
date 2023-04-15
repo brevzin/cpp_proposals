@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-04-01" />
+  <meta name="dcterms.date" content="2023-04-15" />
   <title>A Plan for C++26 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-04-01</td>
+    <td>2023-04-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -580,6 +580,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#algorithms"><span class="toc-section-number">4</span> Algorithms<span></span></a>
 <ul>
 <li><a href="#reduce"><span class="toc-section-number">4.1</span> <code class="sourceCode cpp">reduce</code><span></span></a></li>
+<li><a href="#distance-and-advance"><span class="toc-section-number">4.2</span> <code class="sourceCode cpp">distance</code> and <code class="sourceCode cpp">advance</code><span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
@@ -1190,6 +1191,41 @@ span.yellow {
 <p>However, for convenience, we do propose providing <code class="sourceCode cpp">ranges<span class="op">::</span>sum<span class="op">(</span>r<span class="op">)</span></code> as <code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">(</span>r, plus<span class="op">{}</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;())</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>product<span class="op">(</span>r<span class="op">)</span></code> as <code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">(</span>r, multiplies<span class="op">{}</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;(</span><span class="dv">1</span><span class="op">))</span></code>.</p>
 <p>Note that naming is a problem here: some languages (Rust, Scala, Kotlin) have an algorithm that takes an initial value named <code class="sourceCode cpp">fold</code> and an algorithm that takes no initial value and returns and optional <code class="sourceCode cpp">reduce</code>. In C++23, we called these <code class="sourceCode cpp">fold_left</code> and <code class="sourceCode cpp">fold_left_first</code> since we’ve already had <code class="sourceCode cpp">std<span class="op">::</span>reduce</code> since C++17.</p>
 <p>But since our <code class="sourceCode cpp">reduce</code> differs from our <code class="sourceCode cpp">fold</code> not based on initial element but rather on operation requirements, it also leaves open the question for whether there should be a <code class="sourceCode cpp">reduce_first</code>. A good example there might be using <code class="sourceCode cpp">std<span class="op">::</span>max</code> as the reduction operator - which is both associative and commutative, but for some types may not have an obvious choice for the minimum.</p>
+<h2 data-number="4.2" id="distance-and-advance"><span class="header-section-number">4.2</span> <code class="sourceCode cpp">distance</code> and <code class="sourceCode cpp">advance</code><a href="#distance-and-advance" class="self-link"></a></h2>
+<p>We have <code class="sourceCode cpp">ranges<span class="op">::</span>size<span class="op">(</span>E<span class="op">)</span></code>, which gives you the size of a range in constant time. For non-sized ranges, if you want to know the size you have to use <code class="sourceCode cpp">ranges<span class="op">::</span>distance<span class="op">(</span>E<span class="op">)</span></code>. For non-sized ranges though, <code class="sourceCode cpp">ranges<span class="op">::</span>distance</code> has to iterate over the entire range, element by element, counting the number of iterator increments until the sentinel is reached.</p>
+<p>For many ranges, that’s really the best you can do anyway. But for some, you could do better. Consider <code class="sourceCode cpp">views<span class="op">::</span>join</code>. You could, potentially, do <em>much</em> better on <code class="sourceCode cpp">distance</code> in some cases: if I’m joining a range of sized ranges (like <code class="sourceCode cpp">vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>, although the outer one need not be sized, so even <code class="sourceCode cpp">forward_list<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>), you could compute the size of the overall range by summing the <code class="sourceCode cpp">size<span class="op">()</span></code> of each element. That’s still not <code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, so <code class="sourceCode cpp">ranges<span class="op">::</span>size</code> cannot do this, but it would be substantially more efficient than the naive <code class="sourceCode cpp">ranges<span class="op">::</span>distance</code> implementation.</p>
+<p>A similar argument holds for <code class="sourceCode cpp">ranges<span class="op">::</span>advance</code> for non-random-access iterators. Implementations already do provide special-case overloads for <code class="sourceCode cpp">std<span class="op">::</span>advance</code> in some cases, though they cannot do so for <code class="sourceCode cpp">ranges<span class="op">::</span>advance</code>. For instance, libstdc++ provides a <a href="https://github.com/gcc-mirror/gcc/blob/2e2b6ec156e3035297bd76edfd462d68d1f87314/libstdc%2B%2B-v3/include/bits/streambuf_iterator.h#L472-L513">custom implementation</a> for <code class="sourceCode cpp">std<span class="op">::</span>istreambuf_iterator<span class="op">&lt;</span>Char<span class="op">&gt;</span></code>. You cannot provide <code class="sourceCode cpp">it <span class="op">+</span> n</code>, because that cannot necessarily be constant time, but <code class="sourceCode cpp">advance</code> doesn’t have to be constant - it just has to get there (reduced for brevity):</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> _CharT, <span class="kw">typename</span> _Distance<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>advance<span class="op">(</span>istreambuf_iterator<span class="op">&lt;</span>_CharT<span class="op">&gt;&amp;</span> __i, _Distance __n<span class="op">)</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="op">{</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="cf">if</span> <span class="op">(</span>__n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>        <span class="cf">return</span>;</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a>    <span class="kw">using</span> traits_type <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb7-8"><a href="#cb7-8"></a>    <span class="kw">const</span> traits_type<span class="op">::</span>int_type __eof <span class="op">=</span> traits_type<span class="op">::</span>eof<span class="op">()</span>;</span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a>    streambuf_type<span class="op">*</span> __sb <span class="op">=</span> __i<span class="op">.</span>_M_sbuf;</span>
+<span id="cb7-11"><a href="#cb7-11"></a>    <span class="cf">while</span> <span class="op">(</span>__n <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>        streamsize __size <span class="op">=</span> __sb<span class="op">-&gt;</span>egptr<span class="op">()</span> <span class="op">-</span> __sb<span class="op">-&gt;</span>gptr<span class="op">()</span>;</span>
+<span id="cb7-13"><a href="#cb7-13"></a>        <span class="cf">if</span> <span class="op">(</span>__size <span class="op">&gt;</span> __n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>            __sb<span class="op">-&gt;</span>_M_in_cur <span class="op">+=</span> __n;</span>
+<span id="cb7-15"><a href="#cb7-15"></a>            <span class="cf">break</span>;</span>
+<span id="cb7-16"><a href="#cb7-16"></a>        <span class="op">}</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a></span>
+<span id="cb7-18"><a href="#cb7-18"></a>        __sb<span class="op">-&gt;</span>_M_in_cur <span class="op">+=</span> __size;</span>
+<span id="cb7-19"><a href="#cb7-19"></a>        __n <span class="op">-=</span> __size;</span>
+<span id="cb7-20"><a href="#cb7-20"></a>        <span class="cf">if</span> <span class="op">(</span>traits_type<span class="op">::</span>eq_int_type<span class="op">(</span>__sb<span class="op">-&gt;</span>underflow<span class="op">()</span>, __eof<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a>            <span class="cf">break</span>;</span>
+<span id="cb7-22"><a href="#cb7-22"></a>        <span class="op">}</span></span>
+<span id="cb7-23"><a href="#cb7-23"></a>    <span class="op">}</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a></span>
+<span id="cb7-25"><a href="#cb7-25"></a>    __i<span class="op">.</span>_M_c <span class="op">=</span> __eof;</span>
+<span id="cb7-26"><a href="#cb7-26"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The advance here is that if we want to <code class="sourceCode cpp">advance<span class="op">(</span>it, <span class="dv">10</span><span class="op">)</span></code>, we can simply right away check if there are at least 10 characters in the get area. If there are, we just advance by 10 and we’re done. If not, we have to go pull more characters. Either way, we end up significantly reducing the number of times that we have to go back to the stream - we’re not pulling one character at a time, we’re potentially consuming the entire get buffer at a time, for a significant reduction in the number of branches.</p>
+<p>This is more efficient for the same reason that the hypothetical implementation of <code class="sourceCode cpp">ranges<span class="op">::</span>distance</code> for a <code class="sourceCode cpp">join_view</code> could be more efficient.</p>
+<p>Currently, none of the non-constant-time algorithms (like <code class="sourceCode cpp">distance</code>, <code class="sourceCode cpp">advance</code>, and <code class="sourceCode cpp">next</code>) are customizable - but there could be clear benefits to making them so. Unfortunately, there are very clear costs to making them so: even more work that every range and iterator adaptor has to do.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P0119R2">

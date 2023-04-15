@@ -358,3 +358,48 @@ However, for convenience, we do propose providing `ranges::sum(r)` as `ranges::r
 Note that naming is a problem here: some languages (Rust, Scala, Kotlin) have an algorithm that takes an initial value named `fold` and an algorithm that takes no initial value and returns and optional `reduce`. In C++23, we called these `fold_left` and `fold_left_first` since we've already had `std::reduce` since C++17.
 
 But since our `reduce` differs from our `fold` not based on initial element but rather on operation requirements, it also leaves open the question for whether there should be a `reduce_first`. A good example there might be using `std::max` as the reduction operator - which is both associative and commutative, but for some types may not have an obvious choice for the minimum.
+
+## `distance` and `advance`
+
+We have `ranges::size(E)`, which gives you the size of a range in constant time. For non-sized ranges, if you want to know the size you have to use `ranges::distance(E)`. For non-sized ranges though, `ranges::distance` has to iterate over the entire range, element by element, counting the number of iterator increments until the sentinel is reached.
+
+For many ranges, that's really the best you can do anyway. But for some, you could do better. Consider `views::join`. You could, potentially, do _much_ better on `distance` in some cases: if I'm joining a range of sized ranges (like `vector<vector<T>>`, although the outer one need not be sized, so even `forward_list<vector<T>>`), you could compute the size of the overall range by summing the `size()` of each element. That's still not `O(1)`, so `ranges::size` cannot do this, but it would be substantially more efficient than the naive `ranges::distance` implementation.
+
+A similar argument holds for `ranges::advance` for non-random-access iterators. Implementations already do provide special-case overloads for `std::advance` in some cases, though they cannot do so for `ranges::advance`. For instance, libstdc++ provides a [custom implementation](https://github.com/gcc-mirror/gcc/blob/2e2b6ec156e3035297bd76edfd462d68d1f87314/libstdc%2B%2B-v3/include/bits/streambuf_iterator.h#L472-L513) for `std::istreambuf_iterator<Char>`. You cannot provide `it + n`, because that cannot necessarily be constant time, but `advance` doesn't have to be constant - it just has to get there (reduced for brevity):
+
+::: bq
+```cpp
+template<typename _CharT, typename _Distance>
+advance(istreambuf_iterator<_CharT>& __i, _Distance __n)
+{
+    if (__n == 0)
+        return;
+
+    using traits_type = /* ... */;
+    const traits_type::int_type __eof = traits_type::eof();
+
+    streambuf_type* __sb = __i._M_sbuf;
+    while (__n > 0) {
+        streamsize __size = __sb->egptr() - __sb->gptr();
+        if (__size > __n) {
+            __sb->_M_in_cur += __n;
+            break;
+        }
+
+        __sb->_M_in_cur += __size;
+        __n -= __size;
+        if (traits_type::eq_int_type(__sb->underflow(), __eof)) {
+            break;
+        }
+    }
+
+    __i._M_c = __eof;
+}
+```
+:::
+
+The advance here is that if we want to `advance(it, 10)`, we can simply right away check if there are at least 10 characters in the get area. If there are, we just advance by 10 and we're done. If not, we have to go pull more characters. Either way, we end up significantly reducing the number of times that we have to go back to the stream - we're not pulling one character at a time, we're potentially consuming the entire get buffer at a time, for a significant reduction in the number of branches.
+
+This is more efficient for the same reason that the hypothetical implementation of `ranges::distance` for a `join_view` could be more efficient.
+
+Currently, none of the non-constant-time algorithms (like `distance`, `advance`, and `next`) are customizable - but there could be clear benefits to making them so. Unfortunately, there are very clear costs to making them so: even more work that every range and iterator adaptor has to do.
