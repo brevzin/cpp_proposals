@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-04-16" />
+  <title>Checking if a union alternative is active</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Checking if a union alternative is active</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2641R3</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-04-16</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG, LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#active-member-of-a-union-or-something-more"><span class="toc-section-number">3.1</span> Active Member of a Union, or Something More?<span></span></a></li>
+<li><a href="#interesting-cases"><span class="toc-section-number">3.2</span> Interesting Cases<span></span></a>
+<ul>
+<li><a href="#nested-anonymous-unions"><span class="toc-section-number">3.2.1</span> Nested Anonymous Unions<span></span></a></li>
+<li><a href="#subobject"><span class="toc-section-number">3.2.2</span> Subobject<span></span></a></li>
+<li><a href="#other-rules"><span class="toc-section-number">3.2.3</span> Other rules<span></span></a></li>
+</ul></li>
+<li><a href="#alternative-naming"><span class="toc-section-number">3.3</span> Alternative Naming<span></span></a></li>
+<li><a href="#why-a-pointer-rather-than-a-reference"><span class="toc-section-number">3.4</span> Why a pointer rather than a reference?<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">3.5</span> Implementation Experience<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2641R2">[<a href="#ref-P2641R2" role="doc-biblioref">P2641R2</a>]</span>, added section explaining why this takes a pointer, not a reference.</p>
+<p>After discussion in Issaquah, generalizing the proposed facility to check for object lifetime, instead of just active member of union.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Let’s say you want to implement an <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code> such that <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>Optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;)</span> <span class="op">==</span> <span class="dv">1</span></code>. This is conceptually doable since <code class="sourceCode cpp"><span class="dt">bool</span></code> only has 2 states, but takes up a whole byte anyway, which leaves 254 bit patterns to use to express other criteria (i.e. that the <code class="sourceCode cpp">Optional</code> is disengaged).</p>
+<p>There are two ways to do this, neither of which have undefined behavior:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Union</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Reinterpret</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">struct</span> OptBool <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">union</span> <span class="op">{</span> <span class="dt">bool</span> b; <span class="dt">char</span> c; <span class="op">}</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>  OptBool<span class="op">()</span> <span class="op">:</span> c<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>  OptBool<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">:</span> b<span class="op">(</span>b<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>  <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a></span>
+<span id="cb1-11"><a href="#cb1-11"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="cf">return</span> b;</span>
+<span id="cb1-13"><a href="#cb1-13"></a>  <span class="op">}</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">struct</span> OptBool <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="dt">char</span> c;</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>  OptBool<span class="op">()</span> <span class="op">:</span> c<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>  OptBool<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">{</span> <span class="kw">new</span> <span class="op">(&amp;</span>c<span class="op">)</span> <span class="dt">bool</span><span class="op">(</span>b<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>  <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
+<span id="cb2-9"><a href="#cb2-9"></a>  <span class="op">}</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a>  <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="cf">return</span> <span class="op">(</span><span class="dt">bool</span><span class="op">&amp;)</span>c;</span>
+<span id="cb2-13"><a href="#cb2-13"></a>  <span class="op">}</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Both of these are fine: <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*</span></code> works because we are returning a reference to a very-much-live <code class="sourceCode cpp"><span class="dt">bool</span></code> in both cases, and <code class="sourceCode cpp">has_value<span class="op">()</span></code> works because we are allowed read through a <code class="sourceCode cpp"><span class="dt">char</span></code> (explicitly, per <a href="https://timsong-cpp.github.io/cppwp/n4868/basic.lval#11.3">[basic.lval]/11.3</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>).</p>
+<p>However, try to make this work in <code class="sourceCode cpp"><span class="kw">constexpr</span></code> and we immediately run into problems.</p>
+<p>The union solution has a problem with <code class="sourceCode cpp">has_value<span class="op">()</span></code> because we’re not allowed to read the non-active member of a union (<a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.9">[expr.const]/5.9</a>). <code class="sourceCode cpp">c</code> isn’t the active member of that union, so we can’t read from it, even though it’s <code class="sourceCode cpp"><span class="dt">char</span></code>.</p>
+<p>The reinterpet solution has two problems:</p>
+<ul>
+<li>the placement new into <code class="sourceCode cpp"><span class="op">&amp;</span>c</code> doesn’t work. Placement-new is explicitly disallowed by <a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.17">[expr.const]/5.17</a>. While we have <code class="sourceCode cpp">std<span class="op">::</span>construct_at<span class="op">()</span></code> now to work around the lack of placement-new, that API is typed and would require a <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">*</span></code>, which we don’t have.</li>
+<li><code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code> involves a <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span></code>, which is explicitly disallowed by <a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.15">[expr.const]/5.15</a>.</li>
+</ul>
+<p>This is unfortunate - we have a well-defined runtime solution that we cannot use during constant evaluation time. It’d be nice to do better.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>Supporting the reinterpret solution is expensive - since it requires the implementation to track multiple types for the same bytes. But supporting the union solution, because it’s more structured (and thus arguably better anyway), is very feasible. After all, our problem is localized to <code class="sourceCode cpp">has_value<span class="op">()</span></code>.</p>
+<p>During runtime, we do need to read from <code class="sourceCode cpp">c</code>. But during constant evaluation time, we actually don’t. What we need <code class="sourceCode cpp">c</code> for is to know whether <code class="sourceCode cpp">b</code> is the active member of the union or not. But the compiler already knows whether <code class="sourceCode cpp">b</code> is the active member or not. Indeed, that is precisely <em>why</em> it’s rejecting this implementation. What if we could simply ask the compiler this question?</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">struct</span> OptBool <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">union</span> <span class="op">{</span> <span class="dt">bool</span> b; <span class="dt">char</span> c; <span class="op">}</span>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a>  <span class="kw">constexpr</span> OptBool<span class="op">()</span> <span class="op">:</span> c<span class="op">(</span><span class="dv">2</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>  <span class="kw">constexpr</span> OptBool<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">:</span> b<span class="op">(</span>b<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> has_value<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>      <span class="cf">return</span> std<span class="op">::</span>is_within_lifetime<span class="op">(&amp;</span>b<span class="op">)</span>;</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>      <span class="cf">return</span> c <span class="op">!=</span> <span class="dv">2</span>;</span>
+<span id="cb3-12"><a href="#cb3-12"></a>    <span class="op">}</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a>  <span class="op">}</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> <span class="dt">bool</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a>    <span class="cf">return</span> b;</span>
+<span id="cb3-17"><a href="#cb3-17"></a>  <span class="op">}</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>There’s no particular implementation burden here - the compiler already needs to know this information. No language change is necessary to support this change either.</p>
+<h2 data-number="3.1" id="active-member-of-a-union-or-something-more"><span class="header-section-number">3.1</span> Active Member of a Union, or Something More?<a href="#active-member-of-a-union-or-something-more" class="self-link"></a></h2>
+<p>R0 and R1 of this paper <span class="citation" data-cites="P2641R1">[<a href="#ref-P2641R1" role="doc-biblioref">P2641R1</a>]</span> originally proposed a facility spelled <code class="sourceCode cpp">std<span class="op">::</span>is_active_member<span class="op">(</span>p<span class="op">)</span></code>, which asked if <code class="sourceCode cpp">p</code> was the active member of a union (or a subobject thereof). That is a sufficient question to solve the motivating example, but it’s also a very narrow one. Can we generalize further?</p>
+<p>To start with, asking if an object is the active member of a union is just a specific case of asking if an object is within its lifetime (as noted by Richard Smith). We see no need to be so specific with this facility, the more general question seems more useful.</p>
+<p>But then the question becomes: do we go further? The most broad question would be to ask if evaluating an expression, any expression, as a constant would actually succeed. Perhaps such a (language) facility could be spelled as follows (mirroring the <code class="sourceCode cpp"><span class="kw">requires</span></code> expression that we already have):</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="cf">if</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="op">{</span> e; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    <span class="co">// evaluating e as a constant succeeds</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This is probably useful, specifiable, and implementable. Would this be the right shape for this facility? One issue here might be that if <code class="sourceCode cpp">e</code> is expensive to evaluate, you probably don’t want to first check if you can evaluate it and then, if you <em>can</em> evaluate it, actually evaluate it - this may require the compiler to actually evaluate it twice (not ideal) and definitely requires the user to type it twice (also not ideal).</p>
+<p>The closest parallel to the desired semantics might be (as Nat Goodspeed pointed out) exceptions: you <code class="sourceCode cpp"><span class="cf">try</span></code> to evaluate an expression, but allowing yourself to <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="cf">catch</span></code> evaluation failures. That seems like the right semantic, and is actually a really interesting thing to consider. But that’s… a large thing to think about, with a lot of implications. It may be something we may want to pursue, and I’m sure sufficiently clever people can come up with interesting use-cases.</p>
+<p>But for this problem, we have a fairly simple solution that involves no change in language semantics, simply exposing to the user something the compiler already knows. I think the tiny library facility is the right approach here. At least for now.</p>
+<h2 data-number="3.2" id="interesting-cases"><span class="header-section-number">3.2</span> Interesting Cases<a href="#interesting-cases" class="self-link"></a></h2>
+<p>Let’s go over some interesting cases to flesh out how this facility should behave. With the older revisions of this paper, where the facility was specifically asking the question “is this an active member of a union?”, these questions ended up being potentially subtle.</p>
+<p>But with generalizing the facility to simply asking if an object is within its lifetime, they become more straightforward to answer.</p>
+<h3 data-number="3.2.1" id="nested-anonymous-unions"><span class="header-section-number">3.2.1</span> Nested Anonymous Unions<a href="#nested-anonymous-unions" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">union</span> Outer <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="dt">int</span> x;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    <span class="dt">unsigned</span> <span class="dt">int</span> y;</span>
+<span id="cb5-5"><a href="#cb5-5"></a>  <span class="op">}</span>;</span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="dt">float</span> f;</span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="op">}</span>;</span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="kw">consteval</span> <span class="dt">bool</span> f<span class="op">(</span>Outer <span class="op">*</span>p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a>  <span class="cf">return</span> std<span class="op">::</span>is_within_lifetime<span class="op">(&amp;</span>p<span class="op">-&gt;</span>x<span class="op">)</span>;</span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If the active member of <code class="sourceCode cpp">p</code> is actually <code class="sourceCode cpp">f</code>, then not only is <code class="sourceCode cpp">p<span class="op">-&gt;</span>x</code> not the active member of <em>its</em> union but the union that it’s a member of isn’t even itself an active member. What should happen in this case?</p>
+<p>This should be valid and return <code class="sourceCode cpp"><span class="kw">false</span></code>. It doesn’t matter how many layers of inactivity there are - <code class="sourceCode cpp">p<span class="op">-&gt;</span>x</code> isn’t the active member of a union, and thus is not within its lifetime, and that’s what we’re asking about.</p>
+<h3 data-number="3.2.2" id="subobject"><span class="header-section-number">3.2.2</span> Subobject<a href="#subobject" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>      <span class="dt">int</span> i;</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="op">}</span> n;</span>
+<span id="cb6-6"><a href="#cb6-6"></a>  <span class="op">}</span>;</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="op">}</span>;</span>
+<span id="cb6-8"><a href="#cb6-8"></a></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="kw">consteval</span> <span class="dt">bool</span> f<span class="op">(</span>S s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>  <span class="cf">return</span> std<span class="op">::</span>is_within_lifetime<span class="op">(&amp;</span>s<span class="op">.</span>n<span class="op">.</span>i<span class="op">)</span>;</span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, <code class="sourceCode cpp">s<span class="op">.</span>n<span class="op">.</span>i</code> is not a variant member of a union - it’s a subobject of <code class="sourceCode cpp">s<span class="op">.</span>n</code>. But that no longer matters - if <code class="sourceCode cpp">s<span class="op">.</span>n</code> is within its lifetime, then <code class="sourceCode cpp">s<span class="op">.</span>n<span class="op">.</span>i</code> here would be too.</p>
+<h3 data-number="3.2.3" id="other-rules"><span class="header-section-number">3.2.3</span> Other rules<a href="#other-rules" class="self-link"></a></h3>
+<p>There’s a similar rule in this space, <a href="https://timsong-cpp.github.io/cppwp/n4868/expr.const#5.8">[expr.const]/5.8</a></p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">(5.8)</a></span> an lvalue-to-rvalue conversion unless it is applied to</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(5.8.1)</a></span> a non-volatile glvalue that refers to an object that is usable in constant expressions, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(5.8.2)</a></span> a non-volatile glvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of E;</li>
+</ul>
+</blockquote>
+<p>With this revision, the facility exactly matches this bullet: “is this a pointer that I can read during constant evaluation?”</p>
+<h2 data-number="3.3" id="alternative-naming"><span class="header-section-number">3.3</span> Alternative Naming<a href="#alternative-naming" class="self-link"></a></h2>
+<p>Should the name reflect that this facility can only be used during constant evaluation (<code class="sourceCode cpp">std<span class="op">::</span>is_consteval_within_lifetime</code>) or not (<code class="sourceCode cpp">std<span class="op">::</span>is_within_lifetime</code>)?</p>
+<p>It would help to make the name clearer from the call site that it has limited usage. But it is already a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function, so it’s not like you could misuse it.</p>
+<h2 data-number="3.4" id="why-a-pointer-rather-than-a-reference"><span class="header-section-number">3.4</span> Why a pointer rather than a reference?<a href="#why-a-pointer-rather-than-a-reference" class="self-link"></a></h2>
+<p>This proposal is for asking <code class="sourceCode cpp">is_within_lifetime<span class="op">(&amp;</span>x<span class="op">)</span></code> rather than <code class="sourceCode cpp">is_within_lifetime<span class="op">(</span>x<span class="op">)</span></code>. Why a pointer, rather than a reference?</p>
+<p>There are a few arguments in favor of a pointer. First, we just don’t have to worry about passing in a temporary. Second, many of the other low-level manipulation facilities also take pointers (like <code class="sourceCode cpp">construct_at</code>, <code class="sourceCode cpp">start_lifetime_as</code>, etc.). Third, there’s this whole other set of questions about reference binding validity that come up(<span class="citation" data-cites="CWG453">[<a href="#ref-CWG453" role="doc-biblioref">CWG453</a>]</span>).</p>
+<p>It’s not like these are insurmountable difficulties, but the pointer API just doesn’t have them, and isn’t exactly either burdensome or inconsistent. So is it even worth dealing with them?</p>
+<h2 data-number="3.5" id="implementation-experience"><span class="header-section-number">3.5</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>Daveed Vandevoorde has implemented R1 of this proposal in EDG. There’s no real implementation burden difference between R1 and R2.</p>
+<p>As pointed out by Johel Ernesto Guerrero Peña and Ed Catmur, this facility basically already works in <a href="https://godbolt.org/z/n4za9KzPr">gcc and clang</a>, which has a builtin function (<a href="https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fconstant_005fp"><code class="sourceCode cpp"><span class="fu">__builtin_constant_p</span></code></a>) that be used to achieve the same behavior.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>Add to <span>21.3.3 <a href="https://wg21.link/meta.type.synop">[meta.type.synop]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1"></a>// all freestanding</span>
+<span id="cb7-2"><a href="#cb7-2"></a>namespace std {</span>
+<span id="cb7-3"><a href="#cb7-3"></a>  // ...</span>
+<span id="cb7-4"><a href="#cb7-4"></a></span>
+<span id="cb7-5"><a href="#cb7-5"></a>  // [meta.const.eval], constant evaluation context</span>
+<span id="cb7-6"><a href="#cb7-6"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="va">+   consteval bool is_within_lifetime(T*) noexcept;</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>And add to <span>21.3.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span> (possibly this section should just change name, but it feels like these two should just go together):</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>constexpr bool is_constant_evaluated() noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>  <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>  <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="op">}</span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">2</a></span> [<em>Example 1</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> f<span class="op">(</span><span class="dt">unsigned</span> <span class="dt">char</span> <span class="op">*</span>p, <span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>  <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>is_constant_evaluated<span class="op">())</span> <span class="op">{</span>           <span class="co">// should not be a constexpr if statement</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>; k<span class="op">&lt;</span>n; <span class="op">++</span>k<span class="op">)</span> p<span class="op">[</span>k<span class="op">]</span> <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>    memset<span class="op">(</span>p, <span class="dv">0</span>, n<span class="op">)</span>;                            <span class="co">// not a core constant expression</span></span>
+<span id="cb10-6"><a href="#cb10-6"></a>  <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="op">}</span></span></code></pre></div>
+<p>— <em>end example</em>]</p>
+<div class="addu">
+<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>template&lt;class T&gt;</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  consteval bool is_within_lifetime(T* p) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">3</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">p</code> is a pointer to an object that is within its lifetime ([basic.life]); otherwise, <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">4</a></span> <em>Remarks</em>: During the evaluation of an expression <code class="sourceCode cpp">E</code> as a core constant expression, a call to this function is not a core constant expression if <code class="sourceCode cpp">p</code> points to an object whose complete object’s lifetime did not begin within <code class="sourceCode cpp">E</code> and is not usable in constant expressions.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">5</a></span> [<em>Example 2</em>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>struct OptBool {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  union { bool b; char c; };</span>
+<span id="cb12-3"><a href="#cb12-3"></a></span>
+<span id="cb12-4"><a href="#cb12-4"></a>  constexpr OptBool() : c(2) { }</span>
+<span id="cb12-5"><a href="#cb12-5"></a>  constexpr OptBool(bool b) : b(b) { }</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a>  constexpr auto has_value() const -&gt; bool {</span>
+<span id="cb12-8"><a href="#cb12-8"></a>    if consteval {</span>
+<span id="cb12-9"><a href="#cb12-9"></a>      return std::is_within_lifetime(&amp;b);   // during constant evaluation, cannot read from c</span>
+<span id="cb12-10"><a href="#cb12-10"></a>    } else {</span>
+<span id="cb12-11"><a href="#cb12-11"></a>      return c != 2;                        // during runtime, must read from c</span>
+<span id="cb12-12"><a href="#cb12-12"></a>    }</span>
+<span id="cb12-13"><a href="#cb12-13"></a>  }</span>
+<span id="cb12-14"><a href="#cb12-14"></a></span>
+<span id="cb12-15"><a href="#cb12-15"></a>  constexpr auto operator*() -&gt; bool&amp; {</span>
+<span id="cb12-16"><a href="#cb12-16"></a>    return b;</span>
+<span id="cb12-17"><a href="#cb12-17"></a>  }</span>
+<span id="cb12-18"><a href="#cb12-18"></a>};</span>
+<span id="cb12-19"><a href="#cb12-19"></a></span>
+<span id="cb12-20"><a href="#cb12-20"></a>constexpr OptBool disengaged;</span>
+<span id="cb12-21"><a href="#cb12-21"></a>constexpr OptBool engaged(true);</span>
+<span id="cb12-22"><a href="#cb12-22"></a>static_assert(!disengaged.has_value());</span>
+<span id="cb12-23"><a href="#cb12-23"></a>static_assert(engaged.has_value());</span>
+<span id="cb12-24"><a href="#cb12-24"></a>static_assert(*engaged);</span></code></pre></div>
+<ul>
+<li><em>end example</em>]</li>
+</ul>
+</div>
+</blockquote>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-CWG453">
+<p>[CWG453] Gennaro Prota. 2004-01-18. References may only bind to “valid” objects. <br />
+<a href="https://wg21.link/cwg453">https://wg21.link/cwg453</a></p>
+</div>
+<div id="ref-N4868">
+<p>[N4868] Richard Smith. 2020-10-18. Working Draft, Standard for Programming Language C++. <br />
+<a href="https://wg21.link/n4868">https://wg21.link/n4868</a></p>
+</div>
+<div id="ref-P2641R1">
+<p>[P2641R1] Barry Revzin. 2022-10-11. Checking if a union alternative is active. <br />
+<a href="https://wg21.link/p2641r1">https://wg21.link/p2641r1</a></p>
+</div>
+<div id="ref-P2641R2">
+<p>[P2641R2] Barry Revzin. 2023-02-07. Checking if a union alternative is active. <br />
+<a href="https://wg21.link/p2641r2">https://wg21.link/p2641r2</a></p>
+</div>
+</div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>All references to this paper are to <span class="citation" data-cites="N4868">[<a href="#ref-N4868" role="doc-biblioref">N4868</a>]</span>, C++20 for convenient and stable linking.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</div>
+</div>
+</body>
+</html>
