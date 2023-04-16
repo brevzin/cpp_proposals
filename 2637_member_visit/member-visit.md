@@ -1,6 +1,6 @@
 ---
 title: "Member `visit`"
-document: P2637R1
+document: P2637R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2637R1], deprecating `std::visit_format_arg` and thus adding a feature-test macro.
 
 Since [@P2637R0], dropped `apply`, added member `visit<R>` to `basic_format_arg`, and added support for types privately inheriting from `std::variant` for member `visit` and `visit<R>`
 
@@ -91,6 +93,14 @@ auto format(S s, format_context& ctx) {
 :::
 
 The proposed name here is just `visit` (rather than `visit_format_arg`), since as a member function we don't need the longer name for differentiation.
+
+In an [LEWG telecon](https://wiki.edg.com/bin/view/Wg21telecons2023/P2637#Library-Evolution-2023-04-11), since adding a member `visit` to `basic_format_arg` is just strictly better than `std::visit_format_arg`, there's no reason to preserve the existing one (which was only added as a non-member function for consistency with `std::visit`), so LEWG preferred to deprecate `std::visit_format_arg` as part of this paper with a vote of:
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|1|8|5|1|1|
+
+Because `std::visit_format_arg` is being deprecated, now we do require a feature-test macro for this change - which previously wouldn't have needed one.
 
 ## Implementation
 
@@ -184,6 +194,23 @@ template<class R, class Self, class Visitor>
 :::
 :::
 
+Remove from [format.syn]{.sref} (this is now deprecated):
+
+::: bq
+```diff
+namespace std {
+  // ...
+  // [format.arguments], arguments
+  // [format.arg], class template basic_format_arg
+  template<class Context> class basic_format_arg;
+
+- template<class Visitor, class Context>
+-   decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
+  // ...
+}
+```
+:::
+
 Change the example in [format.context]{.sref}/8:
 
 ::: bq
@@ -257,41 +284,71 @@ And:
 ```
 explicit operator bool() const noexcept;
 ```
-[15]{.pnum} *Returns*: `!holds_­alternative<monostate>(value)`.
+[7]{.pnum} *Returns*: `!holds_­alternative<monostate>(value)`.
 
 ::: addu
 ```
 template<class Visitor>
   decltype(auto) visit(this basic_format_arg arg, Visitor&& vis);
 ```
-[16]{.pnum} *Effects*: Equivalent to `return arg.value.visit(std::forward<Visitor>(vis));`
+
+[#]{.pnum} *Effects*: Equivalent to `return arg.value.visit(std::forward<Visitor>(vis));`
 
 ```
 template<class R, class Visitor>
   R visit(this basic_format_arg arg, Visitor&& vis);
-
 ```
 
 [#]{.pnum} *Effects*: Equivalent to `return arg.value.visit<R>(std::forward<Visitor>(vis));`
 :::
 :::
 
-## Feature-test macro
-
-There isn't much reason to provide one, since would anybody write this?
+And remove [format.arg]{.sref}/13:
 
 ::: bq
-```cpp
-auto result =
-  #ifdef __cpp_lib_member_visit // or whatever
-    var.visit(f);
-  #else
-    std::visit(f, var);
-  #endif
+::: rm
+```
+template<class Visitor, class Context>
+  decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
+```
+[13]{.pnum} *Effects*: Equivalent to `return visit(std​::​forward<Visitor>(vis), arg.value);`
+:::
+:::
+
+Add a new clause in [depr]{.sref}: [depr.format]:
+
+::: bq
+::: addu
+[1]{.pnum} The header `<format>` has the following addition:
+```
+namespace std {
+  template<class Visitor, class Context>
+    decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
+}
+```
+
+```
+template<class Visitor, class Context>
+  decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
+```
+[2]{.pnum} *Effects*: Equivalent to `return visit(std​::​forward<Visitor>(vis), arg.value);`
+:::
+:::
+
+## Feature-test macro
+
+Bump both `__cpp_lib_variant` and `__cpp_lib_format` in [version.syn]{.sref}
+
+::: bq
+```diff
+- #define __cpp_lib_format @[202207L]{.diffdel}@ // also in <format>
++ #define __cpp_lib_format @[2023XXL]{.diffins}@ // also in <format>
+
+- #define __cpp_lib_variant @[202106L]{.diffdel}@ // also in <variant>
++ #define __cpp_lib_variant @[2023XXL]{.diffins}@ // also in <variant>
 ```
 :::
 
-If you have to write the old code, the new code doesn't give you any benefit. Moreover, a lot of visits are more complicated than just `f` - at the very least the're a lambda, but potentially lots of lambdas.
 
 ---
 references:
