@@ -1,6 +1,6 @@
 ---
 title: "Type-checking format args"
-document: P2757R1
+document: P2757R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2757R1], added feature-test macro.
 
 Since [@P2757R0], reverted `basic_format_parse_context` constructor and removed `check_dynamic_spec_arithmetic` - "arithmetic" types technically include `bool` and `char` per the language wording, but those are very unlikely to be actually desired in the context where you're asking for something that could also be an `int` or a `double`. Can always be added back in some form if dynamic floating point argument use-cases surface.
 
@@ -371,6 +373,18 @@ check_dynamic_spec<const char_type*, basic_string_view<char_type>>(id);
 ```
 :::
 :::
+
+## Feature-test Macro
+
+Bump `__cpp_lib_format` in [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_lib_format @[202207L]{.diffdel}@ // also in <format>
++ #define __cpp_lib_format @[2023XXL]{.diffins}@ // also in <format>
+```
+:::
+
 
 # Acknowledgements
 

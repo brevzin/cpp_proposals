@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-04-16" />
+  <title>Type-checking format args</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Type-checking format args</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2757R2</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-04-16</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#the-parse-context"><span class="toc-section-number">2.1</span> The parse context<span></span></a></li>
+<li><a href="#implementation-in-fmt"><span class="toc-section-number">2.2</span> Implementation in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code><span></span></a></li>
+<li><a href="#the-constructor-for-basic_format_parse_context"><span class="toc-section-number">2.3</span> The constructor for <code class="sourceCode cpp">basic_format_parse_context</code><span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording"><span class="toc-section-number">3.1</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro"><span class="toc-section-number">3.2</span> Feature-test Macro<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgements"><span class="toc-section-number">4</span> Acknowledgements<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2757R1">[<span class="citeproc-not-found" data-reference-id="P2757R1"><strong>???</strong></span>]</span>, added feature-test macro.</p>
+<p>Since <span class="citation" data-cites="P2757R0">[<a href="#ref-P2757R0" role="doc-biblioref">P2757R0</a>]</span>, reverted <code class="sourceCode cpp">basic_format_parse_context</code> constructor and removed <code class="sourceCode cpp">check_dynamic_spec_arithmetic</code> - “arithmetic” types technically include <code class="sourceCode cpp"><span class="dt">bool</span></code> and <code class="sourceCode cpp"><span class="dt">char</span></code> per the language wording, but those are very unlikely to be actually desired in the context where you’re asking for something that could also be an <code class="sourceCode cpp"><span class="dt">int</span></code> or a <code class="sourceCode cpp"><span class="dt">double</span></code>. Can always be added back in some form if dynamic floating point argument use-cases surface.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p><code class="sourceCode cpp">std<span class="op">::</span>format</code> supports compile-time checking of format strings <span class="citation" data-cites="P2216R3">[<a href="#ref-P2216R3" role="doc-biblioref">P2216R3</a>]</span>, which is a fantastic feature. A compile-time error is always better than a runtime error, and we can see that happen in a lot of cases:</p>
+<table>
+<colgroup>
+<col style="width: 50%"></col>
+<col style="width: 50%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>expression</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>result</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{:d}&quot;</span>, <span class="st">&quot;I am not a number&quot;</span><span class="op">)</span></code></td>
+<td>compile error (invalid specifier for strings)</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{:7^*}&quot;</span>, <span class="st">&quot;hello&quot;</span><span class="op">)</span></code></td>
+<td>compile error (should be <code class="sourceCode cpp"><span class="op">*^</span><span class="dv">7</span></code>)</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{:&gt;10}&quot;</span>, <span class="st">&quot;hello&quot;</span><span class="op">)</span></code></td>
+<td>ok</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{0:&gt;{1}}&quot;</span>, <span class="st">&quot;hello&quot;</span>, <span class="dv">10</span><span class="op">)</span></code></td>
+<td>ok</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{0:&gt;{2}}&quot;</span>, <span class="st">&quot;hello&quot;</span>, <span class="dv">10</span><span class="op">)</span></code></td>
+<td>compile error (argument <code class="sourceCode cpp"><span class="dv">2</span></code> is out of bounds)</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{:&gt;{}}&quot;</span>, <span class="st">&quot;hello&quot;</span><span class="op">)</span></code></td>
+<td>compile error (missing an argument for dynamic width)</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;{:&gt;{}}&quot;</span>, <span class="st">&quot;hello&quot;</span>, <span class="st">&quot;10&quot;</span><span class="op">)</span></code></td>
+<td><span style="color:#bf0303">runtime error</span></td>
+</tr>
+</tbody>
+</table>
+<p>Wait, why is the last one a runtime error instead of compile-time error?</p>
+<h2 data-number="2.1" id="the-parse-context"><span class="header-section-number">2.1</span> The parse context<a href="#the-parse-context" class="self-link"></a></h2>
+<p><code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;::</span>parse</code> gets an instance of <code class="sourceCode cpp">basic_format_parse_context</code>, which looks like this (<span>22.14.6.5 <a href="https://wg21.link/format.parse.ctx">[format.parse.ctx]</a></span>):</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> charT<span class="op">&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  <span class="kw">class</span> basic_format_parse_context <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">using</span> char_type <span class="op">=</span> charT;</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="kw">using</span> const_iterator <span class="op">=</span> <span class="kw">typename</span> basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;::</span>const_iterator;</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="kw">using</span> iterator <span class="op">=</span> const_iterator;</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="kw">private</span><span class="op">:</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    iterator begin_;                                    <span class="co">// exposition only</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>    iterator end_;                                      <span class="co">// exposition only</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="kw">enum</span> indexing <span class="op">{</span> unknown, manual, automatic <span class="op">}</span>;       <span class="co">// exposition only</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>    indexing indexing_;                                 <span class="co">// exposition only</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="dt">size_t</span> next_arg_id_;                                <span class="co">// exposition only</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="dt">size_t</span> num_args_;                                   <span class="co">// exposition only</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a></span>
+<span id="cb1-17"><a href="#cb1-17"></a>  <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a>    <span class="kw">constexpr</span> <span class="kw">explicit</span> basic_format_parse_context<span class="op">(</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">&gt;</span> fmt,</span>
+<span id="cb1-19"><a href="#cb1-19"></a>                                                  <span class="dt">size_t</span> num_args <span class="op">=</span> <span class="dv">0</span><span class="op">)</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-20"><a href="#cb1-20"></a>    basic_format_parse_context<span class="op">(</span><span class="kw">const</span> basic_format_parse_context<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb1-21"><a href="#cb1-21"></a>    basic_format_parse_context<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="kw">const</span> basic_format_parse_context<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span>;</span>
+<span id="cb1-22"><a href="#cb1-22"></a></span>
+<span id="cb1-23"><a href="#cb1-23"></a>    <span class="kw">constexpr</span> const_iterator begin<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-24"><a href="#cb1-24"></a>    <span class="kw">constexpr</span> const_iterator end<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
+<span id="cb1-25"><a href="#cb1-25"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> advance_to<span class="op">(</span>const_iterator it<span class="op">)</span>;</span>
+<span id="cb1-26"><a href="#cb1-26"></a></span>
+<span id="cb1-27"><a href="#cb1-27"></a>    <span class="kw">constexpr</span> <span class="dt">size_t</span> next_arg_id<span class="op">()</span>;</span>
+<span id="cb1-28"><a href="#cb1-28"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> check_arg_id<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span>
+<span id="cb1-29"><a href="#cb1-29"></a>  <span class="op">}</span>;</span>
+<span id="cb1-30"><a href="#cb1-30"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The user facing logic here is divided into two parts:</p>
+<ul>
+<li>access to the format string itself (<code class="sourceCode cpp">begin<span class="op">()</span></code>, <code class="sourceCode cpp">end<span class="op">()</span></code>, and <code class="sourceCode cpp">advance_to<span class="op">(</span>it<span class="op">)</span></code>)</li>
+<li>access to the arguments (<code class="sourceCode cpp">next_arg_id<span class="op">()</span></code> and <code class="sourceCode cpp">check_arg_id<span class="op">(</span>id<span class="op">)</span></code>)</li>
+</ul>
+<p>Note that the parse context here doesn’t get access to the arguments themselves, it only knows how many arguments there are and, if doing automatic indexing, what the current argument index is. This portion of the API can be used to validate that dynamic arguments <em>exist</em> (ensuring that two of the rows above fail) and, for automatic indexing, storing the argument index for future access in <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;::</span>format</code>.</p>
+<p>The parse context doesn’t get access to the arguments largely for code size reasons, and also because now that <code class="sourceCode cpp">parse<span class="op">()</span></code> is invoked during constant evaluation time, it’s unlikely or simply impossible to provide the arguments at that time anyway.</p>
+<p>But this API has the limitation that it cannot currently allow diagnosing that last line:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a>format<span class="op">(</span><span class="st">&quot;{:&gt;{}}&quot;</span>, <span class="st">&quot;hello&quot;</span>, <span class="st">&quot;10&quot;</span><span class="op">)</span></span></code></pre></div>
+</blockquote>
+<p>Here, the issue is that we have a dynamic width (the <code class="sourceCode cpp"><span class="op">{}</span></code> part), which refers to the next argument, which is <code class="sourceCode cpp"><span class="st">&quot;10&quot;</span></code>. But for <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code>, the width needs to be integral, which <code class="sourceCode cpp"><span class="st">&quot;10&quot;</span></code> is not. Now, we don’t need to know the <em>value</em> of the argument in order to reject this case - we only need to know the type. Which we definitely have. So maybe we can do better?</p>
+<h2 data-number="2.2" id="implementation-in-fmt"><span class="header-section-number">2.2</span> Implementation in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code><a href="#implementation-in-fmt" class="self-link"></a></h2>
+<p>The <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> library actually <em>does</em> reject this example at compile time. It does so by constructing a different kind of parse context that is only used at compile time: the appropriately-named <code class="sourceCode cpp">compile_parse_context</code>. This is a <code class="sourceCode cpp">basic_format_parse_context</code> that additionally stores information about what <em>types</em> the arguments are, except type-erased to the set that of types that is correctly stored in the <code class="sourceCode cpp">variant</code> in <code class="sourceCode cpp">basic_format_context</code>.</p>
+<p>The relevant API of <code class="sourceCode cpp">compile_parse_context</code> looks <a href="https://github.com/fmtlib/fmt/blob/9.1.0/include/fmt/core.h">like this</a> (in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>, <code class="sourceCode cpp">basic_format_parse_context</code> has a second template parameter that is the error handler. It’s not relevant for this example. The rest of the code is slightly altered for paper-ness):</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">enum</span> <span class="kw">class</span> type <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    none_type,</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="co">// Integer types should go first,</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    int_type,</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    uint_type,</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    long_long_type,</span>
+<span id="cb3-7"><a href="#cb3-7"></a>    ulong_long_type,</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    int128_type,</span>
+<span id="cb3-9"><a href="#cb3-9"></a>    uint128_type,</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    bool_type,</span>
+<span id="cb3-11"><a href="#cb3-11"></a>    char_type,</span>
+<span id="cb3-12"><a href="#cb3-12"></a>    last_integer_type <span class="op">=</span> char_type,</span>
+<span id="cb3-13"><a href="#cb3-13"></a>    <span class="co">// followed by floating-point types.</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>    float_type,</span>
+<span id="cb3-15"><a href="#cb3-15"></a>    double_type,</span>
+<span id="cb3-16"><a href="#cb3-16"></a>    long_double_type,</span>
+<span id="cb3-17"><a href="#cb3-17"></a>    last_numeric_type <span class="op">=</span> long_double_type,</span>
+<span id="cb3-18"><a href="#cb3-18"></a>    cstring_type,</span>
+<span id="cb3-19"><a href="#cb3-19"></a>    string_type,</span>
+<span id="cb3-20"><a href="#cb3-20"></a>    pointer_type,</span>
+<span id="cb3-21"><a href="#cb3-21"></a>    custom_type</span>
+<span id="cb3-22"><a href="#cb3-22"></a><span class="op">}</span>;</span>
+<span id="cb3-23"><a href="#cb3-23"></a></span>
+<span id="cb3-24"><a href="#cb3-24"></a><span class="kw">constexpr</span> <span class="kw">auto</span> is_integral_type<span class="op">(</span>type t<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a>    <span class="cf">return</span> t <span class="op">&gt;</span> type<span class="op">::</span>none_type <span class="op">&amp;&amp;</span> t <span class="op">&lt;=</span> type<span class="op">::</span>last_integer_type;</span>
+<span id="cb3-26"><a href="#cb3-26"></a><span class="op">}</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a></span>
+<span id="cb3-28"><a href="#cb3-28"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Char, <span class="kw">typename</span> ErrorHandler<span class="op">&gt;</span></span>
+<span id="cb3-29"><a href="#cb3-29"></a><span class="kw">class</span> basic_format_parse_context <span class="op">:</span> <span class="kw">private</span> ErrorHandler <span class="op">{</span></span>
+<span id="cb3-30"><a href="#cb3-30"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-31"><a href="#cb3-31"></a>    <span class="co">// these are the same as in std</span></span>
+<span id="cb3-32"><a href="#cb3-32"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> next_arg_id<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span>;</span>
+<span id="cb3-33"><a href="#cb3-33"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> check_arg_id<span class="op">(</span><span class="dt">int</span> arg_id<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb3-34"><a href="#cb3-34"></a></span>
+<span id="cb3-35"><a href="#cb3-35"></a>    <span class="co">// but this one is new</span></span>
+<span id="cb3-36"><a href="#cb3-36"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> check_dynamic_spec<span class="op">(</span><span class="dt">int</span> arg_id<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb3-37"><a href="#cb3-37"></a><span class="op">}</span>;</span>
+<span id="cb3-38"><a href="#cb3-38"></a></span>
+<span id="cb3-39"><a href="#cb3-39"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Char, <span class="kw">typename</span> ErrorHandler<span class="op">&gt;</span></span>
+<span id="cb3-40"><a href="#cb3-40"></a><span class="kw">class</span> compile_parse_context <span class="op">:</span> basic_format_parse_context<span class="op">&lt;</span>Char, ErrorHandler<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb3-41"><a href="#cb3-41"></a>    std<span class="op">::</span>span<span class="op">&lt;</span>type <span class="kw">const</span><span class="op">&gt;</span> types_;</span>
+<span id="cb3-42"><a href="#cb3-42"></a></span>
+<span id="cb3-43"><a href="#cb3-43"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-44"><a href="#cb3-44"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> arg_type<span class="op">(</span><span class="dt">int</span> id<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> type <span class="op">{</span> <span class="cf">return</span> types_<span class="op">[</span>id<span class="op">]</span>; <span class="op">}</span></span>
+<span id="cb3-45"><a href="#cb3-45"></a></span>
+<span id="cb3-46"><a href="#cb3-46"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> check_dynamic_spec<span class="op">(</span><span class="dt">int</span> arg_id<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb3-47"><a href="#cb3-47"></a>        <span class="cf">if</span> <span class="op">(</span>arg_id <span class="op">&lt;</span> types_<span class="op">.</span>size<span class="op">()</span> <span class="kw">and</span> <span class="kw">not</span> is_integral_type<span class="op">(</span>types_<span class="op">[</span>arg_id<span class="op">]))</span> <span class="op">{</span></span>
+<span id="cb3-48"><a href="#cb3-48"></a>            <span class="co">// this ensures that the call is not a constant expression</span></span>
+<span id="cb3-49"><a href="#cb3-49"></a>            <span class="kw">this</span><span class="op">-&gt;</span>on_error<span class="op">(</span><span class="st">&quot;width/precision is not an integer&quot;</span><span class="op">)</span>;</span>
+<span id="cb3-50"><a href="#cb3-50"></a>        <span class="op">}</span></span>
+<span id="cb3-51"><a href="#cb3-51"></a>    <span class="op">}</span></span>
+<span id="cb3-52"><a href="#cb3-52"></a><span class="op">}</span>;</span>
+<span id="cb3-53"><a href="#cb3-53"></a></span>
+<span id="cb3-54"><a href="#cb3-54"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Char, <span class="kw">typename</span> ErrorHandler<span class="op">&gt;</span></span>
+<span id="cb3-55"><a href="#cb3-55"></a><span class="kw">constexpr</span> <span class="kw">auto</span> basic_format_parse_context<span class="op">&lt;</span>Char, ErrorHandler<span class="op">&gt;::</span>check_dynamic_spec<span class="op">(</span><span class="dt">int</span> arg_id<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb3-56"><a href="#cb3-56"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb3-57"><a href="#cb3-57"></a>        <span class="kw">using</span> compile_context <span class="op">=</span> compile_parse_context<span class="op">&lt;</span>Char, ErrorHandler<span class="op">&gt;</span>;</span>
+<span id="cb3-58"><a href="#cb3-58"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span>compile_context<span class="op">*&gt;(</span><span class="kw">this</span><span class="op">)-&gt;</span>check_dynamic_spec<span class="op">(</span>arg_id<span class="op">)</span>;</span>
+<span id="cb3-59"><a href="#cb3-59"></a>    <span class="op">}</span></span>
+<span id="cb3-60"><a href="#cb3-60"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>There are several important things to note here.</p>
+<p>First, the implementation is the only one constructing the parse context, so it’s free to do something like - construct a <code class="sourceCode cpp">compile_parse_context</code> if during constant evaluation time so that this downcast is safe.</p>
+<p>Second, the type check <em>only</em> happens during constant evaluation time. This is important. In typical uses, <code class="sourceCode cpp">parse</code> will be called twice: once during compile time (for initial type checking) and then once later during runtime. If we already did the type check during compile time, we don’t have to do it <em>again</em> during runtime. The conditional checking during <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> is the right way to go.</p>
+<p>Third, <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> uses an enum type that maps all user-defined types to <code class="sourceCode cpp">custom_type</code>. This is exposed to the user via <code class="sourceCode cpp">check_dynamic_spec</code> (which checks that the argument type is integral) and <code class="sourceCode cpp">arg_type</code> (which simply returns the enum). There is no user-provided code being run here - which is important because that lets us basically hide this check behind compile time and not have to worry about whether some arbitrary user-defined predicate is being run or not. It also means that users don’t have to worry about the potential overhead of these checks, since they can just choose to call <code class="sourceCode cpp">check_dynamic_spec</code> and know that this has no runtime overhead – rather than them having to write <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span></code> (and probably forget to).</p>
+<p>Finally, because <code class="sourceCode cpp">compile_parse_context</code> inherits from <code class="sourceCode cpp">basic_format_parse_context</code>, implementations of <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;::</span>parse</code> can still happily take a <code class="sourceCode cpp">basic_format_parse_context<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;&amp;</span></code> and continue to work. It’s just that now, during compile time, the dynamic type of that context will be different. This means we can add this functionality without breaking user code or requiring the user to make any other changes.</p>
+<p>Note that even here, <code class="sourceCode cpp">compile_parse_context</code> doesn’t have the <em>actual</em> format arguments - just their types.</p>
+<h2 data-number="2.3" id="the-constructor-for-basic_format_parse_context"><span class="header-section-number">2.3</span> The constructor for <code class="sourceCode cpp">basic_format_parse_context</code><a href="#the-constructor-for-basic_format_parse_context" class="self-link"></a></h2>
+<p>Currently, we specify a constructor for <code class="sourceCode cpp">basic_format_parse_context</code>, though we don’t do the same for <code class="sourceCode cpp">basic_format_context</code>. Only the implementation should be constructing a <code class="sourceCode cpp">basic_format_parse_context</code> anyway - the constructor we do specify doesn’t let us propagate the state properly, and the thing isn’t copyable or movable. The constructor is a bit problematic in that its presence would seem to require specifying just how all this type information from the arguments is encoded.</p>
+<p>However, actually using this constructor in a way that requires reading arguments is inherently problematic - as the user has no way of providing those arguments in the future. Using this constructor <em>just</em> to parse a format string is at least potentially usable:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Parse during <code class="sourceCode cpp">format</code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Parse during <code class="sourceCode cpp">parse</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>PointHex<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="cf">return</span> ctx<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a>  <span class="kw">auto</span> format<span class="op">(</span>PointHex p, <span class="kw">auto</span><span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>    <span class="cf">return</span> std<span class="op">::</span>format_to<span class="op">(</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>      ctx<span class="op">.</span>out<span class="op">()</span>,</span>
+<span id="cb4-10"><a href="#cb4-10"></a>      <span class="st">&quot;(x={:x}, y={:x})&quot;</span>,</span>
+<span id="cb4-11"><a href="#cb4-11"></a>      p<span class="op">.</span>x,</span>
+<span id="cb4-12"><a href="#cb4-12"></a>      p<span class="op">.</span>y</span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="op">)</span>;</span>
+<span id="cb4-14"><a href="#cb4-14"></a>  <span class="op">}</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>PointHex<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>  std<span class="op">::</span>formatter<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> f;</span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>    std<span class="op">::</span>format_parse_context c<span class="op">(</span><span class="st">&quot;x&quot;</span><span class="op">)</span>;</span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="cf">if</span> <span class="op">(</span>f<span class="op">.</span>parse<span class="op">(</span>c<span class="op">)</span> <span class="op">!=</span> c<span class="op">.</span>end<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>      <span class="cf">throw</span> std<span class="op">::</span>format_error<span class="op">(</span><span class="st">&quot;wat&quot;</span><span class="op">)</span>;</span>
+<span id="cb5-9"><a href="#cb5-9"></a>    <span class="op">}</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a></span>
+<span id="cb5-11"><a href="#cb5-11"></a>    <span class="cf">return</span> ctx<span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="op">}</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a></span>
+<span id="cb5-14"><a href="#cb5-14"></a>  <span class="kw">auto</span> format<span class="op">(</span>PointHex p, <span class="kw">auto</span><span class="op">&amp;</span> ctx<span class="op">)</span> <span class="kw">const</span> <span class="op">{</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>    ctx<span class="op">.</span>advance_to<span class="op">(</span>std<span class="op">::</span>format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;(x=&quot;</span><span class="op">))</span>;</span>
+<span id="cb5-16"><a href="#cb5-16"></a>    ctx<span class="op">.</span>advance_to<span class="op">(</span>f<span class="op">.</span>format<span class="op">(</span>p<span class="op">.</span>x, ctx<span class="op">))</span>;</span>
+<span id="cb5-17"><a href="#cb5-17"></a>    ctx<span class="op">.</span>advance_to<span class="op">(</span>std<span class="op">::</span>format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;, y=&quot;</span><span class="op">))</span>;</span>
+<span id="cb5-18"><a href="#cb5-18"></a>    ctx<span class="op">.</span>advance_to<span class="op">(</span>f<span class="op">.</span>format<span class="op">(</span>p<span class="op">.</span>y, ctx<span class="op">))</span>;</span>
+<span id="cb5-19"><a href="#cb5-19"></a>    ctx<span class="op">.</span>advance_to<span class="op">(</span>std<span class="op">::</span>format_to<span class="op">(</span>ctx<span class="op">.</span>out<span class="op">()</span>, <span class="st">&quot;)&quot;</span><span class="op">))</span>;</span>
+<span id="cb5-20"><a href="#cb5-20"></a>    <span class="cf">return</span> ctx<span class="op">.</span>out<span class="op">()</span>;</span>
+<span id="cb5-21"><a href="#cb5-21"></a>  <span class="op">}</span></span>
+<span id="cb5-22"><a href="#cb5-22"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>The latter implementation is significantly more tedious, but only requires parsing the format string for the <code class="sourceCode cpp"><span class="dt">int</span></code> once. This is something that somebody might actually write, so it needs to stay supported. But this is really only useful in the case where the “fake” parse context has no arguments - which is happily the case where we also don’t have to worry about how to propagate type information for those arguments, since there aren’t any.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>In <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>, we have <code class="sourceCode cpp">check_dynamic_spec<span class="op">(</span><span class="dt">int</span><span class="op">)</span></code>. This is sufficient for all the standard types - for whom a dynamic spec is integral, and that’s the only thing you’d want to check. But user-defined types might have arbitrary other dynamic parameters, which need not be integral themselves. So the user will need to specify what the allowed types are somehow - in a way that doesn’t require an arbitrary predicate (since we want to avoid the question of dealing with side effects).</p>
+<p>There’s basically two ways of doing this:</p>
+<ol type="1">
+<li>Expose an <code class="sourceCode cpp"><span class="kw">enum</span></code>, similar to <code class="sourceCode cpp">fmt<span class="op">::</span>detail<span class="op">::</span>type</code>, and add a function like:</li>
+</ol>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> check_dynamic_spec<span class="op">(</span><span class="dt">int</span>, std<span class="op">::</span>initializer_list<span class="op">&lt;</span>format_type<span class="op">&gt;)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
+</blockquote>
+<ol start="2" type="1">
+<li>Don’t expose an <code class="sourceCode cpp"><span class="kw">enum</span></code>, instead make this a function template (the implementation would then convert those types into the corresponding enum anyway):</li>
+</ol>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> check_dynamic_spec<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
+</blockquote>
+<p>In both cases, this function only has effects during constant evaluation time - and the only effect is to force a compile error. Either way, we can then also, for convenience, provide a few helpers for all the common cases:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">// for int, unsigned int, long long int, unsigned long long int</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">constexpr</span> <span class="kw">auto</span> check_dynamic_spec_integral<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co">// for const char_type* and basic_string_view&lt;char_type&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">constexpr</span> <span class="kw">auto</span> check_dynamic_spec_string<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
+</blockquote>
+<p>These both have clear use-cases: dynamic width or precision for the former, dynamic delimiter for the latter.</p>
+<p>The enum approach requires specifying an enum. The template approach, if users make their <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;::</span>parse</code> a function template (which is going to be the common case, especially since you can just write <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">&amp;</span></code>), requires writing <code class="sourceCode cpp"><span class="op">.</span><span class="kw">template</span></code> (which is… still shorter, but also awful):</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a>ctx<span class="op">.</span>check_dynamic_spec<span class="op">(</span>id, <span class="op">{</span>std<span class="op">::</span>format_type<span class="op">::</span>char_type<span class="op">})</span>;</span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a>ctx<span class="op">.</span><span class="kw">template</span> check_dynamic_spec<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;(</span>id<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>This paper proposes the template approach.</p>
+<h2 data-number="3.1" id="wording"><span class="header-section-number">3.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Add to <span>22.14.6.5 <a href="https://wg21.link/format.parse.ctx">[format.parse.ctx]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>namespace std {</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  template&lt;class charT&gt;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>  class basic_format_parse_context {</span>
+<span id="cb10-4"><a href="#cb10-4"></a>  public:</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    using char_type = charT;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    using const_iterator = typename basic_string_view&lt;charT&gt;::const_iterator;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    using iterator = const_iterator;</span>
+<span id="cb10-8"><a href="#cb10-8"></a></span>
+<span id="cb10-9"><a href="#cb10-9"></a>  private:</span>
+<span id="cb10-10"><a href="#cb10-10"></a>    iterator begin_;                                    // exposition only</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    iterator end_;                                      // exposition only</span>
+<span id="cb10-12"><a href="#cb10-12"></a>    enum indexing { unknown, manual, automatic };       // exposition only</span>
+<span id="cb10-13"><a href="#cb10-13"></a>    indexing indexing_;                                 // exposition only</span>
+<span id="cb10-14"><a href="#cb10-14"></a>    size_t next_arg_id_;                                // exposition only</span>
+<span id="cb10-15"><a href="#cb10-15"></a>    size_t num_args_;                                   // exposition only</span>
+<span id="cb10-16"><a href="#cb10-16"></a></span>
+<span id="cb10-17"><a href="#cb10-17"></a>  public:</span>
+<span id="cb10-18"><a href="#cb10-18"></a><span class="st">-   constexpr explicit basic_format_parse_context(basic_string_view&lt;charT&gt; fmt,</span></span>
+<span id="cb10-19"><a href="#cb10-19"></a><span class="st">-                                                 size_t num_args = 0) noexcept;</span></span>
+<span id="cb10-20"><a href="#cb10-20"></a><span class="va">+   constexpr explicit basic_format_parse_context(basic_string_view&lt;charT&gt; fmt) noexcept;</span></span>
+<span id="cb10-21"><a href="#cb10-21"></a>    basic_format_parse_context(const basic_format_parse_context&amp;) = delete;</span>
+<span id="cb10-22"><a href="#cb10-22"></a>    basic_format_parse_context&amp; operator=(const basic_format_parse_context&amp;) = delete;</span>
+<span id="cb10-23"><a href="#cb10-23"></a></span>
+<span id="cb10-24"><a href="#cb10-24"></a>    constexpr const_iterator begin() const noexcept;</span>
+<span id="cb10-25"><a href="#cb10-25"></a>    constexpr const_iterator end() const noexcept;</span>
+<span id="cb10-26"><a href="#cb10-26"></a>    constexpr void advance_to(const_iterator it);</span>
+<span id="cb10-27"><a href="#cb10-27"></a></span>
+<span id="cb10-28"><a href="#cb10-28"></a>    constexpr size_t next_arg_id();</span>
+<span id="cb10-29"><a href="#cb10-29"></a>    constexpr void check_arg_id(size_t id);</span>
+<span id="cb10-30"><a href="#cb10-30"></a></span>
+<span id="cb10-31"><a href="#cb10-31"></a><span class="va">+   template&lt;class... Ts&gt;</span></span>
+<span id="cb10-32"><a href="#cb10-32"></a><span class="va">+     constexpr void check_dynamic_spec(size_t id);</span></span>
+<span id="cb10-33"><a href="#cb10-33"></a><span class="va">+   constexpr void check_dynamic_spec_integral(size_t id);</span></span>
+<span id="cb10-34"><a href="#cb10-34"></a><span class="va">+   constexpr void check_dynamic_spec_string(size_t id);</span></span>
+<span id="cb10-35"><a href="#cb10-35"></a>  };</span>
+<span id="cb10-36"><a href="#cb10-36"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<p>Remove the constructor:</p>
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>constexpr explicit basic_format_parse_context(basic_string_view&lt;charT&gt; fmt<span class="rm" style="color: #bf0303"><del>,</del></span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>                                              <span class="rm" style="color: #bf0303"><del>size_t num_args = 0</del></span>) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span> <em>Effects</em>: Initializes <code class="sourceCode cpp">begin_­</code> with <code class="sourceCode cpp">fmt<span class="op">.</span>begin<span class="op">()</span></code>, <code class="sourceCode cpp">end_­</code> with <code class="sourceCode cpp">fmt<span class="op">.</span>end<span class="op">()</span></code>, <code class="sourceCode cpp">indexing_­</code> with <code class="sourceCode cpp">unknown</code>, <code class="sourceCode cpp">next_­arg_­id_­</code> with <code class="sourceCode cpp"><span class="dv">0</span></code>, and <code class="sourceCode cpp">num_­args_­</code> with <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">num_­args</code></span></del></span> <span class="addu">0</span>. <span class="note addu"><span>[ <em>Note 1:</em> </span>Any call to <code class="sourceCode cpp">next_arg_id</code>, <code class="sourceCode cpp">check_arg_id</code>, or <code class="sourceCode cpp">check_dynamic_spec</code> on an instance of <code class="sourceCode cpp">basic_format_parse_context</code> initialized using this constructor is not a core constant expression.<span> — <em>end note</em> ]</span></span></p>
+</blockquote>
+<p>And then add at the bottom:</p>
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_arg_id<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">9</a></span> <em>Effects</em>: If <code class="sourceCode cpp">indexing_­ <span class="op">!=</span> automatic</code>, equivalent to:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>if (indexing_ == unknown)</span>
+<span id="cb13-2"><a href="#cb13-2"></a>  indexing_ = manual;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">10</a></span> <em>Throws</em>: <code class="sourceCode cpp">format_­error</code> if <code class="sourceCode cpp">indexing_­ <span class="op">==</span> automatic</code> which indicates mixing of automatic and manual argument indexing.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">11</a></span> <em>Remarks</em>: Call expressions where <code class="sourceCode cpp">id <span class="op">&gt;=</span> num_­args_­</code> are not core constant expressions ([expr.const]).</p>
+<div class="addu">
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">12</a></span> <em>Mandates</em>: The types in <code class="sourceCode cpp">Ts<span class="op">...</span></code> are unique. Each type in <code class="sourceCode cpp">Ts<span class="op">...</span></code> is one of <code class="sourceCode cpp"><span class="dt">bool</span></code>, <code class="sourceCode cpp">char_type</code>, <code class="sourceCode cpp"><span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span></code>, <code class="sourceCode cpp"><span class="dt">float</span></code>, <code class="sourceCode cpp"><span class="dt">double</span></code>, <code class="sourceCode cpp"><span class="dt">long</span> <span class="dt">double</span></code>, <code class="sourceCode cpp"><span class="kw">const</span> char_type<span class="op">*</span></code>, <code class="sourceCode cpp">basic_string_view<span class="op">&lt;</span>char_type<span class="op">&gt;</span></code>, or <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">13</a></span> <em>Remarks</em>: Call expressions where <code class="sourceCode cpp">id <span class="op">&gt;=</span> num_args_</code> or the type of the corresponding format argument (after conversion to <code class="sourceCode cpp">basic_format_arg<span class="op">&lt;</span>Context<span class="op">&gt;</span></code>) is not one of the types in <code class="sourceCode cpp">Ts<span class="op">...</span></code> are not core constant expressions ([expr.const]).</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec_integral<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">14</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a>check_dynamic_spec<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">unsigned</span> <span class="dt">int</span>, <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span>, <span class="dt">unsigned</span> <span class="dt">long</span> <span class="dt">long</span> <span class="dt">int</span><span class="op">&gt;(</span>id<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> check_dynamic_spec_string<span class="op">(</span><span class="dt">size_t</span> id<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">15</a></span> <em>Effects</em>: Equivalent to:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a>check_dynamic_spec<span class="op">&lt;</span><span class="kw">const</span> char_type<span class="op">*</span>, basic_string_view<span class="op">&lt;</span>char_type<span class="op">&gt;&gt;(</span>id<span class="op">)</span>;</span></code></pre></div>
+</div>
+</blockquote>
+<h2 data-number="3.2" id="feature-test-macro"><span class="header-section-number">3.2</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Bump <code class="sourceCode cpp">__cpp_lib_format</code> in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1"></a><span class="st">- #define __cpp_lib_format <span class="diffdel">202207L</span> // also in &lt;format&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="va">+ #define __cpp_lib_format <span class="diffins">2023XXL</span> // also in &lt;format&gt;</span></span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">4</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Tim Song for discussing the issues and helping with the wording. Thanks to Victor Zverovich for having already solved the problem.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P2216R3">
+<p>[P2216R3] Victor Zverovich. 2021-02-15. std::format improvements. <br />
+<a href="https://wg21.link/p2216r3">https://wg21.link/p2216r3</a></p>
+</div>
+<div id="ref-P2757R0">
+<p>[P2757R0] Barry Revzin. 2023-01-08. Type checking format args. <br />
+<a href="https://wg21.link/p2757r0">https://wg21.link/p2757r0</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
