@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-04-16" />
+  <meta name="dcterms.date" content="2023-05-15" />
   <title>Checking if a union alternative is active</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-04-16</td>
+    <td>2023-05-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -579,12 +579,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#why-a-pointer-rather-than-a-reference"><span class="toc-section-number">3.4</span> Why a pointer rather than a reference?<span></span></a></li>
 <li><a href="#implementation-experience"><span class="toc-section-number">3.5</span> Implementation Experience<span></span></a></li>
 </ul></li>
-<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro"><span class="toc-section-number">4.1</span> Feature-test Macro<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P2641R2">[<a href="#ref-P2641R2" role="doc-biblioref">P2641R2</a>]</span>, added section explaining why this takes a pointer, not a reference.</p>
+<p>Since <span class="citation" data-cites="P2641R2">[<a href="#ref-P2641R2" role="doc-biblioref">P2641R2</a>]</span>, added a feature-test macro and a section explaining why this takes a pointer (not a reference).</p>
 <p>After discussion in Issaquah, generalizing the proposed facility to check for object lifetime, instead of just active member of union.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Let’s say you want to implement an <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code> such that <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>Optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;)</span> <span class="op">==</span> <span class="dv">1</span></code>. This is conceptually doable since <code class="sourceCode cpp"><span class="dt">bool</span></code> only has 2 states, but takes up a whole byte anyway, which leaves 254 bit patterns to use to express other criteria (i.e. that the <code class="sourceCode cpp">Optional</code> is disengaged).</p>
@@ -728,7 +731,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>It would help to make the name clearer from the call site that it has limited usage. But it is already a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function, so it’s not like you could misuse it.</p>
 <h2 data-number="3.4" id="why-a-pointer-rather-than-a-reference"><span class="header-section-number">3.4</span> Why a pointer rather than a reference?<a href="#why-a-pointer-rather-than-a-reference" class="self-link"></a></h2>
 <p>This proposal is for asking <code class="sourceCode cpp">is_within_lifetime<span class="op">(&amp;</span>x<span class="op">)</span></code> rather than <code class="sourceCode cpp">is_within_lifetime<span class="op">(</span>x<span class="op">)</span></code>. Why a pointer, rather than a reference?</p>
-<p>There are a few arguments in favor of a pointer. First, we just don’t have to worry about passing in a temporary. Second, many of the other low-level manipulation facilities also take pointers (like <code class="sourceCode cpp">construct_at</code>, <code class="sourceCode cpp">start_lifetime_as</code>, etc.). Third, there’s this whole other set of questions about reference binding validity that come up(<span class="citation" data-cites="CWG453">[<a href="#ref-CWG453" role="doc-biblioref">CWG453</a>]</span>).</p>
+<p>There are a few arguments in favor of a pointer. First, we just don’t have to worry about passing in a temporary. Second, many of the other low-level manipulation facilities also take pointers (like <code class="sourceCode cpp">construct_at</code>, <code class="sourceCode cpp">start_lifetime_as</code>, etc.). Third, there’s this whole other set of questions about reference binding validity that come up (<span class="citation" data-cites="CWG453">[<a href="#ref-CWG453" role="doc-biblioref">CWG453</a>]</span>).</p>
 <p>It’s not like these are insurmountable difficulties, but the pointer API just doesn’t have them, and isn’t exactly either burdensome or inconsistent. So is it even worth dealing with them?</p>
 <h2 data-number="3.5" id="implementation-experience"><span class="header-section-number">3.5</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Daveed Vandevoorde has implemented R1 of this proposal in EDG. There’s no real implementation burden difference between R1 and R2.</p>
@@ -799,6 +802,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><em>end example</em>]</li>
 </ul>
+</div>
+</blockquote>
+<h2 data-number="4.1" id="feature-test-macro"><span class="header-section-number">4.1</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Add a new feature-test macro to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>#define __cpp_lib_within_lifetime 2023XXL // also in &lt;type_traits&gt;</span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>

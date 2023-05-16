@@ -14,7 +14,7 @@ tag: constexpr
 
 # Revision History
 
-Since [@P2641R2], added section explaining why this takes a pointer, not a reference.
+Since [@P2641R2], added a feature-test macro and a section explaining why this takes a pointer (not a reference).
 
 After discussion in Issaquah, generalizing the proposed facility to check for object lifetime, instead of just active member of union.
 
@@ -204,7 +204,7 @@ It would help to make the name clearer from the call site that it has limited us
 
 This proposal is for asking `is_within_lifetime(&x)` rather than `is_within_lifetime(x)`. Why a pointer, rather than a reference?
 
-There are a few arguments in favor of a pointer. First, we just don't have to worry about passing in a temporary. Second, many of the other low-level manipulation facilities also take pointers (like `construct_at`, `start_lifetime_as`, etc.). Third, there's this whole other set of questions about reference binding validity that come up([@CWG453]).
+There are a few arguments in favor of a pointer. First, we just don't have to worry about passing in a temporary. Second, many of the other low-level manipulation facilities also take pointers (like `construct_at`, `start_lifetime_as`, etc.). Third, there's this whole other set of questions about reference binding validity that come up ([@CWG453]).
 
 It's not like these are insurmountable difficulties, but the pointer API just doesn't have them, and isn't exactly either burdensome or inconsistent. So is it even worth dealing with them?
 
@@ -298,5 +298,17 @@ static_assert(engaged.has_value());
 static_assert(*engaged);
 ```
 - *end example*]
+:::
+:::
+
+## Feature-test Macro
+
+Add a new feature-test macro to [version.syn]{.sref}:
+
+::: bq
+::: addu
+```
+#define __cpp_lib_within_lifetime 2023XXL // also in <type_traits>
+```
 :::
 :::
