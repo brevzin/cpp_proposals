@@ -1,8 +1,8 @@
 ---
 title: "Checking if a union alternative is active"
-document: P2641R3
+document: P2641R4
 date: today
-audience: EWG, LEWG
+audience: CWG, LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -13,6 +13,8 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P2641R3], wording improvements.
 
 Since [@P2641R2], added a feature-test macro and a section explaining why this takes a pointer (not a reference).
 
@@ -227,7 +229,7 @@ namespace std {
   // [meta.const.eval], constant evaluation context
   constexpr bool is_constant_evaluated() noexcept;
 + template<class T>
-+   consteval bool is_within_lifetime(T*) noexcept;
++   consteval bool is_within_lifetime(const T*) noexcept;
 }
 ```
 :::
@@ -262,12 +264,12 @@ constexpr void f(unsigned char *p, int n) {
 ::: addu
 ```
 template<class T>
-  consteval bool is_within_lifetime(T* p) noexcept;
+  consteval bool is_within_lifetime(const T* p) noexcept;
 ```
 
 [3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]); otherwise, `false`.
 
-[4]{.pnum} *Remarks*: During the evaluation of an expression `E` as a core constant expression, a call to this function is not a core constant expression if `p` points to an object whose complete object's lifetime did not begin within `E` and is not usable in constant expressions.
+[4]{.pnum} *Remarks*: During the evaluation of an expression `E` as a core constant expression, a call to this function is ill-formed unless `p` points to an object that is usable in constant expressions or whose complete object's lifetime began within `E`.
 
 [5]{.pnum}
 [*Example 2*:
@@ -275,6 +277,10 @@ template<class T>
 struct OptBool {
   union { bool b; char c; };
 
+  // note: this assumes common implementation properties for bool and char:
+  // * sizeof(bool) == sizeof(char), and
+  // * the value representations for true and false are distinct
+  //   from the value representation for 2
   constexpr OptBool() : c(2) { }
   constexpr OptBool(bool b) : b(b) { }
 
