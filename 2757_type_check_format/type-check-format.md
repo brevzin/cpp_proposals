@@ -1,8 +1,8 @@
 ---
 title: "Type-checking format args"
-document: P2757R2
+document: D2757R3
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -277,6 +277,12 @@ This paper proposes the template approach.
 
 ## Wording
 
+Change [format.string.std]{.sref}/10:
+
+::: bq
+[10]{.pnum} If `{ $arg-id$@~opt~@ }` is used in a width or precision option, the value of the corresponding formatting argument is used as the value of the option. [If the]{.rm} [The option is valid only if the]{.addu} corresponding formatting argument is [not]{.rm} of standard signed or unsigned integer type[, or]{.rm} [. If]{.addu} its value is negative, an exception of type format_error is thrown.
+:::
+
 Add to [format.parse.ctx]{.sref}:
 
 ::: bq
@@ -312,9 +318,9 @@ namespace std {
     constexpr void check_arg_id(size_t id);
 
 +   template<class... Ts>
-+     constexpr void check_dynamic_spec(size_t id);
-+   constexpr void check_dynamic_spec_integral(size_t id);
-+   constexpr void check_dynamic_spec_string(size_t id);
++     constexpr void check_dynamic_spec(size_t id) noexcept;
++   constexpr void check_dynamic_spec_integral(size_t id) noexcept;
++   constexpr void check_dynamic_spec_string(size_t id) noexcept;
   };
 }
 ```
@@ -348,14 +354,14 @@ if (indexing_ == unknown)
 ::: addu
 ```cpp
 template<class... Ts>
-  constexpr void check_dynamic_spec(size_t id);
+  constexpr void check_dynamic_spec(size_t id) noexcept;
 ```
 [#]{.pnum} *Mandates*: The types in `Ts...` are unique. Each type in `Ts...` is one of `bool`, `char_type`, `int`, `unsigned int`, `long long int`, `unsigned long long int`, `float`, `double`, `long double`, `const char_type*`, `basic_string_view<char_type>`, or `const void*`.
 
 [#]{.pnum} *Remarks*: Call expressions where `id >= num_args_` or the type of the corresponding format argument (after conversion to `basic_format_arg<Context>`) is not one of the types in `Ts...` are not core constant expressions ([expr.const]).
 
 ```cpp
-constexpr void check_dynamic_spec_integral(size_t id);
+constexpr void check_dynamic_spec_integral(size_t id) noexcept;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:
@@ -364,7 +370,7 @@ check_dynamic_spec<int, unsigned int, long long int, unsigned long long int>(id)
 ```
 
 ```cpp
-constexpr void check_dynamic_spec_string(size_t id);
+constexpr void check_dynamic_spec_string(size_t id) noexcept;
 ```
 
 [#]{.pnum} *Effects*: Equivalent to:

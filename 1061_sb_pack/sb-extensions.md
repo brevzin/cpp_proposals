@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R5
+document: D1061R6
 date: today
 audience: CWG
 author:
@@ -13,7 +13,9 @@ toc: true
 
 # Revision History
 
-R5 has minor wording changes,
+R6 has minor wording changes.
+
+R5 has minor wording changes.
 
 R4 significantly improves the wording after review in Issaquah.
 
@@ -407,6 +409,117 @@ a structured binding pack is dependent if: the type of its initializer
 current instantiaton. This would make neither of the `...v` packs dependent,
 which seems conceptually correct.
 
+### The Issaquah Example
+
+Here is an interesting example, courtesy of Christof Meerwald:
+
+::: bq
+```cpp
+struct C
+{
+  int i;
+  long l;
+};
+
+template<typename T>
+struct D {
+  template<int J>
+  static int f(int);
+};
+
+template<>
+struct D<long> {
+  static int f;
+};
+
+auto [ ... v ] = C{ 1, 0 };
+auto x = ( ... + (D<decltype(v)>::f<1>(2)) );
+```
+:::
+
+This example demonstrates the need for having `typename` and/or `template` to disambiguate, even if we're not in a template context.
+
+### The Varna Example
+
+Here is an interesting example, also courtesy of Christof Meerwald:
+
+::: bq
+```cpp
+struct C { int j; long l; };
+
+int g() {
+    auto [ ... i ] = C{ 1, 2L };
+    return ( [c = i] () {
+        if constexpr (sizeof(c) > sizeof(long)) {
+            static_assert(false); // error?
+        }
+
+        struct C {
+            // error, not templated?
+            int f() requires (sizeof(c) == sizeof(int)) { return 1; }
+
+            // error, not templated?
+            int f() requires (sizeof(c) != sizeof(int)) { return 2; }
+        };
+        return C{}.f();
+    } () + ...  + 0 );
+}
+
+// error?
+int v = g();
+```
+:::
+
+What happens here? Core's intent is that this example is valid - the first `static_assert` declaration does not fire, this declares two different types `C`, both of which are valid, and `v` is initialized with the value `3`.
+
+Here's an addendum from Jason Merrill, Jens Maurer, and John Spicer, slightly altered and somewhat gratuitously formatted hoping that it's possible to understand:
+
+::: bq
+```cpp
+struct C { int j; long ; };
+
+int g() {
+    auto [ ... i ] = C{ 1, 2L };
+
+    if constexpr (sizeof...(i) == 0) {
+        static_assert(false); // #1
+    }
+
+    return (
+      // E1
+      []{
+          if constexpr (sizeof(int) == 0) {
+              static_assert(false); // #2
+          }
+          return 1;
+      }()
+      *
+      // E2
+      [c=i]{
+          if constexpr (sizeof(c) > sizeof(long)) {
+              static_assert(false); // #3
+          }
+
+          if constexpr (sizeof(int) == 0) {
+              static_assert(false); // #4
+          }
+
+          return 2;
+      }()
+    + ... + 0)
+}
+```
+:::
+
+The expression `E1` (that first immediately-invoked lambda) is completely non-dependent, no template packs, no structured binding packs, no packs of any kind. The expression `E2` is an abridged version of the previous example's lambda - it does depend on the structured binding pack `i`.
+
+The intent is that the `static_assert` declarations in `#1` and `#3` do not fire (since `i` is not an empty pack and neither `int` nor `long` has larger size than `long`), and this matches user expectation. The `static_assert` in `#2`, if written in a regular function, would immediately fire - since it's not guarded by any kind of template. So the questions are:
+
+1. Does `#2` still fire in this context, or does it become attached to the pack somehow?
+2. Does `#4` still fire in this context? It's still exactly as non-dependent as it was before, but now it's in a context that's at least somewhat dependent - since we're in a pack expansion over `...i`
+
+This brings up the question of what the boundary of dependence is.
+
 ## Namespace-scope packs
 
 In addition to non-dependent packs, this paper also seems like it would offer the ability to declare a pack at _namespace_ scope:
@@ -421,6 +534,12 @@ auto [... parts] = Point{1, 2};
 Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity. However, rejecting it would be a very odd kind of restriction that would be surprising. If users want to do this, they should be able to. EWG also explicitly polled this question in a telecon, with a strong preference for allowing such namespace-scope declarations.
 
 # Wording
+
+Add a drive-by fix to [expr.prim.fold]{.sref} after paragraph 3:
+
+::: bq
+[π]{.pnum} [A fold expression is a pack expansion.]{.addu}
+:::
 
 Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 
@@ -438,7 +557,7 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 > | _simple-declaration_:
 > |     _decl-specifier-seq_ _init-declarator-list_~opt~ `;`
 > |     _attribute-specifier-seq_ _decl-specifier-seq_ _init-declarator-list_ `;`
-> |     _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _ref-qualifier_~opt~ `[` [_identifier-list_]{.rm} [_sb-identifier-list_]{.addu} `]` _initializer_ `;`
+> |     _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _ref-qualifier_~opt~ <code>[</code> [_identifier-list_]{.rm} [_sb-identifier-list_]{.addu} <code>]</code> _initializer_ `;`
 
 :::
 
@@ -481,7 +600,8 @@ Extend [dcl.fct]{.sref}/5:
 + auto [...v] = C{ 1, 0 };
 + C k(int, long);              // #4
 + C k(decltype(v)... p) {      // defines #4
-+   return C{p...};
++   return C{p...};            // non-dependent function parameter pack p
++                              // is instantiated immediately ([temp.variadic])
 + }
 ```
 — end example]
@@ -561,7 +681,7 @@ Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
 
 ::: bq
 ::: addu
-[3+]{.pnum} A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more <i>structured binding</i>s ([dcl.struct.bind]). <i>[ Example</i>
+[3+]{.pnum} A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more structured bindings ([dcl.struct.bind]). <i>[ Example</i>
 
 ```
 auto foo() -> int(&)[2];
@@ -597,7 +717,7 @@ Add a new paragraph after [temp.variadic]{.sref}
 
 ::: bq
 ::: addu
-[12]{.pnum} If all of the packs expanded by a pack expansion are structured binding packs which were initialized with non-dependent <i>brace-or-equal-initializer</i>s, the pack expansion is expanded immediately.
+[12]{.pnum} If all of the packs expanded by a pack expansion are not dependent, the pack expansion is instantiated immediately.
 
 [ *Example:*
 ```
@@ -647,7 +767,7 @@ Add a carve-out for in [temp.dep.constexpr]{.sref}/4:
 sizeof ... ( identifier )
 fold-expression
 ```
-[unless the *identifier* is a structured binding pack initialized with a non-dependent <i>brace-or-equal-initializer</i>, or all of the packs expanded in the *fold-expression* are structured binding packs initialized with a non-dependent <i>brace-or-equal-initializer</i>.]{.addu}
+[unless the *identifier* is a non-dependent pack, or all of the packs expanded in the *fold-expression* are non-dependent packs.]{.addu}
 :::
 
 ## Feature-Test Macro

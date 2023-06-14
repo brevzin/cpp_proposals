@@ -1,8 +1,8 @@
 ---
 title: "Member `visit`"
-document: P2637R2
+document: D2637R3
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2637R2], wording changes.
 
 Since [@P2637R1], deprecating `std::visit_format_arg` and thus adding a feature-test macro.
 
@@ -160,7 +162,7 @@ namespace std {
 
 +   // [variant.visit], visitation
 +   template<class Self, class Visitor>
-+     constexpr $see below$ visit(this Self&&, Visitor&&);
++     constexpr decltype(auto) visit(this Self&&, Visitor&&);
 +   template<class R, class Self, class Visitor>
 +     constexpr R visit(this Self&&, Visitor&&);
   };
@@ -174,14 +176,14 @@ Add to [variant.visit]{.sref}, after the definition of non-member `visit`:
 ::: addu
 ```
 template<class Self, class Visitor>
-  constexpr $see below$ visit(this Self&& self, Visitor&& vis);
+  constexpr decltype(auto) visit(this Self&& self, Visitor&& vis);
 ```
 
 [9]{.pnum} Let `V` be `$OVERRIDE_REF$(Self&&, $COPY_CONST$(remove_reference_t<Self>, variant))` ([forward]).
 
 [#]{.pnum} *Constraints*: The call to `visit` does not use an explicit `$template-argument-list$` that begins with a type `$template-argument$`.
 
-[#]{.pnum} *Effects*: Equivalent to `return std::visit(std::forward<Visitor>(vis), (V)self);`
+[#]{.pnum} *Effects*: Equivalent to: `return std::visit(std::forward<Visitor>(vis), (V)self);`
 
 ```
 template<class R, class Self, class Visitor>
@@ -190,7 +192,7 @@ template<class R, class Self, class Visitor>
 
 [#]{.pnum} Let `V` be `$OVERRIDE_REF$(Self&&, $COPY_CONST$(remove_reference_t<Self>, variant))` ([forward]).
 
-[#]{.pnum} *Effects*: Equivalent to `return std::visit<R>(std::forward<Visitor>(vis), (V)self);`
+[#]{.pnum} *Effects*: Equivalent to: `return std::visit<R>(std::forward<Visitor>(vis), (V)self);`
 :::
 :::
 
@@ -292,14 +294,14 @@ template<class Visitor>
   decltype(auto) visit(this basic_format_arg arg, Visitor&& vis);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return arg.value.visit(std::forward<Visitor>(vis));`
+[#]{.pnum} *Effects*: Equivalent to: `return arg.value.visit(std::forward<Visitor>(vis));`
 
 ```
 template<class R, class Visitor>
   R visit(this basic_format_arg arg, Visitor&& vis);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return arg.value.visit<R>(std::forward<Visitor>(vis));`
+[#]{.pnum} *Effects*: Equivalent to: `return arg.value.visit<R>(std::forward<Visitor>(vis));`
 :::
 :::
 
@@ -311,7 +313,7 @@ And remove [format.arg]{.sref}/13:
 template<class Visitor, class Context>
   decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
 ```
-[13]{.pnum} *Effects*: Equivalent to `return visit(std​::​forward<Visitor>(vis), arg.value);`
+[13]{.pnum} *Effects*: Equivalent to: `return visit(std​::​forward<Visitor>(vis), arg.value);`
 :::
 :::
 
@@ -331,7 +333,7 @@ namespace std {
 template<class Visitor, class Context>
   decltype(auto) visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
 ```
-[2]{.pnum} *Effects*: Equivalent to `return visit(std​::​forward<Visitor>(vis), arg.value);`
+[2]{.pnum} *Effects*: Equivalent to: `return visit(std​::​forward<Visitor>(vis), arg.value);`
 :::
 :::
 
