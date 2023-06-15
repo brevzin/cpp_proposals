@@ -1,6 +1,6 @@
 ---
 title: "Type-checking format args"
-document: D2757R3
+document: P2757R3
 date: today
 audience: LWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2757R2], wording changes and note about feature-test macro after LWG discussion.
 
 Since [@P2757R1], added feature-test macro.
 
@@ -390,6 +392,8 @@ Bump `__cpp_lib_format` in [version.syn]{.sref}:
 + #define __cpp_lib_format @[2023XXL]{.diffins}@ // also in <format>
 ```
 :::
+
+[There are three formatting papers that are going to be moved at the same time: P2510 (Formatting Pointers), this one, and P2637 (Member Visit). They should end up with three consecutive values for `__cpp_lib_format` (not all the same one): `202304L`, `202305L`, and `202306L`, respectively]{.ednote}
 
 
 # Acknowledgements

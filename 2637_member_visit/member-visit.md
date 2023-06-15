@@ -1,6 +1,6 @@
 ---
 title: "Member `visit`"
-document: D2637R3
+document: P2637R3
 date: today
 audience: LWG
 author:
@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2637R2], wording changes.
+Since [@P2637R2], wording changes. Added note on feature-test macro after LWG discussion.
 
 Since [@P2637R1], deprecating `std::visit_format_arg` and thus adding a feature-test macro.
 
@@ -350,6 +350,8 @@ Bump both `__cpp_lib_variant` and `__cpp_lib_format` in [version.syn]{.sref}
 + #define __cpp_lib_variant @[2023XXL]{.diffins}@ // also in <variant>
 ```
 :::
+
+[There are three formatting papers that are going to be moved at the same time: P2510 (Formatting Pointers), P2757 (Type-checking Format Args), and this one. They should end up with three consecutive values for `__cpp_lib_format` (not all the same one): `202304L`, `202305L`, and `202306L`, respectively]{.ednote}
 
 
 ---
