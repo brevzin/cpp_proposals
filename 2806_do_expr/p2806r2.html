@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-06-25" />
+  <title>do expressions</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center"><code class="sourceCode cpp"><span class="cf">do</span></code> expressions</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2806R2</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-06-25</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Bruno Cardoso Lopes<br>&lt;<a href="mailto:bruno.cardoso@gmail.com" class="email">bruno.cardoso@gmail.com</a>&gt;<br>
+      Zach Laine<br>&lt;<a href="mailto:whatwasthataddress@gmail.com" class="email">whatwasthataddress@gmail.com</a>&gt;<br>
+      Michael Park<br>&lt;<a href="mailto:mcypark@gmail.com" class="email">mcypark@gmail.com</a>&gt;<br>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#do-expressions"><span class="toc-section-number">3</span> <code class="sourceCode cpp"><span class="cf">do</span></code> expressions<span></span></a>
+<ul>
+<li><a href="#scope"><span class="toc-section-number">3.1</span> Scope<span></span></a></li>
+<li><a href="#do_return-statement"><span class="toc-section-number">3.2</span> <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement<span></span></a></li>
+<li><a href="#type-and-value-category"><span class="toc-section-number">3.3</span> Type and Value Category<span></span></a></li>
+<li><a href="#copy-elision"><span class="toc-section-number">3.4</span> Copy Elision<span></span></a></li>
+<li><a href="#control-flow"><span class="toc-section-number">3.5</span> Control Flow<span></span></a>
+<ul>
+<li><a href="#noreturn-functions"><span class="toc-section-number">3.5.1</span> <code class="sourceCode cpp">noreturn</code> functions<span></span></a></li>
+<li><a href="#always-escaping-expressions"><span class="toc-section-number">3.5.2</span> Always-escaping expressions<span></span></a></li>
+<li><a href="#goto"><span class="toc-section-number">3.5.3</span> <code class="sourceCode cpp"><span class="cf">goto</span></code><span></span></a></li>
+<li><a href="#should-falling-off-the-end-be-undefined-behavior"><span class="toc-section-number">3.5.4</span> Should falling off the end be undefined behavior?<span></span></a></li>
+</ul></li>
+<li><a href="#lifetime"><span class="toc-section-number">3.6</span> Lifetime<span></span></a></li>
+<li><a href="#grammar-disambiguation"><span class="toc-section-number">3.7</span> Grammar Disambiguation<span></span></a></li>
+<li><a href="#prior-art"><span class="toc-section-number">3.8</span> Prior Art<span></span></a></li>
+<li><a href="#what-about-reflection"><span class="toc-section-number">3.9</span> What About Reflection?<span></span></a></li>
+<li><a href="#where-can-do-expressions-appear"><span class="toc-section-number">3.10</span> Where can <code class="sourceCode cpp"><span class="cf">do</span></code> expressions appear<span></span></a></li>
+</ul></li>
+<li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
+<li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2806R0">[<a href="#ref-P2806R0" role="doc-biblioref">P2806R0</a>]</span>, some more discussion about implicit last value vs explicit return, reflection, and a grammar fix to the still-incomplete wording.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>C++ is a language built on statements. <code class="sourceCode cpp"><span class="cf">if</span></code> is not an expression, loops aren’t expressions, statements aren’t expressions (except maybe in the specific case of <code class="sourceCode cpp"><em>expression</em>;</code>).</p>
+<p>When a single expression is insufficient, the only solution C++ currently has as its disposal is to invoke a function - where that function can now contain arbitrarily many statements. Since C++11, that function can be expressed more conveniently in the form of an immediately invoked lambda.</p>
+<p>However, this approach leaves a lot to be desired. An immediately invoked lambda introduced an extra function scope, which makes control flow much more challenging - it becomes impossible to <code class="sourceCode cpp"><span class="cf">break</span></code> or <code class="sourceCode cpp"><span class="cf">continue</span></code> out of a loop, and attempting to <code class="sourceCode cpp"><span class="cf">return</span></code> from the enclosing function or <code class="sourceCode cpp"><span class="kw">co_await</span></code>, <code class="sourceCode cpp"><span class="kw">co_yield</span></code>, or <code class="sourceCode cpp"><span class="kw">co_return</span></code> from the enclosing coroutine becomes an exercise in cleverness.</p>
+<p>You also have to deal with the issue that the difference between initializing a variable used an immediately-invoked lambda and initializing a variable from a lambda only differs in the trailing <code class="sourceCode cpp"><span class="op">()</span></code>, arbitrarily deep into an expression, which are easy to forget. Some people actually use <code class="sourceCode cpp">std<span class="op">::</span>invoke</code> in this context, specifically to make it clearer that this lambda is, indeed, intended to be immediately invoked.</p>
+<p>This problem surfaces especially brightly in the context of pattern matching <span class="citation" data-cites="P1371R3">[<a href="#ref-P1371R3" role="doc-biblioref">P1371R3</a>]</span>, where the current design is built upon a sequence of:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
+</blockquote>
+<p>This syntax only allows for a single <code class="sourceCode cpp"><em>expression</em></code>, which means that pattern matching has to figure out how to deal with the situation where the user wants to write more than, well, a single expression. The current design is to allow <code class="sourceCode cpp"><span class="op">{</span> <em>statement</em> <span class="op">}</span></code> to be evaluated as an expression of type <code class="sourceCode cpp"><span class="dt">void</span></code>. This is a hack, which is kind of weird (since such a thing is not actually an expression of type <code class="sourceCode cpp"><span class="dt">void</span></code>), but also limits the ability for pattern matching to support another kind of useful syntax: <code class="sourceCode cpp"><span class="op">=&gt;</span> <em>braced-init-list</em></code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="co">// this is fine</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="cf">return</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="co">// this is ill-formed in P1371</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="cf">return</span> <span class="kw">true</span> match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>        _ <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="op">}</span>;</span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>There’s no way to make that work, because <code class="sourceCode cpp"><span class="op">{</span></code> starts a statement. So the choice in that paper lacks orthogonality: we have a hack to support multiple expressions (which are very important to support) that is inventing such support on the fly, in a novel way that is very narrow (only supports <code class="sourceCode cpp"><span class="dt">void</span></code>), that throws other useful syntax under the bus.</p>
+<p>What pattern matching really needs here is a statement-expression syntax. But it’s not just pattern matching that has a strong desire for statement-expressions, this would be a broadly useful facility, so we should have an orthogonal language feature that supports statement-expressions in a way that would allow pattern matching to simplify its grammar to:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1"></a><em>pattern</em> =&gt; <em>expr-or-braced-init-list</em>;</span></code></pre></div>
+</blockquote>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="do-expressions"><span class="header-section-number">3</span> <code class="sourceCode cpp"><span class="cf">do</span></code> expressions<a href="#do-expressions" class="self-link"></a></h1>
+<p>Our proposal is the addition of a new kind of expression, called a <code class="sourceCode cpp"><span class="cf">do</span></code> expression.</p>
+<p>In its simplest form:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>A <code class="sourceCode cpp"><span class="cf">do</span></code> expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). There are a lot of interesting rules that we need to discuss about how those statements behave.</p>
+<h2 data-number="3.1" id="scope"><span class="header-section-number">3.1</span> Scope<a href="#scope" class="self-link"></a></h2>
+<p>A <code class="sourceCode cpp"><span class="cf">do</span></code> expression does introduce a new block scope - as the braces might suggest. But it does <em>not</em> introduce a new function scope. There is no new stack frame. Which is what allows external control flow to work (see below).</p>
+<h2 data-number="3.2" id="do_return-statement"><span class="header-section-number">3.2</span> <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement<a href="#do_return-statement" class="self-link"></a></h2>
+<p>The new <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement has the same form as the <code class="sourceCode cpp"><span class="cf">return</span></code> statement we have today: <code class="sourceCode cpp"><span class="kw">do_return</span> <em>expr-or-braced-init-list</em><sub>opt</sub>;</code>. It’s behavior corresponds closely to that <code class="sourceCode cpp"><span class="cf">return</span></code>, in unsurprising ways - <code class="sourceCode cpp"><span class="kw">do_return</span></code> yields from a <code class="sourceCode cpp"><span class="cf">do</span></code> expression in the same way that <code class="sourceCode cpp"><span class="cf">return</span></code> returns from a function.</p>
+<p>While <code class="sourceCode cpp"><span class="kw">do_return</span> <em>value</em>;</code> and <code class="sourceCode cpp"><span class="cf">return</span> <em>value</em>;</code> do look quite close together and mean fairly different things, the leading <code class="sourceCode cpp"><span class="cf">do</span></code> we think should be sufficiently clear, and we think it is a good spelling for this statement.</p>
+<p>Other alternative spellings we’ve considered:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> (in the previous revision of this paper, which has an ambiguity with <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">...</span> <span class="cf">while</span></code> loops)</li>
+<li><code class="sourceCode cpp">do_yield</code> (presented to EWG in Issaquah as the initial pre-publication draft of this proposal)</li>
+<li><code class="sourceCode cpp"><span class="cf">do</span> yield</code></li>
+<li><code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">break</span></code> (similarly to <code class="sourceCode cpp"><span class="cf">return</span></code>, we are breaking out of this expression, but is less likely to conflict since <code class="sourceCode cpp"><span class="cf">break</span></code> is less likely to be used than <code class="sourceCode cpp"><span class="cf">return</span></code> and also the corresponding <code class="sourceCode cpp"><span class="cf">break</span> <em>value</em>;</code> is invalid today)</li>
+<li><code class="sourceCode cpp"><span class="op">=&gt;</span></code> (or some other arrow, like <code class="sourceCode cpp"><span class="op">&lt;-</span></code> or <code class="sourceCode cpp"><span class="op">&lt;=</span></code>)</li>
+</ul>
+<h2 data-number="3.3" id="type-and-value-category"><span class="header-section-number">3.3</span> Type and Value Category<a href="#type-and-value-category" class="self-link"></a></h2>
+<p>The expression <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span></code> is a prvalue of type <code class="sourceCode cpp"><span class="dt">int</span></code>. We deduce the type from all of the <code class="sourceCode cpp"><span class="kw">do_return</span></code> statements, in the same way that <code class="sourceCode cpp"><span class="kw">auto</span></code> return type deduction works for functions and lambdas.</p>
+<p>An explicit <code class="sourceCode cpp"><em>trailing-return-type</em></code> can be provided to override this:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>If no <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement appears in the body of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression, or every <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement is of the form <code class="sourceCode cpp"><span class="kw">do_return</span>;</code>, then the expression is a prvalue of type <code class="sourceCode cpp"><span class="dt">void</span></code>.</p>
+<p>Falling off the end of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression behaves like an implicit <code class="sourceCode cpp"><span class="kw">do_return</span>;</code> - if this is incompatible the type of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.</p>
+<p>This makes the pattern matching cases <span class="citation" data-cites="P2688R0">[<a href="#ref-P2688R0" role="doc-biblioref">P2688R0</a>]</span> work pretty naturally:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>P2688R0</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a>x match <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    _ <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a>x match <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb7-3"><a href="#cb7-3"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Here, the whole <code class="sourceCode cpp">match</code> expression has type <code class="sourceCode cpp"><span class="dt">void</span></code> because each arm has type <code class="sourceCode cpp"><span class="dt">void</span></code> because none of the <code class="sourceCode cpp"><span class="cf">do</span></code> expressions have a <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement.</p>
+<p>Yes, this requires an extra <code class="sourceCode cpp"><span class="cf">do</span></code> for each arm, but it means we have a language that’s much easier to explain because it’s consistent - <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span></code> is a <code class="sourceCode cpp"><span class="dt">void</span></code> expression in <em>any</em> context. We don’t have a <code class="sourceCode cpp"><em>compound-statement</em></code> that happens to be a <code class="sourceCode cpp"><span class="dt">void</span></code> expression just in this one spot.</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>P2688R0</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;          <span class="co">// ill-formed</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>; <span class="co">// ok</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="op">}</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;          <span class="co">// ok</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>; <span class="co">// ok</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>    <span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Here, the existing pattern matching cannot support a <code class="sourceCode cpp"><em>braced-init-list</em></code> because <code class="sourceCode cpp"><span class="op">{</span></code> is used for the special <code class="sourceCode cpp"><span class="dt">void</span></code>-statement-case. But if we had <code class="sourceCode cpp"><span class="cf">do</span></code> expressions, the grammar of pattern matching can use <code class="sourceCode cpp"><em>expr-or-braced-init-list</em></code> in the same way that we already do in many other places in the C++ grammar. This example just works.</p>
+<h2 data-number="3.4" id="copy-elision"><span class="header-section-number">3.4</span> Copy Elision<a href="#copy-elision" class="self-link"></a></h2>
+<p>All the rules for initializing from <code class="sourceCode cpp"><span class="cf">do</span></code> expression, and the way the expression that appears in a <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement is treated, are the same as what the rules are for <code class="sourceCode cpp"><span class="cf">return</span></code>.</p>
+<p>Implicit move applies, for variables declared within the body of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression. In the following example, <code class="sourceCode cpp">r</code> is an unparenthesized <code class="sourceCode cpp"><em>id-expression</em></code> that names an automatic storage variable declared within the statement, so it’s implicitly moved:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a>std<span class="op">::</span>string s <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>    std<span class="op">::</span>string r <span class="op">=</span> <span class="st">&quot;hello&quot;</span>;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>    r <span class="op">+=</span> <span class="st">&quot;world&quot;</span>;</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    <span class="kw">do_return</span> r;</span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="op">}</span>;</span></code></pre></div>
+<p>Note that automatic storage variables declared within the function that the <code class="sourceCode cpp"><span class="cf">do</span></code> expression appears, but not declared within the statement-expression itself, are <em>not</em> implicitly moved (since they can be used later).</p>
+<h2 data-number="3.5" id="control-flow"><span class="header-section-number">3.5</span> Control Flow<a href="#control-flow" class="self-link"></a></h2>
+<p>In a regular function, there are four ways to escape the function scope:</p>
+<ol type="1">
+<li>a <code class="sourceCode cpp"><span class="cf">return</span></code> statement</li>
+<li><code class="sourceCode cpp"><span class="cf">throw</span></code>ing an exception</li>
+<li>invoking a <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> function, <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code></li>
+<li>falling off the end of the function (undefined behavior if the return type is not <code class="sourceCode cpp"><span class="dt">void</span></code>)</li>
+</ol>
+<p>The same is true for coroutines, except substituting <code class="sourceCode cpp"><span class="cf">return</span></code> for <code class="sourceCode cpp"><span class="kw">co_return</span></code> (and likewise falling off the end is undefined behavior if there is no <code class="sourceCode cpp">return_void<span class="op">()</span></code> function on the promise type).</p>
+<p>For a <code class="sourceCode cpp"><span class="cf">do</span></code> expression, we have two different directions where we can escape (in a non-exception, non-<code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> case): we either yield an expression, or we escape the <em>outer</em> scope. That is, we can also:</p>
+<ol type="1">
+<li><code class="sourceCode cpp"><span class="cf">return</span></code> from the enclosing function (or <code class="sourceCode cpp"><span class="kw">co_return</span></code> from the enclosing coroutine)</li>
+<li><code class="sourceCode cpp"><span class="cf">break</span></code> or <code class="sourceCode cpp"><span class="cf">continue</span></code> from the innermost enclosing loop (if any, ill-formed otherwise)</li>
+</ol>
+<p>Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.</p>
+<p>That is, the rule we propose that the implementation form a control flow graph of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and consider each one of the six escaping kinds described above. All <code class="sourceCode cpp"><span class="kw">do_return</span></code> statements (including the implicit <code class="sourceCode cpp"><span class="kw">do_return</span>;</code> introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no <code class="sourceCode cpp"><em>trailing-return-type</em></code>) or be compatible with the provided return type (if provided). Anything else is ill-formed.</p>
+<p>Let’s go through some examples.</p>
+<table>
+<tr>
+<th>
+Example
+</th>
+<th>
+Discussion
+</th>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>        <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>        <span class="kw">do_return</span> <span class="dv">2</span>;</span>
+<span id="cb11-6"><a href="#cb11-6"></a>    <span class="op">}</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+OK: All yielding control paths have the same type. There’s no falling off the end.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a>        <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>        <span class="kw">do_return</span> <span class="fl">2.0</span>;</span>
+<span id="cb12-6"><a href="#cb12-6"></a>    <span class="op">}</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+Ill-formed: The yielding control paths have different types and there is no provided <code class="sourceCode cpp"><em>trailing-return-type</em></code>. This would be okay if it were <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></code> or <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">double</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></code> or <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">float</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></code>, etc.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">auto</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>        <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb13-4"><a href="#cb13-4"></a>    <span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>    <span class="kw">do_return</span> <span class="dv">2</span>;</span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+OK: Similar to <code class="sourceCode cpp">a</code>, all yielding control paths yield the same type. There is no falling off the end here, it is not important that a yielding <code class="sourceCode cpp"><span class="cf">if</span></code> has an <code class="sourceCode cpp"><span class="cf">else</span></code>.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">auto</span> d <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a>        <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="op">}</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+Ill-formed: There are two yielding control paths here: the <code class="sourceCode cpp"><span class="kw">do_return</span> <span class="dv">1</span>;</code> and the implicit <code class="sourceCode cpp"><span class="kw">do_return</span>;</code> from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if <code class="sourceCode cpp"><em>cond</em></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="dt">int</span> e <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>        <span class="kw">do_return</span>;</span>
+<span id="cb15-4"><a href="#cb15-4"></a>    <span class="op">}</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="op">}</span>, <span class="dv">1</span>;</span></code></pre></div>
+</td>
+<td>
+OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are <code class="sourceCode cpp"><span class="kw">do_return</span>;</code> which are compatible.
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="dt">int</span> f <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>        <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb16-4"><a href="#cb16-4"></a>    <span class="op">}</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a></span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="cf">throw</span> <span class="dv">2</span>;</span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+OK: We no longer fall off the end here, since we always escape. There is only one yielding path.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a><span class="dt">int</span> outer<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>    <span class="dt">int</span> g <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>        <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a>            <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb17-5"><a href="#cb17-5"></a>        <span class="op">}</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a></span>
+<span id="cb17-7"><a href="#cb17-7"></a>        <span class="cf">return</span> <span class="dv">3</span>;</span>
+<span id="cb17-8"><a href="#cb17-8"></a>    <span class="op">}</span>;</span>
+<span id="cb17-9"><a href="#cb17-9"></a><span class="op">}</span></span></code></pre></div>
+</td>
+<td>
+OK: Similar to the above, it’s just that we’re escaping by returning from the outer function instead of throwing. Still not falling off the end.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="dt">int</span> h <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>        <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb18-4"><a href="#cb18-4"></a>    <span class="op">}</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a></span>
+<span id="cb18-6"><a href="#cb18-6"></a>    std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb18-7"><a href="#cb18-7"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+OK: <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> means that we cannot fall off the end, see discussion on <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> below.
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">enum</span> Color <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>    Red,</span>
+<span id="cb19-3"><a href="#cb19-3"></a>    Green,</span>
+<span id="cb19-4"><a href="#cb19-4"></a>    Blue</span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="op">}</span>;</span>
+<span id="cb19-6"><a href="#cb19-6"></a></span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="dt">void</span> func<span class="op">(</span>Color c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a>    std<span class="op">::</span>string_view name <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb19-9"><a href="#cb19-9"></a>        <span class="cf">switch</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-10"><a href="#cb19-10"></a>        <span class="cf">case</span> Red<span class="op">:</span>   <span class="kw">do_return</span> <span class="st">&quot;Red&quot;</span><span class="bu">sv</span>;</span>
+<span id="cb19-11"><a href="#cb19-11"></a>        <span class="cf">case</span> Green<span class="op">:</span> <span class="kw">do_return</span> <span class="st">&quot;Green&quot;</span><span class="bu">sv</span>;</span>
+<span id="cb19-12"><a href="#cb19-12"></a>        <span class="cf">case</span> Blue<span class="op">:</span>  <span class="kw">do_return</span> <span class="st">&quot;Blue&quot;</span><span class="bu">sv</span>;</span>
+<span id="cb19-13"><a href="#cb19-13"></a>        <span class="op">}</span></span>
+<span id="cb19-14"><a href="#cb19-14"></a>    <span class="op">}</span>;</span>
+<span id="cb19-15"><a href="#cb19-15"></a><span class="op">}</span></span></code></pre></div>
+</td>
+<td>
+Ill-formed: This is probably the most interesting case when it comes to falling off the end. Here, the user knows that <code class="sourceCode cpp">c</code> only has three values, but the implementation does not, so it could still fall off the end. gcc does warn on the equivalent function form of this, clang does not. The typical solution here might be to add <code class="sourceCode cpp"><span class="fu">__builtin_unreachable</span><span class="op">()</span></code>, now <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>, to the end of the function, but for this to work we have to discuss <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> below. Barring that, the user would have to add either some default value or some other kind of control flow (like an exception, etc).
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="dt">void</span> func<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>    <span class="cf">for</span> <span class="op">(</span>;;<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>        <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>            <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a>                <span class="cf">break</span>;</span>
+<span id="cb20-6"><a href="#cb20-6"></a>            <span class="op">}</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a></span>
+<span id="cb20-8"><a href="#cb20-8"></a>            <span class="cf">for</span> <span class="op">(</span><em>something</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-9"><a href="#cb20-9"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>                    <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb20-11"><a href="#cb20-11"></a>                <span class="op">}</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a>            <span class="op">}</span></span>
+<span id="cb20-13"><a href="#cb20-13"></a></span>
+<span id="cb20-14"><a href="#cb20-14"></a>            <span class="kw">do_return</span> <span class="dv">2</span>;</span>
+<span id="cb20-15"><a href="#cb20-15"></a>        <span class="op">}</span>;</span>
+<span id="cb20-16"><a href="#cb20-16"></a>    <span class="op">}</span></span>
+<span id="cb20-17"><a href="#cb20-17"></a><span class="op">}</span></span></code></pre></div>
+</td>
+<td>
+<p>OK: The first <code class="sourceCode cpp"><span class="cf">break</span></code> escapes the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and breaks from the outer loop. Otherwise, we have two yielding statements which both yield <code class="sourceCode cpp"><span class="dt">int</span></code>. If the <code class="sourceCode cpp"><span class="kw">do_return</span> <span class="dv">2</span>;</code> statement did not exist, this would be ill-formed unless the compiler could prove that the loop itself did not terminate.</p>
+If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span class="op">(</span>;;<span class="op">)</span></code>, then the lack of <code class="sourceCode cpp"><span class="kw">do_return</span> <span class="dv">2</span>;</code> would be fine - but anything more complicated than that would require some kind of final yield (or <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc.)
+</td>
+</tr>
+</table>
+<p>To reiterate: the implementation produces a control flow graph of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and considers all yielding statements (<em>including</em> the implicit <code class="sourceCode cpp"><span class="kw">do_return</span>;</code> on falling off the end, if the implementation considers that to be a possible path) in order to determine correctness of the statement-expression. The kinds of control flow that escape the statement entirely (exceptions, <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, <code class="sourceCode cpp"><span class="kw">co_return</span></code>) do not need to be considered for purposes of consistency of yields (since they do not yield values).</p>
+<h3 data-number="3.5.1" id="noreturn-functions"><span class="header-section-number">3.5.1</span> <code class="sourceCode cpp">noreturn</code> functions<a href="#noreturn-functions" class="self-link"></a></h3>
+<p>The language currently has several kinds of escaping control flow that it recognizes. As mentioned, exceptions, <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, and <code class="sourceCode cpp"><span class="kw">co_return</span></code>. And, allegedly, <code class="sourceCode cpp"><span class="cf">goto</span></code>.</p>
+<p>But there’s one kind of escaping control flow that it <em>does not</em> currently recognize: functions marked <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>. A call to <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code> escapes control flow, for sure, but today this is just an attribute:</p>
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>        <span class="kw">do_return</span> <span class="dv">5</span>;</span>
+<span id="cb21-4"><a href="#cb21-4"></a>    <span class="op">}</span></span>
+<span id="cb21-5"><a href="#cb21-5"></a></span>
+<span id="cb21-6"><a href="#cb21-6"></a>    std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb21-7"><a href="#cb21-7"></a></span>
+<span id="cb21-8"><a href="#cb21-8"></a>    <span class="co">// we know control flow never gets here, so we should not need to</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>    <span class="co">// insert an implicit &quot;do_return;&quot;</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Pattern Matching has this same problem - it needs to support arms that might <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code> or are <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>, so it that proposal currently is introducing a dedicated syntax to mark an arm as non-returning: <code class="sourceCode cpp"><span class="op">!{</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="op">}</span></code>. Which is… less than ideal.</p>
+<p>However, the rule in <span>9.12.10 <a href="https://wg21.link/dcl.attr.noreturn">[dcl.attr.noreturn]</a></span>/2 is:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span> If a function <code class="sourceCode cpp">f</code> is called where <code class="sourceCode cpp">f</code> was previously declared with the <code class="sourceCode cpp">noreturn</code> attribute and <code class="sourceCode cpp">f</code> eventually returns, the behavior is undefined.</p>
+</blockquote>
+<p>That is normative wording which we can rely on. The above <code class="sourceCode cpp"><span class="cf">do</span></code> expression can only fall off the end if <code class="sourceCode cpp">std<span class="op">::</span>abort</code> returns, which is <em>already</em> undefined behavior. We can avoid introducing any new undefined behavior ourselves as part of this feature.</p>
+<p>That is: invoking a function marked <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code> can be considering an escaping control flow in exactly the same way that <code class="sourceCode cpp"><span class="cf">return</span></code>, <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc., are already.</p>
+<p>Note that this violates the so-called Second Ignorability Rule suggested in <span class="citation" data-cites="P2552R2">[<a href="#ref-P2552R2" role="doc-biblioref">P2552R2</a>]</span>, which is a great reason to ignore that rule.</p>
+<h3 data-number="3.5.2" id="always-escaping-expressions"><span class="header-section-number">3.5.2</span> Always-escaping expressions<a href="#always-escaping-expressions" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>    <span class="cf">throw</span> <span class="dv">42</span>;</span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code>) actually had <code class="sourceCode cpp"><span class="kw">do_return</span></code> statements in them. So it needs to be allowed.</p>
+<h3 data-number="3.5.3" id="goto"><span class="header-section-number">3.5.3</span> <code class="sourceCode cpp"><span class="cf">goto</span></code><a href="#goto" class="self-link"></a></h3>
+<p>Using <code class="sourceCode cpp"><span class="cf">goto</span></code> in a <code class="sourceCode cpp"><span class="cf">do</span></code> expression has some unique problems.</p>
+<p>Jumping <em>within</em> a <code class="sourceCode cpp"><span class="cf">do</span></code> expression should follow whatever restrictions we already have (see <span>8.8 <a href="https://wg21.link/stmt.dcl">[stmt.dcl]</a></span>). Jumping <em>into</em> a <code class="sourceCode cpp"><span class="cf">do</span></code> expression should be completely disallowed (we would call the <code class="sourceCode cpp"><em>statement</em></code> of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression a control-flow limited statement).</p>
+<p>Jumping <em>out</em> of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression is potentially useful though, in the same way that <code class="sourceCode cpp"><span class="cf">break</span></code>, <code class="sourceCode cpp"><span class="cf">continue</span></code>, and <code class="sourceCode cpp"><span class="cf">return</span></code> are:</p>
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a>    <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>1</sub><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a>        <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>2</sub><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>            <span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-5"><a href="#cb23-5"></a>                    <span class="cf">goto</span> done;</span>
+<span id="cb23-6"><a href="#cb23-6"></a>                <span class="op">}</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a></span>
+<span id="cb23-8"><a href="#cb23-8"></a>                <span class="kw">do_return</span> <em>value</em>;</span>
+<span id="cb23-9"><a href="#cb23-9"></a>            <span class="op">}</span>;</span>
+<span id="cb23-10"><a href="#cb23-10"></a>        <span class="op">}</span></span>
+<span id="cb23-11"><a href="#cb23-11"></a>    <span class="op">}</span></span>
+<span id="cb23-12"><a href="#cb23-12"></a>done<span class="op">:</span></span></code></pre></div>
+</blockquote>
+<p>Breaking out of multiple loops is one of the uses of <code class="sourceCode cpp"><span class="cf">goto</span></code> that has no real substitute today. The above example should be fine. But referring to any label that is in scope of the variable we’re initializing needs to be disallowed - since we wouldn’t have actually initialized the variable. We need to ensure that the <span>8.8 <a href="https://wg21.link/stmt.dcl">[stmt.dcl]</a></span> rule is extended to cover this case.</p>
+<p>Also, while computed goto is not a standard C++ feature, it would be nice to disallow this example, courtesy of (of course) JF Bastien (in this case, we are referring to a label that is within <code class="sourceCode cpp">v</code>’s scope. We’re not jumping to it directly, but the ability to jump to it indirectly is still problematic):</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a></span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="kw">struct</span> label <span class="op">{</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a>    <span class="kw">static</span> <span class="kw">inline</span> <span class="dt">void</span><span class="op">*</span> e;</span>
+<span id="cb24-5"><a href="#cb24-5"></a>    <span class="dt">int</span> v;</span>
+<span id="cb24-6"><a href="#cb24-6"></a></span>
+<span id="cb24-7"><a href="#cb24-7"></a>    label<span class="op">()</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a>    <span class="cf">try</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a>        <span class="op">:</span> v<span class="op">(({</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a>            fprintf<span class="op">(</span>stderr, <span class="st">&quot;oh</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb24-11"><a href="#cb24-11"></a>            e <span class="op">=</span> <span class="op">&amp;&amp;</span>awesome;</span>
+<span id="cb24-12"><a href="#cb24-12"></a>            <span class="cf">throw</span> <span class="dv">1</span>;</span>
+<span id="cb24-13"><a href="#cb24-13"></a>            <span class="dv">42</span>;</span>
+<span id="cb24-14"><a href="#cb24-14"></a>        <span class="op">}))</span></span>
+<span id="cb24-15"><a href="#cb24-15"></a>    <span class="op">{</span></span>
+<span id="cb24-16"><a href="#cb24-16"></a>        fprintf<span class="op">(</span>stderr, <span class="st">&quot;no</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb24-17"><a href="#cb24-17"></a>        awesome<span class="op">:</span></span>
+<span id="cb24-18"><a href="#cb24-18"></a>        fprintf<span class="op">(</span>stderr, <span class="st">&quot;you</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb24-19"><a href="#cb24-19"></a>    <span class="op">}</span> <span class="cf">catch</span><span class="op">(...)</span> <span class="op">{</span></span>
+<span id="cb24-20"><a href="#cb24-20"></a>        fprintf<span class="op">(</span>stderr, <span class="st">&quot;don&#39;t</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb24-21"><a href="#cb24-21"></a>        <span class="cf">goto</span> <span class="op">*</span>e;</span>
+<span id="cb24-22"><a href="#cb24-22"></a>    <span class="op">}</span></span>
+<span id="cb24-23"><a href="#cb24-23"></a><span class="op">}</span>;</span>
+<span id="cb24-24"><a href="#cb24-24"></a></span>
+<span id="cb24-25"><a href="#cb24-25"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-26"><a href="#cb24-26"></a>    label l;</span>
+<span id="cb24-27"><a href="#cb24-27"></a><span class="op">}</span></span></code></pre></div>
+<h3 data-number="3.5.4" id="should-falling-off-the-end-be-undefined-behavior"><span class="header-section-number">3.5.4</span> Should falling off the end be undefined behavior?<a href="#should-falling-off-the-end-be-undefined-behavior" class="self-link"></a></h3>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-3"><a href="#cb25-3"></a>        <span class="kw">do_return</span> <span class="dv">0</span>;</span>
+<span id="cb25-4"><a href="#cb25-4"></a>    <span class="op">}</span></span>
+<span id="cb25-5"><a href="#cb25-5"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Is this statement ill-formed (because there is a control path that falls off the end of the <code class="sourceCode cpp"><span class="cf">do</span></code> expression, as discussed in this section) or should this statement be undefined behavior? The latter would be consistent with functions, lambdas, and coroutines (and not a if-you-squint-enough kind of consistency either, this would be exactly identical).</p>
+<p>It would make for a simpler design if we adopted undefined behavior here, but we think it’s a better design to force the user to cover all control paths themselves.</p>
+<h2 data-number="3.6" id="lifetime"><span class="header-section-number">3.6</span> Lifetime<a href="#lifetime" class="self-link"></a></h2>
+<p>One important question is: when are local variables declared within a <code class="sourceCode cpp"><span class="cf">do</span></code> expression destroyed?</p>
+<p>Consider the following:</p>
+<blockquote>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
+<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">)</span> <span class="op">-&gt;</span> U;</span>
+<span id="cb26-3"><a href="#cb26-3"></a></span>
+<span id="cb26-4"><a href="#cb26-4"></a><span class="kw">auto</span> h<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>U, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb26-5"><a href="#cb26-5"></a>    <span class="kw">auto</span> u <span class="op">=</span> g<span class="op">(</span><span class="cf">do</span> <span class="op">-&gt;</span> <em>TYPE</em> <span class="op">{</span></span>
+<span id="cb26-6"><a href="#cb26-6"></a>        <span class="kw">auto</span> result <span class="op">=</span> f<span class="op">()</span>;</span>
+<span id="cb26-7"><a href="#cb26-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> result<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-8"><a href="#cb26-8"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>result<span class="op">).</span>error<span class="op">())</span>;</span>
+<span id="cb26-9"><a href="#cb26-9"></a>        <span class="op">}</span></span>
+<span id="cb26-10"><a href="#cb26-10"></a>        <span class="kw">do_return</span> <span class="op">*</span>std<span class="op">::</span>move<span class="op">(</span>result<span class="op">)</span>;</span>
+<span id="cb26-11"><a href="#cb26-11"></a>    <span class="op">})</span>;</span>
+<span id="cb26-12"><a href="#cb26-12"></a>    <span class="cf">return</span> u;</span>
+<span id="cb26-13"><a href="#cb26-13"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The use of <code class="sourceCode cpp"><em>TYPE</em></code> above is meant as a placeholder for either <code class="sourceCode cpp">T</code> or <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, as we’ll explain shortly.</p>
+<p>What is the lifetime of the local variable <code class="sourceCode cpp">result</code>? There are three possible choices to this question:</p>
+<ol type="1">
+<li>It is destroyed at the next <code class="sourceCode cpp"><span class="op">}</span></code>. This is the most consistent choice with everything else in the language.</li>
+<li>It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of <code class="sourceCode cpp">u</code>).</li>
+<li>It behaves as if it has local scope of the surrounding scope and is destroyed at the end of that outer scope, which in this case would be the end of <code class="sourceCode cpp">h<span class="op">()</span></code>.</li>
+</ol>
+<p>The consequence of (1) is that <code class="sourceCode cpp">result</code> is destroyed before we enter the call to <code class="sourceCode cpp">g</code>. This means that if the <code class="sourceCode cpp"><span class="cf">do</span></code> expression returned a reference (i.e. <code class="sourceCode cpp"><em>TYPE</em></code> was <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>), that reference would immediately dangle, and we would have to yield a <code class="sourceCode cpp">T</code>. This loses us some efficiency, since ideally both the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and <code class="sourceCode cpp">g</code> could just take a <code class="sourceCode cpp">T</code> - but now we have to incur a move.</p>
+<p>The consequence of (2) is that we <em>can</em> yield a <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code> because <code class="sourceCode cpp">result</code> isn’t going to be destroyed yet, and we don’t have a dangling reference. Unless we rewrite it this way:</p>
+<blockquote>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> U;</span>
+<span id="cb27-3"><a href="#cb27-3"></a></span>
+<span id="cb27-4"><a href="#cb27-4"></a><span class="kw">auto</span> h<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>U, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb27-5"><a href="#cb27-5"></a>    T<span class="op">&amp;&amp;</span> t <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T<span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb27-6"><a href="#cb27-6"></a>        <span class="kw">auto</span> result <span class="op">=</span> f<span class="op">()</span>;</span>
+<span id="cb27-7"><a href="#cb27-7"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> result<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-8"><a href="#cb27-8"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>result<span class="op">).</span>error<span class="op">())</span>;</span>
+<span id="cb27-9"><a href="#cb27-9"></a>        <span class="op">}</span></span>
+<span id="cb27-10"><a href="#cb27-10"></a>        <span class="kw">do_return</span> <span class="op">*</span>std<span class="op">::</span>move<span class="op">(</span>result<span class="op">)</span>;</span>
+<span id="cb27-11"><a href="#cb27-11"></a>    <span class="op">}</span>;</span>
+<span id="cb27-12"><a href="#cb27-12"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb27-13"><a href="#cb27-13"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>With (1), in order to avoid dangling, the <code class="sourceCode cpp"><span class="cf">do</span></code> expression has to return a <code class="sourceCode cpp">T</code> (<code class="sourceCode cpp">t</code> can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the <code class="sourceCode cpp"><span class="cf">do</span></code> expression to return <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, but <code class="sourceCode cpp">t</code> would to be a <code class="sourceCode cpp">T</code> and not a <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, since <code class="sourceCode cpp">result</code> is going to be destroyed at the end of the statement.</p>
+<p>Only with (3) - delaying destroying <code class="sourceCode cpp">result</code> until the closing of the innermost non-<code class="sourceCode cpp"><span class="cf">do</span></code>-expression scope - is the above valid code that does not lead to any dangling reference.</p>
+<p>Note that the above example is specifically mentioned in <span class="citation" data-cites="P2561R2">[<a href="#ref-P2561R2" role="doc-biblioref">P2561R2</a>]</span>’s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:</p>
+<blockquote>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> U;</span>
+<span id="cb28-3"><a href="#cb28-3"></a></span>
+<span id="cb28-4"><a href="#cb28-4"></a><span class="kw">auto</span> h<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>U, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>    T<span class="op">&amp;&amp;</span> t <span class="op">=</span> f<span class="op">().</span><span class="cf">try</span><span class="op">?</span>;</span>
+<span id="cb28-6"><a href="#cb28-6"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb28-7"><a href="#cb28-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Choosing (3) allows the control flow operator proposal to be simply a lowering into a <code class="sourceCode cpp"><span class="cf">do</span></code> expression.</p>
+<h2 data-number="3.7" id="grammar-disambiguation"><span class="header-section-number">3.7</span> Grammar Disambiguation<a href="#grammar-disambiguation" class="self-link"></a></h2>
+<p>We have to disambiguate between a <code class="sourceCode cpp"><span class="cf">do</span></code> expression and a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop.</p>
+<p>In an expression-only context, the latter isn’t possible, so we’re fine there.</p>
+<p>In a statement context, a <code class="sourceCode cpp"><span class="cf">do</span></code> expression is completely pointless - you can just write statements. So we disambiguate in favor of the <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop. If somebody really, for some reason, wants to write a <code class="sourceCode cpp"><span class="cf">do</span></code> expression statement, they can parenthesize it: <code class="sourceCode cpp"><span class="op">(</span><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">})</span>;</code>. A statement that begins with a <code class="sourceCode cpp"><span class="op">(</span></code> has to then be an expression, so we’re now in an expression-only context.</p>
+<p>A previous iteration of the paper used <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> (with a space), which would lead to an ambiguity in the following in the context of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression:</p>
+<blockquote>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em>; <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>This could have been parsed as a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement followed by an infinite loop (that would never be executed because we’ve already returned out of the expression) or as a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop containing a single, unbraced, return statement. If we use the <code class="sourceCode cpp"><span class="kw">do_return</span></code> spelling, there’s no such ambiguity, since the above can only be a <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">...</span> <span class="cf">while</span></code> loop.</p>
+<p>Also because we would unconditionally parse a statement as beginning with <code class="sourceCode cpp"><span class="cf">do</span></code> as a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop, code like this would not work:</p>
+<blockquote>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> X<span class="op">{}</span>; <span class="op">}.</span>foo<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>Such code would also have to be parenthesized to disambiguate, which doesn’t seem like a huge burden on the user.</p>
+<h2 data-number="3.8" id="prior-art"><span class="header-section-number">3.8</span> Prior Art<a href="#prior-art" class="self-link"></a></h2>
+<p>GCC has had an extension called <a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html">statement-expressions</a> for decades, which look very similar to what we’re proposing here:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>gcc</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="op">({</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
+<span id="cb31-3"><a href="#cb31-3"></a>    <span class="dt">int</span> z;</span>
+<span id="cb31-4"><a href="#cb31-4"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> z <span class="op">=</span> y;</span>
+<span id="cb31-5"><a href="#cb31-5"></a>    <span class="cf">else</span> z <span class="op">=</span> <span class="op">-</span>y;</span>
+<span id="cb31-6"><a href="#cb31-6"></a>    z;</span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="op">})</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
+<span id="cb32-3"><a href="#cb32-3"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a>        <span class="kw">do_return</span> y;</span>
+<span id="cb32-5"><a href="#cb32-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a>        <span class="kw">do_return</span> <span class="op">-</span>y;</span>
+<span id="cb32-7"><a href="#cb32-7"></a>    <span class="op">}</span></span>
+<span id="cb32-8"><a href="#cb32-8"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>The reason we’re not simply proposing to standardize the existing extension is that there are two features we see that are lacking in it that are not easy to add:</p>
+<ol type="1">
+<li>The ability to specify a return type, which is critical for allowing statement-expressions to be lvalues.</li>
+<li>The ability to support yielding out of different branches of <code class="sourceCode cpp"><span class="cf">if</span></code>, due the implicit nature of the yield.</li>
+</ol>
+<p>For (1), there is simply no obvious place to put the <code class="sourceCode cpp"><em>trailing-return-type</em></code>. For (2), you can’t turn <code class="sourceCode cpp"><span class="cf">if</span></code>s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.</p>
+<p>Let’s also take the example motivating case from <span class="citation" data-cites="P2561R1">[<a href="#ref-P2561R1" role="doc-biblioref">P2561R1</a>]</span> and compare implicit last expression to explicit return:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Implicit Last Value</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Explicit Return</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a></span>
+<span id="cb33-3"><a href="#cb33-3"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb33-4"><a href="#cb33-4"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb33-5"><a href="#cb33-5"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb33-6"><a href="#cb33-6"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-7"><a href="#cb33-7"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">())</span>;</span>
+<span id="cb33-8"><a href="#cb33-8"></a>        <span class="op">}</span></span>
+<span id="cb33-9"><a href="#cb33-9"></a>        <span class="op">*</span>r <span class="co">// &lt;== NB: no semicolon</span></span>
+<span id="cb33-10"><a href="#cb33-10"></a>    <span class="op">}</span>;</span>
+<span id="cb33-11"><a href="#cb33-11"></a></span>
+<span id="cb33-12"><a href="#cb33-12"></a>    <span class="cf">return</span> j <span class="op">*</span> j;</span>
+<span id="cb33-13"><a href="#cb33-13"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2"></a></span>
+<span id="cb34-3"><a href="#cb34-3"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb34-5"><a href="#cb34-5"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb34-6"><a href="#cb34-6"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-7"><a href="#cb34-7"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">())</span>;</span>
+<span id="cb34-8"><a href="#cb34-8"></a>        <span class="op">}</span></span>
+<span id="cb34-9"><a href="#cb34-9"></a>        <span class="kw">do_return</span> <span class="op">*</span>r;</span>
+<span id="cb34-10"><a href="#cb34-10"></a>    <span class="op">}</span>;</span>
+<span id="cb34-11"><a href="#cb34-11"></a></span>
+<span id="cb34-12"><a href="#cb34-12"></a>    <span class="cf">return</span> j <span class="op">*</span> j;</span>
+<span id="cb34-13"><a href="#cb34-13"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>In the simple cases, explicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a <code class="sourceCode cpp"><span class="cf">do</span></code> expression would not be able to return from a loop either. We would have to extend the language to support <code class="sourceCode cpp"><span class="cf">if</span></code> expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.</p>
+<p>There’s also the question of <code class="sourceCode cpp"><span class="dt">void</span></code> expressions - which are where many of the pattern matching examples come from. In Rust, for instance, there is a differentiation based on the presence of a semicolon:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">let</span> a<span class="op">:</span> <span class="dt">i32</span> <span class="op">=</span> <span class="op">{</span> <span class="dv">1</span><span class="op">;</span> <span class="dv">2</span> <span class="op">};</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">let</span> b<span class="op">:</span> () <span class="op">=</span> <span class="op">{</span> <span class="dv">1</span><span class="op">;</span> <span class="dv">2</span><span class="op">;</span> <span class="op">};</span></span></code></pre></div>
+</blockquote>
+<p>This is a simple (if silly) example of a block expression in Rust. The value of the block is the value of the last expression of the block (Rust has both <code class="sourceCode cpp"><span class="cf">if</span></code> expressions and <code class="sourceCode cpp">loop</code> expressions) - in the first case the last example is <code class="sourceCode cpp"><span class="dv">2</span></code>, so <code class="sourceCode cpp">a</code> is an <code class="sourceCode cpp">i32</code>, while in the second example <code class="sourceCode cpp"><span class="dv">2</span>;</code> is a statement, so the last value is the… nothing… after the <code class="sourceCode cpp">;</code>, which is <code class="sourceCode cpp"><span class="op">()</span></code> (Rust’s unit type). This seems like too subtle a distinction, and one that’s very easy to get wrong (although typically the types are far enough apart such that if you get it wrong it’s a compiler error, rather than a runtime one):</p>
+<blockquote>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span> <span class="op">}</span>;   <span class="co">// ok, a is an int</span></span>
+<span id="cb35-2"><a href="#cb35-2"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span>; <span class="op">}</span>;  <span class="co">// ill-formed, b would be void (unless Regular Void is adopted)</span></span></code></pre></div>
+</blockquote>
+<p>But this would mean that our original example would work, just for a very different reason (rather than being <code class="sourceCode cpp"><span class="dt">void</span></code> expressions due to the lack of <code class="sourceCode cpp"><span class="kw">do_return</span></code>, they become <code class="sourceCode cpp"><span class="dt">void</span></code> expressions due to not having a final expression):</p>
+<blockquote>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a>x match <span class="op">{</span></span>
+<span id="cb36-2"><a href="#cb36-2"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb36-3"><a href="#cb36-3"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb36-4"><a href="#cb36-4"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb36-5"><a href="#cb36-5"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Ultimately, we feel that the simplicity of the proposed design and its consistency and uniformity with other parts of the language outweigh the added verbosity in the simple (though typical) cases.</p>
+<h2 data-number="3.9" id="what-about-reflection"><span class="header-section-number">3.9</span> What About Reflection?<a href="#what-about-reflection" class="self-link"></a></h2>
+<p>A question that often comes up, for any language feature: if we had reflection and, in particular, code injection: would we need this facility?</p>
+<p>The answer is not only yes, but reflection is a good motivating use-case for this facility. Because the language does not have any kind of block expression today, adding support for one would increase the amount of ways that code injection could work.</p>
+<p>One example might be, again, the error propagation proposal in <span class="citation" data-cites="P2561R1">[<a href="#ref-P2561R1" role="doc-biblioref">P2561R1</a>]</span>. If reflection allows me to write a hygienic macro that does code injection, perhaps we could write a library such that <code class="sourceCode cpp">try_<span class="op">(</span>E<span class="op">)</span></code> would inject an expression that would evaluate in the way that that paper proposes. But in order to do such a thing, we would need to be able to have a block expression to inject. This paper provides such a block expression.</p>
+<h2 data-number="3.10" id="where-can-do-expressions-appear"><span class="header-section-number">3.10</span> Where can <code class="sourceCode cpp"><span class="cf">do</span></code> expressions appear<a href="#where-can-do-expressions-appear" class="self-link"></a></h2>
+<p>gcc’s statement-expressions are not usable in all expression contexts. Trying to use them at namespace-scope, or in a default member initializer, etc, fails:</p>
+<blockquote>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">({</span>      <span class="co">// error: statement-expressions are not allowed outside functions</span></span>
+<span id="cb37-2"><a href="#cb37-2"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="dv">2</span>;  <span class="co">//        nor in template-argument lists</span></span>
+<span id="cb37-3"><a href="#cb37-3"></a>    j;</span>
+<span id="cb37-4"><a href="#cb37-4"></a><span class="op">})</span>;</span></code></pre></div>
+</blockquote>
+<p>In such contexts, there is a much smaller difference than a statement-expression and an immediately invoked lambda since you don’t have any other interesting control flow that you can do - the expression either yields a value or the program terminates.</p>
+<p>But if we’re going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Especially since if we’re adding a feature to subsume immediately invoked lambdas, it would be preferable to subsume <em>all</em> immediately invoked lambdas, not just some or most.</p>
+<p>We can think of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression as simply behaving like an immediately invoked lambda in such contexts. Not in the sense of allowing <code class="sourceCode cpp"><span class="cf">return</span></code> statements (there’s still no enclosing function to return out of), but the sense that any local variables declared would exist in a function stack. But this is probably more of a compiler implementation detail rather than a language design detail.</p>
+<p>In short: <code class="sourceCode cpp"><span class="cf">do</span></code> expressions should be usable in any expression context.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>This wording is quite incomplete, but is intended at this point to simply be a sketch to help understand the contour of the proposal.</p>
+<p>Add to <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb38-1"><a href="#cb38-1"></a><em>primary-expression</em>:</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  <em>literal</em></span>
+<span id="cb38-3"><a href="#cb38-3"></a>  this</span>
+<span id="cb38-4"><a href="#cb38-4"></a>  ( <em>expression</em> )</span>
+<span id="cb38-5"><a href="#cb38-5"></a>  <em>id-expression</em></span>
+<span id="cb38-6"><a href="#cb38-6"></a>  <em>lambda-expression</em></span>
+<span id="cb38-7"><a href="#cb38-7"></a>  <em>fold-expression</em></span>
+<span id="cb38-8"><a href="#cb38-8"></a>  <em>requires-expression</em></span>
+<span id="cb38-9"><a href="#cb38-9"></a><span class="va">+ <em>do-expression</em></span></span></code></pre></div>
+</div>
+</blockquote>
+<p>Add a new clause [expr.prim.do]:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">1</a></span> A <em>do-expression</em> provides a way to combine multiple statements into a single expression without introducing a new function scope.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb39-1"><a href="#cb39-1"></a><em>do-expression</em>:</span>
+<span id="cb39-2"><a href="#cb39-2"></a>  do <em>trailing-return-type</em><sub>opt</sub> <em>compound-statement</em></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">2</a></span> The <code class="sourceCode cpp"><em>compound-statement</em></code> of a <em>do-expression</em> is a control-flow-limited statement ([stmt.label]).</p>
+</div>
+</blockquote>
+<p>Change <span>8.3 <a href="https://wg21.link/stmt.expr">[stmt.expr]</a></span> to disambugate a <code class="sourceCode cpp"><span class="cf">do</span></code> expression from a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span> Expression statements have the form</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb40-1"><a href="#cb40-1"></a><em>expression-statement</em>:</span>
+<span id="cb40-2"><a href="#cb40-2"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
+<p>The expression is a <em>discarded-value</em> expression. All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a <em>null statement</em>. <span class="addu">The expression shall not be a <em>do-expression</em>.</span></p>
+<p>[Note 1: Most statements are expression statements — usually assignments or function calls. A null statement is useful to supply a null body to an iteration statement such as a while statement ([stmt.while]). — end note]</p>
+</blockquote>
+<p>Add to <span>8.7.1 <a href="https://wg21.link/stmt.jump.general">[stmt.jump.general]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span> Jump statements unconditionally transfer control.</p>
+<div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb41-1"><a href="#cb41-1"></a><em>jump-statement</em>:</span>
+<span id="cb41-2"><a href="#cb41-2"></a>  break ;</span>
+<span id="cb41-3"><a href="#cb41-3"></a>  continue ;</span>
+<span id="cb41-4"><a href="#cb41-4"></a>  return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span>
+<span id="cb41-5"><a href="#cb41-5"></a><span class="va">+ do_return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span></span>
+<span id="cb41-6"><a href="#cb41-6"></a>  <em>coroutine-return-statement</em></span>
+<span id="cb41-7"><a href="#cb41-7"></a>  goto <em>identifier</em> ;</span></code></pre></div>
+</div>
+</blockquote>
+<p>Add a new clause introducing a <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement after <span>8.7.4 <a href="https://wg21.link/stmt.return">[stmt.return]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">1</a></span> The <code class="sourceCode cpp"><span class="cf">do</span></code> expression’s value is produced by the <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">2</a></span> A <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement shall appear only within the <code class="sourceCode cpp"><em>compound-statement</em></code> of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression.</p>
+</div>
+</blockquote>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P1371R3">
+<p>[P1371R3] Michael Park, Bruno Cardoso Lopes, Sergei Murzin, David Sankel, Dan Sarginson, Bjarne Stroustrup. 2020-09-15. Pattern Matching. <br />
+<a href="https://wg21.link/p1371r3">https://wg21.link/p1371r3</a></p>
+</div>
+<div id="ref-P2552R2">
+<p>[P2552R2] Timur Doumler. 2023-05-19. On the ignorability of standard attributes. <br />
+<a href="https://wg21.link/p2552r2">https://wg21.link/p2552r2</a></p>
+</div>
+<div id="ref-P2561R1">
+<p>[P2561R1] Barry Revzin. 2022-10-11. An error propagation operator. <br />
+<a href="https://wg21.link/p2561r1">https://wg21.link/p2561r1</a></p>
+</div>
+<div id="ref-P2561R2">
+<p>[P2561R2] Barry Revzin. 2023-05-18. A control flow operator. <br />
+<a href="https://wg21.link/p2561r2">https://wg21.link/p2561r2</a></p>
+</div>
+<div id="ref-P2688R0">
+<p>[P2688R0] Michael Park. 2022-10-16. Pattern Matching Discussion for Kona 2022. <br />
+<a href="https://wg21.link/p2688r0">https://wg21.link/p2688r0</a></p>
+</div>
+<div id="ref-P2806R0">
+<p>[P2806R0] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park. 2023-02-14. do expressions. <br />
+<a href="https://wg21.link/p2806r0">https://wg21.link/p2806r0</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

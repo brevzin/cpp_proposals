@@ -1,6 +1,6 @@
 ---
 title: "`do` expressions"
-document: P2806R1
+document: P2806R2
 date: today
 audience: EWG
 author:
@@ -71,7 +71,7 @@ In its simplest form:
 
 ::: bq
 ```cpp
-int x = do { do return 42; };
+int x = do { do_return 42; };
 ```
 :::
 
@@ -81,15 +81,15 @@ A `do` expression consists of a sequence of statements, but is still, itself, an
 
 A `do` expression does introduce a new block scope - as the braces might suggest. But it does _not_ introduce a new function scope. There is no new stack frame. Which is what allows external control flow to work (see below).
 
-## `do return` statement
+## `do_return` statement
 
-The new `do return` statement has the same form as the `return` statement we have today: `do return $expr-or-braced-init-list$@~opt~@;`. It's behavior corresponds closely to that `return`, in unsurprising ways - `do return` yields from a `do` expression in the same way that `return` returns from a function.
+The new `do_return` statement has the same form as the `return` statement we have today: `do_return $expr-or-braced-init-list$@~opt~@;`. It's behavior corresponds closely to that `return`, in unsurprising ways - `do_return` yields from a `do` expression in the same way that `return` returns from a function.
 
-While `do return $value$;` and `return $value$;` do look quite close together and mean fairly different things, the leading `do` we think should be sufficiently clear, and we think it is a good spelling for this statement.
+While `do_return $value$;` and `return $value$;` do look quite close together and mean fairly different things, the leading `do` we think should be sufficiently clear, and we think it is a good spelling for this statement.
 
 Other alternative spellings we've considered:
 
-* `do_return`
+* `do return` (in the previous revision of this paper, which has an ambiguity with `do ... while` loops)
 * `do_yield` (presented to EWG in Issaquah as the initial pre-publication draft of this proposal)
 * `do yield`
 * `do break` (similarly to `return`, we are breaking out of this expression, but is less likely to conflict since `break` is less likely to be used than `return` and also the corresponding `break $value$;` is invalid today)
@@ -97,19 +97,19 @@ Other alternative spellings we've considered:
 
 ## Type and Value Category
 
-The expression `do { do return 42; }` is a prvalue of type `int`. We deduce the type from all of the `do return` statements, in the same way that `auto` return type deduction works for functions and lambdas.
+The expression `do { do_return 42; }` is a prvalue of type `int`. We deduce the type from all of the `do_return` statements, in the same way that `auto` return type deduction works for functions and lambdas.
 
 An explicit `$trailing-return-type$` can be provided to override this:
 
 ::: bq
 ```cpp
-do -> long { do return 42; }
+do -> long { do_return 42; }
 ```
 :::
 
-If no `do return` statement appears in the body of the `do` expression, or every `do return` statement is of the form `do return;`, then the expression is a prvalue of type `void`.
+If no `do_return` statement appears in the body of the `do` expression, or every `do_return` statement is of the form `do_return;`, then the expression is a prvalue of type `void`.
 
-Falling off the end of a `do` expression behaves like an implicit `do return;` - if this is incompatible the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
+Falling off the end of a `do` expression behaves like an implicit `do_return;` - if this is incompatible the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
 
 This makes the pattern matching cases [@P2688R0] work pretty naturally:
 
@@ -133,7 +133,7 @@ x match {
 ```
 :::
 
-Here, the whole `match` expression has type `void` because each arm has type `void` because none of the `do` expressions have a `do return` statement.
+Here, the whole `match` expression has type `void` because each arm has type `void` because none of the `do` expressions have a `do_return` statement.
 
 Yes, this requires an extra `do` for each arm, but it means we have a language that's much easier to explain because it's consistent - `do { cout << "don't care"; }` is a `void` expression in _any_ context. We don't have a `$compound-statement$` that happens to be a `void` expression just in this one spot.
 
@@ -163,7 +163,7 @@ Here, the existing pattern matching cannot support a `$braced-init-list$` becaus
 
 ## Copy Elision
 
-All the rules for initializing from `do` expression, and the way the expression that appears in a `do return` statement is treated, are the same as what the rules are for `return`.
+All the rules for initializing from `do` expression, and the way the expression that appears in a `do_return` statement is treated, are the same as what the rules are for `return`.
 
 Implicit move applies, for variables declared within the body of the `do` expression. In the following example, `r` is an unparenthesized `$id-expression$` that names an automatic storage variable declared within the statement, so it's implicitly moved:
 
@@ -171,7 +171,7 @@ Implicit move applies, for variables declared within the body of the `do` expres
 std::string s = do {
     std::string r = "hello";
     r += "world";
-    do return r;
+    do_return r;
 };
 ```
 
@@ -195,7 +195,7 @@ For a `do` expression, we have two different directions where we can escape (in 
 
 Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.
 
-That is, the rule we propose that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All `do return` statements (including the implicit `do return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
+That is, the rule we propose that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All `do_return` statements (including the implicit `do_return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
 
 Let's go through some examples.
 
@@ -205,9 +205,9 @@ Let's go through some examples.
 ```cpp
 auto a = do {
     if ($cond$) {
-        do return 1;
+        do_return 1;
     } else {
-        do return 2;
+        do_return 2;
     }
 };
 ```
@@ -216,21 +216,21 @@ auto a = do {
 ```cpp
 auto b = do {
     if ($cond$) {
-        do return 1;
+        do_return 1;
     } else {
-        do return 2.0;
+        do_return 2.0;
     }
 };
 ```
-</td><td>Error: The yielding control paths have different types and there is no provided `$trailing-return-type$`. This would be okay if it were `do -> int { ... }` or `do -> double { ... }` or `do -> float { ... }`, etc.</td></tr>
+</td><td>Ill-formed: The yielding control paths have different types and there is no provided `$trailing-return-type$`. This would be okay if it were `do -> int { ... }` or `do -> double { ... }` or `do -> float { ... }`, etc.</td></tr>
 <tr><td>
 ```cpp
 auto c = do {
     if ($cond$) {
-        do return 1;
+        do_return 1;
     }
 
-    do return 2;
+    do_return 2;
 };
 ```
 </td><td>OK: Similar to `a`, all yielding control paths yield the same type. There is no falling off the end here, it is not important that a yielding `if` has an `else`.</td></tr>
@@ -238,25 +238,25 @@ auto c = do {
 ```cpp
 auto d = do {
     if ($cond$) {
-        do return 1;
+        do_return 1;
     }
 };
 ```
-</td><td>Error: There are two yielding control paths here: the `do return 1;` and the implicit `do return;` from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if `$cond$` is `false`.</td></tr>
+</td><td>Ill-formed: There are two yielding control paths here: the `do_return 1;` and the implicit `do_return;` from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if `$cond$` is `false`.</td></tr>
 <tr><td>
 ```cpp
 int e = do {
     if ($cond$) {
-        do return;
+        do_return;
     }
 }, 1;
 ```
-</td><td>OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are `do return;` which are compatible.</tr>
+</td><td>OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are `do_return;` which are compatible.</tr>
 <tr><td>
 ```cpp
 int f = do {
     if ($cond$) {
-        do return 1;
+        do_return 1;
     }
 
     throw 2;
@@ -268,7 +268,7 @@ int f = do {
 int outer() {
     int g = do {
         if ($cond$) {
-            do return 1;
+            do_return 1;
         }
 
         return 3;
@@ -280,7 +280,7 @@ int outer() {
 ```cpp
 int h = do {
     if ($cond$) {
-        do return 1;
+        do_return 1;
     }
 
     std::abort();
@@ -298,14 +298,14 @@ enum Color {
 void func(Color c) {
     std::string_view name = do {
         switch (c) {
-        case Red:   do return "Red"sv;
-        case Green: do return "Green"sv;
-        case Blue:  do return "Blue"sv;
+        case Red:   do_return "Red"sv;
+        case Green: do_return "Green"sv;
+        case Blue:  do_return "Blue"sv;
         }
     };
 }
 ```
-</td><td>Error: This is probably the most interesting case when it comes to falling off the end. Here, the user knows that `c` only has three values, but the implementation does not, so it could still fall off the end. gcc does warn on the equivalent function form of this, clang does not. The typical solution here might be to add `__builtin_unreachable()`, now `std::unreachable()`, to the end of the function, but for this to work we have to discuss `[[noreturn]]` below. Barring that, the user would have to add either some default value or some other kind of control flow (like an exception, etc).</td></tr>
+</td><td>Ill-formed: This is probably the most interesting case when it comes to falling off the end. Here, the user knows that `c` only has three values, but the implementation does not, so it could still fall off the end. gcc does warn on the equivalent function form of this, clang does not. The typical solution here might be to add `__builtin_unreachable()`, now `std::unreachable()`, to the end of the function, but for this to work we have to discuss `[[noreturn]]` below. Barring that, the user would have to add either some default value or some other kind of control flow (like an exception, etc).</td></tr>
 <tr><td>
 ```cpp
 void func() {
@@ -317,21 +317,21 @@ void func() {
 
             for ($something$) {
                 if ($cond$) {
-                    do return 1;
+                    do_return 1;
                 }
             }
 
-            do return 2;
+            do_return 2;
         };
     }
 }
 ```
-</td><td>OK: The first `break` escapes the `do` expression and breaks from the outer loop. Otherwise, we have two yielding statements which both yield `int`. If the `do return 2;` statement did not exist, this would be ill-formed unless the compiler could prove that the loop itself did not terminate.
+</td><td>OK: The first `break` escapes the `do` expression and breaks from the outer loop. Otherwise, we have two yielding statements which both yield `int`. If the `do_return 2;` statement did not exist, this would be ill-formed unless the compiler could prove that the loop itself did not terminate.
 
-If the loop were `for (;;)`, then the lack of `do return 2;` would be fine - but anything more complicated than that would require some kind of final yield (or `throw`, etc.)</td></tr>
+If the loop were `for (;;)`, then the lack of `do_return 2;` would be fine - but anything more complicated than that would require some kind of final yield (or `throw`, etc.)</td></tr>
 </table>
 
-To reiterate: the implementation produces a control flow graph of the `do` expression and considers all yielding statements (*including* the implicit `do return;` on falling off the end, if the implementation considers that to be a possible path) in order to determine correctness of the statement-expression. The kinds of control flow that escape the statement entirely (exceptions, `return`, `break`, `continue`, `co_return`) do not need to be considered for purposes of consistency of yields (since they do not yield values).
+To reiterate: the implementation produces a control flow graph of the `do` expression and considers all yielding statements (*including* the implicit `do_return;` on falling off the end, if the implementation considers that to be a possible path) in order to determine correctness of the statement-expression. The kinds of control flow that escape the statement entirely (exceptions, `return`, `break`, `continue`, `co_return`) do not need to be considered for purposes of consistency of yields (since they do not yield values).
 
 ### `noreturn` functions
 
@@ -343,13 +343,13 @@ But there's one kind of escaping control flow that it _does not_ currently recog
 ```cpp
 int i = do {
     if ($cond$) {
-        do return 5;
+        do_return 5;
     }
 
     std::abort();
 
     // we know control flow never gets here, so we should not need to
-    // insert an implicit "do return;"
+    // insert an implicit "do_return;"
 };
 ```
 :::
@@ -366,6 +366,8 @@ That is normative wording which we can rely on. The above `do` expression can on
 
 That is: invoking a function marked `[[noreturn]]` can be considering an escaping control flow in exactly the same way that `return`, `break`, `throw`, etc., are already.
 
+Note that this violates the so-called Second Ignorability Rule suggested in [@P2552R2], which is a great reason to ignore that rule.
+
 ### Always-escaping expressions
 
 Consider:
@@ -378,7 +380,7 @@ int i = do -> int {
 ```
 :::
 
-This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an `if constexpr`) actually had `do return` statements in them. So it needs to be allowed.
+This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an `if constexpr`) actually had `do_return` statements in them. So it needs to be allowed.
 
 ### `goto`
 
@@ -397,7 +399,7 @@ Jumping *out* of a `do` expression is potentially useful though, in the same way
                     goto done;
                 }
 
-                do return $value$;
+                do_return $value$;
             };
         }
     }
@@ -447,7 +449,7 @@ Consider:
 ```cpp
 int i = do {
     if ($cond$) {
-        do return 0;
+        do_return 0;
     }
 };
 ```
@@ -457,15 +459,90 @@ Is this statement ill-formed (because there is a control path that falls off the
 
 It would make for a simpler design if we adopted undefined behavior here, but we think it's a better design to force the user to cover all control paths themselves.
 
+## Lifetime
+
+One important question is: when are local variables declared within a `do` expression destroyed?
+
+Consider the following:
+
+::: bq
+```cpp
+auto f() -> std::expected<T, E>;
+auto g(T) -> U;
+
+auto h() -> std::expected<U, E> {
+    auto u = g(do -> $TYPE$ {
+        auto result = f();
+        if (not result) {
+            return std::unexpected(std::move(result).error());
+        }
+        do_return *std::move(result);
+    });
+    return u;
+}
+```
+:::
+
+The use of `$TYPE$` above is meant as a placeholder for either `T` or `T&&`, as we'll explain shortly.
+
+What is the lifetime of the local variable `result`? There are three possible choices to this question:
+
+1. It is destroyed at the next `}`. This is the most consistent choice with everything else in the language.
+2. It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of `u`).
+3. It behaves as if it has local scope of the surrounding scope and is destroyed at the end of that outer scope, which in this case would be the end of `h()`.
+
+The consequence of (1) is that `result` is destroyed before we enter the call to `g`. This means that if the `do` expression returned a reference (i.e. `$TYPE$` was `T&&`), that reference would immediately dangle, and we would have to yield a `T`. This loses us some efficiency, since ideally both the `do` expression and `g` could just take a `T` - but now we have to incur a move.
+
+The consequence of (2) is that we *can* yield a `T&&` because `result` isn't going to be destroyed yet, and we don't have a dangling reference. Unless we rewrite it this way:
+
+::: bq
+```cpp
+auto f() -> std::expected<T, E>;
+auto g(T&&) -> U;
+
+auto h() -> std::expected<U, E> {
+    T&& t = do -> T&& {
+        auto result = f();
+        if (not result) {
+            return std::unexpected(std::move(result).error());
+        }
+        do_return *std::move(result);
+    };
+    return g(std::move(t));
+}
+```
+:::
+
+With (1), in order to avoid dangling, the `do` expression has to return a `T` (`t` can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the `do` expression to return `T&&`, but `t` would to be a `T` and not a `T&&`, since `result` is going to be destroyed at the end of the statement.
+
+Only with (3) - delaying destroying `result` until the closing of the innermost non-`do`-expression scope - is the above valid code that does not lead to any dangling reference.
+
+Note that the above example is specifically mentioned in [@P2561R2]'s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:
+
+::: bq
+```cpp
+auto f() -> std::expected<T, E>;
+auto g(T&&) -> U;
+
+auto h() -> std::expected<U, E> {
+    T&& t = f().try?;
+    return g(std::move(t));
+}
+```
+:::
+
+Choosing (3) allows the control flow operator proposal to be simply a lowering into a `do` expression.
+
+
 ## Grammar Disambiguation
 
 We have to disambiguate between a `do` expression and a `do`-`while` loop.
 
 In an expression-only context, the latter isn't possible, so we're fine there.
 
-In a statement context, a `do` expression is completely pointless - you can just write statements. So we disambiguate in favor of the `do`-`while` loop. If somebody really, for some reason, wants to write a `do` expression statement, they can parenthesize it: `(do { do return 42; });`. A statement that begins with a `(` has to then be an expression, so we're now in an expression-only context.
+In a statement context, a `do` expression is completely pointless - you can just write statements. So we disambiguate in favor of the `do`-`while` loop. If somebody really, for some reason, wants to write a `do` expression statement, they can parenthesize it: `(do { do_return 42; });`. A statement that begins with a `(` has to then be an expression, so we're now in an expression-only context.
 
-We also have to disambiguate between a `do return` statement (if that is the chosen spelling) and a `do`-`while` loop whose `$statement$` is a `return` statement:
+A previous iteration of the paper used `do return` (with a space), which would lead to an ambiguity in the following in the context of a `do` expression:
 
 ::: bq
 ```cpp
@@ -473,15 +550,13 @@ do return $value$; while ($cond$);
 ```
 :::
 
-This could be parsed as a `do return` statement followed by an infinite loop (that would never be executed because we've already returned out of the expression) or as a `do`-`while` loop containing a single, unbraced, return statement.
-
-The latter interpretation is valid code today, but is completely useless as it is exactly equivalent to having written `return $value$;` to begin with, so we think it's reasonable to disambiguate in favor of the former interpretation. This isn't a silent change in meaning, since all such code would become ill-formed by way of not appearing in a `do` expression - and the new meaning would almost surely lead to a compiler warning due to the unreachable code.
+This could have been parsed as a `do return` statement followed by an infinite loop (that would never be executed because we've already returned out of the expression) or as a `do`-`while` loop containing a single, unbraced, return statement. If we use the `do_return` spelling, there's no such ambiguity, since the above can only be a `do ... while` loop.
 
 Also because we would unconditionally parse a statement as beginning with `do` as a `do`-`while` loop, code like this would not work:
 
 ::: bq
 ```cpp
-do { do return X{}; }.foo();
+do { do_return X{}; }.foo();
 ```
 :::
 
@@ -509,9 +584,9 @@ GCC has had an extension called [statement-expressions](https://gcc.gnu.org/onli
 do {
     int y = foo();
     if (y > 0) {
-        do return y;
+        do_return y;
     } else {
-        do return -y;
+        do_return -y;
     }
 }
 ```
@@ -554,7 +629,7 @@ auto bar(int i) -> std::expected<int, E> {
         if (not r) {
             return std::unexpected(r.error());
         }
-        do return *r;
+        do_return *r;
     };
 
     return j * j;
@@ -582,7 +657,7 @@ auto b = do { 1; 2; };  // ill-formed, b would be void (unless Regular Void is a
 ```
 :::
 
-But this would mean that our original example would work, just for a very different reason (rather than being `void` expressions due to the lack of `do return`, they become `void` expressions due to not having a final expression):
+But this would mean that our original example would work, just for a very different reason (rather than being `void` expressions due to the lack of `do_return`, they become `void` expressions due to not having a final expression):
 
 ::: bq
 ```cpp
@@ -673,18 +748,6 @@ The expression is a *discarded-value* expression. All side effects from an expre
 [Note 1: Most statements are expression statements — usually assignments or function calls. A null statement is useful to supply a null body to an iteration statement such as a while statement ([stmt.while]). — end note]
 :::
 
-Insert a disambiguation to [stmt.do]{.sref}:
-
-::: bq
-[1]{.pnum} The expression is contextually converted to `bool`; if that conversion is ill-formed, the program is ill-formed.
-
-::: addu
-[1a]{.pnum} The `statement` in the `do` statement shall not be a `return` statement.
-:::
-
-[2]{.pnum} In the `do` statement the substatement is executed repeatedly until the value of the expression becomes `false`. The test takes place after each execution of the statement.
-:::
-
 Add to [stmt.jump.general]{.sref}:
 
 ::: bq
@@ -695,18 +758,18 @@ $jump-statement$:
   break ;
   continue ;
   return $expr-or-braced-init-list$@~opt~@ ;
-+ do return $expr-or-braced-init-list$@~opt~@ ;
++ do_return $expr-or-braced-init-list$@~opt~@ ;
   $coroutine-return-statement$
   goto $identifier$ ;
 ```
 :::
 
-Add a new clause introducing a `do return` statement after [stmt.return]{.sref}:
+Add a new clause introducing a `do_return` statement after [stmt.return]{.sref}:
 
 ::: bq
 ::: addu
-[1]{.pnum} The `do` expression's value is produced by the `do return` statement.
+[1]{.pnum} The `do` expression's value is produced by the `do_return` statement.
 
-[2]{.pnum} A `do return` statement shall appear only within the `$compound-statement$` of a `do` expression.
+[2]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `do` expression.
 :::
 :::

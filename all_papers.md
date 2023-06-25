@@ -73,7 +73,7 @@
 - P2757 Type-checking format args: [p2757r0](2757_type_check_format/p2757r0.html) [p2757r1](2757_type_check_format/p2757r1.html) [p2757r2](2757_type_check_format/p2757r2.html) [p2757r3](2757_type_check_format/p2757r3.html)
 - ![][~constexpr] P2758 Emitting messages at compile time: [p2758r0](2758_compile_time_messages/p2758r0.html)
 - ![][~ranges] P2760 A Plan for C++26 Ranges: [p2760r0](2760_ranges_26_plan/p2760r0.html)
-- P2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html) [p2806r1](2806_do_expr/p2806r1.html)
+- P2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html) [p2806r1](2806_do_expr/p2806r1.html) [p2806r2](2806_do_expr/p2806r2.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet
