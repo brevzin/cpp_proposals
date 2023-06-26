@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-06-25" />
+  <meta name="dcterms.date" content="2023-06-26" />
   <title>do expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-06-25</td>
+    <td>2023-06-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1012,7 +1012,7 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <li>It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of <code class="sourceCode cpp">u</code>).</li>
 <li>It behaves as if it has local scope of the surrounding scope and is destroyed at the end of that outer scope, which in this case would be the end of <code class="sourceCode cpp">h<span class="op">()</span></code>.</li>
 </ol>
-<p>The consequence of (1) is that <code class="sourceCode cpp">result</code> is destroyed before we enter the call to <code class="sourceCode cpp">g</code>. This means that if the <code class="sourceCode cpp"><span class="cf">do</span></code> expression returned a reference (i.e. <code class="sourceCode cpp"><em>TYPE</em></code> was <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>), that reference would immediately dangle, and we would have to yield a <code class="sourceCode cpp">T</code>. This loses us some efficiency, since ideally both the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and <code class="sourceCode cpp">g</code> could just take a <code class="sourceCode cpp">T</code> - but now we have to incur a move.</p>
+<p>The consequence of (1) is that <code class="sourceCode cpp">result</code> is destroyed before we enter the call to <code class="sourceCode cpp">g</code>. This means that if the <code class="sourceCode cpp"><span class="cf">do</span></code> expression returned a reference (i.e. <code class="sourceCode cpp"><em>TYPE</em></code> was <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>), that reference would immediately dangle. We would have to yield a <code class="sourceCode cpp">T</code>. This loses us some efficiency, since ideally both the <code class="sourceCode cpp"><span class="cf">do</span></code> expression and <code class="sourceCode cpp">g</code> could just take a <code class="sourceCode cpp">T</code> - but now we have to incur a move.</p>
 <p>The consequence of (2) is that we <em>can</em> yield a <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code> because <code class="sourceCode cpp">result</code> isn’t going to be destroyed yet, and we don’t have a dangling reference. Unless we rewrite it this way:</p>
 <blockquote>
 <div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
@@ -1029,7 +1029,7 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <span id="cb27-12"><a href="#cb27-12"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
 <span id="cb27-13"><a href="#cb27-13"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>With (1), in order to avoid dangling, the <code class="sourceCode cpp"><span class="cf">do</span></code> expression has to return a <code class="sourceCode cpp">T</code> (<code class="sourceCode cpp">t</code> can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the <code class="sourceCode cpp"><span class="cf">do</span></code> expression to return <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, but <code class="sourceCode cpp">t</code> would to be a <code class="sourceCode cpp">T</code> and not a <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, since <code class="sourceCode cpp">result</code> is going to be destroyed at the end of the statement.</p>
+<p>With (1), in order to avoid dangling, the <code class="sourceCode cpp"><span class="cf">do</span></code> expression must return a <code class="sourceCode cpp">T</code> (<code class="sourceCode cpp">t</code> can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the <code class="sourceCode cpp"><span class="cf">do</span></code> expression to return <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, but <code class="sourceCode cpp">t</code> would to be a <code class="sourceCode cpp">T</code> and not a <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>, since <code class="sourceCode cpp">result</code> is going to be destroyed at the end of the statement. We still incur a move, just slightly later.</p>
 <p>Only with (3) - delaying destroying <code class="sourceCode cpp">result</code> until the closing of the innermost non-<code class="sourceCode cpp"><span class="cf">do</span></code>-expression scope - is the above valid code that does not lead to any dangling reference.</p>
 <p>Note that the above example is specifically mentioned in <span class="citation" data-cites="P2561R2">[<a href="#ref-P2561R2" role="doc-biblioref">P2561R2</a>]</span>’s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:</p>
 <blockquote>
@@ -1042,18 +1042,49 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <span id="cb28-7"><a href="#cb28-7"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Choosing (3) allows the control flow operator proposal to be simply a lowering into a <code class="sourceCode cpp"><span class="cf">do</span></code> expression.</p>
+<p>On the other hand, consider this example:</p>
+<blockquote>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">)</span>;</span>
+<span id="cb29-3"><a href="#cb29-3"></a>        <span class="kw">do_return</span> get<span class="op">(</span><span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    <span class="op">}</span> <span class="op">+</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb29-5"><a href="#cb29-5"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">)</span>;</span>
+<span id="cb29-6"><a href="#cb29-6"></a>        <span class="kw">do_return</span> get<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb29-7"><a href="#cb29-7"></a>    <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Each <code class="sourceCode cpp"><span class="cf">do</span></code> expression is locking the same mutex, <code class="sourceCode cpp">mtx</code>. With (1), the two <code class="sourceCode cpp">lock_guard</code>s are each destroyed at their nearest <code class="sourceCode cpp"><span class="op">}</span></code>, so the result of this code is that we lock the mutex, call <code class="sourceCode cpp">get<span class="op">(</span><span class="dv">0</span><span class="op">)</span></code>, unlock the mutex, then lock the mutex, call <code class="sourceCode cpp">get<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, and unlock the mutex (or possibly the second <code class="sourceCode cpp"><span class="cf">do</span></code> expression is evaluated first, doesn’t matter). Following the usual C++ lifetime rules, most people would expect this to be valid code.</p>
+<p>With either of the two approaches to extending lifetime, either (2) or (3), this deadlocks. The two <code class="sourceCode cpp">lock_guard</code>s aren’t destroyed until after the initialization of <code class="sourceCode cpp">i</code>, or even later, and so whichever one is locked first is still alive when the second one is locked.</p>
+<p>That means the choice is between extending the lifetime of variables to avoid dangling references and keeping the lifetime of variables the same to maintain the usual C++ destructor rules. The familiarity and expectation of the latter is so strong that (1) is likely the only option.</p>
+<p>This does suggest that there needs to be some way to explicitly extend a variable to the outer scope. After all, a <code class="sourceCode cpp"><span class="cf">do</span></code> expression’s control flow behaves as if its in that outer scope (we <code class="sourceCode cpp"><span class="cf">return</span></code> from the enclosing function, <code class="sourceCode cpp"><span class="cf">continue</span></code> the enclosing loop, etc.), so there is definitely a compelling argument to me made that variables belong in that scope as well. But they probably need some sort of annotation:</p>
+<blockquote>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
+<span id="cb30-2"><a href="#cb30-2"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> U;</span>
+<span id="cb30-3"><a href="#cb30-3"></a></span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="kw">auto</span> h<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>U, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a>    T<span class="op">&amp;&amp;</span> t <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T<span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>        <span class="co">// Annotating this variable ensures that its destructor runs</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a>        <span class="co">// as if it was declared in the innermost non-do-expression scope.</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a>        <span class="op">[[<em></span><span class="at">outer</span><span class="op">-</span><span class="at">scope</span><span class="op"></em>]]</span> <span class="kw">auto</span> result <span class="op">=</span> f<span class="op">()</span>;</span>
+<span id="cb30-9"><a href="#cb30-9"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> result<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-10"><a href="#cb30-10"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>result<span class="op">).</span>error<span class="op">())</span>;</span>
+<span id="cb30-11"><a href="#cb30-11"></a>        <span class="op">}</span></span>
+<span id="cb30-12"><a href="#cb30-12"></a>        <span class="kw">do_return</span> <span class="op">*</span>std<span class="op">::</span>move<span class="op">(</span>result<span class="op">)</span>;</span>
+<span id="cb30-13"><a href="#cb30-13"></a>    <span class="op">}</span>;</span>
+<span id="cb30-14"><a href="#cb30-14"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
+<span id="cb30-15"><a href="#cb30-15"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
 <h2 data-number="3.7" id="grammar-disambiguation"><span class="header-section-number">3.7</span> Grammar Disambiguation<a href="#grammar-disambiguation" class="self-link"></a></h2>
 <p>We have to disambiguate between a <code class="sourceCode cpp"><span class="cf">do</span></code> expression and a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop.</p>
 <p>In an expression-only context, the latter isn’t possible, so we’re fine there.</p>
 <p>In a statement context, a <code class="sourceCode cpp"><span class="cf">do</span></code> expression is completely pointless - you can just write statements. So we disambiguate in favor of the <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop. If somebody really, for some reason, wants to write a <code class="sourceCode cpp"><span class="cf">do</span></code> expression statement, they can parenthesize it: <code class="sourceCode cpp"><span class="op">(</span><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">})</span>;</code>. A statement that begins with a <code class="sourceCode cpp"><span class="op">(</span></code> has to then be an expression, so we’re now in an expression-only context.</p>
 <p>A previous iteration of the paper used <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> (with a space), which would lead to an ambiguity in the following in the context of a <code class="sourceCode cpp"><span class="cf">do</span></code> expression:</p>
 <blockquote>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em>; <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em>; <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>This could have been parsed as a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code> statement followed by an infinite loop (that would never be executed because we’ve already returned out of the expression) or as a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop containing a single, unbraced, return statement. If we use the <code class="sourceCode cpp"><span class="kw">do_return</span></code> spelling, there’s no such ambiguity, since the above can only be a <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">...</span> <span class="cf">while</span></code> loop.</p>
 <p>Also because we would unconditionally parse a statement as beginning with <code class="sourceCode cpp"><span class="cf">do</span></code> as a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop, code like this would not work:</p>
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1"></a><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> X<span class="op">{}</span>; <span class="op">}.</span>foo<span class="op">()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> X<span class="op">{}</span>; <span class="op">}.</span>foo<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
 <p>Such code would also have to be parenthesized to disambiguate, which doesn’t seem like a huge burden on the user.</p>
 <h2 data-number="3.8" id="prior-art"><span class="header-section-number">3.8</span> Prior Art<a href="#prior-art" class="self-link"></a></h2>
@@ -1071,21 +1102,21 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1"></a><span class="op">({</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
-<span id="cb31-3"><a href="#cb31-3"></a>    <span class="dt">int</span> z;</span>
-<span id="cb31-4"><a href="#cb31-4"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> z <span class="op">=</span> y;</span>
-<span id="cb31-5"><a href="#cb31-5"></a>    <span class="cf">else</span> z <span class="op">=</span> <span class="op">-</span>y;</span>
-<span id="cb31-6"><a href="#cb31-6"></a>    z;</span>
-<span id="cb31-7"><a href="#cb31-7"></a><span class="op">})</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1"></a><span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb32-2"><a href="#cb32-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
-<span id="cb32-3"><a href="#cb32-3"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-4"><a href="#cb32-4"></a>        <span class="kw">do_return</span> y;</span>
-<span id="cb32-5"><a href="#cb32-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb32-6"><a href="#cb32-6"></a>        <span class="kw">do_return</span> <span class="op">-</span>y;</span>
-<span id="cb32-7"><a href="#cb32-7"></a>    <span class="op">}</span></span>
-<span id="cb32-8"><a href="#cb32-8"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="op">({</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
+<span id="cb33-3"><a href="#cb33-3"></a>    <span class="dt">int</span> z;</span>
+<span id="cb33-4"><a href="#cb33-4"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> z <span class="op">=</span> y;</span>
+<span id="cb33-5"><a href="#cb33-5"></a>    <span class="cf">else</span> z <span class="op">=</span> <span class="op">-</span>y;</span>
+<span id="cb33-6"><a href="#cb33-6"></a>    z;</span>
+<span id="cb33-7"><a href="#cb33-7"></a><span class="op">})</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb34-2"><a href="#cb34-2"></a>    <span class="dt">int</span> y <span class="op">=</span> foo<span class="op">()</span>;</span>
+<span id="cb34-3"><a href="#cb34-3"></a>    <span class="cf">if</span> <span class="op">(</span>y <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a>        <span class="kw">do_return</span> y;</span>
+<span id="cb34-5"><a href="#cb34-5"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb34-6"><a href="#cb34-6"></a>        <span class="kw">do_return</span> <span class="op">-</span>y;</span>
+<span id="cb34-7"><a href="#cb34-7"></a>    <span class="op">}</span></span>
+<span id="cb34-8"><a href="#cb34-8"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1109,32 +1140,32 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 </thead>
 <tbody>
 <tr class="odd">
-<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span></span>
-<span id="cb33-2"><a href="#cb33-2"></a></span>
-<span id="cb33-3"><a href="#cb33-3"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb33-4"><a href="#cb33-4"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb33-5"><a href="#cb33-5"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
-<span id="cb33-6"><a href="#cb33-6"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-7"><a href="#cb33-7"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">())</span>;</span>
-<span id="cb33-8"><a href="#cb33-8"></a>        <span class="op">}</span></span>
-<span id="cb33-9"><a href="#cb33-9"></a>        <span class="op">*</span>r <span class="co">// &lt;== NB: no semicolon</span></span>
-<span id="cb33-10"><a href="#cb33-10"></a>    <span class="op">}</span>;</span>
-<span id="cb33-11"><a href="#cb33-11"></a></span>
-<span id="cb33-12"><a href="#cb33-12"></a>    <span class="cf">return</span> j <span class="op">*</span> j;</span>
-<span id="cb33-13"><a href="#cb33-13"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span></span>
-<span id="cb34-2"><a href="#cb34-2"></a></span>
-<span id="cb34-3"><a href="#cb34-3"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb34-4"><a href="#cb34-4"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb34-5"><a href="#cb34-5"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
-<span id="cb34-6"><a href="#cb34-6"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb34-7"><a href="#cb34-7"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">())</span>;</span>
-<span id="cb34-8"><a href="#cb34-8"></a>        <span class="op">}</span></span>
-<span id="cb34-9"><a href="#cb34-9"></a>        <span class="kw">do_return</span> <span class="op">*</span>r;</span>
-<span id="cb34-10"><a href="#cb34-10"></a>    <span class="op">}</span>;</span>
-<span id="cb34-11"><a href="#cb34-11"></a></span>
-<span id="cb34-12"><a href="#cb34-12"></a>    <span class="cf">return</span> j <span class="op">*</span> j;</span>
-<span id="cb34-13"><a href="#cb34-13"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span></span>
+<span id="cb35-2"><a href="#cb35-2"></a></span>
+<span id="cb35-3"><a href="#cb35-3"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb35-4"><a href="#cb35-4"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb35-5"><a href="#cb35-5"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb35-6"><a href="#cb35-6"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-7"><a href="#cb35-7"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">())</span>;</span>
+<span id="cb35-8"><a href="#cb35-8"></a>        <span class="op">}</span></span>
+<span id="cb35-9"><a href="#cb35-9"></a>        <span class="op">*</span>r <span class="co">// &lt;== NB: no semicolon</span></span>
+<span id="cb35-10"><a href="#cb35-10"></a>    <span class="op">}</span>;</span>
+<span id="cb35-11"><a href="#cb35-11"></a></span>
+<span id="cb35-12"><a href="#cb35-12"></a>    <span class="cf">return</span> j <span class="op">*</span> j;</span>
+<span id="cb35-13"><a href="#cb35-13"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2"></a></span>
+<span id="cb36-3"><a href="#cb36-3"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span>, E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb36-4"><a href="#cb36-4"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb36-5"><a href="#cb36-5"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">)</span>;</span>
+<span id="cb36-6"><a href="#cb36-6"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-7"><a href="#cb36-7"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">())</span>;</span>
+<span id="cb36-8"><a href="#cb36-8"></a>        <span class="op">}</span></span>
+<span id="cb36-9"><a href="#cb36-9"></a>        <span class="kw">do_return</span> <span class="op">*</span>r;</span>
+<span id="cb36-10"><a href="#cb36-10"></a>    <span class="op">}</span>;</span>
+<span id="cb36-11"><a href="#cb36-11"></a></span>
+<span id="cb36-12"><a href="#cb36-12"></a>    <span class="cf">return</span> j <span class="op">*</span> j;</span>
+<span id="cb36-13"><a href="#cb36-13"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1146,16 +1177,16 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 </blockquote>
 <p>This is a simple (if silly) example of a block expression in Rust. The value of the block is the value of the last expression of the block (Rust has both <code class="sourceCode cpp"><span class="cf">if</span></code> expressions and <code class="sourceCode cpp">loop</code> expressions) - in the first case the last example is <code class="sourceCode cpp"><span class="dv">2</span></code>, so <code class="sourceCode cpp">a</code> is an <code class="sourceCode cpp">i32</code>, while in the second example <code class="sourceCode cpp"><span class="dv">2</span>;</code> is a statement, so the last value is the… nothing… after the <code class="sourceCode cpp">;</code>, which is <code class="sourceCode cpp"><span class="op">()</span></code> (Rust’s unit type). This seems like too subtle a distinction, and one that’s very easy to get wrong (although typically the types are far enough apart such that if you get it wrong it’s a compiler error, rather than a runtime one):</p>
 <blockquote>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span> <span class="op">}</span>;   <span class="co">// ok, a is an int</span></span>
-<span id="cb35-2"><a href="#cb35-2"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span>; <span class="op">}</span>;  <span class="co">// ill-formed, b would be void (unless Regular Void is adopted)</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span> <span class="op">}</span>;   <span class="co">// ok, a is an int</span></span>
+<span id="cb37-2"><a href="#cb37-2"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span>; <span class="op">}</span>;  <span class="co">// ill-formed, b would be void (unless Regular Void is adopted)</span></span></code></pre></div>
 </blockquote>
 <p>But this would mean that our original example would work, just for a very different reason (rather than being <code class="sourceCode cpp"><span class="dt">void</span></code> expressions due to the lack of <code class="sourceCode cpp"><span class="kw">do_return</span></code>, they become <code class="sourceCode cpp"><span class="dt">void</span></code> expressions due to not having a final expression):</p>
 <blockquote>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1"></a>x match <span class="op">{</span></span>
-<span id="cb36-2"><a href="#cb36-2"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span>; <span class="op">}</span>;</span>
-<span id="cb36-3"><a href="#cb36-3"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span>; <span class="op">}</span>;</span>
-<span id="cb36-4"><a href="#cb36-4"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span>;</span>
-<span id="cb36-5"><a href="#cb36-5"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1"></a>x match <span class="op">{</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb38-3"><a href="#cb38-3"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb38-4"><a href="#cb38-4"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span>;</span>
+<span id="cb38-5"><a href="#cb38-5"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Ultimately, we feel that the simplicity of the proposed design and its consistency and uniformity with other parts of the language outweigh the added verbosity in the simple (though typical) cases.</p>
 <h2 data-number="3.9" id="what-about-reflection"><span class="header-section-number">3.9</span> What About Reflection?<a href="#what-about-reflection" class="self-link"></a></h2>
@@ -1165,10 +1196,10 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <h2 data-number="3.10" id="where-can-do-expressions-appear"><span class="header-section-number">3.10</span> Where can <code class="sourceCode cpp"><span class="cf">do</span></code> expressions appear<a href="#where-can-do-expressions-appear" class="self-link"></a></h2>
 <p>gcc’s statement-expressions are not usable in all expression contexts. Trying to use them at namespace-scope, or in a default member initializer, etc, fails:</p>
 <blockquote>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">({</span>      <span class="co">// error: statement-expressions are not allowed outside functions</span></span>
-<span id="cb37-2"><a href="#cb37-2"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="dv">2</span>;  <span class="co">//        nor in template-argument lists</span></span>
-<span id="cb37-3"><a href="#cb37-3"></a>    j;</span>
-<span id="cb37-4"><a href="#cb37-4"></a><span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">({</span>      <span class="co">// error: statement-expressions are not allowed outside functions</span></span>
+<span id="cb39-2"><a href="#cb39-2"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="dv">2</span>;  <span class="co">//        nor in template-argument lists</span></span>
+<span id="cb39-3"><a href="#cb39-3"></a>    j;</span>
+<span id="cb39-4"><a href="#cb39-4"></a><span class="op">})</span>;</span></code></pre></div>
 </blockquote>
 <p>In such contexts, there is a much smaller difference than a statement-expression and an immediately invoked lambda since you don’t have any other interesting control flow that you can do - the expression either yields a value or the program terminates.</p>
 <p>But if we’re going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Especially since if we’re adding a feature to subsume immediately invoked lambdas, it would be preferable to subsume <em>all</em> immediately invoked lambdas, not just some or most.</p>
@@ -1179,31 +1210,31 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <p>Add to <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb38"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb38-1"><a href="#cb38-1"></a><em>primary-expression</em>:</span>
-<span id="cb38-2"><a href="#cb38-2"></a>  <em>literal</em></span>
-<span id="cb38-3"><a href="#cb38-3"></a>  this</span>
-<span id="cb38-4"><a href="#cb38-4"></a>  ( <em>expression</em> )</span>
-<span id="cb38-5"><a href="#cb38-5"></a>  <em>id-expression</em></span>
-<span id="cb38-6"><a href="#cb38-6"></a>  <em>lambda-expression</em></span>
-<span id="cb38-7"><a href="#cb38-7"></a>  <em>fold-expression</em></span>
-<span id="cb38-8"><a href="#cb38-8"></a>  <em>requires-expression</em></span>
-<span id="cb38-9"><a href="#cb38-9"></a><span class="va">+ <em>do-expression</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb40-1"><a href="#cb40-1"></a><em>primary-expression</em>:</span>
+<span id="cb40-2"><a href="#cb40-2"></a>  <em>literal</em></span>
+<span id="cb40-3"><a href="#cb40-3"></a>  this</span>
+<span id="cb40-4"><a href="#cb40-4"></a>  ( <em>expression</em> )</span>
+<span id="cb40-5"><a href="#cb40-5"></a>  <em>id-expression</em></span>
+<span id="cb40-6"><a href="#cb40-6"></a>  <em>lambda-expression</em></span>
+<span id="cb40-7"><a href="#cb40-7"></a>  <em>fold-expression</em></span>
+<span id="cb40-8"><a href="#cb40-8"></a>  <em>requires-expression</em></span>
+<span id="cb40-9"><a href="#cb40-9"></a><span class="va">+ <em>do-expression</em></span></span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new clause [expr.prim.do]:</p>
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">1</a></span> A <em>do-expression</em> provides a way to combine multiple statements into a single expression without introducing a new function scope.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb39-1"><a href="#cb39-1"></a><em>do-expression</em>:</span>
-<span id="cb39-2"><a href="#cb39-2"></a>  do <em>trailing-return-type</em><sub>opt</sub> <em>compound-statement</em></span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb41-1"><a href="#cb41-1"></a><em>do-expression</em>:</span>
+<span id="cb41-2"><a href="#cb41-2"></a>  do <em>trailing-return-type</em><sub>opt</sub> <em>compound-statement</em></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">2</a></span> The <code class="sourceCode cpp"><em>compound-statement</em></code> of a <em>do-expression</em> is a control-flow-limited statement ([stmt.label]).</p>
 </div>
 </blockquote>
 <p>Change <span>8.3 <a href="https://wg21.link/stmt.expr">[stmt.expr]</a></span> to disambugate a <code class="sourceCode cpp"><span class="cf">do</span></code> expression from a <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code> loop:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span> Expression statements have the form</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb40-1"><a href="#cb40-1"></a><em>expression-statement</em>:</span>
-<span id="cb40-2"><a href="#cb40-2"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb42-1"><a href="#cb42-1"></a><em>expression-statement</em>:</span>
+<span id="cb42-2"><a href="#cb42-2"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
 <p>The expression is a <em>discarded-value</em> expression. All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a <em>null statement</em>. <span class="addu">The expression shall not be a <em>do-expression</em>.</span></p>
 <p>[Note 1: Most statements are expression statements — usually assignments or function calls. A null statement is useful to supply a null body to an iteration statement such as a while statement ([stmt.while]). — end note]</p>
 </blockquote>
@@ -1211,13 +1242,13 @@ If the loop were <code class="sourceCode cpp"><span class="cf">for</span> <span 
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span> Jump statements unconditionally transfer control.</p>
 <div>
-<div class="sourceCode" id="cb41"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb41-1"><a href="#cb41-1"></a><em>jump-statement</em>:</span>
-<span id="cb41-2"><a href="#cb41-2"></a>  break ;</span>
-<span id="cb41-3"><a href="#cb41-3"></a>  continue ;</span>
-<span id="cb41-4"><a href="#cb41-4"></a>  return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span>
-<span id="cb41-5"><a href="#cb41-5"></a><span class="va">+ do_return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span></span>
-<span id="cb41-6"><a href="#cb41-6"></a>  <em>coroutine-return-statement</em></span>
-<span id="cb41-7"><a href="#cb41-7"></a>  goto <em>identifier</em> ;</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb43-1"><a href="#cb43-1"></a><em>jump-statement</em>:</span>
+<span id="cb43-2"><a href="#cb43-2"></a>  break ;</span>
+<span id="cb43-3"><a href="#cb43-3"></a>  continue ;</span>
+<span id="cb43-4"><a href="#cb43-4"></a>  return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span>
+<span id="cb43-5"><a href="#cb43-5"></a><span class="va">+ do_return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span></span>
+<span id="cb43-6"><a href="#cb43-6"></a>  <em>coroutine-return-statement</em></span>
+<span id="cb43-7"><a href="#cb43-7"></a>  goto <em>identifier</em> ;</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new clause introducing a <code class="sourceCode cpp"><span class="kw">do_return</span></code> statement after <span>8.7.4 <a href="https://wg21.link/stmt.return">[stmt.return]</a></span>:</p>

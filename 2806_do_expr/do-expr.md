@@ -491,7 +491,7 @@ What is the lifetime of the local variable `result`? There are three possible ch
 2. It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of `u`).
 3. It behaves as if it has local scope of the surrounding scope and is destroyed at the end of that outer scope, which in this case would be the end of `h()`.
 
-The consequence of (1) is that `result` is destroyed before we enter the call to `g`. This means that if the `do` expression returned a reference (i.e. `$TYPE$` was `T&&`), that reference would immediately dangle, and we would have to yield a `T`. This loses us some efficiency, since ideally both the `do` expression and `g` could just take a `T` - but now we have to incur a move.
+The consequence of (1) is that `result` is destroyed before we enter the call to `g`. This means that if the `do` expression returned a reference (i.e. `$TYPE$` was `T&&`), that reference would immediately dangle. We would have to yield a `T`. This loses us some efficiency, since ideally both the `do` expression and `g` could just take a `T` - but now we have to incur a move.
 
 The consequence of (2) is that we *can* yield a `T&&` because `result` isn't going to be destroyed yet, and we don't have a dangling reference. Unless we rewrite it this way:
 
@@ -513,7 +513,7 @@ auto h() -> std::expected<U, E> {
 ```
 :::
 
-With (1), in order to avoid dangling, the `do` expression has to return a `T` (`t` can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the `do` expression to return `T&&`, but `t` would to be a `T` and not a `T&&`, since `result` is going to be destroyed at the end of the statement.
+With (1), in order to avoid dangling, the `do` expression must return a `T` (`t` can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the `do` expression to return `T&&`, but `t` would to be a `T` and not a `T&&`, since `result` is going to be destroyed at the end of the statement. We still incur a move, just slightly later.
 
 Only with (3) - delaying destroying `result` until the closing of the innermost non-`do`-expression scope - is the above valid code that does not lead to any dangling reference.
 
@@ -532,6 +532,48 @@ auto h() -> std::expected<U, E> {
 :::
 
 Choosing (3) allows the control flow operator proposal to be simply a lowering into a `do` expression.
+
+On the other hand, consider this example:
+
+::: bq
+```cpp
+int i = do {
+        std::lock_guard _(mtx);
+        do_return get(0);
+    } + do {
+        std::lock_guard _(mtx);
+        do_return get(1);
+    };
+```
+:::
+
+Each `do` expression is locking the same mutex, `mtx`. With (1), the two `lock_guard`s are each destroyed at their nearest `}`, so the result of this code is that we lock the mutex, call `get(0)`, unlock the mutex, then lock the mutex, call `get(1)`, and unlock the mutex (or possibly the second `do` expression is evaluated first, doesn't matter). Following the usual C++ lifetime rules, most people would expect this to be valid code.
+
+With either of the two approaches to extending lifetime, either (2) or (3), this deadlocks. The two `lock_guard`s aren't destroyed until after the initialization of `i`, or even later, and so whichever one is locked first is still alive when the second one is locked.
+
+That means the choice is between extending the lifetime of variables to avoid dangling references and keeping the lifetime of variables the same to maintain the usual C++ destructor rules. The familiarity and expectation of the latter is so strong that (1) is likely the only option.
+
+This does suggest that there needs to be some way to explicitly extend a variable to the outer scope. After all, a `do` expression's control flow behaves as if its in that outer scope (we `return` from the enclosing function, `continue` the enclosing loop, etc.), so there is definitely a compelling argument to me made that variables belong in that scope as well. But they probably need some sort of annotation:
+
+::: bq
+```cpp
+auto f() -> std::expected<T, E>;
+auto g(T&&) -> U;
+
+auto h() -> std::expected<U, E> {
+    T&& t = do -> T&& {
+        // Annotating this variable ensures that its destructor runs
+        // as if it was declared in the innermost non-do-expression scope.
+        [[@*outer-scope*@]] auto result = f();
+        if (not result) {
+            return std::unexpected(std::move(result).error());
+        }
+        do_return *std::move(result);
+    };
+    return g(std::move(t));
+}
+```
+:::
 
 
 ## Grammar Disambiguation
