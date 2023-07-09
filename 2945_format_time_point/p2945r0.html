@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-07-08" />
+  <title>Additional format specifiers for time_point</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Additional format specifiers for <code class="sourceCode cpp">time_point</code></h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2945R0</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-07-08</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
+<li><a href="#why-more-specifiers"><span class="toc-section-number">2</span> Why More Specifiers<span></span></a>
+<ul>
+<li><a href="#the-capture-problem"><span class="toc-section-number">2.1</span> The Capture Problem<span></span></a></li>
+<li><a href="#why-not-use-precision"><span class="toc-section-number">2.2</span> Why not use precision?<span></span></a></li>
+<li><a href="#existing-practice-in-other-languages"><span class="toc-section-number">2.3</span> Existing Practice in Other Languages<span></span></a>
+<ul>
+<li><a href="#unix"><span class="toc-section-number">2.3.1</span> UNIX<span></span></a></li>
+<li><a href="#c"><span class="toc-section-number">2.3.2</span> C<span></span></a></li>
+<li><a href="#python"><span class="toc-section-number">2.3.3</span> Python<span></span></a></li>
+<li><a href="#rust"><span class="toc-section-number">2.3.4</span> Rust<span></span></a></li>
+<li><a href="#ruby"><span class="toc-section-number">2.3.5</span> Ruby<span></span></a></li>
+</ul></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#preferred-proposal"><span class="toc-section-number">3.1</span> Preferred Proposal<span></span></a></li>
+<li><a href="#less-preferred-proposal"><span class="toc-section-number">3.2</span> Less-preferred Proposal<span></span></a></li>
+<li><a href="#comparison-of-the-two-proposals"><span class="toc-section-number">3.3</span> Comparison of the two proposals<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p><code class="sourceCode cpp">std<span class="op">::</span>chrono<span class="op">::</span>time_point</code> has a lot of format specifiers. You can peruse the table <a href="https://eel.is/c++draft/tab:time.format.spec">here</a>. This makes it very convenient for the user to format their <code class="sourceCode cpp">time_point</code> however they want: the date in either the correct (<code class="x">2023-07-08</code>) or incorrect (<code class="x">07/08/2023</code>) numeric formats, spelling out the month (<code class="sourceCode cpp">July</code> or <code class="sourceCode cpp">Jul</code>), presenting the time in 24-hour notation or using <code class="sourceCode cpp">AM</code> or <code class="sourceCode cpp">PM</code>, etc. This is all very useful.</p>
+<p>But there’s a few format specifier that I believe are missing that I would like to propose:</p>
+<table>
+<tr>
+<th>
+desired output
+</th>
+<th>
+proposed
+</th>
+<th>
+current workaround
+</th>
+</tr>
+<tr>
+<td>
+1688830834295314673</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%Q}&quot;</span>, tp<span class="op">.</span>time_since_epoch<span class="op">())</span></code><br />or <code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{}&quot;</span>, tp<span class="op">.</span>time_since_epoch<span class="op">().</span>count<span class="op">())</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.0S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S}&quot;</span>, std<span class="op">::</span>chrono<span class="op">::</span>time_point_cast<span class="op">&lt;</span>std<span class="op">::</span>chrono<span class="op">::</span>seconds<span class="op">&gt;(</span>tp<span class="op">))</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34.295
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.3S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S}&quot;</span>, std<span class="op">::</span>chrono<span class="op">::</span>time_point_cast<span class="op">&lt;</span>std<span class="op">::</span>chrono<span class="op">::</span>milliseconds<span class="op">&gt;(</span>tp<span class="op">))</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34.295314
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.6S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S}&quot;</span>, std<span class="op">::</span>chrono<span class="op">::</span>time_point_cast<span class="op">&lt;</span>std<span class="op">::</span>chrono<span class="op">::</span>microseconds<span class="op">&gt;(</span>tp<span class="op">))</span></code>
+</td>
+</tr>
+</table>
+<p>In addition to proposing <code class="sourceCode cpp"><span class="op">%.</span><em>n</em>S</code> (for seconds with <code class="sourceCode cpp"><em>n</em></code> decimal digits), this paper also proposes <code class="sourceCode cpp"><span class="op">%.</span><em>n</em>T</code> to mean <code class="sourceCode cpp"><span class="op">%</span>H<span class="op">:%</span>M<span class="op">:%.</span><em>n</em>S</code>.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="why-more-specifiers"><span class="header-section-number">2</span> Why More Specifiers<a href="#why-more-specifiers" class="self-link"></a></h1>
+<p>First, it is simply much more convenient for the user to write something like <code class="sourceCode cpp"><span class="op">%</span><span class="fl">.0</span><span class="er">T</span></code> if what they want is <code class="sourceCode cpp"><span class="dv">15</span><span class="op">:</span><span class="dv">40</span><span class="op">:</span><span class="dv">34</span></code> than it is for them to write that rather verbose cast expression to convert their <code class="sourceCode cpp">time_point</code> into <code class="sourceCode cpp">seconds</code> duration.</p>
+<p>Second, <code class="x">%.0T</code> ensures that they don’t actually have to care about the underlying duration of their <code class="sourceCode cpp">time_point</code>, this will consistently produce the same output regardless of whether it’s <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, seconds<span class="op">&gt;</span></code> or <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, milliseconds<span class="op">&gt;</span></code> or <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, nanoseconds<span class="op">&gt;</span></code>.</p>
+<p>Third, specifiers can nest in a way that those workarounds don’t. For example, it is straightforward to implement formatting for <code class="sourceCode cpp">Optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> such that it supports all of <code class="sourceCode cpp">T</code>’s format specifiers, so that <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span></code> can format using <code class="x">{:#x}</code> as <code class="sourceCode cpp">Some<span class="op">(</span><span class="bn">0x2a</span><span class="op">)</span></code>. If <code class="sourceCode cpp">time_point</code> has the necessary specifiers than an <code class="sourceCode cpp">Optional<span class="op">&lt;</span>time_point<span class="op">&gt;</span></code> can be formatted as desired simply using <code class="sourceCode cpp">time_point</code>’s specifiers. Otherwise, the workaround requires calling <code class="sourceCode cpp">Optional<span class="op">::</span>transform</code>. The same argument can be made for ranges: use the underlying specifier, or have to resort to using <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform</code>. This certainly becomes inconvenient for the user pretty rapidly, but it also brings up a question of safety - something I’m going to call the capture problem.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<h2 data-number="2.1" id="the-capture-problem"><span class="header-section-number">2.1</span> The Capture Problem<a href="#the-capture-problem" class="self-link"></a></h2>
+<p>Consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">void</span> print_names<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> names<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, names<span class="op">)</span>;</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, the formatting is all done immediately. <code class="sourceCode cpp">std<span class="op">::</span>println</code> doesn’t need to (and doesn’t) copy <code class="sourceCode cpp">names</code> and there are no lifetime issues here at all. Now consider a slight variation:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">void</span> log_names<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> names<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    LOG<span class="op">(</span><span class="st">&quot;{}&quot;</span>, names<span class="op">)</span>;</span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, <code class="sourceCode cpp">LOG</code> is a stand-in for your favorite logging framework. Some of these do foreground logging (and so wouldn’t need to copy <code class="sourceCode cpp">names</code>), some of these do background logging (and so would have to, and do, copy <code class="sourceCode cpp">names</code>), some of these do it conditionally. Either way, the above still works, because the logger simply does the right thing with the object.</p>
+<p>Let’s say we don’t want to log the names, but rather want to log some… transformed version thereof:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="dt">void</span> log_transformed_names<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> names<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    LOG<span class="op">(</span><span class="st">&quot;{}&quot;</span>, names <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">))</span>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>One example of this being wanting to provide a custom delimiter, which currently doesn’t exist as a specifier:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">void</span> log_transformed_names<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> names<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    LOG<span class="op">(</span><span class="st">&quot;{}&quot;</span>, fmt<span class="op">::</span>join<span class="op">(</span><span class="st">&quot;, and &quot;</span>, names<span class="op">))</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Now we have a problem. If <code class="sourceCode cpp">LOG</code> is doing background logging (whether always or conditionally) and it copies the result of <code class="sourceCode cpp">fmt<span class="op">::</span>join</code> and that’s… just a view. We’re not copying the underlying <code class="sourceCode cpp">names</code> and now we have a potential problem with lifetimes. This could now dangle.</p>
+<p>Or it could be fine, if we’re doing foreground logging! So we have this problem where if we’re doing foreground logging, we definitely want to just log the <code class="sourceCode cpp">view</code> without any additional work. Whereas if we’re doing background logging, we probably want to eagerly construct a <code class="sourceCode cpp">vector</code> out of it (or eagerly do the formatting for this argument) to avoid any lifetime issues.</p>
+<p>We have no way of “just doing the right thing” here. We have no way using the <code class="sourceCode cpp">view</code> if that’s good enough or collecting the elements otherwise, nor do we have a way of signaling when using the <code class="sourceCode cpp">view</code> might dangle.</p>
+<p>Note that this is not specific to ranges and views at all, I’m just using it as a simple example.</p>
+<p>Allowing more common logic into the specifiers simply avoids this problem.</p>
+<h2 data-number="2.2" id="why-not-use-precision"><span class="header-section-number">2.2</span> Why not use precision?<a href="#why-not-use-precision" class="self-link"></a></h2>
+<p>Rather than having a prefixed specifier to do millisecond precision, like <code class="x">%3S</code> or <code class="x">%.3S</code>, could we use the already-existing <code class="sourceCode cpp"><em>precision</em></code> specifier and write something like <code class="x">{:.3%H:%M:%S}</code>? We could, but I think this would be a poor choice.</p>
+<p>First, this is what the standard has to say about <code class="sourceCode cpp"><em>precision</em></code> for a <code class="sourceCode cpp"><em>chrono-format-spec</em></code> (in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>/1):</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> […] Giving a <code class="sourceCode cpp"><em>precision</em></code> specification in the <code class="sourceCode cpp"><em>chrono-format-spec</em></code> is valid only for types that are specializations of <code class="sourceCode cpp">std​<span class="op">::</span>​chrono​<span class="op">::</span>​duration</code> for which the nested <code class="sourceCode cpp"><em>typedef-name</em></code> <code class="sourceCode cpp">rep</code> denotes a floating-point type. For all other types, an exception of type <code class="sourceCode cpp">format_error</code> is thrown if the <code class="sourceCode cpp"><em>chrono-format-spec</em></code> contains a <code class="sourceCode cpp"><em>precision</em></code> specification.</p>
+</blockquote>
+<p>That’s it. So, first, <code class="sourceCode cpp"><em>precision</em></code> is only meaningful for floating-point types, which makes it useless here because even <code class="sourceCode cpp"><span class="dt">double</span></code> doesn’t have enough precision for nanoseconds, so <code class="sourceCode cpp">system_clock<span class="op">::</span>rep</code> is practically speaking going to be an integral type (even though all we specify about it is that it’s signed). Second, we don’t… actually say what <code class="sourceCode cpp"><em>precision</em></code> does anywhere.</p>
+<p>But even assuming that it does what we might think of as “the obvious thing”, consider the difference between the two choices of specifier:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>using <code class="sourceCode cpp"><em>precision</em></code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>modifying <code class="sourceCode cpp"><span class="op">%</span>S</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="st">&quot;{:.3%Y-%m-</span><span class="sc">%d</span><span class="st"> %H:%M:%S}&quot;</span></code></td>
+<td><code class="sourceCode cpp"><span class="st">&quot;{:%Y-%m-</span><span class="sc">%d</span><span class="st"> %H:%M:%.3S}&quot;</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>The version on the left just has this weirdly dangling <code class="sourceCode cpp"><span class="fl">.3</span></code>, that only applies to the much later <code class="sourceCode cpp"><span class="op">%</span>S</code>. That’s not really how any of the other specifiers behave and is needlessly harder to understand. It would also meant that you can provide a <code class="sourceCode cpp"><em>precision</em></code> without providing any specifier that makes use of it, which is just a pointless thing to allow.</p>
+<h2 data-number="2.3" id="existing-practice-in-other-languages"><span class="header-section-number">2.3</span> Existing Practice in Other Languages<a href="#existing-practice-in-other-languages" class="self-link"></a></h2>
+<h3 data-number="2.3.1" id="unix"><span class="header-section-number">2.3.1</span> UNIX<a href="#unix" class="self-link"></a></h3>
+<p>In the UNIX <code class="sourceCode cpp">date</code> program, <code class="sourceCode cpp"><span class="op">%</span>S</code> is always an integer number of seconds and <code class="sourceCode cpp"><span class="op">%</span>s</code> is seconds since epoch. If you want decimal digits, you can add a width to <code class="sourceCode cpp"><span class="op">%</span>N</code> (which defaults to <code class="sourceCode cpp"><span class="dv">9</span></code>):</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>example</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">+%T</code></td>
+<td><code class="x">09:40:34</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">+%T.%N</code></td>
+<td><code class="x">09:40:34.295314673</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">+%T.%3N</code></td>
+<td><code class="x">09:40:34.295</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">+%s</code></td>
+<td><code class="x">1688830834</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">+%s%N</code></td>
+<td><code class="x">1688830834295314673</code></td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="2.3.2" id="c"><span class="header-section-number">2.3.2</span> C<a href="#c" class="self-link"></a></h3>
+<p><code class="sourceCode cpp">tm</code> has no subsecond field, but in <code class="sourceCode cpp">strftime</code>, <code class="sourceCode cpp"><span class="op">%</span>S</code> is an integral number of seconds and <code class="sourceCode cpp"><span class="op">%</span>s</code> is seconds since epoch.</p>
+<h3 data-number="2.3.3" id="python"><span class="header-section-number">2.3.3</span> Python<a href="#python" class="self-link"></a></h3>
+<p>In <code class="sourceCode cpp">datetime<span class="op">.</span>strftime</code>, <code class="sourceCode cpp"><span class="op">%</span>S</code> is always an integer number of seconds and <code class="sourceCode cpp"><span class="op">%</span>s</code> is seconds since epoch. <code class="sourceCode cpp"><span class="op">%</span>f</code> exists to print microseconds, as in <code class="sourceCode cpp"><span class="op">%</span>S<span class="op">.%</span>f</code> or <code class="sourceCode cpp"><span class="op">%</span>s<span class="op">%</span>f</code>, but there is no way to get any other precision.</p>
+<h3 data-number="2.3.4" id="rust"><span class="header-section-number">2.3.4</span> Rust<a href="#rust" class="self-link"></a></h3>
+<p>In Rust in the <a href="https://docs.rs/chrono/latest/chrono/format/strftime/index.html"><code class="sourceCode cpp">chrono</code> crate</a>, <code class="sourceCode cpp"><span class="op">%</span>S</code> is always an integer number of seconds, <code class="sourceCode cpp"><span class="op">%</span>s</code> is seconds since epoch. The following specifiers exist to get subsecond precision:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>example</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">%f</code></td>
+<td><code class="x">026490000</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%.f</code></td>
+<td><code class="x">.026940</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">%.3f</code></td>
+<td><code class="x">.026</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%.6f</code></td>
+<td><code class="x">.026490</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">%.9f</code></td>
+<td><code class="x">.026490000</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%3f</code></td>
+<td><code class="x">026</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">%6f</code></td>
+<td><code class="x">026490</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%9f</code></td>
+<td><code class="x">026490000</code></td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="2.3.5" id="ruby"><span class="header-section-number">2.3.5</span> Ruby<a href="#ruby" class="self-link"></a></h3>
+<p>In <a href="https://docs.ruby-lang.org/en/master/strftime_formatting_rdoc.html">Ruby</a>, <code class="sourceCode cpp"><span class="op">%</span>S</code> is always an integer number of seconds, <code class="sourceCode cpp"><span class="op">%</span>s</code> is seconds since epoch, and the following specifiers can give you subsecond precision:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>example</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="x">%L</code></td>
+<td><code class="x">323</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%N</code></td>
+<td><code class="x">323091400</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">%3N</code></td>
+<td><code class="x">323</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%6N</code></td>
+<td><code class="x">323091</code></td>
+</tr>
+<tr class="odd">
+<td><code class="x">%9N</code></td>
+<td><code class="x">323091400</code></td>
+</tr>
+<tr class="even">
+<td><code class="x">%24N</code></td>
+<td><code class="x">323091400000000000000000</code></td>
+</tr>
+</tbody>
+</table>
+<p>I feel like yoctoseconds is probably not a unit people are going to use very often, but there it is.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>I have two proposals here: the one that I think we should do, and the one that will likely get more support.</p>
+<h2 data-number="3.1" id="preferred-proposal"><span class="header-section-number">3.1</span> Preferred Proposal<a href="#preferred-proposal" class="self-link"></a></h2>
+<p>As you can see above, there’s a pretty impressive consensus on what a few specifiers mean. To everybody:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="op">%</span>S</code> is a specifier that gives you a two-digit, integer number of seconds from <code class="x">00</code> to <code class="x">59</code>, and</li>
+<li><code class="sourceCode cpp"><span class="op">%</span>s</code> is a specifier that gives you the integer number of seconds since epoch.</li>
+</ul>
+<p>To everyone, that is, except C++20’s approach to chrono formatting. Why is that? Our wording comes from <span class="citation" data-cites="P1361R2">[<a href="#ref-P1361R2" role="doc-biblioref">P1361R2</a>]</span>, which itself comes from <span class="citation" data-cites="P0355R7">[<a href="#ref-P0355R7" role="doc-biblioref">P0355R7</a>]</span>. That paper, since R0, has always defined <code class="sourceCode cpp"><span class="op">%</span>S</code> in the same way. The specific words changed over time, but even <span class="citation" data-cites="P0355R0">[<a href="#ref-P0355R0" role="doc-biblioref">P0355R0</a>]</span> states:</p>
+<blockquote>
+<ul>
+<li>If <code class="sourceCode cpp"><span class="op">%</span>S</code> or <code class="sourceCode cpp"><span class="op">%</span>T</code> appears in the format string and the argument <code class="sourceCode cpp">tp</code> has precision finer than seconds, then seconds are formatted as a decimal floating point number with a fixed format and a precision matching that of the precision of <code class="sourceCode cpp">tp</code>. The character for the decimal point is localized according to the <code class="sourceCode cpp">locale</code>.</li>
+</ul>
+</blockquote>
+<p>P0355 describes itself as proposing “<code class="sourceCode cpp">strftime</code>-like formatting” but offers no explanation that I can find for why it differs from <code class="sourceCode cpp">strftime</code> in this case. Nor can I find any evidence that this difference was noted in either LEWG or LWG any of the times this paper was discussed.</p>
+<p>This strikes me as a defect, that we should fix as follows:</p>
+<ul>
+<li>Change <code class="sourceCode cpp"><span class="op">%</span>S</code> to be a two-digit, integer number of seconds (<code class="x">00</code> to <code class="x">59</code>), mirroring <code class="sourceCode cpp"><span class="op">%</span>H</code> and <code class="sourceCode cpp"><span class="op">%</span>M</code> for hours and minutes.</li>
+<li>Add <code class="sourceCode cpp"><span class="op">%</span>s</code> to be the integer number of seconds since epoch.</li>
+<li>Add either <code class="sourceCode cpp"><span class="op">%</span>N</code> or <code class="sourceCode cpp"><span class="op">%</span>f</code> (whichever letter is preferred) to be sub-seconds up to the precision of the <code class="sourceCode cpp">time_point</code>. Allow these to be prefixed with either static or dynamic precision, so <code class="x">%3N</code> is always three digits (for <code class="sourceCode cpp">sys_time<span class="op">&lt;</span>seconds<span class="op">&gt;</span></code> it would always be <code class="x">000</code>) while <code class="x">%{}N</code> would mean using another argument for the number of digits.</li>
+</ul>
+<p>This way, we end up with the same meaning of <code class="sourceCode cpp"><span class="op">%</span>S</code> and <code class="sourceCode cpp"><span class="op">%</span>s</code> as everyone else.</p>
+<p>The examples for the initial table thus become:</p>
+<table>
+<tr>
+<th>
+desired output
+</th>
+<th>
+proposed
+</th>
+</tr>
+<tr>
+<td>
+1688830834295314673</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">%9N}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+1688830834</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34.295
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S.%3N}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34.295314
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S.%6N}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+</table>
+<p>This is a breaking change for the behavior of <code class="sourceCode cpp"><span class="op">%</span>S</code>, for those people that rely on the current behavior they get. However, it’s worth noting that the current behavior they get is unspecified. Neither <code class="sourceCode cpp">system_clock<span class="op">::</span>rep</code> nor <code class="sourceCode cpp">system_clock<span class="op">::</span>period</code> is actually specified. And the proposed behavior here doesn’t actually change if <code class="sourceCode cpp">system_clock<span class="op">::</span>period</code> is <code class="sourceCode cpp">std<span class="op">::</span>ratio<span class="op">&lt;</span><span class="dv">1</span><span class="op">&gt;</span></code>, which is an allowable choice.</p>
+<p>The proposal here would actually specify what what happens for:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a>format<span class="op">(</span><span class="st">&quot;{:%T}&quot;</span>, chrono<span class="op">::</span>system_clock<span class="op">::</span>now<span class="op">())</span>;</span></code></pre></div>
+</blockquote>
+<p>Which strikes me as an improvement.</p>
+<h2 data-number="3.2" id="less-preferred-proposal"><span class="header-section-number">3.2</span> Less-preferred Proposal<a href="#less-preferred-proposal" class="self-link"></a></h2>
+<p>If we cannot change <code class="sourceCode cpp"><span class="op">%</span>S</code> as above, then:</p>
+<ul>
+<li>Add <code class="sourceCode cpp"><span class="op">%</span>s</code> to be the number of ticks since epoch in the <code class="sourceCode cpp">time_point</code>’s units.</li>
+<li>Allow both <code class="sourceCode cpp"><span class="op">%</span>S</code> and <code class="sourceCode cpp"><span class="op">%</span>s</code> to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like <code class="x">%.3S</code> for the former and <code class="x">%3s</code> for the latter (since the former includes a decimal point at the latter does not).</li>
+<li>Extend <code class="sourceCode cpp"><span class="op">%</span>T</code> in the same way that we extend <code class="sourceCode cpp"><span class="op">%</span>S</code>, so that <code class="x">%.9T</code> means <code class="x">%H:%M:%.9S</code>.</li>
+<li>Potentially add <code class="sourceCode cpp"><span class="op">%</span>N</code> or <code class="sourceCode cpp"><span class="op">%</span>f</code> as well (as in the previous section), such that <code class="x">%.0S.%3N</code> means the same thing as <code class="x">%.03S</code>.</li>
+</ul>
+<p>Proposed examples (the assume that <code class="sourceCode cpp">system_clock<span class="op">::</span>time_point</code> has nanosecond resolution):</p>
+<table>
+<tr>
+<th>
+desired output
+</th>
+<th>
+proposed
+</th>
+</tr>
+<tr>
+<td>
+1688830834295314673</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+1688830834</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%0s}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.0S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34.295
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.3S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+15:40:34.295314
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.6S}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+</table>
+<h2 data-number="3.3" id="comparison-of-the-two-proposals"><span class="header-section-number">3.3</span> Comparison of the two proposals<a href="#comparison-of-the-two-proposals" class="self-link"></a></h2>
+<p>Just putting those tables side by side for clarity:</p>
+<table>
+<tr>
+<th>
+preferred
+</th>
+<th>
+desired output
+</th>
+<th>
+less preferred
+</th>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">%9N}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+1688830834295314673</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:</span><span class="sc">%s</span><span class="st">}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+1688830834</t>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%0s}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S}&quot;</span>, tp<span class="op">)</span></code><br /><code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%T}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+15:40:34
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.0S}&quot;</span>, tp<span class="op">)</span></code><br /><code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%.0T}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S.%3N}&quot;</span>, tp<span class="op">)</span></code><br /><code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%T.%3N}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+15:40:34.295
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.3S}&quot;</span>, tp<span class="op">)</span></code><br /><code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%.3T}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%S.%6N}&quot;</span>, tp<span class="op">)</span></code><br /><code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%T.%6N}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+<td>
+15:40:34.295314
+</td>
+<td>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.6S}&quot;</span>, tp<span class="op">)</span></code><br /><code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%.6T}&quot;</span>, tp<span class="op">)</span></code>
+</td>
+</tr>
+</table>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P0355R0">
+<p>[P0355R0] Howard Hinnant. 2016-05-30. Extending <chrono> to Calendars and Time Zones. <br />
+<a href="https://wg21.link/p0355r0">https://wg21.link/p0355r0</a></p>
+</div>
+<div id="ref-P0355R7">
+<p>[P0355R7] Howard E. Hinnant, Tomasz Kamiński. 2018-03-16. Extending <chrono> to Calendars and Time Zones. <br />
+<a href="https://wg21.link/p0355r7">https://wg21.link/p0355r7</a></p>
+</div>
+<div id="ref-P1361R2">
+<p>[P1361R2] Victor Zverovich, Daniela Engert, Howard E. Hinnant. 2019-07-19. Integration of chrono with text formatting. <br />
+<a href="https://wg21.link/p1361r2">https://wg21.link/p1361r2</a></p>
+</div>
+</div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>This probably already exists in the literature under a much more suitable name, so I’m hoping by giving it a bad name somebody simply points me to the correct one later.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</div>
+</div>
+</body>
+</html>
