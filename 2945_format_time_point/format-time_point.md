@@ -247,7 +247,7 @@ If we cannot change `%S` as above, then:
 * Extend `%T` in the same way that we extend `%S`, so that `%.9T`{.x} means `%H:%M:%.9S`{.x}.
 * Add `%f` as well (as in the previous section), such that `%.0S.%3f`{.x} means the same thing as `%.03S`{.x}. `%f` may be less compelling in a world where you can print fractional seconds using `%S`, but I think if we're in this space, we might as well do it.
 
-Proposed examples (the assume that `system_clock::time_point` has nanosecond resolution):
+Proposed examples (which assume that `system_clock::time_point` has nanosecond resolution):
 
 <table>
 <tr><th>desired output</th><th>proposed</th></tr>
@@ -306,7 +306,7 @@ Just putting those tables side by side for clarity:
 </tr>
 </table>
 
-Note that my preferred approach here is longer in several of these examples - the reason it's my preferred approach is not because it's necessary terser, but rather because it's more consistent.
+Note that my preferred approach here is longer in several of these examples - the reason it's my preferred approach is not because it's necessarily terser, but rather because it's more consistent.
 
 ## Wording
 
