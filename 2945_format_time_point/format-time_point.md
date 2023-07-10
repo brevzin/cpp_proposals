@@ -328,6 +328,12 @@ Just putting those tables side by side for clarity:
 
 Note that my preferred approach here is longer in several of these examples - the reason it's my preferred approach is not because it's necessarily terser, but rather because it's more consistent.
 
+## Other Specifiers
+
+Separate from the question of what `%S` and `%s` should do: are there any other specifiers that we should add? One that I have not noted here is a specifier to simply format `tp.time_since_epoch().count()`. We have such a thing for `duration`s (`%Q`) but not for `time_point`s. In the less-preferred proposal, `%s` achieves this for the SI units - but not for microfortnights.
+
+When I originally set out to write this paper, my intent was to propose `%Q`. But given the uniformity of treating `%s` as (sub)seconds since epoch, that seemed like a better choice to handle formatting nanoseconds since epoch. This makes `%Q` for `time_point` seem less motivated. But I think we should consider extending `%Q` to work for `time_point` for broadly the reasons described above.
+
 ## Wording
 
 For either proposal, add `f` and `s` to the options for `$type$` and add support for precision modifiers in [time.format]{.sref}:
@@ -356,6 +362,15 @@ Add a row to the conversion specifier table in [time.format]{.sref}:
 |-|-|
 |`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The decimal point is not included. The modified command `%$precision$f` instead uses `$precision$` as the precision for the input.|
 :::
+:::
+
+### The `%Q` and `%q` specifiers
+
+::: bq
+|Specifier|Replacement|
+|-|-|
+|`%q`|The duration's unit suffix as specified in [time.duration.io]{.sref}. [If the type being formatted is a specialization of `time_point`, then the unit suffix of the underlying duration.]{.addu}|
+|`%Q`|The duration's [or time_point's]{.addu} numeric value (as if extracted via `.count()` [or .`time_since_epoch().count()`, respectively]{.addu})|
 :::
 
 ### Preferred Proposal Wording

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-07-09" />
+  <meta name="dcterms.date" content="2023-07-10" />
   <title>Additional format specifiers for time_point</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-07-09</td>
+    <td>2023-07-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -583,11 +583,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#preferred-proposal"><span class="toc-section-number">3.1</span> Preferred Proposal<span></span></a></li>
 <li><a href="#less-preferred-proposal"><span class="toc-section-number">3.2</span> Less-preferred Proposal<span></span></a></li>
 <li><a href="#comparison-of-the-two-proposals"><span class="toc-section-number">3.3</span> Comparison of the two proposals<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">3.4</span> Wording<span></span></a>
+<li><a href="#other-specifiers"><span class="toc-section-number">3.4</span> Other Specifiers<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">3.5</span> Wording<span></span></a>
 <ul>
-<li><a href="#the-f-specifier"><span class="toc-section-number">3.4.1</span> The <code class="sourceCode cpp"><span class="op">%</span>f</code> specifier<span></span></a></li>
-<li><a href="#preferred-proposal-wording"><span class="toc-section-number">3.4.2</span> Preferred Proposal Wording<span></span></a></li>
-<li><a href="#less-preferred-proposal-wording"><span class="toc-section-number">3.4.3</span> Less-Preferred Proposal Wording<span></span></a></li>
+<li><a href="#the-f-specifier"><span class="toc-section-number">3.5.1</span> The <code class="sourceCode cpp"><span class="op">%</span>f</code> specifier<span></span></a></li>
+<li><a href="#the-q-and-q-specifiers"><span class="toc-section-number">3.5.2</span> The <code class="sourceCode cpp"><span class="op">%</span>Q</code> and <code class="sourceCode cpp"><span class="op">%</span>q</code> specifiers<span></span></a></li>
+<li><a href="#preferred-proposal-wording"><span class="toc-section-number">3.5.3</span> Preferred Proposal Wording<span></span></a></li>
+<li><a href="#less-preferred-proposal-wording"><span class="toc-section-number">3.5.4</span> Less-Preferred Proposal Wording<span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -1099,7 +1101,10 @@ less preferred
 </tr>
 </table>
 <p>Note that my preferred approach here is longer in several of these examples - the reason it’s my preferred approach is not because it’s necessarily terser, but rather because it’s more consistent.</p>
-<h2 data-number="3.4" id="wording"><span class="header-section-number">3.4</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="3.4" id="other-specifiers"><span class="header-section-number">3.4</span> Other Specifiers<a href="#other-specifiers" class="self-link"></a></h2>
+<p>Separate from the question of what <code class="sourceCode cpp"><span class="op">%</span>S</code> and <code class="sourceCode cpp"><span class="op">%</span>s</code> should do: are there any other specifiers that we should add? One that I have not noted here is a specifier to simply format <code class="sourceCode cpp">tp<span class="op">.</span>time_since_epoch<span class="op">().</span>count<span class="op">()</span></code>. We have such a thing for <code class="sourceCode cpp">duration</code>s (<code class="sourceCode cpp"><span class="op">%</span>Q</code>) but not for <code class="sourceCode cpp">time_point</code>s. In the less-preferred proposal, <code class="sourceCode cpp"><span class="op">%</span>s</code> achieves this for the SI units - but not for microfortnights.</p>
+<p>When I originally set out to write this paper, my intent was to propose <code class="sourceCode cpp"><span class="op">%</span>Q</code>. But given the uniformity of treating <code class="sourceCode cpp"><span class="op">%</span>s</code> as (sub)seconds since epoch, that seemed like a better choice to handle formatting nanoseconds since epoch. This makes <code class="sourceCode cpp"><span class="op">%</span>Q</code> for <code class="sourceCode cpp">time_point</code> seem less motivated. But I think we should consider extending <code class="sourceCode cpp"><span class="op">%</span>Q</code> to work for <code class="sourceCode cpp">time_point</code> for broadly the reasons described above.</p>
+<h2 data-number="3.5" id="wording"><span class="header-section-number">3.5</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>For either proposal, add <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">s</code> to the options for <code class="sourceCode cpp"><em>type</em></code> and add support for precision modifiers in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>:</p>
 <blockquote>
 <div>
@@ -1114,7 +1119,7 @@ less preferred
 <span id="cb5-9"><a href="#cb5-9"></a><span class="va">+   p q Q r R S <span class="diffins">s</span> t T u U V w W x X y Y z Z %</span></span></code></pre></div>
 </div>
 </blockquote>
-<h3 data-number="3.4.1" id="the-f-specifier"><span class="header-section-number">3.4.1</span> The <code class="sourceCode cpp"><span class="op">%</span>f</code> specifier<a href="#the-f-specifier" class="self-link"></a></h3>
+<h3 data-number="3.5.1" id="the-f-specifier"><span class="header-section-number">3.5.1</span> The <code class="sourceCode cpp"><span class="op">%</span>f</code> specifier<a href="#the-f-specifier" class="self-link"></a></h3>
 <p>Add a row to the conversion specifier table in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>:</p>
 <blockquote>
 <div class="addu">
@@ -1142,7 +1147,36 @@ less preferred
 </table>
 </div>
 </blockquote>
-<h3 data-number="3.4.2" id="preferred-proposal-wording"><span class="header-section-number">3.4.2</span> Preferred Proposal Wording<a href="#preferred-proposal-wording" class="self-link"></a></h3>
+<h3 data-number="3.5.2" id="the-q-and-q-specifiers"><span class="header-section-number">3.5.2</span> The <code class="sourceCode cpp"><span class="op">%</span>Q</code> and <code class="sourceCode cpp"><span class="op">%</span>q</code> specifiers<a href="#the-q-and-q-specifiers" class="self-link"></a></h3>
+<blockquote>
+<table>
+<colgroup>
+<col style="width: 50%"></col>
+<col style="width: 50%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Replacement</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">%</span>q</code></td>
+<td>The duration’s unit suffix as specified in <span>29.5.11 <a href="https://wg21.link/time.duration.io">[time.duration.io]</a></span>. <span class="addu">If the type being formatted is a specialization of <code class="sourceCode cpp">time_point</code>, then the unit suffix of the underlying duration.</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">%</span>Q</code></td>
+<td>The duration’s <span class="addu">or time_point’s</span> numeric value (as if extracted via <code class="sourceCode cpp"><span class="op">.</span>count<span class="op">()</span></code> <span class="addu">or .<code class="sourceCode cpp">time_since_epoch<span class="op">().</span>count<span class="op">()</span></code>, respectively</span>)</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<h3 data-number="3.5.3" id="preferred-proposal-wording"><span class="header-section-number">3.5.3</span> Preferred Proposal Wording<a href="#preferred-proposal-wording" class="self-link"></a></h3>
 <p>Change <code class="sourceCode cpp"><span class="op">%</span>S</code> and add <code class="sourceCode cpp"><span class="op">%</span>s</code> to the conversion specifier table in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>:</p>
 <blockquote>
 <table>
@@ -1172,7 +1206,7 @@ less preferred
 </tbody>
 </table>
 </blockquote>
-<h3 data-number="3.4.3" id="less-preferred-proposal-wording"><span class="header-section-number">3.4.3</span> Less-Preferred Proposal Wording<a href="#less-preferred-proposal-wording" class="self-link"></a></h3>
+<h3 data-number="3.5.4" id="less-preferred-proposal-wording"><span class="header-section-number">3.5.4</span> Less-Preferred Proposal Wording<a href="#less-preferred-proposal-wording" class="self-link"></a></h3>
 <blockquote>
 <table>
 <colgroup>
