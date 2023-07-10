@@ -594,7 +594,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p><code class="sourceCode cpp">std<span class="op">::</span>chrono<span class="op">::</span>time_point</code> has a lot of format specifiers. You can peruse the table <a href="https://eel.is/c++draft/tab:time.format.spec">here</a>. This makes it very convenient for the user to format their <code class="sourceCode cpp">time_point</code> however they want: the date in either the correct (<code class="x">2023-07-08</code>) or incorrect (<code class="x">07/08/2023</code>) numeric formats, spelling out the month (<code class="sourceCode cpp">July</code> or <code class="sourceCode cpp">Jul</code>), presenting the time in 24-hour notation or using <code class="sourceCode cpp">AM</code> or <code class="sourceCode cpp">PM</code>, etc. This is all very useful.</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>chrono<span class="op">::</span>time_point</code> has a lot of format specifiers. You can peruse the table <a href="https://eel.is/c++draft/tab:time.format.spec">here</a>. This makes it very convenient for the user to format their <code class="sourceCode cpp">time_point</code> however they want: the date in either the correct (<code><span class="op">2023-07-08</span></code>) or incorrect (<code><span class="op">07/08/2023</span></code>) numeric formats, spelling out the month (<code class="sourceCode cpp">July</code> or <code class="sourceCode cpp">Jul</code>), presenting the time in 24-hour notation or using <code class="sourceCode cpp">AM</code> or <code class="sourceCode cpp">PM</code>, etc. This is all very useful.</p>
 <p>But there’s a few format specifier that I believe are missing that I would like to propose:</p>
 <table>
 <tr>
@@ -655,8 +655,8 @@ current workaround
 <p>In addition to proposing <code class="sourceCode cpp"><span class="op">%.</span><em>n</em>S</code> (for seconds with <code class="sourceCode cpp"><em>n</em></code> decimal digits), this paper also proposes <code class="sourceCode cpp"><span class="op">%.</span><em>n</em>T</code> to mean <code class="sourceCode cpp"><span class="op">%</span>H<span class="op">:%</span>M<span class="op">:%.</span><em>n</em>S</code>.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="why-more-specifiers"><span class="header-section-number">2</span> Why More Specifiers<a href="#why-more-specifiers" class="self-link"></a></h1>
 <p>First, it is simply much more convenient for the user to write something like <code class="sourceCode cpp"><span class="op">%</span><span class="fl">.0</span><span class="er">T</span></code> if what they want is <code class="sourceCode cpp"><span class="dv">15</span><span class="op">:</span><span class="dv">40</span><span class="op">:</span><span class="dv">34</span></code> then it is for them to write that rather verbose cast expression to convert their <code class="sourceCode cpp">time_point</code> into <code class="sourceCode cpp">seconds</code> duration.</p>
-<p>Second, <code class="x">%.0T</code> ensures that they don’t actually have to care about the underlying duration of their <code class="sourceCode cpp">time_point</code>, this will consistently produce the same output regardless of whether it’s <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, seconds<span class="op">&gt;</span></code> or <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, milliseconds<span class="op">&gt;</span></code> or <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, nanoseconds<span class="op">&gt;</span></code>.</p>
-<p>Third, specifiers can nest in a way that those workarounds don’t. For example, it is straightforward to implement formatting for <code class="sourceCode cpp">Optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> such that it supports all of <code class="sourceCode cpp">T</code>’s format specifiers, so that <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span></code> can format using <code class="x">{:#x}</code> as <code class="sourceCode cpp">Some<span class="op">(</span><span class="bn">0x2a</span><span class="op">)</span></code>. If <code class="sourceCode cpp">time_point</code> has the necessary specifiers then an <code class="sourceCode cpp">Optional<span class="op">&lt;</span>time_point<span class="op">&gt;</span></code> can be formatted as desired simply using <code class="sourceCode cpp">time_point</code>’s specifiers. Otherwise, the workaround requires calling <code class="sourceCode cpp">Optional<span class="op">::</span>transform</code>. The same argument can be made for ranges: use the underlying specifier, or have to resort to using <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform</code>. This certainly becomes inconvenient for the user pretty rapidly, but it also brings up a question of safety - something I’m going to call the capture problem.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Second, <code><span class="op">%.0T</span></code> ensures that they don’t actually have to care about the underlying duration of their <code class="sourceCode cpp">time_point</code>, this will consistently produce the same output regardless of whether it’s <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, seconds<span class="op">&gt;</span></code> or <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, milliseconds<span class="op">&gt;</span></code> or <code class="sourceCode cpp">time_point<span class="op">&lt;</span>system_clock, nanoseconds<span class="op">&gt;</span></code>.</p>
+<p>Third, specifiers can nest in a way that those workarounds don’t. For example, it is straightforward to implement formatting for <code class="sourceCode cpp">Optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> such that it supports all of <code class="sourceCode cpp">T</code>’s format specifiers, so that <code class="sourceCode cpp">Optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span></code> can format using <code><span class="op">{:#x}</span></code> as <code class="sourceCode cpp">Some<span class="op">(</span><span class="bn">0x2a</span><span class="op">)</span></code>. If <code class="sourceCode cpp">time_point</code> has the necessary specifiers then an <code class="sourceCode cpp">Optional<span class="op">&lt;</span>time_point<span class="op">&gt;</span></code> can be formatted as desired simply using <code class="sourceCode cpp">time_point</code>’s specifiers. Otherwise, the workaround requires calling <code class="sourceCode cpp">Optional<span class="op">::</span>transform</code>. The same argument can be made for ranges: use the underlying specifier, or have to resort to using <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>transform</code>. This certainly becomes inconvenient for the user pretty rapidly, but it also brings up a question of safety - something I’m going to call the capture problem.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
 <h2 data-number="2.1" id="the-capture-problem"><span class="header-section-number">2.1</span> The Capture Problem<a href="#the-capture-problem" class="self-link"></a></h2>
 <p>Consider:</p>
 <blockquote>
@@ -689,7 +689,7 @@ current workaround
 <p>Note that this is not specific to ranges and views at all, I’m just using it as a simple example.</p>
 <p>Allowing more common logic into the specifiers simply avoids this problem.</p>
 <h2 data-number="2.2" id="why-not-use-precision"><span class="header-section-number">2.2</span> Why not use precision?<a href="#why-not-use-precision" class="self-link"></a></h2>
-<p>Rather than having a prefixed specifier to do millisecond precision, like <code class="x">%3S</code> or <code class="x">%.3S</code>, could we use the already-existing <code class="sourceCode cpp"><em>precision</em></code> specifier and write something like <code class="x">{:.3%H:%M:%S}</code>? We could, but I think this would be a poor choice.</p>
+<p>Rather than having a prefixed specifier to do millisecond precision, like <code><span class="op">%3S</span></code> or <code><span class="op">%.3S</span></code>, could we use the already-existing <code class="sourceCode cpp"><em>precision</em></code> specifier and write something like <code><span class="op">{:.3%H:%M:%S}</span></code>? We could, but I think this would be a poor choice.</p>
 <p>First, this is what the standard has to say about <code class="sourceCode cpp"><em>precision</em></code> for a <code class="sourceCode cpp"><em>chrono-format-spec</em></code> (in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>/1):</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> […] Giving a <code class="sourceCode cpp"><em>precision</em></code> specification in the <code class="sourceCode cpp"><em>chrono-format-spec</em></code> is valid only for types that are specializations of <code class="sourceCode cpp">std​<span class="op">::</span>​chrono​<span class="op">::</span>​duration</code> for which the nested <code class="sourceCode cpp"><em>typedef-name</em></code> <code class="sourceCode cpp">rep</code> denotes a floating-point type. For all other types, an exception of type <code class="sourceCode cpp">format_error</code> is thrown if the <code class="sourceCode cpp"><em>chrono-format-spec</em></code> contains a <code class="sourceCode cpp"><em>precision</em></code> specification.</p>
@@ -731,24 +731,24 @@ current workaround
 </thead>
 <tbody>
 <tr class="odd">
-<td><code class="x">+%T</code></td>
-<td><code class="x">09:40:34</code></td>
+<td><code><span class="op">+%T</span></code></td>
+<td><code><span class="op">09:40:34</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">+%T.%N</code></td>
-<td><code class="x">09:40:34.295314673</code></td>
+<td><code><span class="op">+%T.%N</span></code></td>
+<td><code><span class="op">09:40:34.295314673</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">+%T.%3N</code></td>
-<td><code class="x">09:40:34.295</code></td>
+<td><code><span class="op">+%T.%3N</span></code></td>
+<td><code><span class="op">09:40:34.295</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">+%s</code></td>
-<td><code class="x">1688830834</code></td>
+<td><code><span class="op">+%s</span></code></td>
+<td><code><span class="op">1688830834</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">+%s%N</code></td>
-<td><code class="x">1688830834295314673</code></td>
+<td><code><span class="op">+%s%N</span></code></td>
+<td><code><span class="op">1688830834295314673</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -771,36 +771,36 @@ current workaround
 </thead>
 <tbody>
 <tr class="odd">
-<td><code class="x">%f</code></td>
-<td><code class="x">026490000</code></td>
+<td><code><span class="op">%f</span></code></td>
+<td><code><span class="op">026490000</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%.f</code></td>
-<td><code class="x">.026940</code></td>
+<td><code><span class="op">%.f</span></code></td>
+<td><code><span class="op">.026940</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">%.3f</code></td>
-<td><code class="x">.026</code></td>
+<td><code><span class="op">%.3f</span></code></td>
+<td><code><span class="op">.026</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%.6f</code></td>
-<td><code class="x">.026490</code></td>
+<td><code><span class="op">%.6f</span></code></td>
+<td><code><span class="op">.026490</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">%.9f</code></td>
-<td><code class="x">.026490000</code></td>
+<td><code><span class="op">%.9f</span></code></td>
+<td><code><span class="op">.026490000</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%3f</code></td>
-<td><code class="x">026</code></td>
+<td><code><span class="op">%3f</span></code></td>
+<td><code><span class="op">026</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">%6f</code></td>
-<td><code class="x">026490</code></td>
+<td><code><span class="op">%6f</span></code></td>
+<td><code><span class="op">026490</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%9f</code></td>
-<td><code class="x">026490000</code></td>
+<td><code><span class="op">%9f</span></code></td>
+<td><code><span class="op">026490000</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -819,28 +819,28 @@ current workaround
 </thead>
 <tbody>
 <tr class="odd">
-<td><code class="x">%L</code></td>
-<td><code class="x">323</code></td>
+<td><code><span class="op">%L</span></code></td>
+<td><code><span class="op">323</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%N</code></td>
-<td><code class="x">323091400</code></td>
+<td><code><span class="op">%N</span></code></td>
+<td><code><span class="op">323091400</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">%3N</code></td>
-<td><code class="x">323</code></td>
+<td><code><span class="op">%3N</span></code></td>
+<td><code><span class="op">323</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%6N</code></td>
-<td><code class="x">323091</code></td>
+<td><code><span class="op">%6N</span></code></td>
+<td><code><span class="op">323091</span></code></td>
 </tr>
 <tr class="odd">
-<td><code class="x">%9N</code></td>
-<td><code class="x">323091400</code></td>
+<td><code><span class="op">%9N</span></code></td>
+<td><code><span class="op">323091400</span></code></td>
 </tr>
 <tr class="even">
-<td><code class="x">%24N</code></td>
-<td><code class="x">323091400000000000000000</code></td>
+<td><code><span class="op">%24N</span></code></td>
+<td><code><span class="op">323091400000000000000000</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -848,7 +848,7 @@ current workaround
 <h3 data-number="2.3.6" id="c-chrono-and-format"><span class="header-section-number">2.3.6</span> C++, <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>, and <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code><a href="#c-chrono-and-format" class="self-link"></a></h3>
 <p>As you can see above, there’s a pretty impressive consensus on what a few specifiers mean. To everybody:</p>
 <ul>
-<li><code class="sourceCode cpp"><span class="op">%</span>S</code> is a specifier that gives you a two-digit, integer number of seconds from <code class="x">00</code> to <code class="x">59</code>, and</li>
+<li><code class="sourceCode cpp"><span class="op">%</span>S</code> is a specifier that gives you a two-digit, integer number of seconds from <code><span class="op">00</span></code> to <code><span class="op">59</span></code>, and</li>
 <li><code class="sourceCode cpp"><span class="op">%</span>s</code> is a specifier that gives you the integer number of seconds since epoch.</li>
 </ul>
 <p>To everyone, that is, except C++20’s approach to chrono formatting. Why is that? Our wording comes from <span class="citation" data-cites="P1361R2">[<a href="#ref-P1361R2" role="doc-biblioref">P1361R2</a>]</span>, which itself comes from <span class="citation" data-cites="P0355R7">[<a href="#ref-P0355R7" role="doc-biblioref">P0355R7</a>]</span>. That paper, since R0, has always defined <code class="sourceCode cpp"><span class="op">%</span>S</code> in the same way. The specific words changed over time, but even <span class="citation" data-cites="P0355R0">[<a href="#ref-P0355R0" role="doc-biblioref">P0355R0</a>]</span> states:</p>
@@ -865,9 +865,9 @@ current workaround
 <h2 data-number="3.1" id="preferred-proposal"><span class="header-section-number">3.1</span> Preferred Proposal<a href="#preferred-proposal" class="self-link"></a></h2>
 <p>As described <a href="#c-chrono-and-format">earlier</a>, my preferred approach would be to break existing uses of <code class="sourceCode cpp"><span class="op">%</span>S</code> to normalize our use of chrono specifiers with the rest of the <code class="sourceCode cpp">strftime</code> ecosystem:</p>
 <ul>
-<li>Change <code class="sourceCode cpp"><span class="op">%</span>S</code> to be a two-digit, integer number of seconds (<code class="x">00</code> to <code class="x">59</code>), mirroring <code class="sourceCode cpp"><span class="op">%</span>H</code> and <code class="sourceCode cpp"><span class="op">%</span>M</code> for hours and minutes.</li>
+<li>Change <code class="sourceCode cpp"><span class="op">%</span>S</code> to be a two-digit, integer number of seconds (<code><span class="op">00</span></code> to <code><span class="op">59</span></code>), mirroring <code class="sourceCode cpp"><span class="op">%</span>H</code> and <code class="sourceCode cpp"><span class="op">%</span>M</code> for hours and minutes.</li>
 <li>Add <code class="sourceCode cpp"><span class="op">%</span>s</code> to be the integer number of seconds since epoch.</li>
-<li>Add <code class="sourceCode cpp"><span class="op">%</span>f</code> to be sub-seconds up to the precision of the <code class="sourceCode cpp">time_point</code> (I think <code class="sourceCode cpp"><span class="op">%</span>f</code> for fractional seconds makes more sense than <code class="sourceCode cpp"><span class="op">%</span>N</code> for nanoseconds, in light of the fact that this can be used to format non-<code class="sourceCode cpp">nanoseconds</code> <code class="sourceCode cpp">time_point</code>s). Allow these to be prefixed with either static or dynamic precision, so <code class="x">%3f</code> is always three digits (for <code class="sourceCode cpp">sys_time<span class="op">&lt;</span>seconds<span class="op">&gt;</span></code> it would always be <code class="x">000</code>) while <code class="x">%{}f</code> would mean using another argument for the number of digits.</li>
+<li>Add <code class="sourceCode cpp"><span class="op">%</span>f</code> to be sub-seconds up to the precision of the <code class="sourceCode cpp">time_point</code> (I think <code class="sourceCode cpp"><span class="op">%</span>f</code> for fractional seconds makes more sense than <code class="sourceCode cpp"><span class="op">%</span>N</code> for nanoseconds, in light of the fact that this can be used to format non-<code class="sourceCode cpp">nanoseconds</code> <code class="sourceCode cpp">time_point</code>s). Allow these to be prefixed with either static or dynamic precision, so <code><span class="op">%3f</span></code> is always three digits (for <code class="sourceCode cpp">sys_time<span class="op">&lt;</span>seconds<span class="op">&gt;</span></code> it would always be <code><span class="op">000</span></code>) while <code><span class="op">%{}f</span></code> would mean using another argument for the number of digits.</li>
 </ul>
 <p>This way, we end up with the same meaning of <code class="sourceCode cpp"><span class="op">%</span>S</code> and <code class="sourceCode cpp"><span class="op">%</span>s</code> as everyone else.</p>
 <p>The examples for the initial table thus become:</p>
@@ -923,9 +923,9 @@ proposed
 <p>If we cannot change <code class="sourceCode cpp"><span class="op">%</span>S</code> as above, then:</p>
 <ul>
 <li>Add <code class="sourceCode cpp"><span class="op">%</span>s</code> to be the number of ticks since epoch in the <code class="sourceCode cpp">time_point</code>’s units.</li>
-<li>Allow both <code class="sourceCode cpp"><span class="op">%</span>S</code> and <code class="sourceCode cpp"><span class="op">%</span>s</code> to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like <code class="x">%.3S</code> for the former and <code class="x">%3s</code> for the latter (since the former includes a decimal point at the latter does not).</li>
-<li>Extend <code class="sourceCode cpp"><span class="op">%</span>T</code> in the same way that we extend <code class="sourceCode cpp"><span class="op">%</span>S</code>, so that <code class="x">%.9T</code> means <code class="x">%H:%M:%.9S</code>.</li>
-<li>Add <code class="sourceCode cpp"><span class="op">%</span>f</code> as well (as in the previous section), such that <code class="x">%.0S.%3f</code> means the same thing as <code class="x">%.03S</code>. <code class="sourceCode cpp"><span class="op">%</span>f</code> may be less compelling in a world where you can print fractional seconds using <code class="sourceCode cpp"><span class="op">%</span>S</code>, but I think if we’re in this space, we might as well do it.</li>
+<li>Allow both <code class="sourceCode cpp"><span class="op">%</span>S</code> and <code class="sourceCode cpp"><span class="op">%</span>s</code> to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like <code><span class="op">%.3S</span></code> for the former and <code><span class="op">%.3s</span></code> for the latter.</li>
+<li>Extend <code class="sourceCode cpp"><span class="op">%</span>T</code> in the same way that we extend <code class="sourceCode cpp"><span class="op">%</span>S</code>, so that <code><span class="op">%.9T</span></code> means <code><span class="op">%H:%M:%.9S</span></code>.</li>
+<li>Add <code class="sourceCode cpp"><span class="op">%</span>f</code> as well (as in the previous section), such that <code><span class="op">%.0S.%.3f</span></code> means the same thing as <code><span class="op">%.03S</span></code>. <code class="sourceCode cpp"><span class="op">%</span>f</code> may be less compelling in a world where you can print fractional seconds using <code class="sourceCode cpp"><span class="op">%</span>S</code>, but I think if we’re in this space, we might as well do it.</li>
 </ul>
 <p>Proposed examples (which assume that <code class="sourceCode cpp">system_clock<span class="op">::</span>time_point</code> has nanosecond resolution):</p>
 <table>
@@ -975,6 +975,60 @@ proposed
 <code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%H:%M:%.6S}&quot;</span>, tp<span class="op">)</span></code>
 </td>
 </tr>
+</table>
+<p>There’s one more thing that needs to be touched on here, that doesn’t need to be addressed in the preferred proposal. For <code class="sourceCode cpp">sys_time<span class="op">&lt;</span>nanoseconds<span class="op">&gt;</span></code>, it’s pretty clear what <code class="sourceCode cpp"><span class="op">%</span>s</code> should mean (nanoseconds since epoch) and what <code><span class="op">%.0s</span></code> would mean (seconds since epoch). But <code class="sourceCode cpp">nanoseconds</code> (and similar units like <code class="sourceCode cpp">microseconds</code> or <code class="sourceCode cpp">seconds</code>) aren’t the only durations. We also have to consider other ones.</p>
+<p>The next most obvious one to consider is… everyone say it with me now… <a href="https://en.wikipedia.org/wiki/FFF_system">microfortnights</a>. A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.</p>
+<p>Following the rules that we have today, formatting 1 microfortnight using <code class="sourceCode cpp"><span class="op">%</span>S</code> would yield <code class="sourceCode cpp"><span class="fl">01.2096</span></code>. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using <code class="sourceCode cpp"><span class="op">%</span>S</code> would yield <code class="sourceCode cpp"><span class="fl">28.7808</span></code>.The question is: what should <code class="sourceCode cpp"><span class="op">%</span>s</code> print for 123 microfortnights? I think the appropriate answer is <code class="sourceCode cpp"><span class="dv">1487808</span></code>. That is: while <code class="sourceCode cpp"><span class="op">%</span>S</code> prints in seconds modulo 60, <code class="sourceCode cpp"><span class="op">%</span>s</code> prints in the unit that would avoid any decimals - in this case in units of 100μs - and withou any modulo. And then explicitly providing a precision would affect the number of “decimal” points that are present. This makes <code><span class="op">%.0s</span></code> always seconds since epoch, regardless of underlying precision.</p>
+<p>That is, a table of examples for formatting <code class="sourceCode cpp">sys_time<span class="op">(</span>microfortnights<span class="op">(</span><span class="dv">123</span><span class="op">))</span></code> would be:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>example</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code><span class="op">%S</span></code></td>
+<td><code class="sourceCode cpp"><span class="fl">28.7808</span></code> (C++20 status quo)</td>
+</tr>
+<tr class="even">
+<td><code><span class="op">%.0S</span></code></td>
+<td><code class="sourceCode cpp"><span class="dv">28</span></code></td>
+</tr>
+<tr class="odd">
+<td><code><span class="op">%.3S</span></code></td>
+<td><code class="sourceCode cpp"><span class="fl">28.780</span></code></td>
+</tr>
+<tr class="even">
+<td><code><span class="op">%.6S</span></code></td>
+<td><code class="sourceCode cpp"><span class="fl">28.780800</span></code></td>
+</tr>
+<tr class="odd">
+<td><code><span class="op">%s</span></code></td>
+<td><code class="sourceCode cpp"><span class="dv">1487808</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">%</span><span class="fl">.0</span><span class="bu">s</span></code></td>
+<td><code class="sourceCode cpp"><span class="dv">148</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">%</span><span class="fl">.3</span><span class="bu">s</span></code></td>
+<td><code class="sourceCode cpp"><span class="dv">148780</span></code></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="op">%</span><span class="fl">.4</span><span class="bu">s</span></code></td>
+<td><code class="sourceCode cpp"><span class="dv">1487808</span></code></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="op">%</span><span class="fl">.6</span><span class="bu">s</span></code></td>
+<td><code class="sourceCode cpp"><span class="dv">148780800</span></code></td>
+</tr>
+</tbody>
 </table>
 <h2 data-number="3.3" id="comparison-of-the-two-proposals"><span class="header-section-number">3.3</span> Comparison of the two proposals<a href="#comparison-of-the-two-proposals" class="self-link"></a></h2>
 <p>Just putting those tables side by side for clarity:</p>
@@ -1046,12 +1100,12 @@ less preferred
 </table>
 <p>Note that my preferred approach here is longer in several of these examples - the reason it’s my preferred approach is not because it’s necessarily terser, but rather because it’s more consistent.</p>
 <h2 data-number="3.4" id="wording"><span class="header-section-number">3.4</span> Wording<a href="#wording" class="self-link"></a></h2>
-<p>For either proposal, add <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">s</code> to the options for <code class="sourceCode cpp"><em>type</em></code> and add support for precision modifiers in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span> <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The <code class="sourceCode default"><em>precision</em></code> modifier is only used in the less-preferred proposal ]</span>:</p>
+<p>For either proposal, add <code class="sourceCode cpp">f</code> and <code class="sourceCode cpp">s</code> to the options for <code class="sourceCode cpp"><em>type</em></code> and add support for precision modifiers in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>:</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1"></a>  <em>modifier</em>: one of</span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="st">-   E O</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="va">+   E O <span class="diffins"><span class="math inline"><em>w</em><em>i</em><em>d</em><em>t</em><em>h</em></span> <span class="math inline"><em>p</em><em>r</em><em>e</em><em>c</em><em>i</em><em>s</em><em>i</em><em>o</em><em>n</em></span></span></span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="va">+   E O <span class="diffins"><span class="math inline"><em>p</em><em>r</em><em>e</em><em>c</em><em>i</em><em>s</em><em>i</em><em>o</em><em>n</em></span></span></span></span>
 <span id="cb5-4"><a href="#cb5-4"></a></span>
 <span id="cb5-5"><a href="#cb5-5"></a>  <em>type</em>: one of</span>
 <span id="cb5-6"><a href="#cb5-6"></a><span class="st">-   a A b B c C d D e F g G h H I j m M n</span></span>
@@ -1082,7 +1136,7 @@ less preferred
 <tbody>
 <tr class="odd">
 <td><code class="sourceCode cpp"><span class="op">%</span>f</code></td>
-<td>Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The decimal point is not included. The modified command <code class="sourceCode cpp"><span class="op">%</span><em>width</em>f</code> instead uses <code class="sourceCode cpp"><em>width</em></code> as the precision for the input.</td>
+<td>Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The decimal point is not included. The modified command <code class="sourceCode cpp"><span class="op">%</span><em>precision</em>f</code> instead uses <code class="sourceCode cpp"><em>precision</em></code> as the precision for the input.</td>
 </tr>
 </tbody>
 </table>
@@ -1142,7 +1196,7 @@ less preferred
 </tr>
 <tr class="even">
 <td><span class="addu"><code class="sourceCode cpp"><span class="op">%</span>s</code></span></td>
-<td><span class="addu">Duration since epoch as a decimal number in the precision of the input. The modified command <code class="sourceCode cpp"><span class="op">%</span><em>width</em>s</code> instead uses <code class="sourceCode cpp"><em>width</em></code> as the precision of the input</span></td>
+<td><span class="addu">Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command <code class="sourceCode cpp"><span class="op">%</span><em>precision</em>s</code> instead uses <code class="sourceCode cpp"><em>precision</em></code> as the precision of the input</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp"><span class="op">%</span>T</code></td>

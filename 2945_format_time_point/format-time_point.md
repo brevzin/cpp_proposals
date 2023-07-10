@@ -11,7 +11,7 @@ toc: true
 
 # Introduction
 
-`std::chrono::time_point` has a lot of format specifiers. You can peruse the table [here](https://eel.is/c++draft/tab:time.format.spec). This makes it very convenient for the user to format their `time_point` however they want: the date in either the correct (`2023-07-08`{.x}) or incorrect (`07/08/2023`{.x}) numeric formats, spelling out the month (`July` or `Jul`), presenting the time in 24-hour notation or using `AM` or `PM`, etc. This is all very useful.
+`std::chrono::time_point` has a lot of format specifiers. You can peruse the table [here](https://eel.is/c++draft/tab:time.format.spec). This makes it very convenient for the user to format their `time_point` however they want: the date in either the correct (`2023-07-08`{.op}) or incorrect (`07/08/2023`{.op}) numeric formats, spelling out the month (`July` or `Jul`), presenting the time in 24-hour notation or using `AM` or `PM`, etc. This is all very useful.
 
 But there's a few format specifier that I believe are missing that I would like to propose:
 
@@ -45,9 +45,9 @@ In addition to proposing `%.$n$S` (for seconds with `$n$` decimal digits), this 
 
 First, it is simply much more convenient for the user to write something like `%.0T` if what they want is `15:40:34` then it is for them to write that rather verbose cast expression to convert their `time_point` into `seconds` duration.
 
-Second, `%.0T`{.x} ensures that they don't actually have to care about the underlying duration of their `time_point`, this will consistently produce the same output regardless of whether it's `time_point<system_clock, seconds>` or `time_point<system_clock, milliseconds>` or `time_point<system_clock, nanoseconds>`.
+Second, `%.0T`{.op} ensures that they don't actually have to care about the underlying duration of their `time_point`, this will consistently produce the same output regardless of whether it's `time_point<system_clock, seconds>` or `time_point<system_clock, milliseconds>` or `time_point<system_clock, nanoseconds>`.
 
-Third, specifiers can nest in a way that those workarounds don't. For example, it is straightforward to implement formatting for `Optional<T>` such that it supports all of `T`'s format specifiers, so that `Optional<int>(42)` can format using `{:#x}`{.x} as `Some(0x2a)`. If `time_point` has the necessary specifiers then an `Optional<time_point>` can be formatted as desired simply using `time_point`'s specifiers. Otherwise, the workaround requires calling `Optional::transform`. The same argument can be made for ranges: use the underlying specifier, or have to resort to using `std::views::transform`. This certainly becomes inconvenient for the user pretty rapidly, but it also brings up a question of safety - something I'm going to call the capture problem [^naming].
+Third, specifiers can nest in a way that those workarounds don't. For example, it is straightforward to implement formatting for `Optional<T>` such that it supports all of `T`'s format specifiers, so that `Optional<int>(42)` can format using `{:#x}`{.op} as `Some(0x2a)`. If `time_point` has the necessary specifiers then an `Optional<time_point>` can be formatted as desired simply using `time_point`'s specifiers. Otherwise, the workaround requires calling `Optional::transform`. The same argument can be made for ranges: use the underlying specifier, or have to resort to using `std::views::transform`. This certainly becomes inconvenient for the user pretty rapidly, but it also brings up a question of safety - something I'm going to call the capture problem [^naming].
 
 [^naming]: This probably already exists in the literature under a much more suitable name, so I'm hoping by giving it a bad name somebody simply points me to the correct one later.
 
@@ -107,7 +107,7 @@ Allowing more common logic into the specifiers simply avoids this problem.
 
 ## Why not use precision?
 
-Rather than having a prefixed specifier to do millisecond precision, like `%3S`{.x} or `%.3S`{.x}, could we use the already-existing `$precision$` specifier and write something like `{:.3%H:%M:%S}`{.x}? We could, but I think this would be a poor choice.
+Rather than having a prefixed specifier to do millisecond precision, like `%3S`{.op} or `%.3S`{.op}, could we use the already-existing `$precision$` specifier and write something like `{:.3%H:%M:%S}`{.op}? We could, but I think this would be a poor choice.
 
 First, this is what the standard has to say about `$precision$` for a `$chrono-format-spec$` (in [time.format]{.sref}/1):
 
@@ -133,11 +133,11 @@ In the UNIX `date` program, `%S` is always an integer number of seconds and `%s`
 
 |specifier|example|
 |-|-|
-|`+%T`{.x}|`09:40:34`{.x}|
-|`+%T.%N`{.x}|`09:40:34.295314673`{.x}|
-|`+%T.%3N`{.x}|`09:40:34.295`{.x}|
-|`+%s`{.x}|`1688830834`{.x}|
-|`+%s%N`{.x}|`1688830834295314673`{.x}|
+|`+%T`{.op}|`09:40:34`{.op}|
+|`+%T.%N`{.op}|`09:40:34.295314673`{.op}|
+|`+%T.%3N`{.op}|`09:40:34.295`{.op}|
+|`+%s`{.op}|`1688830834`{.op}|
+|`+%s%N`{.op}|`1688830834295314673`{.op}|
 
 ### C
 
@@ -153,14 +153,14 @@ In Rust in the [`chrono` crate](https://docs.rs/chrono/latest/chrono/format/strf
 
 |specifier|example|
 |-|-|
-|`%f`{.x}|`026490000`{.x}|
-|`%.f`{.x}|`.026940`{.x}|
-|`%.3f`{.x}|`.026`{.x}|
-|`%.6f`{.x}|`.026490`{.x}|
-|`%.9f`{.x}|`.026490000`{.x}|
-|`%3f`{.x}|`026`{.x}|
-|`%6f`{.x}|`026490`{.x}|
-|`%9f`{.x}|`026490000`{.x}|
+|`%f`{.op}|`026490000`{.op}|
+|`%.f`{.op}|`.026940`{.op}|
+|`%.3f`{.op}|`.026`{.op}|
+|`%.6f`{.op}|`.026490`{.op}|
+|`%.9f`{.op}|`.026490000`{.op}|
+|`%3f`{.op}|`026`{.op}|
+|`%6f`{.op}|`026490`{.op}|
+|`%9f`{.op}|`026490000`{.op}|
 
 ### Ruby
 
@@ -168,12 +168,12 @@ In [Ruby](https://docs.ruby-lang.org/en/master/strftime_formatting_rdoc.html), `
 
 |specifier|example|
 |-|-|
-|`%L`{.x}|`323`{.x}|
-|`%N`{.x}|`323091400`{.x}|
-|`%3N`{.x}|`323`{.x}|
-|`%6N`{.x}|`323091`{.x}|
-|`%9N`{.x}|`323091400`{.x}|
-|`%24N`{.x}|`323091400000000000000000`{.x}|
+|`%L`{.op}|`323`{.op}|
+|`%N`{.op}|`323091400`{.op}|
+|`%3N`{.op}|`323`{.op}|
+|`%6N`{.op}|`323091`{.op}|
+|`%9N`{.op}|`323091400`{.op}|
+|`%24N`{.op}|`323091400000000000000000`{.op}|
 
 I feel like yoctoseconds is probably not a unit people are going to use very often, but there it is.
 
@@ -181,7 +181,7 @@ I feel like yoctoseconds is probably not a unit people are going to use very oft
 
 As you can see above, there's a pretty impressive consensus on what a few specifiers mean. To everybody:
 
-* `%S` is a specifier that gives you a two-digit, integer number of seconds from `00`{.x} to `59`{.x}, and
+* `%S` is a specifier that gives you a two-digit, integer number of seconds from `00`{.op} to `59`{.op}, and
 * `%s` is a specifier that gives you the integer number of seconds since epoch.
 
 To everyone, that is, except C++20's approach to chrono formatting. Why is that? Our wording comes from [@P1361R2], which itself comes from [@P0355R7]. That paper, since R0, has always defined `%S` in the same way. The specific words changed over time, but even [@P0355R0] states:
@@ -206,9 +206,9 @@ I have two proposals here: the one that I think we should do, and the one that w
 
 As described [earlier](#c-chrono-and-format), my preferred approach would be to break existing uses of `%S` to normalize our use of chrono specifiers with the rest of the `strftime` ecosystem:
 
-* Change `%S` to be a two-digit, integer number of seconds (`00`{.x} to `59`{.x}), mirroring `%H` and `%M` for hours and minutes.
+* Change `%S` to be a two-digit, integer number of seconds (`00`{.op} to `59`{.op}), mirroring `%H` and `%M` for hours and minutes.
 * Add `%s` to be the integer number of seconds since epoch.
-* Add `%f` to be sub-seconds up to the precision of the `time_point` (I think `%f` for fractional seconds makes more sense than `%N` for nanoseconds, in light of the fact that this can be used to format non-`nanoseconds` `time_point`s). Allow these to be prefixed with either static or dynamic precision, so `%3f`{.x} is always three digits (for `sys_time<seconds>` it would always be `000`{.x}) while `%{}f`{.x} would mean using another argument for the number of digits.
+* Add `%f` to be sub-seconds up to the precision of the `time_point` (I think `%f` for fractional seconds makes more sense than `%N` for nanoseconds, in light of the fact that this can be used to format non-`nanoseconds` `time_point`s). Allow these to be prefixed with either static or dynamic precision, so `%3f`{.op} is always three digits (for `sys_time<seconds>` it would always be `000`{.op}) while `%{}f`{.op} would mean using another argument for the number of digits.
 
 This way, we end up with the same meaning of `%S` and `%s` as everyone else.
 
@@ -243,9 +243,9 @@ The examples for the initial table thus become:
 If we cannot change `%S` as above, then:
 
 * Add `%s` to be the number of ticks since epoch in the `time_point`'s units.
-* Allow both `%S` and `%s` to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like `%.3S`{.x} for the former and `%3s`{.x} for the latter (since the former includes a decimal point at the latter does not).
-* Extend `%T` in the same way that we extend `%S`, so that `%.9T`{.x} means `%H:%M:%.9S`{.x}.
-* Add `%f` as well (as in the previous section), such that `%.0S.%3f`{.x} means the same thing as `%.03S`{.x}. `%f` may be less compelling in a world where you can print fractional seconds using `%S`, but I think if we're in this space, we might as well do it.
+* Allow both `%S` and `%s` to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like `%.3S`{.op} for the former and `%.3s`{.op} for the latter.
+* Extend `%T` in the same way that we extend `%S`, so that `%.9T`{.op} means `%H:%M:%.9S`{.op}.
+* Add `%f` as well (as in the previous section), such that `%.0S.%.3f`{.op} means the same thing as `%.03S`{.op}. `%f` may be less compelling in a world where you can print fractional seconds using `%S`, but I think if we're in this space, we might as well do it.
 
 Proposed examples (which assume that `system_clock::time_point` has nanosecond resolution):
 
@@ -272,6 +272,26 @@ Proposed examples (which assume that `system_clock::time_point` has nanosecond r
 <td>`std::format("{:%H:%M:%.6S}", tp)`</td>
 </tr>
 </table>
+
+There's one more thing that needs to be touched on here, that doesn't need to be addressed in the preferred proposal. For `sys_time<nanoseconds>`, it's pretty clear what `%s` should mean (nanoseconds since epoch) and what `%.0s`{.op} would mean (seconds since epoch). But `nanoseconds` (and similar units like `microseconds` or `seconds`) aren't the only durations. We also have to consider other ones.
+
+The next most obvious one to consider is... everyone say it with me now... [microfortnights](https://en.wikipedia.org/wiki/FFF_system). A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.
+
+Following the rules that we have today, formatting 1 microfortnight using `%S` would yield `01.2096`. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using `%S` would yield `28.7808`.The question is: what should `%s` print for 123 microfortnights? I think the appropriate answer is `1487808`. That is: while `%S` prints in seconds modulo 60, `%s` prints in the unit that would avoid any decimals - in this case in units of 100μs - and withou any modulo. And then explicitly providing a precision would affect the number of "decimal" points that are present. This makes `%.0s`{.op} always seconds since epoch, regardless of underlying precision.
+
+That is, a table of examples for formatting `sys_time(microfortnights(123))` would be:
+
+|specifier|example|
+|-|-|
+|`%S`{.op}|`28.7808` (C++20 status quo)|
+|`%.0S`{.op}|`28`|
+|`%.3S`{.op}|`28.780`|
+|`%.6S`{.op}|`28.780800`|
+|`%s`{.op}|`1487808`|
+|`%.0s`|`148`|
+|`%.3s`|`148780`|
+|`%.4s`|`1487808`|
+|`%.6s`|`148780800`|
 
 ## Comparison of the two proposals
 
@@ -310,13 +330,13 @@ Note that my preferred approach here is longer in several of these examples - th
 
 ## Wording
 
-For either proposal, add `f` and `s` to the options for `$type$` and add support for precision modifiers in [time.format]{.sref} [The `$precision$` modifier is only used in the less-preferred proposal]{.ednote}:
+For either proposal, add `f` and `s` to the options for `$type$` and add support for precision modifiers in [time.format]{.sref}:
 
 ::: bq
 ```diff
   $modifier$: one of
 -   E O
-+   E O @[$width$ $precision$]{.diffins}@
++   E O @[$precision$]{.diffins}@
 
   $type$: one of
 -   a A b B c C d D e F g G h H I j m M n
@@ -334,7 +354,7 @@ Add a row to the conversion specifier table in [time.format]{.sref}:
 :::addu
 |Specifier|Replacement|
 |-|-|
-|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The decimal point is not included. The modified command `%$width$f` instead uses `$width$` as the precision for the input.|
+|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The decimal point is not included. The modified command `%$precision$f` instead uses `$precision$` as the precision for the input.|
 :::
 :::
 
@@ -355,6 +375,6 @@ Change `%S` and add `%s` to the conversion specifier table in [time.format]{.sre
 |Specifier|Replacement|
 |-|-|
 |`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation. [The modified command `%$precision$S` instead uses `$precision$` as the precision for the input.]{.addu}|
-|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input. The modified command `%$width$s` instead uses `$width$` as the precision of the input]{.addu}|
+|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$precision$s` instead uses `$precision$` as the precision of the input]{.addu}|
 |`%T`|Equivalent to `%H:%M:%S`. [The modified command `%$precision$T` is equivalent to `%H:%M:%$precision$S`.]{.addu}|
 :::
