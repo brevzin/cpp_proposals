@@ -860,12 +860,13 @@ current workaround
 </ul>
 </blockquote>
 <p>P0355 describes itself as proposing “<code class="sourceCode cpp">strftime</code>-like formatting” but offers no explanation that I can find for why it differs from <code class="sourceCode cpp">strftime</code> in this case.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> Nor can I find any evidence that this difference was noted in either LEWG or LWG any of the times this paper was discussed.</p>
-<p>I consider this an unfortunate design choice, and my preference would be to revert <code class="sourceCode cpp"><span class="op">%</span>S</code> to always be a two-digit, integer number of seconds (mirroring <code class="sourceCode cpp"><span class="op">%</span>H</code> and <code class="sourceCode cpp"><span class="op">%</span>M</code> for hours and minutes). This would be a breaking change, as this has been the behavior since C++20.</p>
-<p>Although it’s notable that libstdc++ only implemented formatting in gcc 13 (released April 2023) and libc++ still doesn’t implement formatting (it is currently labelled “implemented but still marked as an incomplete feature” and you must compile with <code class="sourceCode cpp"><span class="op">-</span>fexperimental<span class="op">-</span>library</code> to use it). Only the MSVC standard library has had this functionality for more than a few months (implemented in <a href="https://github.com/microsoft/STL/commit/c33874c3777f1596f4cecce6c00bdda41a4fc1b0">April 2021</a>).</p>
+<p>I consider this an unfortunate design choice.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>I have two proposals here: the one that I think we should do, and the one that will likely get more support.</p>
 <h2 data-number="3.1" id="preferred-proposal"><span class="header-section-number">3.1</span> Preferred Proposal<a href="#preferred-proposal" class="self-link"></a></h2>
-<p>As described <a href="#c-chrono-and-format">earlier</a>, my preferred approach would be to break existing uses of <code class="sourceCode cpp"><span class="op">%</span>S</code> to normalize our use of chrono specifiers with the rest of the <code class="sourceCode cpp">strftime</code> ecosystem:</p>
+<p>My preference would be to revert <code class="sourceCode cpp"><span class="op">%</span>S</code> to always be a two-digit, integer number of seconds (mirroring <code class="sourceCode cpp"><span class="op">%</span>H</code> and <code class="sourceCode cpp"><span class="op">%</span>M</code> for hours and minutes). This would be a breaking change, as this has been the behavior since C++20.</p>
+<p>Although it’s notable that libstdc++ only implemented formatting in gcc 13 (released April 2023) and libc++ still doesn’t implement formatting (it is currently labelled “implemented but still marked as an incomplete feature” and you must compile with <code class="sourceCode cpp"><span class="op">-</span>fexperimental<span class="op">-</span>library</code> to use it). Only the MSVC standard library has had this functionality for more than a few months (implemented in <a href="https://github.com/microsoft/STL/commit/c33874c3777f1596f4cecce6c00bdda41a4fc1b0">April 2021</a>).</p>
+<p>The proposal is to break existing uses of <code class="sourceCode cpp"><span class="op">%</span>S</code> to normalize our use of chrono specifiers with the rest of the <code class="sourceCode cpp">strftime</code> ecosystem:</p>
 <ul>
 <li>Change <code class="sourceCode cpp"><span class="op">%</span>S</code> to be a two-digit, integer number of seconds (<code><span class="op">00</span></code> to <code><span class="op">59</span></code>), mirroring <code class="sourceCode cpp"><span class="op">%</span>H</code> and <code class="sourceCode cpp"><span class="op">%</span>M</code> for hours and minutes.</li>
 <li>Add <code class="sourceCode cpp"><span class="op">%</span>s</code> to be the integer number of seconds since epoch.</li>
@@ -950,7 +951,7 @@ proposed
 <td>
 1688830834</t>
 <td>
-<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%0s}&quot;</span>, tp<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%.0s}&quot;</span>, tp<span class="op">)</span></code>
 </td>
 </tr>
 <tr>
@@ -979,8 +980,9 @@ proposed
 </tr>
 </table>
 <p>There’s one more thing that needs to be touched on here, that doesn’t need to be addressed in the preferred proposal. For <code class="sourceCode cpp">sys_time<span class="op">&lt;</span>nanoseconds<span class="op">&gt;</span></code>, it’s pretty clear what <code class="sourceCode cpp"><span class="op">%</span>s</code> should mean (nanoseconds since epoch) and what <code><span class="op">%.0s</span></code> would mean (seconds since epoch). But <code class="sourceCode cpp">nanoseconds</code> (and similar units like <code class="sourceCode cpp">microseconds</code> or <code class="sourceCode cpp">seconds</code>) aren’t the only durations. We also have to consider other ones.</p>
-<p>The next most obvious one to consider is… everyone say it with me now… <a href="https://en.wikipedia.org/wiki/FFF_system">microfortnights</a>. A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.</p>
-<p>Following the rules that we have today, formatting 1 microfortnight using <code class="sourceCode cpp"><span class="op">%</span>S</code> would yield <code class="sourceCode cpp"><span class="fl">01.2096</span></code>. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using <code class="sourceCode cpp"><span class="op">%</span>S</code> would yield <code class="sourceCode cpp"><span class="fl">28.7808</span></code>.The question is: what should <code class="sourceCode cpp"><span class="op">%</span>s</code> print for 123 microfortnights? I think the appropriate answer is <code class="sourceCode cpp"><span class="dv">1487808</span></code>. That is: while <code class="sourceCode cpp"><span class="op">%</span>S</code> prints in seconds modulo 60, <code class="sourceCode cpp"><span class="op">%</span>s</code> prints in the unit that would avoid any decimals - in this case in units of 100μs - and withou any modulo. And then explicitly providing a precision would affect the number of “decimal” points that are present. This makes <code><span class="op">%.0s</span></code> always seconds since epoch, regardless of underlying precision.</p>
+<p>The next most obvious one to consider is… everyone say it with me now… <a href="https://en.wikipedia.org/wiki/FFF_system">microfortnights</a>.</p>
+<p>A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.</p>
+<p>Following the rules that we have today, formatting 1 microfortnight using <code class="sourceCode cpp"><span class="op">%</span>S</code> would yield <code class="sourceCode cpp"><span class="fl">01.2096</span></code>. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using <code class="sourceCode cpp"><span class="op">%</span>S</code> would yield <code class="sourceCode cpp"><span class="fl">28.7808</span></code>.The question is: what should <code class="sourceCode cpp"><span class="op">%</span>s</code> print for 123 microfortnights? I think the appropriate answer is <code class="sourceCode cpp"><span class="dv">1487808</span></code>. That is: while <code class="sourceCode cpp"><span class="op">%</span>S</code> prints in seconds modulo 60, <code class="sourceCode cpp"><span class="op">%</span>s</code> prints in the unit that would avoid any decimals - in this case in units of 100μs - and without any modulo. And then explicitly providing a precision would affect the number of “decimal” points that are present. This makes <code><span class="op">%.0s</span></code> always seconds since epoch, regardless of underlying precision.</p>
 <p>That is, a table of examples for formatting <code class="sourceCode cpp">sys_time<span class="op">(</span>microfortnights<span class="op">(</span><span class="dv">123</span><span class="op">))</span></code> would be:</p>
 <table>
 <thead>
@@ -1063,7 +1065,7 @@ less preferred
 <td>
 1688830834</t>
 <td>
-<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%0s}&quot;</span>, tp<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{:%.0s}&quot;</span>, tp<span class="op">)</span></code>
 </td>
 </tr>
 <tr>

@@ -194,9 +194,7 @@ P0355 describes itself as proposing "`strftime`-like formatting" but offers no e
 
 [^differs]: You could argue that it doesn't actually differ from `strftime` in the sense that in both cases, `%S` formats all the sub-minute time - it's just that C did not have any subsecond precision. I don't find this argument particularly compelling - `%S` went from always printing a two-digit integer number of seconds to printing decimals.
 
-I consider this an unfortunate design choice, and my preference would be to revert `%S` to always be a two-digit, integer number of seconds (mirroring `%H` and `%M` for hours and minutes). This would be a breaking change, as this has been the behavior since C++20.
-
-Although it's notable that libstdc++ only implemented formatting in gcc 13 (released April 2023) and libc++ still doesn't implement formatting (it is currently labelled "implemented but still marked as an incomplete feature" and you must compile with `-fexperimental-library` to use it). Only the MSVC standard library has had this functionality for more than a few months (implemented in [April 2021](https://github.com/microsoft/STL/commit/c33874c3777f1596f4cecce6c00bdda41a4fc1b0)).
+I consider this an unfortunate design choice.
 
 # Proposal
 
@@ -204,7 +202,11 @@ I have two proposals here: the one that I think we should do, and the one that w
 
 ## Preferred Proposal
 
-As described [earlier](#c-chrono-and-format), my preferred approach would be to break existing uses of `%S` to normalize our use of chrono specifiers with the rest of the `strftime` ecosystem:
+My preference would be to revert `%S` to always be a two-digit, integer number of seconds (mirroring `%H` and `%M` for hours and minutes). This would be a breaking change, as this has been the behavior since C++20.
+
+Although it's notable that libstdc++ only implemented formatting in gcc 13 (released April 2023) and libc++ still doesn't implement formatting (it is currently labelled "implemented but still marked as an incomplete feature" and you must compile with `-fexperimental-library` to use it). Only the MSVC standard library has had this functionality for more than a few months (implemented in [April 2021](https://github.com/microsoft/STL/commit/c33874c3777f1596f4cecce6c00bdda41a4fc1b0)).
+
+The proposal is to break existing uses of `%S` to normalize our use of chrono specifiers with the rest of the `strftime` ecosystem:
 
 * Change `%S` to be a two-digit, integer number of seconds (`00`{.op} to `59`{.op}), mirroring `%H` and `%M` for hours and minutes.
 * Add `%s` to be the integer number of seconds since epoch.
@@ -257,7 +259,7 @@ Proposed examples (which assume that `system_clock::time_point` has nanosecond r
 </tr>
 <tr>
 <td>1688830834</t>
-<td>`std::format("{:%0s}", tp)`</td>
+<td>`std::format("{:%.0s}", tp)`</td>
 </tr>
 <tr>
 <td>15:40:34</td>
@@ -275,9 +277,11 @@ Proposed examples (which assume that `system_clock::time_point` has nanosecond r
 
 There's one more thing that needs to be touched on here, that doesn't need to be addressed in the preferred proposal. For `sys_time<nanoseconds>`, it's pretty clear what `%s` should mean (nanoseconds since epoch) and what `%.0s`{.op} would mean (seconds since epoch). But `nanoseconds` (and similar units like `microseconds` or `seconds`) aren't the only durations. We also have to consider other ones.
 
-The next most obvious one to consider is... everyone say it with me now... [microfortnights](https://en.wikipedia.org/wiki/FFF_system). A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.
+The next most obvious one to consider is... everyone say it with me now... [microfortnights](https://en.wikipedia.org/wiki/FFF_system).
 
-Following the rules that we have today, formatting 1 microfortnight using `%S` would yield `01.2096`. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using `%S` would yield `28.7808`.The question is: what should `%s` print for 123 microfortnights? I think the appropriate answer is `1487808`. That is: while `%S` prints in seconds modulo 60, `%s` prints in the unit that would avoid any decimals - in this case in units of 100μs - and withou any modulo. And then explicitly providing a precision would affect the number of "decimal" points that are present. This makes `%.0s`{.op} always seconds since epoch, regardless of underlying precision.
+A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.
+
+Following the rules that we have today, formatting 1 microfortnight using `%S` would yield `01.2096`. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using `%S` would yield `28.7808`.The question is: what should `%s` print for 123 microfortnights? I think the appropriate answer is `1487808`. That is: while `%S` prints in seconds modulo 60, `%s` prints in the unit that would avoid any decimals - in this case in units of 100μs - and without any modulo. And then explicitly providing a precision would affect the number of "decimal" points that are present. This makes `%.0s`{.op} always seconds since epoch, regardless of underlying precision.
 
 That is, a table of examples for formatting `sys_time(microfortnights(123))` would be:
 
@@ -307,7 +311,7 @@ Just putting those tables side by side for clarity:
 <tr>
 <td>`std::format("{:%s}", tp)`</td>
 <td>1688830834</t>
-<td>`std::format("{:%0s}", tp)`</td>
+<td>`std::format("{:%.0s}", tp)`</td>
 </tr>
 <tr>
 <td>`std::format("{:%H:%M:%S}", tp)`<br />`std::format("{:%T}", tp)`</td>
