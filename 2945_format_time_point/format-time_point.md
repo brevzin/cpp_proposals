@@ -210,9 +210,48 @@ The proposal is to break existing uses of `%S` to normalize our use of chrono sp
 
 * Change `%S` to be a two-digit, integer number of seconds (`00`{.op} to `59`{.op}), mirroring `%H` and `%M` for hours and minutes.
 * Add `%s` to be the integer number of seconds since epoch.
-* Add `%f` to be sub-seconds up to the precision of the `time_point` (I think `%f` for fractional seconds makes more sense than `%N` for nanoseconds, in light of the fact that this can be used to format non-`nanoseconds` `time_point`s). Allow these to be prefixed with either static or dynamic precision, so `%3f`{.op} is always three digits (for `sys_time<seconds>` it would always be `000`{.op}) while `%{}f`{.op} would mean using another argument for the number of digits.
+* Add `%f` to be sub-seconds up to the precision of the `time_point`. I think `%f` for fractional seconds makes more sense than `%N` for nanoseconds, in light of the fact that this can be used to format non-`nanoseconds` `time_point`s.
 
-This way, we end up with the same meaning of `%S` and `%s` as everyone else.
+It bears a little more explanation of how exactly `%f` would have to function for us, and here we do diverge slightly. Currently, we have this behavior:
+
+::: bq
+```cpp
+println("{:%S}", sys_time(1s));     // 01
+println("{:%S}", sys_time(1000ms)); // 01.000
+```
+:::
+
+Which materializes in how formatting works in `<iostream>` (assuming we still remember those). Streaming a `sys_time<Duration>` is defined as formatting using `"{:L%F %T}"`, which means:
+
+::: bq
+```cpp
+cout << sys_time(1s) << '\n';     // 1970-01-01 00:00:01
+cout << sys_time(1000ms) << '\n'; // 1970-01-01 00:00:01.000
+```
+:::
+
+In order to preserve that behavior, and achieve a similar precision-specific formatting, we would need to do something like this:
+
+<table>
+<tr><th /><th colspan="3">precision</th></tr>
+<tr><th>specifier</th><th>`seconds(1)`</th><th>`milliseconds(1234)`</th><th>`nanoseconds(1234567)`</th></tr>
+<tr><td>`%.f`{.op}</td><td>empty string</td><td>`.234`</td><td>`.001234567`</td></tr>
+<tr><td>`%.0f`{.op}</td><td>empty string</td><td>empty string</td><td>empty string</td></tr>
+<tr><td>`%.3f`{.op}</td><td>`.000`</td><td>`.234`</td><td>`.001`</td></tr>
+<tr><td>`%.5f`{.op}</td><td>`.00000`</td><td>`.23400`</td><td>`.00123`</td></tr>
+<tr><td>`%f`{.op}</td><td>empty string</td><td>`234`</td><td>`001234567`</td></tr>
+<tr><td>`%0f`{.op}</td><td>empty string</td><td>empty string</td><td>empty string</td></tr>
+<tr><td>`%3f`{.op}</td><td>`000`</td><td>`234`</td><td>`001`</td></tr>
+<tr><td>`%5f`{.op}</td><td>`00000`</td><td>`23400`</td><td>`00123`</td></tr>
+</table>
+
+That is: `%f` can take an optional `.` and an optional `$precision$`. If the `.` is provided, and digits need to be emitted, then a (localized) decimal point will be also. If `$precision$` is provided, that many digits are emitted. If `$precision$` is not provided, the precision of the `time_point` is used.
+
+In this way, the old `%S` can be achieved by the new `%S%.f`, just like the old `%T` can be achieved by the new `%T%.f`.
+
+`%f` can also take a dynamic precision, so `%.3f%`{.op} is always three digits following a decimal point while `%.{}f`{.op} would mean using another argument for the number of digits.
+
+This way, we end up with the same meaning of `%S` and `%s` as everyone else, and a pretty consistent `%f` as well.
 
 The examples for the initial table thus become:
 
@@ -232,13 +271,15 @@ The examples for the initial table thus become:
 </tr>
 <tr>
 <td>15:40:34.295</td>
-<td>`std::format("{:%H:%M:%S.%3f}", tp)`</td>
+<td>`std::format("{:%H:%M:%S%.3f}", tp)`</td>
 </tr>
 <tr>
 <td>15:40:34.295314</td>
-<td>`std::format("{:%H:%M:%S.%6f}", tp)`</td>
+<td>`std::format("{:%H:%M:%S%.6f}", tp)`</td>
 </tr>
 </table>
+
+Note that we have to do it as `%.3f` rather than the perhaps more obvious `.%3f`{.op} because in order to localize the decimal point, it has to be part of the specifier, not just an arbitrary character.
 
 ## Less-preferred Proposal
 
@@ -247,7 +288,7 @@ If we cannot change `%S` as above, then:
 * Add `%s` to be the number of ticks since epoch in the `time_point`'s units.
 * Allow both `%S` and `%s` to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like `%.3S`{.op} for the former and `%.3s`{.op} for the latter.
 * Extend `%T` in the same way that we extend `%S`, so that `%.9T`{.op} means `%H:%M:%.9S`{.op}.
-* Add `%f` as well (as in the previous section), such that `%.0S.%.3f`{.op} means the same thing as `%.03S`{.op}. `%f` may be less compelling in a world where you can print fractional seconds using `%S`, but I think if we're in this space, we might as well do it.
+* Add `%f` as well (as in the previous section), such that `%.0S%.3f`{.op} means the same thing as `%.03S`{.op}. `%f` may be less compelling in a world where you can print fractional seconds using `%S`, but I think if we're in this space, we might as well do it.
 
 Proposed examples (which assume that `system_clock::time_point` has nanosecond resolution):
 
@@ -319,12 +360,12 @@ Just putting those tables side by side for clarity:
 <td>`std::format("{:%H:%M:%.0S}", tp)`<br />`std::format("{:%.0T}", tp)`</td>
 </tr>
 <tr>
-<td>`std::format("{:%H:%M:%S.%3f}", tp)`<br />`std::format("{:%T.%3f}", tp)`</td>
+<td>`std::format("{:%H:%M:%S%.3f}", tp)`<br />`std::format("{:%T.%3f}", tp)`</td>
 <td>15:40:34.295</td>
 <td>`std::format("{:%H:%M:%.3S}", tp)`<br />`std::format("{:%.3T}", tp)`</td>
 </tr>
 <tr>
-<td>`std::format("{:%H:%M:%S.%6f}", tp)`<br />`std::format("{:%T.%6f}", tp)`</td>
+<td>`std::format("{:%H:%M:%S%.6f}", tp)`<br />`std::format("{:%T.%6f}", tp)`</td>
 <td>15:40:34.295314</td>
 <td>`std::format("{:%H:%M:%.6S}", tp)`<br />`std::format("{:%.6T}", tp)`</td>
 </tr>
@@ -346,7 +387,11 @@ For either proposal, add `f` and `s` to the options for `$type$` and add support
 ```diff
   $modifier$: one of
 -   E O
-+   E O @[$precision$]{.diffins}@
++   E O @[*tp-precision*]{.diffins}@
+
++ $tp-precision$:
++   .@~opt~@ $nonnegative-integer$@~opt~@
++   .@~opt~@ { $arg-id$@~opt~@ }
 
   $type$: one of
 -   a A b B c C d D e F g G h H I j m M n
@@ -364,7 +409,7 @@ Add a row to the conversion specifier table in [time.format]{.sref}:
 :::addu
 |Specifier|Replacement|
 |-|-|
-|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The decimal point is not included. The modified command `%$precision$f` instead uses `$precision$` as the precision for the input.|
+|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to the `$tp-precision$` if provided or otherwise to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The localized decimal point is included if the `.` appears in the specifier.|
 :::
 :::
 
@@ -388,12 +433,14 @@ Change `%S` and add `%s` to the conversion specifier table in [time.format]{.sre
 |[`%s`]{.addu}|[Seconds since epoch as a decimal number.]{.addu}|
 :::
 
+All of the uses other uses of `%T` in [time]{.sref} for ostream formatters would also have to change to be `%T%f`.
+
 ### Less-Preferred Proposal Wording
 
 ::: bq
 |Specifier|Replacement|
 |-|-|
-|`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation. [The modified command `%$precision$S` instead uses `$precision$` as the precision for the input.]{.addu}|
-|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$precision$s` instead uses `$precision$` as the precision of the input]{.addu}|
-|`%T`|Equivalent to `%H:%M:%S`. [The modified command `%$precision$T` is equivalent to `%H:%M:%$precision$S`.]{.addu}|
+|`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation. [The modified command `%$tp-precision$S` instead uses `$tp-precision$` as the precision for the input.]{.addu}|
+|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$tp-precision$s` instead uses `$tp-precision$` as the precision of the input]{.addu}|
+|`%T`|Equivalent to `%H:%M:%S`. [The modified command `%$tp-precision$T` is equivalent to `%H:%M:%$tp-precision$S`.]{.addu}|
 :::
