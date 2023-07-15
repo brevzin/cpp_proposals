@@ -99,6 +99,7 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
 | `iota` | C++20 | -- |
+| `istream` | C++20 | [See below](#istreamt) |
 | `join` | C++20 and C++23 | -- |
 | `keys` | C++20 | -- |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
@@ -246,6 +247,106 @@ There are four potential solutions to this problem, presented in our order of pr
 
 The other issue is what the reference type of the range should be. range-v3 uses `range_value_t<V>&&`, but this somewhat defeats the purpose of caching if you can so easily invalidate it. `range_value_t<V>&` is probably a better choice.
 
+## `istream<T>`
+
+`views::istream<T>` was one of the original C++20 range factories, modified slightly since then to be a bit more user-friendly. But there's an interesting issue with it as pointed out in [@P2406R5] and even before that in [@range-v3#57]: `views::istream<T>(stream) | views::take(N)` will extract `N+1` elements from `stream`. Barry did a CppNow talk on this example (video has not been posted yet).
+
+There are, potentially, two approaches to implementing `views::istream<T>`:
+
+::: cmptable
+### Specified (C++20)
+```cpp
+template <class Val>
+class istream_view {
+  istream* stream;
+  Val value;
+
+  struct iterator {
+    istream_view* parent;
+
+    auto operator++() -> iterator& {
+      parent->extract();
+      return *this;
+    }
+
+    auto operator*() const -> Val& {
+      return parent->value;
+    }
+
+    auto operator==(default_sentinel_t) const -> bool {
+      return not *parent->stream;
+    }
+  };
+
+  auto extract() -> void {
+    *stream >> value;
+  }
+
+public:
+  auto begin() -> iterator {
+    extract();
+    return iterator{this};
+  }
+  auto end() -> default_sentinel_t {
+    return default_sentinel;
+  }
+};
+```
+
+### Alternative (as presented at CppNow)
+```cpp
+template <class Val>
+class istream_view {
+  istream* stream;
+  Val value;
+
+  struct iterator {
+    istream_view* parent;
+    mutable bool dirty = true;
+
+    auto prime() const -> void {
+      if (dirty) {
+        *parent->stream >> parent->value;
+        dirty = false;
+      }
+    }
+
+    auto operator++() -> iterator& {
+      prime();
+      dirty = true;
+      return *this;
+    }
+
+    auto operator*() const -> Val& {
+      prime();
+      return parent->value;
+    }
+
+    auto operator==(default_sentinel_t) const -> bool {
+      prime();
+      return not *parent->stream;
+    }
+  };
+
+public:
+  auto begin() -> iterator {
+    return iterator{this};
+  }
+
+  auto end() -> default_sentinel_t {
+    return default_sentinel;
+  }
+};
+```
+:::
+
+This alternative implementation ensures that consuming `views::istream<T>(stream) | views::take(N)` extracts exactly `N` elements from `stream`, including for `N == 0`. It does, however, require doing work in two different `const` member functions: both `operator*()` and `operator==()`. Neither of these violate the semantic guarantees of those functions - repeated invocations of either will give you the same result every time, until you increment again. But they do violate [res.on.data.races]{.sref}.
+
+We have the same potential four options here as we described with [`cache_last`](#cache_last), but we could also just keep the existing implementation of `views::istream<T>`. Changing this range does have observable effects, but we think we should seriously consider doing so. LEWG seemed very willing to change `counted_iterator<I>` and `views::take` in order to address this issue before, so we think serious consideration should be given to changing `views::istream<T>`.
+
+Additionally, this would set a precedent for how to write these kinds of input ranges. So it's important to get right.
+
+
 ## `scan`
 
 If you want to take a range of elements and get a new range that is applying `f` to every element, that's `transform(f)`. But there are many cases where you need a `transform` to that is _stateful_. That is, rather than have the input to `f` be the current element (and require that `f` be `regular_invocable`), have the input to `f` be both the current element _and_ the current state.
@@ -297,6 +398,26 @@ auto iterate(F f, T x) -> std::generator<T> {
 :::
 
 Whereas `generate(f)` is the sequence `[f(), f(), f(), f(), ...]`, `iterate(f, x)` is the sequence `[x, f(x), f(f(x)), f(f(f(x))), ...]`
+
+Yet another factory, following the theme, is one that Dlang calls `recurrence` ([implementation](https://godbolt.org/z/svfM4eW3b)). Although maybe this one is too cute:
+
+::: bq
+```cpp
+auto main() -> int {
+    // fibonacci: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+    print("fibonacci: {}\n",
+        recurrence([](auto a, int n){ return a[n-1] + a[n-2]; }, 1, 1)
+        | views::take(10)
+    );
+
+    // factorial: [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
+    print("factorial: {}\n",
+        recurrence([](auto a, int n){ return a[n-1] * n; }, 1)
+        | views::take(10)
+    );
+}
+```
+:::
 
 # View Adjuncts
 
@@ -403,3 +524,15 @@ The advance here is that if we want to `advance(it, 10)`, we can simply right aw
 This is more efficient for the same reason that the hypothetical implementation of `ranges::distance` for a `join_view` could be more efficient.
 
 Currently, none of the non-constant-time algorithms (like `distance`, `advance`, and `next`) are customizable - but there could be clear benefits to making them so. Unfortunately, there are very clear costs to making them so: even more work that every range and iterator adaptor has to do.
+
+---
+references:
+    - id: range-v3#57
+      citation-label: range-v3#57
+      title: range-v3
+      author:
+        - family: Eric Niebler
+      issued:
+        year: 2014
+      URL: https://github.com/ericniebler/range-v3/issues/57
+---
