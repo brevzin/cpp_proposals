@@ -470,9 +470,12 @@ r | std::views::transform_join(f)
 ```
 :::
 
-There are probably other common patterns that are worth considering as well. For instance, if we add `trim_left` and `trim_right` then we could define `trim` as simply `trim_left | trim_right`.
+A few other common patterns worth considering:
 
-But not always. It is tempting to define `views::tail` as simply `views::drop(1)`, but a dedicated `tail` could be more efficient (it does not need to store the count or cache `begin()`). It's unfortunate that the relative difference in specification is so high though.
+* `views::replace(old_val, new_val)` and `views::replace_if(pred, new_val)` are kinds of `views::transform`
+* `views::remove(val)` and `views::remove_if(pred)` are kinds of `views::filter`, the latter being just `filter(not_fn(pred))`
+
+But it is not always the case that just writing one algorithm in terms of others is optimal. It is tempting to define `views::tail` as simply `views::drop(1)`, but a dedicated `tail` could be more efficient (it does not need to store the count or cache `begin()`). It's unfortunate that the relative difference in specification is so high though.
 
 # View Adjuncts
 
