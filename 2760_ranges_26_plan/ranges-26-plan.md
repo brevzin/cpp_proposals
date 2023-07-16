@@ -70,6 +70,9 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `adjacent_remove_if` | range-v3 | [Tier 2]{.yellow} |
 | `all` | C++20 | -- |
 | `any_view<T>` | range-v3 | Not proposed |
+| `as_const` | C++23 | -- |
+| `as_input` | C++23 | [Tier 1]{.addu} |
+| `as_rvalue` | C++23 | -- |
 | `c_str` | range-v3 | [Tier 2]{.yellow} |
 | `cache1` | range-v3 | [Tier 1. Possibly renamed as `cache_last` or `cache_latest`]{.addu} |
 | `cartesian_product` | C++23 | -- |
@@ -419,6 +422,58 @@ auto main() -> int {
 ```
 :::
 
+## `as_input`
+
+We added two fairly simply adapters in C++23: `views::as_const` and `views::as_rvalue`, both of which are specialized versions of `views::transform`. Well, `views::as_const` is conceptually simple anyway - even as it is remarkably complex.
+
+There's a third adapter in this family that we should consider adding: `views::as_input(r)`. This is an adapter that all it does is reduce `r`'s category to input and force it to be non-common. Otherwise: same value type, same reference type, same sized-ness, same borrowed-ness, same const-iterability.
+
+Why would anybody want such a thing? Performance.
+
+Range adapters typically provide the maximum possible iterator category - in order to maximize functionality. But sometimes it takes work to do so. A few examples:
+
+* `views::join(r)` is common when `r` is, which means it provides two iterators. The iterator comparison for `join` does [two iterator comparisons](https://eel.is/c++draft/range.join#iterator-18), for both the outer and the inner iterator, which is definitely necessary when comparing two iterators. But if all you want to do is compare `it == end`, you could've gotten away with [one iterator comparison](https://eel.is/c++draft/range.join#sentinel-3). As such, iterating over a common `join_view` is more expensive than an uncommon one.
+* `vews::chunk(r, n)` has a different algorithm for input vs forward. For forward+, you get a range of `views::take(n)` - if you iterate through every element, then advancing from one chunk to the next chunk requires iterating through all the elements of that chunk again. For input, you can only advance element at a time.
+
+The added cost that `views::chunk` adds when consuming all elements for forward+ can be necessary if you need the forward iterator guarantees. But if you don't need it, like if you're just going to consume all the elements in order one time. Or, worse, the next adaptor in the chain reduces you down to input anyway, this is unnecessary.
+
+In this way, `r | views::chunk(n) | views::join` can be particularly bad, since you're paying additional cost for `chunk` that you can't use anyway, since `views::join` here would always be an input range. `r | views::as_input | views::chunk(n) | views::join` would alleviate this problem. It would be a particularly nice way to alleviate this problem if users didn't have to write the `views::as_input` part!
+
+This situation was originally noted in [@range-v3#704].
+
+
+## Simple Adapter Compositions
+
+Many adapters have to have their own dedicated implementation. Some are merely more convenient spellings of existing ones (like `keys` for `elements<0>` and `pairwise` for `adjacent<2>`). Still others could be just compositions of existing range adapters.
+
+One such is what most of the rest of the world calls `flat_map`: this is a combination of `map` and then `flatten`. In C++ terms, we could very simply provide such an adapter:
+
+::: bq
+```cpp
+inline constexpr auto transform_join = []<class F>(F&& f){
+    return transform((F&&)f) | join;
+};
+```
+:::
+
+Well, the actual implementation is slightly more involved in order to be able to also support `views::transform_join(r, f)` in addition to `r | views::transform_join(f)`, but not dramatically so. Importantly, there really isn't much benefit to providing a bespoke `transform_join` as opposed to simply implementing it in terms of these two existing adapters. But this is such a common piece of functionality that it probably merits direct addition into the standard library.
+
+In slide-ware, it probably doesn't make that much of a difference. But in real code that uses namespaces, it really does:
+
+::: bq
+```cpp
+r | transform(f) | join
+r | transform_join(f)
+
+r | std::views::transform(f) | std::views::join
+r | std::views::transform_join(f)
+```
+:::
+
+There are probably other common patterns that are worth considering as well. For instance, if we add `trim_left` and `trim_right` then we could define `trim` as simply `trim_left | trim_right`.
+
+But not always. It is tempting to define `views::tail` as simply `views::drop(1)`, but a dedicated `tail` could be more efficient (it does not need to store the count or cache `begin()`). It's unfortunate that the relative difference in specification is so high though.
+
 # View Adjuncts
 
 In the C++23 plan, we listed several facilities that would greatly improve the usability of views: the ability for users to define first class pipe support, the ability to collect into a container (`ranges::to`), and formatting.
@@ -447,9 +502,12 @@ The various language cases also have no associated function object. The most com
 
 It is also worth considering whether we should actually add function objects for these, like `std::indirect` (or `std::ranges::indirect`?) or whether we should try to bring back one of the earlier proposals that added nicer syntax for passing operators as function objects:
 
-* [@P0119R2]: `views::transform((*))`
-* [@P0834R0]: `views::transform([] *)`
-* use backticks: ``views::transform(`*`)``
+|Paper|Syntax|
+|-|-|
+|[@P0119R2]|`views::transform((*))`|
+|[@P0834R0]|`views::transform([] *)`
+|[@P2672R0] (placeholder lambda)|`views::transform([] *$1)`<br/>`views::transform([] $(*$1))`|
+|backticks|``views::transform(`*`)``|
 
 ## More Function Adapters
 
@@ -525,14 +583,205 @@ This is more efficient for the same reason that the hypothetical implementation 
 
 Currently, none of the non-constant-time algorithms (like `distance`, `advance`, and `next`) are customizable - but there could be clear benefits to making them so. Unfortunately, there are very clear costs to making them so: even more work that every range and iterator adaptor has to do.
 
+# Output Iterators
+
+There are two kinds of output iterators: those that are also input iterators (like `int*`) and those are that are not. This section is dedicated to output-only iterators. The one of these that people are probably most familiar with is `std::back_insert_iterator<C>`.
+
+Output-only iterators are important, yet severely underpowered. The problem with them ultimately is they are shoe-horned into the same *syntax* as input iterators, despite not really have anything to do with iterators.
+
+If we take an algorithm like `std::copy`, it's implemented something like this:
+
+::: bq
+```cpp
+template <typename InputIt, typename OutputIt>
+void copy(InputIt first, InputIt last, OutputIt out) {
+    for (; first != last; ++first) {
+        *out++ = *first;
+    }
+}
+```
+:::
+
+In order to provide `std::back_insert_iterator<C>`, it has to meet that syntax. So we end up with something like:
+
+::: bq
+```cpp
+template <typename C>
+class back_inserter {
+    C* cont_;
+
+public:
+    explicit back_inserter(C& c) : cont_(&c) { }
+
+    // these do nothing
+    auto operator*() -> back_inserter& { return *this; }
+    auto operator++() -> back_inserter& { return *this; }
+    auto operator++(int) -> back_inserter { return *this; }
+
+    // this one does something
+    auto operator=(typename C::value_type const& val) -> back_inserter& {
+        cont_->push_back(val);
+        return *this;
+    }
+
+    // same
+    auto operator=(typename C::value_type&& val) -> back_inserter& {
+};
+```
+:::
+
+There are two problems with this approach. First, it's a really awkward API to go about implementing an output iterator. You have to write three no-op functions and one useful function, whose spelling doesn't really convey any meaning. An output-only iterator *is* a function call, yet it cannot be implemented as such, which is an annoying loss in convenience since you cannot simply use a lambda as an output iterator. Sure, it's not a huge task to implement a `function_output_iterator<F>` - you can find such a thing [in Boost](https://www.boost.org/doc/libs/1_82_0/libs/iterator/doc/function_output_iterator.html) too - but there really shouldn't be a need for this.
+
+But more importantly, it's very inefficient. An output-only iterator gets one element at a time, even when the algorithm knows it's producing more. A common use of `back_insert_iterator` is doing something like this:
+
+::: bq
+```cpp
+std::vector<T> vec;
+std::ranges::copy(r, std::back_inserter(vec));
+```
+:::
+
+That will compile into `N` calls to `vec.push_back`. Maybe `r` is an unsized input range and that's the best you can do anyway. But if `r` is sized, that's pretty wasteful - `vector` has a range insertion API which does the right thing, it can be much more efficient to simply call:
+
+::: bq
+```cpp
+std::vector<T> vec;
+vec.append_range(r);
+```
+:::
+
+Indeed, 2.7x faster in [this simple benchmark](https://quick-bench.com/q/TTbsRVxjQLQMEbP0J5X3pp1IoxQ).
+
+This is a known problem, to the point where libraries try to detect and work around this pessimization. The `{fmt}` formatting library, now `<format>` since C++20, is entirely output-iterator based. But, because of type erasure, the typical output iterator that you will interact with is an output-only iterator, not an input iterator. So what happens when you try to write a `std::string_view` through that output iterator (a not-especially-uncommon operation when it comes to formatting)?
+
+`{fmt}` has an internal helper named `copy_str`, whose [default implementation](https://github.com/fmtlib/fmt/blob/35c0286cd8f1365bffbc417021e8cd23112f6c8f/include/fmt/core.h#L729-L734) is pretty familiar:
+
+```cpp
+template <typename Char, typename InputIt, typename OutputIt>
+FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
+    -> OutputIt {
+  while (begin != end) *out++ = static_cast<Char>(*begin++);
+  return out;
+}
+```
+
+But there's this other [important overload too](https://github.com/fmtlib/fmt/blob/35c0286cd8f1365bffbc417021e8cd23112f6c8f/include/fmt/core.h#L1605-L1609):
+
+```cpp
+template <typename Char, typename InputIt>
+auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
+  get_container(out).append(begin, end);
+  return out;
+}
+```
+
+For most of the operations in `{fmt}`, the implementation-defined type-erased iterator is `appender`, so this would be the overload used. And `appender` is a `back_insert_iterator` into a `buffer<char>`, which is a growable buffer (not unlike `vector<char>`) which has a [dedicated `append`](https://github.com/fmtlib/fmt/blob/35c0286cd8f1365bffbc417021e8cd23112f6c8f/include/fmt/format.h#L632-L644) for this case:
+
+```cpp
+template <typename T>
+template <typename U>
+void buffer<T>::append(const U* begin, const U* end) {
+  while (begin != end) {
+    auto count = to_unsigned(end - begin);
+    try_reserve(size_ + count);
+    auto free_cap = capacity_ - size_;
+    if (free_cap < count) count = free_cap;
+    std::uninitialized_copy_n(begin, count, make_checked(ptr_ + size_, count));
+    size_ += count;
+    begin += count;
+  }
+}
+```
+
+So here, we know that `std::copy` and `std::ranges::copy` would be inefficient, so the library provides (and internally uses) a way to special case that algorithm for its particular output iterator.
+
+This kind of thing really shouldn't be QoI. Output-only iterators that can support efficient range-based operations should be able to do so.
+
+## Potential Design
+
+Barry laid out an approach in a blog post [@improve.output] based on the model the D library uses, using two customization point objects: one for single elements and one for a range of elements:
+
+`ranges::put(out, e)` could be the first valid expression of:
+
+1. `out.put(e)`
+2. `*out++ = e;`
+3. `out(e);`
+
+`ranges::put_range(out, r)` could be the first valid expression of:
+
+1. `out.put_range(r)`
+2. `ranges::for_each(r, bind_front(ranges::put, out))`
+
+This isn't quite what D does, but it's more suited for C++, and would allow output-only iterators to be as efficient (and easy to implement) as they should be.
+
+If we had the above, the implementation of `back_insert_iterator` would become:
+
+::: bq
+```cpp
+template <typename C>
+class back_inserter {
+    C* cont_;
+
+public:
+    explicit back_inserter(C& c) : cont_(&c) { }
+
+    auto put(typename C::value_type const& val) -> void {
+        cont_->push_back(val);
+    }
+    auto put(typename C::value_type&& val) -> void {
+        cont_->push_back(std::move(val));
+    }
+
+
+    template <ranges::input_range R>
+      requires std::convertible_to<ranges::range_reference_t<R>, typename C::value_type>
+    auto put_range(R&& r) -> void
+    {
+        if constexpr (requires { cont_->append_range(r); }) {
+            cont_->append_range(r);
+        } else if constexpr (requires { cont_->insert(cont_->end(), ranges::begin(r), ranges::end(r)); }) {
+            cont_->insert(cont_->end(), ranges::begin(r), ranges::end(r));
+        } else {
+            for (auto&& e : r) {
+                cont_->push_back(FWD(e));
+            }
+        }
+    }
+};
+```
+:::
+
+Sure, `put_range` is mildly complicated, but it's much more efficient than the original implementation, and we no loner have functions that do nothing.
+
+Now, the issue here is that this is a fairly large redesign of the output iterator model with minimal implementation experience (unless you count D or the blog post). So this approach needs more time, but we do think it's worth doing.
+
 ---
 references:
     - id: range-v3#57
       citation-label: range-v3#57
-      title: range-v3
+      title: istream_range filtered with take(N) should stop reading at N
       author:
         - family: Eric Niebler
       issued:
         year: 2014
       URL: https://github.com/ericniebler/range-v3/issues/57
+    - id: range-v3#704
+      citation-label: range-v3#704
+      title: Demand-driven view strength weakening
+      author:
+        - family: Eric Niebler
+      issued:
+        year: 2017
+      URL: https://github.com/ericniebler/range-v3/issues/704
+    - id: improve.output
+      citation-label: improve.output
+      title: Improving Output Iterators
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2022
+          month: 2
+          day: 6
+      URL: https://brevzin.github.io/c++/2022/02/06/output-iterators/
+
 ---
