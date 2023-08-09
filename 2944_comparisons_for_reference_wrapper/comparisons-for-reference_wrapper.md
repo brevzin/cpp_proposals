@@ -1,6 +1,6 @@
 ---
 title: "Comparisons for `reference_wrapper`"
-document: P2944R0
+document: P2944R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P2944R0], fixed the wording
 
 # Introduction
 
@@ -142,7 +146,7 @@ Add a new clause, [refwrap.comparisons], after [refwrap.invoke]{.sref}:
 friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);
 ```
 
-[#]{.pnum} *Constraints*: The expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
+[#]{.pnum} *Mandates*: The expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
 
 [#]{.pnum} *Returns*: `x.get() == y.get()`.
 
@@ -150,7 +154,7 @@ friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);
 friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper x, reference_wrapper y);
 ```
 
-[#]{.pnum} *Returns*: `$synth-three-way$(x.get()) <=> $synth-three-way$(y.get())`.
+[#]{.pnum} *Returns*: `$synth-three-way$(x.get(), y.get())`.
 :::
 :::
 
@@ -162,4 +166,82 @@ We don't have a feature-test macro for `std::reference_wrapper<T>`, and there do
 ```diff
 + #define __cpp_lib_reference_wrapper 20XXXXL // also in <functional>
 ```
+:::
+
+## Constraints vs Mandates
+
+The wording here uses *Mandates* for the equality comparison, even though the spaceship operator is constrained (by way of `$synth-three-way-result$<T>`). This is, surprisingly, consistent with the other standard library types (`std::pair`, `std::tuple`, etc.). There does not seem to be a particularly good reason for this. It kind of just happened - the relational comparisons became constrained by way of my [@P1614R2], and the equality ones just weren't touched. It would make a lot more sense to have all of them constrained, so that `std::equality_comparable<std::tuple<T>>` wasn't just `true` for all `T` (well, except `void` and incomplete types).
+
+If we agree that we should just consistently constrain all the comparison operators, then we should additionally make the following wording changes (in addition to changing the *Mandates* to a *Constraints* above):
+
+In [pairs.spec]{.sref}/1:
+
+::: bq
+[1]{.pnum} [*Preconditions*]{.rm} [*Constraints*]{.addu}: Each of `decltype(x.first == y.first)` and `decltype(x.second == y.second)` models `$boolean-testable$`.
+:::
+
+In [tuple.rel]{.sref}/2:
+
+::: bq
+[2]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: For all `i`, where `0 <= i < sizeof...(TTypes)`, `get<i>(t) == get<i>(u)` is a valid expression. `sizeof...(TTypes)` equals `tuple_size_v<UTuple>`.
+:::
+
+In [optional.relops]{.sref}, change all the *Mandates* to *Constraints*:
+
+::: bq
+[1]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x == *y` is well-formed and its result is convertible to `bool`.
+
+[4]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x != *y` is well-formed and its result is convertible to `bool`.
+
+[7]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x < *y` is well-formed and its result is convertible to `bool`.
+
+[10]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x > *y` is well-formed and its result is convertible to `bool`.
+
+[13]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x <= *y` is well-formed and its result is convertible to `bool`.
+
+[16]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x >= *y` is well-formed and its result is convertible to `bool`.
+:::
+
+In [optional.comp.with.t]{.sref}, change all the *Mandates* to *Constraints*:
+
+::: bq
+[1]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x == v` is well-formed and its result is convertible to `bool`.
+
+[3]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `v == *x` is well-formed and its result is convertible to `bool`.
+
+[5]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x != v` is well-formed and its result is convertible to `bool`.
+
+[7]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `v != *x` is well-formed and its result is convertible to `bool`.
+
+[9]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x < v` is well-formed and its result is convertible to `bool`.
+
+[11]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `v < *x` is well-formed and its result is convertible to `bool`.
+
+[13]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x > v` is well-formed and its result is convertible to `bool`.
+
+[15]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `v > *x` is well-formed and its result is convertible to `bool`.
+
+[17]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x <= v` is well-formed and its result is convertible to `bool`.
+
+[19]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `v <= *x` is well-formed and its result is convertible to `bool`.
+
+[21]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `*x >= v` is well-formed and its result is convertible to `bool`.
+
+[23]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: The expression `v >= *x` is well-formed and its result is convertible to `bool`.
+:::
+
+In [variant.relops]{.sref}, change all the *Mandates* to *Constraints*:
+
+::: bq
+[1]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) == get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
+
+[3]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) != get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
+
+[5]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) < get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
+
+[7]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) > get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
+
+[9]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) <= get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
+
+[11]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) >= get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
 :::
