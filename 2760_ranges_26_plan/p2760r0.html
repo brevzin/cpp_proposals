@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-07-15" />
+  <meta name="dcterms.date" content="2023-08-13" />
   <title>A Plan for C++26 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-07-15</td>
+    <td>2023-08-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -573,12 +573,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#scan"><span class="toc-section-number">2.3</span> <code class="sourceCode cpp">scan</code><span></span></a></li>
 <li><a href="#generate"><span class="toc-section-number">2.4</span> <code class="sourceCode cpp">generate</code><span></span></a></li>
 <li><a href="#as_input"><span class="toc-section-number">2.5</span> <code class="sourceCode cpp">as_input</code><span></span></a></li>
-<li><a href="#simple-adapter-compositions"><span class="toc-section-number">2.6</span> Simple Adapter Compositions<span></span></a></li>
+<li><a href="#simple-adaptor-compositions"><span class="toc-section-number">2.6</span> Simple Adaptor Compositions<span></span></a></li>
 </ul></li>
 <li><a href="#view-adjuncts"><span class="toc-section-number">3</span> View Adjuncts<span></span></a>
 <ul>
 <li><a href="#more-function-objects"><span class="toc-section-number">3.1</span> More Function Objects<span></span></a></li>
-<li><a href="#more-function-adapters"><span class="toc-section-number">3.2</span> More Function Adapters<span></span></a></li>
+<li><a href="#more-function-adaptors"><span class="toc-section-number">3.2</span> More Function Adaptors<span></span></a></li>
 </ul></li>
 <li><a href="#algorithms"><span class="toc-section-number">4</span> Algorithms<span></span></a>
 <ul>
@@ -589,7 +589,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#potential-design"><span class="toc-section-number">5.1</span> Potential Design<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#plan-summary"><span class="toc-section-number">6</span> Plan Summary<span></span></a>
+<ul>
+<li><a href="#tier-1"><span class="toc-section-number">6.1</span> <span class="addu">Tier 1</span><span></span></a></li>
+<li><a href="#tier-2"><span class="toc-section-number">6.2</span> <span class="yellow">Tier 2</span><span></span></a></li>
+<li><a href="#tier-3"><span class="toc-section-number">6.3</span> <span class="diffdel">Tier 3</span><span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <style type="text/css">
@@ -637,7 +643,7 @@ span.yellow {
 <p>There were also a bunch of smaller improvements that are not listed here.</p>
 <p>But there’s still plenty more work to be done - both on the range adaptor and the range algorithm front. The goal of this paper is to do for the C++26 timeframe what our previous plan did for the C++23 one: express what we think is the right prioritization of work, while describing what some of the outstanding issues are so that we can start tackling them.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="views"><span class="header-section-number">2</span> Views<a href="#views" class="self-link"></a></h1>
-<p>As before, we’ll start by enumerating all the adapters in range-v3 (and a few that aren’t), noting their status updated by C++23. Note that many of the adaptors here labelled C++20 or C++23 are in range-v3 also, we’re just using the status “range-v3” to indicate that an adaptor is in range-v3 <em>only</em>:</p>
+<p>As before, we’ll start by enumerating all the adaptors in range-v3 (and a few that aren’t), noting their status updated by C++23. Note that many of the adaptors here labelled C++20 or C++23 are in range-v3 also, we’re just using the status “range-v3” to indicate that an adaptor is in range-v3 <em>only</em>:</p>
 <table>
 <colgroup>
 <col style="width: 36%"></col>
@@ -700,7 +706,7 @@ span.yellow {
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp">as_input</code></td>
-<td>C++23</td>
+<td>(not in range-v3)</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="even">
@@ -711,7 +717,7 @@ span.yellow {
 <tr class="odd">
 <td><code class="sourceCode cpp">c_str</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">cache1</code></td>
@@ -749,77 +755,77 @@ span.yellow {
 <td><span class="addu">Tier 1 <span class="citation" data-cites="P2542R2">[<a href="#ref-P2542R2" role="doc-biblioref">P2542R2</a>]</span></span></td>
 </tr>
 <tr class="odd">
-<td><code class="sourceCode cpp">const_</code></td>
-<td>C++23 (as <code class="sourceCode cpp">as_const</code>)</td>
-<td>–</td>
-</tr>
-<tr class="even">
 <td><code class="sourceCode cpp">counted</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">cycle</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">delimit</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">drop</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">drop_last</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">drop_last_while</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">drop_exactly</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">drop_while</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">empty</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">enumerate</code></td>
 <td>C++23</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">filter</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">for_each</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1. Most languages call this <code class="sourceCode cpp">flat_map</code>, but we probably need to call it <code class="sourceCode cpp">transform_join</code>.</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">generate</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">generate_n</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">getlines</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
@@ -856,11 +862,21 @@ span.yellow {
 <tr class="even">
 <td><code class="sourceCode cpp">istream</code></td>
 <td>C++20</td>
-<td><a href="#istreamt">See below</a></td>
+<td><span class="addu"><a href="#istreamt">See below</a> for potential improvement.</span></td>
 </tr>
 <tr class="odd">
+<td><code class="sourceCode cpp">iterate</code></td>
+<td>(not in range-v3)</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
 <td><code class="sourceCode cpp">join</code></td>
-<td>C++20 and C++23</td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">join_with</code></td>
+<td>C++23</td>
 <td>–</td>
 </tr>
 <tr class="even">
@@ -879,169 +895,169 @@ span.yellow {
 <td>???</td>
 </tr>
 <tr class="odd">
-<td><code class="sourceCode cpp">move</code></td>
-<td>C++23 (as <code class="sourceCode cpp">as_rvalue</code>)</td>
-<td>–</td>
-</tr>
-<tr class="even">
 <td><code class="sourceCode cpp">partial_sum</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1, but not taking a callable (solely as a specialized form of <code class="sourceCode cpp">scan</code>)</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">remove</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">remove_if</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">repeat</code></td>
 <td>C++23</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">repeat_n</code></td>
 <td>C++23 (under the name <code class="sourceCode cpp">repeat</code>)</td>
 <td>–</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">replace</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">replace_if</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">reverse</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">sample</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">scan</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1, as a rename of what is <code class="sourceCode cpp">partial_sum</code> in range-v3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">set_difference</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">set_intersection</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">set_union</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">set_symmetric_difference</code></td>
 <td>range-v3</td>
 <td><span class="diffdel">Tier 3</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">single</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">slice</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">sliding</code></td>
 <td>C++23 (as <code class="sourceCode cpp">slide</code>)</td>
 <td>–</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">split</code></td>
 <td>C++20 (improved)</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">split_when</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">stride</code></td>
 <td>C++23</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">tail</code></td>
 <td>range-v3</td>
 <td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take_exactly</code></td>
 <td>range-v3</td>
-<td><span class="yellow">Tier 2</span></td>
+<td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take_last</code></td>
 <td>range-v3</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">take_last_while</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">take_while</code></td>
 <td>C++20</td>
 <td>–</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">tokenize</code></td>
 <td>range-v3</td>
 <td>Not proposed</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">transform_filter</code></td>
 <td>(not in range-v3)</td>
 <td><span class="addu">Tier 1, related to <code class="sourceCode cpp">views<span class="op">::</span>maybe</code> <span class="citation" data-cites="P1255R9">[<a href="#ref-P1255R9" role="doc-biblioref">P1255R9</a>]</span></span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">trim</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1</span></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">unbounded</code></td>
 <td>range-v3</td>
 <td>Not proposed</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code class="sourceCode cpp">unique</code></td>
 <td>range-v3</td>
-<td><span class="addu">Tier 1</span></td>
+<td><span class="yellow">Tier 2</span></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code class="sourceCode cpp">values</code></td>
 <td>C++20</td>
 <td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">upto</code></td>
+<td>not in range-v3</td>
+<td><span class="addu">Tier 1</span> <span class="citation" data-cites="P1894R0">[<a href="#ref-P1894R0" role="doc-biblioref">P1894R0</a>]</span></td>
 </tr>
 <tr class="even">
 <td><code class="sourceCode cpp">zip</code></td>
@@ -1056,7 +1072,7 @@ span.yellow {
 </tbody>
 </table>
 <h2 data-number="2.1" id="cache_last"><span class="header-section-number">2.1</span> <code class="sourceCode cpp">cache_last</code><a href="#cache_last" class="self-link"></a></h2>
-<p>One of the adapters that we considered for C++23 but ended up not pursuing was what range-v3 calls <code class="sourceCode cpp">cache1</code> and what we’d instead like to call something like <code class="sourceCode cpp">cache_last</code>. This is an adapter which, as the name suggests, caches the last element. The reason for this is efficiency - specifically avoiding extra work that has to be done by iterator dereferencing.</p>
+<p>One of the adaptors that we considered for C++23 but ended up not pursuing was what range-v3 calls <code class="sourceCode cpp">cache1</code> and what we’d instead like to call something like <code class="sourceCode cpp">cache_last</code>. This is an adaptor which, as the name suggests, caches the last element. The reason for this is efficiency - specifically avoiding extra work that has to be done by iterator dereferencing.</p>
 <p>The canonical example of this is <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> filter<span class="op">(</span>g<span class="op">)</span></code>, where if you then iterate over the subsequent range, <code class="sourceCode cpp">f</code> will be invoked twice for every element that satisfies <code class="sourceCode cpp">g</code>:</p>
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">int</span> main<span class="op">()</span></span>
@@ -1292,10 +1308,10 @@ span.yellow {
 <span id="cb9-13"><a href="#cb9-13"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <h2 data-number="2.5" id="as_input"><span class="header-section-number">2.5</span> <code class="sourceCode cpp">as_input</code><a href="#as_input" class="self-link"></a></h2>
-<p>We added two fairly simply adapters in C++23: <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> and <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>, both of which are specialized versions of <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. Well, <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> is conceptually simple anyway - even as it is remarkably complex.</p>
-<p>There’s a third adapter in this family that we should consider adding: <code class="sourceCode cpp">views<span class="op">::</span>as_input<span class="op">(</span>r<span class="op">)</span></code>. This is an adapter that all it does is reduce <code class="sourceCode cpp">r</code>’s category to input and force it to be non-common. Otherwise: same value type, same reference type, same sized-ness, same borrowed-ness, same const-iterability.</p>
+<p>We added two fairly simply adaptors in C++23: <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> and <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>, both of which are specialized versions of <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. Well, <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> is conceptually simple anyway - even as it is remarkably complex.</p>
+<p>There’s a third adaptor in this family that we should consider adding: <code class="sourceCode cpp">views<span class="op">::</span>as_input<span class="op">(</span>r<span class="op">)</span></code>. This is an adaptor that all it does is reduce <code class="sourceCode cpp">r</code>’s category to input and force it to be non-common. Otherwise: same value type, same reference type, same sized-ness, same borrowed-ness, same const-iterability.</p>
 <p>Why would anybody want such a thing? Performance.</p>
-<p>Range adapters typically provide the maximum possible iterator category - in order to maximize functionality. But sometimes it takes work to do so. A few examples:</p>
+<p>Range adaptors typically provide the maximum possible iterator category - in order to maximize functionality. But sometimes it takes work to do so. A few examples:</p>
 <ul>
 <li><code class="sourceCode cpp">views<span class="op">::</span>join<span class="op">(</span>r<span class="op">)</span></code> is common when <code class="sourceCode cpp">r</code> is, which means it provides two iterators. The iterator comparison for <code class="sourceCode cpp">join</code> does <a href="https://eel.is/c++draft/range.join#iterator-18">two iterator comparisons</a>, for both the outer and the inner iterator, which is definitely necessary when comparing two iterators. But if all you want to do is compare <code class="sourceCode cpp">it <span class="op">==</span> end</code>, you could’ve gotten away with <a href="https://eel.is/c++draft/range.join#sentinel-3">one iterator comparison</a>. As such, iterating over a common <code class="sourceCode cpp">join_view</code> is more expensive than an uncommon one.</li>
 <li><code class="sourceCode cpp">vews<span class="op">::</span>chunk<span class="op">(</span>r, n<span class="op">)</span></code> has a different algorithm for input vs forward. For forward+, you get a range of <code class="sourceCode cpp">views<span class="op">::</span>take<span class="op">(</span>n<span class="op">)</span></code> - if you iterate through every element, then advancing from one chunk to the next chunk requires iterating through all the elements of that chunk again. For input, you can only advance element at a time.</li>
@@ -1303,15 +1319,15 @@ span.yellow {
 <p>The added cost that <code class="sourceCode cpp">views<span class="op">::</span>chunk</code> adds when consuming all elements for forward+ can be necessary if you need the forward iterator guarantees. But if you don’t need it, like if you’re just going to consume all the elements in order one time. Or, worse, the next adaptor in the chain reduces you down to input anyway, this is unnecessary.</p>
 <p>In this way, <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span>n<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>join</code> can be particularly bad, since you’re paying additional cost for <code class="sourceCode cpp">chunk</code> that you can’t use anyway, since <code class="sourceCode cpp">views<span class="op">::</span>join</code> here would always be an input range. <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>as_input <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span>n<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>join</code> would alleviate this problem. It would be a particularly nice way to alleviate this problem if users didn’t have to write the <code class="sourceCode cpp">views<span class="op">::</span>as_input</code> part!</p>
 <p>This situation was originally noted in <span class="citation" data-cites="range-v3#704">[<a href="#ref-range-v3#704" role="doc-biblioref">range-v3#704</a>]</span>.</p>
-<h2 data-number="2.6" id="simple-adapter-compositions"><span class="header-section-number">2.6</span> Simple Adapter Compositions<a href="#simple-adapter-compositions" class="self-link"></a></h2>
-<p>Many adapters have to have their own dedicated implementation. Some are merely more convenient spellings of existing ones (like <code class="sourceCode cpp">keys</code> for <code class="sourceCode cpp">elements<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">pairwise</code> for <code class="sourceCode cpp">adjacent<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;</span></code>). Still others could be just compositions of existing range adapters.</p>
-<p>One such is what most of the rest of the world calls <code class="sourceCode cpp">flat_map</code>: this is a combination of <code class="sourceCode cpp">map</code> and then <code class="sourceCode cpp">flatten</code>. In C++ terms, we could very simply provide such an adapter:</p>
+<h2 data-number="2.6" id="simple-adaptor-compositions"><span class="header-section-number">2.6</span> Simple Adaptor Compositions<a href="#simple-adaptor-compositions" class="self-link"></a></h2>
+<p>Many adaptors have to have their own dedicated implementation. Some are merely more convenient spellings of existing ones (like <code class="sourceCode cpp">keys</code> for <code class="sourceCode cpp">elements<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">pairwise</code> for <code class="sourceCode cpp">adjacent<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;</span></code>). Still others could be just compositions of existing range adaptors.</p>
+<p>One such is what most of the rest of the world calls <code class="sourceCode cpp">flat_map</code>: this is a combination of <code class="sourceCode cpp">map</code> and then <code class="sourceCode cpp">flatten</code>. In C++ terms, we could very simply provide such an adaptor:</p>
 <blockquote>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> transform_join <span class="op">=</span> <span class="op">[]&lt;</span><span class="kw">class</span> F<span class="op">&gt;(</span>F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
 <span id="cb10-2"><a href="#cb10-2"></a>    <span class="cf">return</span> transform<span class="op">((</span>F<span class="op">&amp;&amp;)</span>f<span class="op">)</span> <span class="op">|</span> join;</span>
 <span id="cb10-3"><a href="#cb10-3"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>Well, the actual implementation is slightly more involved in order to be able to also support <code class="sourceCode cpp">views<span class="op">::</span>transform_join<span class="op">(</span>r, f<span class="op">)</span></code> in addition to <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>transform_join<span class="op">(</span>f<span class="op">)</span></code>, but not dramatically so. Importantly, there really isn’t much benefit to providing a bespoke <code class="sourceCode cpp">transform_join</code> as opposed to simply implementing it in terms of these two existing adapters. But this is such a common piece of functionality that it probably merits direct addition into the standard library.</p>
+<p>Well, the actual implementation is slightly more involved in order to be able to also support <code class="sourceCode cpp">views<span class="op">::</span>transform_join<span class="op">(</span>r, f<span class="op">)</span></code> in addition to <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>transform_join<span class="op">(</span>f<span class="op">)</span></code>, but not dramatically so. Importantly, there really isn’t much benefit to providing a bespoke <code class="sourceCode cpp">transform_join</code> as opposed to simply implementing it in terms of these two existing adaptors. But this is such a common piece of functionality that it probably merits direct addition into the standard library.</p>
 <p>In slide-ware, it probably doesn’t make that much of a difference. But in real code that uses namespaces, it really does:</p>
 <blockquote>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a>r <span class="op">|</span> transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> join</span>
@@ -1324,6 +1340,8 @@ span.yellow {
 <ul>
 <li><code class="sourceCode cpp">views<span class="op">::</span>replace<span class="op">(</span>old_val, new_val<span class="op">)</span></code> and <code class="sourceCode cpp">views<span class="op">::</span>replace_if<span class="op">(</span>pred, new_val<span class="op">)</span></code> are kinds of <code class="sourceCode cpp">views<span class="op">::</span>transform</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>remove<span class="op">(</span>val<span class="op">)</span></code> and <code class="sourceCode cpp">views<span class="op">::</span>remove_if<span class="op">(</span>pred<span class="op">)</span></code> are kinds of <code class="sourceCode cpp">views<span class="op">::</span>filter</code>, the latter being just <code class="sourceCode cpp">filter<span class="op">(</span>not_fn<span class="op">(</span>pred<span class="op">))</span></code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>upto<span class="op">(</span>n<span class="op">)</span></code> is just <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="kw">decltype</span><span class="op">(</span>n<span class="op">){}</span>, n<span class="op">)</span></code>, which is useful not just because it’s terser and a better name, but also because a fairly typical use is <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, r<span class="op">.</span>size<span class="op">())</span></code> - or at least it would be, but that doesn’t compile when <code class="sourceCode cpp">r<span class="op">.</span>size<span class="op">()</span></code> is unsigned.</li>
+<li>For the <a href="#algorithms">algorithms</a> discussed later, <code class="sourceCode cpp">ranges<span class="op">::</span>sum</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>product</code> are just special cases of <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code>.</li>
 </ul>
 <p>But it is not always the case that just writing one algorithm in terms of others is optimal. It is tempting to define <code class="sourceCode cpp">views<span class="op">::</span>tail</code> as simply <code class="sourceCode cpp">views<span class="op">::</span>drop<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, but a dedicated <code class="sourceCode cpp">tail</code> could be more efficient (it does not need to store the count or cache <code class="sourceCode cpp">begin<span class="op">()</span></code>). It’s unfortunate that the relative difference in specification is so high though.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="view-adjuncts"><span class="header-section-number">3</span> View Adjuncts<a href="#view-adjuncts" class="self-link"></a></h1>
@@ -1380,15 +1398,15 @@ span.yellow {
 </tr>
 </tbody>
 </table>
-<h2 data-number="3.2" id="more-function-adapters"><span class="header-section-number">3.2</span> More Function Adapters<a href="#more-function-adapters" class="self-link"></a></h2>
-<p>The standard library doesn’t have very many function adapters. There are two particularly notable ones that seem to come up frequently.</p>
+<h2 data-number="3.2" id="more-function-adaptors"><span class="header-section-number">3.2</span> More Function Adaptors<a href="#more-function-adaptors" class="self-link"></a></h2>
+<p>The standard library doesn’t have very many function adaptors. There are two particularly notable ones that seem to come up frequently.</p>
 <ul>
-<li>function composition: an adapter <code class="sourceCode cpp">compose</code> such that <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>g<span class="op">(</span>x<span class="op">...))</span></code></li>
-<li>function projection: an adapter <code class="sourceCode cpp">proj</code> such that <code class="sourceCode cpp">proj<span class="op">(</span>p, f<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>p<span class="op">(</span>x<span class="op">)...)</span></code></li>
+<li>function composition: an adaptor <code class="sourceCode cpp">compose</code> such that <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>g<span class="op">(</span>x<span class="op">...))</span></code></li>
+<li>function projection: an adaptor <code class="sourceCode cpp">proj</code> such that <code class="sourceCode cpp">proj<span class="op">(</span>p, f<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>p<span class="op">(</span>x<span class="op">)...)</span></code></li>
 </ul>
-<p>If we had a <code class="sourceCode cpp">proj</code> adapter, people wouldn’t need to ask for range adapters to support projections - they could just provide one.</p>
+<p>If we had a <code class="sourceCode cpp">proj</code> adaptor, people wouldn’t need to ask for range adaptors to support projections - they could just provide one.</p>
 <p>The difficulty with these is that both are syntactically heavy in C++, because our lambdas are verbose and we have difficulties passing functions around (see the two papers noted in the previous section).</p>
-<p>The other problem is that these adapters don’t really have obvious ordering. Should <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">)</span></code> mean <code class="sourceCode cpp">f<span class="op">(</span>g<span class="op">(</span>x<span class="op">))</span></code> or <code class="sourceCode cpp">g<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>? There’s good arguments for either. The same is true for <code class="sourceCode cpp">proj</code> (which is sometimes also called <code class="sourceCode cpp">on</code>).</p>
+<p>The other problem is that these adaptors don’t really have obvious ordering. Should <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">)</span></code> mean <code class="sourceCode cpp">f<span class="op">(</span>g<span class="op">(</span>x<span class="op">))</span></code> or <code class="sourceCode cpp">g<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>? There’s good arguments for either. The same is true for <code class="sourceCode cpp">proj</code> (which is sometimes also called <code class="sourceCode cpp">on</code>).</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="algorithms"><span class="header-section-number">4</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
 <p>We improved the Ranges story on algorithms quite a bit in C++23 - both in terms of new and existing algorithms. But there’s a few more pretty interesting ones left on the table.</p>
 <h2 data-number="4.1" id="reduce"><span class="header-section-number">4.1</span> <code class="sourceCode cpp">reduce</code><a href="#reduce" class="self-link"></a></h2>
@@ -1557,9 +1575,78 @@ span.yellow {
 <span id="cb20-29"><a href="#cb20-29"></a>    <span class="op">}</span></span>
 <span id="cb20-30"><a href="#cb20-30"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>Sure, <code class="sourceCode cpp">put_range</code> is mildly complicated, but it’s much more efficient than the original implementation, and we no loner have functions that do nothing.</p>
+<p>Sure, <code class="sourceCode cpp">put_range</code> is mildly complicated, but it’s much more efficient than the original implementation, and we no longer have functions that do nothing.</p>
 <p>Now, the issue here is that this is a fairly large redesign of the output iterator model with minimal implementation experience (unless you count D or the blog post). So this approach needs more time, but we do think it’s worth doing.</p>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="plan-summary"><span class="header-section-number">6</span> Plan Summary<a href="#plan-summary" class="self-link"></a></h1>
+<p>As previously, we want to triage a lot of outstanding views, algorithms, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++26, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.</p>
+<h2 data-number="6.1" id="tier-1"><span class="header-section-number">6.1</span> <span class="addu">Tier 1</span><a href="#tier-1" class="self-link"></a></h2>
+<ul>
+<li>Range Adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>concat</code> (<span class="citation" data-cites="P2542R2">[<a href="#ref-P2542R2" role="doc-biblioref">P2542R2</a>]</span>)</li>
+<li>Take/Drop Family:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_last</code> and <code class="sourceCode cpp">views<span class="op">::</span>take_last</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_last_while</code> and <code class="sourceCode cpp">views<span class="op">::</span>take_last_while</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_exactly</code> and <code class="sourceCode cpp">views<span class="op">::</span>take_exactly</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slice</code></li>
+</ul></li>
+<li>Simple Adaptor Compositions:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>transform_join</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>replace</code> and <code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>remove</code> and <code class="sourceCode cpp">views<span class="op">::</span>remove_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>upto</code></li>
+</ul></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_input</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cache_last</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_on</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code> and <code class="sourceCode cpp">views<span class="op">::</span>c_str</code></li>
+<li>Generators:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>generate</code> and <code class="sourceCode cpp">views<span class="op">::</span>generate_n</code></li>
+</ul></li>
+</ul></li>
+<li>Algorithms:
+<ul>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>sum</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>product</code></li>
+</ul></li>
+</ul>
+<h2 data-number="6.2" id="tier-2"><span class="header-section-number">6.2</span> <span class="yellow">Tier 2</span><a href="#tier-2" class="self-link"></a></h2>
+<ul>
+<li>Range Adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_filter</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_remove_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>head</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>intersperse</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>iterate</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>split_when</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>tail</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>trim</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>unique</code></li>
+</ul></li>
+</ul>
+<h2 data-number="6.3" id="tier-3"><span class="header-section-number">6.3</span> <span class="diffdel">Tier 3</span><a href="#tier-3" class="self-link"></a></h2>
+<ul>
+<li>Range Adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>linear_distribute</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>sample</code></li>
+<li>Set Adaptors
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_difference</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_intersection</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_symmetric_difference</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_union</code></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-improve.output">
 <p>[improve.output] Barry Revzin. 2022-02-06. Improving Output Iterators. <br />
@@ -1584,6 +1671,10 @@ span.yellow {
 <div id="ref-P1813R0">
 <p>[P1813R0] Christopher Di Bella. 2019-08-02. A Concept Design for the Numeric Algorithms. <br />
 <a href="https://wg21.link/p1813r0">https://wg21.link/p1813r0</a></p>
+</div>
+<div id="ref-P1894R0">
+<p>[P1894R0] Andrew Tomazos. 2019-10-02. Proposal of std::upto, std::indices and std::enumerate. <br />
+<a href="https://wg21.link/p1894r0">https://wg21.link/p1894r0</a></p>
 </div>
 <div id="ref-P1899R3">
 <p>[P1899R3] Christopher Di Bella, Tim Song. 2022-07-11. stride_view. <br />

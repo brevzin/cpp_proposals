@@ -59,7 +59,7 @@ But there's still plenty more work to be done - both on the range adaptor and th
 
 # Views
 
-As before, we'll start by enumerating all the adapters in range-v3 (and a few that aren't), noting their status updated by C++23. Note that many of the adaptors here labelled C++20 or C++23 are in range-v3 also, we're just using the status "range-v3" to indicate that an adaptor is in range-v3 *only*:
+As before, we'll start by enumerating all the adaptors in range-v3 (and a few that aren't), noting their status updated by C++23. Note that many of the adaptors here labelled C++20 or C++23 are in range-v3 also, we're just using the status "range-v3" to indicate that an adaptor is in range-v3 *only*:
 
 | View | Current Status | Proposed Priority |
 |---------------|----------------|----------|
@@ -71,9 +71,9 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `all` | C++20 | -- |
 | `any_view<T>` | range-v3 | Not proposed |
 | `as_const` | C++23 | -- |
-| `as_input` | C++23 | [Tier 1]{.addu} |
+| `as_input` | (not in range-v3) | [Tier 1]{.addu} |
 | `as_rvalue` | C++23 | -- |
-| `c_str` | range-v3 | [Tier 2]{.yellow} |
+| `c_str` | range-v3 | [Tier 1]{.addu} |
 | `cache1` | range-v3 | [Tier 1. Possibly renamed as `cache_last` or `cache_latest`]{.addu} |
 | `cartesian_product` | C++23 | -- |
 | `chunk` | C++23 | -- |
@@ -81,14 +81,13 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `chunk_on` | (not in range-v3) | [Tier 1]{.addu} |
 | `common` | C++20 | -- |
 | `concat` | range-v3 | [Tier 1 [@P2542R2]]{.addu} |
-| `const_` | C++23 (as `as_const`) | -- |
 | `counted` | C++20 | -- |
 | `cycle` | range-v3 | [Tier 1]{.addu} |
 | `delimit` | range-v3 | [Tier 1]{.addu} |
 | `drop` | C++20 | -- |
 | `drop_last` | range-v3 | [Tier 1]{.addu} |
 | `drop_last_while` | (not in range-v3) | [Tier 1]{.addu} |
-| `drop_exactly` | range-v3 | [Tier 2]{.yellow} |
+| `drop_exactly` | range-v3 | [Tier 1]{.addu} |
 | `drop_while` | C++20 | -- |
 | `empty` | C++20 | -- |
 | `enumerate` | C++23 | -- |
@@ -96,18 +95,20 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `for_each` | range-v3 | [Tier 1. Most languages call this `flat_map`, but we probably need to call it `transform_join`.]{.addu} |
 | `generate` | range-v3 | [Tier 1]{.addu} |
 | `generate_n` | range-v3 | [Tier 1]{.addu} |
+| `getlines` | range-v3 | [Tier 1]{.addu} |
 | `group_by` | range-v3 | Not proposed. Subsumed by `chunk_by`. |
 | `head` | (not in range-v3) | [Tier 2]{.yellow} |
 | `indirect` | range-v3 | Not proposed |
 | `intersperse` | range-v3 | [Tier 2]{.yellow} |
 | `ints` | range-v3 | Unnecessary unless people really hate `iota`. |
 | `iota` | C++20 | -- |
-| `istream` | C++20 | [See below](#istreamt) |
-| `join` | C++20 and C++23 | -- |
+| `istream` | C++20 | [[See below](#istreamt) for potential improvement.]{.addu} |
+| `iterate`| (not in range-v3) | [Tier 2]{.yellow} |
+| `join` | C++20 | -- |
+| `join_with` | C++23 | -- |
 | `keys` | C++20 | -- |
 | `linear_distribute` | range-v3 | [Tier 3]{.diffdel} |
 | `maybe` | proposed in [@P1255R9] | ??? |
-| `move` | C++23 (as `as_rvalue`) | -- |
 | `partial_sum` | range-v3 | [Tier 1, but not taking a callable (solely as a specialized form of `scan`)]{.addu} |
 | `remove` | range-v3 | [Tier 1]{.addu} |
 | `remove_if` | range-v3 | [Tier 1]{.addu} |
@@ -130,22 +131,23 @@ As before, we'll start by enumerating all the adapters in range-v3 (and a few th
 | `stride` | C++23 | -- |
 | `tail` | range-v3 | [Tier 2]{.yellow} |
 | `take` | C++20 | -- |
-| `take_exactly` | range-v3 | [Tier 2]{.yellow} |
+| `take_exactly` | range-v3 | [Tier 1]{.addu} |
 | `take_last` | range-v3 | [Tier 1]{.addu} |
 | `take_last_while` | (not in range-v3) | [Tier 1]{.addu} |
 | `take_while` | C++20 | -- |
 | `tokenize` | range-v3 | Not proposed |
 | `transform_filter` | (not in range-v3) | [Tier 1, related to `views::maybe` [@P1255R9] ]{.addu} |
-| `trim` | range-v3 | [Tier 1]{.addu} |
+| `trim` | range-v3 | [Tier 2]{.yellow} |
 | `unbounded` | range-v3 | Not proposed |
-| `unique` | range-v3 | [Tier 1]{.addu} |
+| `unique` | range-v3 | [Tier 2]{.yellow} |
 | `values` | C++20 | -- |
+| `upto` | not in range-v3 | [Tier 1]{.addu} [@P1894R0] |
 | `zip` | C++23 | -- |
 | `zip_with` | C++23 | -- |
 
 ## `cache_last`
 
-One of the adapters that we considered for C++23 but ended up not pursuing was what range-v3 calls `cache1` and what we'd instead like to call something like `cache_last`. This is an adapter which, as the name suggests, caches the last element. The reason for this is efficiency - specifically avoiding extra work that has to be done by iterator dereferencing.
+One of the adaptors that we considered for C++23 but ended up not pursuing was what range-v3 calls `cache1` and what we'd instead like to call something like `cache_last`. This is an adaptor which, as the name suggests, caches the last element. The reason for this is efficiency - specifically avoiding extra work that has to be done by iterator dereferencing.
 
 The canonical example of this is `transform(f) | filter(g)`, where if you then iterate over the subsequent range, `f` will be invoked twice for every element that satisfies `g`:
 
@@ -424,13 +426,13 @@ auto main() -> int {
 
 ## `as_input`
 
-We added two fairly simply adapters in C++23: `views::as_const` and `views::as_rvalue`, both of which are specialized versions of `views::transform`. Well, `views::as_const` is conceptually simple anyway - even as it is remarkably complex.
+We added two fairly simply adaptors in C++23: `views::as_const` and `views::as_rvalue`, both of which are specialized versions of `views::transform`. Well, `views::as_const` is conceptually simple anyway - even as it is remarkably complex.
 
-There's a third adapter in this family that we should consider adding: `views::as_input(r)`. This is an adapter that all it does is reduce `r`'s category to input and force it to be non-common. Otherwise: same value type, same reference type, same sized-ness, same borrowed-ness, same const-iterability.
+There's a third adaptor in this family that we should consider adding: `views::as_input(r)`. This is an adaptor that all it does is reduce `r`'s category to input and force it to be non-common. Otherwise: same value type, same reference type, same sized-ness, same borrowed-ness, same const-iterability.
 
 Why would anybody want such a thing? Performance.
 
-Range adapters typically provide the maximum possible iterator category - in order to maximize functionality. But sometimes it takes work to do so. A few examples:
+Range adaptors typically provide the maximum possible iterator category - in order to maximize functionality. But sometimes it takes work to do so. A few examples:
 
 * `views::join(r)` is common when `r` is, which means it provides two iterators. The iterator comparison for `join` does [two iterator comparisons](https://eel.is/c++draft/range.join#iterator-18), for both the outer and the inner iterator, which is definitely necessary when comparing two iterators. But if all you want to do is compare `it == end`, you could've gotten away with [one iterator comparison](https://eel.is/c++draft/range.join#sentinel-3). As such, iterating over a common `join_view` is more expensive than an uncommon one.
 * `vews::chunk(r, n)` has a different algorithm for input vs forward. For forward+, you get a range of `views::take(n)` - if you iterate through every element, then advancing from one chunk to the next chunk requires iterating through all the elements of that chunk again. For input, you can only advance element at a time.
@@ -442,11 +444,11 @@ In this way, `r | views::chunk(n) | views::join` can be particularly bad, since 
 This situation was originally noted in [@range-v3#704].
 
 
-## Simple Adapter Compositions
+## Simple Adaptor Compositions
 
-Many adapters have to have their own dedicated implementation. Some are merely more convenient spellings of existing ones (like `keys` for `elements<0>` and `pairwise` for `adjacent<2>`). Still others could be just compositions of existing range adapters.
+Many adaptors have to have their own dedicated implementation. Some are merely more convenient spellings of existing ones (like `keys` for `elements<0>` and `pairwise` for `adjacent<2>`). Still others could be just compositions of existing range adaptors.
 
-One such is what most of the rest of the world calls `flat_map`: this is a combination of `map` and then `flatten`. In C++ terms, we could very simply provide such an adapter:
+One such is what most of the rest of the world calls `flat_map`: this is a combination of `map` and then `flatten`. In C++ terms, we could very simply provide such an adaptor:
 
 ::: bq
 ```cpp
@@ -456,7 +458,7 @@ inline constexpr auto transform_join = []<class F>(F&& f){
 ```
 :::
 
-Well, the actual implementation is slightly more involved in order to be able to also support `views::transform_join(r, f)` in addition to `r | views::transform_join(f)`, but not dramatically so. Importantly, there really isn't much benefit to providing a bespoke `transform_join` as opposed to simply implementing it in terms of these two existing adapters. But this is such a common piece of functionality that it probably merits direct addition into the standard library.
+Well, the actual implementation is slightly more involved in order to be able to also support `views::transform_join(r, f)` in addition to `r | views::transform_join(f)`, but not dramatically so. Importantly, there really isn't much benefit to providing a bespoke `transform_join` as opposed to simply implementing it in terms of these two existing adaptors. But this is such a common piece of functionality that it probably merits direct addition into the standard library.
 
 In slide-ware, it probably doesn't make that much of a difference. But in real code that uses namespaces, it really does:
 
@@ -474,6 +476,8 @@ A few other common patterns worth considering:
 
 * `views::replace(old_val, new_val)` and `views::replace_if(pred, new_val)` are kinds of `views::transform`
 * `views::remove(val)` and `views::remove_if(pred)` are kinds of `views::filter`, the latter being just `filter(not_fn(pred))`
+* `views::upto(n)` is just `views::iota(decltype(n){}, n)`, which is useful not just because it's terser and a better name, but also because a fairly typical use is `views::iota(0, r.size())` - or at least it would be, but that doesn't compile when `r.size()` is unsigned.
+* For the [algorithms](#algorithms) discussed later, `ranges::sum` and `ranges::product` are just special cases of `ranges::reduce`.
 
 But it is not always the case that just writing one algorithm in terms of others is optimal. It is tempting to define `views::tail` as simply `views::drop(1)`, but a dedicated `tail` could be more efficient (it does not need to store the count or cache `begin()`). It's unfortunate that the relative difference in specification is so high though.
 
@@ -512,18 +516,18 @@ It is also worth considering whether we should actually add function objects for
 |[@P2672R0] (placeholder lambda)|`views::transform([] *$1)`<br/>`views::transform([] $(*$1))`|
 |backticks|``views::transform(`*`)``|
 
-## More Function Adapters
+## More Function Adaptors
 
-The standard library doesn't have very many function adapters. There are two particularly notable ones that seem to come up frequently.
+The standard library doesn't have very many function adaptors. There are two particularly notable ones that seem to come up frequently.
 
-* function composition: an adapter `compose` such that `compose(f, g)(x...) == f(g(x...))`
-* function projection: an adapter `proj` such that `proj(p, f)(x...) == f(p(x)...)`
+* function composition: an adaptor `compose` such that `compose(f, g)(x...) == f(g(x...))`
+* function projection: an adaptor `proj` such that `proj(p, f)(x...) == f(p(x)...)`
 
-If we had a `proj` adapter, people wouldn't need to ask for range adapters to support projections - they could just provide one.
+If we had a `proj` adaptor, people wouldn't need to ask for range adaptors to support projections - they could just provide one.
 
 The difficulty with these is that both are syntactically heavy in C++, because our lambdas are verbose and we have difficulties passing functions around (see the two papers noted in the previous section).
 
-The other problem is that these adapters don't really have obvious ordering. Should `compose(f, g)(x)` mean `f(g(x))` or `g(f(x))`? There's good arguments for either. The same is true for `proj` (which is sometimes also called `on`).
+The other problem is that these adaptors don't really have obvious ordering. Should `compose(f, g)(x)` mean `f(g(x))` or `g(f(x))`? There's good arguments for either. The same is true for `proj` (which is sometimes also called `on`).
 
 # Algorithms
 
@@ -754,9 +758,64 @@ public:
 ```
 :::
 
-Sure, `put_range` is mildly complicated, but it's much more efficient than the original implementation, and we no loner have functions that do nothing.
+Sure, `put_range` is mildly complicated, but it's much more efficient than the original implementation, and we no longer have functions that do nothing.
 
 Now, the issue here is that this is a fairly large redesign of the output iterator model with minimal implementation experience (unless you count D or the blog post). So this approach needs more time, but we do think it's worth doing.
+
+# Plan Summary
+
+As previously, we want to triage a lot of outstanding views, algorithms, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++26, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.
+
+## [Tier 1]{.addu}
+
+* Range Adaptors:
+  * `views::concat` ([@P2542R2])
+  * Take/Drop Family:
+    * `views::drop_last` and `views::take_last`
+    * `views::drop_last_while` and `views::take_last_while`
+    * `views::drop_exactly` and `views::take_exactly`
+    * `views::slice`
+  * Simple Adaptor Compositions:
+    * `views::transform_join`
+    * `views::replace` and `views::replace_if`
+    * `views::remove` and `views::remove_if`
+    * `views::upto`
+  * `views::as_input`
+  * `views::cache_last`
+  * `views::chunk_on`
+  * `views::cycle`
+  * `views::delimit` and `views::c_str`
+  * Generators:
+    * `views::scan`
+    * `views::generate` and `views::generate_n`
+* Algorithms:
+  * `ranges::reduce`
+  * `ranges::sum`
+  * `ranges::product`
+
+## [Tier 2]{.yellow}
+
+* Range Adaptors:
+  * `views::adjacent_filter`
+  * `views::adjacent_remove_if`
+  * `views::head`
+  * `views::intersperse`
+  * `views::iterate`
+  * `views::split_when`
+  * `views::tail`
+  * `views::trim`
+  * `views::unique`
+
+## [Tier 3]{.diffdel}
+
+* Range Adaptors:
+  * `views::linear_distribute`
+  * `views::sample`
+  * Set Adaptors
+    * `views::set_difference`
+    * `views::set_intersection`
+    * `views::set_symmetric_difference`
+    * `views::set_union`
 
 ---
 references:
