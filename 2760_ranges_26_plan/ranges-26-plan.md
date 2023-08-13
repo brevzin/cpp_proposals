@@ -254,7 +254,7 @@ The other issue is what the reference type of the range should be. range-v3 uses
 
 ## `istream<T>`
 
-`views::istream<T>` was one of the original C++20 range factories, modified slightly since then to be a bit more user-friendly. But there's an interesting issue with it as pointed out in [@P2406R5] and even before that in [@range-v3#57]: `views::istream<T>(stream) | views::take(N)` will extract `N+1` elements from `stream`. Barry did a CppNow talk on this example (video has not been posted yet).
+`views::istream<T>` was one of the original C++20 range factories, modified slightly since then to be a bit more user-friendly. But there's an interesting issue with it as pointed out in [@P2406R5] and even before that in [@range-v3#57]: `views::istream<T>(stream) | views::take(N)` will extract `N+1` elements from `stream`. Barry did a CppNow talk on this example ([video](https://youtu.be/dvi0cl8ccNQ)).
 
 There are, potentially, two approaches to implementing `views::istream<T>`:
 
@@ -350,6 +350,34 @@ This alternative implementation ensures that consuming `views::istream<T>(stream
 We have the same potential four options here as we described with [`cache_last`](#cache_last), but we could also just keep the existing implementation of `views::istream<T>`. Changing this range does have observable effects, but we think we should seriously consider doing so. LEWG seemed very willing to change `counted_iterator<I>` and `views::take` in order to address this issue before, so we think serious consideration should be given to changing `views::istream<T>`.
 
 Additionally, this would set a precedent for how to write these kinds of input ranges. So it's important to get right.
+
+Separately, there is also `views::getlines`. In the say way that `views::istream<T>(is)` is a factory that produces elements of type `T` on demand by way of `is >> obj`, `views::getlines` is a factory that produces elements of type `std::string` on demand by way of `std::getline(is, obj)`. Note that both could nearly be implemented in terms of `views::generate`:
+
+::: cmptable
+### `views::istream<T>`
+```cpp
+template <class T>
+inline constexpr auto istream = [](std::istream& is){
+  return views::generate([&is, obj=T()]() mutable -> T& {
+    is >> obj;
+    return obj;
+  });
+});
+```
+
+### `views::getlines`
+```cpp
+inline constexpr auto getlines = [](std::istream& is, char delim = '\n'){
+  return views::generate(
+    [&is, delim, obj=std::string()]() mutable -> std::string& {
+      std::getline(is, obj);
+      return obj;
+    });
+});
+```
+:::
+
+Almost because neither of these terminates, and we eventually do need some kind of termination condition. Which might call for some kind of `views::generate_until`.
 
 
 ## `scan`
