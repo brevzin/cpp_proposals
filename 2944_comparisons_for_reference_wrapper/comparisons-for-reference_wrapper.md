@@ -177,13 +177,17 @@ If we agree that we should just consistently constrain all the comparison operat
 In [pairs.spec]{.sref}/1:
 
 ::: bq
-[1]{.pnum} [*Preconditions*]{.rm} [*Constraints*]{.addu}: Each of `decltype(x.first == y.first)` and `decltype(x.second == y.second)` models `$boolean-testable$`.
+[1]{.pnum} [*Preconditions*]{.rm} [*Constraints*]{.addu}: [`x.first == y.first` and `x.second == y.second` are valid expressions and each]{.addu} [Each]{.rm} of `decltype(x.first == y.first)` and `decltype(x.second == y.second)` models `$boolean-testable$`.
 :::
 
 In [tuple.rel]{.sref}/2:
 
 ::: bq
-[2]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: For all `i`, where `0 <= i < sizeof...(TTypes)`, `get<i>(t) == get<i>(u)` is a valid expression. `sizeof...(TTypes)` equals `tuple_size_v<UTuple>`.
+[2]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: For all `i`, where `0 <= i < sizeof...(TTypes)`, `get<i>(t) == get<i>(u)` is a valid expression [and `decltype(get<i>(t) == get<i>(u))` models `$boolean-testable$`]{.addu}. `sizeof...(TTypes)` equals `tuple_size_v<UTuple>`.
+
+::: rm
+[3]{.pnum} *Preconditions*: For all `i`, `decltype(get<i>(t) == get<i>(u))` models `$boolean-testable$`.
+:::
 :::
 
 In [optional.relops]{.sref}, change all the *Mandates* to *Constraints*:
