@@ -509,6 +509,20 @@ A few other common patterns worth considering:
 
 But it is not always the case that just writing one algorithm in terms of others is optimal. It is tempting to define `views::tail` as simply `views::drop(1)`, but a dedicated `tail` could be more efficient (it does not need to store the count or cache `begin()`). It's unfortunate that the relative difference in specification is so high though.
 
+## Extending conditionally borrowed
+
+In [@P2017R1], we made some range adaptors conditionally borrowed. But we didn't touch adaptors that had callables - like `views::transform`. It turns out to be very useful to have a borrowable version of `views::transform`. Indeed, [@P2728R6] even adds a dedicated new range adaptor (`views::project`) which is simply a version of `views::transform` that can be borrowed (because its callable must be a constant).
+
+But rather than add a dedicated view for this specific case, which requires a new name but really only helps `views::transform`, we can generalize `views::transform` to address the use-case in a way that would also help all the other range adaptors that take callables. At the very least, in `views::transform(r, f)` if `r` is borrowed and `f` is empty, an implementation can simply put `f` in the `transform_view<R, F>::iterator` directly (rather than a `transform_view<R, F>*`) which would allow it to be borrowed. The same could be said for other range adaptors that take callables as well, which seems like a more useful approach as well as not requiring new names for every adaptor.
+
+The main question then is what the criteria should be for when `transform_view<R, F>` should be a borrowed range (when `R` is):
+
+* `is_empty_v<F>` (range-v3 already does this - not for conditionally borrowed, but just to decide whether to store the callable by value in the iterator)
+* `sizeof(F) <= sizeof(void*) and is_trivially_copyable_v<F>` (this means that when transforming with a function pointer, the function pointer itself can live in the iterator - which takes the same amount of space as the parent pointer, except with one less indirection)
+* something else?
+
+This question is a little simpler for `views::transform` (which only needs to potentially store `f` in the adapted iterator) than it is for `views::filter` (which would need not only the predicate but also the underlying sentinel, so this may not be worthwhile). This would need to be carefully considered.
+
 # View Adjuncts
 
 In the C++23 plan, we listed several facilities that would greatly improve the usability of views: the ability for users to define first class pipe support, the ability to collect into a container (`ranges::to`), and formatting.
@@ -813,6 +827,7 @@ As previously, we want to triage a lot of outstanding views, algorithms, and oth
   * `views::chunk_on`
   * `views::cycle`
   * `views::delimit` and `views::c_str`
+  * making more adaptors (e.g. `views::transform`) conditionally borrowed in more complex circumstances
   * Generators:
     * `views::scan`
     * `views::generate` and `views::generate_n`
@@ -873,5 +888,14 @@ references:
           month: 2
           day: 6
       URL: https://brevzin.github.io/c++/2022/02/06/output-iterators/
-
+    - id: P2728R6
+      citation-label: P2728R6
+      title: "Unicode in the Library, Part 1: UTF Transcoding"
+      author:
+        - family: Zach Laine
+      issued:
+        - year: 2023
+          month: 7
+          day: 11
+      URL: https://isocpp.org/files/papers/P2728R6.html
 ---

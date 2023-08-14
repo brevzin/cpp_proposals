@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-08-13" />
+  <meta name="dcterms.date" content="2023-08-14" />
   <title>A Plan for C++26 Ranges</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-08-13</td>
+    <td>2023-08-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -574,6 +574,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#generate"><span class="toc-section-number">2.4</span> <code class="sourceCode cpp">generate</code><span></span></a></li>
 <li><a href="#as_input"><span class="toc-section-number">2.5</span> <code class="sourceCode cpp">as_input</code><span></span></a></li>
 <li><a href="#simple-adaptor-compositions"><span class="toc-section-number">2.6</span> Simple Adaptor Compositions<span></span></a></li>
+<li><a href="#extending-conditionally-borrowed"><span class="toc-section-number">2.7</span> Extending conditionally borrowed<span></span></a></li>
 </ul></li>
 <li><a href="#view-adjuncts"><span class="toc-section-number">3</span> View Adjuncts<span></span></a>
 <ul>
@@ -1376,6 +1377,16 @@ span.yellow {
 <li>For the <a href="#algorithms">algorithms</a> discussed later, <code class="sourceCode cpp">ranges<span class="op">::</span>sum</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>product</code> are just special cases of <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code>.</li>
 </ul>
 <p>But it is not always the case that just writing one algorithm in terms of others is optimal. It is tempting to define <code class="sourceCode cpp">views<span class="op">::</span>tail</code> as simply <code class="sourceCode cpp">views<span class="op">::</span>drop<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, but a dedicated <code class="sourceCode cpp">tail</code> could be more efficient (it does not need to store the count or cache <code class="sourceCode cpp">begin<span class="op">()</span></code>). It’s unfortunate that the relative difference in specification is so high though.</p>
+<h2 data-number="2.7" id="extending-conditionally-borrowed"><span class="header-section-number">2.7</span> Extending conditionally borrowed<a href="#extending-conditionally-borrowed" class="self-link"></a></h2>
+<p>In <span class="citation" data-cites="P2017R1">[<a href="#ref-P2017R1" role="doc-biblioref">P2017R1</a>]</span>, we made some range adaptors conditionally borrowed. But we didn’t touch adaptors that had callables - like <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. It turns out to be very useful to have a borrowable version of <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. Indeed, <span class="citation" data-cites="P2728R6">[<a href="#ref-P2728R6" role="doc-biblioref">P2728R6</a>]</span> even adds a dedicated new range adaptor (<code class="sourceCode cpp">views<span class="op">::</span>project</code>) which is simply a version of <code class="sourceCode cpp">views<span class="op">::</span>transform</code> that can be borrowed (because its callable must be a constant).</p>
+<p>But rather than add a dedicated view for this specific case, which requires a new name but really only helps <code class="sourceCode cpp">views<span class="op">::</span>transform</code>, we can generalize <code class="sourceCode cpp">views<span class="op">::</span>transform</code> to address the use-case in a way that would also help all the other range adaptors that take callables. At the very least, in <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>r, f<span class="op">)</span></code> if <code class="sourceCode cpp">r</code> is borrowed and <code class="sourceCode cpp">f</code> is empty, an implementation can simply put <code class="sourceCode cpp">f</code> in the <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>R, F<span class="op">&gt;::</span>iterator</code> directly (rather than a <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>R, F<span class="op">&gt;*</span></code>) which would allow it to be borrowed. The same could be said for other range adaptors that take callables as well, which seems like a more useful approach as well as not requiring new names for every adaptor.</p>
+<p>The main question then is what the criteria should be for when <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>R, F<span class="op">&gt;</span></code> should be a borrowed range (when <code class="sourceCode cpp">R</code> is):</p>
+<ul>
+<li><code class="sourceCode cpp">is_empty_v<span class="op">&lt;</span>F<span class="op">&gt;</span></code> (range-v3 already does this - not for conditionally borrowed, but just to decide whether to store the callable by value in the iterator)</li>
+<li><code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>F<span class="op">)</span> <span class="op">&lt;=</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">void</span><span class="op">*)</span> <span class="kw">and</span> is_trivially_copyable_v<span class="op">&lt;</span>F<span class="op">&gt;</span></code> (this means that when transforming with a function pointer, the function pointer itself can live in the iterator - which takes the same amount of space as the parent pointer, except with one less indirection)</li>
+<li>something else?</li>
+</ul>
+<p>This question is a little simpler for <code class="sourceCode cpp">views<span class="op">::</span>transform</code> (which only needs to potentially store <code class="sourceCode cpp">f</code> in the adapted iterator) than it is for <code class="sourceCode cpp">views<span class="op">::</span>filter</code> (which would need not only the predicate but also the underlying sentinel, so this may not be worthwhile). This would need to be carefully considered.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="view-adjuncts"><span class="header-section-number">3</span> View Adjuncts<a href="#view-adjuncts" class="self-link"></a></h1>
 <p>In the C++23 plan, we listed several facilities that would greatly improve the usability of views: the ability for users to define first class pipe support, the ability to collect into a container (<code class="sourceCode cpp">ranges<span class="op">::</span>to</code>), and formatting.</p>
 <p>There are some other operations that we’ve seen come up regularly - operations that are not themselves views or algorithms, but would improve the quality of life around using the standard library (and other) range adpators.</p>
@@ -1635,6 +1646,7 @@ span.yellow {
 <li><code class="sourceCode cpp">views<span class="op">::</span>chunk_on</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
 <li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code> and <code class="sourceCode cpp">views<span class="op">::</span>c_str</code></li>
+<li>making more adaptors (e.g. <code class="sourceCode cpp">views<span class="op">::</span>transform</code>) conditionally borrowed in more complex circumstances</li>
 <li>Generators:
 <ul>
 <li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
@@ -1712,6 +1724,10 @@ span.yellow {
 <p>[P1899R3] Christopher Di Bella, Tim Song. 2022-07-11. stride_view. <br />
 <a href="https://wg21.link/p1899r3">https://wg21.link/p1899r3</a></p>
 </div>
+<div id="ref-P2017R1">
+<p>[P2017R1] Barry Revzin. 2020-02-19. Conditionally borrowed ranges. <br />
+<a href="https://wg21.link/p2017r1">https://wg21.link/p2017r1</a></p>
+</div>
 <div id="ref-P2164R9">
 <p>[P2164R9] Corentin Jabot. 2022-12-07. views::enumerate. <br />
 <a href="https://wg21.link/p2164r9">https://wg21.link/p2164r9</a></p>
@@ -1787,6 +1803,10 @@ span.yellow {
 <div id="ref-P2672R0">
 <p>[P2672R0] Barry Revzin. 2022-10-14. Exploring the Design Space for a Pipeline Operator. <br />
 <a href="https://wg21.link/p2672r0">https://wg21.link/p2672r0</a></p>
+</div>
+<div id="ref-P2728R6">
+<p>[P2728R6] Zach Laine. 2023-07-11. Unicode in the Library, Part 1: UTF Transcoding. <br />
+<a href="https://isocpp.org/files/papers/P2728R6.html">https://isocpp.org/files/papers/P2728R6.html</a></p>
 </div>
 <div id="ref-range-v3#57">
 <p>[range-v3#57] Eric Niebler. 2014. istream_range filtered with take(N) should stop reading at N. <br />
