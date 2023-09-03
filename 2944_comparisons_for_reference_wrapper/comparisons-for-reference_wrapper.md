@@ -11,7 +11,7 @@ toc: true
 
 # Revision History
 
-Since [@P2944R1], added section on [ambiguity](#ambiguity) and updated wording accordingly.
+Since [@P2944R1], added section on [ambiguity](#ambiguity-issues) and updated wording accordingly.
 
 Since [@P2944R0], fixed the wording
 
@@ -103,7 +103,7 @@ if (std::ranges::any_of(v, equals(std::ref(target)))) {
 
 And this works! Just... only for some types, seemingly randomly. The goal of this proposal is for it to just always work.
 
-## Ambiguity
+## Ambiguity Issues
 
 In the original revision of the paper, the proposal was simply to add this equality operator:
 
@@ -178,6 +178,69 @@ template<class T> class reference_wrapper {
 :::
 
 And that, now, passes [all the tests](https://godbolt.org/z/eTs71o49o).
+
+## Non-boolean comparisons
+
+Another question that came up with in the LEWG telecon was how this proposal interacts with non-boolean comparison operators. For instance:
+
+::: bq
+```cpp
+void f(std::valarray<int> v) {
+  // this is a valid expression today, whose type is not bool, but rather
+  // something convertible to std::valarray<bool>
+  v == v;
+}
+```
+:::
+
+Now, `std::valarray<T>`'s comparison operators are specified as non-member function templates, so any comparison using `std::reference_wrapper<std::valarray<T>>` doesn't work today. But let's make our own version of this type that's more friendly (or hostile, depending on your perspective) to this paper and consider:
+
+::: bq
+```cpp
+template <typename T>
+struct ValArray {
+  friend auto operator==(ValArray const&, ValArray const&) -> ValArray<bool> {
+    return {};
+  }
+};
+
+void f(ValArray<int> v) {
+  // this is valid and has type ValArray<bool>
+  v == v;
+
+  // this is also valid today and has the same type
+  std::ref(v) == std::ref(v);
+}
+```
+:::
+
+Now, does anybody write such code? Who knows. If we [constrain](#constraints-vs-mandates) the comparisons of `std::reference_wrapper<T>` (and also the other standard library types), then this code will continue to work fine anyway - since the comparisons would be constrained away by types like `ValArray<T>` not satisfying `equality_comparable`. This paper would not be adding any new candidates to the candidate set, so no behavior changes.
+
+But, as always, there is an edge case.
+
+1. there is a type `T`, whose comparisons return a type like `int`
+2. and those comparisons are written in such a way that comparison `T` to `std::reference_wrapper<T>` works (see table above)
+3. and users are relying on such comparisons to actually return `int`
+
+Then the comparisons to `std::reference_wrapper<T>` will instead start returning `bool`. That is:
+
+::: bq
+```cpp
+struct ComparesAsInt {
+  friend auto operator==(ComparseAsInt, ComparesAsInt) -> int;
+};
+
+auto f(std::reference_wrapper<ComparesAsInt> a, std::reference_wrapper<ComparesAsInt> b) {
+  // today: compiles and returns int
+  // proposed: compiles and returns bool
+  return a == b;
+}
+```
+:::
+
+Here, the added comparison operators would be valid, and wouldn't constrain away, since `std::equality_comparable` is based on `$boolean-testable$` which only requires convertibility to `bool` (and some other nice behavior), which `int` does satisfy. And those added comparison operators would be better matches than the existing ones, so they would win.
+
+This would be the only case where any behavior would change.
 
 # Proposal
 

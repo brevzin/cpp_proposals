@@ -566,7 +566,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
 <li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
 <ul>
-<li><a href="#ambiguity"><span class="toc-section-number">2.1</span> Ambiguity<span></span></a></li>
+<li><a href="#ambiguity-issues"><span class="toc-section-number">2.1</span> Ambiguity Issues<span></span></a></li>
+<li><a href="#non-boolean-comparisons"><span class="toc-section-number">2.2</span> Non-boolean comparisons<span></span></a></li>
 </ul></li>
 <li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
@@ -577,7 +578,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P2944R1">[<a href="#ref-P2944R1" role="doc-biblioref">P2944R1</a>]</span>, added section on <a href="#ambiguity">ambiguity</a> and updated wording accordingly.</p>
+<p>Since <span class="citation" data-cites="P2944R1">[<a href="#ref-P2944R1" role="doc-biblioref">P2944R1</a>]</span>, added section on <a href="#ambiguity-issues">ambiguity</a> and updated wording accordingly.</p>
 <p>Since <span class="citation" data-cites="P2944R0">[<a href="#ref-P2944R0" role="doc-biblioref">P2944R0</a>]</span>, fixed the wording</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Typically in libraries, wrapper types are comparable when their underlying types are comparable. <code class="sourceCode cpp">tuple<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is equality comparable when <code class="sourceCode cpp">T</code> is. <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is equality comparable when <code class="sourceCode cpp">T</code> is. <code class="sourceCode cpp">variant<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is equality comparable when <code class="sourceCode cpp">T</code> is.</p>
@@ -679,7 +680,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-3"><a href="#cb4-3"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>And this works! Just… only for some types, seemingly randomly. The goal of this proposal is for it to just always work.</p>
-<h2 data-number="2.1" id="ambiguity"><span class="header-section-number">2.1</span> Ambiguity<a href="#ambiguity" class="self-link"></a></h2>
+<h2 data-number="2.1" id="ambiguity-issues"><span class="header-section-number">2.1</span> Ambiguity Issues<a href="#ambiguity-issues" class="self-link"></a></h2>
 <p>In the original revision of the paper, the proposal was simply to add this equality operator:</p>
 <blockquote>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">class</span> reference_wrapper <span class="op">{</span></span>
@@ -731,62 +732,109 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb9-5"><a href="#cb9-5"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>And that, now, passes <a href="https://godbolt.org/z/eTs71o49o">all the tests</a>.</p>
+<h2 data-number="2.2" id="non-boolean-comparisons"><span class="header-section-number">2.2</span> Non-boolean comparisons<a href="#non-boolean-comparisons" class="self-link"></a></h2>
+<p>Another question that came up with in the LEWG telecon was how this proposal interacts with non-boolean comparison operators. For instance:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="dt">void</span> f<span class="op">(</span>std<span class="op">::</span>valarray<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>  <span class="co">// this is a valid expression today, whose type is not bool, but rather</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>  <span class="co">// something convertible to std::valarray&lt;bool&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>  v <span class="op">==</span> v;</span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Now, <code class="sourceCode cpp">std<span class="op">::</span>valarray<span class="op">&lt;</span>T<span class="op">&gt;</span></code>’s comparison operators are specified as non-member function templates, so any comparison using <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>std<span class="op">::</span>valarray<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> doesn’t work today. But let’s make our own version of this type that’s more friendly (or hostile, depending on your perspective) to this paper and consider:</p>
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">struct</span> ValArray <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>  <span class="kw">friend</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">==(</span>ValArray <span class="kw">const</span><span class="op">&amp;</span>, ValArray <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> ValArray<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="cf">return</span> <span class="op">{}</span>;</span>
+<span id="cb11-5"><a href="#cb11-5"></a>  <span class="op">}</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="op">}</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a></span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="dt">void</span> f<span class="op">(</span>ValArray<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>  <span class="co">// this is valid and has type ValArray&lt;bool&gt;</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a>  v <span class="op">==</span> v;</span>
+<span id="cb11-11"><a href="#cb11-11"></a></span>
+<span id="cb11-12"><a href="#cb11-12"></a>  <span class="co">// this is also valid today and has the same type</span></span>
+<span id="cb11-13"><a href="#cb11-13"></a>  std<span class="op">::</span>ref<span class="op">(</span>v<span class="op">)</span> <span class="op">==</span> std<span class="op">::</span>ref<span class="op">(</span>v<span class="op">)</span>;</span>
+<span id="cb11-14"><a href="#cb11-14"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Now, does anybody write such code? Who knows. If we <a href="#constraints-vs-mandates">constrain</a> the comparisons of <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> (and also the other standard library types), then this code will continue to work fine anyway - since the comparisons would be constrained away by types like <code class="sourceCode cpp">ValArray<span class="op">&lt;</span>T<span class="op">&gt;</span></code> not satisfying <code class="sourceCode cpp">equality_comparable</code>. This paper would not be adding any new candidates to the candidate set, so no behavior changes.</p>
+<p>But, as always, there is an edge case.</p>
+<ol type="1">
+<li>there is a type <code class="sourceCode cpp">T</code>, whose comparisons return a type like <code class="sourceCode cpp"><span class="dt">int</span></code></li>
+<li>and those comparisons are written in such a way that comparison <code class="sourceCode cpp">T</code> to <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> works (see table above)</li>
+<li>and users are relying on such comparisons to actually return <code class="sourceCode cpp"><span class="dt">int</span></code></li>
+</ol>
+<p>Then the comparisons to <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> will instead start returning <code class="sourceCode cpp"><span class="dt">bool</span></code>. That is:</p>
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">struct</span> ComparesAsInt <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>  <span class="kw">friend</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">==(</span>ComparseAsInt, ComparesAsInt<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span>;</span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="op">}</span>;</span>
+<span id="cb12-4"><a href="#cb12-4"></a></span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>ComparesAsInt<span class="op">&gt;</span> a, std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>ComparesAsInt<span class="op">&gt;</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>  <span class="co">// today: compiles and returns int</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>  <span class="co">// proposed: compiles and returns bool</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>  <span class="cf">return</span> a <span class="op">==</span> b;</span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Here, the added comparison operators would be valid, and wouldn’t constrain away, since <code class="sourceCode cpp">std<span class="op">::</span>equality_comparable</code> is based on <code class="sourceCode cpp"><em>boolean-testable</em></code> which only requires convertibility to <code class="sourceCode cpp"><span class="dt">bool</span></code> (and some other nice behavior), which <code class="sourceCode cpp"><span class="dt">int</span></code> does satisfy. And those added comparison operators would be better matches than the existing ones, so they would win.</p>
+<p>This would be the only case where any behavior would change.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Add <code class="sourceCode cpp"><span class="op">==</span></code> and <code class="sourceCode cpp"><span class="op">&lt;=&gt;</span></code> to <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> so that <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is always comparable when <code class="sourceCode cpp">T</code> is, regardless of how <code class="sourceCode cpp">T</code>’s comparisons are defined.</p>
 <p>Change <span>22.10.6.1 <a href="https://wg21.link/refwrap.general">[refwrap.general]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>  template&lt;class T&gt; class reference_wrapper {</span>
-<span id="cb10-2"><a href="#cb10-2"></a>  public:</span>
-<span id="cb10-3"><a href="#cb10-3"></a>    // types</span>
-<span id="cb10-4"><a href="#cb10-4"></a>    using type = T;</span>
-<span id="cb10-5"><a href="#cb10-5"></a></span>
-<span id="cb10-6"><a href="#cb10-6"></a>    // [refwrap.const], constructors</span>
-<span id="cb10-7"><a href="#cb10-7"></a>    template&lt;class U&gt;</span>
-<span id="cb10-8"><a href="#cb10-8"></a>      constexpr reference_wrapper(U&amp;&amp;) noexcept(<em>see below</em>);</span>
-<span id="cb10-9"><a href="#cb10-9"></a>    constexpr reference_wrapper(const reference_wrapper&amp; x) noexcept;</span>
-<span id="cb10-10"><a href="#cb10-10"></a></span>
-<span id="cb10-11"><a href="#cb10-11"></a>    // [refwrap.assign], assignment</span>
-<span id="cb10-12"><a href="#cb10-12"></a>    constexpr reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span>
-<span id="cb10-13"><a href="#cb10-13"></a></span>
-<span id="cb10-14"><a href="#cb10-14"></a>    // [refwrap.access], access</span>
-<span id="cb10-15"><a href="#cb10-15"></a>    constexpr operator T&amp; () const noexcept;</span>
-<span id="cb10-16"><a href="#cb10-16"></a>    constexpr T&amp; get() const noexcept;</span>
-<span id="cb10-17"><a href="#cb10-17"></a></span>
-<span id="cb10-18"><a href="#cb10-18"></a>    // [refwrap.invoke], invocation</span>
-<span id="cb10-19"><a href="#cb10-19"></a>    template&lt;class... ArgTypes&gt;</span>
-<span id="cb10-20"><a href="#cb10-20"></a>      constexpr invoke_result_t&lt;T&amp;, ArgTypes...&gt; operator()(ArgTypes&amp;&amp;...) const</span>
-<span id="cb10-21"><a href="#cb10-21"></a>        noexcept(is_nothrow_invocable_v&lt;T&amp;, ArgTypes...&gt;);</span>
-<span id="cb10-22"><a href="#cb10-22"></a></span>
-<span id="cb10-23"><a href="#cb10-23"></a><span class="va">+   // [refwrap.comparisons], comparisons</span></span>
-<span id="cb10-24"><a href="#cb10-24"></a><span class="va">+   friend constexpr bool operator==(reference_wrapper, reference_wrapper);</span></span>
-<span id="cb10-25"><a href="#cb10-25"></a><span class="va">+   friend constexpr bool operator==(reference_wrapper, const T&amp;);</span></span>
-<span id="cb10-26"><a href="#cb10-26"></a><span class="va">+   friend constexpr bool operator==(reference_wrapper, reference_wrapper&lt;const T&gt;);</span></span>
-<span id="cb10-27"><a href="#cb10-27"></a></span>
-<span id="cb10-28"><a href="#cb10-28"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper, reference_wrapper);</span></span>
-<span id="cb10-29"><a href="#cb10-29"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper, const T&amp;);</span></span>
-<span id="cb10-30"><a href="#cb10-30"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper, reference_wrapper&lt;const T&gt;);</span></span>
-<span id="cb10-31"><a href="#cb10-31"></a>  };</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb13-1"><a href="#cb13-1"></a>  template&lt;class T&gt; class reference_wrapper {</span>
+<span id="cb13-2"><a href="#cb13-2"></a>  public:</span>
+<span id="cb13-3"><a href="#cb13-3"></a>    // types</span>
+<span id="cb13-4"><a href="#cb13-4"></a>    using type = T;</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>    // [refwrap.const], constructors</span>
+<span id="cb13-7"><a href="#cb13-7"></a>    template&lt;class U&gt;</span>
+<span id="cb13-8"><a href="#cb13-8"></a>      constexpr reference_wrapper(U&amp;&amp;) noexcept(<em>see below</em>);</span>
+<span id="cb13-9"><a href="#cb13-9"></a>    constexpr reference_wrapper(const reference_wrapper&amp; x) noexcept;</span>
+<span id="cb13-10"><a href="#cb13-10"></a></span>
+<span id="cb13-11"><a href="#cb13-11"></a>    // [refwrap.assign], assignment</span>
+<span id="cb13-12"><a href="#cb13-12"></a>    constexpr reference_wrapper&amp; operator=(const reference_wrapper&amp; x) noexcept;</span>
+<span id="cb13-13"><a href="#cb13-13"></a></span>
+<span id="cb13-14"><a href="#cb13-14"></a>    // [refwrap.access], access</span>
+<span id="cb13-15"><a href="#cb13-15"></a>    constexpr operator T&amp; () const noexcept;</span>
+<span id="cb13-16"><a href="#cb13-16"></a>    constexpr T&amp; get() const noexcept;</span>
+<span id="cb13-17"><a href="#cb13-17"></a></span>
+<span id="cb13-18"><a href="#cb13-18"></a>    // [refwrap.invoke], invocation</span>
+<span id="cb13-19"><a href="#cb13-19"></a>    template&lt;class... ArgTypes&gt;</span>
+<span id="cb13-20"><a href="#cb13-20"></a>      constexpr invoke_result_t&lt;T&amp;, ArgTypes...&gt; operator()(ArgTypes&amp;&amp;...) const</span>
+<span id="cb13-21"><a href="#cb13-21"></a>        noexcept(is_nothrow_invocable_v&lt;T&amp;, ArgTypes...&gt;);</span>
+<span id="cb13-22"><a href="#cb13-22"></a></span>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="va">+   // [refwrap.comparisons], comparisons</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a><span class="va">+   friend constexpr bool operator==(reference_wrapper, reference_wrapper);</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a><span class="va">+   friend constexpr bool operator==(reference_wrapper, const T&amp;);</span></span>
+<span id="cb13-26"><a href="#cb13-26"></a><span class="va">+   friend constexpr bool operator==(reference_wrapper, reference_wrapper&lt;const T&gt;);</span></span>
+<span id="cb13-27"><a href="#cb13-27"></a></span>
+<span id="cb13-28"><a href="#cb13-28"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper, reference_wrapper);</span></span>
+<span id="cb13-29"><a href="#cb13-29"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper, const T&amp;);</span></span>
+<span id="cb13-30"><a href="#cb13-30"></a><span class="va">+   friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper, reference_wrapper&lt;const T&gt;);</span></span>
+<span id="cb13-31"><a href="#cb13-31"></a>  };</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add a new clause, [refwrap.comparisons], after <span>22.10.6.5 <a href="https://wg21.link/refwrap.invoke">[refwrap.invoke]</a></span>:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> <em>Mandates</em>: The expression <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>get<span class="op">()</span></code> is well-formed and its result is convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>get<span class="op">()</span></code>.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>friend constexpr bool operator==(reference_wrapper x, const T&amp; y);</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1"></a>friend constexpr bool operator==(reference_wrapper x, const T&amp; y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> <em>Mandates</em>: The expression <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y</code> is well-formed and its result is convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y</code>.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1"></a>friend constexpr bool operator==(reference_wrapper x, reference_wrapper&lt;const T&gt; y);</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1"></a>friend constexpr bool operator==(reference_wrapper x, reference_wrapper&lt;const T&gt; y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">5</a></span> <em>Constraints</em>: <code class="sourceCode cpp">is_const_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">6</a></span> <em>Mandates</em>: The expression <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>get<span class="op">()</span></code> is well-formed and its result is convertible to <code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">x<span class="op">.</span>get<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>get<span class="op">()</span></code>.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1"></a>friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper x, reference_wrapper y);</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb17-1"><a href="#cb17-1"></a>friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper x, reference_wrapper y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">8</a></span> <em>Returns</em>: <code class="sourceCode cpp"><em>synth-three-way</em><span class="op">(</span>x<span class="op">.</span>get<span class="op">()</span>, y<span class="op">.</span>get<span class="op">())</span></code>.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1"></a>friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper x, const T&amp; y);</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1"></a>friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper x, const T&amp; y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">9</a></span> <em>Returns</em>: <code class="sourceCode cpp"><em>synth-three-way</em><span class="op">(</span>x<span class="op">.</span>get<span class="op">()</span>, y<span class="op">)</span></code>.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1"></a>friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper x, reference_wrapper&lt;const T&gt; y);</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1"></a>friend constexpr <em>synth-three-way-result</em>&lt;T&gt; operator&lt;=&gt;(reference_wrapper x, reference_wrapper&lt;const T&gt; y);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">10</a></span> <em>Constraints</em>: <code class="sourceCode cpp">is_const_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">11</a></span> <em>Returns</em>: <code class="sourceCode cpp"><em>synth-three-way</em><span class="op">(</span>x<span class="op">.</span>get<span class="op">()</span>, y<span class="op">.</span>get<span class="op">())</span></code>.</p>
 </div>
@@ -795,7 +843,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>We don’t have a feature-test macro for <code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, and there doesn’t seem like a good one to bump for this, so let’s add a new one to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span></p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1"></a><span class="va">+ #define __cpp_lib_reference_wrapper 20XXXXL // also in &lt;functional&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1"></a><span class="va">+ #define __cpp_lib_reference_wrapper 20XXXXL // also in &lt;functional&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 <h2 data-number="3.2" id="constraints-vs-mandates"><span class="header-section-number">3.2</span> Constraints vs Mandates<a href="#constraints-vs-mandates" class="self-link"></a></h2>
