@@ -1,6 +1,6 @@
 ---
 title: "Comparisons for `reference_wrapper`"
-document: P2944R1
+document: P2944R2
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2944R1], added section on [ambiguity](#ambiguity) and updated wording accordingly.
 
 Since [@P2944R0], fixed the wording
 
@@ -101,6 +103,82 @@ if (std::ranges::any_of(v, equals(std::ref(target)))) {
 
 And this works! Just... only for some types, seemingly randomly. The goal of this proposal is for it to just always work.
 
+## Ambiguity
+
+In the original revision of the paper, the proposal was simply to add this equality operator:
+
+::: bq
+```cpp
+template<class T> class reference_wrapper {
+  friend constexpr bool operator==(reference_wrapper, reference_wrapper);
+}
+```
+:::
+
+But this turns out to be insufficient. It's enough for `reference_wrapper<T>` to become comparable for all cases, but that's not exactly all we need. Consider:
+
+::: bq
+```cpp
+auto check(int i, std::reference_wrapper<int> r) -> bool {
+  return i == r;
+}
+```
+:::
+
+This comparison is valid today, per the table earlier: we convert `r` to `int` through its `operator int&()` and use the builtin comparison. But now we're adding a new candidate, which is also valid: we can convert `i` to `reference_wrapper<int>`. These two candidates are ambiguous. The same is true for many other similar comparisons.
+
+In order to ensure that we catch all the interesting cases, we can build up all the comparisons that we want to check. For non-const `T`:
+
+::: bq
+```cpp
+template <class T>
+concept ref_equality_comparable = requires (T a, T const ca, Ref<T> r, Ref<T const> cr) {
+    // the usual T is equality-comparable with itself
+    a == a;
+    a == ca;
+    ca == ca;
+
+    // Ref<T> is equality-comparable with itself
+    r == r;
+    r == cr;
+    cr == cr;
+
+    // T and Ref<T> are equality-comparable
+    a == r;
+    a == cr;
+    ca == r;
+    ca == cr;
+};
+```
+:::
+
+We don't need to check both directions of comparison anymore, but we do need to check const and non-const comparisons - which means `T` and `T const` for the objects and `Ref<T>` and `Ref<T const>` for our reference wrapper. We need to be careful to check both because of the case I just showed earlier - `int == reference_wrapper<int>` would be ambiguous with the rules laid out in R0 and R1 of this paper, but `int const == reference_wrapper<int>` actually would be fine (because `int const&` is not convertible to `reference_wrapper<int>`, so we only have one viable candidate).
+
+That concept fails for every type with the R0/R1 proposal. To disambigugate, we need to add an extra comparison to handle the `T == Ref<T>` case:`
+
+::: bq
+```cpp
+template<class T> class reference_wrapper {
+  friend constexpr bool operator==(reference_wrapper, reference_wrapper);
+  friend constexpr bool operator==(reference_wrapper, T const&);
+}
+```
+:::
+
+That gets us a lot closer, but it still isn't sufficient. Actually only one single expression now fails: the `r == cr` (`Ref<T> == Ref<T const>`) check, which fails for all `T`. The previous ambiguity is annoying, but this one particularly so since we just need a dedicated comparison operator _just_ for this case. Which we can add:
+
+::: bq
+```cpp
+template<class T> class reference_wrapper {
+  friend constexpr bool operator==(reference_wrapper, reference_wrapper);
+  friend constexpr bool operator==(reference_wrapper, T const&);
+  friend constexpr bool operator==(reference_wrapper, reference_wrapper<T const>); // only for non-const T
+}
+```
+:::
+
+And that, now, passes [all the tests](https://godbolt.org/z/eTs71o49o).
+
 # Proposal
 
 Add `==` and `<=>` to `std::reference_wrapper<T>` so that `std::reference_wrapper<T>` is always comparable when `T` is, regardless of how `T`'s comparisons are defined.
@@ -133,7 +211,12 @@ Change [refwrap.general]{.sref}:
 
 +   // [refwrap.comparisons], comparisons
 +   friend constexpr bool operator==(reference_wrapper, reference_wrapper);
++   friend constexpr bool operator==(reference_wrapper, const T&);
++   friend constexpr bool operator==(reference_wrapper, reference_wrapper<const T>);
+
 +   friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper, reference_wrapper);
++   friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper, const T&);
++   friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper, reference_wrapper<const T>);
   };
 ```
 :::
@@ -151,8 +234,39 @@ friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);
 [#]{.pnum} *Returns*: `x.get() == y.get()`.
 
 ```
+friend constexpr bool operator==(reference_wrapper x, const T& y);
+```
+
+[#]{.pnum} *Mandates*: The expression `x.get() == y` is well-formed and its result is convertible to `bool`.
+
+[#]{.pnum} *Returns*: `x.get() == y`.
+
+```
+friend constexpr bool operator==(reference_wrapper x, reference_wrapper<const T> y);
+```
+
+[#]{.pnum} *Constraints*: `is_const_v<T>` is `false`.
+
+[#]{.pnum} *Mandates*: The expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
+
+[#]{.pnum} *Returns*: `x.get() == y.get()`.
+
+```
 friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper x, reference_wrapper y);
 ```
+
+[#]{.pnum} *Returns*: `$synth-three-way$(x.get(), y.get())`.
+
+```
+friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper x, const T& y);
+```
+
+[#]{.pnum} *Returns*: `$synth-three-way$(x.get(), y)`.
+
+```
+friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper x, reference_wrapper<const T> y);
+```
+[#]{.pnum} *Constraints*: `is_const_v<T>` is `false`.
 
 [#]{.pnum} *Returns*: `$synth-three-way$(x.get(), y.get())`.
 :::
