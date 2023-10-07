@@ -25,15 +25,6 @@ As such, all the ongoing efforts to add more pack functionality choose a distinc
 
 <table>
 <tr><th/><th>Single Element</th><th>Pack</th></tr>
-<tr><th style="vertical-align:middle;">Lambda Capture (since C++11)</th><td>
-```cpp
-[elem](){}
-```
-</td><td>
-```cpp
-[...pack](){}
-```
-</td></tr>
 <tr><th style="vertical-align:middle;">Indexing [@P2662R2]</th><td>
 ```cpp
 elem[0]
@@ -77,32 +68,21 @@ What is unfortunate, in my opinion, is that the syntaxes on the right are also a
 
 While having all the functionality available to us in the various proposals would be great, I think we can do better.
 
+Note that lambda capture isn't included in the above table, since `[pack...]` is basically a regular pack expansion and `[...pack1=pack2]` is introducing a new pack, which is a slightly different operation than what I'm talking about here.
+
 [^exp]: For expansion statements, even though we've agreed on the `template for` syntax, there does not appear to be a published document that uses that syntax. Also, the last revision doesn't have support for expanding over a pack due to the lack of syntax - the three options presented here are various ideas that have come up in various conversations with people.
 
 # Proposal
 
 I would like to suggest that rather than coming up with a bespoke syntax for every pack operation we need to do - that we instead come up with a bespoke syntax for _naming a pack_ and use _that_ syntax for each operation. This gives us orthogonality and consistency.
 
-Thankfully, we don't even really need to come up with what the syntax should be for naming a pack - we already kind of have it: `...pack`. This is the syntax we already have for copy capture (and init-capture) of a pack today, and is basically the way that packs are introduced in various templates already.
+Thankfully, we don't even really need to come up with what the syntax should be for naming a pack - we already kind of have it: `...pack`. This is basically the way that packs are introduced in various templates and lambda init-capture already.
 
 Applying that syntax to each of the facilities presented in the previous section:
 
 
 <table>
 <tr><th/><th>Single Element</th><th>Pack (Previous)</th><th>Pack (Proposed)</th></tr>
-<tr><th style="vertical-align:middle;">Lambda Capture<br />(since C++11)</th><td>
-```cpp
-[elem](){}
-```
-</td><td>
-```cpp
-[...pack](){}
-```
-</td><td>
-```cpp
-[@[\.\.\.pack]{.yellow}@](){}
-```
-</td></tr>
 <tr><th style="vertical-align:middle;">Indexing</th><td>
 ```cpp
 elem[0]
@@ -158,7 +138,7 @@ template for (auto x : @[\.\.\.pack]{.yellow}@)
 
 Here, all the syntaxes in the last column are the same as the syntaxes in the first column, except using `...pack` instead of `elem`. These syntaxes are all distinct and unambiguous.
 
-It is pretty likely that many people will prefer at least one syntax in the second column to its corresponding suggestion in the third column (I certainly do). But, on the whole, I think the consistency and orthogonality outweigh these small preferences. And it helps that we already use this syntax today, for lambda capture.
+It is pretty likely that many people will prefer at least one syntax in the second column to its corresponding suggestion in the third column (I certainly do). But, on the whole, I think the consistency and orthogonality outweigh these small preferences.
 
 Incidentally, this syntax also avoids the potential ambiguity mentioned in [@P2662R2] for its syntax proposal (that having a parameter of `T...[1]` is valid syntax today, which with this proposal for indexing into the pack would instead be spelled `...T[1]` which is not valid today), although given that two compilers don't even support that syntax today makes this a very minor, footnote-level advantage.
 
@@ -180,7 +160,7 @@ void foo(Ts... pack) {
 ```
 :::
 
-Maybe there's something interesting that `...pack` might mean, like some language-tuple thing. I can't immediately come up with a use-case though. So I think a decent enough answer to that question is: it means nothing. It's just not allowed. In the same way that when invoking a non-static member function, `x.f(y)` is a valid expression but `x.f` by itself is not. If in the future, somebody finds a use-case, we can also make it work later. The various pack operations (lambda capture, indexing, expansion, reflection, splice) are just bespoke grammar rules that happen to share this common `...pack` syntax - despite `...pack` itself having no meaning.
+Maybe there's something interesting that `...pack` might mean, like some language-tuple thing. I can't immediately come up with a use-case though. So I think a decent enough answer to that question is: it means nothing. It's just not allowed. In the same way that when invoking a non-static member function, `x.f(y)` is a valid expression but `x.f` by itself is not. If in the future, somebody finds a use-case, we can also make it work later. The various pack operations (indexing, expansion, reflection, splice) are just bespoke grammar rules that happen to share this common `...pack` syntax - despite `...pack` itself having no meaning.
 
 ## Wording
 
