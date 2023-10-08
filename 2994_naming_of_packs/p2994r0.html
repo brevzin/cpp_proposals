@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-07" />
+  <meta name="dcterms.date" content="2023-10-08" />
   <title>On the Naming of Packs</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-07</td>
+    <td>2023-10-08</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -640,10 +640,15 @@ Splice <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role=
 </table>
 <p>As you can see, the syntaxes on the right are distinct from the syntaxes on the left - which is important for those syntaxes to be viable.</p>
 <p>What is unfortunate, in my opinion, is that the syntaxes on the right are also all distinct from each other. We don’t have orthogonality here - knowing how to perform an operation on an element doesn’t necessarily inform you of the syntax to perform that operation on a pack. There’s an extra <code class="sourceCode cpp"><span class="op">...</span></code> that you have to type, but where does it go? It depends.</p>
+<p>Additionally, while the indexing syntax here, <code class="sourceCode cpp">pack<span class="op">...[</span><span class="dv">0</span><span class="op">]</span></code>, works just fine for indexing, it can’t be generalized to the other operations:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> x <span class="op">:</span> pack<span class="op">...)</span></code> looks like a pack expansion, which would then suggest that <code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> x <span class="op">:</span> a, b<span class="op">)</span></code> is valid too. But this leads us to conflicting meanings: are we iterating over each element listed (as we want for a pack) or are we iterating over the sub-elements of the one element listed (as we want for a tuple). These conflict over what <code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> x <span class="op">:</span> a<span class="op">)</span></code> mean.</li>
+<li><code class="sourceCode cpp"><span class="op">^</span>pack<span class="op">...</span></code> is a pack expansion of a reflection, as in <code class="sourceCode cpp">vector<span class="op">{^</span>pack<span class="op">...}</span></code> producing a <code class="sourceCode cpp">vector<span class="op">&lt;</span>meta<span class="op">::</span>info<span class="op">&gt;</span></code> with the reflections over all the elements of <code class="sourceCode cpp">pack</code>.`</li>
+</ul>
 <p>While having all the functionality available to us in the various proposals would be great, I think we can do better.</p>
 <p>Note that lambda capture isn’t included in the above table, since <code class="sourceCode cpp"><span class="op">[</span>pack<span class="op">...]</span></code> is basically a regular pack expansion and <code class="sourceCode cpp"><span class="op">[...</span>pack1<span class="op">=</span>pack2<span class="op">]</span></code> is introducing a new pack, which is a slightly different operation than what I’m talking about here.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>I would like to suggest that rather than coming up with a bespoke syntax for every pack operation we need to do - that we instead come up with a bespoke syntax for <em>naming a pack</em> and use <em>that</em> syntax for each operation. This gives us orthogonality and consistency.</p>
+<p>I would like to suggest that rather than coming up with a bespoke syntax for every pack operation we need to do - that we instead come up with a bespoke syntax for <em>naming a pack</em><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> and use <em>that</em> syntax for each operation. This gives us orthogonality and consistency.</p>
 <p>Thankfully, we don’t even really need to come up with what the syntax should be for naming a pack - we already kind of have it: <code class="sourceCode cpp"><span class="op">...</span>pack</code>. This is basically the way that packs are introduced in various templates and lambda init-capture already.</p>
 <p>Applying that syntax to each of the facilities presented in the previous section:</p>
 <table>
@@ -788,6 +793,7 @@ Splice
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>For expansion statements, even though we’ve agreed on the <code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span></code> syntax, there does not appear to be a published document that uses that syntax. Also, the last revision doesn’t have support for expanding over a pack due to the lack of syntax - the three options presented here are various ideas that have come up in various conversations with people.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>What I mean by naming a pack here is basically using the pack as an operand in some function directly, as opposed to being part of a pack expansion. I think of this as naming the pack itself. Maybe referring to this problem as having a pack operand might be more to the point.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 </div>

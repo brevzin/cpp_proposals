@@ -66,6 +66,11 @@ As you can see, the syntaxes on the right are distinct from the syntaxes on the 
 
 What is unfortunate, in my opinion, is that the syntaxes on the right are also all distinct from each other. We don't have orthogonality here - knowing how to perform an operation on an element doesn't necessarily inform you of the syntax to perform that operation on a pack. There's an extra `...` that you have to type, but where does it go? It depends.
 
+Additionally, while the indexing syntax here, `pack...[0]`, works just fine for indexing, it can't be generalized to the other operations:
+
+* `template for (auto x : pack...)` looks like a pack expansion, which would then suggest that `template for (auto x : a, b)` is valid too. But this leads us to conflicting meanings: are we iterating over each element listed (as we want for a pack) or are we iterating over the sub-elements of the one element listed (as we want for a tuple). These conflict over what `template for (auto x : a)` mean.
+* `^pack...` is a pack expansion of a reflection, as in `vector{^pack...}` producing a `vector<meta::info>` with the reflections over all the elements of `pack`.`
+
 While having all the functionality available to us in the various proposals would be great, I think we can do better.
 
 Note that lambda capture isn't included in the above table, since `[pack...]` is basically a regular pack expansion and `[...pack1=pack2]` is introducing a new pack, which is a slightly different operation than what I'm talking about here.
@@ -74,7 +79,9 @@ Note that lambda capture isn't included in the above table, since `[pack...]` is
 
 # Proposal
 
-I would like to suggest that rather than coming up with a bespoke syntax for every pack operation we need to do - that we instead come up with a bespoke syntax for _naming a pack_ and use _that_ syntax for each operation. This gives us orthogonality and consistency.
+I would like to suggest that rather than coming up with a bespoke syntax for every pack operation we need to do - that we instead come up with a bespoke syntax for _naming a pack_ [^name] and use _that_ syntax for each operation. This gives us orthogonality and consistency.
+
+[^name]: What I mean by naming a pack here is basically using the pack as an operand in some function directly, as opposed to being part of a pack expansion. I think of this as naming the pack itself. Maybe referring to this problem as having a pack operand might be more to the point.
 
 Thankfully, we don't even really need to come up with what the syntax should be for naming a pack - we already kind of have it: `...pack`. This is basically the way that packs are introduced in various templates and lambda init-capture already.
 
