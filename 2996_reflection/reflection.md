@@ -133,7 +133,7 @@ static int y;
 
 S<^x> sx;  // S<^x> has external name linkage.
 S<^y> sy;  // S<^y> has internal name linkage.
-
+```
 
 
 ## The Reflection Operator (`^`)
