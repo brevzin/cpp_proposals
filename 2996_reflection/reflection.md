@@ -85,7 +85,7 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any (C++) type and type-alias
   - any function or member function
   - any namespace-scope variable or any C++ static data member
-  - any nonstatic data member
+  - any non-static data member
   - any constant value
   - any template
 
