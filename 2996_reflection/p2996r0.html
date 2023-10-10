@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-08" />
+  <meta name="dcterms.date" content="2023-10-10" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -235,7 +235,7 @@ font-style: italic;
 margin-top: 0.5em;
 margin-bottom: 0.5em;
 margin-left: 40pt;
-background: inherit;
+background: inherit; 
 }
 span.textnormal {
 font-style: normal;
@@ -339,7 +339,7 @@ margin-left: auto;
 margin-right: auto;
 margin-top: 0.8em;
 text-align: left;
-hyphens: none;
+hyphens: none; 
 }
 td, th {
 padding-left: 1em;
@@ -524,7 +524,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
-
+  
 </head>
 <body>
 <div class="wrapper">
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-08</td>
+    <td>2023-10-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -565,10 +565,75 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
+<ul>
+<li><a href="#why-a-single-opaque-reflection-type"><span class="toc-section-number">1.1</span> Why a single opaque reflection type?<span></span></a></li>
+</ul></li>
+<li><a href="#examples"><span class="toc-section-number">2</span> Examples<span></span></a></li>
+<li><a href="#proposed-features"><span class="toc-section-number">3</span> Proposed Features<span></span></a>
+<ul>
+<li><a href="#stdmetainfo"><span class="toc-section-number">3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><span></span></a></li>
+<li><a href="#the-reflection-operator"><span class="toc-section-number">3.2</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<span></span></a></li>
+<li><a href="#splicers"><span class="toc-section-number">3.3</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<span></span></a></li>
+<li><a href="#metafunctions"><span class="toc-section-number">3.4</span> Metafunctions<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>This is a proposal for a reduced initial set of features to support static reflection in C++. Specifically, we are mostly proposing a subset of features suggested in <span class="citation" data-cites="P1240R2">[<a href="#ref-P1240R2" role="doc-biblioref">P1240R2</a>]</span>:</p>
+<ul>
+<li>the representation of program elements via constant-expressions producing <em>reflection values</em> — <em>reflections</em> for short — of an opaque type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,</li>
+<li>a <em>reflection operator</em> (prefix <code class="sourceCode cpp"><span class="op">^</span></code>) that produces a reflection value for its operand construct,</li>
+<li>a number of <code class="sourceCode cpp"><span class="kw">consteval</span></code> <em>metafunctions</em> to work with reflections (including deriving other reflections), and</li>
+<li>constructs called <em>splicers</em> to produce grammatical elements from reflections (e.g., <code class="sourceCode cpp"><span class="op">[:</span> <em>refl</em> <span class="op">:]</span></code>).</li>
+</ul>
+<p>This proposal is not intended to be the end-game as far as reflection and compile-time metaprogramming are concerned. Instead, we expect it will be a useful core around which more powerful features can be added incrementally over time. In particular, we believe that most or all the remaining features explored in P1240R2 and that code injection (along the lines described in <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>) are desirable directions to pursue.</p>
+<p>Our choice to start with something smaller is primarily motivated by the belief that that improves the chances of these facilities making it into the language sooner rather than later.</p>
+<h2 data-number="1.1" id="why-a-single-opaque-reflection-type"><span class="header-section-number">1.1</span> Why a single opaque reflection type?<a href="#why-a-single-opaque-reflection-type" class="self-link"></a></h2>
+<p>Perhaps the most common suggestion made regarding the framework outlined in P1240 is to switch from the single <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> type to a family of types covering various language elements (e.g., <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>variable</code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type</code>, etc.).</p>
+<p>We believe that doing so would be mistake with very serious consequences for the future of C++.</p>
+<p>Specifically, it would codify the language design into the type system. We know from experience that it has been quasi-impossible to change the semantics of standard types once they were standardized, and there is no reason to think that such evolution would become easier in the future. Suppose for example that we had standardized a reflection type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>variable</code> in C++03 to represent what the standard called “variables” at the time. In C++11, the term “variable” was extended to include “references”. Such an change would have been difficult to do given that C++ by then likely would have had plenty of code that depended on a type arrangement around the more restricted definition of “variable”. That scenario is clearly backward-looking, but there is no reason to believe that similar changes might not be wanted in the future and we strongly believe that it behooves us to avoid adding undue constraints on the evolution of the language.</p>
+<p>Other advantages of a single opaque type include:</p>
+<ul>
+<li>it makes no assumptions about the representation used within the implementation (e.g., it doesn’t advantage one compiler over another),</li>
+<li>it is trivially extensible (no types need to be added to represent additional language elements and meta-elements as the language evolves), and</li>
+<li>it allows convenient collections of heterogeneous constructs without having to surface reference semantics (e.g., a <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span></code> can easily represent a mixed template argument list — containing types and nontypes — without fear of slicing values).</li>
+</ul>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="examples"><span class="header-section-number">2</span> Examples<a href="#examples" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposed-features"><span class="header-section-number">3</span> Proposed Features<a href="#proposed-features" class="self-link"></a></h1>
+<h2 data-number="3.1" id="stdmetainfo"><span class="header-section-number">3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><a href="#stdmetainfo" class="self-link"></a></h2>
+<p>The type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can be defined as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">namespace</span> meta <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  <span class="op">}</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="op">}</span></span></code></pre></div>
+<p>In our initial proposal a value of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can represent:</p>
+<ul>
+<li>an error</li>
+<li>any (C++) type and type-alias</li>
+<li>any function or member function</li>
+<li>any namespace-scope variable or any C++ static data member</li>
+<li>any non-static data member</li>
+<li>any constant value</li>
+<li>any template</li>
+</ul>
+<p>[ (DV) I’m currently excluding local variable representation. We can change that if we have a use for them that we feel must be in the initial core functionality. ]</p>
+<h2 data-number="3.2" id="the-reflection-operator"><span class="header-section-number">3.2</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<a href="#the-reflection-operator" class="self-link"></a></h2>
+<h2 data-number="3.3" id="splicers"><span class="header-section-number">3.3</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<a href="#splicers" class="self-link"></a></h2>
+<h2 data-number="3.4" id="metafunctions"><span class="header-section-number">3.4</span> Metafunctions<a href="#metafunctions" class="self-link"></a></h2>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-P1240R2">
+<p>[P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali. 2022-01-14. Scalable Reflection. <br />
+<a href="https://wg21.link/p1240r2">https://wg21.link/p1240r2</a></p>
+</div>
+<div id="ref-P2237R0">
+<p>[P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <br />
+<a href="https://wg21.link/p2237r0">https://wg21.link/p2237r0</a></p>
+</div>
+</div>
 </div>
 </div>
 </body>
