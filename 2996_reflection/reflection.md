@@ -19,7 +19,7 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
      _reflection values_ — _reflections_ for short — of an opaque type `std::meta::info`,
   - a _reflection operator_ (prefix `^`) that produces a reflection value for its operand construct,
   - a number of `consteval` _metafunctions_ to work with reflections (including deriving other reflections), and
-  - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[:` _refl_ `:]`).
+  - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
 This proposal is not intended to be the end-game as far as reflection and compile-time
 metaprogramming are concerned.  Instead, we expect it will be a useful core around which more
