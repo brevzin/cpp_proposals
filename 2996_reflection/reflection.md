@@ -13,7 +13,7 @@ toc: true
 # Introduction
 
 This is a proposal for a reduced initial set of features to support static reflection in C++.
-Specifically, we are mostly proposing a subset of features suggested in P1240R2:
+Specifically, we are mostly proposing a subset of features suggested in [@P1240R2]:
 
   - the representation of program elements via constant-expressions producing
      _reflection values_ — _reflections_ for short — of an opaque type `std::meta::info`,
