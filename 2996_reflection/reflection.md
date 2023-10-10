@@ -25,7 +25,7 @@ This proposal is not intended to be the end-game as far as reflection and compil
 metaprogramming are concerned.  Instead, we expect it will be a useful core around which more
 powerful features can be added incrementally over time.  In particular, we believe that most
 or all the remaining features explored in P1240R2 and that code injection
-(along the lines described in P2237R0) are desirable directions to pursue.
+(along the lines described in [@P2237R0]) are desirable directions to pursue.
 
 Our choice to start with something smaller is primarily motivated by the belief that that
 improves the chances of these facilities making it into the language sooner rather than
