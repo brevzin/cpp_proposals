@@ -49,11 +49,6 @@ struct R {
 static_assert(std::ranges::range<R>);
 static_assert(std::same_as<std::ranges::range_reference_t<R>, C>);
 
-using P = std::projected<Iterator, std::identity>;
-static_assert(std::same_as<std::iter_value_t<P>, C>);
-static_assert(std::same_as<std::iter_reference_t<P>, C&&>);
-static_assert(std::same_as<std::iter_common_reference_t<P>, C const&>);
-
 auto f(R r) -> void {
     std::ranges::for_each(r, [](auto&& c){
         c.f();
