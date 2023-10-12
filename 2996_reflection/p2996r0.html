@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-10" />
+  <meta name="dcterms.date" content="2023-10-11" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-10</td>
+    <td>2023-10-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -569,12 +569,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#why-a-single-opaque-reflection-type"><span class="toc-section-number">1.1</span> Why a single opaque reflection type?<span></span></a></li>
 </ul></li>
-<li><a href="#examples"><span class="toc-section-number">2</span> Examples<span></span></a></li>
+<li><a href="#examples"><span class="toc-section-number">2</span> Examples<span></span></a>
+<ul>
+<li><a href="#back-and-forth"><span class="toc-section-number">2.1</span> Back-And-Forth<span></span></a></li>
+<li><a href="#selecting-members"><span class="toc-section-number">2.2</span> Selecting Members<span></span></a></li>
+</ul></li>
 <li><a href="#proposed-features"><span class="toc-section-number">3</span> Proposed Features<span></span></a>
 <ul>
-<li><a href="#stdmetainfo"><span class="toc-section-number">3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><span></span></a></li>
-<li><a href="#the-reflection-operator"><span class="toc-section-number">3.2</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<span></span></a></li>
-<li><a href="#splicers"><span class="toc-section-number">3.3</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<span></span></a></li>
+<li><a href="#the-reflection-operator"><span class="toc-section-number">3.1</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<span></span></a></li>
+<li><a href="#splicers"><span class="toc-section-number">3.2</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<span></span></a></li>
+<li><a href="#stdmetainfo"><span class="toc-section-number">3.3</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><span></span></a></li>
 <li><a href="#metafunctions"><span class="toc-section-number">3.4</span> Metafunctions<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
@@ -588,7 +592,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>a number of <code class="sourceCode cpp"><span class="kw">consteval</span></code> <em>metafunctions</em> to work with reflections (including deriving other reflections), and</li>
 <li>constructs called <em>splicers</em> to produce grammatical elements from reflections (e.g., <code class="sourceCode cpp"><span class="op">[:</span> <em>refl</em> <span class="op">:]</span></code>).</li>
 </ul>
-<p>This proposal is not intended to be the end-game as far as reflection and compile-time metaprogramming are concerned. Instead, we expect it will be a useful core around which more powerful features can be added incrementally over time. In particular, we believe that most or all the remaining features explored in P1240R2 and that code injection (along the lines described in <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>) are desirable directions to pursue.</p>
+<p>This proposal is not intended to be the end-game as far as reflection and compile-time metaprogramming are concerned. Instead, we expect it will be a useful core around which more powerful features will be added incrementally over time. In particular, we believe that most or all the remaining features explored in P1240R2 and that code injection (along the lines described in <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>) are desirable directions to pursue.</p>
 <p>Our choice to start with something smaller is primarily motivated by the belief that that improves the chances of these facilities making it into the language sooner rather than later.</p>
 <h2 data-number="1.1" id="why-a-single-opaque-reflection-type"><span class="header-section-number">1.1</span> Why a single opaque reflection type?<a href="#why-a-single-opaque-reflection-type" class="self-link"></a></h2>
 <p>Perhaps the most common suggestion made regarding the framework outlined in P1240 is to switch from the single <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> type to a family of types covering various language elements (e.g., <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>variable</code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type</code>, etc.).</p>
@@ -601,27 +605,115 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>it allows convenient collections of heterogeneous constructs without having to surface reference semantics (e.g., a <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span></code> can easily represent a mixed template argument list — containing types and nontypes — without fear of slicing values).</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="examples"><span class="header-section-number">2</span> Examples<a href="#examples" class="self-link"></a></h1>
+<h2 data-number="2.1" id="back-and-forth"><span class="header-section-number">2.1</span> Back-And-Forth<a href="#back-and-forth" class="self-link"></a></h2>
+<p>Our first example is not meant to be compelling but to show how to go back and forth between the reflection domain and the grammatical domain:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^</span><span class="dt">int</span>;</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">typename</span><span class="op">[:</span>r<span class="op">:]</span> x <span class="op">=</span> <span class="dv">42</span>;       <span class="co">// Same as: int x = 42;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">typename</span><span class="op">[:^</span><span class="dt">char</span><span class="op">:]</span> c <span class="op">=</span> <span class="ch">&#39;*&#39;</span>;  <span class="co">// Same as: char c = &#39;*&#39;;</span></span></code></pre></div>
+</blockquote>
+<p>The <code class="sourceCode cpp"><span class="kw">typename</span></code> prefix can be omitted in the same contexts as with dependent qualified names. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">using</span> MyType <span class="op">=</span> <span class="op">[:</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)&lt;</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">)?</span> <span class="op">^</span><span class="dt">long</span> <span class="op">:</span> <span class="op">^</span><span class="dt">int</span><span class="op">:]</span>;  <span class="co">// Implicit &quot;typename&quot; prefix.</span></span></code></pre></div>
+</blockquote>
+<h2 data-number="2.2" id="selecting-members"><span class="header-section-number">2.2</span> Selecting Members<a href="#selecting-members" class="self-link"></a></h2>
+<p>Our second example enables selecting a member “by number” for a specific type. It also shows the use of a metafunction dealing with diagnostics:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">unsigned</span> i<span class="op">:</span><span class="dv">2</span>, j<span class="op">:</span><span class="dv">6</span>; <span class="op">}</span>;</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">consteval</span> <span class="kw">auto</span> member_number<span class="op">(</span><span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>  <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> <span class="op">^</span>S<span class="op">::</span>i;</span>
+<span id="cb3-5"><a href="#cb3-5"></a>  <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="cf">return</span> <span class="op">^</span>S<span class="op">::</span>j;</span>
+<span id="cb3-6"><a href="#cb3-6"></a>  <span class="cf">else</span> <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>invalid_reflection<span class="op">(</span><span class="st">&quot;Only field numbers 0 and 1 permitted&quot;</span><span class="op">)</span>;</span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="op">}</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>  S s<span class="op">{</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">}</span>;</span>
+<span id="cb3-11"><a href="#cb3-11"></a>  s<span class="op">.[:</span>member_number<span class="op">(</span><span class="dv">1</span><span class="op">):]</span> <span class="op">=</span> <span class="dv">42</span>;  <span class="co">// Same as: s.j = 42;</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>  s<span class="op">.[:</span>member_number<span class="op">(</span><span class="dv">5</span><span class="op">):]</span> <span class="op">=</span> <span class="dv">0</span>;   <span class="co">// Error (likely with &quot;Only field numbers 0 and 1 permitted&quot; in text).</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>This example also illustrates that bit fields are not beyond the reach of this proposal.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposed-features"><span class="header-section-number">3</span> Proposed Features<a href="#proposed-features" class="self-link"></a></h1>
-<h2 data-number="3.1" id="stdmetainfo"><span class="header-section-number">3.1</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><a href="#stdmetainfo" class="self-link"></a></h2>
+<h2 data-number="3.1" id="the-reflection-operator"><span class="header-section-number">3.1</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<a href="#the-reflection-operator" class="self-link"></a></h2>
+<p>The reflection operator produces a reflection value from a grammatical construct (its operand):</p>
+<blockquote>
+<div class="line-block"><em>unary-expression</em>:<br />
+      …<br />
+      <code class="sourceCode cpp"><span class="op">^</span></code> <code class="sourceCode cpp"><span class="op">::</span></code><br />
+      <code class="sourceCode cpp"><span class="op">^</span></code> <em>namespace-name</em><br />
+      <code class="sourceCode cpp"><span class="op">^</span></code> <em>type-id</em><br />
+      <code class="sourceCode cpp"><span class="op">^</span></code> <em>cast-expression</em></div>
+</blockquote>
+<p>Note that <em>cast-expression</em> includes <em>id-expression</em>, which in turn can designate templates, member names, etc.</p>
+<p>The current proposal requires that the <em>cast-expression</em> be:</p>
+<ul>
+<li>a <em>primary-expression</em> referring to a function or member function, or</li>
+<li>a <em>primary-expression</em> referring to a variable, static data member, or structured binding, or</li>
+<li>a <em>primary-expression</em> referring to a nonstatic data member, or</li>
+<li>a <em>primary-expression</em> referring to a template, or</li>
+<li>a constant-expression.</li>
+</ul>
+<p>In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to evaluate to an invalid reflection.</p>
+<p>[ DV: I’m not sure that last rule is needed or even desirable. I know at some point in the discussions it was brought up as desirable, but I don’t think anything like it was implemented. ]</p>
+<h2 data-number="3.2" id="splicers"><span class="header-section-number">3.2</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<a href="#splicers" class="self-link"></a></h2>
+<p>A reflection that is not an invalid reflection can be “spliced” into source code using one of several <em>splicer</em> forms:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="op">[:</span> r <span class="op">:]</span></code> produces an <em>expression</em> evaluating to the entity or constant value represented by <code class="sourceCode cpp">r</code>.</li>
+<li><code class="sourceCode cpp"><span class="kw">typename</span><span class="op">[:</span> r <span class="op">:]</span></code> produces a <em>simple-type-specifier</em> corresponding to the type represented by <code class="sourceCode cpp">r</code>.</li>
+<li><code class="sourceCode cpp"><span class="kw">template</span><span class="op">[:</span> r <span class="op">:]</span></code> produces a <em>template-name</em> corresponding to the template represented by <code class="sourceCode cpp">r</code>.</li>
+<li><code class="sourceCode cpp"><span class="kw">namespace</span><span class="op">[:</span> r <span class="op">:]</span></code> produces a <em>namespace-name</em> corresponding to the namespace represented by <code class="sourceCode cpp">r</code>.</li>
+<li><code class="sourceCode cpp"><span class="op">[:</span>r<span class="op">:]::</span></code> produces a <em>nested-name-specifier</em> corresponding to the namespace, enumeration type, or class type represented by <code class="sourceCode cpp">r</code>.</li>
+</ul>
+<p>Attempting to splice a reflection value that does not meet the requirement of the splice (including “invalid reflections”) is ill-formed. For example: :::bq</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">typename</span><span class="op">[:</span> <span class="op">^::</span> <span class="op">:]</span> x <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// Error.</span></span></code></pre></div>
+<p>::: A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.</p>
+<h2 data-number="3.3" id="stdmetainfo"><span class="header-section-number">3.3</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><a href="#stdmetainfo" class="self-link"></a></h2>
 <p>The type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can be defined as follows:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">namespace</span> meta <span class="op">{</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">int</span><span class="op">)</span>;</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="op">}</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">namespace</span> meta <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="op">}</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="op">}</span></span></code></pre></div>
 <p>In our initial proposal a value of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can represent:</p>
 <ul>
-<li>an error</li>
+<li>an error (corresponding to an “invalid reflection”)</li>
 <li>any (C++) type and type-alias</li>
 <li>any function or member function</li>
-<li>any namespace-scope variable or any C++ static data member</li>
+<li>any variable, static data member, or structured binding</li>
 <li>any non-static data member</li>
 <li>any constant value</li>
 <li>any template</li>
+<li>any namespace</li>
 </ul>
-<p>[ (DV) I’m currently excluding local variable representation. We can change that if we have a use for them that we feel must be in the initial core functionality. ]</p>
-<h2 data-number="3.2" id="the-reflection-operator"><span class="header-section-number">3.2</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<a href="#the-reflection-operator" class="self-link"></a></h2>
-<h2 data-number="3.3" id="splicers"><span class="header-section-number">3.3</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<a href="#splicers" class="self-link"></a></h2>
+<p>Notably absent at this time are general non-constant expressions (that aren’t <em>expression-id</em>s referring to variables or structured bindings). For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>  <span class="op">[:^</span>x<span class="op">:]</span> <span class="op">=</span> <span class="dv">42</span>;     <span class="co">// Okay.  Same as: x = 42;</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>  x <span class="op">=</span> <span class="op">[:^(</span><span class="dv">2</span><span class="op">*</span>x<span class="op">):]</span>;  <span class="co">// Error: &quot;2*x&quot; is a general non-constant expression.</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a>  <span class="kw">constexpr</span> <span class="dt">int</span> N <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb6-6"><a href="#cb6-6"></a>  x <span class="op">=</span> <span class="op">[:^(</span><span class="dv">2</span><span class="op">*</span>N<span class="op">):]</span>;  <span class="co">// Okay: &quot;2*N&quot; is a constant-expression.</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Note that for <code class="sourceCode cpp"><span class="op">^(</span><span class="dv">2</span><span class="op">*</span>N<span class="op">)</span></code> an implementation only has to capture the constant value of <code class="sourceCode cpp"><span class="dv">2</span><span class="op">*</span>N</code> and not various other properties of the underlying expression (such as any temporaries it involves, etc.).</p>
+<p>The type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> is a <em>scalar</em> type. Nontype template arguments of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> are permitted. The entity being reflected can affect the linkage of a template instance involving a reflection. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">auto</span> R<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">extern</span> <span class="dt">int</span> x;</span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="kw">static</span> <span class="dt">int</span> y;</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a>S<span class="op">&lt;^</span>x<span class="op">&gt;</span> sx;  <span class="co">// S&lt;^x&gt; has external name linkage.</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>S<span class="op">&lt;^</span>y<span class="op">&gt;</span> sy;  <span class="co">// S&lt;^y&gt; has internal name linkage.</span></span></code></pre></div>
+</blockquote>
+<p>Namespace <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is associated with type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>: That allows the core meta functions to be invoked without explicit qualification. For example:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a>std<span class="op">::</span>string name2 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(^</span>S<span class="op">)</span>;  <span class="co">// Okay.</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>std<span class="op">::</span>string name1 <span class="op">=</span> name_of<span class="op">(^</span>S<span class="op">)</span>;             <span class="co">// Also okay.</span></span></code></pre></div>
+</blockquote>
 <h2 data-number="3.4" id="metafunctions"><span class="header-section-number">3.4</span> Metafunctions<a href="#metafunctions" class="self-link"></a></h2>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">

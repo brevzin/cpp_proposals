@@ -72,12 +72,12 @@ Our first example is not meant to be compelling but to show how to go back and f
 ::: bq
 ```c++
 constexpr auto r = ^int;
-typename[:r:] x = 42;       // Same as "int x = 42;".
-typename[:^char:] c = '*';  // Same as "char c = '*';".
+typename[:r:] x = 42;       // Same as: int x = 42;
+typename[:^char:] c = '*';  // Same as: char c = '*';
 ```
 :::
 
-The `typename` prefix can be ommitted in the same contexts as with dependent qualified names.  For example:
+The `typename` prefix can be omitted in the same contexts as with dependent qualified names.  For example:
 
 :::bq
 ```c++
@@ -92,14 +92,16 @@ Our second example enables selecting a member "by number" for a specific type.  
 :::bq
 ```c++
 struct S { unsigned i:2, j:6; };
+
 consteval auto member_number(int n) {
   if (n == 0) return ^S::i;
   else if (n == 1) return ^S::j;
   else return std::meta::invalid_reflection("Only field numbers 0 and 1 permitted");
 }
+
 int main() {
   S s{0, 0};
-  s.[:member_number(1):] = 42;  // Same as "s.j = 42;".
+  s.[:member_number(1):] = 42;  // Same as: s.j = 42;
   s.[:member_number(5):] = 0;   // Error (likely with "Only field numbers 0 and 1 permitted" in text).
 }
 ```
@@ -181,14 +183,14 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any template
   - any namespace
 
-Notably absent at this time are general nonconstant expressions (that aren't _expression-id_s referring to variables or structured bindings).  For example:
+Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to variables or structured bindings).  For example:
 
 ::: bq
 ```c++
 int x = 0;
 void g() {
-  [:^x:] = 42;  // Okay.  Same as "x = 42;".
-  x = [:^(2*x):];  // Error: "2*x" is a general nonconstant expression.
+  [:^x:] = 42;     // Okay.  Same as: x = 42;
+  x = [:^(2*x):];  // Error: "2*x" is a general non-constant expression.
   constexpr int N = 42;
   x = [:^(2*N):];  // Okay: "2*N" is a constant-expression.
 }
