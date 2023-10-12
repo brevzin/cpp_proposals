@@ -78,6 +78,7 @@
 - P2945 Additional format specifiers for  <code class="sourceCode cpp">time_point</code>: [p2945r0](2945_format_time_point/p2945r0.html)
 - P2994 On the Naming of Packs: [p2994r0](2994_naming_of_packs/p2994r0.html)
 - P2996 Reflection for C++26: [p2996r0](2996_reflection/p2996r0.html)
+- ![][~ranges] P2997 Removing the common reference requirement from the indirectly invocable concepts: [p2997r0](2997_common_reference_algo/p2997r0.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet

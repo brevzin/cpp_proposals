@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-10-12" />
+  <title>Removing the common reference requirement from the indirectly invocable concepts</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Removing the common reference requirement from the indirectly invocable concepts</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2997R0</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-10-12</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG, SG9<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Tim Song<br>&lt;<a href="mailto:t.canens.cpp@gmail.com" class="email">t.canens.cpp@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
+<ul>
+<li><a href="#wait-but-why"><span class="toc-section-number">1.1</span> Wait… but why?<span></span></a></li>
+<li><a href="#ok-but-why"><span class="toc-section-number">1.2</span> Ok, but… why?<span></span></a></li>
+<li><a href="#common-reference-is-for-parameters"><span class="toc-section-number">1.3</span> Common Reference is for Parameters<span></span></a></li>
+</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording"><span class="toc-section-number">2.1</span> Wording<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Consider the following example (<a href="https://godbolt.org/z/Pcb9639YG">compiler-explorer</a>):</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="pp">#include </span><span class="im">&lt;ranges&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="op">}</span>;</span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="kw">struct</span> Iterator <span class="op">{</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="kw">using</span> value_type <span class="op">=</span> C;</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="kw">using</span> difference_type <span class="op">=</span> std<span class="op">::</span><span class="dt">ptrdiff_t</span>;</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="kw">using</span> iterator_category <span class="op">=</span> std<span class="op">::</span>input_iterator_tag;</span>
+<span id="cb1-12"><a href="#cb1-12"></a></span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> C;</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> Iterator<span class="op">&amp;</span>;</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb1-16"><a href="#cb1-16"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">==(</span>Iterator <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="op">}</span>;</span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>input_iterator<span class="op">&lt;</span>Iterator<span class="op">&gt;)</span>;</span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_value_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_common_reference_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
+<span id="cb1-23"><a href="#cb1-23"></a></span>
+<span id="cb1-24"><a href="#cb1-24"></a><span class="kw">struct</span> R <span class="op">{</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>    <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">-&gt;</span> Iterator;</span>
+<span id="cb1-26"><a href="#cb1-26"></a>    <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> Iterator;</span>
+<span id="cb1-27"><a href="#cb1-27"></a><span class="op">}</span>;</span>
+<span id="cb1-28"><a href="#cb1-28"></a></span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>range<span class="op">&lt;</span>R<span class="op">&gt;)</span>;</span>
+<span id="cb1-30"><a href="#cb1-30"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
+<span id="cb1-31"><a href="#cb1-31"></a></span>
+<span id="cb1-32"><a href="#cb1-32"></a><span class="kw">using</span> P <span class="op">=</span> std<span class="op">::</span>projected<span class="op">&lt;</span>Iterator, std<span class="op">::</span>identity<span class="op">&gt;</span>;</span>
+<span id="cb1-33"><a href="#cb1-33"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_value_t<span class="op">&lt;</span>P<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>P<span class="op">&gt;</span>, C<span class="op">&amp;&amp;&gt;)</span>;</span>
+<span id="cb1-35"><a href="#cb1-35"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_common_reference_t<span class="op">&lt;</span>P<span class="op">&gt;</span>, C <span class="kw">const</span><span class="op">&amp;&gt;)</span>;</span>
+<span id="cb1-36"><a href="#cb1-36"></a></span>
+<span id="cb1-37"><a href="#cb1-37"></a><span class="kw">auto</span> f<span class="op">(</span>R r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a>    std<span class="op">::</span>ranges<span class="op">::</span>for_each<span class="op">(</span>r, <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> c<span class="op">){</span></span>
+<span id="cb1-39"><a href="#cb1-39"></a>        c<span class="op">.</span>f<span class="op">()</span>;</span>
+<span id="cb1-40"><a href="#cb1-40"></a>    <span class="op">})</span>;</span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>It’s a bit lengthy, but the important part is that <code class="sourceCode cpp">R</code> is a range of prvalue <code class="sourceCode cpp">C</code> - <code class="sourceCode cpp">Iterator</code> is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn’t matter, it just makes the example smaller).</p>
+<p>The above example is trying to simply invoke <code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">()</span></code> for every <code class="sourceCode cpp">c</code> in <code class="sourceCode cpp">r</code>. When written using a <code class="sourceCode cpp"><span class="cf">for</span></code> loop, the code compiles. But when written using <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>for_each</code>, it does not. The compile error on gcc 13.2 is:</p>
+<blockquote>
+<pre><code>
+/opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:2558:26:   required by substitution of &#39;template<class _Fn, class ... _Args> static std::__result_of_success<decltype (declval<_Fn>()((declval&lt;_Args&gt;)()...)), std::__invoke_other&gt; std::__result_of_other_impl::_S_test(int) [with _Fn = f(R)::<lambda(auto:62&&)>&amp;; _Args = {const C&amp;}]&#39;
+/opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:2569:55:   required from &#39;struct std::__result_of_impl<false, false, f(R)::<lambda(auto:62&&)>&amp;, const C&amp;&gt;&#39;
+/opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:3077:12:   recursively required by substitution of &#39;template<class _Result, class _Ret> struct std::__is_invocable_impl&lt;_Result, _Ret, true, std::__void_t<typename _CTp::type> &gt; [with _Result = std::__invoke_result<f(R)::<lambda(auto:62&&)>&amp;, const C&amp;&gt;; _Ret = void]&#39;
+/opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:3077:12:   required from &#39;struct std::is_invocable<f(R)::<lambda(auto:62&&)>&amp;, const C&amp;&gt;&#39;
+<source>:38:26:   recursively required by substitution of &#39;template<class _Range, class _Proj, class _Fun>  requires (input_range&lt;_Range&gt;) &amp;&amp; (indirectly_unary_invocable&lt;_Fun, typename std::__detail::__projected<decltype(std::ranges::__cust_access::__begin((declval<_Container&>)())), _Proj&gt;::__type&gt;) constexpr std::ranges::for_each_result<std::ranges::borrowed_iterator_t<_Range>, _Fun&gt; std::ranges::__for_each_fn::operator()(_Range&amp;&amp;, _Fun, _Proj) const [with _Range = R&amp;; _Proj = std::identity; _Fun = f(R)::<lambda(auto:62&&)>]&#39;
+<source>:38:26:   required from here
+<source>:39:12: error: passing &#39;const C&#39; as &#39;this&#39; argument discards qualifiers [-fpermissive]
+   39 |         c.f();
+      |         ~~~^~
+<source>:5:10: note:   in call to &#39;void C::f()&#39;
+    5 |     auto f() -&gt; void;
+      |          ^
+</code></pre>
+</blockquote>
+<p>If you stare at the error long enough you might eventually see a hint as to what the problem is: why, exactly, am I getting a compile error about discarding qualifiers on a <code class="sourceCode cpp"><span class="kw">const</span> C</code> when nothing in this code example appears to be forming a <code class="sourceCode cpp"><span class="kw">const</span> C</code>?</p>
+<h2 data-number="1.1" id="wait-but-why"><span class="header-section-number">1.1</span> Wait… but why?<a href="#wait-but-why" class="self-link"></a></h2>
+<p>The problem here is coming from the algorithm. <code class="sourceCode cpp">ranges<span class="op">::</span>for_each</code> is declared as:</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">template</span><span class="op">&lt;</span>input_range R, <span class="kw">class</span> Proj <span class="op">=</span> identity,</span>
+<span id="cb2-2"><a href="#cb2-2"></a>         indirectly_unary_invocable<span class="op">&lt;</span>projected<span class="op">&lt;</span>iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Proj<span class="op">&gt;&gt;</span> Fun<span class="op">&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>  <span class="kw">constexpr</span> ranges<span class="op">::</span>for_each_result<span class="op">&lt;</span>borrowed_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, Fun<span class="op">&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    ranges<span class="op">::</span>for_each<span class="op">(</span>R<span class="op">&amp;&amp;</span> r, Fun f, Proj proj <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
+</blockquote>
+<p>To understand what’s going on here, we need to look at several other pieces. <code class="sourceCode cpp">projected</code> is a helper utility that is only used to make it easier to specify constraints (it isn’t used in the implementation):</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> I, <span class="kw">class</span> Proj<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">struct</span> <em>projected-impl</em> <span class="op">{</span>                             <span class="co">// exposition only</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>  <span class="kw">struct</span> type <span class="op">{</span>                                       <span class="co">// exposition only</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="kw">using</span> value_type <span class="op">=</span> remove_cvref_t<span class="op">&lt;</span>indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;&gt;</span>;</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="kw">using</span> difference_type <span class="op">=</span> iter_difference_t<span class="op">&lt;</span>I<span class="op">&gt;</span>;     <span class="co">// present only if I</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>                                                      <span class="co">// models weakly_incrementable</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>    indirect_result_t<span class="op">&lt;</span>Proj<span class="op">&amp;</span>, I<span class="op">&gt;</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span>;    <span class="co">// not defined</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>  <span class="op">}</span>;</span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="op">}</span>;</span>
+<span id="cb3-10"><a href="#cb3-10"></a></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="kw">template</span><span class="op">&lt;</span>indirectly_readable I, indirectly_regular_unary_invocable<span class="op">&lt;</span>I<span class="op">&gt;</span> Proj<span class="op">&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>  <span class="kw">using</span> projected <span class="op">=</span> <em>projected-impl</em><span class="op">&lt;</span>I, Proj<span class="op">&gt;::</span>type;</span></code></pre></div>
+</blockquote>
+<p>And the relevant concept for us in this algorithm is this one:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">concept</span> indirectly_unary_invocable <span class="op">=</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    indirectly_readable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    copy_constructible<span class="op">&lt;</span>F<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, <em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>    common_reference_with<span class="op">&lt;</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>      invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, <em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>,</span>
+<span id="cb4-10"><a href="#cb4-10"></a>      invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;</span>;</span></code></pre></div>
+</blockquote>
+<p>What the code example needs to do is validate that our lambda satisfies <code class="sourceCode cpp">indirectly_unary_invocable<span class="op">&lt;</span>I<span class="op">&gt;</span></code>, where <code class="sourceCode cpp">I</code> is <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code>. Before we go through the constraints, it’s worth first start with what all the iterator types actually are, because there’s a lot and it’s easy to get confused.</p>
+<table>
+<tr>
+<th></th>
+<th>
+<code class="sourceCode cpp">Iterator</code>
+</th>
+<th>
+<code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code>
+</th>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">value_type</code>
+</td>
+<td>
+<code class="sourceCode cpp">C</code>
+</td>
+<td>
+<code class="sourceCode cpp">C</code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp"><em>indirect-value-t</em></code>
+</td>
+<td>
+<code class="sourceCode cpp">C<span class="op">&amp;</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">C<span class="op">&amp;</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">reference</code>
+</td>
+<td>
+<code class="sourceCode cpp">C</code>
+</td>
+<td>
+<code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code>
+</td>
+</tr>
+<tr>
+<td>
+<code class="sourceCode cpp">common_reference</code>
+</td>
+<td>
+<code class="sourceCode cpp">C</code>
+</td>
+<td>
+<code class="sourceCode cpp">C <span class="kw">const</span><span class="op">&amp;</span></code>
+</td>
+</tr>
+</table>
+<p>Now, the left column actually doesn’t matter here - although those are probably the types that users expect to be relevant. After all, we are not using a projection in our algorithm call, so why do the projected types matter? But because we can’t propagate prvalues, <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code> does actually differ from <code class="sourceCode cpp">Iterator</code> - because the reference type becomes an rvalue reference, which causes the common reference type to become a reference to const.</p>
+<p>As a result, if we go through our four constraints:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Constraint</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Outcome</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, <em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></code></td>
+<td>✔️</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></code></td>
+<td>✔️</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></code></td>
+<td>❌</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">common_reference_with<span class="op">&lt;...</span>, <span class="op">...&gt;</span></code></td>
+<td>✔️</td>
+</tr>
+</tbody>
+</table>
+<p>That third one fails, because we’re trying to invoke our lambda with a <code class="sourceCode cpp">C <span class="kw">const</span><span class="op">&amp;</span></code>, which instantiates the lambda - which doesn’t have any constraints - and the instantiation of the body (to figure out the return type) causes the compiler to instantiate that <code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">()</span></code> call, which isn’t valid for a <code class="sourceCode cpp">C <span class="kw">const</span></code>. Hard error.</p>
+<p>It’s worth it to point out here that this issue wouldn’t just come up for ranges of prvalues, the same would be true if <code class="sourceCode cpp">R</code> was a range of <code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code> (e.g. <code class="sourceCode cpp">std<span class="op">::</span>generator<span class="op">&lt;</span>C<span class="op">&gt;</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>C<span class="op">&gt;</span> <span class="op">|</span> views<span class="op">::</span>as_rvalue</code>). In that case, both columns of the <code class="sourceCode cpp">Iterator</code> vs <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code> table would look the same as the right column does above. Either way - we start with a range in which nothing is <code class="sourceCode cpp"><span class="kw">const</span></code> and end up with a requirement that the callable is invocable with a <code class="sourceCode cpp"><span class="kw">const</span><span class="op">&amp;</span></code>.</p>
+<h2 data-number="1.2" id="ok-but-why"><span class="header-section-number">1.2</span> Ok, but… why?<a href="#ok-but-why" class="self-link"></a></h2>
+<p>We have to go back to Eric Niebler’s four-part series on iterators <span class="citation" data-cites="niebler.iter.0">[<a href="#ref-niebler.iter.0" role="doc-biblioref">niebler.iter.0</a>]</span> <span class="citation" data-cites="niebler.iter.1">[<a href="#ref-niebler.iter.1" role="doc-biblioref">niebler.iter.1</a>]</span> <span class="citation" data-cites="niebler.iter.2">[<a href="#ref-niebler.iter.2" role="doc-biblioref">niebler.iter.2</a>]</span> <span class="citation" data-cites="niebler.iter.3">[<a href="#ref-niebler.iter.3" role="doc-biblioref">niebler.iter.3</a>]</span>. There, he introduced an algorithm <code class="sourceCode cpp">unique_copy</code> which looks like this:</p>
+<div class="quote">
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">// Copyright (c) 1994</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="co">// Hewlett-Packard Company</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co">// Copyright (c) 1996</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="co">// Silicon Graphics Computer Systems, Inc.</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> InIter, <span class="kw">class</span> OutIter, <span class="kw">class</span> Fn,</span>
+<span id="cb5-6"><a href="#cb5-6"></a>          <span class="kw">class</span> _Tp<span class="op">&gt;</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>OutIter</span>
+<span id="cb5-8"><a href="#cb5-8"></a>__unique_copy<span class="op">(</span>InIter first, InIter last,</span>
+<span id="cb5-9"><a href="#cb5-9"></a>              OutIter result,</span>
+<span id="cb5-10"><a href="#cb5-10"></a>              Fn binary_pred, _Tp<span class="op">*)</span> <span class="op">{</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a>  _Tp value <span class="op">=</span> <span class="op">*</span>first;</span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="op">*</span>result <span class="op">=</span> value;</span>
+<span id="cb5-13"><a href="#cb5-13"></a>  <span class="cf">while</span> <span class="op">(++</span>first <span class="op">!=</span> last<span class="op">)</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="cf">if</span> <span class="op">(!</span>binary_pred<span class="op">(</span>value, <span class="op">*</span>first<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>      value <span class="op">=</span> <span class="op">*</span>first;</span>
+<span id="cb5-16"><a href="#cb5-16"></a>      <span class="op">*++</span>result <span class="op">=</span> value;</span>
+<span id="cb5-17"><a href="#cb5-17"></a>    <span class="op">}</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a>  <span class="cf">return</span> <span class="op">++</span>result;</span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="op">}</span></span></code></pre></div>
+<p>[…] Note the value local variable on line 11, and especially note line 14, where it passes a value and a reference to <code class="sourceCode cpp">binary_pred</code>. Keep that in mind because it’s important!</p>
+<p>[…] Why do I bring it up? Because it’s <em>super problematic</em> when used with proxy iterators. Think about what happens when you try to pass <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>iterator</code> to the above <code class="sourceCode cpp">__unique_copy</code> function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span> vb<span class="op">{</span><span class="kw">true</span>, <span class="kw">true</span>, <span class="kw">false</span>, <span class="kw">false</span><span class="op">}</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">using</span> R <span class="op">=</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference;</span>
+<span id="cb6-3"><a href="#cb6-3"></a>__unique_copy<span class="op">(</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>  vb<span class="op">.</span>begin<span class="op">()</span>, vb<span class="op">.</span>end<span class="op">()</span>,</span>
+<span id="cb6-5"><a href="#cb6-5"></a>  std<span class="op">::</span>ostream_iterator<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;{</span>std<span class="op">::</span>cout, <span class="st">&quot; &quot;</span><span class="op">}</span>,</span>
+<span id="cb6-6"><a href="#cb6-6"></a>  <span class="op">[](</span>R b1, R b2<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> b1 <span class="op">==</span> b2; <span class="op">}</span>, <span class="op">(</span><span class="dt">bool</span><span class="op">*)</span><span class="dv">0</span> <span class="op">)</span>;</span></code></pre></div>
+<p>This <em>should</em> write a “true” and a “false” to <code class="sourceCode cpp">cout</code>, but it doesn’t compile. Why? The lambda is expecting to be passed two objects of <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span></code>‘s proxy reference type, but remember how <code class="sourceCode cpp">__unique_copy</code> calls the predicate:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="cf">if</span> <span class="op">(!</span>binary_pred<span class="op">(</span>value, <span class="op">*</span>first<span class="op">))</span> <span class="op">{</span> <span class="co">/*...*/</span></span></code></pre></div>
+<p>That’s a <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">&amp;</span></code> and a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code>. Ouch!</p>
+</div>
+<p>The blog goes on to point out that one way to resolve this is by having the lambda take both parameters as <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">&amp;&amp;</span></code>. But having to <em>require</em> a generic lambda is a bit… much. This was the reason we have the idea of a <code class="sourceCode cpp">common_reference</code>. Rewriting the above to be:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">using</span> R <span class="op">=</span> std<span class="op">::</span>iter_common_reference_t<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference<span class="op">&gt;</span>;</span>
+<span id="cb8-2"><a href="#cb8-2"></a>__unique_copy<span class="op">(</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>  vb<span class="op">.</span>begin<span class="op">()</span>, vb<span class="op">.</span>end<span class="op">()</span>,</span>
+<span id="cb8-4"><a href="#cb8-4"></a>  std<span class="op">::</span>ostream_iterator<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;{</span>std<span class="op">::</span>cout, <span class="st">&quot; &quot;</span><span class="op">}</span>,</span>
+<span id="cb8-5"><a href="#cb8-5"></a>  <span class="op">[](</span>R b1, R b2<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> b1 <span class="op">==</span> b2; <span class="op">}</span>, <span class="op">(</span><span class="dt">bool</span><span class="op">*)</span><span class="dv">0</span> <span class="op">)</span>;</span></code></pre></div>
+<p>This now works. And that is now the requirement that we have for iterators, that they be <code class="sourceCode cpp">indirectly_readable</code> - which, among other things, requires that there be a <code class="sourceCode cpp">common_reference</code> between the iterator’s <code class="sourceCode cpp">reference</code> type and the iterator’s <code class="sourceCode cpp">value_type<span class="op">&amp;</span></code>.</p>
+<p>That is: the common reference is the type that you can use as the parameter of a non-generic callable that you pass into an algorithm, to ensure that both forms (<code class="sourceCode cpp">value</code> and <code class="sourceCode cpp"><span class="op">*</span>it</code> above) that the implementation might use to invoke the callable work.</p>
+<h2 data-number="1.3" id="common-reference-is-for-parameters"><span class="header-section-number">1.3</span> Common Reference is for Parameters<a href="#common-reference-is-for-parameters" class="self-link"></a></h2>
+<p>The key thing to point out in the above motivation though is that the common reference type is useful <em>for parameters</em>. That is, for the user invoking the algorithm to be able to do so with a homogenous callable - a non-generic lambda.</p>
+<p>But what the common reference type is <em>not</em> useful for is the algorithm implementations themselves. The <code class="sourceCode cpp">unique_copy</code> implementation above is never going to construct a <code class="sourceCode cpp">std<span class="op">::</span>iter_common_reference<span class="op">&lt;</span>InIter<span class="op">&gt;</span></code>. It has no reason to do so - it’s only going to traffic in <code class="sourceCode cpp">std<span class="op">::</span>iter_value_t<span class="op">&lt;</span>InIter<span class="op">&gt;&amp;</span></code> and <code class="sourceCode cpp">std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>InIter<span class="op">&gt;</span></code>. The same is true for every algorithm.</p>
+<p>The only places in the standard library right now where we actually do construct common references are either:</p>
+<ul>
+<li>when we actually do need the common reference of multiple ranges (e.g. <code class="sourceCode cpp">views<span class="op">::</span>join_with</code> and the proposed <code class="sourceCode cpp">views<span class="op">::</span>concat</code>), since we’re explicitly doing merging</li>
+<li>when we’re trying to produce a new reference type (e.g. <code class="sourceCode cpp">views<span class="op">::</span>as_const</code>)</li>
+</ul>
+<p>But internally within the algorithms? No such need.</p>
+<p>So let’s go back to the definition of <code class="sourceCode cpp">std<span class="op">::</span>indirectly_unary_invocable</code>, which was the constraint the original example failed:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> I<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>  <span class="kw">concept</span> indirectly_unary_invocable <span class="op">=</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    indirectly_readable<span class="op">&lt;</span>I<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    copy_constructible<span class="op">&lt;</span>F<span class="op">&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>    invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, <em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>    invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>    invocable<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>    common_reference_with<span class="op">&lt;</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>      invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, <em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>,</span>
+<span id="cb9-10"><a href="#cb9-10"></a>      invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;</span>;</span></code></pre></div>
+</blockquote>
+<p>Excluding the check that <code class="sourceCode cpp">I</code> is an iterator and <code class="sourceCode cpp">F</code> is copyable, we have 4 other checks here:</p>
+<ol type="1">
+<li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&amp;&gt;</span></code> (<code class="sourceCode cpp"><em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;</span></code> is basically this, but in a way that will work correctly through projections, which we don’t have to worry about in this paper)</li>
+<li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code></li>
+<li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code></li>
+<li>that the results of invocations (1) and (2) have a common reference</li>
+</ol>
+<p>Notably, (3) is kind of the odd man out in this concept. Algorithms certainly may need to invoke <code class="sourceCode cpp">F</code> with <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&amp;&gt;</span></code> and with <code class="sourceCode cpp">iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code> (as in the <code class="sourceCode cpp">unique_copy</code> example above, which does both). But algorithms don’t need to interally construct a common reference ever.</p>
+<p>Moreover, we check we can invoke <code class="sourceCode cpp">F</code> with the common reference - but while we check that value/reference invocations are compatible, we don’t actually check that the common reference invocation is compatible with… either of the other two? It could just do something different entirely? It’s not clear what the point of this part of the concept actually is.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The common reference type exists to be able to merge multiple ranges and to provide users with a way to write a non-generic callable. But the requirement that callables be invocable with the iterator’s common reference type isn’t a useful requirement for any algorithm. And while we require this invocability, we don’t even require that this invocation (which no algorithm uses) is compatible with the invocations that the algorithms do use. This check seems to simply reject valid code (as in the original example) while providing no value.</p>
+<p>We propose to simply remove this check from every indirect invocation concept. That would fix the above example and others like it, while also not removing a requirement that algorithms actually rely on. Those uses cited above that actually do need to produce a common reference (<code class="sourceCode cpp">views<span class="op">::</span>join_with</code>, <code class="sourceCode cpp">views<span class="op">::</span>concat</code>, and <code class="sourceCode cpp">views<span class="op">::</span>as_const</code>) already have this requirement separately.</p>
+<h2 data-number="2.1" id="wording"><span class="header-section-number">2.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Remove all the <code class="sourceCode cpp">iter_common_reference_t</code> invocation requirements in <span>25.3.6.3 <a href="https://wg21.link/indirectcallable.indirectinvocable">[indirectcallable.indirectinvocable]</a></span> (which frequently requires a multi-line diff just because the common reference invocation was the last one in the list):</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a>namespace std {</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  template&lt;class F, class I&gt;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>    concept indirectly_unary_invocable =</span>
+<span id="cb10-4"><a href="#cb10-4"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>      invocable&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt; &amp;&amp;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>      invocable&lt;F&amp;, iter_reference_t&lt;I&gt;&gt; &amp;&amp;</span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="st">-     invocable&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt; &amp;&amp;</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a>      common_reference_with&lt;</span>
+<span id="cb10-10"><a href="#cb10-10"></a>        invoke_result_t&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt;,</span>
+<span id="cb10-11"><a href="#cb10-11"></a>        invoke_result_t&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;&gt;;</span>
+<span id="cb10-12"><a href="#cb10-12"></a></span>
+<span id="cb10-13"><a href="#cb10-13"></a>  template&lt;class F, class I&gt;</span>
+<span id="cb10-14"><a href="#cb10-14"></a>    concept indirectly_regular_unary_invocable =</span>
+<span id="cb10-15"><a href="#cb10-15"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
+<span id="cb10-16"><a href="#cb10-16"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
+<span id="cb10-17"><a href="#cb10-17"></a>      regular_invocable&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt; &amp;&amp;</span>
+<span id="cb10-18"><a href="#cb10-18"></a>      regular_invocable&lt;F&amp;, iter_reference_t&lt;I&gt;&gt; &amp;&amp;</span>
+<span id="cb10-19"><a href="#cb10-19"></a><span class="st">-     regular_invocable&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt; &amp;&amp;</span></span>
+<span id="cb10-20"><a href="#cb10-20"></a>      common_reference_with&lt;</span>
+<span id="cb10-21"><a href="#cb10-21"></a>        invoke_result_t&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt;,</span>
+<span id="cb10-22"><a href="#cb10-22"></a>        invoke_result_t&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;&gt;;</span>
+<span id="cb10-23"><a href="#cb10-23"></a></span>
+<span id="cb10-24"><a href="#cb10-24"></a>  template&lt;class F, class I&gt;</span>
+<span id="cb10-25"><a href="#cb10-25"></a>    concept indirect_unary_predicate =</span>
+<span id="cb10-26"><a href="#cb10-26"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
+<span id="cb10-27"><a href="#cb10-27"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
+<span id="cb10-28"><a href="#cb10-28"></a>      predicate&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt; &amp;&amp;</span>
+<span id="cb10-29"><a href="#cb10-29"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-30"><a href="#cb10-30"></a><span class="st">-     predicate&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt;;</span></span>
+<span id="cb10-31"><a href="#cb10-31"></a><span class="va">+     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;<span class="diffins">;</span></span></span>
+<span id="cb10-32"><a href="#cb10-32"></a></span>
+<span id="cb10-33"><a href="#cb10-33"></a>  template&lt;class F, class I1, class I2&gt;</span>
+<span id="cb10-34"><a href="#cb10-34"></a>    concept indirect_binary_predicate =</span>
+<span id="cb10-35"><a href="#cb10-35"></a>      indirectly_readable&lt;I1&gt; &amp;&amp; indirectly_readable&lt;I2&gt; &amp;&amp;</span>
+<span id="cb10-36"><a href="#cb10-36"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
+<span id="cb10-37"><a href="#cb10-37"></a>      predicate&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-38"><a href="#cb10-38"></a>      predicate&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-39"><a href="#cb10-39"></a>      predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-40"><a href="#cb10-40"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-41"><a href="#cb10-41"></a><span class="st">-     predicate&lt;F&amp;, iter_common_reference_t&lt;I1&gt;, iter_common_reference_t&lt;I2&gt;&gt;;</span></span>
+<span id="cb10-42"><a href="#cb10-42"></a><span class="va">+     predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffins">;</span></span></span>
+<span id="cb10-43"><a href="#cb10-43"></a></span>
+<span id="cb10-44"><a href="#cb10-44"></a>  template&lt;class F, class I1, class I2 = I1&gt;</span>
+<span id="cb10-45"><a href="#cb10-45"></a>    concept indirect_equivalence_relation =</span>
+<span id="cb10-46"><a href="#cb10-46"></a>      indirectly_readable&lt;I1&gt; &amp;&amp; indirectly_readable&lt;I2&gt; &amp;&amp;</span>
+<span id="cb10-47"><a href="#cb10-47"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
+<span id="cb10-48"><a href="#cb10-48"></a>      equivalence_relation&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-49"><a href="#cb10-49"></a>      equivalence_relation&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-50"><a href="#cb10-50"></a>      equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-51"><a href="#cb10-51"></a><span class="st">-     equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-52"><a href="#cb10-52"></a><span class="st">-     equivalence_relation&lt;F&amp;, iter_common_reference_t&lt;I1&gt;, iter_common_reference_t&lt;I2&gt;&gt;;</span></span>
+<span id="cb10-53"><a href="#cb10-53"></a><span class="va">+     equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffins">;</span></span></span>
+<span id="cb10-54"><a href="#cb10-54"></a></span>
+<span id="cb10-55"><a href="#cb10-55"></a>  template&lt;class F, class I1, class I2 = I1&gt;</span>
+<span id="cb10-56"><a href="#cb10-56"></a>    concept indirect_strict_weak_order =</span>
+<span id="cb10-57"><a href="#cb10-57"></a>      indirectly_readable&lt;I1&gt; &amp;&amp; indirectly_readable&lt;I2&gt; &amp;&amp;</span>
+<span id="cb10-58"><a href="#cb10-58"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
+<span id="cb10-59"><a href="#cb10-59"></a>      strict_weak_order&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-60"><a href="#cb10-60"></a>      strict_weak_order&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-61"><a href="#cb10-61"></a>      strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
+<span id="cb10-62"><a href="#cb10-62"></a><span class="st">-     strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-63"><a href="#cb10-63"></a><span class="st">-     strict_weak_order&lt;F&amp;, iter_common_reference_t&lt;I1&gt;, iter_common_reference_t&lt;I2&gt;&gt;;</span></span>
+<span id="cb10-64"><a href="#cb10-64"></a><span class="va">+     strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffins">;</span></span></span>
+<span id="cb10-65"><a href="#cb10-65"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-niebler.iter.0">
+<p>[niebler.iter.0] Eric Niebler. 2015. To Be or Not to Be (an Iterator). <br />
+<a href="http://ericniebler.com/2015/01/28/to-be-or-not-to-be-an-iterator/">http://ericniebler.com/2015/01/28/to-be-or-not-to-be-an-iterator/</a></p>
+</div>
+<div id="ref-niebler.iter.1">
+<p>[niebler.iter.1] Eric Niebler. 2015. Iterators++, Part 1. <br />
+<a href="http://ericniebler.com/2015/02/03/iterators-plus-plus-part-1/">http://ericniebler.com/2015/02/03/iterators-plus-plus-part-1/</a></p>
+</div>
+<div id="ref-niebler.iter.2">
+<p>[niebler.iter.2] Eric Niebler. 2015. Iterators++, Part 2. <br />
+<a href="http://ericniebler.com/2015/02/13/iterators-plus-plus-part-2/">http://ericniebler.com/2015/02/13/iterators-plus-plus-part-2/</a></p>
+</div>
+<div id="ref-niebler.iter.3">
+<p>[niebler.iter.3] Eric Niebler. 2015. Iterators++, Part 3. <br />
+<a href="http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/">http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
