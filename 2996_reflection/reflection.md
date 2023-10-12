@@ -69,11 +69,13 @@ Other advantages of a single opaque type include:
 
 Our first example is not meant to be compelling but to show how to go back and forth between the reflection domain and the grammatical domain:
 
+::: bq
 ```c++
 constexpr auto r = ^int;
-typename[:r:] x = 42;  // Same as "int x = 42;".
+typename[:r:] x = 42;       // Same as "int x = 42;".
 typename[:^char:] c = '*';  // Same as "char c = '*';".
 ```
+:::
 
 ## Selecting Members
 
