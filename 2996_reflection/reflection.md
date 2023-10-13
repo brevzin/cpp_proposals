@@ -64,151 +64,14 @@ Other advantages of a single opaque type include:
     nontypes — without fear of slicing values).
 
 
-# Proposed Features
-
-## The Reflection Operator (`^`)
-
-The reflection operator produces a reflection value from a grammatical construct (its operand):
-
-> | _unary-expression_:
-> |       ...
-> |       `^` `::`
-> |       `^` _namespace-name_
-> |       `^` _type-id_
-> |       `^` _cast-expression_
-
-Note that _cast-expression_ includes _id-expression_, which in turn can designate templates, member names, etc.
-
-The current proposal requires that the _cast-expression_ be:
-
-  - a _primary-expression_ referring to a function or member function, or
-  - a _primary-expression_ referring to a variable, static data member, or structured binding, or
-  - a _primary-expression_ referring to a nonstatic data member, or
-  - a _primary-expression_ referring to a template, or
-  - a constant-expression.
-
-In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to evaluate to an invalid reflection.
-
-[ DV: I'm not sure that last rule is needed or even desirable.  I know at some point in the discussions it was brought up as desirable, but
-      I don't think anything like it was implemented. ]
-
-
-## Splicers (`[:`...`:]`)
-
-A reflection that is not an invalid reflection can be "spliced" into source code using one of several _splicer_ forms:
-
- - `[: r :]` produces an _expression_ evaluating to the entity or constant value represented by `r`.
- - `typename[: r :]` produces a _simple-type-specifier_ corresponding to the type represented by `r`.
- - `template[: r :]` produces a _template-name_ corresponding to the template represented by `r`.
- - `namespace[: r :]` produces a _namespace-name_ corresponding to the namespace represented by `r`.
- - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
-
-Attempting to splice a reflection value that does not meet the requirement of the splice (including "invalid reflections") is ill-formed.
-For example:
-:::bq
-```c++
-typename[: ^:: :] x = 0;  // Error.
-```
-:::
-A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.
-
-
-## `std::meta::info`
-
-The type `std::meta::info` can be defined as follows:
-
-```c++
-namespace std {
-  namespace meta {
-    using info = decltype(^int);
-  }
-}
-```
-
-In our initial proposal a value of type `std::meta::info` can represent:
-
-  - an error (corresponding to an "invalid reflection")
-  - any (C++) type and type-alias
-  - any function or member function
-  - any variable, static data member, or structured binding
-  - any non-static data member
-  - any constant value
-  - any template
-  - any namespace
-
-Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to variables or structured bindings).  For example:
-
-::: bq
-```c++
-int x = 0;
-void g() {
-  [:^x:] = 42;     // Okay.  Same as: x = 42;
-  x = [:^(2*x):];  // Error: "2*x" is a general non-constant expression.
-  constexpr int N = 42;
-  x = [:^(2*N):];  // Okay: "2*N" is a constant-expression.
-}
-```
-:::
-Note that for `^(2*N)` an implementation only has to capture the constant value of `2*N` and not various other properties of the underlying expression (such as any temporaries it involves, etc.).
-
-The type `std::meta::info` is a _scalar_ type. Nontype template arguments of type `std::meta::info` are permitted.
-The entity being reflected can affect the linkage of a template instance involving a reflection.  For example:
-
-:::bq
-```c++
-template<auto R> struct S {};
-
-extern int x;
-static int y;
-
-S<^x> sx;  // S<^x> has external name linkage.
-S<^y> sy;  // S<^y> has internal name linkage.
-```
-:::
-
-Namespace `std::meta` is associated with type `std::meta::info`: That allows the core meta functions to be invoked without explicit qualification.
-For example:
-
-:::bq
-```c++
-#include <meta>
-struct S {};
-std::string name2 = std::meta::name_of(^S);  // Okay.
-std::string name1 = name_of(^S);             // Also okay.
-```
-:::
-
-
-
-
-## Metafunctions
-
-We propose a number of metafunctions declared in namespace `std::meta` to operator on reflection values.
-Adding metafunctions to an implementation is expected to be relatively "easy" compared to implementing the core language features described previously.
-However, despite offering a normal C++ function interface, each on of these relies on "compiler magic" to a significant extent.
-
-### `invalid_reflection`, `is_invalid`
-
-### `members_of`, `enumerators_of`
-
-
-### `substitute`
-
-
-### `entity_ref<T>`, `value_of<T>`, `ptr_to_member<T>`
-
-### `test_type<Pred>`
-
-### `reflect_value`
-
-### `make_struct`, `make_union`
-
-### `make_variable`
-
 
 
 
 # Examples
+
+We start with a number of example that show off what is possible with the proposed set of features.
+It is expected that these are mostly self-explanatory.
+Read ahead to the next section for a more systematic description of each element of this proposal.
 
 ## Back-And-Forth
 
@@ -380,5 +243,261 @@ int main(int argc, char *argv[]) {
 
 (This example is based on a presentation by Matúš Chochlík.)
 
+
+# Proposed Features
+
+## The Reflection Operator (`^`)
+
+The reflection operator produces a reflection value from a grammatical construct (its operand):
+
+> | _unary-expression_:
+> |       ...
+> |       `^` `::`
+> |       `^` _namespace-name_
+> |       `^` _type-id_
+> |       `^` _cast-expression_
+
+Note that _cast-expression_ includes _id-expression_, which in turn can designate templates, member names, etc.
+
+The current proposal requires that the _cast-expression_ be:
+
+  - a _primary-expression_ referring to a function or member function, or
+  - a _primary-expression_ referring to a variable, static data member, or structured binding, or
+  - a _primary-expression_ referring to a nonstatic data member, or
+  - a _primary-expression_ referring to a template, or
+  - a constant-expression.
+
+In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to evaluate to an invalid reflection.
+
+[ DV: I'm not sure that last rule is needed or even desirable.  I know at some point in the discussions it was brought up as desirable, but
+      I don't think anything like it was implemented. ]
+
+
+## Splicers (`[:`...`:]`)
+
+A reflection that is not an invalid reflection can be "spliced" into source code using one of several _splicer_ forms:
+
+ - `[: r :]` produces an _expression_ evaluating to the entity or constant value represented by `r`.
+ - `typename[: r :]` produces a _simple-type-specifier_ corresponding to the type represented by `r`.
+ - `template[: r :]` produces a _template-name_ corresponding to the template represented by `r`.
+ - `namespace[: r :]` produces a _namespace-name_ corresponding to the namespace represented by `r`.
+ - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
+
+Attempting to splice a reflection value that does not meet the requirement of the splice (including "invalid reflections") is ill-formed.
+For example:
+:::bq
+```c++
+typename[: ^:: :] x = 0;  // Error.
+```
+:::
+A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.
+
+
+## `std::meta::info`
+
+The type `std::meta::info` can be defined as follows:
+
+```c++
+namespace std {
+  namespace meta {
+    using info = decltype(^int);
+  }
+}
+```
+
+In our initial proposal a value of type `std::meta::info` can represent:
+
+  - an error (corresponding to an "invalid reflection")
+  - any (C++) type and type-alias
+  - any function or member function
+  - any variable, static data member, or structured binding
+  - any non-static data member
+  - any constant value
+  - any template
+  - any namespace
+
+Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to variables or structured bindings).  For example:
+
+::: bq
+```c++
+int x = 0;
+void g() {
+  [:^x:] = 42;     // Okay.  Same as: x = 42;
+  x = [:^(2*x):];  // Error: "2*x" is a general non-constant expression.
+  constexpr int N = 42;
+  x = [:^(2*N):];  // Okay: "2*N" is a constant-expression.
+}
+```
+:::
+Note that for `^(2*N)` an implementation only has to capture the constant value of `2*N` and not various other properties of the underlying expression (such as any temporaries it involves, etc.).
+
+The type `std::meta::info` is a _scalar_ type. Nontype template arguments of type `std::meta::info` are permitted.
+The entity being reflected can affect the linkage of a template instance involving a reflection.  For example:
+
+:::bq
+```c++
+template<auto R> struct S {};
+
+extern int x;
+static int y;
+
+S<^x> sx;  // S<^x> has external name linkage.
+S<^y> sy;  // S<^y> has internal name linkage.
+```
+:::
+
+Namespace `std::meta` is associated with type `std::meta::info`: That allows the core meta functions to be invoked without explicit qualification.
+For example:
+
+:::bq
+```c++
+#include <meta>
+struct S {};
+std::string name2 = std::meta::name_of(^S);  // Okay.
+std::string name1 = name_of(^S);             // Also okay.
+```
+:::
+
+
+
+
+## Metafunctions
+
+We propose a number of metafunctions declared in namespace `std::meta` to operator on reflection values.
+Adding metafunctions to an implementation is expected to be relatively "easy" compared to implementing the core language features described previously.
+However, despite offering a normal consteval C++ function interface, each on of these relies on "compiler magic" to a significant extent.
+
+### `invalid_reflection`, `is_invalid`, `diagnose_error`
+
+:::bq
+```c++
+consteval auto invalid_reflection(
+                  std::string_view message,
+                  std::source_location src_loc = std::source_location::current())->info;
+consteval auto is_invalid(info)->bool;
+consteval auto is_invalid(std::span<info>)->bool;
+consteval void diagnose_error(info);
+```
+:::
+
+An invalid reflection represents a potential diagnostic for an erroneous construct.
+Some standard metafunctions will generate such invalid reflections, but user programs can also create them with the `invalid_reflection` metafunction.
+`is_invalid` returns true if it is given an invalid reflection or a span containing at least one invalid reflection.
+Evaluating `diagnose_error` renders a program ill-formed.
+If the given reflection is for an invalid reflection, an implementation is encouraged to render the encapsulated message and source position as part of the diagnostic indicating that the program is ill-formed.
+
+
+### `name_of`, `display_name_of`
+
+:::bq
+```c++
+consteval auto name_of(info r)->std::string_view;
+consteval auto display_name_of(info r)->std::string_view;
+}
+```
+:::
+
+Given a reflection `r` that designates a declared entity X, `name_of(r)` returns a `string_view` holding the unqualified name of X.
+For all other reflections, an empty `string_view` is produced.
+For template instances, the name does not include the template argument list.
+The contents of the `string_view` consist of characters of the basic source character set only (an implementation can map other characters using universal character names).
+
+Given a reflection `r`, `display_name_of(r)` returns a unspecified non-empty `string_view`.
+Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
+
+### `type_of`, `parent_of`
+
+:::bq
+```c++
+consteval auto type_of(info r)->info;
+consteval auto parent_of(info r)->info;
+}
+```
+:::
+
+If `r` is a reflection indicating a typed entity, `type_of(r)` is a reflection indicating its type.
+Otherwise, `type_of(r)` produces an invalid reflection.
+
+If `r` is a member of a class or namespace, `parent_of(r)` is a reflection indicating its immediately enclosing class or namespace.
+Otherwise, `parent_of(r)` produces an invalid reflection.
+
+
+### `members_of`, `enumerators_of`
+
+
+### `substitute`
+
+:::bq
+```c++
+consteval auto substitute(info templ, std::span<info> args)->info;
+```
+:::
+
+Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtains by substituting the given arguments in the template.
+This process might kick off instantiations outside the immediate context, which can lead to the program being ill-formed.
+Substitution errors in the immediate context of the template result in an invalid reflection being returned.
+
+Note that the template is only substituted, not instantiated.  For example:
+:::bq
+```c++
+template<typename T> struct S { typename T::X x; };
+
+constexpr auto r = substitute(^S, ^int);  // Okay.
+typename[:r:] si;  // Error: T::X is invalid for T = int.
+```
+:::
+
+### `entity_ref<T>`, `value_of<T>`, `ptr_to_member<T>`
+
+:::bq
+```c++
+template<typename T> auto entity_ref<T>(info var_or_func)->T&;
+template<typename T> auto value_of<T>(info constant_expr)->T;
+template<typename T> auto pointer_to_member<T>(info member)->T;
+```
+:::
+
+If `r` is a reflection `r` for a variable or function of type `T`, `entity_ref<T>(r)` evaluates to a reference to that variable or function.
+Otherwise, `entity_ref<T>(r)` is ill-formed.
+
+If `r` is a reflection for a constant-expression or a constant-valued entity of type `T`, `value_of(r)` evaluates to that constant value.
+Otherwise, `value_of<T>(r)` is ill-formed.
+
+If `r` is a reflection for a non-static member or for a constant pointer-to-member value matching type `T`, `pointer_to_member<T>(r)` evaluates to a corresonding pointer-to-member value.
+Otherwise, `value_of<T>(r)` is ill-formed.
+
+These function may feel similar to splicers, but unlike splicers they do not require their operand to be a constant-expression itself.
+Also unlike splicers, they require knowledge of the type associated with the entity reflected by their operand.
+
+
+### `test_type<Pred>`
+
+:::bq
+```c++
+auto test_type(info type, info templ)->bool {
+  return value_of(substitute(templ, std::vector{type}));
+}
+```
+:::
+
+This utility translates existing metaprogramming predicates (expressed as constexpr variable templates) to the reflection domain.
+For example:
+
+:::bq
+```c++
+struct S {};
+static_assert(test_type(^S, ^std::is_class_v));
+```
+:::
+
+An implementation is permitted to recognize standard predicate templates and implement `test_type` without actually instantiating the predicate template.
+In fact, that is recommended practice.
+
+
+### `reflect_value`
+
+### `make_struct`, `make_union`
+
+### `make_variable`
 
 
