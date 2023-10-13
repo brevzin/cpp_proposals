@@ -421,7 +421,7 @@ Evaluating `diagnose_error` renders a program ill-formed.
 If the given reflection is for an invalid reflection, an implementation is encouraged to render the encapsulated message and source position as part of the diagnostic indicating that the program is ill-formed.
 
 
-### `name_of`, `display_name_of`
+### `name_of`, `display_name_of`, `source_location_of`
 
 :::bq
 ```c++
@@ -439,24 +439,44 @@ The contents of the `string_view` consist of characters of the basic source char
 Given a reflection `r`, `display_name_of(r)` returns a unspecified non-empty `string_view`.
 Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
 
-### `type_of`, `parent_of`
+Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
+Implementations are encouraged to produce the correct source location of the item designated by the reflection.
+
+### `type_of`, `parent_of`, `entity_of`
 
 :::bq
 ```c++
 consteval auto type_of(info r)->info;
 consteval auto parent_of(info r)->info;
+consteval auto entity_of(info r)->info;
 }
 ```
 :::
 
-If `r` is a reflection indicating a typed entity, `type_of(r)` is a reflection indicating its type.
+If `r` is a reflection designating a typed entity, `type_of(r)` is a reflection designating its type.
 Otherwise, `type_of(r)` produces an invalid reflection.
 
-If `r` is a member of a class or namespace, `parent_of(r)` is a reflection indicating its immediately enclosing class or namespace.
+If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or namespace.
 Otherwise, `parent_of(r)` produces an invalid reflection.
 
+If `r` designates an alias, `entity_of(r)` designates the underlying entity.
+Otherwise, `parent_of(r)` produces `r`.
 
-### `members_of`, `enumerators_of`
+
+### `members_of`, `enumerators_of`, `subobjects_of`
+
+:::bq
+```c++
+template<typename ...Fs>
+    consteval auto members_of(info class_type, Fs ...filters)->std::vector<info>;
+template<typename ...Fs>
+    consteval auto enumerators_of(info class_type, Fs ...filters)->std::vector<info>;
+template<typename ...Fs>
+    consteval auto subobjects_of(info class_type, Fs ...filters)->std::vector<info>;
+```
+:::
+
+
 
 
 ### `substitute`
@@ -503,13 +523,15 @@ Otherwise, `value_of<T>(r)` is ill-formed.
 These function may feel similar to splicers, but unlike splicers they do not require their operand to be a constant-expression itself.
 Also unlike splicers, they require knowledge of the type associated with the entity reflected by their operand.
 
-
 ### `test_type<Pred>`
 
 :::bq
 ```c++
-auto test_type(info type, info templ)->bool {
+auto test_type(info templ, info type)->bool {
   return value_of(substitute(templ, std::vector{type}));
+}
+auto test_types(info templ, std::vector<info> types)->bool {
+  return value_of(substitute(templ, types));
 }
 ```
 :::
@@ -520,12 +542,47 @@ For example:
 :::bq
 ```c++
 struct S {};
-static_assert(test_type(^S, ^std::is_class_v));
+static_assert(test_type(^std::is_class_v, ^S));
 ```
 :::
 
 An implementation is permitted to recognize standard predicate templates and implement `test_type` without actually instantiating the predicate template.
 In fact, that is recommended practice.
+
+### Other Singular Reflection Predicates
+
+:::bq
+```c++
+consteval auto is_public(info r)->bool;
+consteval auto is_protected(info r)->bool;
+consteval auto is_private(info r)->bool;
+consteval auto is_accessible(info r)->bool;
+consteval auto is_virtual(info r)->bool;
+consteval auto is_deleted(info entity)->bool;
+consteval auto is_defaulted(info entity)->bool;
+consteval auto is_explicit(info entity)->bool;
+consteval auto is_override(info entity)->bool;
+consteval auto is_pure_virtual(info entity)->bool;
+consteval auto has_static_storage_duration(info r)->bool;
+
+consteval auto is_nsdm(info entity)->bool;
+consteval auto is_base(info entity)->bool;
+consteval auto is_namespace(info entity)->bool;
+consteval auto is_function(info entity)->bool;
+consteval auto is_static(info entity)->bool;
+consteval auto is_variable(info entity)->bool;
+consteval auto is_type(info entity)->bool;
+consteval auto is_alias(info entity)->bool;
+consteval auto is_incomplete_type(info entity)->bool;
+consteval auto is_template(info entity)->bool;
+consteval auto is_function_template(info entity)->bool;
+consteval auto is_variable_template(info entity)->bool;
+consteval auto is_class_template(info entity)->bool;
+consteval auto is_alias_template(info entity)->bool;
+consteval auto has_template_arguments(info r)->bool;
+```
+:::
+
 
 
 ### `reflect_value`
@@ -562,7 +619,13 @@ If `std::meta::synth_struct<NSDMs>` is completed and any of the description entr
 
 `std::meta::synth_union<NSDMs>` is similar but produces a union instead of a struct.
 
-
-### `make_variable`
-
+### Data Layout Reflection
+:::bq
+```c++
+consteval auto byte_offset_of(info entity)->std::size_t {...};
+consteval auto bit_offset_of(info entity)->std::size_t {...};
+consteval auto byte_size_of(info entity)->std::size_t {...};
+consteval auto bit_size_of(info entity)->std::size_t {...};
+```
+:::
 
