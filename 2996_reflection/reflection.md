@@ -63,94 +63,6 @@ Other advantages of a single opaque type include:
     can easily represent a mixed template argument list — containing types and
     nontypes — without fear of slicing values).
 
-# Examples
-
-## Back-And-Forth
-
-Our first example is not meant to be compelling but to show how to go back and forth between the reflection domain and the grammatical domain:
-
-::: bq
-```c++
-constexpr auto r = ^int;
-typename[:r:] x = 42;       // Same as: int x = 42;
-typename[:^char:] c = '*';  // Same as: char c = '*';
-```
-:::
-
-The `typename` prefix can be omitted in the same contexts as with dependent qualified names.  For example:
-
-:::bq
-```c++
-using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typename" prefix.
-```
-:::
-
-## Selecting Members
-
-Our second example enables selecting a member "by number" for a specific type.  It also shows the use of a metafunction dealing with diagnostics:
-
-:::bq
-```c++
-struct S { unsigned i:2, j:6; };
-
-consteval auto member_number(int n) {
-  if (n == 0) return ^S::i;
-  else if (n == 1) return ^S::j;
-  else return std::meta::invalid_reflection("Only field numbers 0 and 1 permitted");
-}
-
-int main() {
-  S s{0, 0};
-  s.[:member_number(1):] = 42;  // Same as: s.j = 42;
-  s.[:member_number(5):] = 0;   // Error (likely with "Only field numbers 0 and 1 permitted" in text).
-}
-```
-:::
-
-This example also illustrates that bit fields are not beyond the reach of this proposal.
-
-## Enum to String
-
-One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements [@P1306R1]):
-
-::: bq
-```c++
-template <typename E>
-  requires std::is_enum_v<E>
-constexpr std::string enum_to_string(E value) {
-  template for (constexpr auto e : std::meta::members_of(^E)) {
-    if (value == [:e:]) {
-      return std::string(std::meta::name_of(e));
-    }
-  }
-
-  return "<unnamed>";
-}
-
-enum Color { red, green, blue };
-static_assert(enum_to_string(Color::red) == "red");
-static_assert(enum_to_string(Color(42)) == "<unnamed>");
-```
-:::
-
-We can also do the reverse in pretty much the same way:
-
-::: bq
-```c++
-template <typename E>
-  requires std::is_enum_v<E>
-constexpr std::optional<E> string_to_enum(std::string_view name) {
-  template for (constexpr auto e : std::meta::members_of(^E)) {
-    if (name == std::meta::name_of(e)) {
-      return [:e:];
-    }
-  }
-
-  return std::nullopt;
-}
-```
-:::
-
 
 # Proposed Features
 
@@ -270,5 +182,203 @@ std::string name1 = name_of(^S);             // Also okay.
 
 
 ## Metafunctions
+
+We propose a number of metafunctions declared in namespace `std::meta` to operator on reflection values.
+Adding metafunctions to an implementation is expected to be relatively "easy" compared to implementing the core language features described previously.
+However, despite offering a normal C++ function interface, each on of these relies on "compiler magic" to a significant extent.
+
+### `invalid_reflection`, `is_invalid`
+
+### `members_of`, `enumerators_of`
+
+
+### `substitute`
+
+
+### `entity_ref<T>`, `value_of<T>`, `ptr_to_member<T>`
+
+### `test_type<Pred>`
+
+### `reflect_value`
+
+### `make_struct`, `make_union`
+
+### `make_variable`
+
+
+
+
+# Examples
+
+## Back-And-Forth
+
+Our first example is not meant to be compelling but to show how to go back and forth between the reflection domain and the grammatical domain:
+
+::: bq
+```c++
+constexpr auto r = ^int;
+typename[:r:] x = 42;       // Same as: int x = 42;
+typename[:^char:] c = '*';  // Same as: char c = '*';
+```
+:::
+
+The `typename` prefix can be omitted in the same contexts as with dependent qualified names.  For example:
+
+:::bq
+```c++
+using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typename" prefix.
+```
+:::
+
+
+## Selecting Members
+
+Our second example enables selecting a member "by number" for a specific type.  It also shows the use of a metafunction dealing with diagnostics:
+
+:::bq
+```c++
+struct S { unsigned i:2, j:6; };
+
+consteval auto member_number(int n) {
+  if (n == 0) return ^S::i;
+  else if (n == 1) return ^S::j;
+  else return std::meta::invalid_reflection("Only field numbers 0 and 1 permitted");
+}
+
+int main() {
+  S s{0, 0};
+  s.[:member_number(1):] = 42;  // Same as: s.j = 42;
+  s.[:member_number(5):] = 0;   // Error (likely with "Only field numbers 0 and 1 permitted" in text).
+}
+```
+:::
+
+This example also illustrates that bit fields are not beyond the reach of this proposal.
+
+
+## Fast Generation of Integer Sequence
+
+:::bq
+```c++
+#include <utility>
+#include <vector>
+
+template<typename T>
+consteval info make_integer_seq_refl(T N) {
+  std::vector args{^T};
+  for (T k = 0; k<N; ++k)  args.push_back(std::meta::reflect_value(k));
+  return substitute(^std::integer_sequence, args);
+}
+
+template<typename T>
+  using make_integer_sequence<typename T, T N> = [:make_integer_seq_refl<T>(N):];
+```
+:::
+
+
+## Enum to String
+
+One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements [@P1306R1]):
+
+::: bq
+```c++
+template <typename E>
+  requires std::is_enum_v<E>
+constexpr std::string enum_to_string(E value) {
+  template for (constexpr auto e : std::meta::members_of(^E)) {
+    if (value == [:e:]) {
+      return std::string(std::meta::name_of(e));
+    }
+  }
+
+  return "<unnamed>";
+}
+
+enum Color { red, green, blue };
+static_assert(enum_to_string(Color::red) == "red");
+static_assert(enum_to_string(Color(42)) == "<unnamed>");
+```
+:::
+
+We can also do the reverse in pretty much the same way:
+
+::: bq
+```c++
+template <typename E>
+  requires std::is_enum_v<E>
+constexpr std::optional<E> string_to_enum(std::string_view name) {
+  template for (constexpr auto e : std::meta::members_of(^E)) {
+    if (name == std::meta::name_of(e)) {
+      return [:e:];
+    }
+  }
+
+  return std::nullopt;
+}
+```
+:::
+
+
+## Parsing Command-Line Options
+
+Our next example shows how command-line options could be automatically mapped to an "options" structure.
+For simplicity, we posit the existence of a range-like class type `ProgramArgs` that collects the traditional `(argc, argv)` parameters in a more friendly package.
+This example also uses an expansion statement for simplicity.
+
+::: bq
+```c++
+#include <sstream>
+#include <string>
+#include <meta>
+#include <ProgramArgs.h>
+
+template<typename Opts> bool parse_options(Opts *opts, ProgramArgs const &args) {
+  using namespace std;
+  using namespace std::meta;
+  bool success = true;
+  for (auto const arg = args.begin(); args != args.end(); ++args) {
+    template for(constexpr auto dm: members_of(^Opts, is_nonstatic_data_member)) {
+      if (arg->is_option_with_name(name_of(dm))) {
+        // Arg is of the form "--word" where "word" is the name of dm.
+        // Move to the option value, but remember the option tag:
+        auto const opt_arg = arg++;
+        if (arg == args.end()) {
+          cerr << "Option " << string(opt_arg) << " is missing a value." << endl;
+          success = false;
+          break;
+        }
+        using T = typename[:type_of(dm):];
+        if constexpr (requires (T d, istringstream is) { is >> d; }) {
+          T val;
+          istringstream is(string(*arg));
+          is >> val;
+          opts->[:dm:] = val;
+        } else {
+          cerr << "Option " << string(opt_arg) << " value \"" << string(arg)
+               << "\" is no match for type << display_name_of(^T) << "." << endl;
+          success = false;
+        }
+      }
+    }
+  }
+  return success;
+}
+
+struct MyOpts {
+   string file_name = "input.txt";  // Option "--file_name <string>"
+  int    count = 1;                // Option "--count <int>"
+} opts;
+
+int main(int argc, char *argv[]) {
+  ProgramArgs  cmd_line_args(argc, argv);
+  if (!parse_options(&opts, cmd_line_args)) {
+    return 1;
+  }   ...
+}
+
+```
+
+(This example is based on a presentation by Matúš Chochlík.)
+
 
 
