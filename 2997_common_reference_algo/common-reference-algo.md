@@ -14,7 +14,7 @@ tag: ranges
 
 # Introduction
 
-Consider the following example ([compiler-explorer](https://godbolt.org/z/Pcb9639YG)):
+Consider the following example ([compiler-explorer](https://godbolt.org/z/4d98Es9Ez)):
 
 ::: bq
 ```cpp
@@ -30,7 +30,7 @@ struct Iterator {
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
 
-    auto operator*() const -> C;
+    auto operator*() const -> C&&;
     auto operator++() -> Iterator&;
     auto operator++(int) -> void;
     auto operator==(Iterator const&) const -> bool;
@@ -38,8 +38,7 @@ struct Iterator {
 
 static_assert(std::input_iterator<Iterator>);
 static_assert(std::same_as<std::iter_value_t<Iterator>, C>);
-static_assert(std::same_as<std::iter_reference_t<Iterator>, C>);
-static_assert(std::same_as<std::iter_common_reference_t<Iterator>, C>);
+static_assert(std::same_as<std::iter_reference_t<Iterator>, C&&>);
 
 struct R {
     auto begin() -> Iterator;
@@ -47,7 +46,7 @@ struct R {
 };
 
 static_assert(std::ranges::range<R>);
-static_assert(std::same_as<std::ranges::range_reference_t<R>, C>);
+static_assert(std::same_as<std::ranges::range_reference_t<R>, C&&>);
 
 auto f(R r) -> void {
     std::ranges::for_each(r, [](auto&& c){
@@ -57,7 +56,9 @@ auto f(R r) -> void {
 ```
 :::
 
-It's a bit lengthy, but the important part is that `R` is a range of prvalue `C` - `Iterator` is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn't matter, it just makes the example smaller).
+It's a bit lengthy, but the important part is that `R` is a range of xvalue [^xvalue] `C` - `Iterator` is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn't matter, it just makes the example smaller).
+
+[^xvalue]: The exact same issue comes up for a range of prvalues, arguably in a more surprising way. But a range of prvalue is effectively turned into a range of xvalue by way of projecting `identity`, so it's the same behavior. Note also that the use `identity` doesn't prevent prvalue elision - `std::invoke` already does that.
 
 The above example is trying to simply invoke `c.f()` for every `c` in `r`. When written using a `for` loop, the code compiles. But when written using `std::ranges::for_each`, it does not. The compile error on gcc 13.2 is:
 
@@ -67,10 +68,10 @@ The above example is trying to simply invoke `c.f()` for every `c` in `r`. When 
 /opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:2569:55:   required from 'struct std::__result_of_impl<false, false, f(R)::<lambda(auto:62&&)>&, const C&>'
 /opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:3077:12:   recursively required by substitution of 'template<class _Result, class _Ret> struct std::__is_invocable_impl<_Result, _Ret, true, std::__void_t<typename _CTp::type> > [with _Result = std::__invoke_result<f(R)::<lambda(auto:62&&)>&, const C&>; _Ret = void]'
 /opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:3077:12:   required from 'struct std::is_invocable<f(R)::<lambda(auto:62&&)>&, const C&>'
-<source>:38:26:   recursively required by substitution of 'template<class _Range, class _Proj, class _Fun>  requires (input_range<_Range>) && (indirectly_unary_invocable<_Fun, typename std::__detail::__projected<decltype(std::ranges::__cust_access::__begin((declval<_Container&>)())), _Proj>::__type>) constexpr std::ranges::for_each_result<std::ranges::borrowed_iterator_t<_Range>, _Fun> std::ranges::__for_each_fn::operator()(_Range&&, _Fun, _Proj) const [with _Range = R&; _Proj = std::identity; _Fun = f(R)::<lambda(auto:62&&)>]'
-<source>:38:26:   required from here
-<source>:39:12: error: passing 'const C' as 'this' argument discards qualifiers [-fpermissive]
-   39 |         c.f();
+<source>:32:26:   recursively required by substitution of 'template<class _Range, class _Proj, class _Fun>  requires (input_range<_Range>) && (indirectly_unary_invocable<_Fun, typename std::__detail::__projected<decltype(std::ranges::__cust_access::__begin((declval<_Container&>)())), _Proj>::__type>) constexpr std::ranges::for_each_result<std::ranges::borrowed_iterator_t<_Range>, _Fun> std::ranges::__for_each_fn::operator()(_Range&&, _Fun, _Proj) const [with _Range = R&; _Proj = std::identity; _Fun = f(R)::<lambda(auto:62&&)>]'
+<source>:32:26:   required from here
+<source>:33:12: error: passing 'const C' as 'this' argument discards qualifiers [-fpermissive]
+   33 |         c.f();
       |         ~~~^~
 <source>:5:10: note:   in call to 'void C::f()'
     5 |     auto f() -> void;
@@ -112,7 +113,11 @@ template<indirectly_readable I, indirectly_regular_unary_invocable<I> Proj>
 ```
 :::
 
-And the relevant concept for us in this algorithm is this one:
+In our example, `projected<Iterator, identity>` has the same `value_type` (`C`) and `reference` (`C&&`) as `Iterator`, so we'll ignore `projected` going forward [^issue], since it doesn't change anything.
+
+[^issue]: [@LWG3859] Had suggested to special-case `projected` for `identity` to solve a related issue, and as the previous footnote indicates, had `Iterator`'s `reference` been a prvalue, it would look like the use `identity` as the projection actually caused the issue. But that would be a red herring, which is why we're using an `Iterator` over xvalues as the example instead.
+
+The relevant concept for us in this algorithm is this one:
 
 ::: bq
 ```cpp
@@ -129,17 +134,16 @@ template<class F, class I>
 ```
 :::
 
-What the code example needs to do is validate that our lambda satisfies `indirectly_unary_invocable<I>`, where `I` is `projected<Iterator, identity>`. Before we go through the constraints, it's worth first start with what all the iterator types actually are, because there's a lot and it's easy to get confused.
+What the code example needs to do is validate that our lambda satisfies `indirectly_unary_invocable<I>`, where `I` is actually `projected<Iterator, identity>`, but as just noted we can simply treat this as `Iterator`. Before we go through the constraints, it's worth first start with what all the iterator types actually are, because there's a lot and it's easy to get confused.
 
-<table>
-<tr><th/><th>`Iterator`</th><th>`projected<Iterator, identity>`</th></tr>
-<tr><td>`value_type`</td><td>`C`</td><td>`C`</td></tr>
-<tr><td>`$indirect-value-t$`</td><td>`C&`</td><td>`C&`</td></tr>
-<tr><td>`reference`</td><td>`C`</td><td>`C&&`</td></tr>
-<tr><td>`common_reference`</td><td>`C`</td><td>`C const&`</td></tr>
-</table>
+|Associated Type|Type|
+|-|-|
+|`value_type`|`C`|
+|`$indirect-value-t$`|`C&`|
+|`reference`|`C&&`|
+|`common_reference`|`C const&`|
 
-Now, the left column actually doesn't matter here - although those are probably the types that users expect to be relevant. After all, we are not using a projection in our algorithm call, so why do the projected types matter? But because we can't propagate prvalues, `projected<Iterator, identity>` does actually differ from `Iterator` - because the reference type becomes an rvalue reference, which causes the common reference type to become a reference to const.
+That the `common_reference` between `C&` and `C&&` comes out as `C const&` might be initially surprising, but really the only other type it could be is `C` - and that would mean that initializing a common *reference* would always be either a copy (from `C&`) or move (from `C&&`), which isn't really what we're going for here.
 
 As a result, if we go through our four constraints:
 
@@ -151,8 +155,6 @@ As a result, if we go through our four constraints:
 |`common_reference_with<..., ...>`|✔️|
 
 That third one fails, because we're trying to invoke our lambda with a `C const&`, which instantiates the lambda - which doesn't have any constraints - and the instantiation of the body (to figure out the return type) causes the compiler to instantiate that `c.f()` call, which isn't valid for a `C const`. Hard error.
-
-It's worth it to point out here that this issue wouldn't just come up for ranges of prvalues, the same would be true if `R` was a range of `C&&` (e.g. `std::generator<C>` or `std::vector<C> | views::as_rvalue`). In that case, both columns of the `Iterator` vs `projected<Iterator, identity>` table would look the same as the right column does above. Either way - we start with a range in which nothing is `const` and end up with a requirement that the callable is invocable with a `const&`.
 
 ## Ok, but... why?
 
@@ -204,13 +206,15 @@ That’s a `bool&` and a `vector<bool>::reference`. Ouch!
 
 The blog goes on to point out that one way to resolve this is by having the lambda take both parameters as `auto&&`. But having to _require_ a generic lambda is a bit... much. This was the reason we have the idea of a `common_reference`. Rewriting the above to be:
 
+::: bq
 ```cpp
-using R = std::iter_common_reference_t<std::vector<bool>::reference>;
+using R = std::iter_common_reference_t<std::vector<bool>::iterator>;
 __unique_copy(
   vb.begin(), vb.end(),
   std::ostream_iterator<bool>{std::cout, " "},
   [](R b1, R b2) { return b1 == b2; }, (bool*)0 );
 ```
+:::
 
 This now works. And that is now the requirement that we have for iterators, that they be `indirectly_readable` - which, among other things, requires that there be a `common_reference` between the iterator's `reference` type and the iterator's `value_type&`.
 
@@ -248,12 +252,12 @@ template<class F, class I>
 
 Excluding the check that `I` is an iterator and `F` is copyable, we have 4 other checks here:
 
-1. that `F&` is invocable with `iter_value_t<I&>` (`$indirect-value-t$<I>` is basically this, but in a way that will work correctly through projections, which we don't have to worry about in this paper)
+1. that `F&` is invocable with `iter_value_t<I>&` (`$indirect-value-t$<I>` is basically this, but in a way that will work correctly through projections, which we don't have to worry about in this paper)
 2. that `F&` is invocable with `iter_reference_t<I>`
 3. that `F&` is invocable with `iter_common_reference_t<I>`
 4. that the results of invocations (1) and (2) have a common reference
 
-Notably, (3) is kind of the odd man out in this concept. Algorithms certainly may need to invoke `F` with `iter_value_t<I&>` and with `iter_reference_t<I>` (as in the `unique_copy` example above, which does both). But algorithms don't need to interally construct a common reference ever.
+Notably, (3) is kind of the odd man out in this concept. Algorithms certainly may need to invoke `F` with `iter_value_t<I>&` and with `iter_reference_t<I>` (as in the `unique_copy` example above, which does both). But algorithms don't need to interally construct a common reference ever.
 
 Moreover, we check we can invoke `F` with the common reference - but while we check that value/reference invocations are compatible, we don't actually check that the common reference invocation is compatible with... either of the other two? It could just do something different entirely? It's not clear what the point of this part of the concept actually is.
 
@@ -274,29 +278,29 @@ namespace std {
     concept indirectly_unary_invocable =
       indirectly_readable<I> &&
       copy_constructible<F> &&
-      invocable<F&, $indirect-value-t<I>$> &&
+      invocable<F&, $indirect-value-t$<I>> &&
       invocable<F&, iter_reference_t<I>> &&
 -     invocable<F&, iter_common_reference_t<I>> &&
       common_reference_with<
-        invoke_result_t<F&, $indirect-value-t<I>$>,
+        invoke_result_t<F&, $indirect-value-t$<I>>,
         invoke_result_t<F&, iter_reference_t<I>>>;
 
   template<class F, class I>
     concept indirectly_regular_unary_invocable =
       indirectly_readable<I> &&
       copy_constructible<F> &&
-      regular_invocable<F&, $indirect-value-t<I>$> &&
+      regular_invocable<F&, $indirect-value-t$<I>> &&
       regular_invocable<F&, iter_reference_t<I>> &&
 -     regular_invocable<F&, iter_common_reference_t<I>> &&
       common_reference_with<
-        invoke_result_t<F&, $indirect-value-t<I>$>,
+        invoke_result_t<F&, $indirect-value-t$<I>>,
         invoke_result_t<F&, iter_reference_t<I>>>;
 
   template<class F, class I>
     concept indirect_unary_predicate =
       indirectly_readable<I> &&
       copy_constructible<F> &&
-      predicate<F&, $indirect-value-t<I>$> &&
+      predicate<F&, $indirect-value-t$<I>> &&
 -     predicate<F&, iter_reference_t<I>>@[ &&]{.diffdel}@
 -     predicate<F&, iter_common_reference_t<I>>;
 +     predicate<F&, iter_reference_t<I>>@[;]{.diffins}@

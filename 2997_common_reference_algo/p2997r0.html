@@ -578,7 +578,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>Consider the following example (<a href="https://godbolt.org/z/Pcb9639YG">compiler-explorer</a>):</p>
+<p>Consider the following example (<a href="https://godbolt.org/z/4d98Es9Ez">compiler-explorer</a>):</p>
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="pp">#include </span><span class="im">&lt;ranges&gt;</span></span>
@@ -592,7 +592,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-10"><a href="#cb1-10"></a>    <span class="kw">using</span> difference_type <span class="op">=</span> std<span class="op">::</span><span class="dt">ptrdiff_t</span>;</span>
 <span id="cb1-11"><a href="#cb1-11"></a>    <span class="kw">using</span> iterator_category <span class="op">=</span> std<span class="op">::</span>input_iterator_tag;</span>
 <span id="cb1-12"><a href="#cb1-12"></a></span>
-<span id="cb1-13"><a href="#cb1-13"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> C;</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> C<span class="op">&amp;&amp;</span>;</span>
 <span id="cb1-14"><a href="#cb1-14"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> Iterator<span class="op">&amp;</span>;</span>
 <span id="cb1-15"><a href="#cb1-15"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
 <span id="cb1-16"><a href="#cb1-16"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">==(</span>Iterator <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
@@ -600,24 +600,23 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-18"><a href="#cb1-18"></a></span>
 <span id="cb1-19"><a href="#cb1-19"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>input_iterator<span class="op">&lt;</span>Iterator<span class="op">&gt;)</span>;</span>
 <span id="cb1-20"><a href="#cb1-20"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_value_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
-<span id="cb1-21"><a href="#cb1-21"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
-<span id="cb1-22"><a href="#cb1-22"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_common_reference_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
-<span id="cb1-23"><a href="#cb1-23"></a></span>
-<span id="cb1-24"><a href="#cb1-24"></a><span class="kw">struct</span> R <span class="op">{</span></span>
-<span id="cb1-25"><a href="#cb1-25"></a>    <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">-&gt;</span> Iterator;</span>
-<span id="cb1-26"><a href="#cb1-26"></a>    <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> Iterator;</span>
-<span id="cb1-27"><a href="#cb1-27"></a><span class="op">}</span>;</span>
-<span id="cb1-28"><a href="#cb1-28"></a></span>
-<span id="cb1-29"><a href="#cb1-29"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>range<span class="op">&lt;</span>R<span class="op">&gt;)</span>;</span>
-<span id="cb1-30"><a href="#cb1-30"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, C<span class="op">&gt;)</span>;</span>
-<span id="cb1-31"><a href="#cb1-31"></a></span>
-<span id="cb1-32"><a href="#cb1-32"></a><span class="kw">auto</span> f<span class="op">(</span>R r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb1-33"><a href="#cb1-33"></a>    std<span class="op">::</span>ranges<span class="op">::</span>for_each<span class="op">(</span>r, <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> c<span class="op">){</span></span>
-<span id="cb1-34"><a href="#cb1-34"></a>        c<span class="op">.</span>f<span class="op">()</span>;</span>
-<span id="cb1-35"><a href="#cb1-35"></a>    <span class="op">})</span>;</span>
-<span id="cb1-36"><a href="#cb1-36"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>iter_reference_t<span class="op">&lt;</span>Iterator<span class="op">&gt;</span>, C<span class="op">&amp;&amp;&gt;)</span>;</span>
+<span id="cb1-22"><a href="#cb1-22"></a></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="kw">struct</span> R <span class="op">{</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>    <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">-&gt;</span> Iterator;</span>
+<span id="cb1-25"><a href="#cb1-25"></a>    <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> Iterator;</span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="op">}</span>;</span>
+<span id="cb1-27"><a href="#cb1-27"></a></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>range<span class="op">&lt;</span>R<span class="op">&gt;)</span>;</span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, C<span class="op">&amp;&amp;&gt;)</span>;</span>
+<span id="cb1-30"><a href="#cb1-30"></a></span>
+<span id="cb1-31"><a href="#cb1-31"></a><span class="kw">auto</span> f<span class="op">(</span>R r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb1-32"><a href="#cb1-32"></a>    std<span class="op">::</span>ranges<span class="op">::</span>for_each<span class="op">(</span>r, <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> c<span class="op">){</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a>        c<span class="op">.</span>f<span class="op">()</span>;</span>
+<span id="cb1-34"><a href="#cb1-34"></a>    <span class="op">})</span>;</span>
+<span id="cb1-35"><a href="#cb1-35"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>It’s a bit lengthy, but the important part is that <code class="sourceCode cpp">R</code> is a range of prvalue <code class="sourceCode cpp">C</code> - <code class="sourceCode cpp">Iterator</code> is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn’t matter, it just makes the example smaller).</p>
+<p>It’s a bit lengthy, but the important part is that <code class="sourceCode cpp">R</code> is a range of xvalue<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> <code class="sourceCode cpp">C</code> - <code class="sourceCode cpp">Iterator</code> is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn’t matter, it just makes the example smaller).</p>
 <p>The above example is trying to simply invoke <code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">()</span></code> for every <code class="sourceCode cpp">c</code> in <code class="sourceCode cpp">r</code>. When written using a <code class="sourceCode cpp"><span class="cf">for</span></code> loop, the code compiles. But when written using <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>for_each</code>, it does not. The compile error on gcc 13.2 is:</p>
 <blockquote>
 <pre><code>
@@ -625,10 +624,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 /opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:2569:55:   required from &#39;struct std::__result_of_impl<false, false, f(R)::<lambda(auto:62&&)>&amp;, const C&amp;&gt;&#39;
 /opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:3077:12:   recursively required by substitution of &#39;template<class _Result, class _Ret> struct std::__is_invocable_impl&lt;_Result, _Ret, true, std::__void_t<typename _CTp::type> &gt; [with _Result = std::__invoke_result<f(R)::<lambda(auto:62&&)>&amp;, const C&amp;&gt;; _Ret = void]&#39;
 /opt/compiler-explorer/gcc-13.2.0/include/c++/13.2.0/type_traits:3077:12:   required from &#39;struct std::is_invocable<f(R)::<lambda(auto:62&&)>&amp;, const C&amp;&gt;&#39;
-<source>:38:26:   recursively required by substitution of &#39;template<class _Range, class _Proj, class _Fun>  requires (input_range&lt;_Range&gt;) &amp;&amp; (indirectly_unary_invocable&lt;_Fun, typename std::__detail::__projected<decltype(std::ranges::__cust_access::__begin((declval<_Container&>)())), _Proj&gt;::__type&gt;) constexpr std::ranges::for_each_result<std::ranges::borrowed_iterator_t<_Range>, _Fun&gt; std::ranges::__for_each_fn::operator()(_Range&amp;&amp;, _Fun, _Proj) const [with _Range = R&amp;; _Proj = std::identity; _Fun = f(R)::<lambda(auto:62&&)>]&#39;
-<source>:38:26:   required from here
-<source>:39:12: error: passing &#39;const C&#39; as &#39;this&#39; argument discards qualifiers [-fpermissive]
-   39 |         c.f();
+<source>:32:26:   recursively required by substitution of &#39;template<class _Range, class _Proj, class _Fun>  requires (input_range&lt;_Range&gt;) &amp;&amp; (indirectly_unary_invocable&lt;_Fun, typename std::__detail::__projected<decltype(std::ranges::__cust_access::__begin((declval<_Container&>)())), _Proj&gt;::__type&gt;) constexpr std::ranges::for_each_result<std::ranges::borrowed_iterator_t<_Range>, _Fun&gt; std::ranges::__for_each_fn::operator()(_Range&amp;&amp;, _Fun, _Proj) const [with _Range = R&amp;; _Proj = std::identity; _Fun = f(R)::<lambda(auto:62&&)>]&#39;
+<source>:32:26:   required from here
+<source>:33:12: error: passing &#39;const C&#39; as &#39;this&#39; argument discards qualifiers [-fpermissive]
+   33 |         c.f();
       |         ~~~^~
 <source>:5:10: note:   in call to &#39;void C::f()&#39;
     5 |     auto f() -&gt; void;
@@ -659,7 +658,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-11"><a href="#cb3-11"></a><span class="kw">template</span><span class="op">&lt;</span>indirectly_readable I, indirectly_regular_unary_invocable<span class="op">&lt;</span>I<span class="op">&gt;</span> Proj<span class="op">&gt;</span></span>
 <span id="cb3-12"><a href="#cb3-12"></a>  <span class="kw">using</span> projected <span class="op">=</span> <em>projected-impl</em><span class="op">&lt;</span>I, Proj<span class="op">&gt;::</span>type;</span></code></pre></div>
 </blockquote>
-<p>And the relevant concept for us in this algorithm is this one:</p>
+<p>In our example, <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code> has the same <code class="sourceCode cpp">value_type</code> (<code class="sourceCode cpp">C</code>) and <code class="sourceCode cpp">reference</code> (<code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code>) as <code class="sourceCode cpp">Iterator</code>, so we’ll ignore <code class="sourceCode cpp">projected</code> going forward,<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> since it doesn’t change anything.</p>
+<p>The relevant concept for us in this algorithm is this one:</p>
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> I<span class="op">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">concept</span> indirectly_unary_invocable <span class="op">=</span></span>
@@ -672,63 +672,38 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-9"><a href="#cb4-9"></a>      invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, <em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;&gt;</span>,</span>
 <span id="cb4-10"><a href="#cb4-10"></a>      invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;</span>, iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;&gt;</span>;</span></code></pre></div>
 </blockquote>
-<p>What the code example needs to do is validate that our lambda satisfies <code class="sourceCode cpp">indirectly_unary_invocable<span class="op">&lt;</span>I<span class="op">&gt;</span></code>, where <code class="sourceCode cpp">I</code> is <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code>. Before we go through the constraints, it’s worth first start with what all the iterator types actually are, because there’s a lot and it’s easy to get confused.</p>
+<p>What the code example needs to do is validate that our lambda satisfies <code class="sourceCode cpp">indirectly_unary_invocable<span class="op">&lt;</span>I<span class="op">&gt;</span></code>, where <code class="sourceCode cpp">I</code> is actually <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code>, but as just noted we can simply treat this as <code class="sourceCode cpp">Iterator</code>. Before we go through the constraints, it’s worth first start with what all the iterator types actually are, because there’s a lot and it’s easy to get confused.</p>
 <table>
-<tr>
-<th></th>
-<th>
-<code class="sourceCode cpp">Iterator</code>
-</th>
-<th>
-<code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code>
-</th>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Associated Type</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Type</strong>
+</div></th>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">value_type</code>
-</td>
-<td>
-<code class="sourceCode cpp">C</code>
-</td>
-<td>
-<code class="sourceCode cpp">C</code>
-</td>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">value_type</code></td>
+<td><code class="sourceCode cpp">C</code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp"><em>indirect-value-t</em></code>
-</td>
-<td>
-<code class="sourceCode cpp">C<span class="op">&amp;</span></code>
-</td>
-<td>
-<code class="sourceCode cpp">C<span class="op">&amp;</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp"><em>indirect-value-t</em></code></td>
+<td><code class="sourceCode cpp">C<span class="op">&amp;</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">reference</code>
-</td>
-<td>
-<code class="sourceCode cpp">C</code>
-</td>
-<td>
-<code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code>
-</td>
+<tr class="odd">
+<td><code class="sourceCode cpp">reference</code></td>
+<td><code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code></td>
 </tr>
-<tr>
-<td>
-<code class="sourceCode cpp">common_reference</code>
-</td>
-<td>
-<code class="sourceCode cpp">C</code>
-</td>
-<td>
-<code class="sourceCode cpp">C <span class="kw">const</span><span class="op">&amp;</span></code>
-</td>
+<tr class="even">
+<td><code class="sourceCode cpp">common_reference</code></td>
+<td><code class="sourceCode cpp">C <span class="kw">const</span><span class="op">&amp;</span></code></td>
 </tr>
+</tbody>
 </table>
-<p>Now, the left column actually doesn’t matter here - although those are probably the types that users expect to be relevant. After all, we are not using a projection in our algorithm call, so why do the projected types matter? But because we can’t propagate prvalues, <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code> does actually differ from <code class="sourceCode cpp">Iterator</code> - because the reference type becomes an rvalue reference, which causes the common reference type to become a reference to const.</p>
+<p>That the <code class="sourceCode cpp">common_reference</code> between <code class="sourceCode cpp">C<span class="op">&amp;</span></code> and <code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code> comes out as <code class="sourceCode cpp">C <span class="kw">const</span><span class="op">&amp;</span></code> might be initially surprising, but really the only other type it could be is <code class="sourceCode cpp">C</code> - and that would mean that initializing a common <em>reference</em> would always be either a copy (from <code class="sourceCode cpp">C<span class="op">&amp;</span></code>) or move (from <code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code>), which isn’t really what we’re going for here.</p>
 <p>As a result, if we go through our four constraints:</p>
 <table>
 <thead>
@@ -761,7 +736,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>That third one fails, because we’re trying to invoke our lambda with a <code class="sourceCode cpp">C <span class="kw">const</span><span class="op">&amp;</span></code>, which instantiates the lambda - which doesn’t have any constraints - and the instantiation of the body (to figure out the return type) causes the compiler to instantiate that <code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">()</span></code> call, which isn’t valid for a <code class="sourceCode cpp">C <span class="kw">const</span></code>. Hard error.</p>
-<p>It’s worth it to point out here that this issue wouldn’t just come up for ranges of prvalues, the same would be true if <code class="sourceCode cpp">R</code> was a range of <code class="sourceCode cpp">C<span class="op">&amp;&amp;</span></code> (e.g. <code class="sourceCode cpp">std<span class="op">::</span>generator<span class="op">&lt;</span>C<span class="op">&gt;</span></code> or <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>C<span class="op">&gt;</span> <span class="op">|</span> views<span class="op">::</span>as_rvalue</code>). In that case, both columns of the <code class="sourceCode cpp">Iterator</code> vs <code class="sourceCode cpp">projected<span class="op">&lt;</span>Iterator, identity<span class="op">&gt;</span></code> table would look the same as the right column does above. Either way - we start with a range in which nothing is <code class="sourceCode cpp"><span class="kw">const</span></code> and end up with a requirement that the callable is invocable with a <code class="sourceCode cpp"><span class="kw">const</span><span class="op">&amp;</span></code>.</p>
 <h2 data-number="1.2" id="ok-but-why"><span class="header-section-number">1.2</span> Ok, but… why?<a href="#ok-but-why" class="self-link"></a></h2>
 <p>We have to go back to Eric Niebler’s four-part series on iterators <span class="citation" data-cites="niebler.iter.0">[<a href="#ref-niebler.iter.0" role="doc-biblioref">niebler.iter.0</a>]</span> <span class="citation" data-cites="niebler.iter.1">[<a href="#ref-niebler.iter.1" role="doc-biblioref">niebler.iter.1</a>]</span> <span class="citation" data-cites="niebler.iter.2">[<a href="#ref-niebler.iter.2" role="doc-biblioref">niebler.iter.2</a>]</span> <span class="citation" data-cites="niebler.iter.3">[<a href="#ref-niebler.iter.3" role="doc-biblioref">niebler.iter.3</a>]</span>. There, he introduced an algorithm <code class="sourceCode cpp">unique_copy</code> which looks like this:</p>
 <div class="quote">
@@ -797,11 +771,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>That’s a <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">&amp;</span></code> and a <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference</code>. Ouch!</p>
 </div>
 <p>The blog goes on to point out that one way to resolve this is by having the lambda take both parameters as <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">&amp;&amp;</span></code>. But having to <em>require</em> a generic lambda is a bit… much. This was the reason we have the idea of a <code class="sourceCode cpp">common_reference</code>. Rewriting the above to be:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">using</span> R <span class="op">=</span> std<span class="op">::</span>iter_common_reference_t<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>reference<span class="op">&gt;</span>;</span>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">using</span> R <span class="op">=</span> std<span class="op">::</span>iter_common_reference_t<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;::</span>iterator<span class="op">&gt;</span>;</span>
 <span id="cb8-2"><a href="#cb8-2"></a>__unique_copy<span class="op">(</span></span>
 <span id="cb8-3"><a href="#cb8-3"></a>  vb<span class="op">.</span>begin<span class="op">()</span>, vb<span class="op">.</span>end<span class="op">()</span>,</span>
 <span id="cb8-4"><a href="#cb8-4"></a>  std<span class="op">::</span>ostream_iterator<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;{</span>std<span class="op">::</span>cout, <span class="st">&quot; &quot;</span><span class="op">}</span>,</span>
 <span id="cb8-5"><a href="#cb8-5"></a>  <span class="op">[](</span>R b1, R b2<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> b1 <span class="op">==</span> b2; <span class="op">}</span>, <span class="op">(</span><span class="dt">bool</span><span class="op">*)</span><span class="dv">0</span> <span class="op">)</span>;</span></code></pre></div>
+</blockquote>
 <p>This now works. And that is now the requirement that we have for iterators, that they be <code class="sourceCode cpp">indirectly_readable</code> - which, among other things, requires that there be a <code class="sourceCode cpp">common_reference</code> between the iterator’s <code class="sourceCode cpp">reference</code> type and the iterator’s <code class="sourceCode cpp">value_type<span class="op">&amp;</span></code>.</p>
 <p>That is: the common reference is the type that you can use as the parameter of a non-generic callable that you pass into an algorithm, to ensure that both forms (<code class="sourceCode cpp">value</code> and <code class="sourceCode cpp"><span class="op">*</span>it</code> above) that the implementation might use to invoke the callable work.</p>
 <h2 data-number="1.3" id="common-reference-is-for-parameters"><span class="header-section-number">1.3</span> Common Reference is for Parameters<a href="#common-reference-is-for-parameters" class="self-link"></a></h2>
@@ -828,12 +804,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Excluding the check that <code class="sourceCode cpp">I</code> is an iterator and <code class="sourceCode cpp">F</code> is copyable, we have 4 other checks here:</p>
 <ol type="1">
-<li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&amp;&gt;</span></code> (<code class="sourceCode cpp"><em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;</span></code> is basically this, but in a way that will work correctly through projections, which we don’t have to worry about in this paper)</li>
+<li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;&amp;</span></code> (<code class="sourceCode cpp"><em>indirect-value-t</em><span class="op">&lt;</span>I<span class="op">&gt;</span></code> is basically this, but in a way that will work correctly through projections, which we don’t have to worry about in this paper)</li>
 <li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code></li>
 <li>that <code class="sourceCode cpp">F<span class="op">&amp;</span></code> is invocable with <code class="sourceCode cpp">iter_common_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code></li>
 <li>that the results of invocations (1) and (2) have a common reference</li>
 </ol>
-<p>Notably, (3) is kind of the odd man out in this concept. Algorithms certainly may need to invoke <code class="sourceCode cpp">F</code> with <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&amp;&gt;</span></code> and with <code class="sourceCode cpp">iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code> (as in the <code class="sourceCode cpp">unique_copy</code> example above, which does both). But algorithms don’t need to interally construct a common reference ever.</p>
+<p>Notably, (3) is kind of the odd man out in this concept. Algorithms certainly may need to invoke <code class="sourceCode cpp">F</code> with <code class="sourceCode cpp">iter_value_t<span class="op">&lt;</span>I<span class="op">&gt;&amp;</span></code> and with <code class="sourceCode cpp">iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span></code> (as in the <code class="sourceCode cpp">unique_copy</code> example above, which does both). But algorithms don’t need to interally construct a common reference ever.</p>
 <p>Moreover, we check we can invoke <code class="sourceCode cpp">F</code> with the common reference - but while we check that value/reference invocations are compatible, we don’t actually check that the common reference invocation is compatible with… either of the other two? It could just do something different entirely? It’s not clear what the point of this part of the concept actually is.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The common reference type exists to be able to merge multiple ranges and to provide users with a way to write a non-generic callable. But the requirement that callables be invocable with the iterator’s common reference type isn’t a useful requirement for any algorithm. And while we require this invocability, we don’t even require that this invocation (which no algorithm uses) is compatible with the invocations that the algorithms do use. This check seems to simply reject valid code (as in the original example) while providing no value.</p>
@@ -847,29 +823,29 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-3"><a href="#cb10-3"></a>    concept indirectly_unary_invocable =</span>
 <span id="cb10-4"><a href="#cb10-4"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
 <span id="cb10-5"><a href="#cb10-5"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
-<span id="cb10-6"><a href="#cb10-6"></a>      invocable&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt; &amp;&amp;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>      invocable&lt;F&amp;, <em>indirect-value-t</em>&lt;I&gt;&gt; &amp;&amp;</span>
 <span id="cb10-7"><a href="#cb10-7"></a>      invocable&lt;F&amp;, iter_reference_t&lt;I&gt;&gt; &amp;&amp;</span>
 <span id="cb10-8"><a href="#cb10-8"></a><span class="st">-     invocable&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt; &amp;&amp;</span></span>
 <span id="cb10-9"><a href="#cb10-9"></a>      common_reference_with&lt;</span>
-<span id="cb10-10"><a href="#cb10-10"></a>        invoke_result_t&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt;,</span>
+<span id="cb10-10"><a href="#cb10-10"></a>        invoke_result_t&lt;F&amp;, <em>indirect-value-t</em>&lt;I&gt;&gt;,</span>
 <span id="cb10-11"><a href="#cb10-11"></a>        invoke_result_t&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;&gt;;</span>
 <span id="cb10-12"><a href="#cb10-12"></a></span>
 <span id="cb10-13"><a href="#cb10-13"></a>  template&lt;class F, class I&gt;</span>
 <span id="cb10-14"><a href="#cb10-14"></a>    concept indirectly_regular_unary_invocable =</span>
 <span id="cb10-15"><a href="#cb10-15"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
 <span id="cb10-16"><a href="#cb10-16"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
-<span id="cb10-17"><a href="#cb10-17"></a>      regular_invocable&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt; &amp;&amp;</span>
+<span id="cb10-17"><a href="#cb10-17"></a>      regular_invocable&lt;F&amp;, <em>indirect-value-t</em>&lt;I&gt;&gt; &amp;&amp;</span>
 <span id="cb10-18"><a href="#cb10-18"></a>      regular_invocable&lt;F&amp;, iter_reference_t&lt;I&gt;&gt; &amp;&amp;</span>
 <span id="cb10-19"><a href="#cb10-19"></a><span class="st">-     regular_invocable&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt; &amp;&amp;</span></span>
 <span id="cb10-20"><a href="#cb10-20"></a>      common_reference_with&lt;</span>
-<span id="cb10-21"><a href="#cb10-21"></a>        invoke_result_t&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt;,</span>
+<span id="cb10-21"><a href="#cb10-21"></a>        invoke_result_t&lt;F&amp;, <em>indirect-value-t</em>&lt;I&gt;&gt;,</span>
 <span id="cb10-22"><a href="#cb10-22"></a>        invoke_result_t&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;&gt;;</span>
 <span id="cb10-23"><a href="#cb10-23"></a></span>
 <span id="cb10-24"><a href="#cb10-24"></a>  template&lt;class F, class I&gt;</span>
 <span id="cb10-25"><a href="#cb10-25"></a>    concept indirect_unary_predicate =</span>
 <span id="cb10-26"><a href="#cb10-26"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
 <span id="cb10-27"><a href="#cb10-27"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
-<span id="cb10-28"><a href="#cb10-28"></a>      predicate&lt;F&amp;, $indirect-value-t&lt;I&gt;$&gt; &amp;&amp;</span>
+<span id="cb10-28"><a href="#cb10-28"></a>      predicate&lt;F&amp;, <em>indirect-value-t</em>&lt;I&gt;&gt; &amp;&amp;</span>
 <span id="cb10-29"><a href="#cb10-29"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
 <span id="cb10-30"><a href="#cb10-30"></a><span class="st">-     predicate&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt;;</span></span>
 <span id="cb10-31"><a href="#cb10-31"></a><span class="va">+     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;<span class="diffins">;</span></span></span>
@@ -911,6 +887,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-LWG3859">
+<p>[LWG3859] Hewill Kang. std::projected cannot handle proxy iterator. <br />
+<a href="https://wg21.link/lwg3859">https://wg21.link/lwg3859</a></p>
+</div>
 <div id="ref-niebler.iter.0">
 <p>[niebler.iter.0] Eric Niebler. 2015. To Be or Not to Be (an Iterator). <br />
 <a href="http://ericniebler.com/2015/01/28/to-be-or-not-to-be-an-iterator/">http://ericniebler.com/2015/01/28/to-be-or-not-to-be-an-iterator/</a></p>
@@ -928,6 +908,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <a href="http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/">http://ericniebler.com/2015/03/03/iterators-plus-plus-part-3/</a></p>
 </div>
 </div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>The exact same issue comes up for a range of prvalues, arguably in a more surprising way. But a range of prvalue is effectively turned into a range of xvalue by way of projecting <code class="sourceCode cpp">identity</code>, so it’s the same behavior. Note also that the use <code class="sourceCode cpp">identity</code> doesn’t prevent prvalue elision - <code class="sourceCode cpp">std<span class="op">::</span>invoke</code> already does that.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p><span class="citation" data-cites="LWG3859">[<a href="#ref-LWG3859" role="doc-biblioref">LWG3859</a>]</span> Had suggested to special-case <code class="sourceCode cpp">projected</code> for <code class="sourceCode cpp">identity</code> to solve a related issue, and as the previous footnote indicates, had <code class="sourceCode cpp">Iterator</code>’s <code class="sourceCode cpp">reference</code> been a prvalue, it would look like the use <code class="sourceCode cpp">identity</code> as the projection actually caused the issue. But that would be a red herring, which is why we’re using an <code class="sourceCode cpp">Iterator</code> over xvalues as the example instead.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
 </div>
 </div>
 </body>
