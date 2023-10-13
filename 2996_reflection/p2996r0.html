@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-11" />
+  <meta name="dcterms.date" content="2023-10-12" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-11</td>
+    <td>2023-10-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -573,6 +573,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#back-and-forth"><span class="toc-section-number">2.1</span> Back-And-Forth<span></span></a></li>
 <li><a href="#selecting-members"><span class="toc-section-number">2.2</span> Selecting Members<span></span></a></li>
+<li><a href="#enum-to-string"><span class="toc-section-number">2.3</span> Enum to String<span></span></a></li>
 </ul></li>
 <li><a href="#proposed-features"><span class="toc-section-number">3</span> Proposed Features<span></span></a>
 <ul>
@@ -634,6 +635,39 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb3-13"><a href="#cb3-13"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This example also illustrates that bit fields are not beyond the reach of this proposal.</p>
+<h2 data-number="2.3" id="enum-to-string"><span class="header-section-number">2.3</span> Enum to String<a href="#enum-to-string" class="self-link"></a></h2>
+<p>One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span>):</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> E<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">requires</span> std<span class="op">::</span>is_enum_v<span class="op">&lt;</span>E<span class="op">&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">constexpr</span> std<span class="op">::</span>string enum_to_string<span class="op">(</span>E value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> e <span class="op">:</span> std<span class="op">::</span>meta<span class="op">::</span>members_of<span class="op">(^</span>E<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="cf">if</span> <span class="op">(</span>value <span class="op">==</span> <span class="op">[:</span>e<span class="op">:])</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>      <span class="cf">return</span> std<span class="op">::</span>string<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(</span>e<span class="op">))</span>;</span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>  <span class="op">}</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a></span>
+<span id="cb4-10"><a href="#cb4-10"></a>  <span class="cf">return</span> <span class="st">&quot;&lt;unnamed&gt;&quot;</span>;</span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="op">}</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="kw">enum</span> Color <span class="op">{</span> red, green, blue <span class="op">}</span>;</span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="kw">static_assert</span><span class="op">(</span>enum_to_string<span class="op">(</span>Color<span class="op">::</span>red<span class="op">)</span> <span class="op">==</span> <span class="st">&quot;red&quot;</span><span class="op">)</span>;</span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="kw">static_assert</span><span class="op">(</span>enum_to_string<span class="op">(</span>Color<span class="op">(</span><span class="dv">42</span><span class="op">))</span> <span class="op">==</span> <span class="st">&quot;&lt;unnamed&gt;&quot;</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>We can also do the reverse in pretty much the same way:</p>
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> E<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">requires</span> std<span class="op">::</span>is_enum_v<span class="op">&lt;</span>E<span class="op">&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">constexpr</span> std<span class="op">::</span>optional<span class="op">&lt;</span>E<span class="op">&gt;</span> string_to_enum<span class="op">(</span>std<span class="op">::</span>string_view name<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> e <span class="op">:</span> std<span class="op">::</span>meta<span class="op">::</span>members_of<span class="op">(^</span>E<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>    <span class="cf">if</span> <span class="op">(</span>name <span class="op">==</span> std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(</span>e<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>      <span class="cf">return</span> <span class="op">[:</span>e<span class="op">:]</span>;</span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="op">}</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>  <span class="op">}</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a></span>
+<span id="cb5-10"><a href="#cb5-10"></a>  <span class="cf">return</span> std<span class="op">::</span>nullopt;</span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposed-features"><span class="header-section-number">3</span> Proposed Features<a href="#proposed-features" class="self-link"></a></h1>
 <h2 data-number="3.1" id="the-reflection-operator"><span class="header-section-number">3.1</span> The Reflection Operator (<code class="sourceCode cpp"><span class="op">^</span></code>)<a href="#the-reflection-operator" class="self-link"></a></h2>
 <p>The reflection operator produces a reflection value from a grammatical construct (its operand):</p>
@@ -666,15 +700,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp"><span class="op">[:</span>r<span class="op">:]::</span></code> produces a <em>nested-name-specifier</em> corresponding to the namespace, enumeration type, or class type represented by <code class="sourceCode cpp">r</code>.</li>
 </ul>
 <p>Attempting to splice a reflection value that does not meet the requirement of the splice (including “invalid reflections”) is ill-formed. For example: :::bq</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">typename</span><span class="op">[:</span> <span class="op">^::</span> <span class="op">:]</span> x <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// Error.</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">typename</span><span class="op">[:</span> <span class="op">^::</span> <span class="op">:]</span> x <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// Error.</span></span></code></pre></div>
 <p>::: A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.</p>
 <h2 data-number="3.3" id="stdmetainfo"><span class="header-section-number">3.3</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><a href="#stdmetainfo" class="self-link"></a></h2>
 <p>The type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can be defined as follows:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">namespace</span> meta <span class="op">{</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">int</span><span class="op">)</span>;</span>
-<span id="cb5-4"><a href="#cb5-4"></a>  <span class="op">}</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>  <span class="kw">namespace</span> meta <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>    <span class="kw">using</span> info <span class="op">=</span> <span class="kw">decltype</span><span class="op">(^</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="op">}</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="op">}</span></span></code></pre></div>
 <p>In our initial proposal a value of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can represent:</p>
 <ul>
 <li>an error (corresponding to an “invalid reflection”)</li>
@@ -688,31 +722,31 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>Notably absent at this time are general non-constant expressions (that aren’t <em>expression-id</em>s referring to variables or structured bindings). For example:</p>
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>  <span class="op">[:^</span>x<span class="op">:]</span> <span class="op">=</span> <span class="dv">42</span>;     <span class="co">// Okay.  Same as: x = 42;</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>  x <span class="op">=</span> <span class="op">[:^(</span><span class="dv">2</span><span class="op">*</span>x<span class="op">):]</span>;  <span class="co">// Error: &quot;2*x&quot; is a general non-constant expression.</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a>  <span class="kw">constexpr</span> <span class="dt">int</span> N <span class="op">=</span> <span class="dv">42</span>;</span>
-<span id="cb6-6"><a href="#cb6-6"></a>  x <span class="op">=</span> <span class="op">[:^(</span><span class="dv">2</span><span class="op">*</span>N<span class="op">):]</span>;  <span class="co">// Okay: &quot;2*N&quot; is a constant-expression.</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>  <span class="op">[:^</span>x<span class="op">:]</span> <span class="op">=</span> <span class="dv">42</span>;     <span class="co">// Okay.  Same as: x = 42;</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>  x <span class="op">=</span> <span class="op">[:^(</span><span class="dv">2</span><span class="op">*</span>x<span class="op">):]</span>;  <span class="co">// Error: &quot;2*x&quot; is a general non-constant expression.</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>  <span class="kw">constexpr</span> <span class="dt">int</span> N <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb8-6"><a href="#cb8-6"></a>  x <span class="op">=</span> <span class="op">[:^(</span><span class="dv">2</span><span class="op">*</span>N<span class="op">):]</span>;  <span class="co">// Okay: &quot;2*N&quot; is a constant-expression.</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Note that for <code class="sourceCode cpp"><span class="op">^(</span><span class="dv">2</span><span class="op">*</span>N<span class="op">)</span></code> an implementation only has to capture the constant value of <code class="sourceCode cpp"><span class="dv">2</span><span class="op">*</span>N</code> and not various other properties of the underlying expression (such as any temporaries it involves, etc.).</p>
 <p>The type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> is a <em>scalar</em> type. Nontype template arguments of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> are permitted. The entity being reflected can affect the linkage of a template instance involving a reflection. For example:</p>
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">auto</span> R<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{}</span>;</span>
-<span id="cb7-2"><a href="#cb7-2"></a></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">extern</span> <span class="dt">int</span> x;</span>
-<span id="cb7-4"><a href="#cb7-4"></a><span class="kw">static</span> <span class="dt">int</span> y;</span>
-<span id="cb7-5"><a href="#cb7-5"></a></span>
-<span id="cb7-6"><a href="#cb7-6"></a>S<span class="op">&lt;^</span>x<span class="op">&gt;</span> sx;  <span class="co">// S&lt;^x&gt; has external name linkage.</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>S<span class="op">&lt;^</span>y<span class="op">&gt;</span> sy;  <span class="co">// S&lt;^y&gt; has internal name linkage.</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">auto</span> R<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="kw">extern</span> <span class="dt">int</span> x;</span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="kw">static</span> <span class="dt">int</span> y;</span>
+<span id="cb9-5"><a href="#cb9-5"></a></span>
+<span id="cb9-6"><a href="#cb9-6"></a>S<span class="op">&lt;^</span>x<span class="op">&gt;</span> sx;  <span class="co">// S&lt;^x&gt; has external name linkage.</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>S<span class="op">&lt;^</span>y<span class="op">&gt;</span> sy;  <span class="co">// S&lt;^y&gt; has internal name linkage.</span></span></code></pre></div>
 </blockquote>
 <p>Namespace <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is associated with type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>: That allows the core meta functions to be invoked without explicit qualification. For example:</p>
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
-<span id="cb8-3"><a href="#cb8-3"></a>std<span class="op">::</span>string name2 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(^</span>S<span class="op">)</span>;  <span class="co">// Okay.</span></span>
-<span id="cb8-4"><a href="#cb8-4"></a>std<span class="op">::</span>string name1 <span class="op">=</span> name_of<span class="op">(^</span>S<span class="op">)</span>;             <span class="co">// Also okay.</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<span id="cb10-3"><a href="#cb10-3"></a>std<span class="op">::</span>string name2 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>name_of<span class="op">(^</span>S<span class="op">)</span>;  <span class="co">// Okay.</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>std<span class="op">::</span>string name1 <span class="op">=</span> name_of<span class="op">(^</span>S<span class="op">)</span>;             <span class="co">// Also okay.</span></span></code></pre></div>
 </blockquote>
 <h2 data-number="3.4" id="metafunctions"><span class="header-section-number">3.4</span> Metafunctions<a href="#metafunctions" class="self-link"></a></h2>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
@@ -720,6 +754,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="ref-P1240R2">
 <p>[P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal Vali. 2022-01-14. Scalable Reflection. <br />
 <a href="https://wg21.link/p1240r2">https://wg21.link/p1240r2</a></p>
+</div>
+<div id="ref-P1306R1">
+<p>[P1306R1] Andrew Sutton, Sam Goodrick, Daveed Vandevoorde. 2019-01-21. Expansion statements. <br />
+<a href="https://wg21.link/p1306r1">https://wg21.link/p1306r1</a></p>
 </div>
 <div id="ref-P2237R0">
 <p>[P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <br />

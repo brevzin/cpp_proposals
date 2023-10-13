@@ -109,6 +109,47 @@ int main() {
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
+## Enum to String
+
+One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements [@P1306R1]):
+
+::: bq
+```c++
+template <typename E>
+  requires std::is_enum_v<E>
+constexpr std::string enum_to_string(E value) {
+  template for (constexpr auto e : std::meta::members_of(^E)) {
+    if (value == [:e:]) {
+      return std::string(std::meta::name_of(e));
+    }
+  }
+
+  return "<unnamed>";
+}
+
+enum Color { red, green, blue };
+static_assert(enum_to_string(Color::red) == "red");
+static_assert(enum_to_string(Color(42)) == "<unnamed>");
+```
+:::
+
+We can also do the reverse in pretty much the same way:
+
+::: bq
+```c++
+template <typename E>
+  requires std::is_enum_v<E>
+constexpr std::optional<E> string_to_enum(std::string_view name) {
+  template for (constexpr auto e : std::meta::members_of(^E)) {
+    if (name == std::meta::name_of(e)) {
+      return [:e:];
+    }
+  }
+
+  return std::nullopt;
+}
+```
+:::
 
 
 # Proposed Features
