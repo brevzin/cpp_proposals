@@ -115,7 +115,7 @@ template<indirectly_readable I, indirectly_regular_unary_invocable<I> Proj>
 
 In our example, `projected<Iterator, identity>` has the same `value_type` (`C`) and `reference` (`C&&`) as `Iterator`, so we'll ignore `projected` going forward [^issue], since it doesn't change anything.
 
-[^issue]: [@LWG3859] Had suggested to special-case `projected` for `identity` to solve a related issue, and as the previous footnote indicates, had `Iterator`'s `reference` been a prvalue, it would look like the use `identity` as the projection actually caused the issue. But that would be a red herring, which is why we're using an `Iterator` over xvalues as the example instead.
+[^issue]: [@LWG3859] had suggested to special casing `projected` for `identity` to solve a related issue, and as the previous footnote indicates, had `Iterator`'s `reference` been a prvalue, it would look like the use `identity` as the projection actually caused the issue. But that would be a red herring, which is why we're using an `Iterator` over xvalues as the example instead.
 
 The relevant concept for us in this algorithm is this one:
 
