@@ -4,9 +4,19 @@ document: P2996R0
 date: today
 audience: EWG
 author:
-    - name: Lots
-    - name: Of
-    - name: People
+    - name: Wyatt Childers
+      email: <wcc@edg.com>
+    - name: Peter Dimov
+      email: <pdimov@gmail.com>
+    - name: Barry Revzin
+      email: <barry.revzin@gmail.com>
+    - name: Andrew Sutton
+      email: <andrew.n.sutton@gmail.com>
+    - name: Faisal Vali
+      email: <faisalv@gmail.com>
+    - name: Daveed Vandevoorde
+      email: <daveed@edg.com>
+
 toc: true
 ---
 
