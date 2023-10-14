@@ -299,6 +299,44 @@ template<typename I, typename... Ts>
 
 This example uses a "magic" `std::meta::synth_struct` template along with member reflection through the `members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 
+## Struct to Struct of Arrays
+
+::: bq
+```c++
+consteval auto make_struct_of_arrays(std::meta::info type, size_t n) -> std::meta::info {
+  std::vector<info> members;
+  for (std::meta::info member : members_of(type, std::meta::is_nonstatic_data_member)) {
+    auto array_type = substitute(^std::array, {type_of(member), reflect_value(n)});
+    members.push_back(make_nsdm_field(array_type, {.name = name_of(member)}));
+  }
+  return std::meta::synth_struct(members);
+}
+
+template <typename T, size_t N>
+using struct_of_arrays = [: make_struct_of_arrays(^T, N) :];
+```
+:::
+
+Example:
+
+::: bq
+```c++
+struct point {
+  float x;
+  float y;
+  float z;
+};
+
+using points = struct_of_arrays<point, 30>;
+// equivalent to:
+// struct points {
+//   std::array<float, 30> x;
+//   std::array<float, 30> y;
+//   std::array<float, 30> z;
+// };
+```
+:::
+
 ## A Universal Print Function
 
 This example is taken from Boost.Describe, translated to using `std::format` instead of iostreams:
