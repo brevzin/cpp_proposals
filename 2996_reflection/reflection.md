@@ -350,6 +350,21 @@ int main() {
 ```
 :::
 
+## Implementing hash_append
+
+Based on the [@N3980] API:
+
+::: bq
+```cpp
+template <typename H, typename T> requires std::is_standard_layout_v<T>
+void hash_append(H& algo, T const& t) {
+    template for (constexpr auto mem : members_of(^T, std::meta::is_nonstatic_data_members)) {
+        hash_append(algo, t.[:mem:]);
+    }
+}
+```
+:::
+
 # Proposed Features
 
 ## The Reflection Operator (`^`)
