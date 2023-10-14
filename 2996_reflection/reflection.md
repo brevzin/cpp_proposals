@@ -227,7 +227,7 @@ Our next example shows how a command-line option parser could work by automatica
 template<typename Opts>
 auto parse_options(std::span<std::string_view const> args) -> Opts {
   Opts opts;
-  template for (constexpr auto dm : members_of(^Opts, std::meta::is_nonstatic_data_members)) {
+  template for (constexpr auto dm : members_of(^Opts, std::meta::is_nonstatic_data_member)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
         return args.starts_with("--") && args.substr(2) == name_of(dm);
@@ -396,7 +396,7 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-    template for (constexpr auto mem : members_of(^T, std::meta::is_nonstatic_data_members)) {
+    template for (constexpr auto mem : members_of(^T, std::meta::is_nonstatic_data_member)) {
         hash_append(algo, t.[:mem:]);
     }
 }
