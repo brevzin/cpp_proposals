@@ -572,7 +572,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#notable-additions-to-p1240"><span class="toc-section-number">1.1</span> Notable Additions to P1240<span></span></a></li>
 <li><a href="#why-a-single-opaque-reflection-type"><span class="toc-section-number">1.2</span> Why a single opaque reflection type?<span></span></a></li>
-<li><a href="#additional-language-features"><span class="toc-section-number">1.3</span> Additional Language Features<span></span></a></li>
 </ul></li>
 <li><a href="#examples"><span class="toc-section-number">2</span> Examples<span></span></a>
 <ul>
@@ -583,8 +582,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#parsing-command-line-options"><span class="toc-section-number">2.5</span> Parsing Command-Line Options<span></span></a></li>
 <li><a href="#a-simple-tuple-type"><span class="toc-section-number">2.6</span> A Simple Tuple Type<span></span></a></li>
 <li><a href="#struct-to-struct-of-arrays"><span class="toc-section-number">2.7</span> Struct to Struct of Arrays<span></span></a></li>
-<li><a href="#a-universal-print-function"><span class="toc-section-number">2.8</span> A Universal Print Function<span></span></a></li>
-<li><a href="#implementing-hash_append"><span class="toc-section-number">2.9</span> Implementing hash_append<span></span></a></li>
+<li><a href="#a-universal-formatter"><span class="toc-section-number">2.8</span> A Universal Formatter<span></span></a></li>
+<li><a href="#implementing-member-wise-hash_append"><span class="toc-section-number">2.9</span> Implementing member-wise <code class="sourceCode cpp">hash_append</code><span></span></a></li>
 <li><a href="#converting-a-struct-to-a-tuple"><span class="toc-section-number">2.10</span> Converting a Struct to a Tuple<span></span></a></li>
 </ul></li>
 <li><a href="#proposed-features"><span class="toc-section-number">3</span> Proposed Features<span></span></a>
@@ -633,14 +632,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>it is trivially extensible (no types need to be added to represent additional language elements and meta-elements as the language evolves), and</li>
 <li>it allows convenient collections of heterogeneous constructs without having to surface reference semantics (e.g., a <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span></code> can easily represent a mixed template argument list — containing types and nontypes — without fear of slicing values).</li>
 </ul>
-<h2 data-number="1.3" id="additional-language-features"><span class="header-section-number">1.3</span> Additional Language Features<a href="#additional-language-features" class="self-link"></a></h2>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="examples"><span class="header-section-number">2</span> Examples<a href="#examples" class="self-link"></a></h1>
+<p>We start with a number of examples that show off what is possible with the proposed set of features. It is expected that these are mostly self-explanatory. Read ahead to the next sections for a more systematic description of each element of this proposal.</p>
 <p>A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:</p>
 <ul>
 <li>expansion statements <span class="citation" data-cites="P1306R1">[<a href="#ref-P1306R1" role="doc-biblioref">P1306R1</a>]</span></li>
 <li>non-transient constexpr allocation <span class="citation" data-cites="P0784R7">[<a href="#ref-P0784R7" role="doc-biblioref">P0784R7</a>]</span> <span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> <span class="citation" data-cites="P2670R1">[<a href="#ref-P2670R1" role="doc-biblioref">P2670R1</a>]</span></li>
 </ul>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="examples"><span class="header-section-number">2</span> Examples<a href="#examples" class="self-link"></a></h1>
-<p>We start with a number of examples that show off what is possible with the proposed set of features. It is expected that these are mostly self-explanatory. Read ahead to the next sections for a more systematic description of each element of this proposal.</p>
 <h2 data-number="2.1" id="back-and-forth"><span class="header-section-number">2.1</span> Back-And-Forth<a href="#back-and-forth" class="self-link"></a></h2>
 <p>Our first example is not meant to be compelling but to show how to go back and forth between the reflection domain and the grammatical domain:</p>
 <blockquote>
@@ -841,8 +839,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb11-12"><a href="#cb11-12"></a><span class="co">//   std::array&lt;float, 30&gt; z;</span></span>
 <span id="cb11-13"><a href="#cb11-13"></a><span class="co">// };</span></span></code></pre></div>
 </blockquote>
-<h2 data-number="2.8" id="a-universal-print-function"><span class="header-section-number">2.8</span> A Universal Print Function<a href="#a-universal-print-function" class="self-link"></a></h2>
-<p>This example is taken from Boost.Describe, translated to using <code class="sourceCode cpp">std<span class="op">::</span>format</code> instead of iostreams:</p>
+<h2 data-number="2.8" id="a-universal-formatter"><span class="header-section-number">2.8</span> A Universal Formatter<a href="#a-universal-formatter" class="self-link"></a></h2>
+<p>This example is taken from Boost.Describe:</p>
 <blockquote>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">struct</span> universal_formatter <span class="op">{</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> parse<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> ctx<span class="op">.</span>begin<span class="op">()</span>; <span class="op">}</span></span>
@@ -886,7 +884,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb12-40"><a href="#cb12-40"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, Z<span class="op">())</span>; <span class="co">// Z{X{.m1 = 1}, Y{.m2 = 2}, .m3 = 3, .m4 = 4}</span></span>
 <span id="cb12-41"><a href="#cb12-41"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<h2 data-number="2.9" id="implementing-hash_append"><span class="header-section-number">2.9</span> Implementing hash_append<a href="#implementing-hash_append" class="self-link"></a></h2>
+<h2 data-number="2.9" id="implementing-member-wise-hash_append"><span class="header-section-number">2.9</span> Implementing member-wise <code class="sourceCode cpp">hash_append</code><a href="#implementing-member-wise-hash_append" class="self-link"></a></h2>
 <p>Based on the <span class="citation" data-cites="N3980">[<a href="#ref-N3980" role="doc-biblioref">N3980</a>]</span> API:</p>
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> H, <span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">requires</span> std<span class="op">::</span>is_standard_layout_v<span class="op">&lt;</span>T<span class="op">&gt;</span></span>

@@ -81,18 +81,17 @@ Other advantages of a single opaque type include:
     can easily represent a mixed template argument list — containing types and
     nontypes — without fear of slicing values).
 
-## Additional Language Features
-
-A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
-
-* expansion statements [@P1306R1]
-* non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
 
 # Examples
 
 We start with a number of examples that show off what is possible with the proposed set of features.
 It is expected that these are mostly self-explanatory.
 Read ahead to the next sections for a more systematic description of each element of this proposal.
+
+A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
+
+* expansion statements [@P1306R1]
+* non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
 
 ## Back-And-Forth
 
@@ -351,9 +350,9 @@ using points = struct_of_arrays<point, 30>;
 ```
 :::
 
-## A Universal Print Function
+## A Universal Formatter
 
-This example is taken from Boost.Describe, translated to using `std::format` instead of iostreams:
+This example is taken from Boost.Describe:
 
 ::: bq
 ```cpp
@@ -401,7 +400,7 @@ int main() {
 ```
 :::
 
-## Implementing hash_append
+## Implementing member-wise `hash_append`
 
 Based on the [@N3980] API:
 
