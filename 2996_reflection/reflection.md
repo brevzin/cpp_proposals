@@ -350,6 +350,113 @@ using points = struct_of_arrays<point, 30>;
 ```
 :::
 
+## Parsing Command-Line Options II
+
+Now that we've seen a couple examples of using `std::meta::synth_struct` to create a type, we can create a more sophisticated command-line parser example. This isn't a complete implementation, but hopefully is enough to demonstrate the utility. This is the opening example for [clap](https://docs.rs/clap/latest/clap/):
+
+::: bq
+```c++
+struct Args : Clap {
+  Option<std::string, {.use_short=true, use_long=true}> name;
+  Option<int, {.use_short=true, .use_long=true}> count = 1;
+};
+
+int main(int argc, char** argv) {
+  auto opts = Args{}.parse(argc, argv);
+
+  for (int i = 0; i < opts.count; ++i) {
+    std::print("Hello {}!", opts.name);
+  }
+}
+```
+:::
+
+Which we can implement like this:
+
+::: bq
+```c++
+struct Flags {
+  bool use_short;
+  bool use_long;
+};
+
+// type that has a member optional<T> with some suitable constructors and members
+template <typename T, Flags flags>
+struct Option;
+
+// convert a type (all of whose non-static data members are specializations of Option)
+// to a type that is just the appropriate members.
+// For example, if type is a reflection of
+// struct {
+//   Option<std::string, {.use_short=true, use_long=true}> name;
+//   Option<int, {.use_short=true, .use_long=true}> count = 1;
+// };
+// then this function would evaluate to a reflection of the type
+// struct {
+//   std::string name;
+//   int count;
+// }
+consteval auto spec_to_opts(std::meta::info type) -> std::meta::info {
+  std::vector<std::meta::info> new_members;
+  for (std::meta::info member : nonstatic_data_members_of(type)) {
+    auto new_type = template_arguments_of(type_of(member))[0];
+    new_members.push_back(nsdm_description(new_type, {.name=name_of(members)}));
+  }
+  return std::meta::synth_struct(new_members);
+}
+
+struct Clap {
+  template <typename Spec>
+  auto parse(this Spec const& spec, int argc, char** argv) {
+    std::vector<std::string_view> cmdline(argv+1, argv+argc)
+
+    // check if cmdline contains --help, etc.
+
+    using Opts = [: spec_to_opts(^Spec) :];
+    Opts opts;
+
+    template for (constexpr auto [sm, om] : std::views::zip(nonstatic_data_members_of(^Spec),
+                                                            nonstatic_data_members_of(^Opts))) {
+      auto const& cur = spec.[:sm:];
+      constexpr auto type = type_of(om);
+
+      // find the argument associated with this option
+      auto it = std::ranges::find_if(cmdline,
+        [&](std::string_view arg){
+          return (cur.use_short && arg.starts_with("-") && arg.substr(1) == name_of(sm))
+              || (cur.use_long && arg.starts_with("--") && arg.substr(2) == name_of(sm));
+        });
+
+      if (it == cmdline.end()) {
+        if constexpr (template_of(om) == ^std::optional) {
+          // the type is optional, so the argument is too
+          continue;
+        } else if (cur.initializer) {
+          // the type isn't optional, but an initializer is provided, use that
+          opts.[:om:] = *cur.initializer;
+          continue;
+        } else {
+          std::print(stderr, "Missing required option {}\n", name_of(sm));
+          std::exit(EXIT_FAILURE);
+        }
+      } else if (it + 1 == cmdline.end()) {
+        std::print(stderr, "Option {} for {} is missing a value\n", *it, name_of(sm));
+        std::exit(EXIT_FAILURE);
+      }
+
+      auto iss = ispanstream(it[1]);
+      if (iss >> opts.[:om:]; !iss) {
+        std::print(stderr, "Failed to parse {:?} into option {} of type {}\n",
+          *it, name_of(sm), display_name_of(type));
+        std::exit(EXIT_FAILURE);
+      }
+    }
+    return opts;
+  }
+}
+```
+:::
+
 ## A Universal Formatter
 
 This example is taken from Boost.Describe:
