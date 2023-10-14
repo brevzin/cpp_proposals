@@ -81,6 +81,13 @@ Other advantages of a single opaque type include:
     can easily represent a mixed template argument list — containing types and
     nontypes — without fear of slicing values).
 
+## Additional Language Features
+
+A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
+
+* expansion statements [@P1306R1]
+* non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
+
 # Examples
 
 We start with a number of examples that show off what is possible with the proposed set of features.
@@ -159,7 +166,7 @@ template<typename T, T N>
 
 ## Enum to String
 
-One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements [@P1306R1]):
+One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements):
 
 ::: bq
 ```c++
@@ -199,7 +206,7 @@ constexpr std::optional<E> string_to_enum(std::string_view name) {
 ```
 :::
 
-But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]):
+But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation):
 
 ::: bq
 ```c++
@@ -234,7 +241,7 @@ Our next example shows how a command-line option parser could work by automatica
 template<typename Opts>
 auto parse_options(std::span<std::string_view const> args) -> Opts {
   Opts opts;
-  template for (constexpr auto dm : nonstatic_members_of(^Opts)) {
+  template for (constexpr auto dm : nonstatic_data_members_of(^Opts)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
         return args.starts_with("--") && args.substr(2) == name_of(dm);
@@ -297,7 +304,7 @@ template<typename I, typename... Ts>
 
 template<typename I, typename... Ts>
   constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
-    return t.data.[:nonstatic_members_of(^decltype(t.data))[I]:];
+    return t.data.[:nonstatic_data_members_of(^decltype(t.data))[I]:];
   }
 
 // Similarly for other value categories...
@@ -312,7 +319,7 @@ This example uses a "magic" `std::meta::synth_struct` template along with member
 ```c++
 consteval auto make_struct_of_arrays(std::meta::info type, size_t n) -> std::meta::info {
   std::vector<info> new_members;
-  for (std::meta::info member : nonstatic_members_of(type)) {
+  for (std::meta::info member : nonstatic_data_members_of(type)) {
     auto array_type = substitute(^std::array, {type_of(member), reflect_value(n)});
     new_members.push_back(nsdm_description(array_type, {.name = name_of(member)}));
   }
@@ -370,7 +377,7 @@ struct universal_formatter {
       out = std::format_to(out, "{}", static_cast<[:base:] const&>(t));
     }
 
-    template for (constexpr auto mem : nonstatic_members_of(^T)) {
+    template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
       delim();
       out = std::format_to(out, ".{}={}", name_of(mem), t.[:mem:]);
     }
@@ -402,7 +409,7 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-    template for (constexpr auto mem : nonstatic_members_of(^T)) {
+    template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
         hash_append(algo, t.[:mem:]);
     }
 }
@@ -417,7 +424,7 @@ This approach requires allowing packs in structured bindings [@P1061R5], but can
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = nonstatic_members_of(^T);
+  constexpr auto members = nonstatic_data_members_of(^T);
 
   constexpr auto indices = []{
     std::array<int, members.size()> indices;
@@ -437,7 +444,7 @@ An alternative approach is:
 ```cpp
 consteval auto tuple_to_struct_type(info type) -> info {
   return substitute(^std::tuple,
-                    nonstatic_members_of(type)
+                    nonstatic_data_members_of(type)
                     | std::ranges::transform(std::meta::type_of)
                     | std::ranges::transform(std::meta::remove_cvref)
                     | std::ranges::to<std::vector>());
@@ -453,7 +460,7 @@ constexpr auto struct_to_tuple(From const& from) {
   using To = [: tuple_to_struct_type(^From): ];
 
   std::vector args = {^To, ^From};
-  for (auto mem : nonstatic_members_of(^From)) {
+  for (auto mem : nonstatic_data_members_of(^From)) {
     args.push_back(reflect_value(mem));
   }
 
@@ -658,7 +665,7 @@ If `r` designates an alias, `entity_of(r)` designates the underlying entity.
 Otherwise, `entity_of(r)` produces `r`.
 
 
-### `members_of`, `nonstatic_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
+### `members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
 
 :::bq
 ```c++
@@ -666,7 +673,7 @@ namespace std::meta {
   template<typename ...Fs>
     consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto nonstatic_members_of(info class_type, Fs ...filters) -> vector<info> {
+    consteval auto nonstatic_data_members_of(info class_type, Fs ...filters) -> vector<info> {
       return members_of(class_type, is_nonstatic_data_member, filters...);
     }
   template<typename ...Fs>
