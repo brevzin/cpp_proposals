@@ -352,20 +352,20 @@ using points = struct_of_arrays<point, 30>;
 
 ## Parsing Command-Line Options II
 
-Now that we've seen a couple examples of using `std::meta::synth_struct` to create a type, we can create a more sophisticated command-line parser example. This isn't a complete implementation, but hopefully is enough to demonstrate the utility. This is the opening example for [clap](https://docs.rs/clap/latest/clap/):
+Now that we've seen a couple examples of using `std::meta::synth_struct` to create a type, we can create a more sophisticated command-line parser example. This isn't a complete implementation, but hopefully is enough to demonstrate the utility. This is the opening example for [clap](https://docs.rs/clap/latest/clap/) (Rust's **C**ommand **L**ine **A**rgument **P**arser):
 
 ::: bq
 ```c++
 struct Args : Clap {
-  Option<std::string, {.use_short=true, use_long=true}> name;
+  Option<std::string, {.use_short=true, .use_long=true}> name;
   Option<int, {.use_short=true, .use_long=true}> count = 1;
 };
 
 int main(int argc, char** argv) {
   auto opts = Args{}.parse(argc, argv);
 
-  for (int i = 0; i < opts.count; ++i) {
-    std::print("Hello {}!", opts.name);
+  for (int i = 0; i < opts.count; ++i) {  // opts.count has type int
+    std::print("Hello {}!", opts.name);   // opts.name has type std::string
   }
 }
 ```
@@ -386,12 +386,8 @@ struct Option;
 
 // convert a type (all of whose non-static data members are specializations of Option)
 // to a type that is just the appropriate members.
-// For example, if type is a reflection of
-// struct {
-//   Option<std::string, {.use_short=true, use_long=true}> name;
-//   Option<int, {.use_short=true, .use_long=true}> count = 1;
-// };
-// then this function would evaluate to a reflection of the type
+// For example, if type is a reflection of the Args presented above, then this
+// function would evaluate to a reflection of the type
 // struct {
 //   std::string name;
 //   int count;
@@ -400,7 +396,7 @@ consteval auto spec_to_opts(std::meta::info type) -> std::meta::info {
   std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(type)) {
     auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(nsdm_description(new_type, {.name=name_of(members)}));
+    new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
   }
   return std::meta::synth_struct(new_members);
 }
@@ -427,6 +423,7 @@ struct Clap {
               || (cur.use_long && arg.starts_with("--") && arg.substr(2) == name_of(sm));
         });
 
+      // no such argument
       if (it == cmdline.end()) {
         if constexpr (template_of(om) == ^std::optional) {
           // the type is optional, so the argument is too
@@ -444,6 +441,7 @@ struct Clap {
         std::exit(EXIT_FAILURE);
       }
 
+      // found our argument, try to parse it
       auto iss = ispanstream(it[1]);
       if (iss >> opts.[:om:]; !iss) {
         std::print(stderr, "Failed to parse {:?} into option {} of type {}\n",
@@ -548,7 +546,7 @@ An alternative approach is:
 
 ::: bq
 ```cpp
-consteval auto tuple_to_struct_type(info type) -> info {
+consteval auto struct_to_tuple_type(info type) -> info {
   return substitute(^std::tuple,
                     nonstatic_data_members_of(type)
                     | std::ranges::transform(std::meta::type_of)
@@ -557,28 +555,28 @@ consteval auto tuple_to_struct_type(info type) -> info {
 }
 
 template <typename To, typename From, std::meta::info ... members>
-constexpr auto tuple_to_struct_helper(From const& from) -> To {
+constexpr auto struct_to_tuple_helper(From const& from) -> To {
   return To(from.[:members:]...);
 }
 
 template <typename From>
 constexpr auto struct_to_tuple(From const& from) {
-  using To = [: tuple_to_struct_type(^From): ];
+  using To = [: struct_to_tuple_type(^From): ];
 
   std::vector args = {^To, ^From};
   for (auto mem : nonstatic_data_members_of(^From)) {
     args.push_back(reflect_value(mem));
   }
 
-  auto f = entity_ref<To(From const&)>(substitute(^tuple_to_struct_helper, args));
+  auto f = entity_ref<To(From const&)>(substitute(^struct_to_tuple_helper, args));
   return f(from);
 }
 ```
 :::
 
-Here, `tuple_to_struct_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`. `helper`. That gives us the return type. Then, `tuple_to_struct_helper` is a function template that does the actual conversion - which it can do by having all the reflections of the members as a non-type template parameter pack.
+Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`. `helper`. That gives us the return type. Then, `struct_to_tuple_helper` is a function template that does the actual conversion - which it can do by having all the reflections of the members as a non-type template parameter pack.
 
-Everything is put together by using `substitute` to create the instantiation of `tuple_to_struct_helper` that we need, which is use `entity_ref` to get the correct function out of. `f` there is a function pointer to the correct specialization of `tuple_to_struct_helper`. Which we can simply invoke.
+Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, which is use `entity_ref` to get the correct function out of. `f` there is a function pointer to the correct specialization of `struct_to_tuple_helper`. Which we can simply invoke.
 
 # Proposed Features
 
