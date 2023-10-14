@@ -74,9 +74,6 @@ Other advantages of a single opaque type include:
     nontypes — without fear of slicing values).
 
 
-
-
-
 # Examples
 
 We start with a number of examples that show off what is possible with the proposed set of features.
@@ -383,7 +380,7 @@ template <> struct std::formatter<Y> : universal_formatter { };
 template <> struct std::formatter<Z> : universal_formatter { };
 
 int main() {
-    std::println("{}", Z()); // {{.m1 = 1}, {.m2 = 2}, .m1 = 3, .m2 = 4}
+    std::println("{}", Z()); // {@{@.m1 = 1}, {.m2 = 2}, .m1 = 3, .m2 = 4}
 }
 ```
 :::
