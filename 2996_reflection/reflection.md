@@ -41,6 +41,14 @@ Our choice to start with something smaller is primarily motivated by the belief 
 improves the chances of these facilities making it into the language sooner rather than
 later.
 
+## Notable Additions to P1240
+
+While we tried to select a useful subset of the P1240 features, we also made a few additions and changes.
+Most of those changes are minor.
+For example, we added a `std::meta::test_type` interface that makes it convenient to use existing standard type predicates (such as `is_class_v`) in reflection computations.
+
+One addition does stand out, however: We have added metafunctions that permit the synthesis of simple struct and union types.
+While it is not nearly as powerful as generalized code injection (see [@P2237R0]), it can be remarkably effective in practice.
 
 ## Why a single opaque reflection type?
 
@@ -72,7 +80,6 @@ Other advantages of a single opaque type include:
     to surface reference semantics (e.g., a `std::vector<std::meta::info>`
     can easily represent a mixed template argument list — containing types and
     nontypes — without fear of slicing values).
-
 
 # Examples
 
@@ -214,6 +221,7 @@ constexpr std::string enum_to_string(E value) {
 ```
 :::
 
+Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
 ## Parsing Command-Line Options
 
@@ -270,7 +278,7 @@ int main(int argc, char *argv[]) {
 #include <meta>
 
 template<typename... Ts> struct Tuple {
-  using storage = typename[:std::meta::synth_struct({make_nsdm_field(^T)...}):];
+  using storage = typename[:std::meta::synth_struct({nsdm_description(^T)...}):];
   storage data;
 
   Tuple(): data{} {}
@@ -301,12 +309,12 @@ This example uses a "magic" `std::meta::synth_struct` template along with member
 ::: bq
 ```c++
 consteval auto make_struct_of_arrays(std::meta::info type, size_t n) -> std::meta::info {
-  std::vector<info> members;
+  std::vector<info> new_members;
   for (std::meta::info member : members_of(type, std::meta::is_nonstatic_data_member)) {
     auto array_type = substitute(^std::array, {type_of(member), reflect_value(n)});
-    members.push_back(make_nsdm_field(array_type, {.name = name_of(member)}));
+    new_members.push_back(nsdm_description(array_type, {.name = name_of(member)}));
   }
-  return std::meta::synth_struct(members);
+  return std::meta::synth_struct(new_members);
 }
 
 template <typename T, size_t N>
@@ -445,6 +453,11 @@ typename[: ^:: :] x = 0;  // Error.
 :::
 
 A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.
+
+(This proposal does not at this time propose range-based splicers as described in P1240.
+We still believe that those are desirable.
+However, they are more complex to implement and they involve syntactic choices that benefit from being considered along with other proposals that introduce pack-like constructs in non-template contexts.
+Meanwhile, we found that many very useful techniques are enabled with just the basic splicers presented here.)
 
 
 ## `std::meta::info`
@@ -740,7 +753,7 @@ namespace std::meta {
 This metafunction produces a reflection representing the constant value of the operand.
 
 
-### `make_nsdm_field`, `synth_struct`, `synth_union`
+### `nsdm_description`, `synth_struct`, `synth_union`
 
 :::bq
 ```c++
@@ -751,7 +764,7 @@ namespace std::meta {
     optional<int> width;
   };
 
-  consteval auto make_nsdm_field(info type, nsdm_field_args args = {}) -> info;
+  consteval auto nsdm_description(info type, nsdm_field_args args = {}) -> info;
 
   consteval auto synth_struct(span<info const>) -> info;
   consteval auto synth_union(span<info const>) -> info;
@@ -759,18 +772,22 @@ namespace std::meta {
 ```
 :::
 
-`make_nsdm_field` creates a reflection of a non-static data member field of given type. Optional alignment, bit-field-width, and name can be provided as well. If `type` does not designated a valid data member type, an invalid reflection is produced. If no `name` is provided, the name of the non-static data member is unspecified.
+`nsdm_description` creates a reflection that describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well.
+If `type` does not designated a valid data member type, an invalid reflection is produced.
+If no `name` is provided, the name of the non-static data member is unspecified.
+Note that the reflection obtained from `nsdm_description` is _not_ the reflection of a non-static data member itself; it only encapsulates the information needed to synthesize such a data member.
+In particular, metafunctions like `name_of`, `type_of`, and `parent_of` are not applicable to the result of an `nsdm_description`.
 
-`synth_struct` and `synth_union` take a range of NSDM fields and return a reflection that denotes a struct and union, respectively, comprised of those non-static data members.
+`synth_struct` and `synth_union` take a range of NSDM descriptions and return a reflection that denotes a struct and union, respectively, comprised of corresponding non-static data members.
 
 For example:
 
 ::: bq
 ```c++
 constexpr auto T = std::meta::synth_struct({
-  make_nsdm_field(^int),
-  make_nsdm_field(^char),
-  make_nsdm_field(^double),
+  nsdm_description(^int),
+  nsdm_description(^char),
+  nsdm_description(^double),
 });
 
 // T is a reflection of the type
@@ -781,8 +798,8 @@ constexpr auto T = std::meta::synth_struct({
 // }
 
 constexpr auto U = std::meta::synth_struct({
-  make_nsdm_field(^int, {.name="i", .align=64}),
-  make_nsdm_field(^int, {.name="j", .align=64}),
+  nsdm_description(^int, {.name="i", .align=64}),
+  nsdm_description(^int, {.name="j", .align=64}),
 });
 
 // U is a reflection of the type
