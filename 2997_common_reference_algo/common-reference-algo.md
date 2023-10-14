@@ -56,7 +56,7 @@ auto f(R r) -> void {
 ```
 :::
 
-It's a bit lengthy, but the important part is that `R` is a range of xvalue [^xvalue] `C` - `Iterator` is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn't matter, it just makes the example smaller).
+It's a bit lengthy, but the important part is that `R` is a range of xvalue [^xvalue] `C` - `Iterator` is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn't matter, it just makes the example smaller). Note that ranges of xvalues already aren't all that obscure and will become even less so with time - `R` has the same properties as `std::generator<C>`.
 
 [^xvalue]: The exact same issue comes up for a range of prvalues, arguably in a more surprising way. But a range of prvalue is effectively turned into a range of xvalue by way of projecting `identity`, so it's the same behavior. Note also that the use `identity` doesn't prevent prvalue elision - `std::invoke` already does that.
 
@@ -301,7 +301,7 @@ namespace std {
       indirectly_readable<I> &&
       copy_constructible<F> &&
       predicate<F&, $indirect-value-t$<I>> &&
--     predicate<F&, iter_reference_t<I>>@[ &&]{.diffdel}@
+-     predicate<F&, iter_reference_t<I>> @[&&]{.diffdel}@
 -     predicate<F&, iter_common_reference_t<I>>;
 +     predicate<F&, iter_reference_t<I>>@[;]{.diffins}@
 
@@ -312,7 +312,7 @@ namespace std {
       predicate<F&, $indirect-value-t$<I1>, $indirect-value-t$<I2>> &&
       predicate<F&, $indirect-value-t$<I1>, iter_reference_t<I2>> &&
       predicate<F&, iter_reference_t<I1>, $indirect-value-t$<I2>> &&
--     predicate<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[ &&]{.diffdel}@
+-     predicate<F&, iter_reference_t<I1>, iter_reference_t<I2>> @[&&]{.diffdel}@
 -     predicate<F&, iter_common_reference_t<I1>, iter_common_reference_t<I2>>;
 +     predicate<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[;]{.diffins}@
 
@@ -323,7 +323,7 @@ namespace std {
       equivalence_relation<F&, $indirect-value-t$<I1>, $indirect-value-t$<I2>> &&
       equivalence_relation<F&, $indirect-value-t$<I1>, iter_reference_t<I2>> &&
       equivalence_relation<F&, iter_reference_t<I1>, $indirect-value-t$<I2>> &&
--     equivalence_relation<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[ &&]{.diffdel}@
+-     equivalence_relation<F&, iter_reference_t<I1>, iter_reference_t<I2>> @[&&]{.diffdel}@
 -     equivalence_relation<F&, iter_common_reference_t<I1>, iter_common_reference_t<I2>>;
 +     equivalence_relation<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[;]{.diffins}@
 
@@ -334,7 +334,7 @@ namespace std {
       strict_weak_order<F&, $indirect-value-t$<I1>, $indirect-value-t$<I2>> &&
       strict_weak_order<F&, $indirect-value-t$<I1>, iter_reference_t<I2>> &&
       strict_weak_order<F&, iter_reference_t<I1>, $indirect-value-t$<I2>> &&
--     strict_weak_order<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[ &&]{.diffdel}@
+-     strict_weak_order<F&, iter_reference_t<I1>, iter_reference_t<I2>> @[&&]{.diffdel}@
 -     strict_weak_order<F&, iter_common_reference_t<I1>, iter_common_reference_t<I2>>;
 +     strict_weak_order<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[;]{.diffins}@
 }

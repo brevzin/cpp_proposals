@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-12" />
+  <meta name="dcterms.date" content="2023-10-13" />
   <title>Removing the common reference requirement from the indirectly invocable concepts</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-12</td>
+    <td>2023-10-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -616,7 +616,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-34"><a href="#cb1-34"></a>    <span class="op">})</span>;</span>
 <span id="cb1-35"><a href="#cb1-35"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>It’s a bit lengthy, but the important part is that <code class="sourceCode cpp">R</code> is a range of xvalue<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> <code class="sourceCode cpp">C</code> - <code class="sourceCode cpp">Iterator</code> is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn’t matter, it just makes the example smaller).</p>
+<p>It’s a bit lengthy, but the important part is that <code class="sourceCode cpp">R</code> is a range of xvalue<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> <code class="sourceCode cpp">C</code> - <code class="sourceCode cpp">Iterator</code> is just a minimal iterator to achieve that goal (the fact that the iterator is just an input iterator doesn’t matter, it just makes the example smaller). Note that ranges of xvalues already aren’t all that obscure and will become even less so with time - <code class="sourceCode cpp">R</code> has the same properties as <code class="sourceCode cpp">std<span class="op">::</span>generator<span class="op">&lt;</span>C<span class="op">&gt;</span></code>.</p>
 <p>The above example is trying to simply invoke <code class="sourceCode cpp">c<span class="op">.</span>f<span class="op">()</span></code> for every <code class="sourceCode cpp">c</code> in <code class="sourceCode cpp">r</code>. When written using a <code class="sourceCode cpp"><span class="cf">for</span></code> loop, the code compiles. But when written using <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>for_each</code>, it does not. The compile error on gcc 13.2 is:</p>
 <blockquote>
 <pre><code>
@@ -846,7 +846,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-26"><a href="#cb10-26"></a>      indirectly_readable&lt;I&gt; &amp;&amp;</span>
 <span id="cb10-27"><a href="#cb10-27"></a>      copy_constructible&lt;F&gt; &amp;&amp;</span>
 <span id="cb10-28"><a href="#cb10-28"></a>      predicate&lt;F&amp;, <em>indirect-value-t</em>&lt;I&gt;&gt; &amp;&amp;</span>
-<span id="cb10-29"><a href="#cb10-29"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-29"><a href="#cb10-29"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt; <span class="diffdel">&amp;&amp;</span></span></span>
 <span id="cb10-30"><a href="#cb10-30"></a><span class="st">-     predicate&lt;F&amp;, iter_common_reference_t&lt;I&gt;&gt;;</span></span>
 <span id="cb10-31"><a href="#cb10-31"></a><span class="va">+     predicate&lt;F&amp;, iter_reference_t&lt;I&gt;&gt;<span class="diffins">;</span></span></span>
 <span id="cb10-32"><a href="#cb10-32"></a></span>
@@ -857,7 +857,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-37"><a href="#cb10-37"></a>      predicate&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
 <span id="cb10-38"><a href="#cb10-38"></a>      predicate&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span>
 <span id="cb10-39"><a href="#cb10-39"></a>      predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
-<span id="cb10-40"><a href="#cb10-40"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-40"><a href="#cb10-40"></a><span class="st">-     predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; <span class="diffdel">&amp;&amp;</span></span></span>
 <span id="cb10-41"><a href="#cb10-41"></a><span class="st">-     predicate&lt;F&amp;, iter_common_reference_t&lt;I1&gt;, iter_common_reference_t&lt;I2&gt;&gt;;</span></span>
 <span id="cb10-42"><a href="#cb10-42"></a><span class="va">+     predicate&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffins">;</span></span></span>
 <span id="cb10-43"><a href="#cb10-43"></a></span>
@@ -868,7 +868,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-48"><a href="#cb10-48"></a>      equivalence_relation&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
 <span id="cb10-49"><a href="#cb10-49"></a>      equivalence_relation&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span>
 <span id="cb10-50"><a href="#cb10-50"></a>      equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
-<span id="cb10-51"><a href="#cb10-51"></a><span class="st">-     equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-51"><a href="#cb10-51"></a><span class="st">-     equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; <span class="diffdel">&amp;&amp;</span></span></span>
 <span id="cb10-52"><a href="#cb10-52"></a><span class="st">-     equivalence_relation&lt;F&amp;, iter_common_reference_t&lt;I1&gt;, iter_common_reference_t&lt;I2&gt;&gt;;</span></span>
 <span id="cb10-53"><a href="#cb10-53"></a><span class="va">+     equivalence_relation&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffins">;</span></span></span>
 <span id="cb10-54"><a href="#cb10-54"></a></span>
@@ -879,7 +879,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb10-59"><a href="#cb10-59"></a>      strict_weak_order&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
 <span id="cb10-60"><a href="#cb10-60"></a>      strict_weak_order&lt;F&amp;, <em>indirect-value-t</em>&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; &amp;&amp;</span>
 <span id="cb10-61"><a href="#cb10-61"></a>      strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, <em>indirect-value-t</em>&lt;I2&gt;&gt; &amp;&amp;</span>
-<span id="cb10-62"><a href="#cb10-62"></a><span class="st">-     strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffdel">&amp;&amp;</span></span></span>
+<span id="cb10-62"><a href="#cb10-62"></a><span class="st">-     strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt; <span class="diffdel">&amp;&amp;</span></span></span>
 <span id="cb10-63"><a href="#cb10-63"></a><span class="st">-     strict_weak_order&lt;F&amp;, iter_common_reference_t&lt;I1&gt;, iter_common_reference_t&lt;I2&gt;&gt;;</span></span>
 <span id="cb10-64"><a href="#cb10-64"></a><span class="va">+     strict_weak_order&lt;F&amp;, iter_reference_t&lt;I1&gt;, iter_reference_t&lt;I2&gt;&gt;<span class="diffins">;</span></span></span>
 <span id="cb10-65"><a href="#cb10-65"></a>}</span></code></pre></div>
