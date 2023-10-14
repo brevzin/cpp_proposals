@@ -299,7 +299,56 @@ template<typename I, typename... Ts>
 
 This example uses a "magic" `std::meta::synth_struct` template along with member reflection through the `members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 
+## A Universal Print Function
 
+This example is taken from Boost.Describe, translated to using `std::format` instead of iostreams:
+
+::: bq
+```cpp
+struct universal_formatter {
+  constexpr auto parse(auto& ctx) { return ctx.begin(); }
+
+  template <typename T>
+  auto format(T const& t, auto& ctx) const {
+    auto out = ctx.out();
+    *out++ = '{';
+
+    auto delim = [first=true]() mutable {
+      if (!first) {
+        *out++ = ',';
+        *out++ = ' ';
+      }
+      first = false;
+    };
+
+    template for (constexpr auto base : bases_of(^T)) {
+      delim();
+      out = std::format_to(out, "{}", static_cast<[:base:] const&>(t));
+    }
+
+    template for (constexpr auto mem : members_of(^T, std::meta::is_nonstatic_data_member)) {
+      delim();
+      out = std::format_to(out, ".{}={}", name_of(mem), t.[:mem:]);
+    }
+
+    *out++ = '}';
+    return out;
+  }
+};
+
+struct X { int m1 = 1; };
+struct Y { int m2 = 2; };
+class Z : public X, private Y { int m1 = 3; int m2 = 4; };
+
+template <> struct std::formatter<X> : universal_formatter { };
+template <> struct std::formatter<Y> : universal_formatter { };
+template <> struct std::formatter<Z> : universal_formatter { };
+
+int main() {
+    std::println("{}", Z()); // {{.m1 = 1}, {.m2 = 2}, .m1 = 3, .m2 = 4}
+}
+```
+:::
 
 # Proposed Features
 
