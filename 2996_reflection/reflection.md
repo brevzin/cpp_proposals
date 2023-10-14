@@ -531,7 +531,7 @@ Note that the template is only substituted, not instantiated.  For example:
 ```c++
 template<typename T> struct S { typename T::X x; };
 
-constexpr auto r = substitute(^S, ^int);  // Okay.
+constexpr auto r = substitute(^S, std::vector{^int});  // Okay.
 typename[:r:] si;  // Error: T::X is invalid for T = int.
 ```
 :::
@@ -565,11 +565,12 @@ Also unlike splicers, they require knowledge of the type associated with the ent
 :::bq
 ```c++
 namespace std::meta {
-  auto test_type(info templ, info type)->bool {
-    return value_of(substitute(templ, std::vector{type}));
+  auto test_type(info templ, info type) -> bool {
+    return test_types(templ, vector{type});
   }
-  auto test_types(info templ, std::vector<info> types)->bool {
-    return value_of(substitute(templ, types));
+
+  auto test_types(info templ, span<info const> types) -> bool {
+    return value_of<bool>(substitute(templ, types));
   }
 }
 ```

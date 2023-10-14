@@ -929,7 +929,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{</span> <span class="kw">typename</span> T<span class="op">::</span>X x; <span class="op">}</span>;</span>
 <span id="cb21-2"><a href="#cb21-2"></a></span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> substitute<span class="op">(^</span>S, <span class="op">^</span><span class="dt">int</span><span class="op">)</span>;  <span class="co">// Okay.</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> substitute<span class="op">(^</span>S, std<span class="op">::</span>vector<span class="op">{^</span><span class="dt">int</span><span class="op">})</span>;  <span class="co">// Okay.</span></span>
 <span id="cb21-4"><a href="#cb21-4"></a><span class="kw">typename</span><span class="op">[:</span>r<span class="op">:]</span> si;  <span class="co">// Error: T::X is invalid for T = int.</span></span></code></pre></div>
 </blockquote>
 <h3 data-number="2.7.6" id="entity_reft-value_oft-ptr_to_membert"><span class="header-section-number">2.7.6</span> <code class="sourceCode cpp">entity_ref<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, <code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code>, <code class="sourceCode cpp">ptr_to_member<span class="op">&lt;</span>T<span class="op">&gt;</span></code><a href="#entity_reft-value_oft-ptr_to_membert" class="self-link"></a></h3>
@@ -947,13 +947,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h3 data-number="2.7.7" id="test_typepred"><span class="header-section-number">2.7.7</span> <code class="sourceCode cpp">test_type<span class="op">&lt;</span>Pred<span class="op">&gt;</span></code><a href="#test_typepred" class="self-link"></a></h3>
 <blockquote>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a>  <span class="kw">auto</span> test_type<span class="op">(</span>info templ, info type<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb23-3"><a href="#cb23-3"></a>    <span class="cf">return</span> value_of<span class="op">(</span>substitute<span class="op">(</span>templ, std<span class="op">::</span>vector<span class="op">{</span>type<span class="op">}))</span>;</span>
+<span id="cb23-2"><a href="#cb23-2"></a>  <span class="kw">auto</span> test_type<span class="op">(</span>info templ, info type<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>    <span class="cf">return</span> test_types<span class="op">(</span>templ, vector<span class="op">{</span>type<span class="op">})</span>;</span>
 <span id="cb23-4"><a href="#cb23-4"></a>  <span class="op">}</span></span>
-<span id="cb23-5"><a href="#cb23-5"></a>  <span class="kw">auto</span> test_types<span class="op">(</span>info templ, std<span class="op">::</span>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> types<span class="op">)-&gt;</span><span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb23-6"><a href="#cb23-6"></a>    <span class="cf">return</span> value_of<span class="op">(</span>substitute<span class="op">(</span>templ, types<span class="op">))</span>;</span>
-<span id="cb23-7"><a href="#cb23-7"></a>  <span class="op">}</span></span>
-<span id="cb23-8"><a href="#cb23-8"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb23-5"><a href="#cb23-5"></a></span>
+<span id="cb23-6"><a href="#cb23-6"></a>  <span class="kw">auto</span> test_types<span class="op">(</span>info templ, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;</span> types<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a>    <span class="cf">return</span> value_of<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;(</span>substitute<span class="op">(</span>templ, types<span class="op">))</span>;</span>
+<span id="cb23-8"><a href="#cb23-8"></a>  <span class="op">}</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This utility translates existing metaprogramming predicates (expressed as constexpr variable templates) to the reflection domain. For example:</p>
 <blockquote>
