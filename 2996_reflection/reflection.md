@@ -768,6 +768,30 @@ Otherwise, `parent_of(r)` produces an invalid reflection.
 If `r` designates an alias, `entity_of(r)` designates the underlying entity.
 Otherwise, `entity_of(r)` produces `r`.
 
+### `template_of`, `template_arguments_of`
+
+::: bq
+```c++
+namespace std::meta {
+  consteval auto template_of(info r) -> info;
+  consteval auto template_arguments_of(info r) -> vector<info>;
+}
+```
+:::
+
+If `r` is a reflection designated a type that is a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. Otherwise, both yield invalid reflections. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
+
+For example:
+
+::: bq
+```c++
+std::vector<int> v = {1, 2, 3};
+static_assert(template_of(type_of(^v)) == ^std::vector);
+static_assert(template_arguments_of(type_of(^v))[0] == ^int);
+```
+:::
+
+
 
 ### `members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
 
