@@ -126,7 +126,9 @@ int main() {
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
 
-## Fast Generation of Integer Sequence
+## Implementing `make_integer_sequence`
+
+We can provide a better implementation of `make_integer_sequence` than a hand-rolled approach using regular template metaprogramming (although standard libraries today rely on an intrinsic for this):
 
 :::bq
 ```c++
@@ -345,8 +347,7 @@ struct universal_formatter {
 
   template <typename T>
   auto format(T const& t, auto& ctx) const {
-    auto out = ctx.out();
-    *out++ = '{';
+    auto out = std::format_to(ctx.out(), "{}@{@{", name_of(^T));
 
     auto delim = [first=true]() mutable {
       if (!first) {
@@ -373,14 +374,14 @@ struct universal_formatter {
 
 struct X { int m1 = 1; };
 struct Y { int m2 = 2; };
-class Z : public X, private Y { int m1 = 3; int m2 = 4; };
+class Z : public X, private Y { int m3 = 3; int m4 = 4; };
 
 template <> struct std::formatter<X> : universal_formatter { };
 template <> struct std::formatter<Y> : universal_formatter { };
 template <> struct std::formatter<Z> : universal_formatter { };
 
 int main() {
-    std::println("{}", Z()); // {@{@.m1 = 1}, {.m2 = 2}, .m1 = 3, .m2 = 4}
+    std::println("{}", Z()); // Z{X{.m1 = 1}, Y{.m2 = 2}, .m3 = 3, .m4 = 4}
 }
 ```
 :::
@@ -399,6 +400,64 @@ void hash_append(H& algo, T const& t) {
 }
 ```
 :::
+
+## Converting a Struct to a Tuple
+
+This approach requires allowing packs in structured bindings [@P1061R5], but can also be written using `std::make_index_sequence`:
+
+::: bq
+```c++
+template <typename T>
+constexpr auto struct_to_tuple(T const& t) {
+  constexpr auto members = members_of(^T, std::meta::is_nonstatic_data_members);
+
+  constexpr auto indices = []{
+    std::array<int, members.size()> indices;
+    std::ranges::iota(indices, 0);
+    return indices;
+  }();
+
+  constexpr auto [...Is] = indices;
+  return std::make_tuple(t.[: members[Is] :]...);
+}
+```
+:::
+
+An alternative approach is:
+
+::: bq
+```cpp
+consteval auto tuple_to_struct_type(info type) -> info {
+  return substitute(^std::tuple,
+                    nonstatic_members_of(type)
+                    | std::ranges::transform(std::meta::type_of)
+                    | std::ranges::transform(std::meta::remove_cvref)
+                    | std::ranges::to<std::vector>());
+}
+
+template <typename To, typename From, std::meta::info ... members>
+constexpr auto tuple_to_struct_helper(From const& from) -> To {
+  return To(from.[:members:]...);
+}
+
+template <typename From>
+constexpr auto struct_to_tuple(From const& from) {
+  using To = [: tuple_to_struct_type(^From): ];
+
+  std::vector args = {^To, ^From};
+  for (auto mem : nonstatic_members_of(^From)) {
+    args.push_back(reflect_value(mem));
+  }
+
+  auto f = entity_ref<To(From const&)>(substitute(^tuple_to_struct_helper, args));
+  return f(from);
+}
+```
+:::
+
+Here, `tuple_to_struct_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`. `helper`. That gives us the return type. Then, `tuple_to_struct_helper` is a function template that does the actual conversion - which it can do by having all the reflections of the members as a non-type template parameter pack.
+
+Everything is put together by using `substitute` to create the instantiation of `tuple_to_struct_helper` that we need, which is use `entity_ref` to get the correct function out of. `f` there is a function pointer to the correct specialization of `tuple_to_struct_helper`. Which we can simply invoke.
 
 # Proposed Features
 
