@@ -69,9 +69,9 @@ Other advantages of a single opaque type include:
 
 # Examples
 
-We start with a number of example that show off what is possible with the proposed set of features.
+We start with a number of examples that show off what is possible with the proposed set of features.
 It is expected that these are mostly self-explanatory.
-Read ahead to the next section for a more systematic description of each element of this proposal.
+Read ahead to the next sections for a more systematic description of each element of this proposal.
 
 ## Back-And-Forth
 
@@ -127,14 +127,16 @@ This example also illustrates that bit fields are not beyond the reach of this p
 #include <vector>
 
 template<typename T>
-consteval info make_integer_seq_refl(T N) {
+consteval std::meta::info make_integer_seq_refl(T N) {
   std::vector args{^T};
-  for (T k = 0; k<N; ++k)  args.push_back(std::meta::reflect_value(k));
+  for (T k = 0; k < N; ++k) {
+    args.push_back(std::meta::reflect_value(k));
+  }
   return substitute(^std::integer_sequence, args);
 }
 
-template<typename T>
-  using make_integer_sequence<typename T, T N> = [:make_integer_seq_refl<T>(N):];
+template<typename T, T N>
+  using make_integer_sequence = [:make_integer_seq_refl<T>(N):];
 ```
 :::
 
@@ -181,62 +183,72 @@ constexpr std::optional<E> string_to_enum(std::string_view name) {
 ```
 :::
 
-
-## Parsing Command-Line Options
-
-Our next example shows how command-line options could be automatically mapped to an "options" structure.
-For simplicity, we posit the existence of a range-like class type `ProgramArgs` that collects the traditional `(argc, argv)` parameters in a more friendly package.
-This example also uses an expansion statement for simplicity.
+But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]):
 
 ::: bq
 ```c++
-#include <sstream>
-#include <string>
-#include <meta>
-#include <ProgramArgs.h>
+template <typename E>
+  requires std::is_enum_v<E>
+constexpr std::string enum_to_string(E value) {
+  constexpr auto enumerators =
+    std::meta::members_of(^E)
+    | std::views::transform([](std::meta::info e){
+        return std::pair<E, std::string>(std::meta::value_of<E>(e), std::meta::name_of(e));
+      })
+    | std::ranges::to<std::map>();
 
-template<typename Opts> bool parse_options(Opts *opts, ProgramArgs const &args) {
-  using namespace std;
-  using namespace std::meta;
-  bool success = true;
-  for (auto const arg = args.begin(); args != args.end(); ++args) {
-    template for(constexpr auto dm: members_of(^Opts, is_nonstatic_data_member)) {
-      if (arg->is_option_with_name(name_of(dm))) {
-        // Arg is of the form "--word" where "word" is the name of dm.
-        // Move to the option value, but remember the option tag:
-        auto const opt_arg = arg++;
-        if (arg == args.end()) {
-          cerr << "Option " << string(opt_arg) << " is missing a value." << endl;
-          success = false;
-          break;
-        }
-        using T = typename[:type_of(dm):];
-        if constexpr (requires (T d, istringstream is) { is >> d; }) {
-          T val;
-          istringstream is(string(*arg));
-          is >> val;
-          opts->[:dm:] = val;
-        } else {
-          cerr << "Option " << string(opt_arg) << " value \"" << string(arg)
-               << "\" is no match for type << display_name_of(^T) << "." << endl;
-          success = false;
-        }
-      }
+  auto it = enumerators.find(value);
+  if (it != enumerators.end()) {
+    return it->second;
+  } else {
+    return "<unnamed>";
+  }
+}
+```
+:::
+
+
+## Parsing Command-Line Options
+
+Our next example shows how a command-line option parser could work by automatically inferring flags based on member names. A real command-line parser would of course be more complex, this is just the beginning:
+
+::: bq
+```c++
+template<typename Opts>
+auto parse_options(std::span<std::string_view const> args) -> Opts {
+  Opts opts;
+  template for (constexpr auto dm : members_of(^Opts, std::meta::is_nonstatic_data_members)) {
+    auto it = std::ranges::find_if(args,
+      [](std::string_view arg){
+        return args.starts_with("--") && args.substr(2) == name_of(dm);
+      });
+
+    if (it == args.end()) {
+      // no option provided, use default
+      continue;
+    } else if (it + 1 == args.end()) {
+      std::print(stderr, "Option {} is missing a value\n", *it);
+      std::exit(EXIT_FAILURE);
+    }
+
+    using T = typename[:type_of(dm):];
+    auto iss = ispanstream(it[1]);
+    if (iss >> opts.[:dm:]; !iss) {
+      std::print(stderr, "Failed to parse option {} into a {}\n", *it, display_name_of(^T));
+      std::exit(EXIT_FAILURE);
     }
   }
-  return success;
+  return opts;
 }
 
 struct MyOpts {
-   string file_name = "input.txt";  // Option "--file_name <string>"
+  string file_name = "input.txt";  // Option "--file_name <string>"
   int    count = 1;                // Option "--count <int>"
-} opts;
+};
 
 int main(int argc, char *argv[]) {
-  ProgramArgs  cmd_line_args(argc, argv);
-  if (!parse_options(&opts, cmd_line_args)) {
-    return 1;
-  }   ...
+  MyOpts opts = parse_options<MyOpts>(std::vector<std::string_view>(argv+1, argv+argc));
+  // ...
 }
 
 ```
@@ -251,7 +263,7 @@ int main(int argc, char *argv[]) {
 #include <meta>
 
 template<typename... Ts> struct Tuple {
-  std::meta::synth_struct<std::array<info, sizeof...(Ts)>{ nsdm_description(^Ts)... }> data;
+  std::meta::synth_struct<std::array{ nsdm_description(^Ts)... }> data;
 
   Tuple(): data{} {}
   Tuple(Ts const& ...vs): data{ vs... } {}
@@ -266,7 +278,7 @@ template<typename I, typename... Ts>
   };
 
 template<typename I, typename... Ts>
-  constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element<I, Tuple<Ts...>> {
+  constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
     return t.data.[:members_of(^decltype(t.data), is_nonstatic_data_member)[I]:];
   }
 
@@ -303,10 +315,6 @@ The current proposal requires that the _cast-expression_ be:
 
 In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to evaluate to an invalid reflection.
 
-[ DV: I'm not sure that last rule is needed or even desirable.  I know at some point in the discussions it was brought up as desirable, but
-      I don't think anything like it was implemented. ]
-
-
 ## Splicers (`[:`...`:]`)
 
 A reflection that is not an invalid reflection can be "spliced" into source code using one of several _splicer_ forms:
@@ -331,6 +339,7 @@ A quality implementation should emit the diagnostic text associated with an inva
 
 The type `std::meta::info` can be defined as follows:
 
+::: bq
 ```c++
 namespace std {
   namespace meta {
@@ -338,6 +347,7 @@ namespace std {
   }
 }
 ```
+:::
 
 In our initial proposal a value of type `std::meta::info` can represent:
 
@@ -405,12 +415,12 @@ However, despite offering a normal consteval C++ function interface, each on of 
 
 :::bq
 ```c++
-consteval auto invalid_reflection(
-                  std::string_view message,
-                  std::source_location src_loc = std::source_location::current())->info;
-consteval auto is_invalid(info)->bool;
-consteval auto is_invalid(std::span<info>)->bool;
-consteval void diagnose_error(info);
+namespace std::meta {
+  consteval auto invalid_reflection(string_view msg, source_location loc = source_location::current()) -> info;
+  consteval auto is_invalid(info) -> bool;
+  consteval auto is_invalid(std::span<info const>) -> bool;
+  consteval auto diagnose_error(info) -> void;
+}
 ```
 :::
 
@@ -425,13 +435,14 @@ If the given reflection is for an invalid reflection, an implementation is encou
 
 :::bq
 ```c++
-consteval auto name_of(info r)->std::string_view;
-consteval auto display_name_of(info r)->std::string_view;
+namespace std::meta {
+  consteval auto name_of(info r) -> string_view;
+  consteval auto display_name_of(info r) -> string_view;
 }
 ```
 :::
 
-Given a reflection `r` that designates a declared entity X, `name_of(r)` returns a `string_view` holding the unqualified name of X.
+Given a reflection `r` that designates a declared entity `X`, `name_of(r)` returns a `string_view` holding the unqualified name of `X`.
 For all other reflections, an empty `string_view` is produced.
 For template instances, the name does not include the template argument list.
 The contents of the `string_view` consist of characters of the basic source character set only (an implementation can map other characters using universal character names).
@@ -446,9 +457,10 @@ Implementations are encouraged to produce the correct source location of the ite
 
 :::bq
 ```c++
-consteval auto type_of(info r)->info;
-consteval auto parent_of(info r)->info;
-consteval auto entity_of(info r)->info;
+namespace std::meta {
+  consteval auto type_of(info r) -> info;
+  consteval auto parent_of(info r) -> info;
+  consteval auto entity_of(info r) -> info;
 }
 ```
 :::
@@ -467,31 +479,44 @@ Otherwise, `parent_of(r)` produces `r`.
 
 :::bq
 ```c++
-template<typename ...Fs>
-    consteval auto members_of(info class_type, Fs ...filters)->std::vector<info>;
-template<typename ...Fs>
-    consteval auto enumerators_of(info class_type, Fs ...filters)->std::vector<info>;
-template<typename ...Fs>
-    consteval auto subobjects_of(info class_type, Fs ...filters)->std::vector<info>;
+namespace std::meta {
+  template<typename ...Fs>
+    consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto enumerators_of(info class_type, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto subobjects_of(info class_type, Fs ...filters) -> vector<info>;
+}
 ```
 :::
-
-
 
 
 ### `substitute`
 
 :::bq
 ```c++
-consteval auto substitute(info templ, std::span<info> args)->info;
+namespace std::meta {
+  consteval auto substitute(info templ, span<info const> args) -> info;
+}
 ```
 :::
 
 Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtains by substituting the given arguments in the template.
+
+For example:
+
+::: bq
+```c++
+constexpr auto r = substitute(^std::vector, std::vector{^int});
+using T = [:r:]; // Ok, T is std::vector<int>
+```
+:::
+
 This process might kick off instantiations outside the immediate context, which can lead to the program being ill-formed.
 Substitution errors in the immediate context of the template result in an invalid reflection being returned.
 
 Note that the template is only substituted, not instantiated.  For example:
+
 :::bq
 ```c++
 template<typename T> struct S { typename T::X x; };
@@ -505,13 +530,15 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 
 :::bq
 ```c++
-template<typename T> auto entity_ref<T>(info var_or_func)->T&;
-template<typename T> auto value_of<T>(info constant_expr)->T;
-template<typename T> auto pointer_to_member<T>(info member)->T;
+namespace std::meta {
+  template<typename T> auto entity_ref<T>(info var_or_func) -> T&;
+  template<typename T> auto value_of<T>(info constant_expr) -> T;
+  template<typename T> auto pointer_to_member<T>(info member) -> T;
+}
 ```
 :::
 
-If `r` is a reflection `r` for a variable or function of type `T`, `entity_ref<T>(r)` evaluates to a reference to that variable or function.
+If `r` is a reflection of a variable or function of type `T`, `entity_ref<T>(r)` evaluates to a reference to that variable or function.
 Otherwise, `entity_ref<T>(r)` is ill-formed.
 
 If `r` is a reflection for a constant-expression or a constant-valued entity of type `T`, `value_of(r)` evaluates to that constant value.
@@ -527,11 +554,13 @@ Also unlike splicers, they require knowledge of the type associated with the ent
 
 :::bq
 ```c++
-auto test_type(info templ, info type)->bool {
-  return value_of(substitute(templ, std::vector{type}));
-}
-auto test_types(info templ, std::vector<info> types)->bool {
-  return value_of(substitute(templ, types));
+namespace std::meta {
+  auto test_type(info templ, info type)->bool {
+    return value_of(substitute(templ, std::vector{type}));
+  }
+  auto test_types(info templ, std::vector<info> types)->bool {
+    return value_of(substitute(templ, types));
+  }
 }
 ```
 :::
@@ -553,43 +582,46 @@ In fact, that is recommended practice.
 
 :::bq
 ```c++
-consteval auto is_public(info r)->bool;
-consteval auto is_protected(info r)->bool;
-consteval auto is_private(info r)->bool;
-consteval auto is_accessible(info r)->bool;
-consteval auto is_virtual(info r)->bool;
-consteval auto is_deleted(info entity)->bool;
-consteval auto is_defaulted(info entity)->bool;
-consteval auto is_explicit(info entity)->bool;
-consteval auto is_override(info entity)->bool;
-consteval auto is_pure_virtual(info entity)->bool;
-consteval auto has_static_storage_duration(info r)->bool;
+namespace std::meta {
+  consteval auto is_public(info r) -> bool;
+  consteval auto is_protected(info r) -> bool;
+  consteval auto is_private(info r) -> bool;
+  consteval auto is_accessible(info r) -> bool;
+  consteval auto is_virtual(info r) -> bool;
+  consteval auto is_deleted(info entity) -> bool;
+  consteval auto is_defaulted(info entity) -> bool;
+  consteval auto is_explicit(info entity) -> bool;
+  consteval auto is_override(info entity) -> bool;
+  consteval auto is_pure_virtual(info entity) -> bool;
+  consteval auto has_static_storage_duration(info r) -> bool;
 
-consteval auto is_nsdm(info entity)->bool;
-consteval auto is_base(info entity)->bool;
-consteval auto is_namespace(info entity)->bool;
-consteval auto is_function(info entity)->bool;
-consteval auto is_static(info entity)->bool;
-consteval auto is_variable(info entity)->bool;
-consteval auto is_type(info entity)->bool;
-consteval auto is_alias(info entity)->bool;
-consteval auto is_incomplete_type(info entity)->bool;
-consteval auto is_template(info entity)->bool;
-consteval auto is_function_template(info entity)->bool;
-consteval auto is_variable_template(info entity)->bool;
-consteval auto is_class_template(info entity)->bool;
-consteval auto is_alias_template(info entity)->bool;
-consteval auto has_template_arguments(info r)->bool;
+  consteval auto is_nsdm(info entity) -> bool;
+  consteval auto is_base(info entity) -> bool;
+  consteval auto is_namespace(info entity) -> bool;
+  consteval auto is_function(info entity) -> bool;
+  consteval auto is_static(info entity) -> bool;
+  consteval auto is_variable(info entity) -> bool;
+  consteval auto is_type(info entity) -> bool;
+  consteval auto is_alias(info entity) -> bool;
+  consteval auto is_incomplete_type(info entity) -> bool;
+  consteval auto is_template(info entity) -> bool;
+  consteval auto is_function_template(info entity) -> bool;
+  consteval auto is_variable_template(info entity) -> bool;
+  consteval auto is_class_template(info entity) -> bool;
+  consteval auto is_alias_template(info entity) -> bool;
+  consteval auto has_template_arguments(info r) -> bool;
+}
 ```
 :::
-
 
 
 ### `reflect_value`
 
 :::bq
 ```c++
-template<typename T> consteval auto reflect_value(T value)->info;
+namespace std::meta {
+  template<typename T> consteval auto reflect_value(T value) -> info;
+}
 ```
 :::
 
@@ -600,13 +632,15 @@ This metafunction produces a reflection representing the constant value of the o
 
 :::bq
 ```c++
-consteval auto nsdm_description(info  type, unsigned alignment = 0, unsigned width = 0)->info;
+namespace std::meta {
+  consteval auto nsdm_description(info type, unsigned alignment = 0, unsigned width = 0) -> info;
 
-template<auto NDSMs> requires template_of(^NSDMs) == ^std:array
-  struct synth_struct;
+  template<auto NDSMs> requires template_of(^NSDMs) == ^std:array
+    struct synth_struct;
 
-template<auto NDSMs> requires template_of(^NSDMs) == ^std:array
-  struct synth_union;
+  template<auto NDSMs> requires template_of(^NSDMs) == ^std:array
+    struct synth_union;
+}
 ```
 :::
 
@@ -622,10 +656,12 @@ If `std::meta::synth_struct<NSDMs>` is completed and any of the description entr
 ### Data Layout Reflection
 :::bq
 ```c++
-consteval auto byte_offset_of(info entity)->std::size_t {...};
-consteval auto bit_offset_of(info entity)->std::size_t {...};
-consteval auto byte_size_of(info entity)->std::size_t {...};
-consteval auto bit_size_of(info entity)->std::size_t {...};
+namespace std::meta {
+  consteval auto byte_offset_of(info entity) -> std::size_t;
+  consteval auto bit_offset_of(info entity) -> std::size_t;
+  consteval auto byte_size_of(info entity) -> std::size_t;
+  consteval auto bit_size_of(info entity) -> std::size_t;
+}
 ```
 :::
 
