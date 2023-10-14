@@ -570,7 +570,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
 <ul>
-<li><a href="#why-a-single-opaque-reflection-type"><span class="toc-section-number">1.1</span> Why a single opaque reflection type?<span></span></a></li>
+<li><a href="#notable-additions-to-p1240"><span class="toc-section-number">1.1</span> Notable Additions to P1240<span></span></a></li>
+<li><a href="#why-a-single-opaque-reflection-type"><span class="toc-section-number">1.2</span> Why a single opaque reflection type?<span></span></a></li>
 </ul></li>
 <li><a href="#examples"><span class="toc-section-number">2</span> Examples<span></span></a>
 <ul>
@@ -601,7 +602,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#test_typepred"><span class="toc-section-number">3.4.7</span> <code class="sourceCode cpp">test_type<span class="op">&lt;</span>Pred<span class="op">&gt;</span></code><span></span></a></li>
 <li><a href="#other-singular-reflection-predicates"><span class="toc-section-number">3.4.8</span> Other Singular Reflection Predicates<span></span></a></li>
 <li><a href="#reflect_value"><span class="toc-section-number">3.4.9</span> <code class="sourceCode cpp">reflect_value</code><span></span></a></li>
-<li><a href="#make_nsdm_field-synth_struct-synth_union"><span class="toc-section-number">3.4.10</span> <code class="sourceCode cpp">make_nsdm_field</code>, <code class="sourceCode cpp">synth_struct</code>, <code class="sourceCode cpp">synth_union</code><span></span></a></li>
+<li><a href="#nsdm_description-synth_struct-synth_union"><span class="toc-section-number">3.4.10</span> <code class="sourceCode cpp">nsdm_description</code>, <code class="sourceCode cpp">synth_struct</code>, <code class="sourceCode cpp">synth_union</code><span></span></a></li>
 <li><a href="#data-layout-reflection"><span class="toc-section-number">3.4.11</span> Data Layout Reflection<span></span></a></li>
 </ul></li>
 </ul></li>
@@ -618,7 +619,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 <p>This proposal is not intended to be the end-game as far as reflection and compile-time metaprogramming are concerned. Instead, we expect it will be a useful core around which more powerful features will be added incrementally over time. In particular, we believe that most or all the remaining features explored in P1240R2 and that code injection (along the lines described in <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>) are desirable directions to pursue.</p>
 <p>Our choice to start with something smaller is primarily motivated by the belief that that improves the chances of these facilities making it into the language sooner rather than later.</p>
-<h2 data-number="1.1" id="why-a-single-opaque-reflection-type"><span class="header-section-number">1.1</span> Why a single opaque reflection type?<a href="#why-a-single-opaque-reflection-type" class="self-link"></a></h2>
+<h2 data-number="1.1" id="notable-additions-to-p1240"><span class="header-section-number">1.1</span> Notable Additions to P1240<a href="#notable-additions-to-p1240" class="self-link"></a></h2>
+<p>While we tried to select a useful subset of the P1240 features, we also made a few additions and changes. Most of those changes are minor. For example, we added a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>test_type</code> interface that makes it convenient to use existing standard type predicates (such as <code class="sourceCode cpp">is_class_v</code>) in reflection computations.</p>
+<p>One addition does stand out, however: We have added metafunctions that permit the synthesis of simple struct and union types. While it is not nearly as powerful as generalized code injection (see <span class="citation" data-cites="P2237R0">[<a href="#ref-P2237R0" role="doc-biblioref">P2237R0</a>]</span>), it can be remarkably effective in practice.</p>
+<h2 data-number="1.2" id="why-a-single-opaque-reflection-type"><span class="header-section-number">1.2</span> Why a single opaque reflection type?<a href="#why-a-single-opaque-reflection-type" class="self-link"></a></h2>
 <p>Perhaps the most common suggestion made regarding the framework outlined in P1240 is to switch from the single <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> type to a family of types covering various language elements (e.g., <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>variable</code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type</code>, etc.).</p>
 <p>We believe that doing so would be mistake with very serious consequences for the future of C++.</p>
 <p>Specifically, it would codify the language design into the type system. We know from experience that it has been quasi-impossible to change the semantics of standard types once they were standardized, and there is no reason to think that such evolution would become easier in the future. Suppose for example that we had standardized a reflection type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>variable</code> in C++03 to represent what the standard called “variables” at the time. In C++11, the term “variable” was extended to include “references”. Such an change would have been difficult to do given that C++ by then likely would have had plenty of code that depended on a type arrangement around the more restricted definition of “variable”. That scenario is clearly backward-looking, but there is no reason to believe that similar changes might not be wanted in the future and we strongly believe that it behooves us to avoid adding undue constraints on the evolution of the language.</p>
@@ -730,6 +734,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb7-16"><a href="#cb7-16"></a>  <span class="op">}</span></span>
 <span id="cb7-17"><a href="#cb7-17"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+<p>Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a <code class="sourceCode cpp">std<span class="op">::</span>map</code> achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).</p>
 <h2 data-number="2.5" id="parsing-command-line-options"><span class="header-section-number">2.5</span> Parsing Command-Line Options<a href="#parsing-command-line-options" class="self-link"></a></h2>
 <p>Our next example shows how a command-line option parser could work by automatically inferring flags based on member names. A real command-line parser would of course be more complex, this is just the beginning:</p>
 <blockquote>
@@ -776,7 +781,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a></span>
 <span id="cb9-3"><a href="#cb9-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span> <span class="kw">struct</span> Tuple <span class="op">{</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a>  <span class="kw">using</span> storage <span class="op">=</span> <span class="kw">typename</span><span class="op">[:</span>std<span class="op">::</span>meta<span class="op">::</span>synth_struct<span class="op">({</span>make_nsdm_field<span class="op">(^</span>T<span class="op">)...}):]</span>;</span>
+<span id="cb9-4"><a href="#cb9-4"></a>  <span class="kw">using</span> storage <span class="op">=</span> <span class="kw">typename</span><span class="op">[:</span>std<span class="op">::</span>meta<span class="op">::</span>synth_struct<span class="op">({</span>nsdm_description<span class="op">(^</span>T<span class="op">)...}):]</span>;</span>
 <span id="cb9-5"><a href="#cb9-5"></a>  storage data;</span>
 <span id="cb9-6"><a href="#cb9-6"></a></span>
 <span id="cb9-7"><a href="#cb9-7"></a>  Tuple<span class="op">():</span> data<span class="op">{}</span> <span class="op">{}</span></span>
@@ -802,12 +807,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h2 data-number="2.7" id="struct-to-struct-of-arrays"><span class="header-section-number">2.7</span> Struct to Struct of Arrays<a href="#struct-to-struct-of-arrays" class="self-link"></a></h2>
 <blockquote>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> make_struct_of_arrays<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info type, <span class="dt">size_t</span> n<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb10-2"><a href="#cb10-2"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> members;</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> new_members;</span>
 <span id="cb10-3"><a href="#cb10-3"></a>  <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info member <span class="op">:</span> members_of<span class="op">(</span>type, std<span class="op">::</span>meta<span class="op">::</span>is_nonstatic_data_member<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb10-4"><a href="#cb10-4"></a>    <span class="kw">auto</span> array_type <span class="op">=</span> substitute<span class="op">(^</span>std<span class="op">::</span>array, <span class="op">{</span>type_of<span class="op">(</span>member<span class="op">)</span>, reflect_value<span class="op">(</span>n<span class="op">)})</span>;</span>
-<span id="cb10-5"><a href="#cb10-5"></a>    members<span class="op">.</span>push_back<span class="op">(</span>make_nsdm_field<span class="op">(</span>array_type, <span class="op">{.</span>name <span class="op">=</span> name_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>nsdm_description<span class="op">(</span>array_type, <span class="op">{.</span>name <span class="op">=</span> name_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
 <span id="cb10-6"><a href="#cb10-6"></a>  <span class="op">}</span></span>
-<span id="cb10-7"><a href="#cb10-7"></a>  <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>synth_struct<span class="op">(</span>members<span class="op">)</span>;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>  <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>synth_struct<span class="op">(</span>new_members<span class="op">)</span>;</span>
 <span id="cb10-8"><a href="#cb10-8"></a><span class="op">}</span></span>
 <span id="cb10-9"><a href="#cb10-9"></a></span>
 <span id="cb10-10"><a href="#cb10-10"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
@@ -966,6 +971,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">typename</span><span class="op">[:</span> <span class="op">^::</span> <span class="op">:]</span> x <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// Error.</span></span></code></pre></div>
 </blockquote>
 <p>A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.</p>
+<p>(This proposal does not at this time propose range-based splicers as described in P1240. We still believe that those are desirable. However, they are more complex to implement and they involve syntactic choices that benefit from being considered along with other proposals that introduce pack-like constructs in non-template contexts. Meanwhile, we found that many very useful techniques are enabled with just the basic splicers presented here.)</p>
 <h2 data-number="3.3" id="stdmetainfo"><span class="header-section-number">3.3</span> <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code><a href="#stdmetainfo" class="self-link"></a></h2>
 <p>The type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can be defined as follows:</p>
 <blockquote>
@@ -1146,7 +1152,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb32-3"><a href="#cb32-3"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This metafunction produces a reflection representing the constant value of the operand.</p>
-<h3 data-number="3.4.10" id="make_nsdm_field-synth_struct-synth_union"><span class="header-section-number">3.4.10</span> <code class="sourceCode cpp">make_nsdm_field</code>, <code class="sourceCode cpp">synth_struct</code>, <code class="sourceCode cpp">synth_union</code><a href="#make_nsdm_field-synth_struct-synth_union" class="self-link"></a></h3>
+<h3 data-number="3.4.10" id="nsdm_description-synth_struct-synth_union"><span class="header-section-number">3.4.10</span> <code class="sourceCode cpp">nsdm_description</code>, <code class="sourceCode cpp">synth_struct</code>, <code class="sourceCode cpp">synth_union</code><a href="#nsdm_description-synth_struct-synth_union" class="self-link"></a></h3>
 <blockquote>
 <div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
 <span id="cb33-2"><a href="#cb33-2"></a>  <span class="kw">struct</span> nsdm_field_args <span class="op">{</span></span>
@@ -1155,20 +1161,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb33-5"><a href="#cb33-5"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> width;</span>
 <span id="cb33-6"><a href="#cb33-6"></a>  <span class="op">}</span>;</span>
 <span id="cb33-7"><a href="#cb33-7"></a></span>
-<span id="cb33-8"><a href="#cb33-8"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> make_nsdm_field<span class="op">(</span>info type, nsdm_field_args args <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb33-8"><a href="#cb33-8"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> nsdm_description<span class="op">(</span>info type, nsdm_field_args args <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb33-9"><a href="#cb33-9"></a></span>
 <span id="cb33-10"><a href="#cb33-10"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> synth_struct<span class="op">(</span>span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb33-11"><a href="#cb33-11"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> synth_union<span class="op">(</span>span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb33-12"><a href="#cb33-12"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p><code class="sourceCode cpp">make_nsdm_field</code> creates a reflection of a non-static data member field of given type. Optional alignment, bit-field-width, and name can be provided as well. If <code class="sourceCode cpp">type</code> does not designated a valid data member type, an invalid reflection is produced. If no <code class="sourceCode cpp">name</code> is provided, the name of the non-static data member is unspecified.</p>
-<p><code class="sourceCode cpp">synth_struct</code> and <code class="sourceCode cpp">synth_union</code> take a range of NSDM fields and return a reflection that denotes a struct and union, respectively, comprised of those non-static data members.</p>
+<p><code class="sourceCode cpp">nsdm_description</code> creates a reflection that describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well. If <code class="sourceCode cpp">type</code> does not designated a valid data member type, an invalid reflection is produced. If no <code class="sourceCode cpp">name</code> is provided, the name of the non-static data member is unspecified. Note that the reflection obtained from <code class="sourceCode cpp">nsdm_description</code> is <em>not</em> the reflection of a non-static data member itself; it only encapsulates the information needed to synthesize such a data member. In particular, metafunctions like <code class="sourceCode cpp">name_of</code>, <code class="sourceCode cpp">type_of</code>, and <code class="sourceCode cpp">parent_of</code> are not applicable to the result of an <code class="sourceCode cpp">nsdm_description</code>.</p>
+<p><code class="sourceCode cpp">synth_struct</code> and <code class="sourceCode cpp">synth_union</code> take a range of NSDM descriptions and return a reflection that denotes a struct and union, respectively, comprised of corresponding non-static data members.</p>
 <p>For example:</p>
 <blockquote>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> T <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>synth_struct<span class="op">({</span></span>
-<span id="cb34-2"><a href="#cb34-2"></a>  make_nsdm_field<span class="op">(^</span><span class="dt">int</span><span class="op">)</span>,</span>
-<span id="cb34-3"><a href="#cb34-3"></a>  make_nsdm_field<span class="op">(^</span><span class="dt">char</span><span class="op">)</span>,</span>
-<span id="cb34-4"><a href="#cb34-4"></a>  make_nsdm_field<span class="op">(^</span><span class="dt">double</span><span class="op">)</span>,</span>
+<span id="cb34-2"><a href="#cb34-2"></a>  nsdm_description<span class="op">(^</span><span class="dt">int</span><span class="op">)</span>,</span>
+<span id="cb34-3"><a href="#cb34-3"></a>  nsdm_description<span class="op">(^</span><span class="dt">char</span><span class="op">)</span>,</span>
+<span id="cb34-4"><a href="#cb34-4"></a>  nsdm_description<span class="op">(^</span><span class="dt">double</span><span class="op">)</span>,</span>
 <span id="cb34-5"><a href="#cb34-5"></a><span class="op">})</span>;</span>
 <span id="cb34-6"><a href="#cb34-6"></a></span>
 <span id="cb34-7"><a href="#cb34-7"></a><span class="co">// T is a reflection of the type</span></span>
@@ -1179,8 +1185,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb34-12"><a href="#cb34-12"></a><span class="co">// }</span></span>
 <span id="cb34-13"><a href="#cb34-13"></a></span>
 <span id="cb34-14"><a href="#cb34-14"></a><span class="kw">constexpr</span> <span class="kw">auto</span> U <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>synth_struct<span class="op">({</span></span>
-<span id="cb34-15"><a href="#cb34-15"></a>  make_nsdm_field<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
-<span id="cb34-16"><a href="#cb34-16"></a>  make_nsdm_field<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;j&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
+<span id="cb34-15"><a href="#cb34-15"></a>  nsdm_description<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
+<span id="cb34-16"><a href="#cb34-16"></a>  nsdm_description<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;j&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
 <span id="cb34-17"><a href="#cb34-17"></a><span class="op">})</span>;</span>
 <span id="cb34-18"><a href="#cb34-18"></a></span>
 <span id="cb34-19"><a href="#cb34-19"></a><span class="co">// U is a reflection of the type</span></span>
