@@ -234,7 +234,7 @@ Our next example shows how a command-line option parser could work by automatica
 template<typename Opts>
 auto parse_options(std::span<std::string_view const> args) -> Opts {
   Opts opts;
-  template for (constexpr auto dm : members_of(^Opts, std::meta::is_nonstatic_data_member)) {
+  template for (constexpr auto dm : nonstatic_members_of(^Opts)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
         return args.starts_with("--") && args.substr(2) == name_of(dm);
@@ -297,7 +297,7 @@ template<typename I, typename... Ts>
 
 template<typename I, typename... Ts>
   constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
-    return t.data.[:members_of(^decltype(t.data), is_nonstatic_data_member)[I]:];
+    return t.data.[:nonstatic_members_of(^decltype(t.data))[I]:];
   }
 
 // Similarly for other value categories...
@@ -312,7 +312,7 @@ This example uses a "magic" `std::meta::synth_struct` template along with member
 ```c++
 consteval auto make_struct_of_arrays(std::meta::info type, size_t n) -> std::meta::info {
   std::vector<info> new_members;
-  for (std::meta::info member : members_of(type, std::meta::is_nonstatic_data_member)) {
+  for (std::meta::info member : nonstatic_members_of(type)) {
     auto array_type = substitute(^std::array, {type_of(member), reflect_value(n)});
     new_members.push_back(nsdm_description(array_type, {.name = name_of(member)}));
   }
@@ -370,7 +370,7 @@ struct universal_formatter {
       out = std::format_to(out, "{}", static_cast<[:base:] const&>(t));
     }
 
-    template for (constexpr auto mem : members_of(^T, std::meta::is_nonstatic_data_member)) {
+    template for (constexpr auto mem : nonstatic_members_of(^T)) {
       delim();
       out = std::format_to(out, ".{}={}", name_of(mem), t.[:mem:]);
     }
@@ -402,7 +402,7 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-    template for (constexpr auto mem : members_of(^T, std::meta::is_nonstatic_data_member)) {
+    template for (constexpr auto mem : nonstatic_members_of(^T)) {
         hash_append(algo, t.[:mem:]);
     }
 }
@@ -417,7 +417,7 @@ This approach requires allowing packs in structured bindings [@P1061R5], but can
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = members_of(^T, std::meta::is_nonstatic_data_members);
+  constexpr auto members = nonstatic_members_of(^T);
 
   constexpr auto indices = []{
     std::array<int, members.size()> indices;
@@ -658,13 +658,21 @@ If `r` designates an alias, `entity_of(r)` designates the underlying entity.
 Otherwise, `entity_of(r)` produces `r`.
 
 
-### `members_of`, `enumerators_of`, `subobjects_of`
+### `members_of`, `nonstatic_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
 
 :::bq
 ```c++
 namespace std::meta {
   template<typename ...Fs>
     consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto nonstatic_members_of(info class_type, Fs ...filters) -> vector<info> {
+      return members_of(class_type, is_nonstatic_data_member, filters...);
+    }
+  template<typename ...Fs>
+    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info> {
+      return members_of(class_type, is_base, filters...);
+    }
   template<typename ...Fs>
     consteval auto enumerators_of(info class_type, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
