@@ -63,7 +63,15 @@ Other advantages of a single opaque type include:
     can easily represent a mixed template argument list — containing types and
     nontypes — without fear of slicing values).
 
+
+
+
+
 # Examples
+
+We start with a number of example that show off what is possible with the proposed set of features.
+It is expected that these are mostly self-explanatory.
+Read ahead to the next section for a more systematic description of each element of this proposal.
 
 ## Back-And-Forth
 
@@ -84,6 +92,7 @@ The `typename` prefix can be omitted in the same contexts as with dependent qual
 using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typename" prefix.
 ```
 :::
+
 
 ## Selecting Members
 
@@ -108,6 +117,27 @@ int main() {
 :::
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
+
+
+## Fast Generation of Integer Sequence
+
+:::bq
+```c++
+#include <utility>
+#include <vector>
+
+template<typename T>
+consteval info make_integer_seq_refl(T N) {
+  std::vector args{^T};
+  for (T k = 0; k<N; ++k)  args.push_back(std::meta::reflect_value(k));
+  return substitute(^std::integer_sequence, args);
+}
+
+template<typename T>
+  using make_integer_sequence<typename T, T N> = [:make_integer_seq_refl<T>(N):];
+```
+:::
+
 
 ## Enum to String
 
@@ -150,6 +180,102 @@ constexpr std::optional<E> string_to_enum(std::string_view name) {
 }
 ```
 :::
+
+
+## Parsing Command-Line Options
+
+Our next example shows how command-line options could be automatically mapped to an "options" structure.
+For simplicity, we posit the existence of a range-like class type `ProgramArgs` that collects the traditional `(argc, argv)` parameters in a more friendly package.
+This example also uses an expansion statement for simplicity.
+
+::: bq
+```c++
+#include <sstream>
+#include <string>
+#include <meta>
+#include <ProgramArgs.h>
+
+template<typename Opts> bool parse_options(Opts *opts, ProgramArgs const &args) {
+  using namespace std;
+  using namespace std::meta;
+  bool success = true;
+  for (auto const arg = args.begin(); args != args.end(); ++args) {
+    template for(constexpr auto dm: members_of(^Opts, is_nonstatic_data_member)) {
+      if (arg->is_option_with_name(name_of(dm))) {
+        // Arg is of the form "--word" where "word" is the name of dm.
+        // Move to the option value, but remember the option tag:
+        auto const opt_arg = arg++;
+        if (arg == args.end()) {
+          cerr << "Option " << string(opt_arg) << " is missing a value." << endl;
+          success = false;
+          break;
+        }
+        using T = typename[:type_of(dm):];
+        if constexpr (requires (T d, istringstream is) { is >> d; }) {
+          T val;
+          istringstream is(string(*arg));
+          is >> val;
+          opts->[:dm:] = val;
+        } else {
+          cerr << "Option " << string(opt_arg) << " value \"" << string(arg)
+               << "\" is no match for type << display_name_of(^T) << "." << endl;
+          success = false;
+        }
+      }
+    }
+  }
+  return success;
+}
+
+struct MyOpts {
+   string file_name = "input.txt";  // Option "--file_name <string>"
+  int    count = 1;                // Option "--count <int>"
+} opts;
+
+int main(int argc, char *argv[]) {
+  ProgramArgs  cmd_line_args(argc, argv);
+  if (!parse_options(&opts, cmd_line_args)) {
+    return 1;
+  }   ...
+}
+
+```
+
+(This example is based on a presentation by Matúš Chochlík.)
+
+
+## A Simple Tuple Type
+
+:::bq
+```c++
+#include <meta>
+
+template<typename... Ts> struct Tuple {
+  std::meta::synth_struct<std::array<info, sizeof...(Ts)>{ nsdm_description(^Ts)... }> data;
+
+  Tuple(): data{} {}
+  Tuple(Ts const& ...vs): data{ vs... } {}
+};
+
+template<typename... Ts>
+  struct std::tuple_size<Tuple<Ts...>>: public integral_constant<size_t, sizeof...(Ts)> {};
+
+template<typename I, typename... Ts>
+  struct std::tuple_element<I, Tuple<Ts...>> {
+    using type = [: template_arguments_of(^Tuple<Ts...>)[I] :];
+  };
+
+template<typename I, typename... Ts>
+  constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element<I, Tuple<Ts...>> {
+    return t.data.[:members_of(^decltype(t.data), is_nonstatic_data_member)[I]:];
+  }
+
+// Similarly for other value categories...
+```
+:::
+
+This example uses a "magic" `std::meta::synth_struct` template along with member reflection (through the `members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
+
 
 
 # Proposed Features
@@ -271,4 +397,235 @@ std::string name1 = name_of(^S);             // Also okay.
 
 ## Metafunctions
 
+We propose a number of metafunctions declared in namespace `std::meta` to operator on reflection values.
+Adding metafunctions to an implementation is expected to be relatively "easy" compared to implementing the core language features described previously.
+However, despite offering a normal consteval C++ function interface, each on of these relies on "compiler magic" to a significant extent.
+
+### `invalid_reflection`, `is_invalid`, `diagnose_error`
+
+:::bq
+```c++
+consteval auto invalid_reflection(
+                  std::string_view message,
+                  std::source_location src_loc = std::source_location::current())->info;
+consteval auto is_invalid(info)->bool;
+consteval auto is_invalid(std::span<info>)->bool;
+consteval void diagnose_error(info);
+```
+:::
+
+An invalid reflection represents a potential diagnostic for an erroneous construct.
+Some standard metafunctions will generate such invalid reflections, but user programs can also create them with the `invalid_reflection` metafunction.
+`is_invalid` returns true if it is given an invalid reflection or a span containing at least one invalid reflection.
+Evaluating `diagnose_error` renders a program ill-formed.
+If the given reflection is for an invalid reflection, an implementation is encouraged to render the encapsulated message and source position as part of the diagnostic indicating that the program is ill-formed.
+
+
+### `name_of`, `display_name_of`, `source_location_of`
+
+:::bq
+```c++
+consteval auto name_of(info r)->std::string_view;
+consteval auto display_name_of(info r)->std::string_view;
+}
+```
+:::
+
+Given a reflection `r` that designates a declared entity X, `name_of(r)` returns a `string_view` holding the unqualified name of X.
+For all other reflections, an empty `string_view` is produced.
+For template instances, the name does not include the template argument list.
+The contents of the `string_view` consist of characters of the basic source character set only (an implementation can map other characters using universal character names).
+
+Given a reflection `r`, `display_name_of(r)` returns a unspecified non-empty `string_view`.
+Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
+
+Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
+Implementations are encouraged to produce the correct source location of the item designated by the reflection.
+
+### `type_of`, `parent_of`, `entity_of`
+
+:::bq
+```c++
+consteval auto type_of(info r)->info;
+consteval auto parent_of(info r)->info;
+consteval auto entity_of(info r)->info;
+}
+```
+:::
+
+If `r` is a reflection designating a typed entity, `type_of(r)` is a reflection designating its type.
+Otherwise, `type_of(r)` produces an invalid reflection.
+
+If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or namespace.
+Otherwise, `parent_of(r)` produces an invalid reflection.
+
+If `r` designates an alias, `entity_of(r)` designates the underlying entity.
+Otherwise, `parent_of(r)` produces `r`.
+
+
+### `members_of`, `enumerators_of`, `subobjects_of`
+
+:::bq
+```c++
+template<typename ...Fs>
+    consteval auto members_of(info class_type, Fs ...filters)->std::vector<info>;
+template<typename ...Fs>
+    consteval auto enumerators_of(info class_type, Fs ...filters)->std::vector<info>;
+template<typename ...Fs>
+    consteval auto subobjects_of(info class_type, Fs ...filters)->std::vector<info>;
+```
+:::
+
+
+
+
+### `substitute`
+
+:::bq
+```c++
+consteval auto substitute(info templ, std::span<info> args)->info;
+```
+:::
+
+Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtains by substituting the given arguments in the template.
+This process might kick off instantiations outside the immediate context, which can lead to the program being ill-formed.
+Substitution errors in the immediate context of the template result in an invalid reflection being returned.
+
+Note that the template is only substituted, not instantiated.  For example:
+:::bq
+```c++
+template<typename T> struct S { typename T::X x; };
+
+constexpr auto r = substitute(^S, ^int);  // Okay.
+typename[:r:] si;  // Error: T::X is invalid for T = int.
+```
+:::
+
+### `entity_ref<T>`, `value_of<T>`, `ptr_to_member<T>`
+
+:::bq
+```c++
+template<typename T> auto entity_ref<T>(info var_or_func)->T&;
+template<typename T> auto value_of<T>(info constant_expr)->T;
+template<typename T> auto pointer_to_member<T>(info member)->T;
+```
+:::
+
+If `r` is a reflection `r` for a variable or function of type `T`, `entity_ref<T>(r)` evaluates to a reference to that variable or function.
+Otherwise, `entity_ref<T>(r)` is ill-formed.
+
+If `r` is a reflection for a constant-expression or a constant-valued entity of type `T`, `value_of(r)` evaluates to that constant value.
+Otherwise, `value_of<T>(r)` is ill-formed.
+
+If `r` is a reflection for a non-static member or for a constant pointer-to-member value matching type `T`, `pointer_to_member<T>(r)` evaluates to a corresonding pointer-to-member value.
+Otherwise, `value_of<T>(r)` is ill-formed.
+
+These function may feel similar to splicers, but unlike splicers they do not require their operand to be a constant-expression itself.
+Also unlike splicers, they require knowledge of the type associated with the entity reflected by their operand.
+
+### `test_type<Pred>`
+
+:::bq
+```c++
+auto test_type(info templ, info type)->bool {
+  return value_of(substitute(templ, std::vector{type}));
+}
+auto test_types(info templ, std::vector<info> types)->bool {
+  return value_of(substitute(templ, types));
+}
+```
+:::
+
+This utility translates existing metaprogramming predicates (expressed as constexpr variable templates) to the reflection domain.
+For example:
+
+:::bq
+```c++
+struct S {};
+static_assert(test_type(^std::is_class_v, ^S));
+```
+:::
+
+An implementation is permitted to recognize standard predicate templates and implement `test_type` without actually instantiating the predicate template.
+In fact, that is recommended practice.
+
+### Other Singular Reflection Predicates
+
+:::bq
+```c++
+consteval auto is_public(info r)->bool;
+consteval auto is_protected(info r)->bool;
+consteval auto is_private(info r)->bool;
+consteval auto is_accessible(info r)->bool;
+consteval auto is_virtual(info r)->bool;
+consteval auto is_deleted(info entity)->bool;
+consteval auto is_defaulted(info entity)->bool;
+consteval auto is_explicit(info entity)->bool;
+consteval auto is_override(info entity)->bool;
+consteval auto is_pure_virtual(info entity)->bool;
+consteval auto has_static_storage_duration(info r)->bool;
+
+consteval auto is_nsdm(info entity)->bool;
+consteval auto is_base(info entity)->bool;
+consteval auto is_namespace(info entity)->bool;
+consteval auto is_function(info entity)->bool;
+consteval auto is_static(info entity)->bool;
+consteval auto is_variable(info entity)->bool;
+consteval auto is_type(info entity)->bool;
+consteval auto is_alias(info entity)->bool;
+consteval auto is_incomplete_type(info entity)->bool;
+consteval auto is_template(info entity)->bool;
+consteval auto is_function_template(info entity)->bool;
+consteval auto is_variable_template(info entity)->bool;
+consteval auto is_class_template(info entity)->bool;
+consteval auto is_alias_template(info entity)->bool;
+consteval auto has_template_arguments(info r)->bool;
+```
+:::
+
+
+
+### `reflect_value`
+
+:::bq
+```c++
+template<typename T> consteval auto reflect_value(T value)->info;
+```
+:::
+
+This metafunction produces a reflection representing the constant value of the operand.
+
+
+### `nsdm_description`, `synth_struct`, `synth_union`
+
+:::bq
+```c++
+consteval auto nsdm_description(info  type, unsigned alignment = 0, unsigned width = 0)->info;
+
+template<auto NDSMs> requires template_of(^NSDMs) == ^std:array
+  struct synth_struct;
+
+template<auto NDSMs> requires template_of(^NSDMs) == ^std:array
+  struct synth_union;
+```
+:::
+
+`nsdm_description` encapsulates the type of a nonstatic data member into a reflection.  Optional alignment and bit-field-width can be provided as well.
+If the first operand does not designate a valid data member type, an invalid reflection is produced.
+
+`std::meta::synth_struct<NSDMs>` where NSDMs is a `std::array<info, N>` containing entries generated by `nsdm_description` is a struct, which when completed contains just `N` data members corresponding to those descriptions (declared in the order of the array elements).
+The names of the members are unspecified.
+If `std::meta::synth_struct<NSDMs>` is completed and any of the description entries is an invalid reflection, the program is ill-formed.
+
+`std::meta::synth_union<NSDMs>` is similar but produces a union instead of a struct.
+
+### Data Layout Reflection
+:::bq
+```c++
+consteval auto byte_offset_of(info entity)->std::size_t {...};
+consteval auto bit_offset_of(info entity)->std::size_t {...};
+consteval auto byte_size_of(info entity)->std::size_t {...};
+consteval auto bit_size_of(info entity)->std::size_t {...};
+```
+:::
 
