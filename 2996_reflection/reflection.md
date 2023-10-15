@@ -751,6 +751,23 @@ This is a very useful facility indeed!
 However, range splicing of dependent arguments is at least an order of magnitude harder to implement than ordinary splicing. We think that not including range splicing gives us a better chance of having reflection in C++26.
 Especially since, as this paper's examples demonstrate, a lot can be done without them.
 
+Another way to work around a lack of range splicing would be to implement `with_size<N>(f)`, which would behave like `f(integral_constant<size_t, 0>{}, integral_constant<size_t, 0>{}, ..., integral_constant<size_t, N-1>{})`.
+Which is enough for a tolerable implementation:
+
+::: bq
+```c++
+template <typename T>
+constexpr auto struct_to_tuple(T const& t) {
+  constexpr auto members = nonstatic_data_members_of(^T);
+  return with_size<members.size()>([&](auto... Is){
+    return std::make_tuple(t.[: members[Is] :]...);
+  });
+}
+```
+:::
+
+
+
 ## `std::meta::info`
 
 The type `std::meta::info` can be defined as follows:
