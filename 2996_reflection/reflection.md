@@ -730,7 +730,7 @@ constexpr auto struct_to_tuple(T const& t) {
 ```
 :::
 
-A range splice, `[: ... r :]`, would accept as its argument a range of `meta::info`, `r`, and it woudl behave as an unexpanded pack of splices. So the above expression
+A range splice, `[: ... r :]`, would accept as its argument a constant range of `meta::info`, `r`, and  would behave as an unexpanded pack of splices. So the above expression
 
 :::bq
 ```c++
