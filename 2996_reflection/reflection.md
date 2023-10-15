@@ -153,6 +153,20 @@ constexpr std::array sizes = []{
 ```
 :::
 
+Compare this to the following type-based approach, which produces the same array `sizes`:
+
+::: bq
+```c++
+template<class...> struct list {};
+
+using types = list<int, float, double>;
+
+constexpr auto sizes = []<template<class...> class L, class... T>(L<T...>) {
+    return std::array<std::size_t, sizeof...(T)>{{ sizeof(T)... }};
+}(types{});
+```
+:::
+
 ## Implementing `make_integer_sequence`
 
 We can provide a better implementation of `make_integer_sequence` than a hand-rolled approach using regular template metaprogramming (although standard libraries today rely on an intrinsic for this):
@@ -680,6 +694,62 @@ We still believe that those are desirable.
 However, they are more complex to implement and they involve syntactic choices that benefit from being considered along with other proposals that introduce pack-like constructs in non-template contexts.
 Meanwhile, we found that many very useful techniques are enabled with just the basic splicers presented here.)
 
+### Range Splicers
+
+The splicers described above all take a single object of type `std::meta::info` (described in more detail below).
+However, there are many cases where we don't have a single reflection, we have a range of reflections - and we want to splice them all in one go.
+For that, we need a different form of splicer: a range splicer.
+
+Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from above. It was demonstrates using a single splice, but it would be simpler if we had a range splice:
+
+::: cmptable
+### With Single Splice
+```c++
+template <typename T>
+constexpr auto struct_to_tuple(T const& t) {
+  constexpr auto members = nonstatic_data_members_of(^T);
+
+  constexpr auto indices = []{
+    std::array<int, members.size()> indices;
+    std::ranges::iota(indices, 0);
+    return indices;
+  }();
+
+  constexpr auto [...Is] = indices;
+  return std::make_tuple(t.[: members[Is] :]...);
+}
+```
+
+### With Range Splice
+```c++
+template <typename T>
+constexpr auto struct_to_tuple(T const& t) {
+  constexpr auto members = nonstatic_data_members_of(^T);
+  return std::make_tuple(t.[: ...members :]...);
+}
+```
+:::
+
+A range splice, `[: ... r :]`, would accept as its argument a range of `meta::info`, `r`, and it woudl behave as an unexpanded pack of splices. So the above expression
+
+:::bq
+```c++
+make_tuple(t.[: ... members :]...)
+```
+:::
+
+would evaluate as
+
+::: bq
+```c++
+make_tuple(t.[:members[0]:], t.[:members[1]:], ..., t.[:members[$N-1$]:])
+```
+:::
+
+This is a very useful facility indeed!
+
+However, range splicing of dependent arguments is at least an order of magnitude harder to implement than ordinary splicing. We think that not including range splicing gives us a better chance of having reflection in C++26.
+Especially since, as this paper's examples demonstrate, a lot can be done without them.
 
 ## `std::meta::info`
 
@@ -908,9 +978,9 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 :::bq
 ```c++
 namespace std::meta {
-  template<typename T> auto entity_ref<T>(info var_or_func) -> T&;
-  template<typename T> auto value_of<T>(info constant_expr) -> T;
-  template<typename T> auto pointer_to_member<T>(info member) -> T;
+  template<typename T> consteval auto entity_ref(info var_or_func) -> T&;
+  template<typename T> consteval auto value_of(info constant_expr) -> T;
+  template<typename T> consteval auto pointer_to_member(info member) -> T;
 }
 ```
 :::
