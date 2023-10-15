@@ -162,6 +162,43 @@ template<typename T, T N>
 ```
 :::
 
+## Getting Class Layout
+
+::: bq
+```c++
+struct member_descriptor
+{
+  std::size_t offset;
+  std::size_t size;
+};
+
+// returns std::array<member_descriptor, N>
+template <typename S>
+consteval auto get_layout() {
+  constexpr auto members = nonstatic_data_members_of(^S);
+  std::array<member_descriptor, members.size()> layout;
+  for (int i = 0; i < members.size(); ++i) {
+      layout[i] = {.offset=offset_of(members[i]), .size=size_of(members[i])};
+  }
+  return members;
+}
+
+struct X
+{
+    char a;
+    int b;
+    double c;
+};
+
+/*constexpr*/ auto Xd = get_layout<X>();
+
+/*
+where Xd would be std::array<member_descriptor, 3>{@{@
+  { 0, 1 }, { 4, 4 }, { 8, 8 }
+}}
+*/
+```
+:::
 
 ## Enum to String
 
@@ -1016,10 +1053,11 @@ constexpr auto U = std::meta::synth_struct({
 :::bq
 ```c++
 namespace std::meta {
-  consteval auto byte_offset_of(info entity) -> std::size_t;
-  consteval auto bit_offset_of(info entity) -> std::size_t;
-  consteval auto byte_size_of(info entity) -> std::size_t;
-  consteval auto bit_size_of(info entity) -> std::size_t;
+  consteval auto offset_of(info entity) -> size_t;
+  consteval auto size_of(info entity) -> size_t;
+
+  consteval auto bit_offset_of(info entity) -> size_t;
+  consteval auto bit_size_of(info entity) -> size_t;
 }
 ```
 :::
