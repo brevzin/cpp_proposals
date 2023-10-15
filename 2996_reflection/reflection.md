@@ -138,6 +138,20 @@ int main() {
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
+## List of Types to List of Sizes
+
+Here, `sizes` will be a `std::array<std::size_t, 3>` initialized with `{sizeof(int), sizeof(float), sizeof(double)}`:
+
+::: bq
+```c++
+constexpr std::array types = {^int, ^float, ^double};
+constexpr std::array sizes = []{
+  std::array<std::size_t, types.size()> r;
+  std::ranges::transform(types, r.begin(), std::meta::size_of);
+  return r;
+}();
+```
+:::
 
 ## Implementing `make_integer_sequence`
 
