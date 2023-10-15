@@ -180,7 +180,7 @@ consteval auto get_layout() {
   for (int i = 0; i < members.size(); ++i) {
       layout[i] = {.offset=offset_of(members[i]), .size=size_of(members[i])};
   }
-  return members;
+  return layout;
 }
 
 struct X
