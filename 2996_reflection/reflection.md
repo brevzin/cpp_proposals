@@ -965,7 +965,8 @@ namespace std::meta {
 ```
 :::
 
-Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtains by substituting the given arguments in the template.  (If the template is a concept template, the substitute result is a constant of type `bool`.)
+Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtained by substituting the given arguments in the template.
+If the template is a concept template, the result is a reflection of a constant of type `bool`.
 
 For example:
 
