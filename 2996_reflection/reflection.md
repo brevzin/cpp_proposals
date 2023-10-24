@@ -965,7 +965,8 @@ namespace std::meta {
 ```
 :::
 
-Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtains by substituting the given arguments in the template.
+Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtained by substituting the given arguments in the template.
+If the template is a concept template, the result is a reflection of a constant of type `bool`.
 
 For example:
 
@@ -1009,9 +1010,9 @@ If `r` is a reflection for a constant-expression or a constant-valued entity of 
 Otherwise, `value_of<T>(r)` is ill-formed.
 
 If `r` is a reflection for a non-static member or for a constant pointer-to-member value matching type `T`, `pointer_to_member<T>(r)` evaluates to a corresonding pointer-to-member value.
-Otherwise, `value_of<T>(r)` is ill-formed.
+Otherwise, `pointer_to_member<T>(r)` is ill-formed.
 
-These function may feel similar to splicers, but unlike splicers they do not require their operand to be a constant-expression itself.
+These functions may feel similar to splicers, but unlike splicers they do not require their operand to be a constant-expression itself.
 Also unlike splicers, they require knowledge of the type associated with the entity reflected by their operand.
 
 ### `test_type<Pred>`
@@ -1030,7 +1031,7 @@ namespace std::meta {
 ```
 :::
 
-This utility translates existing metaprogramming predicates (expressed as constexpr variable templates) to the reflection domain.
+This utility translates existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
 For example:
 
 :::bq
