@@ -965,7 +965,8 @@ namespace std::meta {
 ```
 :::
 
-Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtains by substituting the given arguments in the template.
+Given a reflection for a template and reflections for template arguments that match that template, `substitute` returns a reflection for the entity obtained by substituting the given arguments in the template.
+If the template is a concept template, the result is a reflection of a constant of type `bool`.
 
 For example:
 
@@ -1032,7 +1033,7 @@ namespace std::meta {
 ```
 :::
 
-This utility translates existing metaprogramming predicates (expressed as constexpr variable templates) to the reflection domain.
+This utility translates existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
 For example:
 
 :::bq
