@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R0
+document: D2996R1
 date: today
 audience: EWG
 author:
@@ -990,29 +990,31 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 ```
 :::
 
-### `entity_ref<T>`, `value_of<T>`, `ptr_to_member<T>`
+### `value_of<T>`
 
 :::bq
 ```c++
 namespace std::meta {
-  template<typename T> consteval auto entity_ref(info var_or_func) -> T&;
-  template<typename T> consteval auto value_of(info constant_expr) -> T;
-  template<typename T> consteval auto pointer_to_member(info member) -> T;
+  template<typename T> consteval auto value_of(info) -> T;
 }
 ```
 :::
 
-If `r` is a reflection of a variable or function of type `T`, `entity_ref<T>(r)` evaluates to a reference to that variable or function.
-Otherwise, `entity_ref<T>(r)` is ill-formed.
+If `r` is a reflection for a constant-expression or a constant-valued entity of type `T`, `value_of<T>(r)` evaluates to that constant value.
 
-If `r` is a reflection for a constant-expression or a constant-valued entity of type `T`, `value_of(r)` evaluates to that constant value.
-Otherwise, `value_of<T>(r)` is ill-formed.
+If `r` is a reflection for a variable of non-reference type `T`, `value_of<T&>(r)` and `value_of<T const&>(r)` are lvalues referring to that variable.
+If the variable is usable in constant expressions [expr.const], `value_of<T>(r)` evaluates to its value.
 
-If `r` is a reflection for a non-static member or for a constant pointer-to-member value matching type `T`, `pointer_to_member<T>(r)` evaluates to a corresonding pointer-to-member value.
-Otherwise, `value_of<T>(r)` is ill-formed.
+If `r` is a reflection for a variable of reference type `T` usable in constant-expressions, `value_of<T>(r)` evaluates to that reference.
 
-These function may feel similar to splicers, but unlike splicers they do not require their operand to be a constant-expression itself.
-Also unlike splicers, they require knowledge of the type associated with the entity reflected by their operand.
+If `r` is a reflection of an enumerator constant of type `E`, `value_of<E>(r)` evaluates to the value of that enumerator.
+
+If `r` is a reflection of a non-bit-field non-reference non-static member of type `M` in a class `C`, `value_of<M C::*>(r)` is the pointer-to-member value for that nonstatic member.
+
+For other reflection values `r`, `value_of<T>(r)` is ill-formed.
+
+The function template `value_of` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
+Also unlike splicers, it requires knowledge of the type associated with the entity reflected by its operand.
 
 ### `test_type<Pred>`
 
