@@ -885,14 +885,14 @@ Implementations are encouraged to produce text that is helpful in identifying th
 Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
 Implementations are encouraged to produce the correct source location of the item designated by the reflection.
 
-### `type_of`, `parent_of`, `entity_of`
+### `type_of`, `parent_of`, `dealias`
 
 :::bq
 ```c++
 namespace std::meta {
   consteval auto type_of(info r) -> info;
   consteval auto parent_of(info r) -> info;
-  consteval auto entity_of(info r) -> info;
+  consteval auto dealias(info r) -> info;
 }
 ```
 :::
@@ -903,8 +903,8 @@ Otherwise, `type_of(r)` produces an invalid reflection.
 If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or namespace.
 Otherwise, `parent_of(r)` produces an invalid reflection.
 
-If `r` designates an alias, `entity_of(r)` designates the underlying entity.
-Otherwise, `entity_of(r)` produces `r`.
+If `r` designates an alias, `dealias(r)` designates the underlying entity.
+Otherwise, `dealias(r)` produces `r`.
 
 ### `template_of`, `template_arguments_of`
 
