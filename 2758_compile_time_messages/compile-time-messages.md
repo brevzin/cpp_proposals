@@ -1,6 +1,6 @@
 ---
 title: "Emitting messages at compile time"
-document: P2758R0
+document: P2758R1
 date: today
 audience: EWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+[@P2758R0] and [@P2741R0] were published at the same time and had a lot of overlap. Since then, [@P2741R3] was adopted. As such, this paper no longer needs to propose the same thing. That part of the paper has been removed.
 
 # Introduction
 
@@ -291,7 +295,7 @@ static_assert(cond, std::format("The value is {}", 42));
 ```
 :::
 
-Tedious, but at least it makes a facility possible that currently is not. In order to specify this, we'd need to extend the definition of `static_assert`. Currently, it only allows `$string-literal$`, but we'd want it to be any range of some character type. We already have some language range wording in the standard, in [stmt.ranged]{.sref}, so we'd just refer to that.
+Tedious, but at least it makes a facility possible that currently is not. In order to specify this, we'd need to extend the definition of `static_assert`. Which [@P2741R3] has already done for us.
 
 # Improving compile-time diagnostics
 
@@ -313,10 +317,8 @@ But we'll probably still need a lower-level API as well. Something these facilit
 ::: bq
 ```cpp
 namespace std {
-  constexpr void constexpr_print_str(char const*);
-  constexpr void constexpr_print_str(char const*, size_t);
-  constexpr void constexpr_error_str(char const*);
-  constexpr void constexpr_error_str(char const*, size_t);
+  constexpr void constexpr_print_str(string_view);
+  constexpr void constexpr_error_str(string_view);
 }
 ```
 :::
@@ -332,7 +334,7 @@ But in order to talk about what these APIs actually do and what their effects ar
 ::: quote
 ```cpp
 template<typename> constexpr int g() {
-    std::__report_constexpr_value(“in g()\n”);
+    std::__report_constexpr_value("in g()\n");
     return 42;
 }
 
@@ -514,17 +516,119 @@ So we should probably provide that as well (under whichever name).
 
 But that's a format-specific solution. But a similar pattern works just fine for other error handling mechanisms, except for wanting to return an object (unless your return object happens to have a string part - since the two cases end up being very dfferent). I think that's okay though - at least we have the utility.
 
+## Errors in Constraints
+
+Let's take a look again at the example I showed [earlier](#predictability):
+
+::: bq
+```cpp
+constexpr auto f(int i) -> int {
+    if (i < 0) {
+        std::constexpr_error_str("cannot invoke f with a negative number");
+    }
+    return i;
+}
+
+template <int I> requires (f(I) % 2 == 0)
+auto g() -> void;
+```
+:::
+
+Here, `g<2>()` is obviously fine and `g<3>()` will not satisfy the constraints as usual, nothing interesting to say about either call. But what about if we try `g<-1>()`? Based on our currently language rules and what's being proposed here, `f(-1)` is not a constant expression, and the rule we have in [temp.constr.atomic]{.sref}/3 is:
+
+::: quote
+If substitution results in an invalid type or expression, the constraint is not satisfied. Otherwise, the lvalue-to-rvalue conversion is performed if necessary, and E shall be a constant expression of type `bool`.
+:::
+
+That is, `g<-1>()` is ill-formed, with our current rules. But loosening those rules to allow non-constants (still of type `bool`) would allow for more useful constructs like this. After all, the above is pretty conceptually similar to having written:
+
+::: bq
+```cpp
+constexpr auto f(int i) -> std::optional<int> {
+    if (i < 0) {
+        return std::nullopt;
+    }
+    return i;
+}
+
+template <int I> requires (f(I) % 2 == 0)
+auto g() -> void;
+```
+:::
+
+And here, `g<-1>()` would be a substitute failure. So why not in the original? This question also ends up being closely tied into what it would mean to have constexpr exceptions.
+
 # Proposal
 
 This paper proposes the following:
 
-1. Extend `static_assert` to take not just a `$string-literal$` but any `$string-range$` such that you can use a call to `std::format()` as the message
-2. Introduce new compile-time diagnostic APIs, that only have effect if manifestly constant evaluated: `std::constexpr_print_str(msg)` and `std::constexpr_print_str(msg, len)`.
-3. Introduce new compile-time error APIs, that only have effect if manifestly constant evaluated: `std::constexpr_error_str(msg)` and `std::constexpr_error_str(msg, len)`.
-4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
+1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str(msg)`
+2. Introduce a new compile-time error API, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(msg)`
+3. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
    a. `std::constexpr_print(fmt_str, args...)`
    b. `std::constexpr_error(fmt_str, args...)`
    c. a `format`-specific helper `std::format_parse_error(fmt_str, args...)` that either calls `std::constexpr_error` or throws a `std::format_error`, depending on context.
+
+# Wording
+
+We don't quite have `constexpr std::format` yet (although with the addition of [@P2738R1] we're probably nearly the whole way there), so the wording here only includes (1) and (2) above - with the understanding that a separate paper will materialize to produce a `constexpr std::format` and then another separate paper will add `std::constexpr_print` and `std::constexpr_error` (the nicer names, with the more user-friendly semantics).
+
+Add to [expr.const]{.sref}:
+
+::: bq
+[2]{.pnum} A variable or temporary object o is constant-initialized if [...]
+
+::: addu
+[2*]{.pnum} If a variable undergoes constant initialization and the initialization fails to satisfy the requirements of a core constant expression due to evaluating a call to `std::constexpr_error_str` ([meta.const.eval]), the program is ill-formed.
+:::
+
+...
+
+[5]{.pnum} An expression E is a *core constant expression* unless the evaluation of `E``, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
+
+* [5.1]{.pnum} [...]
+* [5.x]{.pnum} [...]
+
+::: addu
+* [5.34]{.pnum} A call to `std::constexpr_error_str` ([meta.const.eval]).
+:::
+
+:::
+
+Add to [meta.type.synop]{.sref}:
+
+::: bq
+```diff
+// all freestanding
+namespace std {
+  // ...
+
+  // [meta.const.eval], constant evaluation context
+  constexpr bool is_constant_evaluated() noexcept;
+  consteval bool is_within_lifetime(const auto*) noexcept;
+
++ constexpr void constexpr_print_str(string_view) noexcept;
++ constexpr void constexpr_error_str(string_view) noexcept;
+
+}
+```
+:::
+
+Add to [meta.const.eval]{.sref}:
+
+::: bq
+::: addu
+```
+constexpr void constexpr_print_str(string_view msg) noexcept;
+```
+[6]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the contents of `msg`. Otherwise, no effect.
+
+```
+constexpr void constexpr_error_str(string_view msg) noexcept;
+```
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the contents of `msg` and constant evaluation fails ([expr.const]). Otherwise, no effect.
+:::
+:::
 
 ---
 references:
