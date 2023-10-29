@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-24" />
+  <meta name="dcterms.date" content="2023-10-29" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-24</td>
+    <td>2023-10-29</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -601,7 +601,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#invalid_reflection-is_invalid-diagnose_error"><span class="toc-section-number">3.4.1</span> <code class="sourceCode cpp">invalid_reflection</code>, <code class="sourceCode cpp">is_invalid</code>, <code class="sourceCode cpp">diagnose_error</code><span></span></a></li>
 <li><a href="#name_of-display_name_of-source_location_of"><span class="toc-section-number">3.4.2</span> <code class="sourceCode cpp">name_of</code>, <code class="sourceCode cpp">display_name_of</code>, <code class="sourceCode cpp">source_location_of</code><span></span></a></li>
-<li><a href="#type_of-parent_of-entity_of"><span class="toc-section-number">3.4.3</span> <code class="sourceCode cpp">type_of</code>, <code class="sourceCode cpp">parent_of</code>, <code class="sourceCode cpp">entity_of</code><span></span></a></li>
+<li><a href="#type_of-parent_of-dealias"><span class="toc-section-number">3.4.3</span> <code class="sourceCode cpp">type_of</code>, <code class="sourceCode cpp">parent_of</code>, <code class="sourceCode cpp">dealias</code><span></span></a></li>
 <li><a href="#template_of-template_arguments_of"><span class="toc-section-number">3.4.4</span> <code class="sourceCode cpp">template_of</code>, <code class="sourceCode cpp">template_arguments_of</code><span></span></a></li>
 <li><a href="#members_of-nonstatic_data_members_of-bases_of-enumerators_of-subobjects_of"><span class="toc-section-number">3.4.5</span> <code class="sourceCode cpp">members_of</code>, <code class="sourceCode cpp">nonstatic_data_members_of</code>, <code class="sourceCode cpp">bases_of</code>, <code class="sourceCode cpp">enumerators_of</code>, <code class="sourceCode cpp">subobjects_of</code><span></span></a></li>
 <li><a href="#substitute"><span class="toc-section-number">3.4.6</span> <code class="sourceCode cpp">substitute</code><span></span></a></li>
@@ -1260,17 +1260,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Given a reflection <code class="sourceCode cpp">r</code> that designates a declared entity <code class="sourceCode cpp">X</code>, <code class="sourceCode cpp">name_of<span class="op">(</span>r<span class="op">)</span></code> returns a <code class="sourceCode cpp">string_view</code> holding the unqualified name of <code class="sourceCode cpp">X</code>. For all other reflections, an empty <code class="sourceCode cpp">string_view</code> is produced. For template instances, the name does not include the template argument list. The contents of the <code class="sourceCode cpp">string_view</code> consist of characters of the basic source character set only (an implementation can map other characters using universal character names).</p>
 <p>Given a reflection <code class="sourceCode cpp">r</code>, <code class="sourceCode cpp">display_name_of<span class="op">(</span>r<span class="op">)</span></code> returns a unspecified non-empty <code class="sourceCode cpp">string_view</code>. Implementations are encouraged to produce text that is helpful in identifying the reflected construct.</p>
 <p>Given a reflection <code class="sourceCode cpp">r</code>, <code class="sourceCode cpp">source_location_of<span class="op">(</span>r<span class="op">)</span></code> returns an unspecified <code class="sourceCode cpp">source_location</code>. Implementations are encouraged to produce the correct source location of the item designated by the reflection.</p>
-<h3 data-number="3.4.3" id="type_of-parent_of-entity_of"><span class="header-section-number">3.4.3</span> <code class="sourceCode cpp">type_of</code>, <code class="sourceCode cpp">parent_of</code>, <code class="sourceCode cpp">entity_of</code><a href="#type_of-parent_of-entity_of" class="self-link"></a></h3>
+<h3 data-number="3.4.3" id="type_of-parent_of-dealias"><span class="header-section-number">3.4.3</span> <code class="sourceCode cpp">type_of</code>, <code class="sourceCode cpp">parent_of</code>, <code class="sourceCode cpp">dealias</code><a href="#type_of-parent_of-dealias" class="self-link"></a></h3>
 <blockquote>
 <div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
 <span id="cb33-2"><a href="#cb33-2"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> type_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb33-3"><a href="#cb33-3"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> parent_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb33-4"><a href="#cb33-4"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> entity_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb33-4"><a href="#cb33-4"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> dealias<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb33-5"><a href="#cb33-5"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>If <code class="sourceCode cpp">r</code> is a reflection designating a typed entity, <code class="sourceCode cpp">type_of<span class="op">(</span>r<span class="op">)</span></code> is a reflection designating its type. Otherwise, <code class="sourceCode cpp">type_of<span class="op">(</span>r<span class="op">)</span></code> produces an invalid reflection.</p>
 <p>If <code class="sourceCode cpp">r</code> designates a member of a class or namespace, <code class="sourceCode cpp">parent_of<span class="op">(</span>r<span class="op">)</span></code> is a reflection designating its immediately enclosing class or namespace. Otherwise, <code class="sourceCode cpp">parent_of<span class="op">(</span>r<span class="op">)</span></code> produces an invalid reflection.</p>
-<p>If <code class="sourceCode cpp">r</code> designates an alias, <code class="sourceCode cpp">entity_of<span class="op">(</span>r<span class="op">)</span></code> designates the underlying entity. Otherwise, <code class="sourceCode cpp">entity_of<span class="op">(</span>r<span class="op">)</span></code> produces <code class="sourceCode cpp">r</code>.</p>
+<p>If <code class="sourceCode cpp">r</code> designates an alias, <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code> designates the underlying entity. Otherwise, <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code> produces <code class="sourceCode cpp">r</code>.</p>
 <h3 data-number="3.4.4" id="template_of-template_arguments_of"><span class="header-section-number">3.4.4</span> <code class="sourceCode cpp">template_of</code>, <code class="sourceCode cpp">template_arguments_of</code><a href="#template_of-template_arguments_of" class="self-link"></a></h3>
 <blockquote>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
