@@ -963,24 +963,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ol>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">7</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>We don’t quite have <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code> yet (although with the addition of <span class="citation" data-cites="P2738R1">[<a href="#ref-P2738R1" role="doc-biblioref">P2738R1</a>]</span> we’re probably nearly the whole way there), so the wording here only includes (1) and (2) above - with the understanding that a separate paper will materialize to produce a <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code> and then another separate paper will add <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print</code> and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code> (the nicer names, with the more user-friendly semantics).</p>
-<p>Add to <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span> A variable or temporary object o is constant-initialized if […]</p>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2*</a></span> If a variable undergoes constant initialization and the initialization fails to satisfy the requirements of a core constant expression due to evaluating a call to <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code> ([meta.const.eval]), the program is ill-formed.</p>
-</div>
-<p>…</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">5</a></span> An expression E is a <em>core constant expression</em> unless the evaluation of `E``, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.1)</a></span> […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5.x)</a></span> […]</li>
-</ul>
-<div class="addu">
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5.34)</a></span> A call to <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code> ([meta.const.eval]).</li>
-</ul>
-</div>
-</blockquote>
 <p>Add to <span>21.3.3 <a href="https://wg21.link/meta.type.synop">[meta.type.synop]</a></span>:</p>
 <blockquote>
 <div>
@@ -1002,9 +984,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">6</a></span> <em>Effects</em>: During constant evaluation, a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code>. Otherwise, no effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">6</a></span> <em>Effects</em>: During constant evaluation, a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code>. Otherwise, no effect.</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>constexpr void constexpr_error_str(string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">7</a></span> <em>Effects</em>: During constant evaluation, a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code> and constant evaluation fails ([expr.const]). Otherwise, no effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> <em>Effects</em>: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code>. Otherwise, no effect.</p>
 </div>
 </blockquote>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>

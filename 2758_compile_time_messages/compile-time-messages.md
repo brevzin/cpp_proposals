@@ -573,28 +573,6 @@ This paper proposes the following:
 
 We don't quite have `constexpr std::format` yet (although with the addition of [@P2738R1] we're probably nearly the whole way there), so the wording here only includes (1) and (2) above - with the understanding that a separate paper will materialize to produce a `constexpr std::format` and then another separate paper will add `std::constexpr_print` and `std::constexpr_error` (the nicer names, with the more user-friendly semantics).
 
-Add to [expr.const]{.sref}:
-
-::: bq
-[2]{.pnum} A variable or temporary object o is constant-initialized if [...]
-
-::: addu
-[2*]{.pnum} If a variable undergoes constant initialization and the initialization fails to satisfy the requirements of a core constant expression due to evaluating a call to `std::constexpr_error_str` ([meta.const.eval]), the program is ill-formed.
-:::
-
-...
-
-[5]{.pnum} An expression E is a *core constant expression* unless the evaluation of `E``, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
-
-* [5.1]{.pnum} [...]
-* [5.x]{.pnum} [...]
-
-::: addu
-* [5.34]{.pnum} A call to `std::constexpr_error_str` ([meta.const.eval]).
-:::
-
-:::
-
 Add to [meta.type.synop]{.sref}:
 
 ::: bq
@@ -626,7 +604,7 @@ constexpr void constexpr_print_str(string_view msg) noexcept;
 ```
 constexpr void constexpr_error_str(string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the contents of `msg` and constant evaluation fails ([expr.const]). Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the contents of `msg`. Otherwise, no effect.
 :::
 :::
 
