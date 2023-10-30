@@ -678,6 +678,8 @@ A reflection that is not an invalid reflection can be "spliced" into source code
  - `namespace[: r :]` produces a _namespace-name_ corresponding to the namespace represented by `r`.
  - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
 
+The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work.)
+
 Attempting to splice a reflection value that does not meet the requirement of the splice (including "invalid reflections") is ill-formed.
 For example:
 
