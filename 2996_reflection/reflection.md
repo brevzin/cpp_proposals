@@ -1078,6 +1078,9 @@ namespace std::meta {
   consteval auto is_class_template(info entity) -> bool;
   consteval auto is_alias_template(info entity) -> bool;
   consteval auto has_template_arguments(info r) -> bool;
+  consteval auto is_constructor(info r) -> bool;
+  consteval auto is_destructor(info r) -> bool;
+  consteval auto is_special_member(info r) -> bool;
 }
 ```
 :::
