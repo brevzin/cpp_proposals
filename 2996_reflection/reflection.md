@@ -1063,6 +1063,7 @@ namespace std::meta {
   consteval auto is_explicit(info entity) -> bool;
   consteval auto is_override(info entity) -> bool;
   consteval auto is_pure_virtual(info entity) -> bool;
+  consteval auto is_bit_field(info entity) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
 
   consteval auto is_nsdm(info entity) -> bool;
@@ -1167,6 +1168,8 @@ namespace std::meta {
 
   consteval auto bit_offset_of(info entity) -> size_t;
   consteval auto bit_size_of(info entity) -> size_t;
+
+  consteval auto alignment_of(info entity) -> size_t;
 }
 ```
 :::
