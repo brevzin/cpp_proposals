@@ -667,7 +667,7 @@ public:
     }
     // Return the value of its member.  Calling nonstatic_data_members_of
     // triggers the instantiation (i.e., completion) of Helper<k>.
-    return value_of<int>(nonstatic_data_members_of(r)[0]);
+    return value_of<int>(static_data_members_of(r)[0]);
   }
 };
 
