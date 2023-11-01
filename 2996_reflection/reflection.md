@@ -654,17 +654,18 @@ class TU_Ticket {
   template<int N> struct Helper {
     constexpr int value = N;
   };
-  static std::meta::info find_next() {
+public:
+  static consteval int next() {
+    // Search for the next incomplete Helper<k>.
+    std::meta::info r;
     for (int k = 0;; ++k) {
       auto r = substitute(^Helper, { reflect_value(k) });
-      if (is_incomplete_type(r)) return r;
+      if (is_incomplete_type(r)) break;
     }
+    // Return the value of its member.  Calling nonstatic_data_members_of
+    // triggers the instantiation (i.e., completion) of Helper<k>.
+    return value_of<int>(nonstatic_data_members_of(r)[0]);
   }
-public:
-  static int next() {
-    using Next = [:find_next():];   // Next is incomplete here.
-    return Next::value;             // Accessing the value member completes
-  }                                 // (i.e., instantiates) the class type.
 };
 
 int x = TU_Ticket::next();  // x initialized to 0.
