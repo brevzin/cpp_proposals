@@ -673,7 +673,7 @@ int z = TU_Ticket::next();  // z initialized to 2.
 ```
 :::
 
-Note that this relies on the fact that a call to `substitute` only creates a specialization of a template, it doesn't instantiate it.
+Note that this relies on the fact that a call to `substitute` returns a specialization of a template, but doesn't trigger the instantiation of that specialization.
 Thus, the only instantiations of `TU_Ticket::Helper` occur because of access to their `value` members.
 
 # Proposed Features
