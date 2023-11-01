@@ -662,8 +662,9 @@ class TU_Ticket {
   }
 public:
   static int next() {
-    return [:find_next():]::value;  // Accessing the value member
-  }                                 // completes the class type.
+    using Next = [:find_next():];   // Next is incomplete here.
+    return Next::value;             // Accessing the value member completes
+  }                                 // (i.e., instantiates) the class type.
 };
 
 int x = TU_Ticket::next();  // x initialized to 0.
@@ -671,6 +672,9 @@ int y = TU_Ticket::next();  // y initialized to 1.
 int z = TU_Ticket::next();  // z initialized to 2.
 ```
 :::
+
+Note that this relies on the fact that a call to `substitute` only creates a specialization of a template, it doesn't instantiate it.
+Thus, the only instantiations of `TU_Ticket::Helper` occur because of access to their `value` members.
 
 # Proposed Features
 
