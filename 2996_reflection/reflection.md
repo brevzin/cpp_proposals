@@ -662,7 +662,7 @@ public:
     // Search for the next incomplete Helper<k>.
     std::meta::info r;
     for (int k = 0;; ++k) {
-      auto r = substitute(^Helper, { reflect_value(k) });
+      r = substitute(^Helper, { std::meta::reflect_value(k) });
       if (is_incomplete_type(r)) break;
     }
     // Return the value of its member.  Calling nonstatic_data_members_of
