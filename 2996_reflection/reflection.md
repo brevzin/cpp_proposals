@@ -984,12 +984,9 @@ namespace std::meta {
   consteval auto static_data_members_of(info class_type) -> vector<info> {
     return members_of(class_type, is_variable);
   }
+
   consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
     return members_of(class_type, is_nsdm);
-  }
-  
-  consteval auto bases_of(info class_type) -> vector<info> {
-    return members_of(class_type, is_base);
   }
   
   consteval auto subobjects_of(info class_type) -> vector<info> {
