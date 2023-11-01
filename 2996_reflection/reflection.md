@@ -633,15 +633,18 @@ constexpr auto struct_to_tuple(From const& from) {
     args.push_back(reflect_value(mem));
   }
 
-  auto f = entity_ref<To(From const&)>(substitute(^struct_to_tuple_helper, args));
+  auto f = value_of<To(&)(From const&)>(substitute(^struct_to_tuple_helper, args));
   return f(from);
 }
 ```
 :::
 
-Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`. `helper`. That gives us the return type. Then, `struct_to_tuple_helper` is a function template that does the actual conversion - which it can do by having all the reflections of the members as a non-type template parameter pack.
+Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
+That gives us the return type.
+Then, `struct_to_tuple_helper` is a function template that does the actual conversion --- which it can do by having all the reflections of the members as a non-type template parameter pack.
 
-Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, which is use `entity_ref` to get the correct function out of. `f` there is a function pointer to the correct specialization of `struct_to_tuple_helper`. Which we can simply invoke.
+Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `value_of`.
+Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
 
 ## Compile-Time Ticket Counter
 
@@ -675,7 +678,7 @@ int z = TU_Ticket::next();  // z initialized to 2.
 :::
 
 Note that this relies on the fact that a call to `substitute` returns a specialization of a template, but doesn't trigger the instantiation of that specialization.
-Thus, the only instantiations of `TU_Ticket::Helper` occur because of access to their `value` members.
+Thus, the only instantiations of `TU_Ticket::Helper` occur because of the call to `nonstatic_data_members_of` (which is a singleton representing the lone `value` member).
 
 # Proposed Features
 
