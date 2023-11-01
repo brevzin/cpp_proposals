@@ -970,28 +970,48 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 
 
 
-### `members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
+### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
 
 :::bq
 ```c++
 namespace std::meta {
   template<typename ...Fs>
     consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+
   template<typename ...Fs>
-    consteval auto nonstatic_data_members_of(info class_type, Fs ...filters) -> vector<info> {
-      return members_of(class_type, is_nonstatic_data_member, filters...);
-    }
-  template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info> {
-      return members_of(class_type, is_base, filters...);
-    }
-  template<typename ...Fs>
-    consteval auto enumerators_of(info class_type, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto subobjects_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+
+  consteval auto static_data_members_of(info class_type) -> vector<info> {
+    return members_of(class_type, is_variable);
+  }
+  consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
+    return members_of(class_type, is_nsdm);
+  }
+  
+  consteval auto bases_of(info class_type) -> vector<info> {
+    return members_of(class_type, is_base);
+  }
+  
+  consteval auto subobjects_of(info class_type) -> vector<info> {
+    auto subobjects = bases_of(class_type);
+    subobjects.append_range(nonstatic_data_members_of(class_type));
+    return subobjects;
+  }
+
+  consteval auto enumerators_of(info enum_type) -> vector<info>;
 }
 ```
 :::
+
+The template `members_of` returns a vector of reflections representing the direct members of the class type represented by its first argument.
+Any nonstatic data members appear in declaration order within that vector.
+Anonymous unions appear as a nonstatic data member of corresponding union type.
+If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
+E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
+
+The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
+
+`enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
 
 ### `substitute`
