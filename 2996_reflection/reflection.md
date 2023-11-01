@@ -655,7 +655,7 @@ This is not an ideal implementation (we'd prefer direct support for compile-time
 ```cpp
 class TU_Ticket {
   template<int N> struct Helper {
-    constexpr int value = N;
+    static constexpr int value = N;
   };
 public:
   static consteval int next() {
