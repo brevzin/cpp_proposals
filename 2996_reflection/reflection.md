@@ -643,6 +643,35 @@ Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U 
 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, which is use `entity_ref` to get the correct function out of. `f` there is a function pointer to the correct specialization of `struct_to_tuple_helper`. Which we can simply invoke.
 
+## Compile-Time Ticket Counter
+
+The features proposed here make it a little easier to update a ticket counter at compile time.
+This is not an ideal implementation (we'd prefer direct support for compile-time —-- i.e., `consteval` --- variables), but it shows how compile-time mutable state surfaces in new ways.
+
+::: bq
+```cpp
+class TU_Ticket {
+  template<int N> struct Helper {
+    constexpr int value = N;
+  };
+  static std::meta::info find_next() {
+    for (int k = 0;; ++k) {
+      auto r = substitute(^Helper, { reflect_value(k) });
+      if (is_incomplete_type(r)) return r;
+    }
+  }
+public:
+  static int next() {
+    return [:find_next():]::value;  // Accessing the value member
+  }                                 // completes the class type.
+};
+
+int x = TU_Ticket::next();  // x initialized to 0.
+int y = TU_Ticket::next();  // y initialized to 1.
+int z = TU_Ticket::next();  // z initialized to 2.
+```
+:::
+
 # Proposed Features
 
 ## The Reflection Operator (`^`)
