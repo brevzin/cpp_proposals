@@ -665,7 +665,7 @@ public:
       r = substitute(^Helper, { std::meta::reflect_value(k) });
       if (is_incomplete_type(r)) break;
     }
-    // Return the value of its member.  Calling nonstatic_data_members_of
+    // Return the value of its member.  Calling static_data_members_of
     // triggers the instantiation (i.e., completion) of Helper<k>.
     return value_of<int>(static_data_members_of(r)[0]);
   }
