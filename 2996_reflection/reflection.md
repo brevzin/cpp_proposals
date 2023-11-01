@@ -633,15 +633,52 @@ constexpr auto struct_to_tuple(From const& from) {
     args.push_back(reflect_value(mem));
   }
 
-  auto f = entity_ref<To(From const&)>(substitute(^struct_to_tuple_helper, args));
+  auto f = value_of<To(&)(From const&)>(substitute(^struct_to_tuple_helper, args));
   return f(from);
 }
 ```
 :::
 
-Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`. `helper`. That gives us the return type. Then, `struct_to_tuple_helper` is a function template that does the actual conversion - which it can do by having all the reflections of the members as a non-type template parameter pack.
+Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
+That gives us the return type.
+Then, `struct_to_tuple_helper` is a function template that does the actual conversion --- which it can do by having all the reflections of the members as a non-type template parameter pack.
 
-Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, which is use `entity_ref` to get the correct function out of. `f` there is a function pointer to the correct specialization of `struct_to_tuple_helper`. Which we can simply invoke.
+Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `value_of`.
+Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
+
+## Compile-Time Ticket Counter
+
+The features proposed here make it a little easier to update a ticket counter at compile time.
+This is not an ideal implementation (we'd prefer direct support for compile-time —-- i.e., `consteval` --- variables), but it shows how compile-time mutable state surfaces in new ways.
+
+::: bq
+```cpp
+class TU_Ticket {
+  template<int N> struct Helper {
+    static constexpr int value = N;
+  };
+public:
+  static consteval int next() {
+    // Search for the next incomplete Helper<k>.
+    std::meta::info r;
+    for (int k = 0;; ++k) {
+      r = substitute(^Helper, { std::meta::reflect_value(k) });
+      if (is_incomplete_type(r)) break;
+    }
+    // Return the value of its member.  Calling static_data_members_of
+    // triggers the instantiation (i.e., completion) of Helper<k>.
+    return value_of<int>(static_data_members_of(r)[0]);
+  }
+};
+
+int x = TU_Ticket::next();  // x initialized to 0.
+int y = TU_Ticket::next();  // y initialized to 1.
+int z = TU_Ticket::next();  // z initialized to 2.
+```
+:::
+
+Note that this relies on the fact that a call to `substitute` returns a specialization of a template, but doesn't trigger the instantiation of that specialization.
+Thus, the only instantiations of `TU_Ticket::Helper` occur because of the call to `nonstatic_data_members_of` (which is a singleton representing the lone `value` member).
 
 # Proposed Features
 
@@ -933,28 +970,45 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 
 
 
-### `members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
+### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
 
 :::bq
 ```c++
 namespace std::meta {
   template<typename ...Fs>
     consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+
   template<typename ...Fs>
-    consteval auto nonstatic_data_members_of(info class_type, Fs ...filters) -> vector<info> {
-      return members_of(class_type, is_nonstatic_data_member, filters...);
-    }
-  template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info> {
-      return members_of(class_type, is_base, filters...);
-    }
-  template<typename ...Fs>
-    consteval auto enumerators_of(info class_type, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto subobjects_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+
+  consteval auto static_data_members_of(info class_type) -> vector<info> {
+    return members_of(class_type, is_variable);
+  }
+
+  consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
+    return members_of(class_type, is_nsdm);
+  }
+  
+  consteval auto subobjects_of(info class_type) -> vector<info> {
+    auto subobjects = bases_of(class_type);
+    subobjects.append_range(nonstatic_data_members_of(class_type));
+    return subobjects;
+  }
+
+  consteval auto enumerators_of(info enum_type) -> vector<info>;
 }
 ```
 :::
+
+The template `members_of` returns a vector of reflections representing the direct members of the class type represented by its first argument.
+Any nonstatic data members appear in declaration order within that vector.
+Anonymous unions appear as a nonstatic data member of corresponding union type.
+If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
+E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
+
+The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
+
+`enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
 
 ### `substitute`
