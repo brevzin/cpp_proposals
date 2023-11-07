@@ -614,6 +614,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#nsdm_description-synth_struct-synth_union"><span class="toc-section-number">3.4.11</span> <code class="sourceCode cpp">nsdm_description</code>, <code class="sourceCode cpp">synth_struct</code>, <code class="sourceCode cpp">synth_union</code><span></span></a></li>
 <li><a href="#data-layout-reflection"><span class="toc-section-number">3.4.12</span> Data Layout Reflection<span></span></a></li>
 </ul></li>
+<li><a href="#error-handling-in-reflection"><span class="toc-section-number">3.5</span> Error-Handling in Reflection<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
@@ -1346,7 +1347,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb37-12"><a href="#cb37-12"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> nonstatic_data_members_of<span class="op">(</span>info class_type<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb37-13"><a href="#cb37-13"></a>    <span class="cf">return</span> members_of<span class="op">(</span>class_type, is_nsdm<span class="op">)</span>;</span>
 <span id="cb37-14"><a href="#cb37-14"></a>  <span class="op">}</span></span>
-<span id="cb37-15"><a href="#cb37-15"></a>  </span>
+<span id="cb37-15"><a href="#cb37-15"></a></span>
 <span id="cb37-16"><a href="#cb37-16"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> subobjects_of<span class="op">(</span>info class_type<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb37-17"><a href="#cb37-17"></a>    <span class="kw">auto</span> subobjects <span class="op">=</span> bases_of<span class="op">(</span>class_type<span class="op">)</span>;</span>
 <span id="cb37-18"><a href="#cb37-18"></a>    subobjects<span class="op">.</span>append_range<span class="op">(</span>nonstatic_data_members_of<span class="op">(</span>class_type<span class="op">))</span>;</span>
@@ -1508,6 +1509,38 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb48-8"><a href="#cb48-8"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> alignment_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
 <span id="cb48-9"><a href="#cb48-9"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+<h2 data-number="3.5" id="error-handling-in-reflection"><span class="header-section-number">3.5</span> Error-Handling in Reflection<a href="#error-handling-in-reflection" class="self-link"></a></h2>
+<p>One important question we have to answer is: how do we handle errors in reflection metafunctions? Concretely, what does <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>template_of<span class="op">(^</span><span class="dt">int</span><span class="op">)</span></code> do? <code class="sourceCode cpp"><span class="op">^</span><span class="dt">int</span></code> is a reflection of a type, but that type is not a specialization of a template, so there is no valid reflected template for us to return.</p>
+<p>There are a few options available to us today:</p>
+<ol type="1">
+<li>This fails to be a constant expression (unspecified mechanism).</li>
+<li>This returns an invalid reflection (similar to <code class="sourceCode cpp">NaN</code> for floating point) which carries source location info and some useful message.</li>
+<li>This returns <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, E<span class="op">&gt;</span></code> for some reflection-specific error type <code class="sourceCode cpp">E</code> which carries source location info and some useful message (this could be just <code class="sourceCode cpp">info</code> but probably should not be).</li>
+<li>This throws an exception of type <code class="sourceCode cpp">E</code> (which requires allow exceptions to work during <code class="sourceCode cpp"><span class="kw">constexpr</span></code> evaluation, such that an uncaught exception would fail to be a constant exception).</li>
+</ol>
+<p>The immediate downside of (2), yielding a <code class="sourceCode cpp">NaN</code>-like reflection for <code class="sourceCode cpp">template_of<span class="op">(^</span><span class="dt">int</span><span class="op">)</span></code> is what we do for those functions that need to return a range. That is, what does <code class="sourceCode cpp">template_arguments_of<span class="op">(^</span><span class="dt">int</span><span class="op">)</span></code> return?</p>
+<ol type="1">
+<li>This fails to be a constant expression (unspecified mechanism).</li>
+<li>This returns a <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span></code> containing one invalid reflection.</li>
+<li>This returns a <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span>, E<span class="op">&gt;</span></code>.</li>
+<li>This throws an exception of type <code class="sourceCode cpp">E</code>.</li>
+</ol>
+<p>Having range-based functions return a single invalid reflection would make for awkward error handling code. Using <code class="sourceCode cpp">std<span class="op">::</span>expected</code> or exceptions for error handling allow for a consistent, more straightforward interface.</p>
+<p>This becomes another situation where we need to decide an error handling mechanism between exceptions and not exceptions, although importantly in this context a lot of usual concerns about exceptions do not apply:</p>
+<ul>
+<li>there is no runtime (so concerns about runtime performance, object file size, etc. do not exist), and</li>
+<li>there is no runtime (so concerns about code evolving to add a new uncaught exception type do not apply)</li>
+</ul>
+<p>There is one interesting example to consider to decide between <code class="sourceCode cpp">std<span class="op">::</span>expected</code> and exceptions here:</p>
+<blockquote>
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb49-2"><a href="#cb49-2"></a>  <span class="kw">requires</span> <span class="op">(</span>template_of<span class="op">(^</span>T<span class="op">)</span> <span class="op">==</span> <span class="op">^</span>std<span class="op">::</span>optional<span class="op">)</span></span>
+<span id="cb49-3"><a href="#cb49-3"></a><span class="dt">void</span> foo<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+<p>If <code class="sourceCode cpp">template_of</code> returns an <code class="sourceCode cpp">excepted<span class="op">&lt;</span>info, E<span class="op">&gt;</span></code>, then <code class="sourceCode cpp">foo<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> is a substitution failure - <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code> is equality-comparable to <code class="sourceCode cpp">T</code>, that comparison would evaluate to <code class="sourceCode cpp"><span class="kw">false</span></code> but still be a constant expression.</p>
+<p>If <code class="sourceCode cpp">template_of</code> returns <code class="sourceCode cpp">info</code> but throws an exception, then <code class="sourceCode cpp">foo<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> would cause that exception to be uncaught, which would make the comparison not a constant expression. This actually makes the constraint ill-formed - not a substitution failure. In order to have <code class="sourceCode cpp">foo<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code> be a substitution failure, either the constraint would either have to first check that <code class="sourceCode cpp">T</code> is a template or we would have to change the language rule that requires constraints to be constant expressions (we would of course still keep the requirement that the constraint is a <code class="sourceCode cpp"><span class="dt">bool</span></code>).</p>
+<p>The other thing to consider is <code class="sourceCode cpp"><span class="op">-</span>fno<span class="op">-</span>exceptions</code>. Today, implementations reject using <code class="sourceCode cpp"><span class="cf">try</span></code>, <code class="sourceCode cpp"><span class="cf">catch</span></code>, or <code class="sourceCode cpp"><span class="cf">throw</span></code> at all. With support for <code class="sourceCode cpp"><span class="kw">constexpr</span></code> exceptions, implementations would have to come up with a strategy for how to support compile-time exceptions - probably by only allowing them in <code class="sourceCode cpp"><span class="kw">consteval</span></code> functions (including <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function templates that were propagated to <code class="sourceCode cpp"><span class="kw">consteval</span></code>).</p>
+<p>Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than <code class="sourceCode cpp">std<span class="op">::</span>expected</code> (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-N3980">

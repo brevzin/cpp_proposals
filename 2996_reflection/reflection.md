@@ -1011,7 +1011,7 @@ namespace std::meta {
   consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
     return members_of(class_type, is_nsdm);
   }
-  
+
   consteval auto subobjects_of(info class_type) -> vector<info> {
     auto subobjects = bases_of(class_type);
     subobjects.append_range(nonstatic_data_members_of(class_type));
@@ -1251,3 +1251,53 @@ namespace std::meta {
 ```
 :::
 
+## Error-Handling in Reflection
+
+One important question we have to answer is: how do we handle errors in reflection metafunctions?
+Concretely, what does `std::meta::template_of(^int)` do?
+`^int` is a reflection of a type, but that type is not a specialization of a template, so there is no valid reflected template for us to return.
+
+There are a few options available to us today:
+
+1. This fails to be a constant expression (unspecified mechanism).
+2. This returns an invalid reflection (similar to `NaN` for floating point) which carries source location info and some useful message.
+3. This returns `std::expected<std::meta::info, E>` for some reflection-specific error type `E` which carries source location info and some useful message (this could be just `info` but probably should not be).
+4. This throws an exception of type `E` (which requires allow exceptions to work during `constexpr` evaluation, such that an uncaught exception would fail to be a constant exception).
+
+The immediate downside of (2), yielding a `NaN`-like reflection for `template_of(^int)` is what we do for those functions that need to return a range.
+That is, what does `template_arguments_of(^int)` return?
+
+1. This fails to be a constant expression (unspecified mechanism).
+2. This returns a `std::vector<std::meta::info>` containing one invalid reflection.
+3. This returns a `std::expected<std::vector<std::meta::info>, E>`.
+4. This throws an exception of type `E`.
+
+Having range-based functions return a single invalid reflection would make for awkward error handling code.
+Using `std::expected` or exceptions for error handling allow for a consistent, more straightforward interface.
+
+This becomes another situation where we need to decide an error handling mechanism between exceptions and not exceptions, although importantly in this context a lot of usual concerns about exceptions do not apply:
+
+* there is no runtime (so concerns about runtime performance, object file size, etc. do not exist), and
+* there is no runtime (so concerns about code evolving to add a new uncaught exception type do not apply)
+
+There is one interesting example to consider to decide between `std::expected` and exceptions here:
+
+::: bq
+```cpp
+template <typename T>
+  requires (template_of(^T) == ^std::optional)
+void foo();
+```
+:::
+
+If `template_of` returns an `excepted<info, E>`, then `foo<int>` is a substitution failure - `expected<T, E>` is equality-comparable to `T`, that comparison would evaluate to `false` but still be a constant expression.
+
+If `template_of` returns `info` but throws an exception, then `foo<int>` would cause that exception to be uncaught, which would make the comparison not a constant expression.
+This actually makes the constraint ill-formed - not a substitution failure.
+In order to have `foo<int>` be a substitution failure, either the constraint would either have to first check that `T` is a template or we would have to change the language rule that requires constraints to be constant expressions (we would of course still keep the requirement that the constraint is a `bool`).
+
+The other thing to consider is `-fno-exceptions`.
+Today, implementations reject using `try`, `catch`, or `throw` at all.
+With support for `constexpr` exceptions, implementations would have to come up with a strategy for how to support compile-time exceptions - probably by only allowing them in `consteval` functions (including `constexpr` function templates that were propagated to `consteval`).
+
+Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than `std::expected` (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).
