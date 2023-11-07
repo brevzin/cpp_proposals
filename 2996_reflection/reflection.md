@@ -1262,7 +1262,7 @@ There are a few options available to us today:
 1. This fails to be a constant expression (unspecified mechanism).
 2. This returns an invalid reflection (similar to `NaN` for floating point) which carries source location info and some useful message.
 3. This returns `std::expected<std::meta::info, E>` for some reflection-specific error type `E` which carries source location info and some useful message (this could be just `info` but probably should not be).
-4. This throws an exception of type `E` (which requires allow exceptions to work during `constexpr` evaluation, such that an uncaught exception would fail to be a constant exception).
+4. This throws an exception of type `E` (which requires allowing exceptions to work during `constexpr` evaluation, such that an uncaught exception would fail to be a constant exception).
 
 The immediate downside of (2), yielding a `NaN`-like reflection for `template_of(^int)` is what we do for those functions that need to return a range.
 That is, what does `template_arguments_of(^int)` return?
