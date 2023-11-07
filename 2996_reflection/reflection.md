@@ -624,8 +624,8 @@ constexpr auto struct_to_tuple_helper(From const& from) -> To {
   return To(from.[:members:]...);
 }
 
-template <typename From>
-constexpr auto struct_to_tuple(From const& from) {
+template<typename From>
+consteval auto get_struct_to_tuple_helper() {
   using To = [: struct_to_tuple_type(^From): ];
 
   std::vector args = {^To, ^From};
@@ -633,8 +633,13 @@ constexpr auto struct_to_tuple(From const& from) {
     args.push_back(reflect_value(mem));
   }
 
-  auto f = value_of<To(&)(From const&)>(substitute(^struct_to_tuple_helper, args));
-  return f(from);
+  return value_of<To(*)(From const&)>(
+                                   substitute(^struct_to_tuple_helper, args));
+}
+
+template <typename From>
+constexpr auto struct_to_tuple(From const& from) {
+  return get_struct_to_tuple_helper<From>()(from);
 }
 ```
 :::
@@ -642,6 +647,8 @@ constexpr auto struct_to_tuple(From const& from) {
 Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
 That gives us the return type.
 Then, `struct_to_tuple_helper` is a function template that does the actual conversion --- which it can do by having all the reflections of the members as a non-type template parameter pack.
+This is a `constexpr` function and not a `consteval` function because in the general case the conversion is a run-time operation.
+However, determining the instance of `struct_to_tuple_helper` that is needed is a compile-time operation and has to be performed with a `consteval` function (because the function invokes `nonstatic_data_members_of`), hence the separate function template `get_struct_to_tuple_helper()`.
 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `value_of`.
 Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
