@@ -641,8 +641,16 @@ consteval auto get_struct_to_tuple_helper() {
     args.push_back(reflect_value(mem));
   }
 
+  /*
+  Alternatively, with Ranges:
+  args.append_range(
+    nonstatic_data_members_of(^From)
+    | std::views::transform(std::meta::reflect_value)
+    );
+  */
+
   return value_of<To(*)(From const&)>(
-                                   substitute(^struct_to_tuple_helper, args));
+    substitute(^struct_to_tuple_helper, args));
 }
 
 template <typename From>
