@@ -82,6 +82,14 @@ Other advantages of a single opaque type include:
     nontypes — without fear of slicing values).
 
 
+## Implementation Status
+
+Lock3 implemented the equivalent of much that is proposed here in a fork of Clang (specifically, it worked with the P1240 proposal, but also included several other capabilities including a first-class injection mechanism).
+
+EDG has an ongoing implementation of this proposal: It is being updated to reflect this paper and is expected be made available to licensees in a "preview" form by year's end.
+In particular, the EDG implementation mostly follows the syntax and metafunction names as described in this paper.
+
+
 # Examples
 
 We start with a number of examples that show off what is possible with the proposed set of features.
