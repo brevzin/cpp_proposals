@@ -628,7 +628,7 @@ template<typename From>
 consteval auto get_struct_to_tuple_helper() {
   using To = [: struct_to_tuple_type(^From): ];
 
-  std::meta::infovec args = {^To, ^From};
+  std::vector args = {^To, ^From};
   for (auto mem : nonstatic_data_members_of(^From)) {
     args.push_back(reflect_value(mem));
   }
