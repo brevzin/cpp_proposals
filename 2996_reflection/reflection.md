@@ -373,7 +373,8 @@ template<typename... Ts>
 
 template<std::size_t I, typename... Ts>
   struct std::tuple_element<I, Tuple<Ts...>> {
-    using type = [: template_arguments_of(^Tuple<Ts...>)[I-1] :];
+    static constexpr std::array types = {^Ts...};
+    using types = [: types[I] :];
   };
 
 consteval std::meta::info get_nth_nsdm(std::meta::info r, std::size_t n) {
