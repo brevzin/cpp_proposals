@@ -930,25 +930,6 @@ We propose a number of metafunctions declared in namespace `std::meta` to operat
 Adding metafunctions to an implementation is expected to be relatively "easy" compared to implementing the core language features described previously.
 However, despite offering a normal consteval C++ function interface, each on of these relies on "compiler magic" to a significant extent.
 
-### `invalid_reflection`, `is_invalid`, `diagnose_error`
-
-:::bq
-```c++
-namespace std::meta {
-  consteval auto invalid_reflection(string_view msg, source_location loc = source_location::current()) -> info;
-  consteval auto is_invalid(info) -> bool;
-  consteval auto diagnose_error(info) -> void;
-}
-```
-:::
-
-An invalid reflection represents a potential diagnostic for an erroneous construct.
-Some standard metafunctions will generate such invalid reflections, but user programs can also create them with the `invalid_reflection` metafunction.
-`is_invalid` returns true if it is given an invalid reflection.
-Evaluating `diagnose_error` renders a program ill-formed.
-If the given reflection is for an invalid reflection, an implementation is encouraged to render the encapsulated message and source position as part of the diagnostic indicating that the program is ill-formed.
-
-
 ### `name_of`, `display_name_of`, `source_location_of`
 
 :::bq
@@ -956,6 +937,7 @@ If the given reflection is for an invalid reflection, an implementation is encou
 namespace std::meta {
   consteval auto name_of(info r) -> string_view;
   consteval auto display_name_of(info r) -> string_view;
+  consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
@@ -984,10 +966,8 @@ namespace std::meta {
 :::
 
 If `r` is a reflection designating a typed entity, `type_of(r)` is a reflection designating its type.
-Otherwise, `type_of(r)` produces an invalid reflection.
 
 If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or namespace.
-Otherwise, `parent_of(r)` produces an invalid reflection.
 
 If `r` designates an alias, `dealias(r)` designates the underlying entity.
 Otherwise, `dealias(r)` produces `r`.
@@ -1003,7 +983,7 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection designated a type that is a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. Otherwise, both yield invalid reflections. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
+If `r` is a reflection designated a type that is a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
 
 For example:
 
@@ -1081,7 +1061,6 @@ using T = [:r:]; // Ok, T is std::vector<int>
 :::
 
 This process might kick off instantiations outside the immediate context, which can lead to the program being ill-formed.
-Substitution errors in the immediate context of the template result in an invalid reflection being returned.
 
 Note that the template is only substituted, not instantiated.  For example:
 
@@ -1277,14 +1256,14 @@ namespace std::meta {
 
 ## Error-Handling in Reflection
 
-One important question we have to answer is: how do we handle errors in reflection metafunctions?
-Concretely, what does `std::meta::template_of(^int)` do?
+One important question we have to answer is: How do we handle errors in reflection metafunctions?
+For example, what does `std::meta::template_of(^int)` do?
 `^int` is a reflection of a type, but that type is not a specialization of a template, so there is no valid reflected template for us to return.
 
 There are a few options available to us today:
 
 1. This fails to be a constant expression (unspecified mechanism).
-2. This returns an invalid reflection (similar to `NaN` for floating point) which carries source location info and some useful message.
+2. This returns an invalid reflection (similar to `NaN` for floating point) which carries source location info and some useful message.  (This was the approach suggested in P1240.)
 3. This returns `std::expected<std::meta::info, E>` for some reflection-specific error type `E` which carries source location info and some useful message (this could be just `info` but probably should not be).
 4. This throws an exception of type `E` (which requires allowing exceptions to work during `constexpr` evaluation, such that an uncaught exception would fail to be a constant exception).
 
@@ -1314,14 +1293,14 @@ void foo();
 ```
 :::
 
-If `template_of` returns an `excepted<info, E>`, then `foo<int>` is a substitution failure - `expected<T, E>` is equality-comparable to `T`, that comparison would evaluate to `false` but still be a constant expression.
+If `template_of` returns an `excepted<info, E>`, then `foo<int>` is a substitution failure --- `expected<T, E>` is equality-comparable to `T`, that comparison would evaluate to `false` but still be a constant expression.
 
 If `template_of` returns `info` but throws an exception, then `foo<int>` would cause that exception to be uncaught, which would make the comparison not a constant expression.
 This actually makes the constraint ill-formed - not a substitution failure.
-In order to have `foo<int>` be a substitution failure, either the constraint would either have to first check that `T` is a template or we would have to change the language rule that requires constraints to be constant expressions (we would of course still keep the requirement that the constraint is a `bool`).
+In order to have `foo<int>` be a substitution failure, either the constraint would have to first check that `T` is a template or we would have to change the language rule that requires constraints to be constant expressions (we would of course still keep the requirement that the constraint is a `bool`).
 
-The other thing to consider is `-fno-exceptions`.
-Today, implementations reject using `try`, `catch`, or `throw` at all.
-With support for `constexpr` exceptions, implementations would have to come up with a strategy for how to support compile-time exceptions - probably by only allowing them in `consteval` functions (including `constexpr` function templates that were propagated to `consteval`).
+The other thing to consider are compiler modes that disable exception support (like `-fno-exceptions` in GCC and Clang).
+Today, implementations reject using `try`, `catch`, or `throw` at all when such modes are enabled.
+With support for `constexpr` exceptions, implementations would have to come up with a strategy for how to support compile-time exceptions --- probably by only allowing them in `consteval` functions (including `constexpr` function templates that were propagated to `consteval`).
 
 Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than `std::expected` (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).
