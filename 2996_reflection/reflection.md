@@ -359,7 +359,9 @@ int main(int argc, char *argv[]) {
 #include <meta>
 
 template<typename... Ts> struct Tuple {
-  using storage = typename[:std::meta::synth_struct({nsdm_description(^T)...}):];
+  struct storage;
+
+  static_assert(is_type(define_class(^storage, {std::meta::nsdm_description(^Ts)...})));
   storage data;
 
   Tuple(): data{} {}
@@ -369,37 +371,54 @@ template<typename... Ts> struct Tuple {
 template<typename... Ts>
   struct std::tuple_size<Tuple<Ts...>>: public integral_constant<size_t, sizeof...(Ts)> {};
 
-template<typename I, typename... Ts>
+template<std::size_t I, typename... Ts>
   struct std::tuple_element<I, Tuple<Ts...>> {
-    using type = [: template_arguments_of(^Tuple<Ts...>)[I] :];
+    static constexpr std::array types = {^Ts...};
+    using types = [: types[I] :];
   };
 
-template<typename I, typename... Ts>
-  constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
-    return t.data.[:nonstatic_data_members_of(^decltype(t.data))[I]:];
-  }
+consteval std::meta::info get_nth_nsdm(std::meta::info r, std::size_t n) {
+  return nonstatic_data_members_of(r)[n];
+}
 
+template<std::size_t I, typename... Ts>
+  constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
+    return t.data.[:get_nth_nsdm(^decltype(t.data), I):];
+  }
 // Similarly for other value categories...
 ```
 :::
 
-This example uses a "magic" `std::meta::synth_struct` template along with member reflection through the `members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
+This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
+`define_class` takes a reflection for an incomplete class or union plus a vector of nonstatic data member descriptions, and completes the give class or union type to have the described members.
 
 ## Struct to Struct of Arrays
 
 ::: bq
 ```c++
-consteval auto make_struct_of_arrays(std::meta::info type, size_t n) -> std::meta::info {
-  std::vector<info> new_members;
-  for (std::meta::info member : nonstatic_data_members_of(type)) {
-    auto array_type = substitute(^std::array, {type_of(member), reflect_value(n)});
-    new_members.push_back(nsdm_description(array_type, {.name = name_of(member)}));
+#include <meta>
+#include <array>
+
+template <typename T, std::size_t N>
+struct struct_of_arrays_impl;
+
+consteval auto make_struct_of_arrays(std::meta::info type,
+                                     std::meta::info N) -> std::meta::info {
+  std::meta::vector<info> old_members = nonstatic_data_members_of(type);
+  std::vector<std::meta::nsdm_description> new_members = {};
+  for (std::meta::info member : old_members) {
+    auto array_type = substitute(^std::array, {type_of(member), N });
+    std::meta::nsdm_description
+      mem_descr(array_type, std::meta::nsdm_options{.name = name_of(member)});
+    new_members.push_back(mem_descr);
   }
-  return std::meta::synth_struct(new_members);
+  return std::meta::define_class(
+    substitute(^struct_of_arrays_impl, {type, N}),
+    new_members);
 }
 
 template <typename T, size_t N>
-using struct_of_arrays = [: make_struct_of_arrays(^T, N) :];
+using struct_of_arrays = [: make_struct_of_arrays(^T, ^N) :];
 ```
 :::
 
@@ -422,6 +441,9 @@ using points = struct_of_arrays<point, 30>;
 // };
 ```
 :::
+
+Again, the combination of `nonstatic_data_members_of` and `define_class` is put to good use.
+
 
 ## Parsing Command-Line Options II
 
@@ -465,13 +487,14 @@ struct Option;
 //   std::string name;
 //   int count;
 // }
-consteval auto spec_to_opts(std::meta::info type) -> std::meta::info {
+consteval auto spec_to_opts(std::meta::info opts,
+                            std::meta::info spec) -> std::meta::info {
   std::vector<std::meta::info> new_members;
-  for (std::meta::info member : nonstatic_data_members_of(type)) {
+  for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto new_type = template_arguments_of(type_of(member))[0];
     new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
   }
-  return std::meta::synth_struct(new_members);
+  return std::meta::define_class(opts, new_members);
 }
 
 struct Clap {
@@ -481,7 +504,8 @@ struct Clap {
 
     // check if cmdline contains --help, etc.
 
-    using Opts = [: spec_to_opts(^Spec) :];
+    struct Opts;
+    static_assert(is_type(spec_to_opts(^Opts, ^Spec)));
     Opts opts;
 
     template for (constexpr auto [sm, om] : std::views::zip(nonstatic_data_members_of(^Spec),
@@ -1179,60 +1203,60 @@ namespace std::meta {
 This metafunction produces a reflection representing the constant value of the operand.
 
 
-### `nsdm_description`, `synth_struct`, `synth_union`
+### `nsdm_description`, `define_class`
 
 :::bq
 ```c++
 namespace std::meta {
-  struct nsdm_field_args {
+  struct nsdm_options {
     optional<string_view> name;
     optional<int> alignment;
     optional<int> width;
   };
+  struct nsdm_description {
+    constexpr nsdm_description(info type, nsdm_options options = {});
+    ...
+  };
 
-  consteval auto nsdm_description(info type, nsdm_field_args args = {}) -> info;
-
-  consteval auto synth_struct(span<info const>) -> info;
-  consteval auto synth_union(span<info const>) -> info;
+  consteval auto define_class(info class_type, span<nsdm_description const>) -> info;
 }
 ```
 :::
 
-`nsdm_description` creates a reflection that describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well.
-If `type` does not designated a valid data member type, an invalid reflection is produced.
+`nsdm_description` describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well.
 If no `name` is provided, the name of the non-static data member is unspecified.
-Note that the reflection obtained from `nsdm_description` is _not_ the reflection of a non-static data member itself; it only encapsulates the information needed to synthesize such a data member.
-In particular, metafunctions like `name_of`, `type_of`, and `parent_of` are not applicable to the result of an `nsdm_description`.
-
-`synth_struct` and `synth_union` take a range of NSDM descriptions and return a reflection that denotes a struct and union, respectively, comprised of corresponding non-static data members.
+`define_class` takes the reflection of an incomplete class/struct/union type and a range of NSDM descriptions and it completes the given class type with nonstatic data members as described (in the given order).
+The given reflection is returned.
 
 For example:
 
 ::: bq
 ```c++
-constexpr auto T = std::meta::synth_struct({
+union U;
+static_assert(is_type(define_class(^U, {
   nsdm_description(^int),
   nsdm_description(^char),
   nsdm_description(^double),
-});
+})));
 
-// T is a reflection of the type
-// struct {
+// U is now defined to the equivalent of
+// union U {
 //   int $_0$;
 //   char $_1$;
 //   double $_2$;
-// }
+// };
 
-constexpr auto U = std::meta::synth_struct({
+template<typename T> struct S;
+constexpr auto U = define_class(^S<int>, {
   nsdm_description(^int, {.name="i", .align=64}),
   nsdm_description(^int, {.name="j", .align=64}),
 });
 
-// U is a reflection of the type
-// struct {
+// S<int> is now defined to the equivalent of
+// template<> struct S<int> {
 //   alignas(64) int i;
 //   alignas(64) int j;
-// }
+// };
 ```
 :::
 
