@@ -378,7 +378,7 @@ template<std::size_t I, typename... Ts>
   };
 
 consteval std::meta::info get_nth_nsdm(std::meta::info r, std::size_t n) {
-  return nonstatic_data_members_of(r)[n-1];
+  return nonstatic_data_members_of(r)[n];
 }
 
 template<std::size_t I, typename... Ts>
