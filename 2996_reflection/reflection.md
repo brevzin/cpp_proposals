@@ -494,7 +494,7 @@ consteval auto spec_to_opts(std::meta::info opts,
     auto new_type = template_arguments_of(type_of(member))[0];
     new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
   }
-  return std::meta::define_class(new_members);
+  return std::meta::define_class(opts, new_members);
 }
 
 struct Clap {
