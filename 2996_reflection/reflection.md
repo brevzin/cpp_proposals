@@ -20,6 +20,15 @@ author:
 toc: true
 ---
 
+# Revision History
+
+Since [@P2996R0]:
+* respecified `synth_struct` to `define_class`
+* respecified a few metafunctions to be functions instead of function templates
+* introduced section on error handling mechanism and our preference for exceptions (removing invalid reflections)
+* added ticket counter example
+* collapsed `entity_ref` and `pointer_to_member` into `value_of`
+
 # Introduction
 
 This is a proposal for a reduced initial set of features to support static reflection in C++.
