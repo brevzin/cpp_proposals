@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-11-09" />
+  <meta name="dcterms.date" content="2023-11-10" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-11-09</td>
+    <td>2023-11-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -673,21 +673,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">using</span> MyType <span class="op">=</span> <span class="op">[:</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)&lt;</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">)?</span> <span class="op">^</span><span class="dt">long</span> <span class="op">:</span> <span class="op">^</span><span class="dt">int</span><span class="op">:]</span>;  <span class="co">// Implicit &quot;typename&quot; prefix.</span></span></code></pre></div>
 </blockquote>
 <h2 data-number="3.2" id="selecting-members"><span class="header-section-number">3.2</span> Selecting Members<a href="#selecting-members" class="self-link"></a></h2>
-<p>Our second example enables selecting a member “by number” for a specific type. It also shows the use of a metafunction dealing with diagnostics:</p>
+<p>Our second example enables selecting a member “by number” for a specific type:</p>
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">unsigned</span> i<span class="op">:</span><span class="dv">2</span>, j<span class="op">:</span><span class="dv">6</span>; <span class="op">}</span>;</span>
 <span id="cb3-2"><a href="#cb3-2"></a></span>
 <span id="cb3-3"><a href="#cb3-3"></a><span class="kw">consteval</span> <span class="kw">auto</span> member_number<span class="op">(</span><span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb3-4"><a href="#cb3-4"></a>  <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> <span class="op">^</span>S<span class="op">::</span>i;</span>
 <span id="cb3-5"><a href="#cb3-5"></a>  <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>n <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="cf">return</span> <span class="op">^</span>S<span class="op">::</span>j;</span>
-<span id="cb3-6"><a href="#cb3-6"></a>  <span class="cf">else</span> <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>invalid_reflection<span class="op">(</span><span class="st">&quot;Only field numbers 0 and 1 permitted&quot;</span><span class="op">)</span>;</span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="op">}</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a></span>
-<span id="cb3-9"><a href="#cb3-9"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>  S s<span class="op">{</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">}</span>;</span>
-<span id="cb3-11"><a href="#cb3-11"></a>  s<span class="op">.[:</span>member_number<span class="op">(</span><span class="dv">1</span><span class="op">):]</span> <span class="op">=</span> <span class="dv">42</span>;  <span class="co">// Same as: s.j = 42;</span></span>
-<span id="cb3-12"><a href="#cb3-12"></a>  s<span class="op">.[:</span>member_number<span class="op">(</span><span class="dv">5</span><span class="op">):]</span> <span class="op">=</span> <span class="dv">0</span>;   <span class="co">// Error (likely with &quot;Only field numbers 0 and 1 permitted&quot; in text).</span></span>
-<span id="cb3-13"><a href="#cb3-13"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="op">}</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>  S s<span class="op">{</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">}</span>;</span>
+<span id="cb3-10"><a href="#cb3-10"></a>  s<span class="op">.[:</span>member_number<span class="op">(</span><span class="dv">1</span><span class="op">):]</span> <span class="op">=</span> <span class="dv">42</span>;  <span class="co">// Same as: s.j = 42;</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>  s<span class="op">.[:</span>member_number<span class="op">(</span><span class="dv">5</span><span class="op">):]</span> <span class="op">=</span> <span class="dv">0</span>;   <span class="co">// Error (member_number(5) is not a constant).</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This example also illustrates that bit fields are not beyond the reach of this proposal.</p>
 <h2 data-number="3.3" id="list-of-types-to-list-of-sizes"><span class="header-section-number">3.3</span> List of Types to List of Sizes<a href="#list-of-types-to-list-of-sizes" class="self-link"></a></h2>
@@ -971,12 +970,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb16-17"><a href="#cb16-17"></a><span class="co">// }</span></span>
 <span id="cb16-18"><a href="#cb16-18"></a><span class="kw">consteval</span> <span class="kw">auto</span> spec_to_opts<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info opts,</span>
 <span id="cb16-19"><a href="#cb16-19"></a>                            std<span class="op">::</span>meta<span class="op">::</span>info spec<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb16-20"><a href="#cb16-20"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> new_members;</span>
+<span id="cb16-20"><a href="#cb16-20"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>nsdm_descriptions<span class="op">&gt;</span> new_members;</span>
 <span id="cb16-21"><a href="#cb16-21"></a>  <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info member <span class="op">:</span> nonstatic_data_members_of<span class="op">(</span>spec<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb16-22"><a href="#cb16-22"></a>    <span class="kw">auto</span> new_type <span class="op">=</span> template_arguments_of<span class="op">(</span>type_of<span class="op">(</span>member<span class="op">))[</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb16-23"><a href="#cb16-23"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>nsdm_description<span class="op">(</span>new_type, <span class="op">{.</span>name<span class="op">=</span>name_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
+<span id="cb16-23"><a href="#cb16-23"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>nsdm_description<span class="op">(</span>new_type, <span class="op">{.</span>name<span class="op">=</span>name_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
 <span id="cb16-24"><a href="#cb16-24"></a>  <span class="op">}</span></span>
-<span id="cb16-25"><a href="#cb16-25"></a>  <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>define_class<span class="op">(</span>opts, new_members<span class="op">)</span>;</span>
+<span id="cb16-25"><a href="#cb16-25"></a>  <span class="cf">return</span> define_class<span class="op">(</span>opts, new_members<span class="op">)</span>;</span>
 <span id="cb16-26"><a href="#cb16-26"></a><span class="op">}</span></span>
 <span id="cb16-27"><a href="#cb16-27"></a></span>
 <span id="cb16-28"><a href="#cb16-28"></a><span class="kw">struct</span> Clap <span class="op">{</span></span>
@@ -1030,7 +1029,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb16-76"><a href="#cb16-76"></a>    <span class="op">}</span></span>
 <span id="cb16-77"><a href="#cb16-77"></a>    <span class="cf">return</span> opts;</span>
 <span id="cb16-78"><a href="#cb16-78"></a>  <span class="op">}</span></span>
-<span id="cb16-79"><a href="#cb16-79"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb16-79"><a href="#cb16-79"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <h2 data-number="3.11" id="a-universal-formatter"><span class="header-section-number">3.11</span> A Universal Formatter<a href="#a-universal-formatter" class="self-link"></a></h2>
 <p>This example is taken from Boost.Describe:</p>
@@ -1193,9 +1192,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>a <em>primary-expression</em> referring to a template, or</li>
 <li>a constant-expression.</li>
 </ul>
-<p>In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to evaluate to an invalid reflection.</p>
+<p>In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to not evaluate to constant.</p>
 <h2 data-number="4.2" id="splicers"><span class="header-section-number">4.2</span> Splicers (<code class="sourceCode cpp"><span class="op">[:</span></code>…<code class="sourceCode cpp"><span class="op">:]</span></code>)<a href="#splicers" class="self-link"></a></h2>
-<p>A reflection that is not an invalid reflection can be “spliced” into source code using one of several <em>splicer</em> forms:</p>
+<p>A reflection can be “spliced” into source code using one of several <em>splicer</em> forms:</p>
 <ul>
 <li><code class="sourceCode cpp"><span class="op">[:</span> r <span class="op">:]</span></code> produces an <em>expression</em> evaluating to the entity or constant value represented by <code class="sourceCode cpp">r</code>.</li>
 <li><code class="sourceCode cpp"><span class="kw">typename</span><span class="op">[:</span> r <span class="op">:]</span></code> produces a <em>simple-type-specifier</em> corresponding to the type represented by <code class="sourceCode cpp">r</code>.</li>
@@ -1204,11 +1203,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><code class="sourceCode cpp"><span class="op">[:</span>r<span class="op">:]::</span></code> produces a <em>nested-name-specifier</em> corresponding to the namespace, enumeration type, or class type represented by <code class="sourceCode cpp">r</code>.</li>
 </ul>
 <p>The operand of a splicer is implicitly converted to a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, splicing can still work.)</p>
-<p>Attempting to splice a reflection value that does not meet the requirement of the splice (including “invalid reflections”) is ill-formed. For example:</p>
+<p>Attempting to splice a reflection value that does not meet the requirement of the splice is ill-formed. For example:</p>
 <blockquote>
 <div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">typename</span><span class="op">[:</span> <span class="op">^::</span> <span class="op">:]</span> x <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// Error.</span></span></code></pre></div>
 </blockquote>
-<p>A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.</p>
 <p>(This proposal does not at this time propose range-based splicers as described in P1240. We still believe that those are desirable. However, they are more complex to implement and they involve syntactic choices that benefit from being considered along with other proposals that introduce pack-like constructs in non-template contexts. Meanwhile, we found that many very useful techniques are enabled with just the basic splicers presented here.)</p>
 <h3 data-number="4.2.1" id="range-splicers"><span class="header-section-number">4.2.1</span> Range Splicers<a href="#range-splicers" class="self-link"></a></h3>
 <p>The splicers described above all take a single object of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> (described in more detail below). However, there are many cases where we don’t have a single reflection, we have a range of reflections - and we want to splice them all in one go. For that, we need a different form of splicer: a range splicer.</p>
@@ -1278,7 +1276,6 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>In our initial proposal a value of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> can represent:</p>
 <ul>
-<li>an error (corresponding to an “invalid reflection”)</li>
 <li>any (C++) type and type-alias</li>
 <li>any function or member function</li>
 <li>any variable, static data member, or structured binding</li>
@@ -1287,7 +1284,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>any template</li>
 <li>any namespace</li>
 </ul>
-<p>Notably absent at this time are general non-constant expressions (that aren’t <em>expression-id</em>s referring to variables or structured bindings). For example:</p>
+<p>Notably absent at this time are general non-constant expressions (that aren’t <em>expression-id</em>s referring to functions, variables or structured bindings). For example:</p>
 <blockquote>
 <div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="dv">0</span>;</span>
 <span id="cb29-2"><a href="#cb29-2"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
