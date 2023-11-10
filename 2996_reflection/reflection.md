@@ -875,7 +875,7 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any template
   - any namespace
 
-Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to functios, variables or structured bindings).  For example:
+Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to functions, variables or structured bindings).  For example:
 
 ::: bq
 ```c++
