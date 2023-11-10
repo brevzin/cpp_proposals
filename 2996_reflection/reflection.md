@@ -23,6 +23,7 @@ toc: true
 # Revision History
 
 Since [@P2996R0]:
+
 * respecified `synth_struct` to `define_class`
 * respecified a few metafunctions to be functions instead of function templates
 * introduced section on error handling mechanism and our preference for exceptions (removing invalid reflections)
@@ -1028,6 +1029,17 @@ If `r` designates a member of a class or namespace, `parent_of(r)` is a reflecti
 
 If `r` designates an alias, `dealias(r)` designates the underlying entity.
 Otherwise, `dealias(r)` produces `r`.
+`dealias` is recursive - it strips all aliases:
+
+::: bq
+```cpp
+using X = int;
+using Y = X;
+static_assert(dealias(^int) == ^int);
+static_assert(dealias(^X) == ^int);
+static_assert(dealias(^Y) == ^int);
+```
+:::
 
 ### `template_of`, `template_arguments_of`
 
