@@ -124,7 +124,7 @@ using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typenam
 
 ## Selecting Members
 
-Our second example enables selecting a member "by number" for a specific type.  It also shows the use of a metafunction dealing with diagnostics:
+Our second example enables selecting a member "by number" for a specific type:
 
 :::bq
 ```c++
@@ -133,13 +133,12 @@ struct S { unsigned i:2, j:6; };
 consteval auto member_number(int n) {
   if (n == 0) return ^S::i;
   else if (n == 1) return ^S::j;
-  else return std::meta::invalid_reflection("Only field numbers 0 and 1 permitted");
 }
 
 int main() {
   S s{0, 0};
   s.[:member_number(1):] = 42;  // Same as: s.j = 42;
-  s.[:member_number(5):] = 0;   // Error (likely with "Only field numbers 0 and 1 permitted" in text).
+  s.[:member_number(5):] = 0;   // Error (member_number(5) is not a constant).
 }
 ```
 :::
@@ -489,12 +488,12 @@ struct Option;
 // }
 consteval auto spec_to_opts(std::meta::info opts,
                             std::meta::info spec) -> std::meta::info {
-  std::vector<std::meta::info> new_members;
+  std::vector<std::meta::nsdm_descriptions> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
+    new_members.push_back(std::meta::nsdm_description(new_type, {.name=name_of(member)}));
   }
-  return std::meta::define_class(opts, new_members);
+  return define_class(opts, new_members);
 }
 
 struct Clap {
@@ -548,7 +547,7 @@ struct Clap {
     }
     return opts;
   }
-}
+};
 ```
 :::
 
@@ -750,11 +749,11 @@ The current proposal requires that the _cast-expression_ be:
   - a _primary-expression_ referring to a template, or
   - a constant-expression.
 
-In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to evaluate to an invalid reflection.
+In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to not evaluate to constant.
 
 ## Splicers (`[:`...`:]`)
 
-A reflection that is not an invalid reflection can be "spliced" into source code using one of several _splicer_ forms:
+A reflection can be "spliced" into source code using one of several _splicer_ forms:
 
  - `[: r :]` produces an _expression_ evaluating to the entity or constant value represented by `r`.
  - `typename[: r :]` produces a _simple-type-specifier_ corresponding to the type represented by `r`.
@@ -764,7 +763,7 @@ A reflection that is not an invalid reflection can be "spliced" into source code
 
 The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work.)
 
-Attempting to splice a reflection value that does not meet the requirement of the splice (including "invalid reflections") is ill-formed.
+Attempting to splice a reflection value that does not meet the requirement of the splice is ill-formed.
 For example:
 
 :::bq
@@ -772,8 +771,6 @@ For example:
 typename[: ^:: :] x = 0;  // Error.
 ```
 :::
-
-A quality implementation should emit the diagnostic text associated with an invalid reflection when attempting to splice that invalid reflection.
 
 (This proposal does not at this time propose range-based splicers as described in P1240.
 We still believe that those are desirable.
@@ -870,7 +867,6 @@ namespace std {
 
 In our initial proposal a value of type `std::meta::info` can represent:
 
-  - an error (corresponding to an "invalid reflection")
   - any (C++) type and type-alias
   - any function or member function
   - any variable, static data member, or structured binding
@@ -879,7 +875,7 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any template
   - any namespace
 
-Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to variables or structured bindings).  For example:
+Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to functios, variables or structured bindings).  For example:
 
 ::: bq
 ```c++
