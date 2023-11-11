@@ -531,7 +531,7 @@ struct Clap {
 
       // no such argument
       if (it == cmdline.end()) {
-        if constexpr (template_of(om) == ^std::optional) {
+        if constexpr (has_template_arguments(type) and template_of(type) == ^std::optional) {
           // the type is optional, so the argument is too
           continue;
         } else if (cur.initializer) {
