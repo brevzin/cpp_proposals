@@ -987,6 +987,97 @@ With support for `constexpr` exceptions, implementations would have to come up w
 
 Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than `std::expected` (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).
 
+### Synopsis
+
+Here is a synopsis for the proposed library API. The functions will be explained below.
+
+::: bq
+```c++
+namespace std::meta {
+  // @[name and location](#name_of-display_name_of-source_location_of)@
+  consteval auto name_of(info r) -> string_view;
+  consteval auto display_name_of(info r) -> string_view;
+  consteval auto source_location_of(info r) -> source_location;
+
+  // @[type queries](#type_of-parent_of-dealias)@
+  consteval auto type_of(info r) -> info;
+  consteval auto parent_of(info r) -> info;
+  consteval auto dealias(info r) -> info;
+
+  // @[template queries](#template_of-template_arguments_of)@
+  consteval auto template_of(info r) -> info;
+  consteval auto template_arguments_of(info r) -> vector<info>;
+
+  // @[member queries](#members_of-static_data_members_of-nonstatic_data_members_of-bases_of-enumerators_of-subobjects_of)@
+  template<typename ...Fs>
+    consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+  consteval auto static_data_members_of(info class_type) -> vector<info>;
+  consteval auto nonstatic_data_members_of(info class_type) -> vector<info>;
+  consteval auto subobjects_of(info class_type) -> vector<info>;
+  consteval auto enumerators_of(info enum_type) -> vector<info>;
+
+  // @[substitute](#substitute)@
+  consteval auto substitute(info templ, span<info const> args) -> info;
+
+   // @[value_of<T>](#value_oft)@
+  template<typename T>
+    consteval auto value_of(info) -> T;
+
+  // @[test_type](#test_type-test_types)@
+  consteval auto test_type(info templ, info type) -> bool;
+  consteval auto test_types(info templ, span<info const> types) -> bool;
+
+  // @[other type predicates](#other-singular-reflection-predicates)@
+  consteval auto is_public(info r) -> bool;
+  consteval auto is_protected(info r) -> bool;
+  consteval auto is_private(info r) -> bool;
+  consteval auto is_accessible(info r) -> bool;
+  consteval auto is_virtual(info r) -> bool;
+  consteval auto is_deleted(info entity) -> bool;
+  consteval auto is_defaulted(info entity) -> bool;
+  consteval auto is_explicit(info entity) -> bool;
+  consteval auto is_override(info entity) -> bool;
+  consteval auto is_pure_virtual(info entity) -> bool;
+  consteval auto is_bit_field(info entity) -> bool;
+  consteval auto has_static_storage_duration(info r) -> bool;
+  consteval auto is_nsdm(info entity) -> bool;
+  consteval auto is_base(info entity) -> bool;
+  consteval auto is_namespace(info entity) -> bool;
+  consteval auto is_function(info entity) -> bool;
+  consteval auto is_static(info entity) -> bool;
+  consteval auto is_variable(info entity) -> bool;
+  consteval auto is_type(info entity) -> bool;
+  consteval auto is_alias(info entity) -> bool;
+  consteval auto is_incomplete_type(info entity) -> bool;
+  consteval auto is_template(info entity) -> bool;
+  consteval auto is_function_template(info entity) -> bool;
+  consteval auto is_variable_template(info entity) -> bool;
+  consteval auto is_class_template(info entity) -> bool;
+  consteval auto is_alias_template(info entity) -> bool;
+  consteval auto has_template_arguments(info r) -> bool;
+  consteval auto is_constructor(info r) -> bool;
+  consteval auto is_destructor(info r) -> bool;
+  consteval auto is_special_member(info r) -> bool;
+
+  // @[reflect_value](#reflect_value)@
+  template<typename T>
+    consteval auto reflect_value(T value) -> info;
+
+  // @[define_class](#nsdm_description-define_class)@
+  struct nsdm_description;
+  consteval auto define_class(info class_type, span<nsdm_description const>) -> info;
+
+  // @[data layout](#data-layout-reflection)@
+  consteval auto offset_of(info entity) -> size_t;
+  consteval auto size_of(info entity) -> size_t;
+  consteval auto bit_offset_of(info entity) -> size_t;
+  consteval auto bit_size_of(info entity) -> size_t;
+  consteval auto alignment_of(info entity) -> size_t;
+}
+```
+:::
 
 ### `name_of`, `display_name_of`, `source_location_of`
 
@@ -1168,16 +1259,16 @@ For other reflection values `r`, `value_of<T>(r)` is ill-formed.
 The function template `value_of` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity reflected by its operand.
 
-### `test_type<Pred>`
+### `test_type`, `test_types`
 
 :::bq
 ```c++
 namespace std::meta {
-  auto test_type(info templ, info type) -> bool {
-    return test_types(templ, vector{type});
+  consteval auto test_type(info templ, info type) -> bool {
+    return test_types(templ, {type});
   }
 
-  auto test_types(info templ, span<info const> types) -> bool {
+  consteval auto test_types(info templ, span<info const> types) -> bool {
     return value_of<bool>(substitute(templ, types));
   }
 }
