@@ -17,6 +17,8 @@ toc: true
 
 # Revision History
 
+Since [@P2806R1], switched syntax from `do return` to `do_return` to avoid ambiguity. Added section on [lifetime](#lifetime).
+
 Since [@P2806R0], some more discussion about implicit last value vs explicit return, reflection, and a grammar fix to the still-incomplete wording.
 
 # Introduction
@@ -382,6 +384,12 @@ int i = do -> int {
 
 This is weird, but might end up as a result of template instantiation where maybe other control paths (guarded with an `if constexpr`) actually had `do_return` statements in them. So it needs to be allowed.
 
+It does lead to an interesting question: what is `decltype(do { return; })`? We already define `decltype(throw 42)` to be `void`, so would this also be `void`? It's kind of an odd choice, and it would be nice if we had a specific type for an escaping expression. While we could come up with the right language facility to allow the conditional operator (`?:`) and pattern matching to work correctly by ignoring arms that are always-escaping, user-defined code would have no way of differentiating between a real void expression (`std::print("Hello {}!", "EWG")` is actually an expression of type `void`) and an artificial one (`std::abort()` is not really the same thing).
+
+We could instead introduce a new type, `std::noreturn_t` (as an easier-to-type spelling of `⊥`), change `decltype(throw e)` to be `std::noreturn_t` (since nobody actually writes this - code search results are exclusively in compiler test suites) and treat the return types of `[[noreturn]]` functions as `std::noreturn_t`. Then the type system gains understanding of always-escaping expressions/statements and the rules for pattern matching, the conditional operator, `do` expressions, and arbitrary user-defined libraries just fall out.
+
+See reflector discussion [here](https://lists.isocpp.org/ext/2023/05/21202.php).
+
 ### `goto`
 
 Using `goto` in a `do` expression has some unique problems.
@@ -488,7 +496,7 @@ The use of `$TYPE$` above is meant as a placeholder for either `T` or `T&&`, as 
 What is the lifetime of the local variable `result`? There are three possible choices to this question:
 
 1. It is destroyed at the next `}`. This is the most consistent choice with everything else in the language.
-2. It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of `u`).
+2. It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of `u`). In other words, at the end of the *full-expression* (the _real_ full-expression, not the nested *full-expression*s inside of the `do` expression).
 3. It behaves as if it has local scope of the surrounding scope and is destroyed at the end of that outer scope, which in this case would be the end of `h()`.
 
 The consequence of (1) is that `result` is destroyed before we enter the call to `g`. This means that if the `do` expression returned a reference (i.e. `$TYPE$` was `T&&`), that reference would immediately dangle. We would have to yield a `T`. This loses us some efficiency, since ideally both the `do` expression and `g` could just take a `T` - but now we have to incur a move.
@@ -551,9 +559,9 @@ Each `do` expression is locking the same mutex, `mtx`. With (1), the two `lock_g
 
 With either of the two approaches to extending lifetime, either (2) or (3), this deadlocks. The two `lock_guard`s aren't destroyed until after the initialization of `i`, or even later, and so whichever one is locked first is still alive when the second one is locked.
 
-That means the choice is between extending the lifetime of variables to avoid dangling references and keeping the lifetime of variables the same to maintain the usual C++ destructor rules. The familiarity and expectation of the latter is so strong that (1) is likely the only option.
+That means the choice is between extending the lifetime of variables to avoid dangling references and keeping the lifetime of variables the same to maintain the usual C++ destructor rules. The familiarity and expectation of the latter is so strong that (1) is likely the only option. After all, scoped lifetimes is one of the fundamental rules of C++.
 
-This does suggest that there needs to be some way to explicitly extend a variable to the outer scope. After all, a `do` expression's control flow behaves as if its in that outer scope (we `return` from the enclosing function, `continue` the enclosing loop, etc.), so there is definitely a compelling argument to me made that variables belong in that scope as well. But they probably need some sort of annotation:
+This does suggest that there needs to be some way to explicitly extend a variable to the outer scope. After all, a `do` expression's control flow behaves as if its in that outer scope (we `return` from the enclosing function, `continue` the enclosing loop, etc.), so there is definitely a compelling argument to me made that variables belong in that scope as well. But they probably need some sort of annotation - something like a reverse lambda capture:
 
 ::: bq
 ```cpp
@@ -561,10 +569,11 @@ auto f() -> std::expected<T, E>;
 auto g(T&&) -> U;
 
 auto h() -> std::expected<U, E> {
-    T&& t = do -> T&& {
-        // Annotating this variable ensures that its destructor runs
-        // as if it was declared in the innermost non-do-expression scope.
-        [[@*outer-scope*@]] auto result = f();
+    // The "anti-capture" of result means that it's actually declared in the
+    // outer scope, as if before the variable t. If no such variable result in
+    // the do expression's scope, the expression is ill-formed.
+    T&& t = do [result] -> T&& {
+        auto result = f();
         if (not result) {
             return std::unexpected(std::move(result).error());
         }
@@ -574,6 +583,65 @@ auto h() -> std::expected<U, E> {
 }
 ```
 :::
+
+### Conditional Lifetime
+
+An interesting sub-question on lifetimes is what does this do:
+
+::: bq
+```cpp
+auto prvalue() -> T;
+
+auto f() -> void {
+    // lifetime extension, reference bound to temporary
+    T const& r1 = prvalue();
+
+    // dangling
+    T const& r2 = []() -> T const& { return prvalue(); };
+
+    // lifetime extension??
+    T const& r3 = do -> T const& { do_return prvalue(); };
+}
+```
+:::
+
+`r1` is our familiar lifetime extension case - a reference is bound to a temporary. `r2` is definitely dangling. The temporary is destroyed and definitely does not last as long as `r2`. But what about `r3`, is it more like `r1` or `r2`?
+
+In this case, we see the entire `do` expression - so unlike the general callable case, it may actually be possible for lifetime extension to work here.
+
+But as we're thinking about it, let's make the example slightly more complicated:
+
+::: bq
+```cpp
+auto lvalue() -> T const&;
+auto prvalue() -> T;
+
+auto g(bool c) -> void {
+    T const& r4 = do -> T const& {
+        if (c) {
+            do_return lvalue();
+        } else {
+            do_return prvalue();
+        }
+    }
+
+    T const& r5 = do -> T const& {
+        if (c) {
+            do_return lvalue();
+        } else {
+            T x = prvalue();
+            do_return x;
+        }
+    }
+}
+```
+:::
+
+If `r3` doesn't dangle (and we do lifetime extension), does `r4`? Well, presumably. But here we have a form of runtime-conditional lifetime extension. That's still seemingly doable - we would effectively have an `optional<T> __storage` that is declared before `r4` and then `r4` is either a reference into that or whatever we got from `lvalue()`.
+
+But even if we made `r4` work, `r5` now almost certainly cannot - now we're definitely not binding a temporary to a reference, this is quite adrift from our usual rules.
+
+Which makes us wonder if there's really any value in being adventurous here - and instead probably consider that there is no lifetime extension in any of these cases, not in `r3`, not in `r4`, and definitely not in `r5`.
 
 
 ## Grammar Disambiguation
@@ -641,7 +709,7 @@ The reason we're not simply proposing to standardize the existing extension is t
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
-Let's also take the example motivating case from [@P2561R1] and compare implicit last expression to explicit return:
+Let's also take the example motivating case from [@P2561R2] and compare implicit last expression to explicit return:
 
 ::: cmptable
 ### Implicit Last Value
@@ -719,7 +787,7 @@ A question that often comes up, for any language feature: if we had reflection a
 
 The answer is not only yes, but reflection is a good motivating use-case for this facility. Because the language does not have any kind of block expression today, adding support for one would increase the amount of ways that code injection could work.
 
-One example might be, again, the error propagation proposal in [@P2561R1]. If reflection allows me to write a hygienic macro that does code injection, perhaps we could write a library such that `try_(E)` would inject an expression that would evaluate in the way that that paper proposes. But in order to do such a thing, we would need to be able to have a block expression to inject. This paper provides such a block expression.
+One example might be, again, the control flow operator proposal in [@P2561R2]. If reflection allows me to write a hygienic macro that does code injection, perhaps we could write a library such that `try_(E)` would inject an expression that would evaluate in the way that that paper proposes. But in order to do such a thing, we would need to be able to have a block expression to inject. This paper provides such a block expression.
 
 ## Where can `do` expressions appear
 
