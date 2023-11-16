@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: D2996R1
+document: P2996R1
 date: today
 audience: EWG
 author:
@@ -98,6 +98,7 @@ Lock3 implemented the equivalent of much that is proposed here in a fork of Clan
 
 EDG has an ongoing implementation of this proposal: It is being updated to reflect this paper and is expected be made available to licensees in a "preview" form by year's end.
 In particular, the EDG implementation mostly follows the syntax and metafunction names as described in this paper.
+We hope to have it publicly available on Compiler Explorer in the next few months.
 
 
 # Examples
@@ -1115,6 +1116,18 @@ namespace std::meta {
 :::
 
 If `r` is a reflection designating a typed entity, `type_of(r)` is a reflection designating its type.
+If `r` is already a type, `type_of(r)` is not a constant expression.
+This can be used to implement the C `typeof` feature (which works on both types and expressions and strips qualifiers):
+
+::: bq
+```cpp
+consteval auto do_typeof(std::meta::info r) -> std::meta::info {
+  return remove_cvref(is_type(r) ? r : type_of(r));
+}
+
+#define typeof(e) [: do_typeof(^e) :]
+```
+:::
 
 If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or namespace.
 
@@ -1414,3 +1427,34 @@ namespace std::meta {
 ```
 :::
 
+### Other Type Traits
+
+There is a question of whether all the type traits should be provided in `std::meta`.
+For instance, a few examples in this paper use `std::meta::remove_cvref(t)` as if that exists.
+Technically, the functionality isn't strictly necessary - since it can be provided indirectly:
+
+::: cmptable
+### Direct
+```cpp
+std::meta::remove_cvref(type)
+```
+
+### Indirect
+```cpp
+std::meta::substitute(^std::remove_cvref_t, {type})
+```
+
+---
+
+```cpp
+std::meta::is_const(type)
+```
+
+```cpp
+std::meta::value_of<bool>(std::meta::substitute(^std::is_const_v, {type}))
+std::meta::test_type(^std::is_const_v, type)
+```
+:::
+
+Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API.
+There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
