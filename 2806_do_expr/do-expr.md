@@ -584,7 +584,7 @@ auto h() -> std::expected<U, E> {
 ```
 :::
 
-### Conditional Lifetime
+### Conditional Lifetime Extension
 
 An interesting sub-question on lifetimes is what does this do:
 
