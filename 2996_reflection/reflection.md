@@ -66,7 +66,7 @@ Perhaps the most common suggestion made regarding the framework outlined in P124
 switch from the single `std::meta::info` type to a family of types covering various
 language elements (e.g., `std::meta::variable`, `std::meta::type`, etc.).
 
-We believe that doing so would be mistake with very serious consequences for the future of C++.
+We believe that doing so would be a mistake with very serious consequences for the future of C++.
 
 Specifically, it would codify the language design into the type system.  We know from
 experience that it has been quasi-impossible to change the semantics of standard types once they
