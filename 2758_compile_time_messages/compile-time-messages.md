@@ -606,12 +606,12 @@ Add to [meta.const.eval]{.sref}:
 ```
 constexpr void constexpr_print_str(string_view msg) noexcept;
 ```
-[6]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the contents of `msg`. Otherwise, no effect.
+[6]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
 
 ```
 constexpr void constexpr_error_str(bool non_constant, string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the contents of `msg`. If `non_constant` is `true`, then the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the text of `msg`. If `non_constant` is `true`, then the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
 :::
 :::
 
