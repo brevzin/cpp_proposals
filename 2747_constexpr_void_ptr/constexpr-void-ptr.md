@@ -1,6 +1,6 @@
 ---
-title: "Limited support for `constexpr void*`"
-document: P2747R0
+title: "`constexpr` placement new"
+document: P2747R1
 date: today
 audience: EWG
 author:
@@ -10,47 +10,17 @@ toc: true
 tag: constexpr
 ---
 
+# Revision History
+
+R0 [@P2747R0] of this paper proposed three related features:
+
+1. Allowing casts from `$cv$ void*` to `$cv$ T*` during constant evaluation
+2. Allowing placement new during constant evaluation
+3. Better handling an array of uninitialized objects
+
+Since then, [@P2738R1] was adopted in Varna, which resolves problem #1. Separately, #3 is kind of a separate issue and there are ongoing conversations about how to handle this in order to make `inplace_vector` [@P0843R9] actually during during constant evaluation for all types. So this paper refocuses to just solve problem #2 and has been renamed accordingly.
+
 # Introduction
-
-One of the operations that you are not allowed to do during constant evaluation today is, from [\[expr.const\]/5.14](https://eel.is/c++draft/expr.const#5.14):
-
-> [5.14]{.pnum} a conversion from type `$cv$ void*` to a pointer-to-object type;
-
-This makes some amount of sense from the perspective of wanting constant evaluation to be a safer subset of C++, we can't just go throwing away all of our type information. But not all conversions from `void*` are the same - some are, in fact, perfectly safe, and the lack of ability to do so prevents some useful tools from being available at compile time.
-
-# Type Erasure
-
-Consider the following [very] reduced implementation of `function_ref`:
-
-::: bq
-```cpp
-template <typename R, typename... Args>
-class function_ref<R(Args...)> {
-    void* data;
-    auto (*func)(void*, Args...) -> R;
-
-public:
-    template <typename F>
-    constexpr function_ref(F&& f)
-      : data(&f)
-      , func(+[](void* f, Args... args){
-          using FD = std::remove_reference_t<F>;
-          return (*static_cast<FD*>(f))(args...);
-      })
-    { }
-
-    constexpr auto operator()(Args... args) const -> R {
-        return func(data, args...);
-    }
-};
-```
-:::
-
-This is a common technique for type erasure - we have a `void*` that type erases some data and then we have a function pointer that knows how to cast that `void*` to the appropriate type. `data` here may be a `void*`, but it _actually does_ point to an `FD`. That cast right there is perfectly safe, by construction. But we're just not allowed to do it during constant evaluation time.
-
-Which means that this entire implementation strategy just... doesn't work.
-
-# Placement new
 
 Consider this implementation of `std::uninitialized_copy`, partially adjusted from [cppreference](https://en.cppreference.com/w/cpp/memory/uninitialized_copy):
 
@@ -147,149 +117,20 @@ void construct_into(T* p) {
 
 Placement new is only unsafe because the language allows you to do practically anything - want to placement new a `std::string` into a `double*`? Sure, why not. But during constant evaluation we already have a way of limiting operations to those that make sense - we can require that the pointer we're constructing into actually is a `T*`. The fact that we have to go through a `void*` to get there doesn't make it unsafe.
 
-# Uninitialized objects
+Now that we have support for `static_cast<T*>(static_cast<void*>(p))`, we can adopt the same rules to make placement new work.
 
-Since C++20, we can use `std::vector<T>` during constant evaluation. But what about a type that doesn't actually need allocation, like `static_vector<T, capacity>`? That proposal ([@P0843R4]) currently only supports `constexpr` if `T` is trivially copyable and default constructible, because of issues with storage. David Stone covered this in a [recent CppCon talk](https://www.youtube.com/watch?v=I8QJLGI0GOE).
+# Wording
 
-The issue there is you want to do something like... this:
-
-::: bq
-```cpp
-template <typename T, size_t Capacity>
-class static_vector {
-    alignas(T) std::byte storage_[sizeof(T) * Capacity];
-    size_t size_;
-
-public:
-    constexpr auto data() -> T* {
-        return (T*)storage_;
-    }
-
-    void push_back(T const& rhs) {
-        // check size vs capacity, etc, out of scope
-        ::new (data() + size_) T(rhs);
-        ++size_;
-    }
-};
-```
-:::
-
-But here the problem is on top of the `void*` that we have to deal with from placement-new, we have the issue that the originating storage isn't actually a `T` to begin with, it's just an array of `std::byte` (or `char` or `unsigned char`). It can't just be a `T[Capacity]` because we want to avoid having to default-construct all of our `T`s.
-
-We could try to change the storage to from the array of `std::byte` to something like:
+Change [expr.const]{.sref}/5.18 (paragraph 14 here was the fix to allow converting from `void*` to `T*` during constant evaluation):
 
 ::: bq
-```cpp
-union U {
-  constexpr U() { }
-  constexpr ~U() { }
+* [5.14]{.pnum} a conversion from a prvalue `P` of type “pointer to cv `void`” to a pointer-to-object type `T` unless `P` points to an object whose type is similar to `T`;
+* [5.15]{.pnum} ...
+* [5.16]{.pnum} ...
+* [5.17]{.pnum} ...
+* [5.18]{.pnum} a *new-expression* ([expr.new]{.sref}), unless [either]{.addu}
+  * the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`[, or]{.addu}
+  * [the selected allocation function is a non-allocating form ([new.delete.placement]) and the provided pointer points to an object whose type is similar to the allocated type of the *new-expression*]{.addu};
 
-  T data[N];
-} storage_;
-```
+
 :::
-
-This helps in the sense that our placement-new now does originate with a `T`, so we don't have that particular concern. But we now have the added issue that at no point did we begin the lifetime of this union alternative. That is, consider this hilariously complex [identity function](https://godbolt.org/z/xq9haKsvY):
-
-::: bq
-```{.cpp .numberLines}
-constexpr int id(int i) {
-    struct X {
-        int i;
-        constexpr X(int i) : i(i) { }
-    };
-
-    union U {
-        constexpr U() { }
-        constexpr ~U() { }
-        X data[1];
-    };
-
-    U storage;
-    X* x = std::construct_at(&storage.data[0], i);
-    return x->i;
-}
-
-static_assert(id(42) == 42);
-```
-:::
-
-On line 14 there, while `&storage.data[0]` is actually an `X*`, the `data` union alternative of `storage` isn't active yet. Nothing constructed it. Nevertheless, as you can see in the compiler explorer link, gcc and msvc both accept this code.
-
-How can we make this work? There's a few directions, I think.
-
-First, we can have the language recognize an uninitialized storage type. Like a `std::uninitialized<T>`. Which, for the `static_vector` case, would be `std::uninitialized<T[Capacity]>` This would be a type that's just already much easier to use than the `std::aligned_storage` that we deprecated ([@P1413R3]) simply on the basis that you can't misspell it. libstdc++, for instance, has an `__aligned_membuf<T>` type with a pretty [nice API](https://github.com/gcc-mirror/gcc/blob/3f101e32e2fb616633722fb552779f537e9a9891/libstdc%2B%2B-v3/include/ext/aligned_buffer.h#L46-L78) that could be the basis for this (except that the `ptr()` function should really return `remove_extent_t<T>*` not just `T*`, to properly handle the array case). This seems like a good direction since it makes intent that much clearer and would be harder to misuse (since you can't forget the alignment):
-
-::: cmptable
-### With buffer array
-```cpp
-template <typename T, size_t Capacity>
-class static_vector {
-    alignas(T) std::byte storage_[sizeof(T) * Capacity];
-    size_t size_;
-
-public:
-    constexpr auto data() -> T* {
-        return (T*)storage_;
-    }
-};
-```
-
-### With `std::uninitialized`
-```cpp
-template <typename T, size_t Capacity>
-class static_vector {
-    std::uninitialized<T, N> storage_;
-    size_t size_;
-
-public:
-    constexpr auto data() -> T* {
-        return storage_.data();
-    }
-};
-```
-:::
-
-Second, we could simply bless the union example from earlier. That is, it's already the case that a placement new (or, for now, `std::construct_at`) on a union alternative changes that to be the active alternative. But we could extend that to be true for if you are constructing a subobject of an alternative (or, at the very least, an array member). This approach isn't actually mutually exclusive with `std::uninitialized` - it just makes `std::uninitialized` something that can be implemented outside of the standard library. Depending on your perspective, that's either very good (less magic things in the language that can only be implemented by the compiler) or very bad (allows for multiple different implementations of `std::uninitialized`).
-
-An alternative to making the union example work is to provide a mechanism to start the lifetime of a union alternative but performing no initialization. One idea discussed in context of JF Bastien's [@P2723R0] was the ability to explicitly denote no initialization, not as an attribute but using some kind of syntax. Some ideas that I've seen thrown around were:
-
-::: bq
-```cpp
-void test() {
-  int a;                  // zero-initialized, per the paper
-  int b = void;           // uninitialized (explicitly)
-  int c = uninitialized;  // uninitialized (explicitly)
-}
-```
-:::
-
-The advantage of the syntax over the attribute in this particular case is that the storage example could be implemented as:
-
-::: bq
-```cpp
-template <typename T>
-union storage_for {
-    constexpr ~storage_for() requires std::is_trivially_destructible_v<T> = default;
-    constexpr ~storage_for() { }
-
-    T data = void; // or whatever syntax
-};
-```
-:::
-
-We'd still need it to be a union, because we need to avoid destruction, but at least this gives us an active union member that we could then safely use.
-
-# Proposal
-
-This paper proposes extending constant evaluation support to cover a lot more interesting cases by striking the rule about conversion from `$cv$ void*`. We still require that reading through a `T*` is only valid if actually points to a `T` (as in, the `void*` had to have been obtained by a `static_cast` from a `T*`) - this doesn't open the door for various type punning shenanigans during constant evaluation time. These are all conversions that would only be allowed if they were actually valid.
-
-Allowing converting from `$cv$ void*` to `$cv$ T*`, if there is actually a `T` there, should immediately allow placement-new to work, but this may require explicit permission for global placement new in the same place where we currently have explicit permission for `std::construct_at`.
-
-Lastly, this paper proposes that placement new on an array alternative of a union implicitly starts the lifetime of the whole array alternative. This seems consistent with the implicit-lifetime-type rule that we have for arrays, and is the minimal change required to allow `static_vector` to work and to allow user implementations of `uninitialized<T>`. I'm not proposing `std::uninitialized<T>` specifically because I don't think it's strictly necessary, and the shape of it will largely end up depending on the discussion around JF's paper - which is otherwise completely unrelated to this paper.
-
-Importantly, the changes proposed here allow code that people would already be writing today to simply work during compile time as well. Well, for uninitialized storage people probably use an aligned array of bytes rather than a union with an array of `T`, but least this isn't too far off, and the main point is that the proposal isn't inventing a new way of writing compile-time-friendly code.
-
-## Implementation Concerns
-
-One of the raised concerns against allowing conversion from `$cv$ void*` in the way proposed by this paper is the cost to certain implementations of tracking pointers - specifically in the cost of validating this conversion. However, while everyone would obviously prefer things to be as fast to compile as possible, we're not choosing here between a fast approach and a slow approach - the decision here is between a slow approach and *no approach at all*. The inability to convert from `$cv$ void*` means we can't have a certain class of type erasure, we can't do several kinds of placement new and other kinds efficiently, and we can't have a `constexpr static_vector` without introducing more special cases for magic library names. I don't think that's a good trade-off.

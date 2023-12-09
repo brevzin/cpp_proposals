@@ -69,7 +69,7 @@
 - ![][~constexpr] P2670 Non-transient  <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  allocation: [p2670r0](2670_constexpr_allocation/p2670r0.html) [p2670r1](2670_constexpr_allocation/p2670r1.html)
 - P2671 Syntax Choices for Generalized Pack Declaration and Usage: [p2671r0](2671_syntax_generalized_packs/p2671r0.html)
 - P2672 Exploring the Design Space for a Pipeline Operator: [p2672r0](2672_pipeline_designs/p2672r0.html)
-- ![][~constexpr] P2747 Limited support for  <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="dt">void</span><span class="op">*</span></code>: [p2747r0](2747_constexpr_void_ptr/p2747r0.html)
+- ![][~constexpr] P2747 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  placement new: [p2747r0](2747_constexpr_void_ptr/p2747r0.html) [p2747r1](2747_constexpr_void_ptr/p2747r1.html)
 - P2757 Type-checking format args: [p2757r0](2757_type_check_format/p2757r0.html) [p2757r1](2757_type_check_format/p2757r1.html) [p2757r2](2757_type_check_format/p2757r2.html) [p2757r3](2757_type_check_format/p2757r3.html)
 - ![][~constexpr] P2758 Emitting messages at compile time: [p2758r0](2758_compile_time_messages/p2758r0.html) [p2758r1](2758_compile_time_messages/p2758r1.html)
 - ![][~ranges] P2760 A Plan for C++26 Ranges: [p2760r0](2760_ranges_26_plan/p2760r0.html)
