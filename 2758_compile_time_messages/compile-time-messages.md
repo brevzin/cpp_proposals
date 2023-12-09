@@ -563,17 +563,17 @@ And here, `g<-1>()` would be a substitute failure. So why not in the original? T
 This paper proposes the following:
 
 1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str(msg)`
-2. Introduce a new compile-time error API, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(flag, msg)` will cause the program to be ill-formed and, if `flag` is `true`, not a constant expression. EWG took a poll in February to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
+2. Introduce two new compile-time error APIs, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(msg)` and `std::constexpr_fail_str(msg)` will both cause the program to be ill-formed. The second additionally causes the evaluation to not be a constant expression. EWG took a poll in February to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
 
     |SF|F|N|A|SA|
     |-|-|-|-|-|
     |5|10|3|1|0|
 
-    This implies having a function that can make the program ill-formed, and a stronger one that also makes the constant evaluation fail to be a constant expression (to ensure that the next statement is not executed). Rather than coming up with how to name the two different functions, I thought it'd be easier to differentiate the functionality via a flag.
+    This implies having a function that can make the program ill-formed, and a stronger one that also makes the constant evaluation fail to be a constant expression (to ensure that the next statement is not executed).
 
 3. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
    a. `std::constexpr_print(fmt_str, args...)`
-   b. `std::constexpr_error(flag, fmt_str, args...)`
+   b. `std::constexpr_error(fmt_str, args...)` and `std::constexpr_fail(fmt_str, args...)`
    c. a `format`-specific helper `std::format_parse_error(fmt_str, args...)` that either calls `std::constexpr_error` or throws a `std::format_error`, depending on context.
 
 # Wording
@@ -593,7 +593,8 @@ namespace std {
   consteval bool is_within_lifetime(const auto*) noexcept;
 
 + constexpr void constexpr_print_str(string_view) noexcept;
-+ constexpr void constexpr_error_str(bool, string_view) noexcept;
++ constexpr void constexpr_error_str(string_view) noexcept;
++ constexpr void constexpr_fail_str(string_view) noexcept;
 
 }
 ```
@@ -609,9 +610,14 @@ constexpr void constexpr_print_str(string_view msg) noexcept;
 [6]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
 
 ```
-constexpr void constexpr_error_str(bool non_constant, string_view msg) noexcept;
+constexpr void constexpr_error_str(string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the text of `msg`. If `non_constant` is `true`, then the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
+
+```
+constexpr void constexpr_fail_str(string_view msg) noexcept;
+```
+[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed, a diagnostic message is issued including the text of `msg`, and the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
 :::
 :::
 
