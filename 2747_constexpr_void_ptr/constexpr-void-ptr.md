@@ -121,10 +121,10 @@ Now that we have support for `static_cast<T*>(static_cast<void*>(p))`, we can ad
 
 # Wording
 
-Change [expr.const]{.sref}/5.18 (paragraph 14 here was the fix to allow converting from `void*` to `T*` during constant evaluation):
+Change [expr.const]{.sref}/5.18 (paragraph 14 here was the fix to allow converting from `void*` to `T*` during constant evaluation, as adjusted by CWG 2755):
 
 ::: bq
-* [5.14]{.pnum} a conversion from a prvalue `P` of type “pointer to cv `void`” to a pointer-to-object type `T` unless `P` points to an object whose type is similar to `T`;
+* [5.14]{.pnum} a conversion from a prvalue `P` of type “pointer to cv `void`” to a "`$cv1$` pointer to `T`", where `T` is not `$cv2$ void`, unless `P` points to an object whose type is similar to `T`;
 * [5.15]{.pnum} ...
 * [5.16]{.pnum} ...
 * [5.17]{.pnum} ...
