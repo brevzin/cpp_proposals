@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-10-28" />
+  <meta name="dcterms.date" content="2023-12-09" />
   <title>Emitting messages at compile time</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-10-28</td>
+    <td>2023-12-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -586,7 +586,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p><span class="citation" data-cites="P2758R0">[<a href="#ref-P2758R0" role="doc-biblioref">P2758R0</a>]</span> and <span class="citation" data-cites="P2741R0">[<a href="#ref-P2741R0" role="doc-biblioref">P2741R0</a>]</span> were published at the same time and had a lot of overlap. Since then, <span class="citation" data-cites="P2741R3">[<a href="#ref-P2741R3" role="doc-biblioref">P2741R3</a>]</span> was adopted. As such, this paper no longer needs to propose the same thing. That part of the paper has been removed.</p>
+<p><span class="citation" data-cites="P2758R0">[<a href="#ref-P2758R0" role="doc-biblioref">P2758R0</a>]</span> and <span class="citation" data-cites="P2741R0">[<a href="#ref-P2741R0" role="doc-biblioref">P2741R0</a>]</span> were published at the same time and had a lot of overlap. Since then, <span class="citation" data-cites="P2741R3">[<a href="#ref-P2741R3" role="doc-biblioref">P2741R3</a>]</span> was adopted. As such, this paper no longer needs to propose the same thing. That part of the paper has been removed. This revision now only adds library functions that emit messages at compile time.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Currently, our ability to provide diagnostics to users is pretty limited. There are two kinds of errors I want to talk about here: static assertions and forced constant evaluation failures.</p>
 <h2 data-number="2.1" id="static_assert"><span class="header-section-number">2.1</span> <code class="sourceCode cpp"><span class="kw">static_assert</span></code><a href="#static_assert" class="self-link"></a></h2>
@@ -952,12 +952,43 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">6</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes the following:</p>
 <ol type="1">
-<li>Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">(</span>msg<span class="op">)</span></code></li>
-<li>Introduce a new compile-time error API, that only has effect if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>msg<span class="op">)</span></code></li>
-<li>Pursue <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format<span class="op">(</span>fmt_str, args<span class="op">...)</span></code>, which would then allow us to extend the above API with:
+<li><p>Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">(</span>msg<span class="op">)</span></code></p></li>
+<li><p>Introduce a new compile-time error API, that only has effect if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>flag, msg<span class="op">)</span></code> will cause the program to be ill-formed and, if <code class="sourceCode cpp">flag</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, not a constant expression. EWG took a poll in February to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5</td>
+<td>10</td>
+<td>3</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>This implies having a function that can make the program ill-formed, and a stronger one that also makes the constant evaluation fail to be a constant expression (to ensure that the next statement is not executed). Rather than coming up with how to name the two different functions, I thought it’d be easier to differentiate the functionality via a flag.</p></li>
+<li><p>Pursue <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format<span class="op">(</span>fmt_str, args<span class="op">...)</span></code>, which would then allow us to extend the above API with:</p>
 <ol type="a">
 <li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_print<span class="op">(</span>fmt_str, args<span class="op">...)</span></code></li>
-<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_error<span class="op">(</span>fmt_str, args<span class="op">...)</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>constexpr_error<span class="op">(</span>flag, fmt_str, args<span class="op">...)</span></code></li>
 <li>a <code class="sourceCode cpp">format</code>-specific helper <code class="sourceCode cpp">std<span class="op">::</span>format_parse_error<span class="op">(</span>fmt_str, args<span class="op">...)</span></code> that either calls <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code> or throws a <code class="sourceCode cpp">std<span class="op">::</span>format_error</code>, depending on context.</li>
 </ol></li>
 </ol>
@@ -975,7 +1006,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb27-7"><a href="#cb27-7"></a>  consteval bool is_within_lifetime(const auto*) noexcept;</span>
 <span id="cb27-8"><a href="#cb27-8"></a></span>
 <span id="cb27-9"><a href="#cb27-9"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
-<span id="cb27-10"><a href="#cb27-10"></a><span class="va">+ constexpr void constexpr_error_str(string_view) noexcept;</span></span>
+<span id="cb27-10"><a href="#cb27-10"></a><span class="va">+ constexpr void constexpr_error_str(bool, string_view) noexcept;</span></span>
 <span id="cb27-11"><a href="#cb27-11"></a></span>
 <span id="cb27-12"><a href="#cb27-12"></a>}</span></code></pre></div>
 </div>
@@ -985,8 +1016,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="addu">
 <div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">6</a></span> <em>Effects</em>: During constant evaluation, a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code>. Otherwise, no effect.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>constexpr void constexpr_error_str(string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> <em>Effects</em>: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code>. Otherwise, no effect.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>constexpr void constexpr_error_str(bool non_constant, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span> <em>Effects</em>: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the contents of <code class="sourceCode cpp">msg</code>. If <code class="sourceCode cpp">non_constant</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>, then the evaluation of this call is not a <em>core constant expression</em> ([expr.const]). Otherwise, no effect.</p>
 </div>
 </blockquote>
 <h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
