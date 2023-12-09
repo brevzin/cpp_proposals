@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
 template<typename... Ts> struct Tuple {
   struct storage;
 
-  static_assert(is_type(define_class(^storage, {std::meta::nsdm_description(^Ts)...})));
+  static_assert(is_type(define_class(^storage, {nsdm_description(^Ts)...})));
   storage data;
 
   Tuple(): data{} {}
@@ -450,8 +450,8 @@ class Variant {
     struct Empty { };
 
     static_assert(is_type(define_class(^Storage, {
-        std::meta::nsdm_description(^Empty, {.name="empty"}),
-        std::meta::nsdm_description(^Ts)...
+        nsdm_description(^Empty, {.name="empty"}),
+        nsdm_description(^Ts)...
     })));
 
     static constexpr std::array<std::meta::info, sizeof...(Ts)> types = {^Ts...};
@@ -571,11 +571,10 @@ struct struct_of_arrays_impl;
 consteval auto make_struct_of_arrays(std::meta::info type,
                                      std::meta::info N) -> std::meta::info {
   std::meta::vector<info> old_members = nonstatic_data_members_of(type);
-  std::vector<std::meta::nsdm_description> new_members = {};
+  std::vector<std::meta::nsdm_description_t> new_members = {};
   for (std::meta::info member : old_members) {
     auto array_type = substitute(^std::array, {type_of(member), N });
-    std::meta::nsdm_description
-      mem_descr(array_type, std::meta::nsdm_options{.name = name_of(member)});
+    auto mem_descr = nsdm_description(array_type, {.name = name_of(member)});
     new_members.push_back(mem_descr);
   }
   return std::meta::define_class(
@@ -655,10 +654,10 @@ struct Option;
 // }
 consteval auto spec_to_opts(std::meta::info opts,
                             std::meta::info spec) -> std::meta::info {
-  std::vector<std::meta::nsdm_descriptions> new_members;
+  std::vector<std::meta::nsdm_description_t> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(std::meta::nsdm_description(new_type, {.name=name_of(member)}));
+    new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
   }
   return define_class(opts, new_members);
 }
@@ -1224,7 +1223,7 @@ namespace std::meta {
 
   // @[define_class](#nsdm_description-define_class)@
   struct nsdm_description;
-  consteval auto define_class(info class_type, span<nsdm_description const>) -> info;
+  consteval auto define_class(info class_type, span<nsdm_description_t const>) -> info;
 
   // @[data layout](#data-layout-reflection)@
   consteval auto offset_of(info entity) -> size_t;
@@ -1516,24 +1515,28 @@ This metafunction produces a reflection representing the constant value of the o
 :::bq
 ```c++
 namespace std::meta {
-  struct nsdm_options {
+  struct nsdm_options_t {
     optional<string_view> name;
     optional<int> alignment;
     optional<int> width;
   };
-  struct nsdm_description {
-    constexpr nsdm_description(info type, nsdm_options options = {});
+  struct nsdm_description_t {
+    constexpr nsdm_description_t(info type, nsdm_options options = {});
     ...
   };
 
-  consteval auto define_class(info class_type, span<nsdm_description const>) -> info;
+  consteval auto nsdm_description(info type, nsdm_options options = {}) -> nsdm_description_t {
+    return nsdm_description_t(type, options);
+  }
+
+  consteval auto define_class(info class_type, span<nsdm_description_t const>) -> info;
 }
 ```
 :::
 
-`nsdm_description` describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well.
+`nsdm_description_t` describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well.
 If no `name` is provided, the name of the non-static data member is unspecified.
-`define_class` takes the reflection of an incomplete class/struct/union type and a range of NSDM descriptions and it completes the given class type with nonstatic data members as described (in the given order).
+`define_class` takes the reflection of an incomplete class/struct/union type and a range of non-static data member descriptions and it completes the given class type with nonstatic data members as described (in the given order).
 The given reflection is returned.
 
 For example:
