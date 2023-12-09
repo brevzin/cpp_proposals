@@ -1,7 +1,7 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: D1061R6
-date: today
+document: P1061R6
+date: 2023-06-14
 audience: CWG
 author:
     - name: Barry Revzin
@@ -13,7 +13,7 @@ toc: true
 
 # Revision History
 
-R6 has minor wording changes.
+R6 has added wording changes and adds some more complicated examples to motivate how to actually word this paper.
 
 R5 has minor wording changes.
 
