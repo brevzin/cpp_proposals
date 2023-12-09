@@ -27,7 +27,7 @@ Since [@P2996R0]:
 * respecified `synth_struct` to `define_class`
 * respecified a few metafunctions to be functions instead of function templates
 * introduced section on error handling mechanism and our preference for exceptions (removing invalid reflections)
-* added ticket counter example
+* added ticket counter and variant examples
 * collapsed `entity_ref` and `pointer_to_member` into `value_of`
 
 # Introduction
@@ -96,9 +96,7 @@ Other advantages of a single opaque type include:
 
 Lock3 implemented the equivalent of much that is proposed here in a fork of Clang (specifically, it worked with the P1240 proposal, but also included several other capabilities including a first-class injection mechanism).
 
-EDG has an ongoing implementation of this proposal: It is being updated to reflect this paper and is expected be made available to licensees in a "preview" form by year's end.
-In particular, the EDG implementation mostly follows the syntax and metafunction names as described in this paper.
-We hope to have it publicly available on Compiler Explorer in the next few months.
+EDG has an ongoing implementation of this proposal that is currently available on Compiler Explorer (thank you Matt Godbolt). It is not complete, and does not include some of the other language features we would like to be able to take advantage of (like expansion statements) but will be regularly be updated as this paper progresses.
 
 
 # Examples
@@ -401,6 +399,164 @@ template<std::size_t I, typename... Ts>
 
 This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_class` takes a reflection for an incomplete class or union plus a vector of nonstatic data member descriptions, and completes the give class or union type to have the described members.
+
+## A Simple Variant Type
+
+Similarly to how we can implement a tuple using `define_class` to create on the fly a type with one member for each `Ts...`, we can implement a variant that simply defines a `union` instead of a `struct`.
+One difference here is how the destructor of a `union` is currently defined:
+
+::: bq
+```cpp
+union U1 {
+  int i;
+  char c;
+};
+
+union U2 {
+  int i;
+  std::string s;
+};
+```
+:::
+
+`U1` has a trivial destructor, but `U2`'s destructor is defined as deleted (because `std::string` has a non-trivial destructor).
+This is a problem because we need to define this thing... somehow.
+However, for the purposes of `define_class`, there really is only one reasonable option to choose here:
+
+::: bq
+```cpp
+template <class... Ts>
+union U {
+  // all of our members
+  Ts... members;
+
+  // a defaulted destructor if all of the types are trivially destructible
+  constexpr ~U() requires (std::is_trivially_destructible_v<Ts> && ...) = default;
+
+  // ... otherwise a destructor that does nothing
+  constexpr ~U() { }
+};
+```
+:::
+
+If we make [`define_class`](#nsdm_description-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
+This is not a complete implementation of `std::variant` (and cheats using libstdc++ internals, and also uses Boost.Mp11's `mp_with_index`) but should demonstrate the idea:
+
+::: bq
+```cpp
+template <typename... Ts>
+class Variant {
+    union Storage;
+    struct Empty { };
+
+    static_assert(is_type(define_class(^Storage, {
+        std::meta::nsdm_description(^Empty, {.name="empty"}),
+        std::meta::nsdm_description(^Ts)...
+    })));
+
+    static constexpr std::array<std::meta::info, sizeof...(Ts)> types = {^Ts...};
+
+    static consteval std::meta::info get_nth_nsdm(std::size_t n) {
+        return nonstatic_data_members_of(^Storage)[n+1];
+    }
+
+    Storage storage_;
+    int index_ = -1;
+
+    // cheat: use libstdc++'s implementation
+    template <typename T>
+    static constexpr size_t accepted_index = std::__detail::__variant::__accepted_index<T, std::variant<Ts...>>;
+
+    template <class F>
+    constexpr auto with_index(F&& f) const -> decltype(auto) {
+        return mp_with_index<sizeof...(Ts)>(index_, (F&&)f);
+    }
+
+public:
+    constexpr Variant() requires std::is_default_constructible_v<[: types[0] :]>
+        // should this work: storage_{. [: get_nth_nsdm(0) :]{} }
+        : storage_{.empty={}}
+        , index_(0)
+    {
+        std::construct_at(&storage_.[: get_nth_nsdm(0) :]);
+    }
+
+    constexpr ~Variant() requires (std::is_trivially_destructible_v<Ts> and ...) = default;
+    constexpr ~Variant() {
+        if (index_ != -1) {
+            with_index([&](auto I){
+                std::destroy_at(&storage_.[: get_nth_nsdm(I) :]);
+            });
+        }
+    }
+
+    template <typename T, size_t I = accepted_index<T&&>>
+        requires (!std::is_base_of_v<Variant, std::decay_t<T>>)
+    constexpr Variant(T&& t)
+        : storage_{.empty={}}
+        , index_(-1)
+    {
+        std::construct_at(&storage_.[: get_nth_nsdm(I) :], (T&&)t);
+        index_ = (int)I;
+    }
+
+    // you can't actually express this constraint nicely until P2963
+    constexpr Variant(Variant const&) requires (std::is_trivially_copyable_v<Ts> and ...) = default;
+    constexpr Variant(Variant const& rhs)
+            requires ((std::is_copy_constructible_v<Ts> and ...)
+                and not (std::is_trivially_copyable_v<Ts> and ...))
+        : storage_{.empty={}}
+        , index_(-1)
+    {
+        rhs.with_index([&](auto I){
+            constexpr auto nsdm = get_nth_nsdm(I);
+            std::construct_at(&storage_.[: nsdm :], rhs.storage_.[: nsdm :]);
+            index_ = I;
+        });
+    }
+
+    constexpr auto index() const -> int { return index_; }
+
+    template <class F>
+    constexpr auto visit(F&& f) const -> decltype(auto) {
+        if (index_ == -1) {
+            throw std::bad_variant_access();
+        }
+
+        return mp_with_index<sizeof...(Ts)>(index_, [&](auto I) -> decltype(auto) {
+            return std::invoke((F&&)f,  storage_.[: get_nth_nsdm(I) :]);
+        });
+    }
+};
+```
+:::
+
+Effectively, `Variant<T, U>` synthesizes a union type `Storage` which looks like this:
+
+::: bq
+```cpp
+union Storage {
+    Empty empty;
+    T @*unnamed~0~*@;
+    U @*unnamed~1~*@;
+
+    ~Storage() requires std::is_trivially_destructible_v<T> && std::is_trivially_destructible_v<U> = default;
+    ~Storage() { }
+}
+```
+:::
+
+The question here is whether we should be should be able to directly initialize members of a defined union using a splicer, as in:
+
+::: bq
+```cpp
+: storage{.[: get_nth_nsdm(0) :]={}}
+```
+:::
+
+Arguably, the answer should be yes - this would be consistent with how other accesses work.
+
+[Demo on Compiler Explorer](https://godbolt.org/z/Efz5vsjaa).
 
 ## Struct to Struct of Arrays
 
@@ -1411,6 +1567,9 @@ constexpr auto U = define_class(^S<int>, {
 // };
 ```
 :::
+
+When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
+This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
 
 ### Data Layout Reflection
 :::bq
