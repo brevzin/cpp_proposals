@@ -121,7 +121,9 @@ Now that we have support for `static_cast<T*>(static_cast<void*>(p))`, we can ad
 
 # Wording
 
-Change [expr.const]{.sref}/5.18 (paragraph 14 here was the fix to allow converting from `void*` to `T*` during constant evaluation, as adjusted by CWG 2755):
+Today, we have an exception for `std::construct_at` and `std::ranges::construct_at` to avoid evaluating the placement new that they do internally. But once we allow placement new, we no longer need an exception for those cases - we simply need to move the lifetime requirement from the exception into the general rule for placement new.
+
+Change [expr.const]{.sref}/5.18 (paragraph 14 here for context was the [@P2738R1] fix to allow converting from `void*` to `T*` during constant evaluation, as adjusted by [@CWG2755]):
 
 ::: bq
 * [5.14]{.pnum} a conversion from a prvalue `P` of type “pointer to cv `void`” to a "`$cv1$` pointer to `T`", where `T` is not `$cv2$ void`, unless `P` points to an object whose type is similar to `T`;
@@ -130,7 +132,11 @@ Change [expr.const]{.sref}/5.18 (paragraph 14 here was the fix to allow converti
 * [5.17]{.pnum} ...
 * [5.18]{.pnum} a *new-expression* ([expr.new]{.sref}), unless [either]{.addu}
   * the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`[, or]{.addu}
-  * [the selected allocation function is a non-allocating form ([new.delete.placement]) and the provided pointer points to an object whose type is similar to the allocated type of the *new-expression*]{.addu};
+  * [the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type `T`, the provided pointer points to an object whose type is similar to `T`, and the pointer either points to storage allocated with `std::allocator<T>` or to an object whose lifetime began within the evaluation of `E`]{.addu};
+:::
 
+Remove the special case for `construct_at` in [expr.const]{.sref}/6:
 
+::: bq
+* [6]{.pnum} For the purposes of determining whether an expression `E` is a core constant expression, the evaluation of the body of a member function of `std​::​allocator<T>` as defined in [allocator.members], where T is a literal type, is ignored. [Similarly, the evaluation of the body of `std​::​construct_at` or `std​::​ranges​::​construct_at` is considered to include only the initialization of the `T` object if the first argument (of type `T*`) points to storage allocated with `std​::​allocator<T>` or to an object whose lifetime began within the evaluation of `E`.]{.rm}
 :::

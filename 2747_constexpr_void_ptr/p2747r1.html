@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-12-09" />
+  <meta name="dcterms.date" content="2023-12-10" />
   <title>constexpr placement new</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-12-09</td>
+    <td>2023-12-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -686,7 +686,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Placement new is only unsafe because the language allows you to do practically anything - want to placement new a <code class="sourceCode cpp">std<span class="op">::</span>string</code> into a <code class="sourceCode cpp"><span class="dt">double</span><span class="op">*</span></code>? Sure, why not. But during constant evaluation we already have a way of limiting operations to those that make sense - we can require that the pointer we’re constructing into actually is a <code class="sourceCode cpp">T<span class="op">*</span></code>. The fact that we have to go through a <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code> to get there doesn’t make it unsafe.</p>
 <p>Now that we have support for <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">*&gt;(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(</span>p<span class="op">))</span></code>, we can adopt the same rules to make placement new work.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.18 (paragraph 14 here was the fix to allow converting from <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code> to <code class="sourceCode cpp">T<span class="op">*</span></code> during constant evaluation, as adjusted by CWG 2755):</p>
+<p>Today, we have an exception for <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>construct_at</code> to avoid evaluating the placement new that they do internally. But once we allow placement new, we no longer need an exception for those cases - we simply need to move the lifetime requirement from the exception into the general rule for placement new.</p>
+<p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.18 (paragraph 14 here for context was the <span class="citation" data-cites="P2738R1">[<a href="#ref-P2738R1" role="doc-biblioref">P2738R1</a>]</span> fix to allow converting from <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code> to <code class="sourceCode cpp">T<span class="op">*</span></code> during constant evaluation, as adjusted by <span class="citation" data-cites="CWG2755">[<a href="#ref-CWG2755" role="doc-biblioref">CWG2755</a>]</span>):</p>
 <blockquote>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(5.14)</a></span> a conversion from a prvalue <code class="sourceCode cpp">P</code> of type “pointer to cv <code class="sourceCode cpp"><span class="dt">void</span></code>” to a “<code class="sourceCode cpp"><em>cv1</em></code> pointer to <code class="sourceCode cpp">T</code>”, where <code class="sourceCode cpp">T</code> is not <code class="sourceCode cpp"><em>cv2</em> <span class="dt">void</span></code>, unless <code class="sourceCode cpp">P</code> points to an object whose type is similar to <code class="sourceCode cpp">T</code>;</li>
@@ -696,12 +697,22 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5.18)</a></span> a <em>new-expression</em> (<span>7.6.2.8 <a href="https://wg21.link/expr.new">[expr.new]</a></span>), unless <span class="addu">either</span>
 <ul>
 <li>the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code><span class="addu">, or</span></li>
-<li><span class="addu">the selected allocation function is a non-allocating form ([new.delete.placement]) and the provided pointer points to an object whose type is similar to the allocated type of the <em>new-expression</em></span>;</li>
+<li><span class="addu">the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type <code class="sourceCode cpp">T</code>, the provided pointer points to an object whose type is similar to <code class="sourceCode cpp">T</code>, and the pointer either points to storage allocated with <code class="sourceCode cpp">std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;</span></code> or to an object whose lifetime began within the evaluation of <code class="sourceCode cpp">E</code></span>;</li>
 </ul></li>
+</ul>
+</blockquote>
+<p>Remove the special case for <code class="sourceCode cpp">construct_at</code> in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/6:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">6</a></span> For the purposes of determining whether an expression <code class="sourceCode cpp">E</code> is a core constant expression, the evaluation of the body of a member function of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as defined in [allocator.members], where T is a literal type, is ignored. <span class="rm" style="color: #bf0303"><del>Similarly, the evaluation of the body of <span><code class="sourceCode default">std​::​construct_at</code></span> or <span><code class="sourceCode default">std​::​ranges​::​construct_at</code></span> is considered to include only the initialization of the <span><code class="sourceCode default">T</code></span> object if the first argument (of type <span><code class="sourceCode default">T*</code></span>) points to storage allocated with <span><code class="sourceCode default">std​::​allocator&lt;T&gt;</code></span> or to an object whose lifetime began within the evaluation of <span><code class="sourceCode default">E</code></span>.</del></span></li>
 </ul>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-CWG2755">
+<p>[CWG2755] Jens Maurer. 2023-06-28. Incorrect wording applied by P2738R1. <br />
+<a href="https://wg21.link/cwg2755">https://wg21.link/cwg2755</a></p>
+</div>
 <div id="ref-P0784R7">
 <p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
 <a href="https://wg21.link/p0784r7">https://wg21.link/p0784r7</a></p>
