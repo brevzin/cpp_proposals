@@ -231,7 +231,7 @@ template<class T>
 ```
 
 * [9]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime type.
-* [#]{.pnum} *Remarks*: A call to this function is not a core constant expression ([expr.const]) unless `p` is a pointer to a variant member of a union.
+* [#]{.pnum} *Preconditions*: `p` is a pointer to a variant member of a union.
 * [#]{.pnum} *Effects*: Begins the lifetime ([basic.life]) of the non-static data member denoted by `p`. It is now the active member of its union. This ends the lifetime of the previously-active member of the union, if any.
 :::
 :::
