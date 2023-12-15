@@ -25,7 +25,7 @@ span.yellow {
 
 # Revision History
 
-From [@P2760R0] to R1: Added [output iterator enhancements](#output-iterators) to Tier 1.
+From [@P2760R0] to R1: Added [output iterator enhancements](#output-iterators) and [parallel algorithm support](#parallel-algorithms) to Tier 1, following discussions in Kona.
 
 # Introduction
 
@@ -808,6 +808,12 @@ Sure, `put_range` is mildly complicated, but it's much more efficient than the o
 
 Now, the issue here is that this is a fairly large redesign of the output iterator model with minimal implementation experience (unless you count D or the blog post). So this approach needs more time, but we do think it's worth doing.
 
+# Parallel Algorithms
+
+C++17 added parallel versions of standard library algorithms, but we never added any ranges versions there if. There is no `std::ranges` parallel `for_each`, etc. In the same way that we want to add a ranges version of [`reduce`](#reduce), we also more broadly want to add ranges versions of all the parallel algorithms.
+
+Here, there are a lot of questions to consider, especially when it comes to tying into [@P2300R7]. [@P2500R2] is attempting to solve that gap - both by adding range-based parallel algorithms and also by tying it with the intended C++26 senders/receivers model. We think that is also a high priority item for C++26, although it also needs a lot of design consideration.
+
 # Plan Summary
 
 As previously, we want to triage a lot of outstanding views, algorithms, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++26, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.
@@ -840,6 +846,7 @@ As previously, we want to triage a lot of outstanding views, algorithms, and oth
   * `ranges::sum`
   * `ranges::product`
 * Improving Output Iterators
+* Parallelizing Algorithms ([@P2500R2])
 
 ## [Tier 2]{.yellow}
 
