@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2023-12-14" />
+  <meta name="dcterms.date" content="2023-12-15" />
   <title>constexpr union lifetime</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2023-12-14</td>
+    <td>2023-12-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -606,7 +606,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-25"><a href="#cb1-25"></a><span class="kw">static_assert</span><span class="op">(</span>silly_test<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 <p>This is basically how any static/non-allocating/in-place vector is implemented: we have some storage, that we <em>definitely do not value initialize</em> and then we steadily construct elements into it.</p>
-<p>The problem is that the above does not work (although there is <a href="https://godbolt.org/z/a3318n63v">implementation divergence</a> - MSVC accept it and GCC did accept it even up to 13.2, but GCC trunk and Clang reject).</p>
+<p>The problem is that the above does not work (although there is <a href="https://godbolt.org/z/a3318n63v">implementation divergence</a> - MSVC and EDG accept it and GCC did accept it even up to 13.2, but GCC trunk and Clang reject).</p>
 <p>Getting this example to work would allow <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code> (<span class="citation" data-cites="P0843R9">[<a href="#ref-P0843R9" role="doc-biblioref">P0843R9</a>]</span>) to simply work during <code class="sourceCode cpp"><span class="kw">constexpr</span></code> time for all times (instead of just trivial ones), and was a problem briefly touched on in <span class="citation" data-cites="P2747R0">[<a href="#ref-P2747R0" role="doc-biblioref">P2747R0</a>]</span>.</p>
 <p>There are basically three ways we can approach this problem.</p>
 <h2 data-number="1.1" id="a-library-type-stduninitializedt"><span class="header-section-number">1.1</span> A library type: <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code><a href="#a-library-type-stduninitializedt" class="self-link"></a></h2>
