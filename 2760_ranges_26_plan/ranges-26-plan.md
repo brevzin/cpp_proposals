@@ -810,7 +810,7 @@ Now, the issue here is that this is a fairly large redesign of the output iterat
 
 # Parallel Algorithms
 
-C++17 added parallel versions of standard library algorithms, but we never added any ranges versions there if. There is no `std::ranges` parallel `for_each`, etc. In the same way that we want to add a ranges version of [`reduce`](#reduce), we also more broadly want to add ranges versions of all the parallel algorithms.
+C++17 added parallel versions of standard library algorithms, but we never added any ranges versions thereof. There is no `std::ranges` parallel `for_each`, etc. In the same way that we want to add a ranges version of [`reduce`](#reduce), we also more broadly want to add ranges versions of all the parallel algorithms.
 
 Here, there are a lot of questions to consider, especially when it comes to tying into [@P2300R7]. [@P2500R2] is attempting to solve that gap - both by adding range-based parallel algorithms and also by tying it with the intended C++26 senders/receivers model. We think that is also a high priority item for C++26, although it also needs a lot of design consideration.
 
