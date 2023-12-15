@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2023-12-14" />
+  <title>A Plan for C++26 Ranges</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span. { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #e6ffed;
+--diff-strongins: #acf2bd;
+--diff-del: #ffdddd;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">A Plan for C++26 Ranges</h1>
+
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2760R1</td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2023-12-14</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      LEWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Conor Hoekstra<br>&lt;<a href="mailto:conorhoekstra@gmail.com" class="email">conorhoekstra@gmail.com</a>&gt;<br>
+      Tim Song<br>&lt;<a href="mailto:t.canens.cpp@gmail.com" class="email">t.canens.cpp@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#views"><span class="toc-section-number">3</span> Views<span></span></a>
+<ul>
+<li><a href="#cache_last"><span class="toc-section-number">3.1</span> <code class="sourceCode cpp">cache_last</code><span></span></a></li>
+<li><a href="#istreamt"><span class="toc-section-number">3.2</span> <code class="sourceCode cpp">istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code><span></span></a></li>
+<li><a href="#scan"><span class="toc-section-number">3.3</span> <code class="sourceCode cpp">scan</code><span></span></a></li>
+<li><a href="#generate"><span class="toc-section-number">3.4</span> <code class="sourceCode cpp">generate</code><span></span></a></li>
+<li><a href="#as_input"><span class="toc-section-number">3.5</span> <code class="sourceCode cpp">as_input</code><span></span></a></li>
+<li><a href="#simple-adaptor-compositions"><span class="toc-section-number">3.6</span> Simple Adaptor Compositions<span></span></a></li>
+<li><a href="#extending-conditionally-borrowed"><span class="toc-section-number">3.7</span> Extending conditionally borrowed<span></span></a></li>
+</ul></li>
+<li><a href="#view-adjuncts"><span class="toc-section-number">4</span> View Adjuncts<span></span></a>
+<ul>
+<li><a href="#more-function-objects"><span class="toc-section-number">4.1</span> More Function Objects<span></span></a></li>
+<li><a href="#more-function-adaptors"><span class="toc-section-number">4.2</span> More Function Adaptors<span></span></a></li>
+</ul></li>
+<li><a href="#algorithms"><span class="toc-section-number">5</span> Algorithms<span></span></a>
+<ul>
+<li><a href="#reduce"><span class="toc-section-number">5.1</span> <code class="sourceCode cpp">reduce</code><span></span></a></li>
+<li><a href="#distance-and-advance"><span class="toc-section-number">5.2</span> <code class="sourceCode cpp">distance</code> and <code class="sourceCode cpp">advance</code><span></span></a></li>
+</ul></li>
+<li><a href="#output-iterators"><span class="toc-section-number">6</span> Output Iterators<span></span></a>
+<ul>
+<li><a href="#potential-design"><span class="toc-section-number">6.1</span> Potential Design<span></span></a></li>
+</ul></li>
+<li><a href="#plan-summary"><span class="toc-section-number">7</span> Plan Summary<span></span></a>
+<ul>
+<li><a href="#tier-1"><span class="toc-section-number">7.1</span> <span class="addu">Tier 1</span><span></span></a></li>
+<li><a href="#tier-2"><span class="toc-section-number">7.2</span> <span class="yellow">Tier 2</span><span></span></a></li>
+<li><a href="#tier-3"><span class="toc-section-number">7.3</span> <span class="diffdel">Tier 3</span><span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">8</span> References<span></span></a></li>
+</ul>
+</div>
+<style type="text/css">
+span.orange {
+    background-color: #ffa500;
+}
+span.yellow {
+    background-color: #ffff00;
+}
+</style>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>From <span class="citation" data-cites="P2760R0">[<a href="#ref-P2760R0" role="doc-biblioref">P2760R0</a>]</span> to R1: Added <a href="#output-iterators">output iterator enhancements</a> to Tier 1.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>For the C++23 cycle, we set out to create a plan to prioritize what additions we wanted to make for Ranges <span class="citation" data-cites="P2214R2">[<a href="#ref-P2214R2" role="doc-biblioref">P2214R2</a>]</span>. We ended up adopting all of the proposals we originally labelled as Tier 1 (with the exception of some we deliberately dropped, see later), as well as some from Tier 2. Moreover, based on the questions we’ve seen in various contexts about how to solve certain problems with Ranges - a significant percentage of them can be answered with some new C++23 facility, which suggests that we prioritized the right tools.</p>
+<p>To summarize, in C++23 we adopted the following facilities:</p>
+<ul>
+<li>General additions to ranges:
+<ul>
+<li>the ability to define first-class user-defined range adaptors (<span class="citation" data-cites="P2387R3">[<a href="#ref-P2387R3" role="doc-biblioref">P2387R3</a>]</span>)</li>
+<li>the ability to collect a range into a container, <code class="sourceCode cpp">ranges<span class="op">::</span>to</code> (<span class="citation" data-cites="P1206R7">[<a href="#ref-P1206R7" role="doc-biblioref">P1206R7</a>]</span>)</li>
+<li>the ability to format ranges (<span class="citation" data-cites="P2286R8">[<a href="#ref-P2286R8" role="doc-biblioref">P2286R8</a>]</span>)</li>
+</ul></li>
+<li>New range adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent</code> and <code class="sourceCode cpp">views<span class="op">::</span>adjacent_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_const</code> (<span class="citation" data-cites="P2278R4">[<a href="#ref-P2278R4" role="doc-biblioref">P2278R4</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code> (<span class="citation" data-cites="P2446R2">[<a href="#ref-P2446R2" role="doc-biblioref">P2446R2</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cartesian_product</code> (<span class="citation" data-cites="P2374R4">[<a href="#ref-P2374R4" role="doc-biblioref">P2374R4</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk</code> (<span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_by</code> (<span class="citation" data-cites="P2443R1">[<a href="#ref-P2443R1" role="doc-biblioref">P2443R1</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>enumerate</code> (<span class="citation" data-cites="P2164R9">[<a href="#ref-P2164R9" role="doc-biblioref">P2164R9</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>join_with</code> (<span class="citation" data-cites="P2441R2">[<a href="#ref-P2441R2" role="doc-biblioref">P2441R2</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>repeat</code> (<span class="citation" data-cites="P2474R2">[<a href="#ref-P2474R2" role="doc-biblioref">P2474R2</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slide</code> (<span class="citation" data-cites="P2442R1">[<a href="#ref-P2442R1" role="doc-biblioref">P2442R1</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>stride</code> (<span class="citation" data-cites="P1899R3">[<a href="#ref-P1899R3" role="doc-biblioref">P1899R3</a>]</span>)</li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>zip</code> and <code class="sourceCode cpp">views<span class="op">::</span>zip_transform</code> (<span class="citation" data-cites="P2321R2">[<a href="#ref-P2321R2" role="doc-biblioref">P2321R2</a>]</span>)</li>
+</ul></li>
+<li>New (or improved) range algorithms:
+<ul>
+<li>allowing C++20 iterators to be used in C++17 algorithms (<span class="citation" data-cites="P2408R5">[<a href="#ref-P2408R5" role="doc-biblioref">P2408R5</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>contains</code> (<span class="citation" data-cites="P2302R4">[<a href="#ref-P2302R4" role="doc-biblioref">P2302R4</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>fold</code> and family (<span class="citation" data-cites="P2322R6">[<a href="#ref-P2322R6" role="doc-biblioref">P2322R6</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>iota</code> (<span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span>)</li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>shift_left</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>shift_right</code> (<span class="citation" data-cites="P2440R1">[<a href="#ref-P2440R1" role="doc-biblioref">P2440R1</a>]</span>)</li>
+</ul></li>
+</ul>
+<p>There were also a bunch of smaller improvements that are not listed here.</p>
+<p>But there’s still plenty more work to be done - both on the range adaptor and the range algorithm front. The goal of this paper is to do for the C++26 timeframe what our previous plan did for the C++23 one: express what we think is the right prioritization of work, while describing what some of the outstanding issues are so that we can start tackling them.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="views"><span class="header-section-number">3</span> Views<a href="#views" class="self-link"></a></h1>
+<p>As before, we’ll start by enumerating all the adaptors in range-v3 (and a few that aren’t), noting their status updated by C++23. Note that many of the adaptors here labelled C++20 or C++23 are in range-v3 also, we’re just using the status “range-v3” to indicate that an adaptor is in range-v3 <em>only</em>:</p>
+<table>
+<colgroup>
+<col style="width: 36%"></col>
+<col style="width: 39%"></col>
+<col style="width: 24%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>View</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Current Status</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed Priority</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code class="sourceCode cpp">addressof</code></td>
+<td>range-v3</td>
+<td>Not proposed</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">adjacent</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">adjacent_transform</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">adjacent_filter</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">adjacent_remove_if</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">all</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">any_view<span class="op">&lt;</span>T<span class="op">&gt;</span></code></td>
+<td>range-v3</td>
+<td>Not proposed</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">as_const</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">as_input</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">as_rvalue</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">c_str</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">cache1</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1. Possibly renamed as <code class="sourceCode cpp">cache_last</code> or <code class="sourceCode cpp">cache_latest</code></span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">cartesian_product</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">chunk</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">chunk_by</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">chunk_on</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">common</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">concat</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1 <span class="citation" data-cites="P2542R2">[<a href="#ref-P2542R2" role="doc-biblioref">P2542R2</a>]</span></span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">counted</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">cycle</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">delimit</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">drop</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">drop_last</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">drop_last_while</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">drop_exactly</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">drop_while</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">empty</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">enumerate</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">filter</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">for_each</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1. Most languages call this <code class="sourceCode cpp">flat_map</code>, but we probably need to call it <code class="sourceCode cpp">transform_join</code>.</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">generate</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">generate_n</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">getlines</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">group_by</code></td>
+<td>range-v3</td>
+<td>Not proposed. Subsumed by <code class="sourceCode cpp">chunk_by</code>.</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">head</code></td>
+<td>(not in range-v3)</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">indirect</code></td>
+<td>range-v3</td>
+<td>Not proposed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">intersperse</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">ints</code></td>
+<td>range-v3</td>
+<td>Unnecessary unless people really hate <code class="sourceCode cpp">iota</code>.</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">iota</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">istream</code></td>
+<td>C++20</td>
+<td><span class="addu"><a href="#istreamt">See below</a> for potential improvement.</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">iterate</code></td>
+<td>(not in range-v3)</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">join</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">join_with</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">keys</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">linear_distribute</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">maybe</code></td>
+<td>proposed in <span class="citation" data-cites="P1255R9">[<a href="#ref-P1255R9" role="doc-biblioref">P1255R9</a>]</span></td>
+<td>???</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">partial_sum</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1, but not taking a callable (solely as a specialized form of <code class="sourceCode cpp">scan</code>)</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">remove</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">remove_if</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">repeat</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">repeat_n</code></td>
+<td>C++23 (under the name <code class="sourceCode cpp">repeat</code>)</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">replace</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">replace_if</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">reverse</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">sample</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">scan</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1, as a rename of what is <code class="sourceCode cpp">partial_sum</code> in range-v3</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">set_difference</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">set_intersection</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">set_union</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">set_symmetric_difference</code></td>
+<td>range-v3</td>
+<td><span class="diffdel">Tier 3</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">single</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">slice</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">sliding</code></td>
+<td>C++23 (as <code class="sourceCode cpp">slide</code>)</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">split</code></td>
+<td>C++20 (improved)</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">split_when</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">stride</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">tail</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">take</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">take_exactly</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">take_last</code></td>
+<td>range-v3</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">take_last_while</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">take_while</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">tokenize</code></td>
+<td>range-v3</td>
+<td>Not proposed</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">transform_filter</code></td>
+<td>(not in range-v3)</td>
+<td><span class="addu">Tier 1, related to <code class="sourceCode cpp">views<span class="op">::</span>maybe</code> <span class="citation" data-cites="P1255R9">[<a href="#ref-P1255R9" role="doc-biblioref">P1255R9</a>]</span></span></td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">trim</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">unbounded</code></td>
+<td>range-v3</td>
+<td>Not proposed</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">unique</code></td>
+<td>range-v3</td>
+<td><span class="yellow">Tier 2</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">values</code></td>
+<td>C++20</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">upto</code></td>
+<td>not in range-v3</td>
+<td><span class="addu">Tier 1</span> <span class="citation" data-cites="P1894R0">[<a href="#ref-P1894R0" role="doc-biblioref">P1894R0</a>]</span></td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp">zip</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp">zip_with</code></td>
+<td>C++23</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="3.1" id="cache_last"><span class="header-section-number">3.1</span> <code class="sourceCode cpp">cache_last</code><a href="#cache_last" class="self-link"></a></h2>
+<p>One of the adaptors that we considered for C++23 but ended up not pursuing was what range-v3 calls <code class="sourceCode cpp">cache1</code> and what we’d instead like to call something like <code class="sourceCode cpp">cache_last</code>. This is an adaptor which, as the name suggests, caches the last element. The reason for this is efficiency - specifically avoiding extra work that has to be done by iterator dereferencing.</p>
+<p>The canonical example of this is <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> filter<span class="op">(</span>g<span class="op">)</span></code>, where if you then iterate over the subsequent range, <code class="sourceCode cpp">f</code> will be invoked twice for every element that satisfies <code class="sourceCode cpp">g</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="dt">int</span> main<span class="op">()</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>;</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">auto</span> even_squares <span class="op">=</span> v</span>
+<span id="cb1-6"><a href="#cb1-6"></a>        <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>                std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;transform: {}</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb1-8"><a href="#cb1-8"></a>                <span class="cf">return</span> i <span class="op">*</span> i;</span>
+<span id="cb1-9"><a href="#cb1-9"></a>            <span class="op">})</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>        <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>filter<span class="op">([](</span><span class="dt">int</span> i<span class="op">){</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>                std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;filter: {}</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb1-12"><a href="#cb1-12"></a>                <span class="cf">return</span> i <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span>;</span>
+<span id="cb1-13"><a href="#cb1-13"></a>            <span class="op">})</span>;</span>
+<span id="cb1-14"><a href="#cb1-14"></a></span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">:</span> even_squares<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a>        std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;Got: {}</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    <span class="op">}</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>prints the following (note that there are 7 invocations of <code class="sourceCode cpp">transform</code>):</p>
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1"></a>transform: 1</span>
+<span id="cb2-2"><a href="#cb2-2"></a>filter: 1</span>
+<span id="cb2-3"><a href="#cb2-3"></a>transform: 2</span>
+<span id="cb2-4"><a href="#cb2-4"></a>filter: 4</span>
+<span id="cb2-5"><a href="#cb2-5"></a>transform: 2</span>
+<span id="cb2-6"><a href="#cb2-6"></a>Got: 4</span>
+<span id="cb2-7"><a href="#cb2-7"></a>transform: 3</span>
+<span id="cb2-8"><a href="#cb2-8"></a>filter: 9</span>
+<span id="cb2-9"><a href="#cb2-9"></a>transform: 4</span>
+<span id="cb2-10"><a href="#cb2-10"></a>filter: 16</span>
+<span id="cb2-11"><a href="#cb2-11"></a>transform: 4</span>
+<span id="cb2-12"><a href="#cb2-12"></a>Got: 16</span>
+<span id="cb2-13"><a href="#cb2-13"></a>transform: 5</span>
+<span id="cb2-14"><a href="#cb2-14"></a>filter: 25</span></code></pre></div>
+</blockquote>
+<p>The solution here is to add a layer of caching:</p>
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">auto</span> even_squares <span class="op">=</span> v</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>square<span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="op">|</span> views<span class="op">::</span>cache_last</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="op">|</span> views<span class="op">::</span>filter<span class="op">(</span>is_even<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Which will ensure that <code class="sourceCode cpp">square</code> will only be called once per element.</p>
+<p>The tricky part here is: how do you implement <code class="sourceCode cpp">cache_last</code>? Specifically: in what member function do you perform the caching?</p>
+<p>The range-v3 implementation looks roughly like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">template</span> <span class="op">&lt;</span>view V<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">struct</span> cache_last_view <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    V base_;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="dt">bool</span> dirty_ <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <em>non-propagating-cache</em><span class="op">&lt;</span>range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&gt;</span> cache_;</span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">struct</span> <em>iterator</em> <span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>        cache_last_view<span class="op">*</span> parent_;</span>
+<span id="cb4-9"><a href="#cb4-9"></a>        iterator_t<span class="op">&lt;</span>V<span class="op">&gt;</span> cur_;</span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>            <span class="cf">if</span> <span class="op">(</span>parent_<span class="op">-&gt;</span>dirty_<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>                parent_<span class="op">-&gt;</span>cache_<span class="op">.</span>emplace<span class="op">(</span>iter_move<span class="op">(</span>cur_<span class="op">))</span>;</span>
+<span id="cb4-14"><a href="#cb4-14"></a>                parent_<span class="op">-&gt;</span>dirty_ <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb4-15"><a href="#cb4-15"></a>            <span class="op">}</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>            <span class="cf">return</span> std<span class="op">::</span>move<span class="op">(*</span>parent_<span class="op">-&gt;</span>cache_<span class="op">)</span>;</span>
+<span id="cb4-17"><a href="#cb4-17"></a>        <span class="op">}</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a></span>
+<span id="cb4-19"><a href="#cb4-19"></a>        <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> <em>iterator</em><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a>            <span class="op">++</span>cur_;</span>
+<span id="cb4-21"><a href="#cb4-21"></a>            parent_<span class="op">-&gt;</span>dirty_ <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb4-22"><a href="#cb4-22"></a>        <span class="op">}</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a>    <span class="op">}</span>;</span>
+<span id="cb4-24"><a href="#cb4-24"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>But there’s a problem here: <span>16.4.6.10 <a href="https://wg21.link/res.on.data.races">[res.on.data.races]</a></span> says that <code class="sourceCode cpp"><span class="kw">const</span></code> member functions are not allowed to introduce data races. While everything here is <code class="sourceCode cpp"><span class="kw">const</span></code>-correct (there isn’t even a <code class="sourceCode cpp"><span class="kw">mutable</span></code>), iterator dereference here <em>does</em> introduce a data race: two threads were both dereferencing an iterator into a dirty <code class="sourceCode cpp">cache_last_view</code>.</p>
+<p>There are four potential solutions to this problem, presented in our order of preference:</p>
+<ol type="1">
+<li>We could carve out an exception to [res.on.data.races] for all input iterators. Even some standard library implementations of input iterators (like <code class="sourceCode cpp">std<span class="op">::</span>istreambuf_iterator<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span></code>) already don’t satisfy this, and using input iterators in multi-threaded contexts is already kind of interesting. This makes the above implementation valid.</li>
+<li>We could require synchronization on <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span></code>. This probably isn’t terrible expensive in this context, but adding synchronization to an adaptor whose primary purpose is to improve performance seems a bit heavy-handed, especially since that synchronization will almost never be actually necessary.</li>
+<li>We could move the updating of the cached value from <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span></code> to <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">++()</span></code>, which is already a mutable member function. This has the downside of requiring calculating more elements than necessary - since <code class="sourceCode cpp">r <span class="op">|</span> cache_last <span class="op">|</span> stride<span class="op">(</span><span class="dv">2</span><span class="op">)</span></code> will still have to cache every element, even if only every other one is necessary.</li>
+<li>We could allow input iterators to have <em>mutable</em> <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code>, since some of them clearly need it. A mutable <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code> makes the concepts even more awkward, and adds more work for every range adaptor. It theoretically is sensible, but seems extremely impractical.</li>
+</ol>
+<p>The other issue is what the reference type of the range should be. range-v3 uses <code class="sourceCode cpp">range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&amp;&amp;</span></code>, but this somewhat defeats the purpose of caching if you can so easily invalidate it. <code class="sourceCode cpp">range_value_t<span class="op">&lt;</span>V<span class="op">&gt;&amp;</span></code> is probably a better choice.</p>
+<h2 data-number="3.2" id="istreamt"><span class="header-section-number">3.2</span> <code class="sourceCode cpp">istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code><a href="#istreamt" class="self-link"></a></h2>
+<p><code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code> was one of the original C++20 range factories, modified slightly since then to be a bit more user-friendly. But there’s an interesting issue with it as pointed out in <span class="citation" data-cites="P2406R5">[<a href="#ref-P2406R5" role="doc-biblioref">P2406R5</a>]</span> and even before that in <span class="citation" data-cites="range-v3#57">[<a href="#ref-range-v3#57" role="doc-biblioref">range-v3#57</a>]</span>: <code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;(</span>stream<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span>N<span class="op">)</span></code> will extract <code class="sourceCode cpp">N<span class="op">+</span><span class="dv">1</span></code> elements from <code class="sourceCode cpp">stream</code>. Barry did a CppNow talk on this example (<a href="https://youtu.be/dvi0cl8ccNQ">video</a>).</p>
+<p>There are, potentially, two approaches to implementing <code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code>:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Specified (C++20)</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Alternative (as presented at CppNow)</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> Val<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">class</span> istream_view <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>  istream<span class="op">*</span> stream;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>  Val value;</span>
+<span id="cb5-5"><a href="#cb5-5"></a></span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="kw">struct</span> iterator <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    istream_view<span class="op">*</span> parent;</span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> iterator<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a>      parent<span class="op">-&gt;</span>extract<span class="op">()</span>;</span>
+<span id="cb5-11"><a href="#cb5-11"></a>      <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="op">}</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a></span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> Val<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>      <span class="cf">return</span> parent<span class="op">-&gt;</span>value;</span>
+<span id="cb5-16"><a href="#cb5-16"></a>    <span class="op">}</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a></span>
+<span id="cb5-18"><a href="#cb5-18"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">==(</span>default_sentinel_t<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb5-19"><a href="#cb5-19"></a>      <span class="cf">return</span> <span class="kw">not</span> <span class="op">*</span>parent<span class="op">-&gt;</span>stream;</span>
+<span id="cb5-20"><a href="#cb5-20"></a>    <span class="op">}</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a>  <span class="op">}</span>;</span>
+<span id="cb5-22"><a href="#cb5-22"></a></span>
+<span id="cb5-23"><a href="#cb5-23"></a>  <span class="kw">auto</span> extract<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a>    <span class="op">*</span>stream <span class="op">&gt;&gt;</span> value;</span>
+<span id="cb5-25"><a href="#cb5-25"></a>  <span class="op">}</span></span>
+<span id="cb5-26"><a href="#cb5-26"></a></span>
+<span id="cb5-27"><a href="#cb5-27"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb5-28"><a href="#cb5-28"></a>  <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">-&gt;</span> iterator <span class="op">{</span></span>
+<span id="cb5-29"><a href="#cb5-29"></a>    extract<span class="op">()</span>;</span>
+<span id="cb5-30"><a href="#cb5-30"></a>    <span class="cf">return</span> iterator<span class="op">{</span><span class="kw">this</span><span class="op">}</span>;</span>
+<span id="cb5-31"><a href="#cb5-31"></a>  <span class="op">}</span></span>
+<span id="cb5-32"><a href="#cb5-32"></a>  <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> default_sentinel_t <span class="op">{</span></span>
+<span id="cb5-33"><a href="#cb5-33"></a>    <span class="cf">return</span> default_sentinel;</span>
+<span id="cb5-34"><a href="#cb5-34"></a>  <span class="op">}</span></span>
+<span id="cb5-35"><a href="#cb5-35"></a><span class="op">}</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> Val<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">class</span> istream_view <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>  istream<span class="op">*</span> stream;</span>
+<span id="cb6-4"><a href="#cb6-4"></a>  Val value;</span>
+<span id="cb6-5"><a href="#cb6-5"></a></span>
+<span id="cb6-6"><a href="#cb6-6"></a>  <span class="kw">struct</span> iterator <span class="op">{</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>    istream_view<span class="op">*</span> parent;</span>
+<span id="cb6-8"><a href="#cb6-8"></a>    <span class="kw">mutable</span> <span class="dt">bool</span> dirty <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb6-9"><a href="#cb6-9"></a></span>
+<span id="cb6-10"><a href="#cb6-10"></a>    <span class="kw">auto</span> prime<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a>      <span class="cf">if</span> <span class="op">(</span>dirty<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a>        <span class="op">*</span>parent<span class="op">-&gt;</span>stream <span class="op">&gt;&gt;</span> parent<span class="op">-&gt;</span>value;</span>
+<span id="cb6-13"><a href="#cb6-13"></a>        dirty <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb6-14"><a href="#cb6-14"></a>      <span class="op">}</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a>    <span class="op">}</span></span>
+<span id="cb6-16"><a href="#cb6-16"></a></span>
+<span id="cb6-17"><a href="#cb6-17"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> iterator<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb6-18"><a href="#cb6-18"></a>      prime<span class="op">()</span>;</span>
+<span id="cb6-19"><a href="#cb6-19"></a>      dirty <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb6-20"><a href="#cb6-20"></a>      <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb6-21"><a href="#cb6-21"></a>    <span class="op">}</span></span>
+<span id="cb6-22"><a href="#cb6-22"></a></span>
+<span id="cb6-23"><a href="#cb6-23"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="kw">const</span> <span class="op">-&gt;</span> Val<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb6-24"><a href="#cb6-24"></a>      prime<span class="op">()</span>;</span>
+<span id="cb6-25"><a href="#cb6-25"></a>      <span class="cf">return</span> parent<span class="op">-&gt;</span>value;</span>
+<span id="cb6-26"><a href="#cb6-26"></a>    <span class="op">}</span></span>
+<span id="cb6-27"><a href="#cb6-27"></a></span>
+<span id="cb6-28"><a href="#cb6-28"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">==(</span>default_sentinel_t<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb6-29"><a href="#cb6-29"></a>      prime<span class="op">()</span>;</span>
+<span id="cb6-30"><a href="#cb6-30"></a>      <span class="cf">return</span> <span class="kw">not</span> <span class="op">*</span>parent<span class="op">-&gt;</span>stream;</span>
+<span id="cb6-31"><a href="#cb6-31"></a>    <span class="op">}</span></span>
+<span id="cb6-32"><a href="#cb6-32"></a>  <span class="op">}</span>;</span>
+<span id="cb6-33"><a href="#cb6-33"></a></span>
+<span id="cb6-34"><a href="#cb6-34"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb6-35"><a href="#cb6-35"></a>  <span class="kw">auto</span> begin<span class="op">()</span> <span class="op">-&gt;</span> iterator <span class="op">{</span></span>
+<span id="cb6-36"><a href="#cb6-36"></a>    <span class="cf">return</span> iterator<span class="op">{</span><span class="kw">this</span><span class="op">}</span>;</span>
+<span id="cb6-37"><a href="#cb6-37"></a>  <span class="op">}</span></span>
+<span id="cb6-38"><a href="#cb6-38"></a></span>
+<span id="cb6-39"><a href="#cb6-39"></a>  <span class="kw">auto</span> end<span class="op">()</span> <span class="op">-&gt;</span> default_sentinel_t <span class="op">{</span></span>
+<span id="cb6-40"><a href="#cb6-40"></a>    <span class="cf">return</span> default_sentinel;</span>
+<span id="cb6-41"><a href="#cb6-41"></a>  <span class="op">}</span></span>
+<span id="cb6-42"><a href="#cb6-42"></a><span class="op">}</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>This alternative implementation ensures that consuming <code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;(</span>stream<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span>N<span class="op">)</span></code> extracts exactly <code class="sourceCode cpp">N</code> elements from <code class="sourceCode cpp">stream</code>, including for <code class="sourceCode cpp">N <span class="op">==</span> <span class="dv">0</span></code>. It does, however, require doing work in two different <code class="sourceCode cpp"><span class="kw">const</span></code> member functions: both <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">*()</span></code> and <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==()</span></code>. Neither of these violate the semantic guarantees of those functions - repeated invocations of either will give you the same result every time, until you increment again. But they do violate <span>16.4.6.10 <a href="https://wg21.link/res.on.data.races">[res.on.data.races]</a></span>.</p>
+<p>We have the same potential four options here as we described with <a href="#cache_last"><code class="sourceCode cpp">cache_last</code></a>, but we could also just keep the existing implementation of <code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. Changing this range does have observable effects, but we think we should seriously consider doing so. LEWG seemed very willing to change <code class="sourceCode cpp">counted_iterator<span class="op">&lt;</span>I<span class="op">&gt;</span></code> and <code class="sourceCode cpp">views<span class="op">::</span>take</code> in order to address this issue before, so we think serious consideration should be given to changing <code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
+<p>Additionally, this would set a precedent for how to write these kinds of input ranges. So it’s important to get right.</p>
+<p>Separately, there is also <code class="sourceCode cpp">views<span class="op">::</span>getlines</code>. In the say way that <code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;(</span>is<span class="op">)</span></code> is a factory that produces elements of type <code class="sourceCode cpp">T</code> on demand by way of <code class="sourceCode cpp">is <span class="op">&gt;&gt;</span> obj</code>, <code class="sourceCode cpp">views<span class="op">::</span>getlines</code> is a factory that produces elements of type <code class="sourceCode cpp">std<span class="op">::</span>string</code> on demand by way of <code class="sourceCode cpp">std<span class="op">::</span>getline<span class="op">(</span>is, obj<span class="op">)</span></code>. Note that both could nearly be implemented in terms of <code class="sourceCode cpp">views<span class="op">::</span>generate</code>:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">views<span class="op">::</span>istream<span class="op">&lt;</span>T<span class="op">&gt;</span></code></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong><code class="sourceCode cpp">views<span class="op">::</span>getlines</code></strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> istream <span class="op">=</span> <span class="op">[](</span>std<span class="op">::</span>istream<span class="op">&amp;</span> is<span class="op">){</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>  <span class="cf">return</span> views<span class="op">::</span>generate<span class="op">([&amp;</span>is, obj<span class="op">=</span>T<span class="op">()]()</span> <span class="kw">mutable</span> <span class="op">-&gt;</span> T<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    is <span class="op">&gt;&gt;</span> obj;</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    <span class="cf">return</span> obj;</span>
+<span id="cb7-6"><a href="#cb7-6"></a>  <span class="op">})</span>;</span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="op">})</span>;</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> getlines <span class="op">=</span> <span class="op">[](</span>std<span class="op">::</span>istream<span class="op">&amp;</span> is, <span class="dt">char</span> delim <span class="op">=</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span><span class="op">){</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="cf">return</span> views<span class="op">::</span>generate<span class="op">(</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>    <span class="op">[&amp;</span>is, delim, obj<span class="op">=</span>std<span class="op">::</span>string<span class="op">()]()</span> <span class="kw">mutable</span> <span class="op">-&gt;</span> std<span class="op">::</span>string<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>      std<span class="op">::</span>getline<span class="op">(</span>is, obj<span class="op">)</span>;</span>
+<span id="cb8-5"><a href="#cb8-5"></a>      <span class="cf">return</span> obj;</span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="op">})</span>;</span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="op">})</span>;</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>Almost because neither of these terminates, and we eventually do need some kind of termination condition. Which might call for some kind of <code class="sourceCode cpp">views<span class="op">::</span>generate_until</code>.</p>
+<h2 data-number="3.3" id="scan"><span class="header-section-number">3.3</span> <code class="sourceCode cpp">scan</code><a href="#scan" class="self-link"></a></h2>
+<p>If you want to take a range of elements and get a new range that is applying <code class="sourceCode cpp">f</code> to every element, that’s <code class="sourceCode cpp">transform<span class="op">(</span>f<span class="op">)</span></code>. But there are many cases where you need a <code class="sourceCode cpp">transform</code> to that is <em>stateful</em>. That is, rather than have the input to <code class="sourceCode cpp">f</code> be the current element (and require that <code class="sourceCode cpp">f</code> be <code class="sourceCode cpp">regular_invocable</code>), have the input to <code class="sourceCode cpp">f</code> be both the current element <em>and</em> the current state.</p>
+<p>For instance, given the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">]</span></code>, if you want to produce the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span><span class="op">]</span></code> - you can’t get there with <code class="sourceCode cpp">transform</code>. Instead, you need to use <code class="sourceCode cpp">scan</code> using <code class="sourceCode cpp"><span class="op">+</span></code> as the binary operator. The special case of <code class="sourceCode cpp">scan</code> over <code class="sourceCode cpp"><span class="op">+</span></code> is <code class="sourceCode cpp">partial_sum</code>.</p>
+<p>One consideration here is how to process the first element. You might want <code class="sourceCode cpp"><span class="op">[</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span><span class="op">]</span></code> and you might want <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span><span class="op">]</span></code> (with one extra element), the latter could be called a <code class="sourceCode cpp">prescan</code>.</p>
+<h2 data-number="3.4" id="generate"><span class="header-section-number">3.4</span> <code class="sourceCode cpp">generate</code><a href="#generate" class="self-link"></a></h2>
+<p>C++23 has <code class="sourceCode cpp">std<span class="op">::</span>generator<span class="op">&lt;</span>T<span class="op">&gt;</span></code>. There are two very closely related range factories in range-v3, which are basically:</p>
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">requires</span> std<span class="op">::</span>invocable<span class="op">&lt;</span>F<span class="op">&amp;&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="kw">auto</span> generate<span class="op">(</span>F f<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span>std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    <span class="cf">while</span> <span class="op">(</span><span class="kw">true</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>        <span class="kw">co_yield</span> f<span class="op">()</span>;</span>
+<span id="cb9-6"><a href="#cb9-6"></a>    <span class="op">}</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="op">}</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>    <span class="kw">requires</span> std<span class="op">::</span>invocable<span class="op">&lt;</span>F<span class="op">&amp;&gt;</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="kw">auto</span> generate_n<span class="op">(</span>F f, <span class="dt">int</span> n<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span>std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;&gt;&gt;</span> <span class="op">{</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">!=</span> n; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a>        <span class="kw">co_yield</span> f<span class="op">()</span>;</span>
+<span id="cb9-14"><a href="#cb9-14"></a>    <span class="op">}</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Note that the constraint here is <code class="sourceCode cpp">invocable</code>, not <code class="sourceCode cpp">regular_invocable</code>. The latter wouldn’t be very interesting - that’s <code class="sourceCode cpp">views<span class="op">::</span>repeat<span class="op">(</span>f<span class="op">())</span></code>. These factories are somewhat related to <code class="sourceCode cpp">scan</code> (in the sense that we have a mutable function that we’re repeatedly invoking) and also somewhat related to <code class="sourceCode cpp">cache_latest</code> (in the sense that the range-v3 implementation of both also violate [res.on.data.races]).</p>
+<p>Since with <code class="sourceCode cpp">views<span class="op">::</span>repeat</code>, we just used the same name for the infinite and finite versions, we should probably end up with just the one name for <code class="sourceCode cpp">views<span class="op">::</span>generate</code>.</p>
+<p>A similar factory in this vein is one that Haskell calls <code class="sourceCode cpp">iterate</code>:</p>
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F, <span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="kw">auto</span> iterate<span class="op">(</span>F f, T x<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>generator<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="cf">while</span> <span class="op">(</span><span class="kw">true</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>        <span class="kw">co_yield</span> x;</span>
+<span id="cb10-5"><a href="#cb10-5"></a>        x <span class="op">=</span> f<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>Whereas <code class="sourceCode cpp">generate<span class="op">(</span>f<span class="op">)</span></code> is the sequence <code class="sourceCode cpp"><span class="op">[</span>f<span class="op">()</span>, f<span class="op">()</span>, f<span class="op">()</span>, f<span class="op">()</span>, <span class="op">...]</span></code>, <code class="sourceCode cpp">iterate<span class="op">(</span>f, x<span class="op">)</span></code> is the sequence <code class="sourceCode cpp"><span class="op">[</span>x, f<span class="op">(</span>x<span class="op">)</span>, f<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span>, f<span class="op">(</span>f<span class="op">(</span>f<span class="op">(</span>x<span class="op">)))</span>, <span class="op">...]</span></code></p>
+<p>Yet another factory, following the theme, is one that Dlang calls <code class="sourceCode cpp">recurrence</code> (<a href="https://godbolt.org/z/svfM4eW3b">implementation</a>). Although maybe this one is too cute:</p>
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">auto</span> main<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="co">// fibonacci: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>    print<span class="op">(</span><span class="st">&quot;fibonacci: {}</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb11-4"><a href="#cb11-4"></a>        recurrence<span class="op">([](</span><span class="kw">auto</span> a, <span class="dt">int</span> n<span class="op">){</span> <span class="cf">return</span> a<span class="op">[</span>n<span class="op">-</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> a<span class="op">[</span>n<span class="op">-</span><span class="dv">2</span><span class="op">]</span>; <span class="op">}</span>, <span class="dv">1</span>, <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a>        <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span><span class="dv">10</span><span class="op">)</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>    <span class="op">)</span>;</span>
+<span id="cb11-7"><a href="#cb11-7"></a></span>
+<span id="cb11-8"><a href="#cb11-8"></a>    <span class="co">// factorial: [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>    print<span class="op">(</span><span class="st">&quot;factorial: {}</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb11-10"><a href="#cb11-10"></a>        recurrence<span class="op">([](</span><span class="kw">auto</span> a, <span class="dt">int</span> n<span class="op">){</span> <span class="cf">return</span> a<span class="op">[</span>n<span class="op">-</span><span class="dv">1</span><span class="op">]</span> <span class="op">*</span> n; <span class="op">}</span>, <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb11-11"><a href="#cb11-11"></a>        <span class="op">|</span> views<span class="op">::</span>take<span class="op">(</span><span class="dv">10</span><span class="op">)</span></span>
+<span id="cb11-12"><a href="#cb11-12"></a>    <span class="op">)</span>;</span>
+<span id="cb11-13"><a href="#cb11-13"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<h2 data-number="3.5" id="as_input"><span class="header-section-number">3.5</span> <code class="sourceCode cpp">as_input</code><a href="#as_input" class="self-link"></a></h2>
+<p>We added two fairly simply adaptors in C++23: <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> and <code class="sourceCode cpp">views<span class="op">::</span>as_rvalue</code>, both of which are specialized versions of <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. Well, <code class="sourceCode cpp">views<span class="op">::</span>as_const</code> is conceptually simple anyway - even as it is remarkably complex.</p>
+<p>There’s a third adaptor in this family that we should consider adding: <code class="sourceCode cpp">views<span class="op">::</span>as_input<span class="op">(</span>r<span class="op">)</span></code>. This is an adaptor that all it does is reduce <code class="sourceCode cpp">r</code>’s category to input and force it to be non-common. Otherwise: same value type, same reference type, same sized-ness, same borrowed-ness, same const-iterability.</p>
+<p>Why would anybody want such a thing? Performance.</p>
+<p>Range adaptors typically provide the maximum possible iterator category - in order to maximize functionality. But sometimes it takes work to do so. A few examples:</p>
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>join<span class="op">(</span>r<span class="op">)</span></code> is common when <code class="sourceCode cpp">r</code> is, which means it provides two iterators. The iterator comparison for <code class="sourceCode cpp">join</code> does <a href="https://eel.is/c++draft/range.join#iterator-18">two iterator comparisons</a>, for both the outer and the inner iterator, which is definitely necessary when comparing two iterators. But if all you want to do is compare <code class="sourceCode cpp">it <span class="op">==</span> end</code>, you could’ve gotten away with <a href="https://eel.is/c++draft/range.join#sentinel-3">one iterator comparison</a>. As such, iterating over a common <code class="sourceCode cpp">join_view</code> is more expensive than an uncommon one.</li>
+<li><code class="sourceCode cpp">vews<span class="op">::</span>chunk<span class="op">(</span>r, n<span class="op">)</span></code> has a different algorithm for input vs forward. For forward+, you get a range of <code class="sourceCode cpp">views<span class="op">::</span>take<span class="op">(</span>n<span class="op">)</span></code> - if you iterate through every element, then advancing from one chunk to the next chunk requires iterating through all the elements of that chunk again. For input, you can only advance element at a time.</li>
+</ul>
+<p>The added cost that <code class="sourceCode cpp">views<span class="op">::</span>chunk</code> adds when consuming all elements for forward+ can be necessary if you need the forward iterator guarantees. But if you don’t need it, like if you’re just going to consume all the elements in order one time. Or, worse, the next adaptor in the chain reduces you down to input anyway, this is unnecessary.</p>
+<p>In this way, <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span>n<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>join</code> can be particularly bad, since you’re paying additional cost for <code class="sourceCode cpp">chunk</code> that you can’t use anyway, since <code class="sourceCode cpp">views<span class="op">::</span>join</code> here would always be an input range. <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>as_input <span class="op">|</span> views<span class="op">::</span>chunk<span class="op">(</span>n<span class="op">)</span> <span class="op">|</span> views<span class="op">::</span>join</code> would alleviate this problem. It would be a particularly nice way to alleviate this problem if users didn’t have to write the <code class="sourceCode cpp">views<span class="op">::</span>as_input</code> part!</p>
+<p>This situation was originally noted in <span class="citation" data-cites="range-v3#704">[<a href="#ref-range-v3#704" role="doc-biblioref">range-v3#704</a>]</span>.</p>
+<h2 data-number="3.6" id="simple-adaptor-compositions"><span class="header-section-number">3.6</span> Simple Adaptor Compositions<a href="#simple-adaptor-compositions" class="self-link"></a></h2>
+<p>Many adaptors have to have their own dedicated implementation. Some are merely more convenient spellings of existing ones (like <code class="sourceCode cpp">keys</code> for <code class="sourceCode cpp">elements<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span></code> and <code class="sourceCode cpp">pairwise</code> for <code class="sourceCode cpp">adjacent<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;</span></code>). Still others could be just compositions of existing range adaptors.</p>
+<p>One such is what most of the rest of the world calls <code class="sourceCode cpp">flat_map</code>: this is a combination of <code class="sourceCode cpp">map</code> and then <code class="sourceCode cpp">flatten</code>. In C++ terms, we could very simply provide such an adaptor:</p>
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> transform_join <span class="op">=</span> <span class="op">[]&lt;</span><span class="kw">class</span> F<span class="op">&gt;(</span>F<span class="op">&amp;&amp;</span> f<span class="op">){</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="cf">return</span> transform<span class="op">((</span>F<span class="op">&amp;&amp;)</span>f<span class="op">)</span> <span class="op">|</span> join;</span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Well, the actual implementation is slightly more involved in order to be able to also support <code class="sourceCode cpp">views<span class="op">::</span>transform_join<span class="op">(</span>r, f<span class="op">)</span></code> in addition to <code class="sourceCode cpp">r <span class="op">|</span> views<span class="op">::</span>transform_join<span class="op">(</span>f<span class="op">)</span></code>, but not dramatically so. Importantly, there really isn’t much benefit to providing a bespoke <code class="sourceCode cpp">transform_join</code> as opposed to simply implementing it in terms of these two existing adaptors. But this is such a common piece of functionality that it probably merits direct addition into the standard library.</p>
+<p>In slide-ware, it probably doesn’t make that much of a difference. But in real code that uses namespaces, it really does:</p>
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1"></a>r <span class="op">|</span> transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> join</span>
+<span id="cb13-2"><a href="#cb13-2"></a>r <span class="op">|</span> transform_join<span class="op">(</span>f<span class="op">)</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a></span>
+<span id="cb13-4"><a href="#cb13-4"></a>r <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>f<span class="op">)</span> <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>join</span>
+<span id="cb13-5"><a href="#cb13-5"></a>r <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform_join<span class="op">(</span>f<span class="op">)</span></span></code></pre></div>
+</blockquote>
+<p>A few other common patterns worth considering:</p>
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>replace<span class="op">(</span>old_val, new_val<span class="op">)</span></code> and <code class="sourceCode cpp">views<span class="op">::</span>replace_if<span class="op">(</span>pred, new_val<span class="op">)</span></code> are kinds of <code class="sourceCode cpp">views<span class="op">::</span>transform</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>remove<span class="op">(</span>val<span class="op">)</span></code> and <code class="sourceCode cpp">views<span class="op">::</span>remove_if<span class="op">(</span>pred<span class="op">)</span></code> are kinds of <code class="sourceCode cpp">views<span class="op">::</span>filter</code>, the latter being just <code class="sourceCode cpp">filter<span class="op">(</span>not_fn<span class="op">(</span>pred<span class="op">))</span></code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>upto<span class="op">(</span>n<span class="op">)</span></code> is just <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="kw">decltype</span><span class="op">(</span>n<span class="op">){}</span>, n<span class="op">)</span></code>, which is useful not just because it’s terser and a better name, but also because a fairly typical use is <code class="sourceCode cpp">views<span class="op">::</span>iota<span class="op">(</span><span class="dv">0</span>, r<span class="op">.</span>size<span class="op">())</span></code> - or at least it would be, but that doesn’t compile when <code class="sourceCode cpp">r<span class="op">.</span>size<span class="op">()</span></code> is unsigned.</li>
+<li>For the <a href="#algorithms">algorithms</a> discussed later, <code class="sourceCode cpp">ranges<span class="op">::</span>sum</code> and <code class="sourceCode cpp">ranges<span class="op">::</span>product</code> are just special cases of <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code>.</li>
+</ul>
+<p>But it is not always the case that just writing one algorithm in terms of others is optimal. It is tempting to define <code class="sourceCode cpp">views<span class="op">::</span>tail</code> as simply <code class="sourceCode cpp">views<span class="op">::</span>drop<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, but a dedicated <code class="sourceCode cpp">tail</code> could be more efficient (it does not need to store the count or cache <code class="sourceCode cpp">begin<span class="op">()</span></code>). It’s unfortunate that the relative difference in specification is so high though.</p>
+<h2 data-number="3.7" id="extending-conditionally-borrowed"><span class="header-section-number">3.7</span> Extending conditionally borrowed<a href="#extending-conditionally-borrowed" class="self-link"></a></h2>
+<p>In <span class="citation" data-cites="P2017R1">[<a href="#ref-P2017R1" role="doc-biblioref">P2017R1</a>]</span>, we made some range adaptors conditionally borrowed. But we didn’t touch adaptors that had callables - like <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. It turns out to be very useful to have a borrowable version of <code class="sourceCode cpp">views<span class="op">::</span>transform</code>. Indeed, <span class="citation" data-cites="P2728R6">[<a href="#ref-P2728R6" role="doc-biblioref">P2728R6</a>]</span> even adds a dedicated new range adaptor (<code class="sourceCode cpp">views<span class="op">::</span>project</code>) which is simply a version of <code class="sourceCode cpp">views<span class="op">::</span>transform</code> that can be borrowed (because its callable must be a constant).</p>
+<p>But rather than add a dedicated view for this specific case, which requires a new name but really only helps <code class="sourceCode cpp">views<span class="op">::</span>transform</code>, we can generalize <code class="sourceCode cpp">views<span class="op">::</span>transform</code> to address the use-case in a way that would also help all the other range adaptors that take callables. At the very least, in <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>r, f<span class="op">)</span></code> if <code class="sourceCode cpp">r</code> is borrowed and <code class="sourceCode cpp">f</code> is empty, an implementation can simply put <code class="sourceCode cpp">f</code> in the <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>R, F<span class="op">&gt;::</span>iterator</code> directly (rather than a <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>R, F<span class="op">&gt;*</span></code>) which would allow it to be borrowed. The same could be said for other range adaptors that take callables as well, which seems like a more useful approach as well as not requiring new names for every adaptor.</p>
+<p>The main question then is what the criteria should be for when <code class="sourceCode cpp">transform_view<span class="op">&lt;</span>R, F<span class="op">&gt;</span></code> should be a borrowed range (when <code class="sourceCode cpp">R</code> is):</p>
+<ul>
+<li><code class="sourceCode cpp">is_empty_v<span class="op">&lt;</span>F<span class="op">&gt;</span></code> (range-v3 already does this - not for conditionally borrowed, but just to decide whether to store the callable by value in the iterator)</li>
+<li><code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>F<span class="op">)</span> <span class="op">&lt;=</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">void</span><span class="op">*)</span> <span class="kw">and</span> is_trivially_copyable_v<span class="op">&lt;</span>F<span class="op">&gt;</span></code> (this means that when transforming with a function pointer, the function pointer itself can live in the iterator - which takes the same amount of space as the parent pointer, except with one less indirection)</li>
+<li>something else?</li>
+</ul>
+<p>This question is a little simpler for <code class="sourceCode cpp">views<span class="op">::</span>transform</code> (which only needs to potentially store <code class="sourceCode cpp">f</code> in the adapted iterator) than it is for <code class="sourceCode cpp">views<span class="op">::</span>filter</code> (which would need not only the predicate but also the underlying sentinel, so this may not be worthwhile). This would need to be carefully considered.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="view-adjuncts"><span class="header-section-number">4</span> View Adjuncts<a href="#view-adjuncts" class="self-link"></a></h1>
+<p>In the C++23 plan, we listed several facilities that would greatly improve the usability of views: the ability for users to define first class pipe support, the ability to collect into a container (<code class="sourceCode cpp">ranges<span class="op">::</span>to</code>), and formatting.</p>
+<p>There are some other operations that we’ve seen come up regularly - operations that are not themselves views or algorithms, but would improve the quality of life around using the standard library (and other) range adpators.</p>
+<h2 data-number="4.1" id="more-function-objects"><span class="header-section-number">4.1</span> More Function Objects<a href="#more-function-objects" class="self-link"></a></h2>
+<p>The standard library has a lot of function objects, but there are still plenty of common ones that are missing.</p>
+<p>Some unary operators have no associated function object:</p>
+<ul>
+<li>indirection: <code class="sourceCode cpp"><span class="op">*</span>_1</code></li>
+<li>addressof: <code class="sourceCode cpp"><span class="op">&amp;</span>_1</code> (except if we add a function object for this, it should do <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>)</li>
+<li>prefix and postfix increment: <code class="sourceCode cpp"><span class="op">++</span>_1</code> or <code class="sourceCode cpp">_1<span class="op">++</span></code></li>
+<li>prefix and postfix decrement: <code class="sourceCode cpp"><span class="op">--</span>_1</code> or <code class="sourceCode cpp">_1<span class="op">--</span></code></li>
+</ul>
+<p>range-v3 has <code class="sourceCode cpp">views<span class="op">::</span>indirect</code>, for instance, which is basically an over-constrained <code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(*</span>_1<span class="op">)</span></code>.</p>
+<p>Some binary operators have no associated function object:</p>
+<ul>
+<li>the shifts: <code class="sourceCode cpp">_1 <span class="op">&lt;&lt;</span> _2</code> and <code class="sourceCode cpp">_1 <span class="op">&gt;&gt;</span> _2</code></li>
+<li>all the compound assignments: <code class="sourceCode cpp">_1 <span class="op">+=</span> _2</code>, etc.</li>
+</ul>
+<p>The various language cases also have no associated function object. The most common of these is <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">&gt;(</span>_1<span class="op">)</span></code>.</p>
+<p>It is also worth considering whether we should actually add function objects for these, like <code class="sourceCode cpp">std<span class="op">::</span>indirect</code> (or <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>indirect</code>?) or whether we should try to bring back one of the earlier proposals that added nicer syntax for passing operators as function objects:</p>
+<table>
+<colgroup>
+<col style="width: 50%"></col>
+<col style="width: 50%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Paper</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Syntax</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="citation" data-cites="P0119R2">[<a href="#ref-P0119R2" role="doc-biblioref">P0119R2</a>]</span></td>
+<td><code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">((*))</span></code></td>
+</tr>
+<tr class="even">
+<td><span class="citation" data-cites="P0834R0">[<a href="#ref-P0834R0" role="doc-biblioref">P0834R0</a>]</span></td>
+<td><code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">([]</span> <span class="op">*)</span></code></td>
+</tr>
+<tr class="odd">
+<td><span class="citation" data-cites="P2672R0">[<a href="#ref-P2672R0" role="doc-biblioref">P2672R0</a>]</span> (placeholder lambda)</td>
+<td><code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">([]</span> <span class="op">*</span><span class="er">$</span><span class="dv">1</span><span class="op">)</span></code><br /><code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">([]</span> <span class="er">$</span><span class="op">(*</span><span class="er">$</span><span class="dv">1</span><span class="op">))</span></code></td>
+</tr>
+<tr class="even">
+<td>backticks</td>
+<td><code class="sourceCode cpp">views<span class="op">::</span>transform<span class="op">(</span>`<span class="op">*</span>`<span class="op">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="4.2" id="more-function-adaptors"><span class="header-section-number">4.2</span> More Function Adaptors<a href="#more-function-adaptors" class="self-link"></a></h2>
+<p>The standard library doesn’t have very many function adaptors. There are two particularly notable ones that seem to come up frequently.</p>
+<ul>
+<li>function composition: an adaptor <code class="sourceCode cpp">compose</code> such that <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>g<span class="op">(</span>x<span class="op">...))</span></code></li>
+<li>function projection: an adaptor <code class="sourceCode cpp">proj</code> such that <code class="sourceCode cpp">proj<span class="op">(</span>p, f<span class="op">)(</span>x<span class="op">...)</span> <span class="op">==</span> f<span class="op">(</span>p<span class="op">(</span>x<span class="op">)...)</span></code></li>
+</ul>
+<p>If we had a <code class="sourceCode cpp">proj</code> adaptor, people wouldn’t need to ask for range adaptors to support projections - they could just provide one.</p>
+<p>The difficulty with these is that both are syntactically heavy in C++, because our lambdas are verbose and we have difficulties passing functions around (see the two papers noted in the previous section).</p>
+<p>The other problem is that these adaptors don’t really have obvious ordering. Should <code class="sourceCode cpp">compose<span class="op">(</span>f, g<span class="op">)(</span>x<span class="op">)</span></code> mean <code class="sourceCode cpp">f<span class="op">(</span>g<span class="op">(</span>x<span class="op">))</span></code> or <code class="sourceCode cpp">g<span class="op">(</span>f<span class="op">(</span>x<span class="op">))</span></code>? There’s good arguments for either. The same is true for <code class="sourceCode cpp">proj</code> (which is sometimes also called <code class="sourceCode cpp">on</code>).</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="algorithms"><span class="header-section-number">5</span> Algorithms<a href="#algorithms" class="self-link"></a></h1>
+<p>We improved the Ranges story on algorithms quite a bit in C++23 - both in terms of new and existing algorithms. But there’s a few more pretty interesting ones left on the table.</p>
+<h2 data-number="5.1" id="reduce"><span class="header-section-number">5.1</span> <code class="sourceCode cpp">reduce</code><a href="#reduce" class="self-link"></a></h2>
+<p>We talked about <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2214r2.html#rangesreduce"><code class="sourceCode cpp">reduce</code></a> in <span class="citation" data-cites="P2214R2">[<a href="#ref-P2214R2" role="doc-biblioref">P2214R2</a>]</span>. <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> is a version of <code class="sourceCode cpp">ranges<span class="op">::</span>fold_left</code> (<span class="citation" data-cites="P2322R6">[<a href="#ref-P2322R6" role="doc-biblioref">P2322R6</a>]</span>) that is parallelizable. It requires the binary operation to be associative (to allow chunks of the range to be reduced in praallel) and commutative (to allow those chunks to be arbitrarily combined). So we will need to figure out what constraints to add on this algorithm (see <span class="citation" data-cites="P1813R0">[<a href="#ref-P1813R0" role="doc-biblioref">P1813R0</a>]</span>) as well as how we determine what the return type is (see <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2322r6.html#return-type">this section</a> discussing the same problem for <code class="sourceCode cpp">ranges<span class="op">::</span>fold_left</code>).</p>
+<p>One thing is clear: <code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code> should <em>not</em> take a default binary operation <em>nor</em> a default initial parameter. The user needs to supply both.</p>
+<p>However, for convenience, we do propose providing <code class="sourceCode cpp">ranges<span class="op">::</span>sum<span class="op">(</span>r<span class="op">)</span></code> as <code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">(</span>r, plus<span class="op">{}</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;())</span></code> and <code class="sourceCode cpp">ranges<span class="op">::</span>product<span class="op">(</span>r<span class="op">)</span></code> as <code class="sourceCode cpp">ranges<span class="op">::</span>reduce<span class="op">(</span>r, multiplies<span class="op">{}</span>, range_value_t<span class="op">&lt;</span>R<span class="op">&gt;(</span><span class="dv">1</span><span class="op">))</span></code>.</p>
+<p>Note that naming is a problem here: some languages (Rust, Scala, Kotlin) have an algorithm that takes an initial value named <code class="sourceCode cpp">fold</code> and an algorithm that takes no initial value and returns and optional <code class="sourceCode cpp">reduce</code>. In C++23, we called these <code class="sourceCode cpp">fold_left</code> and <code class="sourceCode cpp">fold_left_first</code> since we’ve already had <code class="sourceCode cpp">std<span class="op">::</span>reduce</code> since C++17.</p>
+<p>But since our <code class="sourceCode cpp">reduce</code> differs from our <code class="sourceCode cpp">fold</code> not based on initial element but rather on operation requirements, it also leaves open the question for whether there should be a <code class="sourceCode cpp">reduce_first</code>. A good example there might be using <code class="sourceCode cpp">std<span class="op">::</span>max</code> as the reduction operator - which is both associative and commutative, but for some types may not have an obvious choice for the minimum.</p>
+<h2 data-number="5.2" id="distance-and-advance"><span class="header-section-number">5.2</span> <code class="sourceCode cpp">distance</code> and <code class="sourceCode cpp">advance</code><a href="#distance-and-advance" class="self-link"></a></h2>
+<p>We have <code class="sourceCode cpp">ranges<span class="op">::</span>size<span class="op">(</span>E<span class="op">)</span></code>, which gives you the size of a range in constant time. For non-sized ranges, if you want to know the size you have to use <code class="sourceCode cpp">ranges<span class="op">::</span>distance<span class="op">(</span>E<span class="op">)</span></code>. For non-sized ranges though, <code class="sourceCode cpp">ranges<span class="op">::</span>distance</code> has to iterate over the entire range, element by element, counting the number of iterator increments until the sentinel is reached.</p>
+<p>For many ranges, that’s really the best you can do anyway. But for some, you could do better. Consider <code class="sourceCode cpp">views<span class="op">::</span>join</code>. You could, potentially, do <em>much</em> better on <code class="sourceCode cpp">distance</code> in some cases: if I’m joining a range of sized ranges (like <code class="sourceCode cpp">vector<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>, although the outer one need not be sized, so even <code class="sourceCode cpp">forward_list<span class="op">&lt;</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code>), you could compute the size of the overall range by summing the <code class="sourceCode cpp">size<span class="op">()</span></code> of each element. That’s still not <code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>, so <code class="sourceCode cpp">ranges<span class="op">::</span>size</code> cannot do this, but it would be substantially more efficient than the naive <code class="sourceCode cpp">ranges<span class="op">::</span>distance</code> implementation.</p>
+<p>A similar argument holds for <code class="sourceCode cpp">ranges<span class="op">::</span>advance</code> for non-random-access iterators. Implementations already do provide special-case overloads for <code class="sourceCode cpp">std<span class="op">::</span>advance</code> in some cases, though they cannot do so for <code class="sourceCode cpp">ranges<span class="op">::</span>advance</code>. For instance, libstdc++ provides a <a href="https://github.com/gcc-mirror/gcc/blob/2e2b6ec156e3035297bd76edfd462d68d1f87314/libstdc%2B%2B-v3/include/bits/streambuf_iterator.h#L472-L513">custom implementation</a> for <code class="sourceCode cpp">std<span class="op">::</span>istreambuf_iterator<span class="op">&lt;</span>Char<span class="op">&gt;</span></code>. You cannot provide <code class="sourceCode cpp">it <span class="op">+</span> n</code>, because that cannot necessarily be constant time, but <code class="sourceCode cpp">advance</code> doesn’t have to be constant - it just has to get there (reduced for brevity):</p>
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> _CharT, <span class="kw">typename</span> _Distance<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>advance<span class="op">(</span>istreambuf_iterator<span class="op">&lt;</span>_CharT<span class="op">&gt;&amp;</span> __i, _Distance __n<span class="op">)</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="op">{</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>    <span class="cf">if</span> <span class="op">(</span>__n <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a>        <span class="cf">return</span>;</span>
+<span id="cb14-6"><a href="#cb14-6"></a></span>
+<span id="cb14-7"><a href="#cb14-7"></a>    <span class="kw">using</span> traits_type <span class="op">=</span> <span class="co">/* ... */</span>;</span>
+<span id="cb14-8"><a href="#cb14-8"></a>    <span class="kw">const</span> traits_type<span class="op">::</span>int_type __eof <span class="op">=</span> traits_type<span class="op">::</span>eof<span class="op">()</span>;</span>
+<span id="cb14-9"><a href="#cb14-9"></a></span>
+<span id="cb14-10"><a href="#cb14-10"></a>    streambuf_type<span class="op">*</span> __sb <span class="op">=</span> __i<span class="op">.</span>_M_sbuf;</span>
+<span id="cb14-11"><a href="#cb14-11"></a>    <span class="cf">while</span> <span class="op">(</span>__n <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a>        streamsize __size <span class="op">=</span> __sb<span class="op">-&gt;</span>egptr<span class="op">()</span> <span class="op">-</span> __sb<span class="op">-&gt;</span>gptr<span class="op">()</span>;</span>
+<span id="cb14-13"><a href="#cb14-13"></a>        <span class="cf">if</span> <span class="op">(</span>__size <span class="op">&gt;</span> __n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a>            __sb<span class="op">-&gt;</span>_M_in_cur <span class="op">+=</span> __n;</span>
+<span id="cb14-15"><a href="#cb14-15"></a>            <span class="cf">break</span>;</span>
+<span id="cb14-16"><a href="#cb14-16"></a>        <span class="op">}</span></span>
+<span id="cb14-17"><a href="#cb14-17"></a></span>
+<span id="cb14-18"><a href="#cb14-18"></a>        __sb<span class="op">-&gt;</span>_M_in_cur <span class="op">+=</span> __size;</span>
+<span id="cb14-19"><a href="#cb14-19"></a>        __n <span class="op">-=</span> __size;</span>
+<span id="cb14-20"><a href="#cb14-20"></a>        <span class="cf">if</span> <span class="op">(</span>traits_type<span class="op">::</span>eq_int_type<span class="op">(</span>__sb<span class="op">-&gt;</span>underflow<span class="op">()</span>, __eof<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb14-21"><a href="#cb14-21"></a>            <span class="cf">break</span>;</span>
+<span id="cb14-22"><a href="#cb14-22"></a>        <span class="op">}</span></span>
+<span id="cb14-23"><a href="#cb14-23"></a>    <span class="op">}</span></span>
+<span id="cb14-24"><a href="#cb14-24"></a></span>
+<span id="cb14-25"><a href="#cb14-25"></a>    __i<span class="op">.</span>_M_c <span class="op">=</span> __eof;</span>
+<span id="cb14-26"><a href="#cb14-26"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The advance here is that if we want to <code class="sourceCode cpp">advance<span class="op">(</span>it, <span class="dv">10</span><span class="op">)</span></code>, we can simply right away check if there are at least 10 characters in the get area. If there are, we just advance by 10 and we’re done. If not, we have to go pull more characters. Either way, we end up significantly reducing the number of times that we have to go back to the stream - we’re not pulling one character at a time, we’re potentially consuming the entire get buffer at a time, for a significant reduction in the number of branches.</p>
+<p>This is more efficient for the same reason that the hypothetical implementation of <code class="sourceCode cpp">ranges<span class="op">::</span>distance</code> for a <code class="sourceCode cpp">join_view</code> could be more efficient.</p>
+<p>Currently, none of the non-constant-time algorithms (like <code class="sourceCode cpp">distance</code>, <code class="sourceCode cpp">advance</code>, and <code class="sourceCode cpp">next</code>) are customizable - but there could be clear benefits to making them so. Unfortunately, there are very clear costs to making them so: even more work that every range and iterator adaptor has to do.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="output-iterators"><span class="header-section-number">6</span> Output Iterators<a href="#output-iterators" class="self-link"></a></h1>
+<p>There are two kinds of output iterators: those that are also input iterators (like <code class="sourceCode cpp"><span class="dt">int</span><span class="op">*</span></code>) and those are that are not. This section is dedicated to output-only iterators. The one of these that people are probably most familiar with is <code class="sourceCode cpp">std<span class="op">::</span>back_insert_iterator<span class="op">&lt;</span>C<span class="op">&gt;</span></code>.</p>
+<p>Output-only iterators are important, yet severely underpowered. The problem with them ultimately is they are shoe-horned into the same <em>syntax</em> as input iterators, despite not really have anything to do with iterators.</p>
+<p>If we take an algorithm like <code class="sourceCode cpp">std<span class="op">::</span>copy</code>, it’s implemented something like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> InputIt, <span class="kw">typename</span> OutputIt<span class="op">&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="dt">void</span> copy<span class="op">(</span>InputIt first, InputIt last, OutputIt out<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>    <span class="cf">for</span> <span class="op">(</span>; first <span class="op">!=</span> last; <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a>        <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="op">*</span>first;</span>
+<span id="cb15-5"><a href="#cb15-5"></a>    <span class="op">}</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>In order to provide <code class="sourceCode cpp">std<span class="op">::</span>back_insert_iterator<span class="op">&lt;</span>C<span class="op">&gt;</span></code>, it has to meet that syntax. So we end up with something like:</p>
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="kw">class</span> back_inserter <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>    C<span class="op">*</span> cont_;</span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="kw">explicit</span> back_inserter<span class="op">(</span>C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">:</span> cont_<span class="op">(&amp;</span>c<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a></span>
+<span id="cb16-8"><a href="#cb16-8"></a>    <span class="co">// these do nothing</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">*()</span> <span class="op">-&gt;</span> back_inserter<span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>; <span class="op">}</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++()</span> <span class="op">-&gt;</span> back_inserter<span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>; <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">++(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> back_inserter <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>; <span class="op">}</span></span>
+<span id="cb16-12"><a href="#cb16-12"></a></span>
+<span id="cb16-13"><a href="#cb16-13"></a>    <span class="co">// this one does something</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">=(</span><span class="kw">typename</span> C<span class="op">::</span>value_type <span class="kw">const</span><span class="op">&amp;</span> val<span class="op">)</span> <span class="op">-&gt;</span> back_inserter<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb16-15"><a href="#cb16-15"></a>        cont_<span class="op">-&gt;</span>push_back<span class="op">(</span>val<span class="op">)</span>;</span>
+<span id="cb16-16"><a href="#cb16-16"></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb16-17"><a href="#cb16-17"></a>    <span class="op">}</span></span>
+<span id="cb16-18"><a href="#cb16-18"></a></span>
+<span id="cb16-19"><a href="#cb16-19"></a>    <span class="co">// same</span></span>
+<span id="cb16-20"><a href="#cb16-20"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">=(</span><span class="kw">typename</span> C<span class="op">::</span>value_type<span class="op">&amp;&amp;</span> val<span class="op">)</span> <span class="op">-&gt;</span> back_inserter<span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb16-21"><a href="#cb16-21"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>There are two problems with this approach. First, it’s a really awkward API to go about implementing an output iterator. You have to write three no-op functions and one useful function, whose spelling doesn’t really convey any meaning. An output-only iterator <em>is</em> a function call, yet it cannot be implemented as such, which is an annoying loss in convenience since you cannot simply use a lambda as an output iterator. Sure, it’s not a huge task to implement a <code class="sourceCode cpp">function_output_iterator<span class="op">&lt;</span>F<span class="op">&gt;</span></code> - you can find such a thing <a href="https://www.boost.org/doc/libs/1_82_0/libs/iterator/doc/function_output_iterator.html">in Boost</a> too - but there really shouldn’t be a need for this.</p>
+<p>But more importantly, it’s very inefficient. An output-only iterator gets one element at a time, even when the algorithm knows it’s producing more. A common use of <code class="sourceCode cpp">back_insert_iterator</code> is doing something like this:</p>
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> vec;</span>
+<span id="cb17-2"><a href="#cb17-2"></a>std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>r, std<span class="op">::</span>back_inserter<span class="op">(</span>vec<span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+<p>That will compile into <code class="sourceCode cpp">N</code> calls to <code class="sourceCode cpp">vec<span class="op">.</span>push_back</code>. Maybe <code class="sourceCode cpp">r</code> is an unsized input range and that’s the best you can do anyway. But if <code class="sourceCode cpp">r</code> is sized, that’s pretty wasteful - <code class="sourceCode cpp">vector</code> has a range insertion API which does the right thing, it can be much more efficient to simply call:</p>
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> vec;</span>
+<span id="cb18-2"><a href="#cb18-2"></a>vec<span class="op">.</span>append_range<span class="op">(</span>r<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+<p>Indeed, 2.7x faster in <a href="https://quick-bench.com/q/TTbsRVxjQLQMEbP0J5X3pp1IoxQ">this simple benchmark</a>.</p>
+<p>This is a known problem, to the point where libraries try to detect and work around this pessimization. The <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> formatting library, now <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code> since C++20, is entirely output-iterator based. But, because of type erasure, the typical output iterator that you will interact with is an output-only iterator, not an input iterator. So what happens when you try to write a <code class="sourceCode cpp">std<span class="op">::</span>string_view</code> through that output iterator (a not-especially-uncommon operation when it comes to formatting)?</p>
+<p><code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code> has an internal helper named <code class="sourceCode cpp">copy_str</code>, whose <a href="https://github.com/fmtlib/fmt/blob/35c0286cd8f1365bffbc417021e8cd23112f6c8f/include/fmt/core.h#L729-L734">default implementation</a> is pretty familiar:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Char, <span class="kw">typename</span> InputIt, <span class="kw">typename</span> OutputIt<span class="op">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>FMT_CONSTEXPR <span class="kw">auto</span> copy_str<span class="op">(</span>InputIt begin, InputIt end, OutputIt out<span class="op">)</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>    <span class="op">-&gt;</span> OutputIt <span class="op">{</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a>  <span class="cf">while</span> <span class="op">(</span>begin <span class="op">!=</span> end<span class="op">)</span> <span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span>Char<span class="op">&gt;(*</span>begin<span class="op">++)</span>;</span>
+<span id="cb19-5"><a href="#cb19-5"></a>  <span class="cf">return</span> out;</span>
+<span id="cb19-6"><a href="#cb19-6"></a><span class="op">}</span></span></code></pre></div>
+<p>But there’s this other <a href="https://github.com/fmtlib/fmt/blob/35c0286cd8f1365bffbc417021e8cd23112f6c8f/include/fmt/core.h#L1605-L1609">important overload too</a>:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Char, <span class="kw">typename</span> InputIt<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="kw">auto</span> copy_str<span class="op">(</span>InputIt begin, InputIt end, appender out<span class="op">)</span> <span class="op">-&gt;</span> appender <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>  get_container<span class="op">(</span>out<span class="op">).</span>append<span class="op">(</span>begin, end<span class="op">)</span>;</span>
+<span id="cb20-4"><a href="#cb20-4"></a>  <span class="cf">return</span> out;</span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="op">}</span></span></code></pre></div>
+<p>For most of the operations in <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>, the implementation-defined type-erased iterator is <code class="sourceCode cpp">appender</code>, so this would be the overload used. And <code class="sourceCode cpp">appender</code> is a <code class="sourceCode cpp">back_insert_iterator</code> into a <code class="sourceCode cpp">buffer<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span></code>, which is a growable buffer (not unlike <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span></code>) which has a <a href="https://github.com/fmtlib/fmt/blob/35c0286cd8f1365bffbc417021e8cd23112f6c8f/include/fmt/format.h#L632-L644">dedicated <code class="sourceCode cpp">append</code></a> for this case:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> U<span class="op">&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="dt">void</span> buffer<span class="op">&lt;</span>T<span class="op">&gt;::</span>append<span class="op">(</span><span class="kw">const</span> U<span class="op">*</span> begin, <span class="kw">const</span> U<span class="op">*</span> end<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>  <span class="cf">while</span> <span class="op">(</span>begin <span class="op">!=</span> end<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-5"><a href="#cb21-5"></a>    <span class="kw">auto</span> count <span class="op">=</span> to_unsigned<span class="op">(</span>end <span class="op">-</span> begin<span class="op">)</span>;</span>
+<span id="cb21-6"><a href="#cb21-6"></a>    try_reserve<span class="op">(</span>size_ <span class="op">+</span> count<span class="op">)</span>;</span>
+<span id="cb21-7"><a href="#cb21-7"></a>    <span class="kw">auto</span> free_cap <span class="op">=</span> capacity_ <span class="op">-</span> size_;</span>
+<span id="cb21-8"><a href="#cb21-8"></a>    <span class="cf">if</span> <span class="op">(</span>free_cap <span class="op">&lt;</span> count<span class="op">)</span> count <span class="op">=</span> free_cap;</span>
+<span id="cb21-9"><a href="#cb21-9"></a>    std<span class="op">::</span>uninitialized_copy_n<span class="op">(</span>begin, count, make_checked<span class="op">(</span>ptr_ <span class="op">+</span> size_, count<span class="op">))</span>;</span>
+<span id="cb21-10"><a href="#cb21-10"></a>    size_ <span class="op">+=</span> count;</span>
+<span id="cb21-11"><a href="#cb21-11"></a>    begin <span class="op">+=</span> count;</span>
+<span id="cb21-12"><a href="#cb21-12"></a>  <span class="op">}</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="op">}</span></span></code></pre></div>
+<p>So here, we know that <code class="sourceCode cpp">std<span class="op">::</span>copy</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>copy</code> would be inefficient, so the library provides (and internally uses) a way to special case that algorithm for its particular output iterator.</p>
+<p>This kind of thing really shouldn’t be QoI. Output-only iterators that can support efficient range-based operations should be able to do so.</p>
+<h2 data-number="6.1" id="potential-design"><span class="header-section-number">6.1</span> Potential Design<a href="#potential-design" class="self-link"></a></h2>
+<p>Barry laid out an approach in a blog post <span class="citation" data-cites="improve.output">[<a href="#ref-improve.output" role="doc-biblioref">improve.output</a>]</span> based on the model the D library uses, using two customization point objects: one for single elements and one for a range of elements:</p>
+<p><code class="sourceCode cpp">ranges<span class="op">::</span>put<span class="op">(</span>out, e<span class="op">)</span></code> could be the first valid expression of:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">out<span class="op">.</span>put<span class="op">(</span>e<span class="op">)</span></code></li>
+<li><code class="sourceCode cpp"><span class="op">*</span>out<span class="op">++</span> <span class="op">=</span> e;</code></li>
+<li><code class="sourceCode cpp">out<span class="op">(</span>e<span class="op">)</span>;</code></li>
+</ol>
+<p><code class="sourceCode cpp">ranges<span class="op">::</span>put_range<span class="op">(</span>out, r<span class="op">)</span></code> could be the first valid expression of:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">out<span class="op">.</span>put_range<span class="op">(</span>r<span class="op">)</span></code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>for_each<span class="op">(</span>r, bind_front<span class="op">(</span>ranges<span class="op">::</span>put, out<span class="op">))</span></code></li>
+</ol>
+<p>This isn’t quite what D does, but it’s more suited for C++, and would allow output-only iterators to be as efficient (and easy to implement) as they should be.</p>
+<p>If we had the above, the implementation of <code class="sourceCode cpp">back_insert_iterator</code> would become:</p>
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> C<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="kw">class</span> back_inserter <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>    C<span class="op">*</span> cont_;</span>
+<span id="cb22-4"><a href="#cb22-4"></a></span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>    <span class="kw">explicit</span> back_inserter<span class="op">(</span>C<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">:</span> cont_<span class="op">(&amp;</span>c<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a></span>
+<span id="cb22-8"><a href="#cb22-8"></a>    <span class="kw">auto</span> put<span class="op">(</span><span class="kw">typename</span> C<span class="op">::</span>value_type <span class="kw">const</span><span class="op">&amp;</span> val<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a>        cont_<span class="op">-&gt;</span>push_back<span class="op">(</span>val<span class="op">)</span>;</span>
+<span id="cb22-10"><a href="#cb22-10"></a>    <span class="op">}</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a>    <span class="kw">auto</span> put<span class="op">(</span><span class="kw">typename</span> C<span class="op">::</span>value_type<span class="op">&amp;&amp;</span> val<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb22-12"><a href="#cb22-12"></a>        cont_<span class="op">-&gt;</span>push_back<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>val<span class="op">))</span>;</span>
+<span id="cb22-13"><a href="#cb22-13"></a>    <span class="op">}</span></span>
+<span id="cb22-14"><a href="#cb22-14"></a></span>
+<span id="cb22-15"><a href="#cb22-15"></a></span>
+<span id="cb22-16"><a href="#cb22-16"></a>    <span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb22-17"><a href="#cb22-17"></a>      <span class="kw">requires</span> std<span class="op">::</span>convertible_to<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;</span>, <span class="kw">typename</span> C<span class="op">::</span>value_type<span class="op">&gt;</span></span>
+<span id="cb22-18"><a href="#cb22-18"></a>    <span class="kw">auto</span> put_range<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span></span>
+<span id="cb22-19"><a href="#cb22-19"></a>    <span class="op">{</span></span>
+<span id="cb22-20"><a href="#cb22-20"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> cont_<span class="op">-&gt;</span>append_range<span class="op">(</span>r<span class="op">)</span>; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb22-21"><a href="#cb22-21"></a>            cont_<span class="op">-&gt;</span>append_range<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb22-22"><a href="#cb22-22"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> cont_<span class="op">-&gt;</span>insert<span class="op">(</span>cont_<span class="op">-&gt;</span>end<span class="op">()</span>, ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>, ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">))</span>; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb22-23"><a href="#cb22-23"></a>            cont_<span class="op">-&gt;</span>insert<span class="op">(</span>cont_<span class="op">-&gt;</span>end<span class="op">()</span>, ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">)</span>, ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb22-24"><a href="#cb22-24"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb22-25"><a href="#cb22-25"></a>            <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e <span class="op">:</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-26"><a href="#cb22-26"></a>                cont_<span class="op">-&gt;</span>push_back<span class="op">(</span>FWD<span class="op">(</span>e<span class="op">))</span>;</span>
+<span id="cb22-27"><a href="#cb22-27"></a>            <span class="op">}</span></span>
+<span id="cb22-28"><a href="#cb22-28"></a>        <span class="op">}</span></span>
+<span id="cb22-29"><a href="#cb22-29"></a>    <span class="op">}</span></span>
+<span id="cb22-30"><a href="#cb22-30"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+<p>Sure, <code class="sourceCode cpp">put_range</code> is mildly complicated, but it’s much more efficient than the original implementation, and we no longer have functions that do nothing.</p>
+<p>Now, the issue here is that this is a fairly large redesign of the output iterator model with minimal implementation experience (unless you count D or the blog post). So this approach needs more time, but we do think it’s worth doing.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="plan-summary"><span class="header-section-number">7</span> Plan Summary<a href="#plan-summary" class="self-link"></a></h1>
+<p>As previously, we want to triage a lot of outstanding views, algorithms, and other utilities into three tiers based on our opinions of their importance. While ideally we could just add everything into C++26, we realize that this is not realistic with the amount of available LWG bandwidth, so our tier 1 here is trying to be as small as possible while still hitting as many major pain points as possible.</p>
+<h2 data-number="7.1" id="tier-1"><span class="header-section-number">7.1</span> <span class="addu">Tier 1</span><a href="#tier-1" class="self-link"></a></h2>
+<ul>
+<li>Range Adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>concat</code> (<span class="citation" data-cites="P2542R2">[<a href="#ref-P2542R2" role="doc-biblioref">P2542R2</a>]</span>)</li>
+<li>Take/Drop Family:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_last</code> and <code class="sourceCode cpp">views<span class="op">::</span>take_last</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_last_while</code> and <code class="sourceCode cpp">views<span class="op">::</span>take_last_while</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>drop_exactly</code> and <code class="sourceCode cpp">views<span class="op">::</span>take_exactly</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>slice</code></li>
+</ul></li>
+<li>Simple Adaptor Compositions:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>transform_join</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>replace</code> and <code class="sourceCode cpp">views<span class="op">::</span>replace_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>remove</code> and <code class="sourceCode cpp">views<span class="op">::</span>remove_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>upto</code></li>
+</ul></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>as_input</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cache_last</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>chunk_on</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>cycle</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>delimit</code> and <code class="sourceCode cpp">views<span class="op">::</span>c_str</code></li>
+<li>making more adaptors (e.g. <code class="sourceCode cpp">views<span class="op">::</span>transform</code>) conditionally borrowed in more complex circumstances</li>
+<li>Generators:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>scan</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>generate</code> and <code class="sourceCode cpp">views<span class="op">::</span>generate_n</code></li>
+</ul></li>
+</ul></li>
+<li>Algorithms:
+<ul>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>reduce</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>sum</code></li>
+<li><code class="sourceCode cpp">ranges<span class="op">::</span>product</code></li>
+</ul></li>
+<li>Improving Output Iterators</li>
+</ul>
+<h2 data-number="7.2" id="tier-2"><span class="header-section-number">7.2</span> <span class="yellow">Tier 2</span><a href="#tier-2" class="self-link"></a></h2>
+<ul>
+<li>Range Adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_filter</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>adjacent_remove_if</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>head</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>intersperse</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>iterate</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>split_when</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>tail</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>trim</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>unique</code></li>
+</ul></li>
+</ul>
+<h2 data-number="7.3" id="tier-3"><span class="header-section-number">7.3</span> <span class="diffdel">Tier 3</span><a href="#tier-3" class="self-link"></a></h2>
+<ul>
+<li>Range Adaptors:
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>linear_distribute</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>sample</code></li>
+<li>Set Adaptors
+<ul>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_difference</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_intersection</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_symmetric_difference</code></li>
+<li><code class="sourceCode cpp">views<span class="op">::</span>set_union</code></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">8</span> References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-improve.output">
+<p>[improve.output] Barry Revzin. 2022-02-06. Improving Output Iterators. <br />
+<a href="https://brevzin.github.io/c++/2022/02/06/output-iterators/">https://brevzin.github.io/c++/2022/02/06/output-iterators/</a></p>
+</div>
+<div id="ref-P0119R2">
+<p>[P0119R2] Andrew Sutton. 2016-05-28. Overload sets as function arguments. <br />
+<a href="https://wg21.link/p0119r2">https://wg21.link/p0119r2</a></p>
+</div>
+<div id="ref-P0834R0">
+<p>[P0834R0] Michael Dominiak. 2017-10-16. Lifting overload sets into objects. <br />
+<a href="https://wg21.link/p0834r0">https://wg21.link/p0834r0</a></p>
+</div>
+<div id="ref-P1206R7">
+<p>[P1206R7] Corentin Jabot, Eric Niebler, Casey Carter. 2022-01-21. Conversions from ranges to containers. <br />
+<a href="https://wg21.link/p1206r7">https://wg21.link/p1206r7</a></p>
+</div>
+<div id="ref-P1255R9">
+<p>[P1255R9] Steve Downey. 2022-08-16. A view of 0 or 1 elements: views::maybe. <br />
+<a href="https://wg21.link/p1255r9">https://wg21.link/p1255r9</a></p>
+</div>
+<div id="ref-P1813R0">
+<p>[P1813R0] Christopher Di Bella. 2019-08-02. A Concept Design for the Numeric Algorithms. <br />
+<a href="https://wg21.link/p1813r0">https://wg21.link/p1813r0</a></p>
+</div>
+<div id="ref-P1894R0">
+<p>[P1894R0] Andrew Tomazos. 2019-10-02. Proposal of std::upto, std::indices and std::enumerate. <br />
+<a href="https://wg21.link/p1894r0">https://wg21.link/p1894r0</a></p>
+</div>
+<div id="ref-P1899R3">
+<p>[P1899R3] Christopher Di Bella, Tim Song. 2022-07-11. stride_view. <br />
+<a href="https://wg21.link/p1899r3">https://wg21.link/p1899r3</a></p>
+</div>
+<div id="ref-P2017R1">
+<p>[P2017R1] Barry Revzin. 2020-02-19. Conditionally borrowed ranges. <br />
+<a href="https://wg21.link/p2017r1">https://wg21.link/p2017r1</a></p>
+</div>
+<div id="ref-P2164R9">
+<p>[P2164R9] Corentin Jabot. 2022-12-07. views::enumerate. <br />
+<a href="https://wg21.link/p2164r9">https://wg21.link/p2164r9</a></p>
+</div>
+<div id="ref-P2214R2">
+<p>[P2214R2] Barry Revzin, Conor Hoekstra, Tim Song. 2022-02-18. A Plan for C++23 Ranges. <br />
+<a href="https://wg21.link/p2214r2">https://wg21.link/p2214r2</a></p>
+</div>
+<div id="ref-P2278R4">
+<p>[P2278R4] Barry Revzin. 2022-06-17. cbegin should always return a constant iterator. <br />
+<a href="https://wg21.link/p2278r4">https://wg21.link/p2278r4</a></p>
+</div>
+<div id="ref-P2286R8">
+<p>[P2286R8] Barry Revzin. 2022-05-16. Formatting Ranges. <br />
+<a href="https://wg21.link/p2286r8">https://wg21.link/p2286r8</a></p>
+</div>
+<div id="ref-P2302R4">
+<p>[P2302R4] Christopher Di Bella. 2022-04-17. std::ranges::contains. <br />
+<a href="https://wg21.link/p2302r4">https://wg21.link/p2302r4</a></p>
+</div>
+<div id="ref-P2321R2">
+<p>[P2321R2] Tim Song. 2021-06-11. zip. <br />
+<a href="https://wg21.link/p2321r2">https://wg21.link/p2321r2</a></p>
+</div>
+<div id="ref-P2322R6">
+<p>[P2322R6] Barry Revzin. 2022-04-22. ranges::fold. <br />
+<a href="https://wg21.link/p2322r6">https://wg21.link/p2322r6</a></p>
+</div>
+<div id="ref-P2374R4">
+<p>[P2374R4] Sy Brand, Michał Dominiak. 2022-07-13. views::cartesian_product. <br />
+<a href="https://wg21.link/p2374r4">https://wg21.link/p2374r4</a></p>
+</div>
+<div id="ref-P2387R3">
+<p>[P2387R3] Barry Revzin. 2021-12-17. Pipe support for user-defined range adaptors. <br />
+<a href="https://wg21.link/p2387r3">https://wg21.link/p2387r3</a></p>
+</div>
+<div id="ref-P2406R5">
+<p>[P2406R5] Yehezkel Bernat, Yehuda Bernat. 2023-02-08. Add lazy_counted_iterator. <br />
+<a href="https://wg21.link/p2406r5">https://wg21.link/p2406r5</a></p>
+</div>
+<div id="ref-P2408R5">
+<p>[P2408R5] David Olsen. 2022-04-22. Ranges iterators as inputs to non-Ranges algorithms. <br />
+<a href="https://wg21.link/p2408r5">https://wg21.link/p2408r5</a></p>
+</div>
+<div id="ref-P2440R1">
+<p>[P2440R1] Tim Song. 2021-12-06. ranges::iota, ranges::shift_left, and ranges::shift_right. <br />
+<a href="https://wg21.link/p2440r1">https://wg21.link/p2440r1</a></p>
+</div>
+<div id="ref-P2441R2">
+<p>[P2441R2] Barry Revzin. 2022-01-28. views::join_with. <br />
+<a href="https://wg21.link/p2441r2">https://wg21.link/p2441r2</a></p>
+</div>
+<div id="ref-P2442R1">
+<p>[P2442R1] Tim Song. 2021-12-06. Windowing range adaptors: views::chunk and views::slide. <br />
+<a href="https://wg21.link/p2442r1">https://wg21.link/p2442r1</a></p>
+</div>
+<div id="ref-P2443R1">
+<p>[P2443R1] Tim Song. 2021-11-19. views::chunk_by. <br />
+<a href="https://wg21.link/p2443r1">https://wg21.link/p2443r1</a></p>
+</div>
+<div id="ref-P2446R2">
+<p>[P2446R2] Barry Revzin. 2022-02-15. views::as_rvalue. <br />
+<a href="https://wg21.link/p2446r2">https://wg21.link/p2446r2</a></p>
+</div>
+<div id="ref-P2474R2">
+<p>[P2474R2] Michał Dominiak. 2022-07-13. views::repeat. <br />
+<a href="https://wg21.link/p2474r2">https://wg21.link/p2474r2</a></p>
+</div>
+<div id="ref-P2542R2">
+<p>[P2542R2] Hui Xie, S. Levent Yilmaz. 2022-05-11. views::concat. <br />
+<a href="https://wg21.link/p2542r2">https://wg21.link/p2542r2</a></p>
+</div>
+<div id="ref-P2672R0">
+<p>[P2672R0] Barry Revzin. 2022-10-14. Exploring the Design Space for a Pipeline Operator. <br />
+<a href="https://wg21.link/p2672r0">https://wg21.link/p2672r0</a></p>
+</div>
+<div id="ref-P2728R6">
+<p>[P2728R6] Zach Laine. 2023-07-11. Unicode in the Library, Part 1: UTF Transcoding. <br />
+<a href="https://isocpp.org/files/papers/P2728R6.html">https://isocpp.org/files/papers/P2728R6.html</a></p>
+</div>
+<div id="ref-P2760R0">
+<p>[P2760R0] Barry Revzin. 2023-09-17. A Plan for C++26 Ranges. <br />
+<a href="https://wg21.link/p2760r0">https://wg21.link/p2760r0</a></p>
+</div>
+<div id="ref-range-v3#57">
+<p>[range-v3#57] Eric Niebler. 2014. istream_range filtered with take(N) should stop reading at N. <br />
+<a href="https://github.com/ericniebler/range-v3/issues/57">https://github.com/ericniebler/range-v3/issues/57</a></p>
+</div>
+<div id="ref-range-v3#704">
+<p>[range-v3#704] Eric Niebler. 2017. Demand-driven view strength weakening. <br />
+<a href="https://github.com/ericniebler/range-v3/issues/704">https://github.com/ericniebler/range-v3/issues/704</a></p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

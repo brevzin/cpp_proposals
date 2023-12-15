@@ -72,7 +72,7 @@
 - ![][~constexpr] P2747 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>  placement new: [p2747r0](2747_constexpr_void_ptr/p2747r0.html) [p2747r1](2747_constexpr_void_ptr/p2747r1.html)
 - P2757 Type-checking format args: [p2757r0](2757_type_check_format/p2757r0.html) [p2757r1](2757_type_check_format/p2757r1.html) [p2757r2](2757_type_check_format/p2757r2.html) [p2757r3](2757_type_check_format/p2757r3.html)
 - ![][~constexpr] P2758 Emitting messages at compile time: [p2758r0](2758_compile_time_messages/p2758r0.html) [p2758r1](2758_compile_time_messages/p2758r1.html)
-- ![][~ranges] P2760 A Plan for C++26 Ranges: [p2760r0](2760_ranges_26_plan/p2760r0.html)
+- ![][~ranges] P2760 A Plan for C++26 Ranges: [p2760r0](2760_ranges_26_plan/p2760r0.html) [p2760r1](2760_ranges_26_plan/p2760r1.html)
 - P2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html) [p2806r1](2806_do_expr/p2806r1.html) [p2806r2](2806_do_expr/p2806r2.html)
 - P2944 Comparisons for  <code class="sourceCode cpp">reference_wrapper</code>: [p2944r0](2944_comparisons_for_reference_wrapper/p2944r0.html) [p2944r1](2944_comparisons_for_reference_wrapper/p2944r1.html) [p2944r2](2944_comparisons_for_reference_wrapper/p2944r2.html)
 - P2945 Additional format specifiers for  <code class="sourceCode cpp">time_point</code>: [p2945r0](2945_format_time_point/p2945r0.html)

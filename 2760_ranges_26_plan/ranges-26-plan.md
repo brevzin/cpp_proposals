@@ -1,6 +1,6 @@
 ---
 title: "A Plan for C++26 Ranges"
-document: P2214R2
+document: P2760R1
 date: today
 audience: LEWG
 author:
@@ -22,6 +22,10 @@ span.yellow {
     background-color: #ffff00;
 }
 </style>
+
+# Revision History
+
+From [@P2760R0] to R1: Added [output iterator enhancements](#output-iterators) to Tier 1.
 
 # Introduction
 
@@ -835,6 +839,7 @@ As previously, we want to triage a lot of outstanding views, algorithms, and oth
   * `ranges::reduce`
   * `ranges::sum`
   * `ranges::product`
+* Improving Output Iterators
 
 ## [Tier 2]{.yellow}
 
