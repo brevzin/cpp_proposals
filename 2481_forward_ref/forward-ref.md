@@ -1,6 +1,6 @@
 ---
 title: "Forwarding reference to specific type/template"
-document: P2481R1
+document: P2481R2
 date: today
 audience: EWG
 author:
@@ -10,6 +10,20 @@ toc: true
 ---
 
 # Revision History
+
+When [@P2481R1] was discussed in Issaquah, three polls were taken. There was weak consensus to solve the problem as a whole, but there was clear preference to see "a new forwarding reference syntax":
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|1|7|3|0|0|
+
+Over "additional syntax in the parameter declaration":
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|3|2|4|1|2|
+
+So this paper focuses on trying to find a solution that satisfies that preference.
 
 Since [@P2481R0], added [Circle's approach](#circles-approach) and a choice implementor quote.
 
@@ -166,34 +180,47 @@ With deducing this, we could write this as a single function template - deducing
 
 To be more concrete, the goal here is to be able to specify a particular type or a particular class template such that template deduction will _just_ deduce the `const`-ness and value category, while also (where relevant) performing a derived-to-base conversion. That is, I want to be able to implement a single function template for `optional<T>::transform` such that if I invoke it with an rvalue of type `D` that inherits publicly and unambiguously from `optional<int>`, the function template will be instantiated with a first parameter of `optional<int>&&` (not `D&&`).
 
-# Not a proposal
-
-If you don't find the above examples and the need for more concrete deduction motivating, then I'm sorry for wasting your time.
-
-If you _do_ find the above examples and the need for more concrete deduction motivating, then I'm sorry that I don't actually have a solution for you. What I have instead are several example syntaxes that I've thought about over the years that are all varying degrees of mediocre. My hope with this paper is that other, more creative, people are equally interesting in coming up with a solution to this problem and can come up with a better syntax for it.
-
-Here are those syntax options. I will, for each option, demonstrate how to implement the `tuple` converting constructor, `optional::transform`, and `view_interface::empty`. I will use the following tools:
+Put differently, and focused more on the desired solution criteria, the goal is to be able to define this (to be clear, the syntax `$some-kind-of$` is just a placeholder):
 
 ::: bq
 ```cpp
-#define FWD(e) static_cast<decltype(e)&&>(e)
+template <class T> struct Base { };
+template <class T> struct Derived : Base<T> { };
 
-template <bool RV, typename T>
-using apply_ref = std::conditional_t<RV, T&&, T&>;
+void f($some-kind-of$(Base<int>) x) {
+  std::println("Type of x is {}", name_of(type_of(^x)));
+}
 
-template <bool C, typename T>
-using apply_const = std::conditional_t<C, T const, T>;
+template <class T>
+void g($some-kind-of$(Base<T>) y) {
+  std::println("Type of y is {}", name_of(type_of(^y)));
+}
 
-template <bool C, bool RV, typename T>
-using apply_const_ref = apply_ref<RV, apply_const<C, T>>;
+int main() {
+  Base<char> bc;
+  Base<int> bi;
+  Derived<char> dc;
+  Derived<int> di;
 
-template <typename T, typename U>
-using copy_cvref_t = apply_const_ref<
-  is_const_v<remove_reference_t<T>>,
-  !is_lvalue_reference_v<T>,
-  U>;
+  f(bi);                // prints: Type of x is Base<int>&
+  f(di);                // prints: Type of x is Base<int&>
+  f(std::move(di));     // prints: Type of x is Base<int>&&
+
+  g(bc);                // deduces T=char, prints: Type of y is Base<char>&
+  g(std::move(dc));     // deduces T=char, prints: Type of y is Base<char>&&
+  g(std::as_const(di)); // deduces T=int, prints: Type of y is Base<int> const&
+}
 ```
 :::
+
+Two important things to keep in mind here:
+
+* `f` and `g` are both function templates
+* The types of the parameters `x` and `y` are always some kind of `Base`, even if we pass in a `Derived`.
+
+# The Ideas
+
+There were several ideas suggested in the previous revision that fit the EWG-preferred criteria of "a new forwarding reference syntax". Let's quickly run through them and see how they stack up.
 
 ## `T auto&&`
 
@@ -265,26 +292,49 @@ template <typename T> void g(T&&&); // also regular forwarding reference
 
 The advantage here is that it's less arguably broken than the previous version, since it's more reasonable that the `tuple<U...>&&&` syntax would allow derived-to-base conversion.
 
-The disadvantages are all the other disadvantages of the previous version, plus also a whole new reference token? Swell.
+But the problem with this syntax is what it would mean in the case where we wanted a forwarding reference to a specific type:
 
-## `const(bool)`
+::: bq
+```cpp
+// this is a function taking an rvalue reference to string
+void f(string&& x);
 
-We have `noexcept(true)` and `explicit(true)`. What about `const(true)`?
+// this is a function template taking a forwarding reference to string
+void g(string&&& x);
+```
+:::
 
-On some level, this seems to make perfect sense. At least for `const` - since we want to deduce either `T` or `T const`, and so `const` is either absent or present. But what about value category? How do you represent `T&` vs `T&&`? Surely, we wouldn't do `T &(LV) &&(RV)` for deducing two different `bool`s - these two cases are mutually exclusive. Keeping one of the `&`s around, as in `T& &(RV)` (with a mandatory space) also seems pretty bad. So for the purposes of this section, let's try `T && (RV)` (where `RV` is `true` for rvalues and `false` for lvalues, but still a forwarding reference).
+That visually-negligible difference makes this a complete non-starter. Yes, it's technically _distinct_ in the same way that `Concept auto` is visually distinct from `Type` and a compiler would have no trouble doing the correct thing in this situation, but the `auto` there really helps readability a lot and having a third `&` be the distinguishing marker is just far too subtle in a language that has a lot of `&`s already.
+
+## `forward T`
+
+This is not a syntax that has previously appeared in the paper, but the idea is:
+
+::: bq
+```cpp
+// this is a function template taking a forwarding reference to string
+void f(forward string x);
+
+// these declarations are equivalent in what they accept
+template <typename T> void g(forward T x);
+template <typename U> void h(U&& y);
+```
+:::
+
+Otherwise usage is similar to the `T auto&&` syntax [above](#t-auto):
 
 <table>
 <tr><th>`tuple`</th><td>
 ```cpp
 template <typename... Ts>
 struct tuple {
-  template <typename... Us, bool C, bool RV>
+  template <typename... Us>
+  tuple(forward tuple<Us...> rhs)
     requires sizeof...(Us) == sizeof...(Ts)
           && (constructible_from<
                 Ts,
-                apply_const_ref<C, RV, Us>
-              > && ...)
-  tuple(tuple<Us...> const(C) &&(RV) rhs);
+                copy_cvref_t<decltype(rhs), Us>
+              > && ...);
 };
 ```
 </td></tr>
@@ -292,10 +342,9 @@ struct tuple {
 ```cpp
 template <typename T>
 struct optional {
-    template <typename F, bool C, bool RV>
-    auto transform(this optional const(C) &&(RV) self, F&& f) {
+    template <typename F>
+    auto transform(this forward optional self, F&& f) {
         using U = remove_cv_t<invoke_result_t<F,
-            // apply_const_ref<C, RV, T>
             decltype(FWD(self).value())>;
 
         if (self) {
@@ -311,9 +360,8 @@ struct optional {
 ```cpp
 template <typename D>
 struct view_interface {
-    template <bool C>
-        requires forward_range<apply_const<C, D>>
-    constexpr bool empty(this D bool(C)& self)
+    constexpr bool empty(this forward D& self)
+        requires forward_range<decltype(self)>
     {
         return ranges::begin(self) == ranges::end(self);
     }
@@ -322,202 +370,105 @@ struct view_interface {
 </td></tr>
 </table>
 
-This syntax is... pretty weird. Very weird.
+Both `forward T x` and `T auto&& x` have the issue that there's no way to name the actual type of the parameter `x` other than `decltype(x)`. The advantage of `forward T x` is that, as a novel syntax, the fact that it behaves differently from `Concept auto` is... fine - it's a different syntax, so it is unsurprising that it would behave differently.
 
-The advantages are that it's clearer that we're only deducing `const`-ness and ref qualifiers. It also allows you to put `requires` clauses after the _template-head_ rather than much later. When only deducing `const`, it's arguably pretty clear what's going on.
-
-The disadvantages are the obvious weirdness of the syntax, _especially_ for figuring out the value category, and the mandatory metaprogramming around applying those boolean values that we deduce through the types. `apply_const` and `apply_const_ref` (as I'm arbitrarily calling them here, the former appears as an exposition-only trait in Ranges under the name `$maybe-const$`) will be _everywhere_, and those aren't exactly obvious to understand either. It may be tempting to allow writing `int const(false) &&(true)` as a type directly to facilitate writing such code (this would be `int&&`), but this seems facially terrible.
-
-There's further issues that `int const(true)` isn't quite valid grammar today, but it's pretty close. `const(true)` looks like a cast, and it's not unreasonable that we may at some point consider `const(x)` as a language cast version of `std::as_const(x)`.
-
-But there is one entirely unrelated benefit. Consider trying to write a function that accepts any function pointer:
+The disadvantage of `forward T x` is that it's a novel syntax - would require a contextually sensitive keyword `forward`:
 
 ::: bq
 ```cpp
-template <typename R, typename... Args, bool B>
-void accepts_function_ptr(R (*p)(Args...) noexcept(B));
+struct forward { };
+struct string { };
+
+// function taking a parameter of type forward named string
+void f(forward string);
+
+// function taking a forwarding reference of type string named _
+void g(forward string _);
 ```
 :::
 
-That's all you need (if we ignore varargs, assume the adoption of [@CWG2355] - which was accepted but not fully processed yet). And note here the deduction of `noexcept`-ness (and the usage of it on a function type) very closely resembles the kind of deduction of `const` and value category discussed in this section.
+But this probably isn't a huge problem - since
 
-But today if we wanted to deduce a pointer to _member_ function, we have to write a whole lot more - precisely because we can't deduce all the other stuff at the end of the type:
+a. `forward` isn't a terribly common name for a type
+b. the actual type would have to be a valid identifier in its own right (so no qualified names or template specializations), and
+c. you're never going to write such a function template without actually wanting to use the parameter, so you're not going to forget to name it.
 
-::: bq
-```cpp
-// this only accepts non-const pointers to member functions that have no ref-qualifier
-template <typename R, typename C, typename... Args, bool B>
-void accepts_member_function_ptr(R (C::*p)(Args...) noexcept(B));
+So while the novelty is certainly a disadvantage, the potential misuse/clash with existing syntax does not strike me as a big concern.
 
-// so we also need this one
-template <typename R, typename C, typename... Args, bool B>
-void accepts_member_function_ptr(R (C::*p)(Args...) const noexcept(B));
-
-// ... and this one
-template <typename R, typename C, typename... Args, bool B>
-void accepts_member_function_ptr(R (C::*p)(Args...) & noexcept(B));
-
-// ... and also this one
-template <typename R, typename C, typename... Args, bool B>
-void accepts_member_function_ptr(R (C::*p)(Args...) && noexcept(B));
-
-// ... and then also these two
-template <typename R, typename C, typename... Args, bool B>
-void accepts_member_function_ptr(R (C::*p)(Args...) const& noexcept(B));
-
-template <typename R, typename C, typename... Args, bool B>
-void accepts_member_function_ptr(R (C::*p)(Args...) const&& noexcept(B));
-```
-:::
-
-The direction where we can deduce `const` in the same way that we can deduce `noexcept` provides a much better solution for this. Although here, unlike the examples presented earlier, we're not simply selecting between `&` and `&&`. Here, we have three options. Does that mean a different design then? And what would it look like to handle both cases? It's a bit unclear.
-
-## `qualifiers Q`
-
-This approach is quite different and involves introducing a new kind of template parameter, which I'm calling `qualifiers`, which will deduce an _alias template_. It may be easier to look at the examples:
-
-<table>
-<tr><th>`tuple`</th><td>
-```cpp
-template <typename... Ts>
-struct tuple {
-  template <typename... Us, qualifiers Q>
-    requires sizeof...(Us) == sizeof...(Ts)
-          && (constructible_from<Ts, Q<Us>> && ...)
-  tuple(Q<tuple<Us...>> rhs);
-};
-```
-</td></tr>
-<tr><th>`optional`</th><td>
-```cpp
-template <typename T>
-struct optional {
-    template <typename F, qualifiers Q>
-    auto transform(this Q<optional> self, F&& f) {
-        using U = remove_cv_t<invoke_result_t<F, Q<T>>>;
-
-        if (self) {
-          return optional<U>(invoke(FWD(f), FWD(self).value()));
-        } else {
-          return optional<U>();
-        }
-    }
-};
-```
-</td></tr>
-<tr><th>`view_interface`</th><td>
-```cpp
-template <typename D>
-struct view_interface {
-    template <qualifiers Q>
-        requires forward_range<Q<D>>
-    constexpr bool empty(this Q<D>& self)
-    {
-        return ranges::begin(self) == ranges::end(self);
-    }
-};
-```
-</td></tr>
-</table>
-
-The idea here is that a parameter of the form `Q<T> x` will deduce `T` and `Q` separately, but `Q` will be deduced as one of the following four alias templates:
-
-* `template <typename T> using Q = T&;`
-* `template <typename T> using Q = T const&;`
-* `template <typename T> using Q = T&&;`
-* `template <typename T> using Q = T const&&;`
-
-Whereas a parameter of the form `Q<T>& x` or `Q<T>&&` will deduce `Q` either as:
-
-* `template <typename T> using Q = T;`
-* `template <typename T> using Q = T const;`
-
-The significant advantage here is that applying the `const` and reference qualifiers that we just deduced is trivial, since we already have exactly the tool we need to do that: `Q`. This makes all the implementations simpler. It also gives you a way to name the parameter other than `decltype(param)`, since there is a proper C++ spelling for the parameter itself in all cases.
-
-The disadvantage is that this is _quite_ novel for C++, and extremely weird. Even more dramatically weird than the other two solutions. And that's even with using the nice name of `qualifiers`, which is probably untenable (although `cvrefquals` or `refqual` might be available?). Also `Q<T> x` does not look like a forwarding reference, but since `Q<T>& x` is the only meaningful way to deduce just `const` - this suggests that `Q<T>&& x` _also_ needs to deduce just `const` (even though why would anyone write this), which leaves `Q<T> x` alone.
-
-There's also the question of how we could provide an explicit template argument for `Q`. Perhaps that's spelled `qualifiers::rvalue` (to add `&&`) or `qualifiers::const_lvalue` (to add `const&`) and the like? There'd need to be some language magic way of spelling such a thing - since we probably wouldn't want to just allow an arbitrary alias template. `std::add_pointer_t`, for instance, would suddenly introduce a non-deduced context, and wouldn't make any sense anyway.
-
-## Circle's approach
-
-Sean Baxter implemented the following approach in Circle:
-
-::: bq
-```cpp
-template<typename T, typename... Args>
-void f(T&& y : std::tuple<Args...>);
-```
-:::
-
-In this syntax, we effectively are deducing some kind of `std::tuple<Args...>`. `T` here is always a (possibly reference to) (possibly const) `std::tuple`. This behaves the same way as the previous section's:
-
-::: bq
-```cpp
-template<qualifiers Q, typename... Args>
-void f(Q<std::tuple<Args...>> y);
-```
-:::
-
-with the only difference being what additional information you have available to you: whether that's the type of `y` (`T`, or really `T&&`) or an alias providing the appropriate qualifiers (`Q`). As such, their uses are broadly similar:
+Note that Herb Sutter's [CppFront](https://github.com/hsutter/cppfront) has parameter labels, one of which is `forward`. You can declare a CppFront function template as:
 
 ::: cmptable
-### Qualifiers
+### CppFront
 ```cpp
-template <typename... Ts>
-struct tuple {
-  template <typename... Us, qualifiers Q>
-    requires sizeof...(Us) == sizeof...(Ts)
-          && (constructible_from<Ts, Q<Us>> && ...)
-  tuple(Q<tuple<Us...>> rhs);
-};
+decorate: (forward s: std::string) = {
+    s = "[" + s + "]";
+}
 ```
 
-### Circle
+### C++
 ```cpp
-template <typename... Ts>
-struct tuple {
-  template <typename... Us, typename Rhs>
-    requires sizeof...(Us) == sizeof...(Ts)
-          && (constructible_from<Ts, copy_cvref_t<Rhs, Us>> && ...)
-  tuple(Rhs&& rhs : tuple<Us...>);
-};
-```
-
----
-
-```cpp
-template <typename D>
-struct view_interface {
-    template <qualifiers Q>
-        requires forward_range<Q<D>>
-    constexpr bool empty(this Q<D>& self)
-    {
-        return ranges::begin(self) == ranges::end(self);
-    }
-};
-```
-
-```cpp
-template <typename D>
-struct view_interface {
-    template <class Self>
-        requires forward_range<Self>
-    constexpr bool empty(this Self& self : D)
-    {
-        return ranges::begin(self) == ranges::end(self);
-    }
-};
+auto decorate(auto&& s) -> void
+requires (std::is_same_v<CPP2_TYPEOF(s), std::string>) {
+    s = "[" + CPP2_FORWARD(s) + "]";
+}
 ```
 :::
 
-The Circle approach requires a bit more work to propagate the qualifiers as compared to the qualifiers approach (which exists to propagate qualifiers), but gives you an actual name for the actual type you end up with rather than having to re-spell it manually.
+The CppFront code on the left compiles into the C++ code on the right. This seems equivalent, but there are two important differences between the CppFront feature and what's suggested here:
 
-As Circle's approach is conceptually similar to the qualifiers approach, it is weird for some of the same ways. The declaration `T&& t : tuple<U...>` may look like it's deducing `t` as a regular forwarding reference, but it's not - it additionally (potentially) undergoes a derived-to-base conversion at the call site. We now have two types attached to a given variable. For those coming from languages which put the type of a variable after a colon, it would look like the type of `t` is `tuple<U...>` - and that's kind of correct at least (the type of `remove_cvref_t<decltype(t)>` is `tuple<U...>`). It seems unlikely that we would ever move C++ into a direction with better declaration syntax, but if we did this would cut off that approach.
+1. CppFront's declaration requires the argument to be exactly some kind of `std::string`, not any derived type. But this proposal needs `forward std::string s` to accept any type derived from `std::string` and also coerce it to be a `std::string` such that the parameter is always some kind of `std::string`.
+2. CppFront's `forward` parameters forward on definite last use.
 
+(2) is actually a pretty useful aspect in its own right, since it allows you to annotate a `forward` parameter and not have to annotate the body - although it doesn't actually save you many characters. But (1) is the important difference - accepting derived types and coercing to base is the key aspect to this proposal.
 
-## Something else
+## Non-forward reference syntaxes
 
-If there's a different approach someone has, I'd love to hear it. But this is what I've got so far.
+For completeness, the previous revision had ideas for [deducing `const`](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2481r1.html#constbool), a new kind of [qualifier deduction](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2481r1.html#qualifiers-q), and Circle's approach of a new kind of [parameter annotation](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2481r1.html#circles-approach).
+
+# Proposal
+
+There are only really two viable syntaxes I've come up with for how to solve this problem that are some kind of "new forwarding reference syntax":
+
+::: cmptable
+### `T auto&& x`
+```cpp
+void f(std::string auto&& a);
+
+template <typename... Ts>
+void g(std::tuple<Ts...> auto&& b);
+
+template <typename T>
+void h(T auto&& c);
+
+template <typename T>
+void i(T auto& d);
+```
+
+### `forward T x`
+```cpp
+void f(forward std::string a);
+
+template <typename... Ts>
+void g(forward std::tuple<Ts...> b);
+
+template <typename T>
+void h(forward T c);
+
+template <typename T>
+void i(forward T& d);
+```
+:::
+
+These are all function template declarations:
+
+* `f` takes a forwarding reference to `std::string` (`a` is always some kind of `std::string $cv$ $ref$`). Types derived from `std::string` undergo derived-to-base conversion first.
+* `g` takes a forwarding reference to some kind of `std::tuple<Ts...>`, deducing `Ts...`.
+* `h` takes a forwarding to any type. Here, if I pass an lvalue of type `int`, while `decltype(c)` will be `int&`, `T` will deduce as `int`.
+* `i` takes a forwarding reference to any type, but only accepts lvalues. Passing an rvalue is rejected (maybe passing a const rvalue should still succeed for consistency?)
+
+All of these declarations insert an extra trailing template parameter, in the same way that `auto` function parameters do today. So `f("hello")` would fail (`"hello"` is not a `std::string` or something derived from it), but `f<std::string>("hello")` would work (as the implicit next template parameter that denotes the type of `a`).
+
+Of these two, my preference is for **the latter**: `forward T param`. It's a new kind of deduction so having distinct syntax, the additionally makes clear the intended use of these parameters, is an advantage.
 
 ---
 references:
