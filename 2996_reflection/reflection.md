@@ -96,8 +96,69 @@ Other advantages of a single opaque type include:
 
 Lock3 implemented the equivalent of much that is proposed here in a fork of Clang (specifically, it worked with the P1240 proposal, but also included several other capabilities including a first-class injection mechanism).
 
-EDG has an ongoing implementation of this proposal that is currently available on Compiler Explorer (thank you Matt Godbolt). It is not complete, and does not include some of the other language features we would like to be able to take advantage of (like expansion statements) but will be regularly be updated as this paper progresses.
+EDG has an ongoing implementation of this proposal that is currently available on Compiler Explorer (thank you, Matt Godbolt). Nearly all of the examples below have links to compiler explorer demonstrating them.
 
+Note that the implementation is not complete (notably, for debugging purposes, `name_of(^int)` yields an empty string and `name_of(^std::optional<std::string>)` yields `"optional"`, neither of which are what we want), and does not include some of the other language features we would like to be able to take advantage of (like expansion statements) but will be regularly be updated as this paper progresses. Notably, it does not currently support expansion statements - and so a workaround that will be used in the linked implementations of examples is the following facility:
+
+::: bq
+```cpp
+namespace __impl {
+  template<auto... vals>
+  struct replicator_type {
+    template<typename F>
+      constexpr void operator>>(F body) const {
+        (body.template operator()<vals>(), ...);
+      }
+  };
+
+  template<auto... vals>
+  replicator_type<vals...> replicator = {};
+}
+
+template<typename R>
+consteval auto expand(R range) {
+  std::vector<std::meta::info> args;
+  for (auto r : range) {
+    args.push_back(reflect_value(r));
+  }
+  return substitute(^__impl::replicator, args);
+}
+```
+:::
+
+Used like:
+
+::: cmptable
+### With expansion statements
+```cpp
+template <typename E>
+  requires std::is_enum_v<E>
+constexpr std::string enum_to_string(E value) {
+  template for (constexpr auto e : std::meta::members_of(^E)) {
+    if (value == [:e:]) {
+      return std::string(std::meta::name_of(e));
+    }
+  }
+
+  return "<unnamed>";
+}
+```
+
+### With `expand` workaround
+```cpp
+template<typename E>
+  requires std::is_enum_v<E>
+constexpr std::string enum_to_string(E value) {
+  std::string result = "<unnamed>";
+  [:expand(std::meta::enumerators_of(^E)):] >> [&]<auto e>{
+    if (value == [:e:]) {
+      result = std::meta::name_of(e);
+    }
+  };
+  return result;
+}
+```
+:::
 
 # Examples
 
@@ -130,6 +191,8 @@ using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typenam
 ```
 :::
 
+[On Compiler Explorer](https://godbolt.org/z/13anqE1Pa).
+
 
 ## Selecting Members
 
@@ -153,6 +216,8 @@ int main() {
 :::
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
+
+[On Compiler Explorer](https://godbolt.org/z/vT4rbva7M)
 
 ## List of Types to List of Sizes
 
@@ -183,6 +248,8 @@ constexpr auto sizes = []<template<class...> class L, class... T>(L<T...>) {
 ```
 :::
 
+[On Compiler Explorer](https://godbolt.org/z/4xz9Wsa8f).
+
 ## Implementing `make_integer_sequence`
 
 We can provide a better implementation of `make_integer_sequence` than a hand-rolled approach using regular template metaprogramming (although standard libraries today rely on an intrinsic for this):
@@ -205,6 +272,8 @@ template<typename T, T N>
   using make_integer_sequence = [:make_integer_seq_refl<T>(N):];
 ```
 :::
+
+[On Compiler Explorer](https://godbolt.org/z/bvPeqvaK5).
 
 ## Getting Class Layout
 
@@ -243,6 +312,8 @@ where Xd would be std::array<member_descriptor, 3>{@{@
 */
 ```
 :::
+
+[On Compiler Explorer](https://godbolt.org/z/rbbWY99TM).
 
 ## Enum to String
 
@@ -312,9 +383,11 @@ constexpr std::string enum_to_string(E value) {
 
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
+[On Compiler Explorer](https://godbolt.org/z/Y5va8MqzG).
+
 ## Parsing Command-Line Options
 
-Our next example shows how a command-line option parser could work by automatically inferring flags based on member names. A real command-line parser would of course be more complex, this is just the beginning:
+Our next example shows how a command-line option parser could work by automatically inferring flags based on member names. A real command-line parser would of course be more complex, this is just the beginning.
 
 ::: bq
 ```c++
@@ -324,7 +397,7 @@ auto parse_options(std::span<std::string_view const> args) -> Opts {
   template for (constexpr auto dm : nonstatic_data_members_of(^Opts)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
-        return args.starts_with("--") && args.substr(2) == name_of(dm);
+        return arg.starts_with("--") && arg.substr(2) == name_of(dm);
       });
 
     if (it == args.end()) {
@@ -336,7 +409,7 @@ auto parse_options(std::span<std::string_view const> args) -> Opts {
     }
 
     using T = typename[:type_of(dm):];
-    auto iss = ispanstream(it[1]);
+    auto iss = std::ispanstream(it[1]);
     if (iss >> opts.[:dm:]; !iss) {
       std::print(stderr, "Failed to parse option {} into a {}\n", *it, display_name_of(^T));
       std::exit(EXIT_FAILURE);
@@ -346,8 +419,8 @@ auto parse_options(std::span<std::string_view const> args) -> Opts {
 }
 
 struct MyOpts {
-  string file_name = "input.txt";  // Option "--file_name <string>"
-  int    count = 1;                // Option "--count <int>"
+  std::string file_name = "input.txt";  // Option "--file_name <string>"
+  int    count = 1;                     // Option "--count <int>"
 };
 
 int main(int argc, char *argv[]) {
@@ -357,8 +430,9 @@ int main(int argc, char *argv[]) {
 ```
 :::
 
-(This example is based on a presentation by Matúš Chochlík.)
+This example is based on a presentation by Matúš Chochlík.
 
+[On Compiler Explorer](https://godbolt.org/z/G4dh3jq8a).
 
 ## A Simple Tuple Type
 
@@ -382,7 +456,7 @@ template<typename... Ts>
 template<std::size_t I, typename... Ts>
   struct std::tuple_element<I, Tuple<Ts...>> {
     static constexpr std::array types = {^Ts...};
-    using types = [: types[I] :];
+    using type = [: types[I] :];
   };
 
 consteval std::meta::info get_nth_nsdm(std::meta::info r, std::size_t n) {
@@ -399,6 +473,8 @@ template<std::size_t I, typename... Ts>
 
 This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_class` takes a reflection for an incomplete class or union plus a vector of nonstatic data member descriptions, and completes the give class or union type to have the described members.
+
+[On Compiler Explorer](https://godbolt.org/z/4P15rnbxh).
 
 ## A Simple Variant Type
 
@@ -556,7 +632,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work.
 
-[Demo on Compiler Explorer](https://godbolt.org/z/Efz5vsjaa).
+[On Compiler Explorer](https://godbolt.org/z/Efz5vsjaa).
 
 ## Struct to Struct of Arrays
 
@@ -570,8 +646,8 @@ struct struct_of_arrays_impl;
 
 consteval auto make_struct_of_arrays(std::meta::info type,
                                      std::meta::info N) -> std::meta::info {
-  std::meta::vector<info> old_members = nonstatic_data_members_of(type);
-  std::vector<std::meta::nsdm_description_t> new_members = {};
+  std::vector<std::meta::info> old_members = nonstatic_data_members_of(type);
+  std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
     auto array_type = substitute(^std::array, {type_of(member), N });
     auto mem_descr = nsdm_description(array_type, {.name = name_of(member)});
@@ -609,10 +685,14 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_class` is put to good use.
 
+[On Compiler Explorer](https://godbolt.org/z/8rT77KxjP).
+
 
 ## Parsing Command-Line Options II
 
-Now that we've seen a couple examples of using `std::meta::synth_struct` to create a type, we can create a more sophisticated command-line parser example. This isn't a complete implementation, but hopefully is enough to demonstrate the utility. This is the opening example for [clap](https://docs.rs/clap/latest/clap/) (Rust's **C**ommand **L**ine **A**rgument **P**arser):
+Now that we've seen a couple examples of using `std::meta::define_class` to create a type, we can create a more sophisticated command-line parser example.
+
+This is the opening example for [clap](https://docs.rs/clap/latest/clap/) (Rust's **C**ommand **L**ine **A**rgument **P**arser):
 
 ::: bq
 ```c++
@@ -654,7 +734,7 @@ struct Option;
 // }
 consteval auto spec_to_opts(std::meta::info opts,
                             std::meta::info spec) -> std::meta::info {
-  std::vector<std::meta::nsdm_description_t> new_members;
+  std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto new_type = template_arguments_of(type_of(member))[0];
     new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
@@ -681,7 +761,7 @@ struct Clap {
       // find the argument associated with this option
       auto it = std::ranges::find_if(cmdline,
         [&](std::string_view arg){
-          return (cur.use_short && arg.starts_with("-") && arg.substr(1) == name_of(sm))
+          return (cur.use_short && arg.size() == 2 && arg[0] == '-' && arg[1] == name_of(sm)[0])
               || (cur.use_long && arg.starts_with("--") && arg.substr(2) == name_of(sm));
         });
 
@@ -707,7 +787,7 @@ struct Clap {
       auto iss = ispanstream(it[1]);
       if (iss >> opts.[:om:]; !iss) {
         std::print(stderr, "Failed to parse {:?} into option {} of type {}\n",
-          *it, name_of(sm), display_name_of(type));
+          it[1], name_of(sm), display_name_of(type));
         std::exit(EXIT_FAILURE);
       }
     }
@@ -716,6 +796,8 @@ struct Clap {
 };
 ```
 :::
+
+[On Compiler Explorer](https://godbolt.org/z/1esbcq4jq).
 
 ## A Universal Formatter
 
@@ -766,6 +848,8 @@ int main() {
 }
 ```
 :::
+
+This example is not implemented on compiler explorer at this time, but only because of issues compiling both `std::format` and `fmt::format.`
 
 ## Implementing member-wise `hash_append`
 
@@ -858,6 +942,8 @@ However, determining the instance of `struct_to_tuple_helper` that is needed is 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `value_of`.
 Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
 
+[On Compiler Explorer](https://godbolt.org/z/Moqf84nc1), with a different implementation than either of the above.
+
 ## Compile-Time Ticket Counter
 
 The features proposed here make it a little easier to update a ticket counter at compile time.
@@ -891,6 +977,8 @@ int z = TU_Ticket::next();  // z initialized to 2.
 
 Note that this relies on the fact that a call to `substitute` returns a specialization of a template, but doesn't trigger the instantiation of that specialization.
 Thus, the only instantiations of `TU_Ticket::Helper` occur because of the call to `nonstatic_data_members_of` (which is a singleton representing the lone `value` member).
+
+[On Compiler Explorer](https://godbolt.org/z/1vEjW4sTr).
 
 # Proposed Features
 
@@ -1222,8 +1310,9 @@ namespace std::meta {
     consteval auto reflect_value(T value) -> info;
 
   // @[define_class](#nsdm_description-define_class)@
-  struct nsdm_description;
-  consteval auto define_class(info class_type, span<nsdm_description_t const>) -> info;
+  struct nsdm_options_t;
+  consteval auto nsdm_description(info class_type, nsdm_options_t options = {}) -> info;
+  consteval auto define_class(info class_type, span<info const>) -> info;
 
   // @[data layout](#data-layout-reflection)@
   consteval auto offset_of(info entity) -> size_t;
@@ -1520,24 +1609,16 @@ namespace std::meta {
     optional<int> alignment;
     optional<int> width;
   };
-  struct nsdm_description_t {
-    constexpr nsdm_description_t(info type, nsdm_options options = {});
-    ...
-  };
-
-  consteval auto nsdm_description(info type, nsdm_options options = {}) -> nsdm_description_t {
-    return nsdm_description_t(type, options);
-  }
-
-  consteval auto define_class(info class_type, span<nsdm_description_t const>) -> info;
+  consteval auto nsdm_description(info type, nsdm_options options = {}) -> info;
+  consteval auto define_class(info class_type, span<info const>) -> info;
 }
 ```
 :::
 
-`nsdm_description_t` describes a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well.
-If no `name` is provided, the name of the non-static data member is unspecified.
-`define_class` takes the reflection of an incomplete class/struct/union type and a range of non-static data member descriptions and it completes the given class type with nonstatic data members as described (in the given order).
-The given reflection is returned.
+`nsdm_description` returns a reflection of a description of a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well. If no `name` is provided, the name of the non-static data member is unspecified.
+
+`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of non-static data member descriptions and it completes the given class type with nonstatic data members as described (in the given order).
+The given reflection is returned. For now, only non-static data member reflections are supported (via `nsdm_description`) but the API takes in a range of `info` anticipating expanding this in the near future.
 
 For example:
 
