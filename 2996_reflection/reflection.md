@@ -24,6 +24,7 @@ toc: true
 
 Since [@P2996R0]:
 
+* added links to Compiler Explorer demonstrating just about all of the examples
 * respecified `synth_struct` to `define_class`
 * respecified a few metafunctions to be functions instead of function templates
 * introduced section on error handling mechanism and our preference for exceptions (removing invalid reflections)
