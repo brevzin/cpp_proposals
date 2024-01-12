@@ -1702,3 +1702,60 @@ std::meta::test_type(^std::is_const_v, type)
 
 Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API.
 There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
+
+
+# Proposed Wording
+
+## The Reflection Operator
+
+Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
+
+::: bq
+```diff
+  $unary-expression$:
+     ...
+     $delete-expression$
++    ^ ::
++    ^ $namespace-name$
++    ^ $nested-name-specifier$@~opt~@ $template-name$
++    ^ $type-id$
++    ^ $cast-expression$
+```
+:::
+
+Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}:
+
+::: addu
+### The Reflection Operator                               [expr.reflect]
+
+::: bq [1]{.pnum}
+The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
+That reflection represents its operand.
+:::
+
+::: bq [2]{.pnum}
+When applied to `::`, the reflection operator produces a reflection for the global scope.
+When applied to a `$namespace-name$`, the reflection produces a reflection for the indicated namespace or namespace alias.
+:::
+
+::: bq [3]{.pnum}
+When applied to a `$template-name$`, the reflection produces a reflection for the indicated template.
+:::
+
+::: bq [4]{.pnum}
+When applied to a `$type-id$`, the reflection produces a reflection for the indicated type or type-alias.
+:::
+
+::: bq [5]{.pnum}
+When applied to a `$cast-expression$`, the `$cast-expression$` shall be a constant expression [expr.const]{.sref} or an `$id-expression$` [expr.prim.id]{.sref} designating a variable, a function, an enumerator constant, or a nonstatic member.
+The `$cast-expression$` is not evaluated.
+If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
+If the operand is a constant expression, the result is a reflection for the resulting value.
+If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
+:::
+::: addu [ Example:
+
+constexpr auto r = ^std::vector;
+
+— end example ] :::
+::: 
