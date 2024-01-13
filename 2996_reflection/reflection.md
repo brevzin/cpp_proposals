@@ -1863,6 +1863,20 @@ namespace std::meta {
   consteval size_t alignment_of(info type);
   consteval size_t rank(info type);
   consteval size_t extent(info type, unsigned i = 0);
+
+  // [meta.reflection.rel], type relations
+  consteval bool is_same(info type1, info type2);
+  consteval bool is_base_of(info base_type, info derived_type);
+  consteval bool is_convertible(info src_type, info dst_type);
+  consteval bool is_nothrow_convertible(info src_type, info dst_type);
+  consteval bool is_layout_compatible(info type1, info type2);
+  consteval bool is_pointer_interconvertible_base_of(info base_type, info derived_type);
+
+  consteval bool is_invocable(info type, span<const info> type_args);
+  consteval bool is_invocable_r(info result_type, info type, span<const info> type_args);
+
+  consteval bool is_nothrow_invocable(info type, span<const info> type_args);
+  consteval bool is_nothrow_invocable_r(info result_type, info type, span<const info> type_args);
 }
 ```
 :::
@@ -1874,7 +1888,7 @@ namespace std::meta {
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` named `type`, `src_type`, or `dst_type`, that argument shall be a reflection of a type or type-alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type-alias.
+[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, that argument shall be a reflection of a type or type-alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type-alias.
 :::
 :::
 
@@ -2024,3 +2038,33 @@ consteval size_t extent(info type, unsigned i = 0);
 ```
 :::
 :::
+
+#### [meta.reflection.rel], Type relations
+
+::: bq
+::: addu
+[1]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$` defined in this clause which takes a two arguments of type `std::meta::info`, `std::meta::$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+
+[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL$` defined in this clause which takes arguments of type `std::meta::info` and `std::span<const std::meta::info>`, `std::meta::$VARIADIC-REL$(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+
+[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL-R$` defined in this clause which takes two arguments of type `std::meta::info` and one argument of type `std::span<const std::meta::info>`, `std::meta::$VARIADIC-REL-R$(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+
+```cpp
+consteval bool is_same(info type1, info type2);
+consteval bool is_base_of(info base_type, info derived_type);
+consteval bool is_convertible(info src_type, info dst_type);
+consteval bool is_nothrow_convertible(info src_type, info dst_type);
+consteval bool is_layout_compatible(info type1, info type2);
+consteval bool is_pointer_interconvertible_base_of(info base_type, info derived_type);
+
+consteval bool is_invocable(info type, span<const info> type_args);
+consteval bool is_invocable_r(info result_type, info type, span<const info> type_args);
+
+consteval bool is_nothrow_invocable(info type, span<const info> type_args);
+consteval bool is_nothrow_invocable_r(info result_type, info type, span<const info> type_args);
+```
+
+[#]{.pnum} [If `t` is a reflection of the type `int` and `u` is a reflection of an alias to the type `int`, then `t == u` is `false` but `is_same(t, u)` is `true`. `t == dealias(u)` is also `true`.]{.note}.
+:::
+:::
+
