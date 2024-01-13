@@ -1858,6 +1858,11 @@ namespace std::meta {
 
   consteval bool reference_constructs_from_temporary(info dst_type, info src_type);
   consteval bool reference_converts_from_temporary(info dst_type, info src_type);
+
+  // [meta.reflection.unary.prop.query], type property queries
+  consteval size_t alignment_of(info type);
+  consteval size_t rank(info type);
+  consteval size_t extent(info type, unsigned i = 0);
 }
 ```
 :::
@@ -2000,6 +2005,22 @@ consteval bool has_unique_object_representations(info type);
 
 consteval bool reference_constructs_from_temporary(info dst_type, info src_type);
 consteval bool reference_converts_from_temporary(info dst_type, info src_type);
+```
+:::
+:::
+
+#### [meta.reflection.unary.prop.query] Type property queries
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$PROP$` defined in this clause which takes a single argument of type `std::meta::info`, `std::meta::$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
+
+[#]{.pnum} For any type `T` and unsigned integer value `I`, `std::meta::extent(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
+
+```cpp
+consteval size_t alignment_of(info type);
+consteval size_t rank(info type);
+consteval size_t extent(info type, unsigned i = 0);
 ```
 :::
 :::
