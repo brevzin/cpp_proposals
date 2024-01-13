@@ -1706,7 +1706,9 @@ There are quite a few traits in [meta]{.sref} - but it should be easy enough to 
 
 # Proposed Wording
 
-## The Reflection Operator
+## Language
+
+### expr.unary.general
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
 
@@ -1723,12 +1725,14 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
 ```
 :::
 
-Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}:
+### expr.reflect
 
-### The Reflection Operator                               [expr.reflect]
+Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
 ::: bq
 ::: addu
+**The Reflection Operator \[expr.reflect\]**
+
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
@@ -1750,5 +1754,251 @@ If the operand is both an `$id-expression$` and a constant expression, the resul
 constexpr auto r = ^std::vector;
 ```
 — *end example* ]
+:::
+:::
+
+## Library
+
+### Header `<meta>` synopsis
+
+Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
+
+::: bq
+::: addu
+**Header `<meta>` synopsis**
+
+```
+namespace std::meta {
+  // [meta.reflection.unary.cat], primary type categories
+  consteval bool is_void(info type);
+  consteval bool is_null_pointer(info type);
+  consteval bool is_integral(info type);
+  consteval bool is_floating_point(info type);
+  consteval bool is_array(info type);
+  consteval bool is_pointer(info type);
+  consteval bool is_lvalue_reference(info type);
+  consteval bool is_rvalue_reference(info type);
+  consteval bool is_member_object_pointer(info type);
+  consteval bool is_member_function_pointer(info type);
+  consteval bool is_enum(info type);
+  consteval bool is_union(info type);
+  consteval bool is_class(info type);
+  consteval bool is_function(info type);
+
+  // [meta.reflection.unary.comp], composite type categories
+  consteval bool is_reference(info type);
+  consteval bool is_arithmetic(info type);
+  consteval bool is_fundamental(info type);
+  consteval bool is_object(info type);
+  consteval bool is_scalar(info type);
+  consteval bool is_compound(info type);
+  consteval bool is_member_pointer(info type);
+
+  // [meta.reflection unary.prop], type properties
+  consteval bool is_const(info type);
+  consteval bool is_volatile(info type);
+  consteval bool is_trivial(info type);
+  consteval bool is_trivially_copyable(info type);
+  consteval bool is_standard_layout(info type);
+  consteval bool is_empty(info type);
+  consteval bool is_polymorphic(info type);
+  consteval bool is_abstract(info type);
+  consteval bool is_final(info type);
+  consteval bool is_aggregate(info type);
+  consteval bool is_signed(info type);
+  consteval bool is_unsigned(info type);
+  consteval bool is_bounded_array(info type);
+  consteval bool is_unbounded_array(info type);
+  consteval bool is_scoped_enum(info type);
+
+  consteval bool is_constructible(info type, span<info const> type_args);
+  consteval bool is_default_constructible(info type);
+  consteval bool is_copy_constructible(info type);
+  consteval bool is_move_constructible(info type);
+
+  consteval bool is_assignable(info dst_type, info src_type);
+  consteval bool is_copy_assignable(info type);
+  consteval bool is_move_assignable(info type);
+
+  consteval bool is_swappable_with(info dst_type, info src_type);
+  consteval bool is_swappable(info type);
+
+  consteval bool is_destructible(info type);
+
+  consteval bool is_trivially_constructible(info type, span<info const> type_args);
+  consteval bool is_trivially_default_constructible(info type);
+  consteval bool is_trivially_copy_constructible(info type);
+  consteval bool is_trivially_move_constructible(info type);
+
+  consteval bool is_trivially_assignable(info dst_type, info src_type);
+  consteval bool is_trivially_copy_assignable(info type);
+  consteval bool is_trivially_move_assignable(info type);
+  consteval bool is_trivially_destructible(info type);
+
+  consteval bool is_nothrow_constructible(info type, span<info const> type_args);
+  consteval bool is_nothrow_default_constructible(info type);
+  consteval bool is_nothrow_copy_constructible(info type);
+  consteval bool is_nothrow_move_constructible(info type);
+
+  consteval bool is_nothrow_assignable(info dst_type, info src_type);
+  consteval bool is_nothrow_copy_assignable(info type);
+  consteval bool is_nothrow_move_assignable(info type);
+
+  consteval bool is_nothrow_swappable_with(info dst_type, info src_type);
+  consteval bool is_nothrow_swappable(info type);
+
+  consteval bool is_nothrow_destructible(info type);
+
+  consteval bool is_implicit_lifetime(info type);
+
+  consteval bool has_virtual_destructor(info type);
+
+  consteval bool has_unique_object_representations(info type);
+
+  consteval bool reference_constructs_from_temporary(info dst_type, info src_type);
+  consteval bool reference_converts_from_temporary(info dst_type, info src_type);
+}
+```
+:::
+:::
+
+### [meta.reflection.unary] Unary type traits
+
+::: bq
+::: addu
+[1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
+
+[2]{.pnum} For each function taking an argument of type `meta::info` named `type`, `src_type`, or `dst_type`, that argument shall be a reflection of a type or type-alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type-alias.
+:::
+:::
+
+#### [meta.reflection.unary.cat] Primary type categories
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$` defined in this clause, `std::meta::$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
+
+```cpp
+consteval bool is_void(info type);
+consteval bool is_null_pointer(info type);
+consteval bool is_integral(info type);
+consteval bool is_floating_point(info type);
+consteval bool is_array(info type);
+consteval bool is_pointer(info type);
+consteval bool is_lvalue_reference(info type);
+consteval bool is_rvalue_reference(info type);
+consteval bool is_member_object_pointer(info type);
+consteval bool is_member_function_pointer(info type);
+consteval bool is_enum(info type);
+consteval bool is_union(info type);
+consteval bool is_class(info type);
+consteval bool is_function(info type);
+```
+
+[2]{.pnum} [*Example*
+```
+// an example implementation
+namespace std::meta {
+  consteval bool is_void(info type) {
+    return value_of<bool>(substitute(^is_void_v, {type}));
+  }
+}
+```
+*-end example*]
+:::
+:::
+
+#### [meta.reflection.unary.comp] Composite type categories
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$` defined in this clause, `std::meta::$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
+
+```cpp
+consteval bool is_reference(info type);
+consteval bool is_arithmetic(info type);
+consteval bool is_fundamental(info type);
+consteval bool is_object(info type);
+consteval bool is_scalar(info type);
+consteval bool is_compound(info type);
+consteval bool is_member_pointer(info type);
+```
+:::
+:::
+
+#### [meta.reflection.unary.prop] Type properties
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$UNARY-TRAIT$` defined in this clause which takes a single argument of type `std::meta::info`, `std::meta::$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
+
+[#]{.pnum} For any types `T` and `U`, for each function `std::meta::$BINARY-TRAIT$` defined in this clause which takes two arguments of type `std::meta::info`, `std::meta::$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
+
+[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-TRAIT$` defined in this clause which takes one argument of type `std::meta::info` and one argument of type `std::span<const std::meta::info>`, `std::meta::$VARIADIC-TRAIT$(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+
+```cpp
+consteval bool is_const(info type);
+consteval bool is_volatile(info type);
+consteval bool is_trivial(info type);
+consteval bool is_trivially_copyable(info type);
+consteval bool is_standard_layout(info type);
+consteval bool is_empty(info type);
+consteval bool is_polymorphic(info type);
+consteval bool is_abstract(info type);
+consteval bool is_final(info type);
+consteval bool is_aggregate(info type);
+consteval bool is_signed(info type);
+consteval bool is_unsigned(info type);
+consteval bool is_bounded_array(info type);
+consteval bool is_unbounded_array(info type);
+consteval bool is_scoped_enum(info type);
+
+consteval bool is_constructible(info type, span<info const> type_args);
+consteval bool is_default_constructible(info type);
+consteval bool is_copy_constructible(info type);
+consteval bool is_move_constructible(info type);
+
+consteval bool is_assignable(info dst_type, info src_type);
+consteval bool is_copy_assignable(info type);
+consteval bool is_move_assignable(info type);
+
+consteval bool is_swappable_with(info dst_type, info src_type);
+consteval bool is_swappable(info type);
+
+consteval bool is_destructible(info type);
+
+consteval bool is_trivially_constructible(info type, span<info const> type_args);
+consteval bool is_trivially_default_constructible(info type);
+consteval bool is_trivially_copy_constructible(info type);
+consteval bool is_trivially_move_constructible(info type);
+
+consteval bool is_trivially_assignable(info dst_type, info src_type);
+consteval bool is_trivially_copy_assignable(info type);
+consteval bool is_trivially_move_assignable(info type);
+consteval bool is_trivially_destructible(info type);
+
+consteval bool is_nothrow_constructible(info type, span<info const> type_args);
+consteval bool is_nothrow_default_constructible(info type);
+consteval bool is_nothrow_copy_constructible(info type);
+consteval bool is_nothrow_move_constructible(info type);
+
+consteval bool is_nothrow_assignable(info dst_type, info src_type);
+consteval bool is_nothrow_copy_assignable(info type);
+consteval bool is_nothrow_move_assignable(info type);
+
+consteval bool is_nothrow_swappable_with(info dst_type, info src_type);
+consteval bool is_nothrow_swappable(info type);
+
+consteval bool is_nothrow_destructible(info type);
+
+consteval bool is_implicit_lifetime(info type);
+
+consteval bool has_virtual_destructor(info type);
+
+consteval bool has_unique_object_representations(info type);
+
+consteval bool reference_constructs_from_temporary(info dst_type, info src_type);
+consteval bool reference_converts_from_temporary(info dst_type, info src_type);
+```
 :::
 :::

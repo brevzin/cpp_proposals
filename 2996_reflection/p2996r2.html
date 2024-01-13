@@ -621,9 +621,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </ul></li>
 <li><a href="#proposed-wording"><span class="toc-section-number">5</span> Proposed Wording<span></span></a>
 <ul>
-<li><a href="#the-reflection-operator-1"><span class="toc-section-number">5.1</span> The Reflection Operator<span></span></a>
+<li><a href="#language"><span class="toc-section-number">5.1</span> Language<span></span></a>
 <ul>
-<li><a href="#the-reflection-operator-expr.reflect"><span class="toc-section-number">5.1.1</span> The Reflection Operator [expr.reflect]<span></span></a></li>
+<li><a href="#expr.unary.general"><span class="toc-section-number">5.1.1</span> expr.unary.general<span></span></a></li>
+<li><a href="#expr.reflect"><span class="toc-section-number">5.1.2</span> expr.reflect<span></span></a></li>
+</ul></li>
+<li><a href="#library"><span class="toc-section-number">5.2</span> Library<span></span></a>
+<ul>
+<li><a href="#header-meta-synopsis"><span class="toc-section-number">5.2.1</span> Header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code> synopsis<span></span></a></li>
+<li><a href="#meta.reflection.unary-unary-type-traits"><span class="toc-section-number">5.2.2</span> [meta.reflection.unary] Unary type traits<span></span></a></li>
 </ul></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
@@ -1907,7 +1913,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </table>
 <p>Having <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>meow</code> for every trait <code class="sourceCode cpp">std<span class="op">::</span>meow</code> is more straightforward and will likely be faster to compile, though means we will have a much larger library API. There are quite a few traits in <span>21 <a href="https://wg21.link/meta">[meta]</a></span> - but it should be easy enough to specify all of them.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposed-wording"><span class="header-section-number">5</span> Proposed Wording<a href="#proposed-wording" class="self-link"></a></h1>
-<h2 data-number="5.1" id="the-reflection-operator-1"><span class="header-section-number">5.1</span> The Reflection Operator<a href="#the-reflection-operator-1" class="self-link"></a></h2>
+<h2 data-number="5.1" id="language"><span class="header-section-number">5.1</span> Language<a href="#language" class="self-link"></a></h2>
+<h3 data-number="5.1.1" id="expr.unary.general"><span class="header-section-number">5.1.1</span> expr.unary.general<a href="#expr.unary.general" class="self-link"></a></h3>
 <p>Change <span>7.6.2.1 <a href="https://wg21.link/expr.unary.general">[expr.unary.general]</a></span> paragraph 1 to add productions for the new operator:</p>
 <blockquote>
 <div>
@@ -1921,10 +1928,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb64-8"><a href="#cb64-8"></a><span class="va">+    ^ <em>cast-expression</em></span></span></code></pre></div>
 </div>
 </blockquote>
-<p>Add a new subsection of <span>7.6.2 <a href="https://wg21.link/expr.unary">[expr.unary]</a></span> following <span>7.6.2.9 <a href="https://wg21.link/expr.delete">[expr.delete]</a></span>:</p>
-<h3 data-number="5.1.1" id="the-reflection-operator-expr.reflect"><span class="header-section-number">5.1.1</span> The Reflection Operator [expr.reflect]<a href="#the-reflection-operator-expr.reflect" class="self-link"></a></h3>
+<h3 data-number="5.1.2" id="expr.reflect"><span class="header-section-number">5.1.2</span> expr.reflect<a href="#expr.reflect" class="self-link"></a></h3>
+<p>Add a new subsection of <span>7.6.2 <a href="https://wg21.link/expr.unary">[expr.unary]</a></span> following <span>7.6.2.9 <a href="https://wg21.link/expr.delete">[expr.delete]</a></span></p>
 <blockquote>
 <div class="addu">
+<p><strong>The Reflection Operator [expr.reflect]</strong></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> The unary <code class="sourceCode cpp"><span class="op">^</span></code> operator (called <em>the reflection operator</em>) produces a prvalue — called <em>reflection</em> — whose type is the reflection type (i.e., <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>). That reflection represents its operand.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> When applied to <code class="sourceCode cpp"><span class="op">::</span></code>, the reflection operator produces a reflection for the global scope. When applied to a <code class="sourceCode cpp"><em>namespace-name</em></code>, the reflection produces a reflection for the indicated namespace or namespace alias.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> When applied to a <code class="sourceCode cpp"><em>template-name</em></code>, the reflection produces a reflection for the indicated template.</p>
@@ -1933,6 +1941,222 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>[ <em>Example</em>:</p>
 <div class="sourceCode" id="cb65"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb65-1"><a href="#cb65-1"></a>constexpr auto r = ^std::vector;</span></code></pre></div>
 <p>— <em>end example</em> ]</p>
+</div>
+</blockquote>
+<h2 data-number="5.2" id="library"><span class="header-section-number">5.2</span> Library<a href="#library" class="self-link"></a></h2>
+<h3 data-number="5.2.1" id="header-meta-synopsis"><span class="header-section-number">5.2.1</span> Header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code> synopsis<a href="#header-meta-synopsis" class="self-link"></a></h3>
+<p>Add a new subsection in <span>21 <a href="https://wg21.link/meta">[meta]</a></span> after <span>21.3 <a href="https://wg21.link/type.traits">[type.traits]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<p><strong>Header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code> synopsis</strong></p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb66-1"><a href="#cb66-1"></a>namespace std::meta {</span>
+<span id="cb66-2"><a href="#cb66-2"></a>  // [meta.reflection.unary.cat], primary type categories</span>
+<span id="cb66-3"><a href="#cb66-3"></a>  consteval bool is_void(info type);</span>
+<span id="cb66-4"><a href="#cb66-4"></a>  consteval bool is_null_pointer(info type);</span>
+<span id="cb66-5"><a href="#cb66-5"></a>  consteval bool is_integral(info type);</span>
+<span id="cb66-6"><a href="#cb66-6"></a>  consteval bool is_floating_point(info type);</span>
+<span id="cb66-7"><a href="#cb66-7"></a>  consteval bool is_array(info type);</span>
+<span id="cb66-8"><a href="#cb66-8"></a>  consteval bool is_pointer(info type);</span>
+<span id="cb66-9"><a href="#cb66-9"></a>  consteval bool is_lvalue_reference(info type);</span>
+<span id="cb66-10"><a href="#cb66-10"></a>  consteval bool is_rvalue_reference(info type);</span>
+<span id="cb66-11"><a href="#cb66-11"></a>  consteval bool is_member_object_pointer(info type);</span>
+<span id="cb66-12"><a href="#cb66-12"></a>  consteval bool is_member_function_pointer(info type);</span>
+<span id="cb66-13"><a href="#cb66-13"></a>  consteval bool is_enum(info type);</span>
+<span id="cb66-14"><a href="#cb66-14"></a>  consteval bool is_union(info type);</span>
+<span id="cb66-15"><a href="#cb66-15"></a>  consteval bool is_class(info type);</span>
+<span id="cb66-16"><a href="#cb66-16"></a>  consteval bool is_function(info type);</span>
+<span id="cb66-17"><a href="#cb66-17"></a></span>
+<span id="cb66-18"><a href="#cb66-18"></a>  // [meta.reflection.unary.comp], composite type categories</span>
+<span id="cb66-19"><a href="#cb66-19"></a>  consteval bool is_reference(info type);</span>
+<span id="cb66-20"><a href="#cb66-20"></a>  consteval bool is_arithmetic(info type);</span>
+<span id="cb66-21"><a href="#cb66-21"></a>  consteval bool is_fundamental(info type);</span>
+<span id="cb66-22"><a href="#cb66-22"></a>  consteval bool is_object(info type);</span>
+<span id="cb66-23"><a href="#cb66-23"></a>  consteval bool is_scalar(info type);</span>
+<span id="cb66-24"><a href="#cb66-24"></a>  consteval bool is_compound(info type);</span>
+<span id="cb66-25"><a href="#cb66-25"></a>  consteval bool is_member_pointer(info type);</span>
+<span id="cb66-26"><a href="#cb66-26"></a></span>
+<span id="cb66-27"><a href="#cb66-27"></a>  // [meta.reflection unary.prop], type properties</span>
+<span id="cb66-28"><a href="#cb66-28"></a>  consteval bool is_const(info type);</span>
+<span id="cb66-29"><a href="#cb66-29"></a>  consteval bool is_volatile(info type);</span>
+<span id="cb66-30"><a href="#cb66-30"></a>  consteval bool is_trivial(info type);</span>
+<span id="cb66-31"><a href="#cb66-31"></a>  consteval bool is_trivially_copyable(info type);</span>
+<span id="cb66-32"><a href="#cb66-32"></a>  consteval bool is_standard_layout(info type);</span>
+<span id="cb66-33"><a href="#cb66-33"></a>  consteval bool is_empty(info type);</span>
+<span id="cb66-34"><a href="#cb66-34"></a>  consteval bool is_polymorphic(info type);</span>
+<span id="cb66-35"><a href="#cb66-35"></a>  consteval bool is_abstract(info type);</span>
+<span id="cb66-36"><a href="#cb66-36"></a>  consteval bool is_final(info type);</span>
+<span id="cb66-37"><a href="#cb66-37"></a>  consteval bool is_aggregate(info type);</span>
+<span id="cb66-38"><a href="#cb66-38"></a>  consteval bool is_signed(info type);</span>
+<span id="cb66-39"><a href="#cb66-39"></a>  consteval bool is_unsigned(info type);</span>
+<span id="cb66-40"><a href="#cb66-40"></a>  consteval bool is_bounded_array(info type);</span>
+<span id="cb66-41"><a href="#cb66-41"></a>  consteval bool is_unbounded_array(info type);</span>
+<span id="cb66-42"><a href="#cb66-42"></a>  consteval bool is_scoped_enum(info type);</span>
+<span id="cb66-43"><a href="#cb66-43"></a></span>
+<span id="cb66-44"><a href="#cb66-44"></a>  consteval bool is_constructible(info type, span&lt;info const&gt; type_args);</span>
+<span id="cb66-45"><a href="#cb66-45"></a>  consteval bool is_default_constructible(info type);</span>
+<span id="cb66-46"><a href="#cb66-46"></a>  consteval bool is_copy_constructible(info type);</span>
+<span id="cb66-47"><a href="#cb66-47"></a>  consteval bool is_move_constructible(info type);</span>
+<span id="cb66-48"><a href="#cb66-48"></a></span>
+<span id="cb66-49"><a href="#cb66-49"></a>  consteval bool is_assignable(info dst_type, info src_type);</span>
+<span id="cb66-50"><a href="#cb66-50"></a>  consteval bool is_copy_assignable(info type);</span>
+<span id="cb66-51"><a href="#cb66-51"></a>  consteval bool is_move_assignable(info type);</span>
+<span id="cb66-52"><a href="#cb66-52"></a></span>
+<span id="cb66-53"><a href="#cb66-53"></a>  consteval bool is_swappable_with(info dst_type, info src_type);</span>
+<span id="cb66-54"><a href="#cb66-54"></a>  consteval bool is_swappable(info type);</span>
+<span id="cb66-55"><a href="#cb66-55"></a></span>
+<span id="cb66-56"><a href="#cb66-56"></a>  consteval bool is_destructible(info type);</span>
+<span id="cb66-57"><a href="#cb66-57"></a></span>
+<span id="cb66-58"><a href="#cb66-58"></a>  consteval bool is_trivially_constructible(info type, span&lt;info const&gt; type_args);</span>
+<span id="cb66-59"><a href="#cb66-59"></a>  consteval bool is_trivially_default_constructible(info type);</span>
+<span id="cb66-60"><a href="#cb66-60"></a>  consteval bool is_trivially_copy_constructible(info type);</span>
+<span id="cb66-61"><a href="#cb66-61"></a>  consteval bool is_trivially_move_constructible(info type);</span>
+<span id="cb66-62"><a href="#cb66-62"></a></span>
+<span id="cb66-63"><a href="#cb66-63"></a>  consteval bool is_trivially_assignable(info dst_type, info src_type);</span>
+<span id="cb66-64"><a href="#cb66-64"></a>  consteval bool is_trivially_copy_assignable(info type);</span>
+<span id="cb66-65"><a href="#cb66-65"></a>  consteval bool is_trivially_move_assignable(info type);</span>
+<span id="cb66-66"><a href="#cb66-66"></a>  consteval bool is_trivially_destructible(info type);</span>
+<span id="cb66-67"><a href="#cb66-67"></a></span>
+<span id="cb66-68"><a href="#cb66-68"></a>  consteval bool is_nothrow_constructible(info type, span&lt;info const&gt; type_args);</span>
+<span id="cb66-69"><a href="#cb66-69"></a>  consteval bool is_nothrow_default_constructible(info type);</span>
+<span id="cb66-70"><a href="#cb66-70"></a>  consteval bool is_nothrow_copy_constructible(info type);</span>
+<span id="cb66-71"><a href="#cb66-71"></a>  consteval bool is_nothrow_move_constructible(info type);</span>
+<span id="cb66-72"><a href="#cb66-72"></a></span>
+<span id="cb66-73"><a href="#cb66-73"></a>  consteval bool is_nothrow_assignable(info dst_type, info src_type);</span>
+<span id="cb66-74"><a href="#cb66-74"></a>  consteval bool is_nothrow_copy_assignable(info type);</span>
+<span id="cb66-75"><a href="#cb66-75"></a>  consteval bool is_nothrow_move_assignable(info type);</span>
+<span id="cb66-76"><a href="#cb66-76"></a></span>
+<span id="cb66-77"><a href="#cb66-77"></a>  consteval bool is_nothrow_swappable_with(info dst_type, info src_type);</span>
+<span id="cb66-78"><a href="#cb66-78"></a>  consteval bool is_nothrow_swappable(info type);</span>
+<span id="cb66-79"><a href="#cb66-79"></a></span>
+<span id="cb66-80"><a href="#cb66-80"></a>  consteval bool is_nothrow_destructible(info type);</span>
+<span id="cb66-81"><a href="#cb66-81"></a></span>
+<span id="cb66-82"><a href="#cb66-82"></a>  consteval bool is_implicit_lifetime(info type);</span>
+<span id="cb66-83"><a href="#cb66-83"></a></span>
+<span id="cb66-84"><a href="#cb66-84"></a>  consteval bool has_virtual_destructor(info type);</span>
+<span id="cb66-85"><a href="#cb66-85"></a></span>
+<span id="cb66-86"><a href="#cb66-86"></a>  consteval bool has_unique_object_representations(info type);</span>
+<span id="cb66-87"><a href="#cb66-87"></a></span>
+<span id="cb66-88"><a href="#cb66-88"></a>  consteval bool reference_constructs_from_temporary(info dst_type, info src_type);</span>
+<span id="cb66-89"><a href="#cb66-89"></a>  consteval bool reference_converts_from_temporary(info dst_type, info src_type);</span>
+<span id="cb66-90"><a href="#cb66-90"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+<h3 data-number="5.2.2" id="meta.reflection.unary-unary-type-traits"><span class="header-section-number">5.2.2</span> [meta.reflection.unary] Unary type traits<a href="#meta.reflection.unary-unary-type-traits" class="self-link"></a></h3>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">1</a></span> Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">2</a></span> For each function taking an argument of type <code class="sourceCode cpp">meta<span class="op">::</span>info</code> named <code class="sourceCode cpp">type</code>, <code class="sourceCode cpp">src_type</code>, or <code class="sourceCode cpp">dst_type</code>, that argument shall be a reflection of a type or type-alias. For each function taking an argument of type <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="kw">const</span> meta<span class="op">::</span>info<span class="op">&gt;</span></code> named <code class="sourceCode cpp">type_args</code>, each <code class="sourceCode cpp">meta<span class="op">::</span>info</code> in that <code class="sourceCode cpp">span</code> shall be a reflection of a type or a type-alias.</p>
+</div>
+</blockquote>
+<h4 data-number="5.2.2.1" id="meta.reflection.unary.cat-primary-type-categories"><span class="header-section-number">5.2.2.1</span> [meta.reflection.unary.cat] Primary type categories<a href="#meta.reflection.unary.cat-primary-type-categories" class="self-link"></a></h4>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">1</a></span> For any type <code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em></code> defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code> equals the value of the corresponding unary type trait <code class="sourceCode cpp">std<span class="op">::</span><em>TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as specified in <span>21.3.5.2 <a href="https://wg21.link/meta.unary.cat">[meta.unary.cat]</a></span>.</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_void<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-2"><a href="#cb67-2"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_null_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-3"><a href="#cb67-3"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_integral<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-4"><a href="#cb67-4"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_floating_point<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-5"><a href="#cb67-5"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_array<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-6"><a href="#cb67-6"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-7"><a href="#cb67-7"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_lvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-8"><a href="#cb67-8"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_rvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-9"><a href="#cb67-9"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_member_object_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-10"><a href="#cb67-10"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_member_function_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-11"><a href="#cb67-11"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_enum<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-12"><a href="#cb67-12"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_union<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-13"><a href="#cb67-13"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_class<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb67-14"><a href="#cb67-14"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_function<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">2</a></span> [<em>Example</em></p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb68-1"><a href="#cb68-1"></a>// an example implementation</span>
+<span id="cb68-2"><a href="#cb68-2"></a>namespace std::meta {</span>
+<span id="cb68-3"><a href="#cb68-3"></a>  consteval bool is_void(info type) {</span>
+<span id="cb68-4"><a href="#cb68-4"></a>    return value_of&lt;bool&gt;(substitute(^is_void_v, {type}));</span>
+<span id="cb68-5"><a href="#cb68-5"></a>  }</span>
+<span id="cb68-6"><a href="#cb68-6"></a>}</span></code></pre></div>
+<p><em>-end example</em>]</p>
+</div>
+</blockquote>
+<h4 data-number="5.2.2.2" id="meta.reflection.unary.comp-composite-type-categories"><span class="header-section-number">5.2.2.2</span> [meta.reflection.unary.comp] Composite type categories<a href="#meta.reflection.unary.comp-composite-type-categories" class="self-link"></a></h4>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">1</a></span> For any type <code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em></code> defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code> equals the value of the corresponding unary type trait <code class="sourceCode cpp">std<span class="op">::</span><em>TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as specified in <span>21.3.5.3 <a href="https://wg21.link/meta.unary.comp">[meta.unary.comp]</a></span>.</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb69-2"><a href="#cb69-2"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_arithmetic<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb69-3"><a href="#cb69-3"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_fundamental<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb69-4"><a href="#cb69-4"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_object<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb69-5"><a href="#cb69-5"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_scalar<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb69-6"><a href="#cb69-6"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_compound<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb69-7"><a href="#cb69-7"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_member_pointer<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+</div>
+</blockquote>
+<h4 data-number="5.2.2.3" id="meta.reflection.unary.prop-type-properties"><span class="header-section-number">5.2.2.3</span> [meta.reflection.unary.prop] Type properties<a href="#meta.reflection.unary.prop-type-properties" class="self-link"></a></h4>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1</a></span> For any type <code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em></code> defined in this clause which takes a single argument of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code> equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>UNARY-TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">2</a></span> For any types <code class="sourceCode cpp">T</code> and <code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em></code> defined in this clause which takes two arguments of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em><span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code> equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>BINARY-TRAIT</em>_v<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code> as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">3</a></span> For any type <code class="sourceCode cpp">T</code> and pack of types <code class="sourceCode cpp">U<span class="op">...</span></code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-TRAIT</em></code> defined in this clause which takes one argument of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> and one argument of type <code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span><span class="kw">const</span> std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span></code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-TRAIT</em><span class="op">(^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code> equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-TRAIT</em>_v<span class="op">&lt;</span>T, U<span class="op">...&gt;</span></code> as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_const<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-2"><a href="#cb70-2"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-3"><a href="#cb70-3"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivial<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-4"><a href="#cb70-4"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copyable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-5"><a href="#cb70-5"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_standard_layout<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-6"><a href="#cb70-6"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_empty<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-7"><a href="#cb70-7"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_polymorphic<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-8"><a href="#cb70-8"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_abstract<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-9"><a href="#cb70-9"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_final<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-10"><a href="#cb70-10"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_aggregate<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-11"><a href="#cb70-11"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_signed<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-12"><a href="#cb70-12"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_unsigned<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-13"><a href="#cb70-13"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_bounded_array<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-14"><a href="#cb70-14"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_unbounded_array<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-15"><a href="#cb70-15"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_scoped_enum<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-16"><a href="#cb70-16"></a></span>
+<span id="cb70-17"><a href="#cb70-17"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_constructible<span class="op">(</span>info type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;</span> type_args<span class="op">)</span>;</span>
+<span id="cb70-18"><a href="#cb70-18"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_default_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-19"><a href="#cb70-19"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_copy_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-20"><a href="#cb70-20"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_move_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-21"><a href="#cb70-21"></a></span>
+<span id="cb70-22"><a href="#cb70-22"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_assignable<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span>
+<span id="cb70-23"><a href="#cb70-23"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_copy_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-24"><a href="#cb70-24"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_move_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-25"><a href="#cb70-25"></a></span>
+<span id="cb70-26"><a href="#cb70-26"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_swappable_with<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span>
+<span id="cb70-27"><a href="#cb70-27"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_swappable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-28"><a href="#cb70-28"></a></span>
+<span id="cb70-29"><a href="#cb70-29"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_destructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-30"><a href="#cb70-30"></a></span>
+<span id="cb70-31"><a href="#cb70-31"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_constructible<span class="op">(</span>info type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;</span> type_args<span class="op">)</span>;</span>
+<span id="cb70-32"><a href="#cb70-32"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_default_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-33"><a href="#cb70-33"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copy_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-34"><a href="#cb70-34"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_move_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-35"><a href="#cb70-35"></a></span>
+<span id="cb70-36"><a href="#cb70-36"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_assignable<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span>
+<span id="cb70-37"><a href="#cb70-37"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copy_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-38"><a href="#cb70-38"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_move_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-39"><a href="#cb70-39"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_destructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-40"><a href="#cb70-40"></a></span>
+<span id="cb70-41"><a href="#cb70-41"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_constructible<span class="op">(</span>info type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;</span> type_args<span class="op">)</span>;</span>
+<span id="cb70-42"><a href="#cb70-42"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_default_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-43"><a href="#cb70-43"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_copy_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-44"><a href="#cb70-44"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_move_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-45"><a href="#cb70-45"></a></span>
+<span id="cb70-46"><a href="#cb70-46"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_assignable<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span>
+<span id="cb70-47"><a href="#cb70-47"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_copy_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-48"><a href="#cb70-48"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_move_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-49"><a href="#cb70-49"></a></span>
+<span id="cb70-50"><a href="#cb70-50"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_swappable_with<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span>
+<span id="cb70-51"><a href="#cb70-51"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_swappable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-52"><a href="#cb70-52"></a></span>
+<span id="cb70-53"><a href="#cb70-53"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_destructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-54"><a href="#cb70-54"></a></span>
+<span id="cb70-55"><a href="#cb70-55"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_implicit_lifetime<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-56"><a href="#cb70-56"></a></span>
+<span id="cb70-57"><a href="#cb70-57"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_virtual_destructor<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-58"><a href="#cb70-58"></a></span>
+<span id="cb70-59"><a href="#cb70-59"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_unique_object_representations<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb70-60"><a href="#cb70-60"></a></span>
+<span id="cb70-61"><a href="#cb70-61"></a><span class="kw">consteval</span> <span class="dt">bool</span> reference_constructs_from_temporary<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span>
+<span id="cb70-62"><a href="#cb70-62"></a><span class="kw">consteval</span> <span class="dt">bool</span> reference_converts_from_temporary<span class="op">(</span>info dst_type, info src_type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>
