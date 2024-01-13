@@ -18,6 +18,7 @@ author:
       email: <daveed@edg.com>
 
 toc: true
+toc-depth: 4
 tag: constexpr
 ---
 
@@ -1770,6 +1771,12 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
 ```
 namespace std::meta {
+  // [meta.reflection.names], reflection names and locations
+  consteval string_view name_of(info r);
+  consteval string_view qualified_name_of(info r);
+  consteval string_view display_name_of(info r);
+  consteval source_location source_location_of(info r);
+
   // [meta.reflection.unary.cat], primary type categories
   consteval bool is_void(info type);
   consteval bool is_null_pointer(info type);
@@ -1881,6 +1888,49 @@ namespace std::meta {
 ```
 :::
 :::
+
+### [meta.reflection.names] Reflection names and locations
+
+::: bq
+::: addu
+```cpp
+consteval string_view name_of(info r);
+consteval string_view qualified_name_of(info r);
+```
+
+[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified qualified names of `X`, respectively. Otherwise, an empty `string_view`.
+
+[#]{.pnum} [*Example*:
+```
+namespace N {
+  struct C {
+    int i;
+  };
+}
+
+static_assert(name_of(^0) == "");
+static_assert(name_of(^N::C) == "C");
+static_assert(qualified_name_of(^N::C) == "N::C");
+static_assert(name_of(^N::C::i) == "i");
+static_assert(name_of(^N) == "N");
+static_assert(qualified_name_of(^N) == "N");
+```
+*-end example*]
+
+
+```cpp
+consteval string_view display_name_of(info r);
+```
+[#]{.pnum} *Returns*: An implementation-defined string suitable for identifying the reflected construct.
+
+```cpp
+consteval source_location source_location_of(info r);
+```
+
+[#]{.pnum} *Returns*: An implementation-defined `source_location` corresponding to the reflected construct.
+:::
+:::
+
 
 ### [meta.reflection.unary] Unary type traits
 
