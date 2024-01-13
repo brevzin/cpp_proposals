@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R1
+document: P2996R2
 date: today
 audience: EWG
 author:
@@ -1725,37 +1725,30 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
 
 Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}:
 
-::: addu
 ### The Reflection Operator                               [expr.reflect]
 
-::: bq [1]{.pnum}
-The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
+::: bq
+::: addu
+[#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
-:::
 
-::: bq [2]{.pnum}
-When applied to `::`, the reflection operator produces a reflection for the global scope.
+[#]{.pnum} When applied to `::`, the reflection operator produces a reflection for the global scope.
 When applied to a `$namespace-name$`, the reflection produces a reflection for the indicated namespace or namespace alias.
-:::
 
-::: bq [3]{.pnum}
-When applied to a `$template-name$`, the reflection produces a reflection for the indicated template.
-:::
+[#]{.pnum} When applied to a `$template-name$`, the reflection produces a reflection for the indicated template.
 
-::: bq [4]{.pnum}
-When applied to a `$type-id$`, the reflection produces a reflection for the indicated type or type-alias.
-:::
+[#]{.pnum} When applied to a `$type-id$`, the reflection produces a reflection for the indicated type or type-alias.
 
-::: bq [5]{.pnum}
-When applied to a `$cast-expression$`, the `$cast-expression$` shall be a constant expression [expr.const]{.sref} or an `$id-expression$` [expr.prim.id]{.sref} designating a variable, a function, an enumerator constant, or a nonstatic member.
+[#]{.pnum} When applied to a `$cast-expression$`, the `$cast-expression$` shall be a constant expression ([expr.const]{.sref}) or an `$id-expression$` ([expr.prim.id]{.sref}) designating a variable, a function, an enumerator constant, or a nonstatic member.
 The `$cast-expression$` is not evaluated.
 If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
 If the operand is a constant expression, the result is a reflection for the resulting value.
 If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
-:::
-::: addu [ Example:
 
+[ *Example*:
+```
 constexpr auto r = ^std::vector;
-
-— end example ] :::
-::: 
+```
+— *end example* ]
+:::
+:::
