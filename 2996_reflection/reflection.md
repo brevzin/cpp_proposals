@@ -2000,11 +2000,11 @@ consteval bool is_member_pointer(info type);
 
 ::: bq
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$UNARY-TRAIT$` defined in this clause which takes a single argument of type `std::meta::info`, `std::meta::$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any types `T` and `U`, for each function `std::meta::$BINARY-TRAIT$` defined in this clause which takes two arguments of type `std::meta::info`, `std::meta::$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any types `T` and `U`, for each function `std::meta::$BINARY-TRAIT$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-TRAIT$` defined in this clause which takes one argument of type `std::meta::info` and one argument of type `std::span<const std::meta::info>`, `std::meta::$VARIADIC-TRAIT$(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-TRAIT$` defined in this clause with signature `bool(std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-TRAIT$(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
 
 ```cpp
 consteval bool is_const(info type);
@@ -2077,7 +2077,7 @@ consteval bool reference_converts_from_temporary(info dst_type, info src_type);
 
 ::: bq
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$PROP$` defined in this clause which takes a single argument of type `std::meta::info`, `std::meta::$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::$PROP$` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
 
 [#]{.pnum} For any type `T` and unsigned integer value `I`, `std::meta::extent(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
 
@@ -2093,11 +2093,11 @@ consteval size_t extent(info type, unsigned i = 0);
 
 ::: bq
 ::: addu
-[1]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$` defined in this clause which takes a two arguments of type `std::meta::info`, `std::meta::$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+[1]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL$` defined in this clause which takes arguments of type `std::meta::info` and `std::span<const std::meta::info>`, `std::meta::$VARIADIC-REL$(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL$` defined in this clause with signature `bool(std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-REL$(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL-R$` defined in this clause which takes two arguments of type `std::meta::info` and one argument of type `std::span<const std::meta::info>`, `std::meta::$VARIADIC-REL-R$(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL-R$` defined in this clause with signature `bool(std::meta::info, std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-REL-R$(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
 
 ```cpp
 consteval bool is_same(info type1, info type2);
