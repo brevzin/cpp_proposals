@@ -1710,11 +1710,12 @@ There are quite a few traits in [meta]{.sref} - but it should be easy enough to 
 
 ## Language
 
-### expr.unary.general
+### [expr.unary.general]
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
 
 ::: bq
+[1]{.pnum} Expressions with unary operators group right-to-left.
 ```diff
   $unary-expression$:
      ...
@@ -1727,14 +1728,12 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
 ```
 :::
 
-### expr.reflect
+### [expr.reflect] The Reflection operator
 
 Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
 ::: bq
 ::: addu
-**The Reflection Operator \[expr.reflect\]**
-
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
@@ -1776,6 +1775,45 @@ namespace std::meta {
   consteval string_view qualified_name_of(info r);
   consteval string_view display_name_of(info r);
   consteval source_location source_location_of(info r);
+
+  // [meta.reflection.queries], reflection queries
+  consteval bool is_public(info r);
+  consteval bool is_protected(info r);
+  consteval bool is_private(info r);
+  consteval bool is_accessible(info r);
+  consteval bool is_virtual(info r);
+  consteval bool is_deleted(info r);
+  consteval bool is_defaulted(info r);
+  consteval bool is_explicit(info r);
+  consteval bool is_override(info r);
+  consteval bool is_pure_virtual(info r);
+  consteval bool is_bit_field(info r);
+  consteval bool has_static_storage_duration(info r);
+
+  consteval bool is_nsdm(info r);
+  consteval bool is_base(info r);
+  consteval bool is_namespace(info r);
+  consteval bool is_function(info r);
+  consteval bool is_static(info r);
+  consteval bool is_variable(info r);
+  consteval bool is_type(info r);
+  consteval bool is_alias(info r);
+  consteval bool is_incomplete_type(info r);
+  consteval bool is_template(info r);
+  consteval bool is_function_template(info r);
+  consteval bool is_variable_template(info r);
+  consteval bool is_class_template(info r);
+  consteval bool is_alias_template(info r);
+  consteval bool has_template_arguments(info r);
+  consteval bool is_constructor(info r);
+  consteval bool is_destructor(info r);
+  consteval bool is_special_member(info r);
+
+  consteval info type_of(info r);
+  consteval info parent_of(info r);
+  consteval info dealias(info r);
+  consteval info template_of(info r);
+  consteval info template_arguments_of(info r);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool is_void(info type);
@@ -1948,6 +1986,60 @@ consteval source_location source_location_of(info r);
 :::
 :::
 
+### [meta.reflection.queries] Reflection queries
+
+::: bq
+::: addu
+```cpp
+consteval bool is_public(info r);
+consteval bool is_protected(info r);
+consteval bool is_private(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a static or non-static member of a class.
+
+[#]{.pnum} *Returns*: `true` if the member that `r` denotes is public, protected, or private, respectively. Otherwise, `false`.
+
+```cpp
+consteval bool is_accessible(info r);
+consteval bool is_virtual(info r);
+consteval bool is_deleted(info r);
+consteval bool is_defaulted(info r);
+consteval bool is_explicit(info r);
+consteval bool is_override(info r);
+consteval bool is_pure_virtual(info r);
+consteval bool is_bit_field(info r);
+consteval bool has_static_storage_duration(info r);
+
+consteval bool is_nsdm(info r);
+consteval bool is_base(info r);
+consteval bool is_namespace(info r);
+consteval bool is_function(info r);
+consteval bool is_static(info r);
+consteval bool is_variable(info r);
+consteval bool is_type(info r);
+consteval bool is_alias(info r);
+consteval bool is_incomplete_type(info r);
+consteval bool is_template(info r);
+consteval bool is_function_template(info r);
+consteval bool is_variable_template(info r);
+consteval bool is_class_template(info r);
+consteval bool is_alias_template(info r);
+consteval bool has_template_arguments(info r);
+consteval bool is_constructor(info r);
+consteval bool is_destructor(info r);
+consteval bool is_special_member(info r);
+
+consteval info type_of(info r);
+consteval info parent_of(info r);
+consteval info dealias(info r);
+consteval info template_of(info r);
+consteval info template_arguments_of(info r);
+```
+
+[#]{.pnum} TODO.
+:::
+:::
 
 ### [meta.reflection.unary] Unary type traits
 
