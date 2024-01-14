@@ -2336,6 +2336,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb81-6"><a href="#cb81-6"></a><span class="kw">consteval</span> info invoke_result<span class="op">(</span>info type, span<span class="op">&lt;</span><span class="kw">const</span> info<span class="op">&gt;</span> type_args<span class="op">)</span>;</span>
 <span id="cb81-7"><a href="#cb81-7"></a><span class="kw">consteval</span> info unwrap_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb81-8"><a href="#cb81-8"></a><span class="kw">consteval</span> info unwrap_ref_decay<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">4</a></span> [<em>Example</em>:</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb82-1"><a href="#cb82-1"></a><span class="co">// example implementation</span></span>
+<span id="cb82-2"><a href="#cb82-2"></a><span class="kw">consteval</span> info unwrap_reference<span class="op">(</span>info type<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb82-3"><a href="#cb82-3"></a>  <span class="cf">if</span> <span class="op">(</span>has_template_arguments<span class="op">(</span>type<span class="op">)</span> <span class="op">&amp;&amp;</span> template_of<span class="op">(</span>type<span class="op">)</span> <span class="op">==</span> <span class="op">^</span>reference_wrapper<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb82-4"><a href="#cb82-4"></a>    <span class="cf">return</span> add_lvalue_reference<span class="op">(</span>template_arguments_of<span class="op">(</span>type<span class="op">)[</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb82-5"><a href="#cb82-5"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb82-6"><a href="#cb82-6"></a>    <span class="cf">return</span> type;</span>
+<span id="cb82-7"><a href="#cb82-7"></a>  <span class="op">}</span></span>
+<span id="cb82-8"><a href="#cb82-8"></a><span class="op">}</span></span></code></pre></div>
+<p><em>-end example</em>]</p>
 </div>
 </blockquote>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span> References<a href="#bibliography" class="self-link"></a></h1>

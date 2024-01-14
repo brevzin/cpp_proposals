@@ -2223,5 +2223,20 @@ consteval info invoke_result(info type, span<const info> type_args);
 consteval info unwrap_reference(info type);
 consteval info unwrap_ref_decay(info type);
 ```
+
+[#]{.pnum} [*Example*:
+
+```cpp
+// example implementation
+consteval info unwrap_reference(info type) {
+  if (has_template_arguments(type) && template_of(type) == ^reference_wrapper) {
+    return add_lvalue_reference(template_arguments_of(type)[0]);
+  } else {
+    return type;
+  }
+}
+```
+
+*-end example*]
 :::
 :::
