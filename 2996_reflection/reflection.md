@@ -2203,7 +2203,7 @@ consteval info add_pointer(info type);
 
 #### [meta.reflection.trans.other], Other transformations
 
-[There are three transformations that are deliberately omitted here. `enable_if` is not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
+[There are four transformations that are deliberately omitted here. `type_identity` and `enable_if` are not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
 
 ::: bq
 ::: addu
