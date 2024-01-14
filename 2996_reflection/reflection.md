@@ -1884,6 +1884,41 @@ namespace std::meta {
 
   consteval bool is_nothrow_invocable(info type, span<const info> type_args);
   consteval bool is_nothrow_invocable_r(info result_type, info type, span<const info> type_args);
+
+  // [meta.reflection.trans.cv], const-volatile modifications
+  consteval info remove_const(info type);
+  consteval info remove_volatile(info type);
+  consteval info remove_cv(info type);
+  consteval info add_const(info type);
+  consteval info add_volatile(info type);
+  consteval info add_cv(info type);
+
+  // [meta.reflection.trans.ref], reference modifications
+  consteval info remove_reference(info type);
+  consteval info add_lvalue_reference(info type);
+  consteval info add_rvalue_reference(info type);
+
+  // [meta.reflection.trans.sign], sign modifications
+  consteval info make_signed(info type);
+  consteval info make_unsigned(info type);
+
+  // [meta.reflection.trans.arr], array modifications
+  consteval info remove_extent(info type);
+  consteval info remove_all_extents(info type);
+
+  // [meta.reflection.trans.ptr], pointer modifications
+  consteval info remove_pointer(info type);
+  consteval info add_pointer(info type);
+
+  // [meta.reflection.trans.other], other transformations
+  consteval info remove_cvref(info type);
+  consteval info decay(info type);
+  consteval info common_type(span<const info> type_args);
+  consteval info common_reference(span<const info> type_args);
+  consteval info underlying_type(info type);
+  consteval info invoke_result(info type, span<const info> type_args);
+  consteval info unwrap_reference(info type);
+  consteval info unwrap_ref_decay(info type);
 }
 ```
 :::
@@ -1898,25 +1933,7 @@ consteval string_view name_of(info r);
 consteval string_view qualified_name_of(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified qualified names of `X`, respectively. Otherwise, an empty `string_view`.
-
-[#]{.pnum} [*Example*:
-```
-namespace N {
-  struct C {
-    int i;
-  };
-}
-
-static_assert(name_of(^0) == "");
-static_assert(name_of(^N::C) == "C");
-static_assert(qualified_name_of(^N::C) == "N::C");
-static_assert(name_of(^N::C::i) == "i");
-static_assert(name_of(^N) == "N");
-static_assert(qualified_name_of(^N) == "N");
-```
-*-end example*]
-
+[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified and qualified names of `X`, respectively. Otherwise, an empty `string_view`.
 
 ```cpp
 consteval string_view display_name_of(info r);
@@ -2118,3 +2135,93 @@ consteval bool is_nothrow_invocable_r(info result_type, info type, span<const in
 :::
 :::
 
+
+#### [meta.reflection.trans.cv], Const-volatile modifications
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
+
+```cpp
+consteval info remove_const(info type);
+consteval info remove_volatile(info type);
+consteval info remove_cv(info type);
+consteval info add_const(info type);
+consteval info add_volatile(info type);
+consteval info add_cv(info type);
+```
+:::
+:::
+
+#### [meta.reflection.trans.ref], Reference modifications
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
+
+```cpp
+consteval info remove_reference(info type);
+consteval info add_lvalue_reference(info type);
+consteval info add_rvalue_reference(info type);
+```
+:::
+:::
+
+#### [meta.reflection.trans.sign], Sign modifications
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
+```cpp
+consteval info make_signed(info type);
+consteval info make_unsigned(info type);
+```
+:::
+:::
+
+#### [meta.reflection.trans.arr], Array modifications
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
+```cpp
+consteval info remove_extent(info type);
+consteval info remove_all_extents(info type);
+```
+:::
+:::
+
+#### [meta.reflection.trans.ptr], Pointer modifications
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
+```cpp
+consteval info remove_pointer(info type);
+consteval info add_pointer(info type);
+```
+:::
+:::
+
+#### [meta.reflection.trans.other], Other transformations
+
+[There are three transformations that are deliberately omitted here. `enable_if` is not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
+
+::: bq
+::: addu
+[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
+
+[#]{.pnum} For any pack of types `T...`, for each function `std::meta::$VARIADIC-MOD$` defined in this clause with signature `std::meta::info(std::span<const std::meta::info>)`, `std::meta::$VARIADIC-MOD$({^T...})` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
+
+[#]{.pnum} For any type `T` and pack of types `U...`, `std::meta::invoke_result(^T, {^u...})` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
+
+```cpp
+consteval info remove_cvref(info type);
+consteval info decay(info type);
+consteval info common_type(span<const info> type_args);
+consteval info common_reference(span<const info> type_args);
+consteval info underlying_type(info type);
+consteval info invoke_result(info type, span<const info> type_args);
+consteval info unwrap_reference(info type);
+consteval info unwrap_ref_decay(info type);
+```
+:::
+:::
