@@ -1850,7 +1850,7 @@ namespace std::meta {
   consteval info parent_of(info r);
   consteval info dealias(info r);
   consteval info template_of(info r);
-  consteval info template_arguments_of(info r);
+  consteval vector<info> template_arguments_of(info r);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool is_void(info type);
@@ -2033,9 +2033,7 @@ consteval bool is_protected(info r);
 consteval bool is_private(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
-
-[#]{.pnum} *Returns*: `true` if the member that `r` denotes is public, protected, or private, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a class member or base class that is public, protected, or private, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_accessible(info r);
@@ -2044,95 +2042,85 @@ consteval bool is_accessible(info r);
 
 ```cpp
 consteval bool is_virtual(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` designates a either a virtual member function or a virtual base class. Otherwise, `false`.
+
+```cpp
 consteval bool is_pure_virtual(info r);
 consteval bool is_override(info r);
 ```
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
-
-[#]{.pnum} *Returns*: `true` if that member is member function that is virtual, pure virtual, or an override, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is pure virtual or an override, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_deleted(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a function or class member.
-
-[#]{.pnum} *Returns*: `true` if that function or member function is defined as deleted. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function or member function that is defined as deleted. Otherwise, `false`.
 
 ```cpp
 consteval bool is_defaulted(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
-
-[#]{.pnum} *Returns*: `true` if that member is a function that is defined as defaulted. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is defined as defaulted. Otherwise, `false`.
 
 ```cpp
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
-
-[#]{.pnum} *Returns*: `true` if that entity is member function that is declared explicit. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared explicit. Otherwise, `false`.
 
 ```cpp
 consteval bool is_bit_field(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
-
-[#]{.pnum} *Returns*: `true` if that member is a bit-field. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a bit-field. Otherwise, `false`.
 
 ```cpp
 consteval bool has_static_storage_duration(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an object.
-
-[#]{.pnum} *Returns*: `true` if that object has static storage duration. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates an object that has static storage duration. Otherwise, `false`.
 
 ```cpp
 consteval bool is_namespace(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` denotes a namespace or namespace alias. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a namespace or namespace alias. Otherwise, `false`.
 
 ```cpp
 consteval bool is_function(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes a function or mnember function. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function or mnember function. Otherwise, `false`.
 
 ```cpp
 consteval bool is_static(info r);
 ```
-[#]{.pnum} *Return*: `true` if `r` denotes a variable, function, or member function that is declared static. Otherwise, `false`.
+[#]{.pnum} *Return*: `true` if `r` designates a variable, function, or member function that is declared static. Otherwise, `false`.
 
 ```cpp
 consteval bool is_variable(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes a variable. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a variable. Otherwise, `false`.
 
 ```cpp
 consteval bool is_type(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes a type or a type alias. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a type or a type alias. Otherwise, `false`.
 
 ```cpp
 consteval bool is_alias(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes a type alias, alias template, or namespace alias. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a type alias, alias template, or namespace alias. Otherwise, `false`.
 
 ```cpp
 consteval bool is_incomplete_type(info r);
 ```
-[#]{.pnum} *Mandates*: `is_type(r)` is `true`.
-
-[#]{.pnum} *Returns*: `true` if `delias(r)` denotes an incomplete type. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `delias(r)` designates an incomplete type. Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes a function template, class template, variable template, or alias template. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, or alias template. Otherwise, `false`.
 
 [#]{.pnum} [A template specialization is not a template. `is_template(^std::vector)` is `true` but `is_template(^std::vector<int>)` is `false`.]{.note}
 
@@ -2142,12 +2130,12 @@ consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes a function template, class template, variable template, or alias template, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, or alias template, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool has_template_arguments(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` denotes an instantiation of a function template, variable template, class template, or an alias template. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates an instantiation of a function template, variable template, class template, or an alias template. Otherwise, `false`.
 
 
 ```cpp
@@ -2158,19 +2146,60 @@ consteval bool is_destructor(info r);
 consteval bool is_special_member(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes a class member.
-
-[#]{.pnum} *Returns*: `true` if that member is a non-static data member, base class, constructor, destructor, or special member, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a class member is a non-static data member, base class, constructor, destructor, or special member, respectively. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
-consteval info parent_of(info r);
-consteval info dealias(info r);
-consteval info template_of(info r);
-consteval info template_arguments_of(info r);
 ```
 
-[#]{.pnum} TODO.
+[#]{.pnum} *Mandates*: `r` designates a typed entity.
+
+[#]{.pnum} *Returns*: A reflection of the type of that entity.
+
+```cpp
+consteval info parent_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` designates a member of a class or a namespace.
+
+[#]{.pnum} *Returns*: A reflection of the that entity's immediately enclosing class or namespace.
+
+```cpp
+consteval info dealias(info r);
+```
+
+[#]{.pnum} *Returns*: If `r` designates a type alias or a namespace alias, a reflection designating the underlying entity. Otherwise, `r`.
+
+[#]{.pnum} [*Example*
+```
+using X = int;
+using Y = X;
+static_assert(dealias(^int) == ^int);
+static_assert(dealias(^X) == ^int);
+static_assert(dealias(^Y) == ^int);
+```
+-*end example*]
+
+```cpp
+consteval info template_of(info r);
+consteval vector<info> template_arguments_of(info r);
+```
+[#]{.pnum} *Mandates*: `has_template_arguments(r)` is `true`.
+
+[#]{.pnum} *Returns*: A reflection of the template, and the reflections of the template arguments, repectively.
+
+[#]{.pnum} [*Example*:
+```
+template <class T, class U=T> struct Pair { };
+template <class T> using PairPtr = Pair<T*>;
+
+static_assert(template_of(^Pair<int>) == ^Pair);
+static_assert(template_arguments_of(^Pair<int>).size() == 2);
+
+static_assert(template_of(^PairPtr<int>) == ^PairPtr);
+static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
+```
+-*end example*]
 :::
 :::
 
