@@ -1234,6 +1234,41 @@ With support for `constexpr` exceptions, implementations would have to come up w
 
 Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than `std::expected` (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).
 
+### Handling Aliases
+
+Consider
+
+::: bq
+```cpp
+using A = int;
+```
+:::
+
+In C++ today, `A` and `int` can be used interchangeably and there is no distinction between the two types.
+With reflection as proposed in this paper, that will no longer be the case.
+`^A` yields a reflection of an alias to `int`, while `^int` yields a reflection of `int`.
+`^A == ^int` evaluates to `false`, but there will be a way to strip aliases - so `dealias(^A) == ^int` evaluates to `true`.
+
+This opens up the question of how various other metafunctions handle aliases and it is worth going over a few examples:
+
+::: bq
+```cpp
+using A = int;
+using B = std::unique_ptr<int>;
+template <class T> using C = std::unique_ptr<T>;
+```
+:::
+
+This paper is proposing that:
+
+* `is_type(^A)` is `true`.
+   `^A` is an alias, but it's an alias to a type, and if this evaluated as `false` then everyone would have to `dealias` everything all the time.
+* `has_template_arguments(^B)` is `false` while `has_template_arguments(^C<int>)` is `true`.
+  Even though `B` is an alias to a type that itself has template arguments (`unique_ptr<int>`), `B` itself is simply a type alias and does not.
+  This reflects the actual usage.
+* Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
+  This is `C` has its own template arguments that can be reflected on.
+
 ### Synopsis
 
 Here is a synopsis for the proposed library API. The functions will be explained below.
@@ -1243,6 +1278,7 @@ Here is a synopsis for the proposed library API. The functions will be explained
 namespace std::meta {
   // @[name and location](#name_of-display_name_of-source_location_of)@
   consteval auto name_of(info r) -> string_view;
+  consteval auto qualified_name_of(info r) -> string_view;
   consteval auto display_name_of(info r) -> string_view;
   consteval auto source_location_of(info r) -> source_location;
 
@@ -1282,11 +1318,11 @@ namespace std::meta {
   consteval auto is_private(info r) -> bool;
   consteval auto is_accessible(info r) -> bool;
   consteval auto is_virtual(info r) -> bool;
+  consteval auto is_pure_virtual(info entity) -> bool;
+  consteval auto is_override(info entity) -> bool;
   consteval auto is_deleted(info entity) -> bool;
   consteval auto is_defaulted(info entity) -> bool;
   consteval auto is_explicit(info entity) -> bool;
-  consteval auto is_override(info entity) -> bool;
-  consteval auto is_pure_virtual(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto is_nsdm(info entity) -> bool;
@@ -1333,13 +1369,14 @@ namespace std::meta {
 ```c++
 namespace std::meta {
   consteval auto name_of(info r) -> string_view;
+  consteval auto qualified_name_of(info r) -> string_view;
   consteval auto display_name_of(info r) -> string_view;
   consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
 
-Given a reflection `r` that designates a declared entity `X`, `name_of(r)` returns a `string_view` holding the unqualified name of `X`.
+Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of(r)` return a `string_view` holding the unqualified and qualified name of `X`, respectively.
 For all other reflections, an empty `string_view` is produced.
 For template instances, the name does not include the template argument list.
 The contents of the `string_view` consist of characters of the basic source character set only (an implementation can map other characters using universal character names).
@@ -1558,11 +1595,11 @@ namespace std::meta {
   consteval auto is_private(info r) -> bool;
   consteval auto is_accessible(info r) -> bool;
   consteval auto is_virtual(info r) -> bool;
+  consteval auto is_pure_virtual(info entity) -> bool;
+  consteval auto is_override(info entity) -> bool;
   consteval auto is_deleted(info entity) -> bool;
   consteval auto is_defaulted(info entity) -> bool;
   consteval auto is_explicit(info entity) -> bool;
-  consteval auto is_override(info entity) -> bool;
-  consteval auto is_pure_virtual(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
 
@@ -1782,16 +1819,14 @@ namespace std::meta {
   consteval bool is_private(info r);
   consteval bool is_accessible(info r);
   consteval bool is_virtual(info r);
+  consteval bool is_pure_virtual(info r);
+  consteval bool is_override(info r);
   consteval bool is_deleted(info r);
   consteval bool is_defaulted(info r);
   consteval bool is_explicit(info r);
-  consteval bool is_override(info r);
-  consteval bool is_pure_virtual(info r);
   consteval bool is_bit_field(info r);
   consteval bool has_static_storage_duration(info r);
 
-  consteval bool is_nsdm(info r);
-  consteval bool is_base(info r);
   consteval bool is_namespace(info r);
   consteval bool is_function(info r);
   consteval bool is_static(info r);
@@ -1805,6 +1840,8 @@ namespace std::meta {
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
   consteval bool has_template_arguments(info r);
+  consteval bool is_nsdm(info r);
+  consteval bool is_base(info r);
   consteval bool is_constructor(info r);
   consteval bool is_destructor(info r);
   consteval bool is_special_member(info r);
@@ -1996,40 +2033,136 @@ consteval bool is_protected(info r);
 consteval bool is_private(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` denotes an entity that is a static or non-static member of a class.
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
 
 [#]{.pnum} *Returns*: `true` if the member that `r` denotes is public, protected, or private, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_accessible(info r);
-consteval bool is_virtual(info r);
-consteval bool is_deleted(info r);
-consteval bool is_defaulted(info r);
-consteval bool is_explicit(info r);
-consteval bool is_override(info r);
-consteval bool is_pure_virtual(info r);
-consteval bool is_bit_field(info r);
-consteval bool has_static_storage_duration(info r);
+```
+[#]{.pnum} *Returns*: TODO
 
-consteval bool is_nsdm(info r);
-consteval bool is_base(info r);
+```cpp
+consteval bool is_virtual(info r);
+consteval bool is_pure_virtual(info r);
+consteval bool is_override(info r);
+```
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
+
+[#]{.pnum} *Returns*: `true` if that member is member function that is virtual, pure virtual, or an override, respectively. Otherwise, `false`.
+
+```cpp
+consteval bool is_deleted(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a function or class member.
+
+[#]{.pnum} *Returns*: `true` if that function or member function is defined as deleted. Otherwise, `false`.
+
+```cpp
+consteval bool is_defaulted(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
+
+[#]{.pnum} *Returns*: `true` if that member is a function that is defined as defaulted. Otherwise, `false`.
+
+```cpp
+consteval bool is_explicit(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
+
+[#]{.pnum} *Returns*: `true` if that entity is member function that is declared explicit. Otherwise, `false`.
+
+```cpp
+consteval bool is_bit_field(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` denotes an entity that is a class member.
+
+[#]{.pnum} *Returns*: `true` if that member is a bit-field. Otherwise, `false`.
+
+```cpp
+consteval bool has_static_storage_duration(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` denotes an object.
+
+[#]{.pnum} *Returns*: `true` if that object has static storage duration. Otherwise, `false`.
+
+```cpp
 consteval bool is_namespace(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` denotes a namespace or namespace alias. Otherwise, `false`.
+
+```cpp
 consteval bool is_function(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes a function or mnember function. Otherwise, `false`.
+
+```cpp
 consteval bool is_static(info r);
+```
+[#]{.pnum} *Return*: `true` if `r` denotes a variable, function, or member function that is declared static. Otherwise, `false`.
+
+```cpp
 consteval bool is_variable(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes a variable. Otherwise, `false`.
+
+```cpp
 consteval bool is_type(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes a type or a type alias. Otherwise, `false`.
+
+```cpp
 consteval bool is_alias(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes a type alias, alias template, or namespace alias. Otherwise, `false`.
+
+```cpp
 consteval bool is_incomplete_type(info r);
+```
+[#]{.pnum} *Mandates*: `is_type(r)` is `true`.
+
+[#]{.pnum} *Returns*: `true` if `delias(r)` denotes an incomplete type. Otherwise, `false`.
+
+```cpp
 consteval bool is_template(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes a function template, class template, variable template, or alias template. Otherwise, `false`.
+
+[#]{.pnum} [A template specialization is not a template. `is_template(^std::vector)` is `true` but `is_template(^std::vector<int>)` is `false`.]{.note}
+
+```cpp
 consteval bool is_function_template(info r);
 consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes a function template, class template, variable template, or alias template, respectively. Otherwise, `false`.
+
+```cpp
 consteval bool has_template_arguments(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` denotes an instantiation of a function template, variable template, class template, or an alias template. Otherwise, `false`.
+
+
+```cpp
+consteval bool is_nsdm(info r);
+consteval bool is_base(info r);
 consteval bool is_constructor(info r);
 consteval bool is_destructor(info r);
 consteval bool is_special_member(info r);
+```
 
+[#]{.pnum} *Mandates*: `r` denotes a class member.
+
+[#]{.pnum} *Returns*: `true` if that member is a non-static data member, base class, constructor, destructor, or special member, respectively. Otherwise, `false`.
+
+```cpp
 consteval info type_of(info r);
 consteval info parent_of(info r);
 consteval info dealias(info r);
