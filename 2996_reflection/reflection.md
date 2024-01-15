@@ -2090,7 +2090,7 @@ consteval bool is_namespace(info r);
 ```cpp
 consteval bool is_function(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` designates a function or mnember function. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function or member function. Otherwise, `false`.
 
 ```cpp
 consteval bool is_static(info r);
