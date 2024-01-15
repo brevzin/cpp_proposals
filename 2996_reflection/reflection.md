@@ -1755,6 +1755,7 @@ std::meta::test_type(^std::is_const_v, type)
 
 Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API.
 There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
+So we're doing it.
 
 
 # Proposed Wording
