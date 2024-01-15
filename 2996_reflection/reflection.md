@@ -24,6 +24,12 @@ tag: constexpr
 
 # Revision History
 
+Since [@P2996R1], several changes to the overall library API:
+
+* added `qualiifed_name_of` (to partner with `name_of`)
+* removed `is_static` for being ambiguous, added `has_internal_linkage` (and `has_linkage` and `has_external_linkage`) and `is_static_member` instead
+* added `is_class_member` and `is_namespace_member`
+
 Since [@P2996R0]:
 
 * added links to Compiler Explorer demonstrating just about all of the examples
@@ -1325,11 +1331,15 @@ namespace std::meta {
   consteval auto is_explicit(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
+  consteval auto has_internal_linkage(info r) -> bool;
+  consteval auto has_external_linkage(info r) -> bool;
+  consteval auto has_linkage(info r) -> bool;
+  consteval auto is_class_member(info entity) -> bool;
+  consteval auto is_namespace_member(info entity) -> bool;
   consteval auto is_nsdm(info entity) -> bool;
   consteval auto is_base(info entity) -> bool;
   consteval auto is_namespace(info entity) -> bool;
   consteval auto is_function(info entity) -> bool;
-  consteval auto is_static(info entity) -> bool;
   consteval auto is_variable(info entity) -> bool;
   consteval auto is_type(info entity) -> bool;
   consteval auto is_alias(info entity) -> bool;
@@ -1602,12 +1612,16 @@ namespace std::meta {
   consteval auto is_explicit(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
+  consteval auto has_internal_linkage(info r) -> bool;
+  consteval auto has_external_linkage(info r) -> bool;
+  consteval auto has_linkage(info r) -> bool;
 
+  consteval auto is_class_member(info entity) -> bool;
+  consteval auto is_namespace_member(info entity) -> bool;
   consteval auto is_nsdm(info entity) -> bool;
   consteval auto is_base(info entity) -> bool;
   consteval auto is_namespace(info entity) -> bool;
   consteval auto is_function(info entity) -> bool;
-  consteval auto is_static(info entity) -> bool;
   consteval auto is_variable(info entity) -> bool;
   consteval auto is_type(info entity) -> bool;
   consteval auto is_alias(info entity) -> bool;
@@ -1826,10 +1840,12 @@ namespace std::meta {
   consteval bool is_explicit(info r);
   consteval bool is_bit_field(info r);
   consteval bool has_static_storage_duration(info r);
+  consteval bool has_internal_linkage(info r);
+  consteval bool has_external_linkage(info r);
+  consteval bool has_linkage(info r);
 
   consteval bool is_namespace(info r);
   consteval bool is_function(info r);
-  consteval bool is_static(info r);
   consteval bool is_variable(info r);
   consteval bool is_type(info r);
   consteval bool is_alias(info r);
@@ -1840,6 +1856,8 @@ namespace std::meta {
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
   consteval bool has_template_arguments(info r);
+  consteval auto is_class_member(info entity) -> bool;
+  consteval auto is_namespace_member(info entity) -> bool;
   consteval bool is_nsdm(info r);
   consteval bool is_base(info r);
   consteval bool is_constructor(info r);
@@ -2082,6 +2100,15 @@ consteval bool has_static_storage_duration(info r);
 [#]{.pnum} *Returns*: `true` if `r` designates an object that has static storage duration. Otherwise, `false`.
 
 ```cpp
+consteval bool has_internal_linkage(info r);
+consteval bool has_external_linkage(info r);
+consteval bool has_linkage(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates an entity that has internal linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
+
+
+```cpp
 consteval bool is_namespace(info r);
 ```
 
@@ -2091,11 +2118,6 @@ consteval bool is_namespace(info r);
 consteval bool is_function(info r);
 ```
 [#]{.pnum} *Returns*: `true` if `r` designates a function or member function. Otherwise, `false`.
-
-```cpp
-consteval bool is_static(info r);
-```
-[#]{.pnum} *Return*: `true` if `r` designates a variable, function, or member function that is declared static. Otherwise, `false`.
 
 ```cpp
 consteval bool is_variable(info r);
@@ -2139,6 +2161,8 @@ consteval bool has_template_arguments(info r);
 
 
 ```cpp
+consteval auto is_class_member(info entity) -> bool;
+consteval auto is_namespace_member(info entity) -> bool;
 consteval bool is_nsdm(info r);
 consteval bool is_base(info r);
 consteval bool is_constructor(info r);
@@ -2146,7 +2170,7 @@ consteval bool is_destructor(info r);
 consteval bool is_special_member(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a class member is a non-static data member, base class, constructor, destructor, or special member, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, base class member, constructor, destructor, or special member, respectively. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
