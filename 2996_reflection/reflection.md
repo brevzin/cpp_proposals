@@ -1318,7 +1318,7 @@ namespace std::meta {
   consteval auto test_type(info templ, info type) -> bool;
   consteval auto test_types(info templ, span<info const> types) -> bool;
 
-  // @[other type predicates](#other-singular-reflection-predicates)@
+  // other type predicates (see @[the wording](#meta.reflection.queries-reflection-queries)@)
   consteval auto is_public(info r) -> bool;
   consteval auto is_protected(info r) -> bool;
   consteval auto is_private(info r) -> bool;
@@ -1337,6 +1337,7 @@ namespace std::meta {
   consteval auto is_class_member(info entity) -> bool;
   consteval auto is_namespace_member(info entity) -> bool;
   consteval auto is_nsdm(info entity) -> bool;
+  consteval auto is_static_member(info entity) -> bool;
   consteval auto is_base(info entity) -> bool;
   consteval auto is_namespace(info entity) -> bool;
   consteval auto is_function(info entity) -> bool;
@@ -1595,51 +1596,6 @@ static_assert(test_type(^std::is_class_v, ^S));
 An implementation is permitted to recognize standard predicate templates and implement `test_type` without actually instantiating the predicate template.
 In fact, that is recommended practice.
 
-### Other Singular Reflection Predicates
-
-:::bq
-```c++
-namespace std::meta {
-  consteval auto is_public(info r) -> bool;
-  consteval auto is_protected(info r) -> bool;
-  consteval auto is_private(info r) -> bool;
-  consteval auto is_accessible(info r) -> bool;
-  consteval auto is_virtual(info r) -> bool;
-  consteval auto is_pure_virtual(info entity) -> bool;
-  consteval auto is_override(info entity) -> bool;
-  consteval auto is_deleted(info entity) -> bool;
-  consteval auto is_defaulted(info entity) -> bool;
-  consteval auto is_explicit(info entity) -> bool;
-  consteval auto is_bit_field(info entity) -> bool;
-  consteval auto has_static_storage_duration(info r) -> bool;
-  consteval auto has_internal_linkage(info r) -> bool;
-  consteval auto has_external_linkage(info r) -> bool;
-  consteval auto has_linkage(info r) -> bool;
-
-  consteval auto is_class_member(info entity) -> bool;
-  consteval auto is_namespace_member(info entity) -> bool;
-  consteval auto is_nsdm(info entity) -> bool;
-  consteval auto is_base(info entity) -> bool;
-  consteval auto is_namespace(info entity) -> bool;
-  consteval auto is_function(info entity) -> bool;
-  consteval auto is_variable(info entity) -> bool;
-  consteval auto is_type(info entity) -> bool;
-  consteval auto is_alias(info entity) -> bool;
-  consteval auto is_incomplete_type(info entity) -> bool;
-  consteval auto is_template(info entity) -> bool;
-  consteval auto is_function_template(info entity) -> bool;
-  consteval auto is_variable_template(info entity) -> bool;
-  consteval auto is_class_template(info entity) -> bool;
-  consteval auto is_alias_template(info entity) -> bool;
-  consteval auto has_template_arguments(info r) -> bool;
-  consteval auto is_constructor(info r) -> bool;
-  consteval auto is_destructor(info r) -> bool;
-  consteval auto is_special_member(info r) -> bool;
-}
-```
-:::
-
-
 ### `reflect_value`
 
 :::bq
@@ -1860,6 +1816,7 @@ namespace std::meta {
   consteval auto is_class_member(info entity) -> bool;
   consteval auto is_namespace_member(info entity) -> bool;
   consteval bool is_nsdm(info r);
+  consteval bool is_static_member(info r);
   consteval bool is_base(info r);
   consteval bool is_constructor(info r);
   consteval bool is_destructor(info r);
@@ -2068,7 +2025,7 @@ consteval bool is_virtual(info r);
 consteval bool is_pure_virtual(info r);
 consteval bool is_override(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is pure virtual or an override, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is pure virtual or overrides another member function, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_deleted(info r);
@@ -2165,13 +2122,14 @@ consteval bool has_template_arguments(info r);
 consteval auto is_class_member(info entity) -> bool;
 consteval auto is_namespace_member(info entity) -> bool;
 consteval bool is_nsdm(info r);
+consteval bool is_static_member(info r);
 consteval bool is_base(info r);
 consteval bool is_constructor(info r);
 consteval bool is_destructor(info r);
 consteval bool is_special_member(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, base class member, constructor, destructor, or special member, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, static member, base class member, constructor, destructor, or special member, respectively. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
@@ -2211,7 +2169,7 @@ consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Mandates*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A reflection of the template, and the reflections of the template arguments, repectively.
+[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of, the specialization designated by `r`, repectively.
 
 [#]{.pnum} [*Example*:
 ```
