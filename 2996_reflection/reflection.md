@@ -1828,6 +1828,16 @@ namespace std::meta {
   consteval info template_of(info r);
   consteval vector<info> template_arguments_of(info r);
 
+  // [meta.reflection.member.queries], reflection member queries
+  template<class... Fs>
+    consteval vector<info> members_of(info r, Fs... filters);
+  template<class... Fs>
+    consteval vector<info> bases_of(info class_type, Fs... filters);
+  consteval vector<info> static_data_members_of(info class_type);
+  consteval vector<info> nonstatic_data_members_of(info class_type);
+  consteval vector<info> subobjects_of(info class_type);
+  consteval vector<info> enumerators_of(info enum_type);
+
   // [meta.reflection.unary.cat], primary type categories
   consteval bool is_void(info type);
   consteval bool is_null_pointer(info type);
@@ -2186,6 +2196,61 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 :::
 :::
 
+### [meta.reflection.member.queries], Reflection member queries
+
+::: bq
+::: addu
+```cpp
+template<class... Fs>
+  consteval vector<info> members_of(info r, Fs... filters);
+```
+[#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
+
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`, in the order in which they are declared. [Base classes precede any members and are returned in the order they are listed in the *base-specifier-list*.]{.note}
+
+```cpp
+template<class... Fs>
+  consteval vector<info> bases_of(info class_type, Fs... filters);
+```
+
+[#]{.pnum} *Mandates*: `class_type` designates a class type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_base, filters...);`
+
+```cpp
+consteval vector<info> static_data_members_of(info class_type);
+```
+
+[#]{.pnum} *Mandates*: `class_type` designates a class type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_variable);`
+
+```cpp
+consteval vector<info> nonstatic_data_members_of(info class_type);
+```
+
+[#]{.pnum} *Mandates*: `class_type` designates a class type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_nsdm);`
+
+```cpp
+consteval vector<info> subobjects_of(info class_type);
+```
+
+[#]{.pnum} *Mandates*: `class_type` designates a class type.
+
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(class_type)` followed by all the reflections in `nonstatic_data_members_of(class_type)`.
+
+```cpp
+consteval vector<info> enumerators_of(info enum_type);
+```
+
+[#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
+
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`.
+:::
+:::
+
 ### [meta.reflection.unary] Unary type traits
 
 ::: bq
@@ -2343,11 +2408,13 @@ consteval size_t extent(info type, unsigned i = 0);
 :::
 :::
 
-#### [meta.reflection.rel], Type relations
+### [meta.reflection.rel], Type relations
 
 ::: bq
 ::: addu
-[1]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+[1]{.pnum} The consteval functions specified in this clause may be used to query relationships between types at compile time.
+
+[#]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
 [#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL$` defined in this clause with signature `bool(std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-REL$(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
 
@@ -2372,6 +2439,14 @@ consteval bool is_nothrow_invocable_r(info result_type, info type, span<const in
 :::
 :::
 
+
+### [meta.reflection.trans], Transformatinos between types
+
+::: bq
+::: addu
+[1]{.pnum} Subclause [meta.reflection.trans] contains consteval functions that may be used to transform one type to another following some predefined rule.
+:::
+:::
 
 #### [meta.reflection.trans.cv], Const-volatile modifications
 ::: bq
