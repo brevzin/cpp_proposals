@@ -1731,6 +1731,7 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
 +    ^ ::
 +    ^ $namespace-name$
 +    ^ $nested-name-specifier$@~opt~@ $template-name$
++    ^ $nested-name-specifier$@~opt~@ $concept-name$
 +    ^ $type-id$
 +    ^ $cast-expression$
 ```
@@ -1742,13 +1743,38 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
 ::: bq
 ::: addu
+**The Reflection Operator   [expr.reflect]**
+
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
-[#]{.pnum} When applied to `::`, the reflection operator produces a reflection for the global scope.
+[#]{.pnum} An ambiguity can arise between the interpretation of the operand of the reflection operator as a `$type-id$` or a `$cast-expression$`; in such cases, the `$type-id$` treatment is chosen.
+Parentheses can be introduced to force the `$cast-expression$` interpretation.
+
+
+[#]{.pnum} [*Example*
+```
+static_assert(is_type(^int())); // ^ applies to the type-id "int()"; not the cast "int()".
+static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())".
+
+template<bool> struct X;
+consteval void g(std::meta::info r) {
+  if (r == ^int && true);  // Error: ^ applies to the type-id "int&&".
+  if (r == (^int) && true);  // Okay.
+  if (r == ^X < true);  // Error: "<" is an angle bracket.
+  if (r == (^X) < true);  // Okay.
+}
+
+
+```
+-*end example*]
+
+[#]{.pnum} When applied to `::`, the reflection operator produces a reflection for the global namespace.
 When applied to a `$namespace-name$`, the reflection produces a reflection for the indicated namespace or namespace alias.
 
 [#]{.pnum} When applied to a `$template-name$`, the reflection produces a reflection for the indicated template.
+
+[#]{.pnum} When applied to a `$concept-name$`, the reflection produces a reflection for the indicated concept.
 
 [#]{.pnum} When applied to a `$type-id$`, the reflection produces a reflection for the indicated type or type-alias.
 
@@ -1765,6 +1791,59 @@ constexpr auto r = ^std::vector;
 — *end example* ]
 :::
 :::
+
+
+### [expr.const] Constant Expressions
+
+Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]/20:
+
+:::bq
+:::addu
+
+An expression or conversion is _plainly constant-evaluated_ if it is:
+
+--- a `$constant-expression$`, or
+
+--- the condition of a constexpr if statement ([stmt.if]{.sref}),
+
+--- the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+
+--- an immediate invocation, unless it
+      (a) results from the substitution of template parameters in a concept-id ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
+      (b) a manifestly constant-evaluated initialized of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}) .
+
+
+:::
+:::
+
+
+
+### [lex.phases] Phases of translation
+
+Modify the wording for phase 7 of [lex.phases] as follows:
+
+:::bq
+
+[7.]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
+[ Plainly constant-evaluated expressions appearing outside template declarations are evaluated in lexical order.]{.add}
+...
+
+:::
+
+Modify paragraph 8 of [lex.phases] as follows:
+
+
+:::bq
+
+[8.]{.pnum} ...
+All the required instantiations are performed to produce instantiation units.
+[ Plainly constant-evaluated expressions appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.add}
+...
+
+:::
+
+
+
 
 ## Library
 
