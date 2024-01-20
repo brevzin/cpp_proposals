@@ -1896,12 +1896,12 @@ namespace std::meta {
 
   // [meta.reflection.member.queries], reflection member queries
   template<class... Fs>
-    consteval vector<info> members_of(info r, Fs... filters);
+    consteval vector<info> members_of(info type, Fs... filters);
   template<class... Fs>
-    consteval vector<info> bases_of(info class_type, Fs... filters);
-  consteval vector<info> static_data_members_of(info class_type);
-  consteval vector<info> nonstatic_data_members_of(info class_type);
-  consteval vector<info> subobjects_of(info class_type);
+    consteval vector<info> bases_of(info type, Fs... filters);
+  consteval vector<info> static_data_members_of(info type);
+  consteval vector<info> nonstatic_data_members_of(info type);
+  consteval vector<info> subobjects_of(info type);
   consteval vector<info> enumerators_of(info enum_type);
 
   // [meta.reflection.unary.cat], primary type categories
@@ -2272,40 +2272,42 @@ template<class... Fs>
 ```
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of all the members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`, in the order in which they are declared. [Base classes precede any members and are returned in the order they are listed in the *base-specifier-list*.]{.note}
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
+Data members are returned in the order in which they are declared, but the order of member functions and member types is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> bases_of(info class_type, Fs... filters);
+  consteval vector<info> bases_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_base, filters...);`
+[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes, if any, of `C` such that `(filters(class_type) && ...)` is `true`.
+The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
 
 ```cpp
-consteval vector<info> static_data_members_of(info class_type);
+consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_variable);`
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
 ```cpp
-consteval vector<info> nonstatic_data_members_of(info class_type);
+consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_nsdm);`
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nsdm);`
 
 ```cpp
-consteval vector<info> subobjects_of(info class_type);
+consteval vector<info> subobjects_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(class_type)` followed by all the reflections in `nonstatic_data_members_of(class_type)`.
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> enumerators_of(info enum_type);
@@ -2313,7 +2315,7 @@ consteval vector<info> enumerators_of(info enum_type);
 
 [#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declard.
 :::
 :::
 
