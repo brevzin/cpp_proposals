@@ -26,7 +26,7 @@ tag: constexpr
 
 Since [@P2996R1], several changes to the overall library API:
 
-* added `qualiifed_name_of` (to partner with `name_of`)
+* added `qualified_name_of` (to partner with `name_of`)
 * removed `is_static` for being ambiguous, added `has_internal_linkage` (and `has_linkage` and `has_external_linkage`) and `is_static_member` instead
 * added `is_class_member` and `is_namespace_member`
 
@@ -1718,6 +1718,23 @@ So we're doing it.
 
 ## Language
 
+### [lex.phases] Phases of translation
+
+Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
+
+:::bq
+
+[7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
+[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.]{.addu}
+[...]
+
+[8]{.pnum} [...]
+All the required instantiations are performed to produce instantiation units.
+[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.addu}
+[...]
+
+:::
+
 ### [expr.unary.general]
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
@@ -1754,15 +1771,15 @@ Parentheses can be introduced to force the `$cast-expression$` interpretation.
 
 [#]{.pnum} [*Example*
 ```
-static_assert(is_type(^int())); // ^ applies to the type-id "int()"; not the cast "int()".
-static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())".
+static_assert(is_type(^int()));    // ^ applies to the type-id "int()"; not the cast "int()"
+static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())"
 
 template<bool> struct X;
 consteval void g(std::meta::info r) {
-  if (r == ^int && true);  // Error: ^ applies to the type-id "int&&".
-  if (r == (^int) && true);  // Okay.
-  if (r == ^X < true);  // Error: "<" is an angle bracket.
-  if (r == (^X) < true);  // Okay.
+  if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
+  if (r == (^int) && true);  // OK
+  if (r == ^X < true);       // error: "<" is an angle bracket
+  if (r == (^X) < true);     // OK
 }
 
 
@@ -1795,54 +1812,24 @@ constexpr auto r = ^std::vector;
 
 ### [expr.const] Constant Expressions
 
-Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]/20:
+Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]{.sref}/20:
 
 :::bq
 :::addu
 
-An expression or conversion is _plainly constant-evaluated_ if it is:
+[21]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
 
---- a `$constant-expression$`, or
+* [#.#]{.pnum} a `$constant-expression$`, or
+* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} an immediate invocation, unless it
 
---- the condition of a constexpr if statement ([stmt.if]{.sref}),
-
---- the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
-
---- an immediate invocation, unless it
-      (a) results from the substitution of template parameters in a concept-id ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
-      (b) a manifestly constant-evaluated initialized of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}) .
+  * [#.#.#]{.pnum} results from the substitution of template parameters in a concept-id ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
+  * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
 
 
 :::
 :::
-
-
-
-### [lex.phases] Phases of translation
-
-Modify the wording for phase 7 of [lex.phases] as follows:
-
-:::bq
-
-[7.]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
-[ Plainly constant-evaluated expressions appearing outside template declarations are evaluated in lexical order.]{.add}
-...
-
-:::
-
-Modify paragraph 8 of [lex.phases] as follows:
-
-
-:::bq
-
-[8.]{.pnum} ...
-All the required instantiations are performed to produce instantiation units.
-[ Plainly constant-evaluated expressions appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.add}
-...
-
-:::
-
-
 
 
 ## Library
