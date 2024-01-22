@@ -1350,6 +1350,7 @@ namespace std::meta {
   consteval auto is_variable_template(info entity) -> bool;
   consteval auto is_class_template(info entity) -> bool;
   consteval auto is_alias_template(info entity) -> bool;
+  consteval auto is_concept(info entity) -> bool;
   consteval auto has_template_arguments(info r) -> bool;
   consteval auto is_constructor(info r) -> bool;
   consteval auto is_destructor(info r) -> bool;
@@ -1878,6 +1879,7 @@ namespace std::meta {
   consteval bool is_variable_template(info r);
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
+  consteval bool is_concept(info r);
   consteval bool has_template_arguments(info r);
   consteval auto is_class_member(info entity) -> bool;
   consteval auto is_namespace_member(info entity) -> bool;
@@ -2185,8 +2187,9 @@ consteval bool is_function_template(info r);
 consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
+consteval bool is_concept(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, or alias template, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, alias template, or concept, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool has_template_arguments(info r);
