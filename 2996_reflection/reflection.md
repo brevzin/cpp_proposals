@@ -105,9 +105,14 @@ Other advantages of a single opaque type include:
 
 Lock3 implemented the equivalent of much that is proposed here in a fork of Clang (specifically, it worked with the P1240 proposal, but also included several other capabilities including a first-class injection mechanism).
 
-EDG has an ongoing implementation of this proposal that is currently available on Compiler Explorer (thank you, Matt Godbolt). Nearly all of the examples below have links to compiler explorer demonstrating them.
+EDG has an ongoing implementation of this proposal that is currently available on Compiler Explorer (thank you, Matt Godbolt).
+Nearly all of the examples below have links to compiler explorer demonstrating them.
 
-Note that the implementation is not complete (notably, for debugging purposes, `name_of(^int)` yields an empty string and `name_of(^std::optional<std::string>)` yields `"optional"`, neither of which are what we want), and does not include some of the other language features we would like to be able to take advantage of (like expansion statements) but will be regularly be updated as this paper progresses. Notably, it does not currently support expansion statements - and so a workaround that will be used in the linked implementations of examples is the following facility:
+The implementation is not complete (notably, for debugging purposes, `name_of(^int)` yields an empty string and `name_of(^std::optional<std::string>)` yields `"optional"`, neither of which are what we want).
+The implementation will evolve along with this paper.
+The EDG implementation also lacks some of the other language features we would like to be able to take advantage of.
+In particular, it does not support expansion statements.
+A workaround that will be used in the linked implementations of examples is the following facility:
 
 ::: bq
 ```cpp
@@ -1014,6 +1019,26 @@ The current proposal requires that the _cast-expression_ be:
 
 In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to not evaluate to constant.
 
+### Syntax discussion
+
+The original TS landed on `reflexpr(...)` as the syntax to reflect source constructs and P1240R0 adopted that syntax as well.
+As more examples were discussed, it became clear that that syntax was both (a) too "heavy" and (b) insufficiently distinct from a function call.
+SG7 eventually agreed upon the prefix `^` operator: The "upward arrow" interpretation of the caret matches the "lift" or "raise" verbs that are sometimes used to decribe the reflection operation in other contexts.
+
+The caret already has a meaning as a binary operator in C++ ("exclusive OR"), but that is clearly not conflicting with a prefix operator.
+In C++/CLI (a Microsoft C++ dialect) the caret is also used as a new kind of `$ptr-operator$` ([dcl.decl.general]{.sref}) to declare "handles".
+That is also not conflicting with the use of the caret as a unary operator because C++/CLI uses the usual prefix `*` operator to dereference handled.
+
+Apple also uses the caret in the syntax "blocks" and unfortunately we believe that does conflict with our proposed use of the caret.
+
+Since the syntax discussions in SG-7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``, and `$`.
+Of those, `@` seems the most likely substitute for the caret, because `$` is used for splice-like operations in other languages and `` ` `` is suggestive of some kind of quoting (which may be useful in future metaprogramming syntax developments).
+
+Another option might be the use of the backslash (`\`).
+It currently has a meaning at the end of a line of source code, but we could still use it as a prefix operator with the constraint that the reflected operand has to start on the same source line.
+
+
+
 ## Splicers (`[:`...`:]`)
 
 A reflection can be "spliced" into source code using one of several _splicer_ forms:
@@ -1112,6 +1137,23 @@ constexpr auto struct_to_tuple(T const& t) {
 ```
 :::
 
+
+### Syntax discussion
+
+Early discussions of splice-like constructs (related to the TS design) considered using `unreflexpr(...)` for that purpose.
+P1240R0 adopted that option for _expression_ splicing, observing that a single splicing syntax could not viably be parsed (some disambiguation is needed to distinguish types and templates).
+SG-7 eventually agreed with the `[: ... :]` syntax --- with disambiguating tokens such as `typename` where needed --- which is a little lighter and more distinctive.
+
+A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators.
+However, there are other possibilities.
+For example, now that `$` is available in the basic source character set, we might consider `@$@<@_expr_@>`.
+This is somewhat natural to those of us that have used systems where `$` is used to expand placeholders in document templates.
+
+The prefix `namespace` is not strictly needed at all and should perhaps be dropped since it's generally clear where a namespace name appears.
+
+The prefixes `typename` and `template` are only needed in some cases where the operand of the splice is a dependent expression.
+In our proposal, however, we only make `typename` optional in the same contexts where it would be optional for qualified names with dependent name qualifiers.
+That has the advantage to catch unfortunate errors while keeping a single rule and helping human readers parse the intended meaning of otherwise ambiguous constructs.
 
 
 ## `std::meta::info`
@@ -1718,6 +1760,62 @@ So we're doing it.
 
 ## Language
 
+### [lex.operators]
+
+Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operators]{.sref} to include splicer delimiters:
+
+::: bq
+```
+  $operator-or-punctuator$: @_one of_@
+         {        }        [        ]        (        )        @[`[:        :]`]{.add}@
+         <:       :>       <%       %>       ;        :        ...
+         ?        ::       .       .*        ->       ->*      ~
+         !        +        -        *        /        %        ^        &        |
+         =        +=       -=       *=       /=       %=       ^=       &=       |=
+         ==       !=       <        >        <=       >=       <=>      &&       ||
+         <<       >>       <<=      >>=      ++       --       ,
+         and      or       xor      not      bitand   bitor    compl
+         and_eq   or_eq    xor_eq   not_eq
+```
+:::
+
+
+### [expr.prim] Primary expressions
+
+Change the grammar for `$primary-expression$` as follows:
+
+::: bq
+```diff
+  $primary-expression$:
+     $literal$
+     this
+     ( $expression$ )
+     $id-expression$
+     $lambda-expression$
+     $fold-expression$
+     $requires-expression$
++    [: $constant-expression$ :]
++    [: $constant-expression$ :] < $template-argument-list$@~_opt_~@ >
+```
+:::
+
+### [expr.prim.splice] Expression splicing
+
+Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
+
+::: bq
+::: addu
+**Expression Splicing   [expr.prim.splice]**
+
+[#]{.pnum} In a `$primary-expression$` of the form `[: $constant-expression$ :]` or `[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
+
+[#]{.pnum} In a `$primary-expression$` of the form `[: $constant-expression$ :]` or `[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
+
+[#]{.pnum} In a `$primary-expression$` of the form `[: $constant-expression$ :]` or `[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
+
+:::
+:::
+
 ### [expr.unary.general]
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
@@ -1730,14 +1828,14 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
      $delete-expression$
 +    ^ ::
 +    ^ $namespace-name$
-+    ^ $nested-name-specifier$@~opt~@ $template-name$
-+    ^ $nested-name-specifier$@~opt~@ $concept-name$
++    ^ $nested-name-specifier$@~_opt_~@ $template-name$
++    ^ $nested-name-specifier$@~_opt_~@ $concept-name$
 +    ^ $type-id$
 +    ^ $cast-expression$
 ```
 :::
 
-### [expr.reflect] The Reflection operator
+### [expr.reflect] The reflection operator
 
 Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
