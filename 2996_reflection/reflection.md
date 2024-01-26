@@ -26,7 +26,7 @@ tag: constexpr
 
 Since [@P2996R1], several changes to the overall library API:
 
-* added `qualiifed_name_of` (to partner with `name_of`)
+* added `qualified_name_of` (to partner with `name_of`)
 * removed `is_static` for being ambiguous, added `has_internal_linkage` (and `has_linkage` and `has_external_linkage`) and `is_static_member` instead
 * added `is_class_member` and `is_namespace_member`
 
@@ -1392,6 +1392,7 @@ namespace std::meta {
   consteval auto is_variable_template(info entity) -> bool;
   consteval auto is_class_template(info entity) -> bool;
   consteval auto is_alias_template(info entity) -> bool;
+  consteval auto is_concept(info entity) -> bool;
   consteval auto has_template_arguments(info r) -> bool;
   consteval auto is_constructor(info r) -> bool;
   consteval auto is_destructor(info r) -> bool;
@@ -1816,6 +1817,25 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 :::
 :::
 
+
+### [lex.phases] Phases of translation
+
+Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
+
+:::bq
+
+[7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
+[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.]{.addu}
+[...]
+
+[8]{.pnum} [...]
+All the required instantiations are performed to produce instantiation units.
+[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.addu}
+[...]
+
+:::
+
+
 ### [expr.unary.general]
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
@@ -1852,15 +1872,15 @@ Parentheses can be introduced to force the `$cast-expression$` interpretation.
 
 [#]{.pnum} [*Example*
 ```
-static_assert(is_type(^int())); // ^ applies to the type-id "int()"; not the cast "int()".
-static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())".
+static_assert(is_type(^int()));    // ^ applies to the type-id "int()"; not the cast "int()"
+static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())"
 
 template<bool> struct X;
 consteval void g(std::meta::info r) {
-  if (r == ^int && true);  // Error: ^ applies to the type-id "int&&".
-  if (r == (^int) && true);  // Okay.
-  if (r == ^X < true);  // Error: "<" is an angle bracket.
-  if (r == (^X) < true);  // Okay.
+  if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
+  if (r == (^int) && true);  // OK
+  if (r == ^X < true);       // error: "<" is an angle bracket
+  if (r == (^X) < true);     // OK
 }
 
 
@@ -1893,54 +1913,24 @@ constexpr auto r = ^std::vector;
 
 ### [expr.const] Constant Expressions
 
-Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]/20:
+Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]{.sref}/20:
 
 :::bq
 :::addu
 
-An expression or conversion is _plainly constant-evaluated_ if it is:
+[21]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
 
---- a `$constant-expression$`, or
+* [#.#]{.pnum} a `$constant-expression$`, or
+* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} an immediate invocation, unless it
 
---- the condition of a constexpr if statement ([stmt.if]{.sref}),
-
---- the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
-
---- an immediate invocation, unless it
-      (a) results from the substitution of template parameters in a concept-id ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
-      (b) a manifestly constant-evaluated initialized of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}) .
+  * [#.#.#]{.pnum} results from the substitution of template parameters in a concept-id ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
+  * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
 
 
 :::
 :::
-
-
-
-### [lex.phases] Phases of translation
-
-Modify the wording for phase 7 of [lex.phases] as follows:
-
-:::bq
-
-[7.]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
-[ Plainly constant-evaluated expressions appearing outside template declarations are evaluated in lexical order.]{.add}
-...
-
-:::
-
-Modify paragraph 8 of [lex.phases] as follows:
-
-
-:::bq
-
-[8.]{.pnum} ...
-All the required instantiations are performed to produce instantiation units.
-[ Plainly constant-evaluated expressions appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.add}
-...
-
-:::
-
-
 
 
 ## Library
@@ -1989,6 +1979,7 @@ namespace std::meta {
   consteval bool is_variable_template(info r);
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
+  consteval bool is_concept(info r);
   consteval bool has_template_arguments(info r);
   consteval auto is_class_member(info entity) -> bool;
   consteval auto is_namespace_member(info entity) -> bool;
@@ -2007,12 +1998,12 @@ namespace std::meta {
 
   // [meta.reflection.member.queries], reflection member queries
   template<class... Fs>
-    consteval vector<info> members_of(info r, Fs... filters);
+    consteval vector<info> members_of(info type, Fs... filters);
   template<class... Fs>
-    consteval vector<info> bases_of(info class_type, Fs... filters);
-  consteval vector<info> static_data_members_of(info class_type);
-  consteval vector<info> nonstatic_data_members_of(info class_type);
-  consteval vector<info> subobjects_of(info class_type);
+    consteval vector<info> bases_of(info type, Fs... filters);
+  consteval vector<info> static_data_members_of(info type);
+  consteval vector<info> nonstatic_data_members_of(info type);
+  consteval vector<info> subobjects_of(info type);
   consteval vector<info> enumerators_of(info enum_type);
 
   // [meta.reflection.unary.cat], primary type categories
@@ -2296,8 +2287,9 @@ consteval bool is_function_template(info r);
 consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
+consteval bool is_concept(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, or alias template, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, alias template, or concept, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool has_template_arguments(info r);
@@ -2383,40 +2375,42 @@ template<class... Fs>
 ```
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of all the members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`, in the order in which they are declared. [Base classes precede any members and are returned in the order they are listed in the *base-specifier-list*.]{.note}
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
+Data members are returned in the order in which they are declared, but the order of member functions and member types is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> bases_of(info class_type, Fs... filters);
+  consteval vector<info> bases_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_base, filters...);`
+[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes, if any, of `C` such that `(filters(class_type) && ...)` is `true`.
+The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
 
 ```cpp
-consteval vector<info> static_data_members_of(info class_type);
+consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_variable);`
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
 ```cpp
-consteval vector<info> nonstatic_data_members_of(info class_type);
+consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(class_type, is_nsdm);`
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nsdm);`
 
 ```cpp
-consteval vector<info> subobjects_of(info class_type);
+consteval vector<info> subobjects_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `class_type` designates a class type.
+[#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(class_type)` followed by all the reflections in `nonstatic_data_members_of(class_type)`.
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> enumerators_of(info enum_type);
@@ -2424,7 +2418,7 @@ consteval vector<info> enumerators_of(info enum_type);
 
 [#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declard.
 :::
 :::
 
