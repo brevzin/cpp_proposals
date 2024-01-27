@@ -1178,7 +1178,7 @@ namespace std {
 
 In our initial proposal a value of type `std::meta::info` can represent:
 
-  - any (C++) type and type-alias
+  - any (C++) type and type alias
   - any function or member function
   - any variable, static data member, or structured binding
   - any non-static data member
@@ -1916,7 +1916,7 @@ When applied to a `$namespace-name$`, the reflection produces a reflection for t
 
 [#]{.pnum} When applied to a `$concept-name$`, the reflection produces a reflection for the indicated concept.
 
-[#]{.pnum} When applied to a `$type-id$`, the reflection produces a reflection for the indicated type or type-alias.
+[#]{.pnum} When applied to a `$type-id$`, the reflection produces a reflection for the indicated type or type alias.
 
 [#]{.pnum} When applied to a `$cast-expression$`, the `$cast-expression$` shall be a constant expression ([expr.const]{.sref}) or an `$id-expression$` ([expr.prim.id]{.sref}) designating a variable, a function, an enumerator constant, or a nonstatic member.
 The `$cast-expression$` is not evaluated.
@@ -1954,6 +1954,19 @@ Add a new paragraph after the definition of _manifestly constant-evaluated_ [exp
 :::
 :::
 
+### [dcl.typedef] The `typedef` specifier
+
+Introduce the term "type alias" to [dcl.typedef]{.sref}:
+
+::: bq
+[1]{.pnum} [...] A name declared with the `typedef` specifier becomes a typedef-name. A typedef-name names the type associated with the identifier ([dcl.decl]) or simple-template-id ([temp.pre]); a typedef-name is thus a synonym for another type. A typedef-name does not introduce a new type the way a class declaration ([class.name]) or enum declaration ([dcl.enum]) does.
+
+[2]{.pnum} A *typedef-name* can also be introduced by an alias-declaration. The identifier following the using keyword is not looked up; it becomes a typedef-name and the optional attribute-specifier-seq following the identifier appertains to that typedef-name. Such a typedef-name has the same semantics as if it were introduced by the typedef specifier. In particular, it does not define a new type.
+
+::: addu
+[*]{.pnum} A *type alias* is either a name declared with the `typedef` specifier or a name introduced by an *alias-declaration*.
+:::
+:::
 
 ## Library
 
@@ -2450,7 +2463,7 @@ consteval vector<info> enumerators_of(info enum_type);
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, that argument shall be a reflection of a type or type-alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type-alias.
+[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, that argument shall be a reflection of a type or type alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type alias.
 :::
 :::
 
