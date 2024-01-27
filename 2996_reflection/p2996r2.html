@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-01-26" />
+  <meta name="dcterms.date" content="2024-01-27" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-01-26</td>
+    <td>2024-01-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -627,11 +627,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#language"><span class="toc-section-number">5.1</span> Language<span></span></a>
 <ul>
-<li><a href="#lex.operators-operators-and-punctuators"><span class="toc-section-number">5.1.1</span> [lex.operators] Operators and punctuators<span></span></a></li>
+<li><a href="#lex.phases-phases-of-translation"><span class="toc-section-number">5.1.1</span> [lex.phases] Phases of translation<span></span></a></li>
 <li><a href="#lex.pptoken-preprocessing-tokens"><span class="toc-section-number">5.1.2</span> [lex.pptoken] Preprocessing tokens<span></span></a></li>
-<li><a href="#expr.prim-primary-expressions"><span class="toc-section-number">5.1.3</span> [expr.prim] Primary expressions<span></span></a></li>
-<li><a href="#expr.prim.splice-expression-splicing"><span class="toc-section-number">5.1.4</span> [expr.prim.splice] Expression splicing<span></span></a></li>
-<li><a href="#lex.phases-phases-of-translation"><span class="toc-section-number">5.1.5</span> [lex.phases] Phases of translation<span></span></a></li>
+<li><a href="#lex.operators-operators-and-punctuators"><span class="toc-section-number">5.1.3</span> [lex.operators] Operators and punctuators<span></span></a></li>
+<li><a href="#expr.prim-primary-expressions"><span class="toc-section-number">5.1.4</span> [expr.prim] Primary expressions<span></span></a></li>
+<li><a href="#expr.prim.splice-expression-splicing"><span class="toc-section-number">5.1.5</span> [expr.prim.splice] Expression splicing<span></span></a></li>
 <li><a href="#expr.unary.general"><span class="toc-section-number">5.1.6</span> [expr.unary.general]<span></span></a></li>
 <li><a href="#expr.reflect-the-reflection-operator"><span class="toc-section-number">5.1.7</span> [expr.reflect] The reflection operator<span></span></a></li>
 <li><a href="#expr.const-constant-expressions"><span class="toc-section-number">5.1.8</span> [expr.const] Constant Expressions<span></span></a></li>
@@ -1952,7 +1952,23 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Having <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>meow</code> for every trait <code class="sourceCode cpp">std<span class="op">::</span>meow</code> is more straightforward and will likely be faster to compile, though means we will have a much larger library API. There are quite a few traits in <span>21 <a href="https://wg21.link/meta">[meta]</a></span> - but it should be easy enough to specify all of them. So we’re doing it.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposed-wording"><span class="header-section-number">5</span> Proposed Wording<a href="#proposed-wording" class="self-link"></a></h1>
 <h2 data-number="5.1" id="language"><span class="header-section-number">5.1</span> Language<a href="#language" class="self-link"></a></h2>
-<h3 data-number="5.1.1" id="lex.operators-operators-and-punctuators"><span class="header-section-number">5.1.1</span> [lex.operators] Operators and punctuators<a href="#lex.operators-operators-and-punctuators" class="self-link"></a></h3>
+<h3 data-number="5.1.1" id="lex.phases-phases-of-translation"><span class="header-section-number">5.1.1</span> [lex.phases] Phases of translation<a href="#lex.phases-phases-of-translation" class="self-link"></a></h3>
+<p>Modify the wording for phases 7-8 of <span>5.2 <a href="https://wg21.link/lex.phases">[lex.phases]</a></span> as follows:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">7</a></span> Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated. <span class="addu">Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.</span> […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">8</a></span> […] All the required instantiations are performed to produce instantiation units. <span class="addu">Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.</span> […]</p>
+</blockquote>
+<h3 data-number="5.1.2" id="lex.pptoken-preprocessing-tokens"><span class="header-section-number">5.1.2</span> [lex.pptoken] Preprocessing tokens<a href="#lex.pptoken-preprocessing-tokens" class="self-link"></a></h3>
+<p>Add a bullet after <span>5.4 <a href="https://wg21.link/lex.pptoken">[lex.pptoken]</a></span> bullet (3.2):</p>
+<blockquote>
+<p>…</p>
+<p>— Otherwise, if the next three characters are <code class="sourceCode cpp"><span class="op">&lt;::</span></code> and the subsequent character is neither <code class="sourceCode cpp"><span class="op">:</span></code> nor <code class="sourceCode cpp"><span class="op">&gt;</span></code>, the <code class="sourceCode cpp"><span class="op">&lt;</span></code> is treated as a preprocessing token by itself and not as the first character of the alternative token <code class="sourceCode cpp"><span class="op">&lt;:</span></code>.</p>
+<div class="addu">
+<p>— Otherwise, if the next three characters are <code class="sourceCode cpp"><span class="op">[::</span></code> and the subsequent character is not <code class="sourceCode cpp"><span class="op">:</span></code>, the <code class="sourceCode cpp"><span class="op">[</span></code> is treated as a preprocessing token by itself and not as the first character of the preprocessing token <code class="sourceCode cpp"><span class="op">[:</span></code>.</p>
+</div>
+<p>…</p>
+</blockquote>
+<h3 data-number="5.1.3" id="lex.operators-operators-and-punctuators"><span class="header-section-number">5.1.3</span> [lex.operators] Operators and punctuators<a href="#lex.operators-operators-and-punctuators" class="self-link"></a></h3>
 <p>Change the grammar for <code class="sourceCode cpp"><em>operator-or-punctuator</em></code> in paragraph 1 of <span>5.12 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span> to include splicer delimiters:</p>
 <blockquote>
 <div class="sourceCode" id="cb66"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb66-1"><a href="#cb66-1"></a>  <em>operator-or-punctuator</em>: <em>one of</em></span>
@@ -1966,17 +1982,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb66-9"><a href="#cb66-9"></a>         and      or       xor      not      bitand   bitor    compl</span>
 <span id="cb66-10"><a href="#cb66-10"></a>         and_eq   or_eq    xor_eq   not_eq</span></code></pre></div>
 </blockquote>
-<h3 data-number="5.1.2" id="lex.pptoken-preprocessing-tokens"><span class="header-section-number">5.1.2</span> [lex.pptoken] Preprocessing tokens<a href="#lex.pptoken-preprocessing-tokens" class="self-link"></a></h3>
-<p>Add a bullet after <span>5.4 <a href="https://wg21.link/lex.pptoken">[lex.pptoken]</a></span> bullet (3.2):</p>
-<blockquote>
-<p>…</p>
-<p>— Otherwise, if the next three characters are <code class="sourceCode cpp"><span class="op">&lt;::</span></code> and the subsequent character is neither <code class="sourceCode cpp"><span class="op">:</span></code> nor <code class="sourceCode cpp"><span class="op">&gt;</span></code>, the <code class="sourceCode cpp"><span class="op">&lt;</span></code> is treated as a preprocessing token by itself and not as the first character of the alternative token <code class="sourceCode cpp"><span class="op">&lt;:</span></code>.</p>
-<div class="addu">
-<p>— Otherwise, if the next three characters are <code class="sourceCode cpp"><span class="op">[::</span></code> and the subsequent character is not <code class="sourceCode cpp"><span class="op">:</span></code>, the <code class="sourceCode cpp"><span class="op">[</span></code> is treated as a preprocessing token by itself and not as the first character of the preprocessing token <code class="sourceCode cpp"><span class="op">[:</span></code>.</p>
-</div>
-<p>…</p>
-</blockquote>
-<h3 data-number="5.1.3" id="expr.prim-primary-expressions"><span class="header-section-number">5.1.3</span> [expr.prim] Primary expressions<a href="#expr.prim-primary-expressions" class="self-link"></a></h3>
+<h3 data-number="5.1.4" id="expr.prim-primary-expressions"><span class="header-section-number">5.1.4</span> [expr.prim] Primary expressions<a href="#expr.prim-primary-expressions" class="self-link"></a></h3>
 <p>Change the grammar for <code class="sourceCode cpp"><em>primary-expression</em></code> in <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span> as follows:</p>
 <blockquote>
 <div>
@@ -1992,22 +1998,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb67-10"><a href="#cb67-10"></a><span class="va">+    template[: <em>constant-expression</em> :] &lt; <em>template-argument-list</em><sub><em>opt</em></sub> &gt;</span></span></code></pre></div>
 </div>
 </blockquote>
-<h3 data-number="5.1.4" id="expr.prim.splice-expression-splicing"><span class="header-section-number">5.1.4</span> [expr.prim.splice] Expression splicing<a href="#expr.prim.splice-expression-splicing" class="self-link"></a></h3>
+<h3 data-number="5.1.5" id="expr.prim.splice-expression-splicing"><span class="header-section-number">5.1.5</span> [expr.prim.splice] Expression splicing<a href="#expr.prim.splice-expression-splicing" class="self-link"></a></h3>
 <p>Add a new subsection of <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span> following <span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
 <blockquote>
 <div class="addu">
 <p><strong>Expression Splicing [expr.prim.splice]</strong></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> For a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span></code> or <code class="sourceCode cpp"><span class="kw">template</span><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span>  <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code> the <code class="sourceCode cpp"><em>constant-expression</em></code> shall be a converted constant expression (<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>) of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> For a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="kw">template</span><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span>  <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code> the converted <code class="sourceCode cpp"><em>constant-expression</em></code> shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template. The meaning of such a construct is identical to that of a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><em>template-name</em> <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code> where <code class="sourceCode cpp"><em>template-name</em></code> denotes the reflected template or concept (ignoring access checking on the <code class="sourceCode cpp"><em>template-name</em></code>).</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> For a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span></code> where the converted <code class="sourceCode cpp"><em>constant-expression</em></code> evaluates to a reflection for a variable, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><em>id-expression</em></code> that would denote the reflected entity (ignoring access checking).</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> Otherwise, for a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span></code> the converted <code class="sourceCode cpp"><em>constant-expression</em></code> shall evaluate to a reflection for a constant value and the expression shall evaluate to that value.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">1</a></span> For a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span></code> or <code class="sourceCode cpp"><span class="kw">template</span><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span>  <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code> the <code class="sourceCode cpp"><em>constant-expression</em></code> shall be a converted constant expression (<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>) of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">2</a></span> For a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="kw">template</span><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span>  <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code> the converted <code class="sourceCode cpp"><em>constant-expression</em></code> shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template. The meaning of such a construct is identical to that of a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><em>template-name</em> <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code> where <code class="sourceCode cpp"><em>template-name</em></code> denotes the reflected template or concept (ignoring access checking on the <code class="sourceCode cpp"><em>template-name</em></code>).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">3</a></span> For a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span></code> where the converted <code class="sourceCode cpp"><em>constant-expression</em></code> evaluates to a reflection for a variable, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><em>id-expression</em></code> that would denote the reflected entity (ignoring access checking).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">4</a></span> Otherwise, for a <code class="sourceCode cpp"><em>primary-expression</em></code> of the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-expression</em> <span class="op">:]</span></code> the converted <code class="sourceCode cpp"><em>constant-expression</em></code> shall evaluate to a reflection for a constant value and the expression shall evaluate to that value.</p>
 </div>
-</blockquote>
-<h3 data-number="5.1.5" id="lex.phases-phases-of-translation"><span class="header-section-number">5.1.5</span> [lex.phases] Phases of translation<a href="#lex.phases-phases-of-translation" class="self-link"></a></h3>
-<p>Modify the wording for phases 7-8 of <span>5.2 <a href="https://wg21.link/lex.phases">[lex.phases]</a></span> as follows:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">7</a></span> Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated. <span class="addu">Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.</span> […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">8</a></span> […] All the required instantiations are performed to produce instantiation units. <span class="addu">Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.</span> […]</p>
 </blockquote>
 <h3 data-number="5.1.6" id="expr.unary.general"><span class="header-section-number">5.1.6</span> [expr.unary.general]<a href="#expr.unary.general" class="self-link"></a></h3>
 <p>Change <span>7.6.2.1 <a href="https://wg21.link/expr.unary.general">[expr.unary.general]</a></span> paragraph 1 to add productions for the new operator:</p>

@@ -1767,6 +1767,38 @@ So we're doing it.
 
 ## Language
 
+### [lex.phases] Phases of translation
+
+Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
+
+:::bq
+
+[7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
+[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.]{.addu}
+[...]
+
+[8]{.pnum} [...]
+All the required instantiations are performed to produce instantiation units.
+[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.addu}
+[...]
+
+:::
+
+### [lex.pptoken] Preprocessing tokens
+
+Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
+
+::: bq
+  ...
+
+  --- Otherwise, if the next three characters are `<::` and the subsequent character is neither `:` nor `>`, the `<` is treated as a preprocessing token by itself and not as the first character of the alternative token `<:`.
+
+:::addu
+  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
+:::
+  ...
+:::
+
 ### [lex.operators] Operators and punctuators
 
 Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operators]{.sref} to include splicer delimiters:
@@ -1784,22 +1816,6 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
          and      or       xor      not      bitand   bitor    compl
          and_eq   or_eq    xor_eq   not_eq
 ```
-:::
-
-
-### [lex.pptoken] Preprocessing tokens
-
-Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
-
-::: bq
-  ...
-
-  --- Otherwise, if the next three characters are `<::` and the subsequent character is neither `:` nor `>`, the `<` is treated as a preprocessing token by itself and not as the first character of the alternative token `<:`.
-
-:::addu
-  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
-:::
-  ...
 :::
 
 
@@ -1839,24 +1855,6 @@ The meaning of such a construct is identical to that of a `$primary-expression$`
 
 [#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection for a constant value and the expression shall evaluate to that value.
 :::
-:::
-
-
-### [lex.phases] Phases of translation
-
-Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
-
-:::bq
-
-[7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
-[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.]{.addu}
-[...]
-
-[8]{.pnum} [...]
-All the required instantiations are performed to produce instantiation units.
-[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.addu}
-[...]
-
 :::
 
 
