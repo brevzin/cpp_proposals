@@ -1021,22 +1021,21 @@ In a SFINAE context, a failure to substitute the operand of a reflection operato
 
 ### Syntax discussion
 
-The original TS landed on `reflexpr(...)` as the syntax to reflect source constructs and P1240R0 adopted that syntax as well.
+The original TS landed on `@[reflexpr]{.cf}@(...)` as the syntax to reflect source constructs and [@P1240R0] adopted that syntax as well.
 As more examples were discussed, it became clear that that syntax was both (a) too "heavy" and (b) insufficiently distinct from a function call.
-SG7 eventually agreed upon the prefix `^` operator: The "upward arrow" interpretation of the caret matches the "lift" or "raise" verbs that are sometimes used to decribe the reflection operation in other contexts.
+SG7 eventually agreed upon the prefix `^` operator. The "upward arrow" interpretation of the caret matches the "lift" or "raise" verbs that are sometimes used to describe the reflection operation in other contexts.
 
 The caret already has a meaning as a binary operator in C++ ("exclusive OR"), but that is clearly not conflicting with a prefix operator.
-In C++/CLI (a Microsoft C++ dialect) the caret is also used as a new kind of `$ptr-operator$` ([dcl.decl.general]{.sref}) to declare "handles".
+In C++/CLI (a Microsoft C++ dialect) the caret is also used as a new kind of `$ptr-operator$` ([dcl.decl.general]{.sref}) to declare ["handles"](https://learn.microsoft.com/en-us/cpp/extensions/handle-to-object-operator-hat-cpp-component-extensions?view=msvc-170).
 That is also not conflicting with the use of the caret as a unary operator because C++/CLI uses the usual prefix `*` operator to dereference handled.
 
-Apple also uses the caret in the syntax "blocks" and unfortunately we believe that does conflict with our proposed use of the caret.
+Apple also uses the caret in the [syntax "blocks"](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/WorkingwithBlocks/WorkingwithBlocks.html) and unfortunately we believe that does conflict with our proposed use of the caret.
 
-Since the syntax discussions in SG-7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``, and `@$@`.
-Of those, `@` seems the most likely substitute for the caret, because `@$@` is used for splice-like operations in other languages and `` ` `` is suggestive of some kind of quoting (which may be useful in future metaprogramming syntax developments).
+Since the syntax discussions in SG7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``{.op}, and `$`{.op}.
+Of those, `@` seems the most likely substitute for the caret, because `$`{.op} is used for splice-like operations in other languages and `` ` ``{.op} is suggestive of some kind of quoting (which may be useful in future metaprogramming syntax developments).
 
-Another option might be the use of the backslash (`\`).
-It currently has a meaning at the end of a line of source code, but we could still use it as a prefix operator with the constraint that the reflected operand has to start on the same source line.  If we were to opt for that choice, it could make sense to use the slash (`/`) as a unary operator denoting splicing (see "Splicerts" below) so that `\` would correspond to "raise" and `/` would correspond to "lower".
-
+Another option might be the use of the backslash (`\`{.op}).
+It currently has a meaning at the end of a line of source code, but we could still use it as a prefix operator with the constraint that the reflected operand has to start on the same source line.  If we were to opt for that choice, it could make sense to use the slash (`/`{.op}) as a unary operator denoting splicing (see [Splicers](#splicers) below) so that `\`{.op} would correspond to "raise" and `/`{.op} would correspond to "lower".
 
 
 ## Splicers (`[:`...`:]`)
@@ -1139,9 +1138,9 @@ constexpr auto struct_to_tuple(T const& t) {
 
 ### Syntax discussion
 
-Early discussions of splice-like constructs (related to the TS design) considered using `unreflexpr(...)` for that purpose.
-P1240R0 adopted that option for _expression_ splicing, observing that a single splicing syntax could not viably be parsed (some disambiguation is needed to distinguish types and templates).
-SG-7 eventually agreed with the `[: ... :]` syntax --- with disambiguating tokens such as `typename` where needed --- which is a little lighter and more distinctive.
+Early discussions of splice-like constructs (related to the TS design) considered using `@[unreflexpr]{.cf}@(...)` for that purpose.
+[@P1240R0] adopted that option for _expression_ splicing, observing that a single splicing syntax could not viably be parsed (some disambiguation is needed to distinguish types and templates).
+S-7 eventually agreed with the `[: ... :]` syntax --- with disambiguating tokens such as `typename` where needed --- which is a little lighter and more distinctive.
 
 We propose `[:` and `:]` be single tokens rather than combinations of `[`, `]`, and `:`.
 Among others, it simplifies the handling of expressions like `arr[[:refl():]]`.
@@ -1149,12 +1148,12 @@ On the flip side, it requires a special rule like the one that was made to handl
 
 A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators.
 However, there are other possibilities.
-For example, now that `@$@` is available in the basic source character set, we might consider `@$@<@_expr_@>`.
-This is somewhat natural to those of us that have used systems where `@$@` is used to expand placeholders in document templates.  For example:
+For example, now that `$`{.op} is available in the basic source character set, we might consider `@[$]{.op}@<$expr$>`.
+This is somewhat natural to those of us that have used systems where `$`{.op} is used to expand placeholders in document templates.  For example:
 
 ::: bq
 ```c++
-@$@select_type(3) *ptr = nullptr;
+@[$]{.op}@select_type(3) *ptr = nullptr;
 ```
 :::
 
@@ -1768,14 +1767,14 @@ So we're doing it.
 
 ## Language
 
-### [lex.operators]
+### [lex.operators] Operators and punctuators
 
 Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operators]{.sref} to include splicer delimiters:
 
 ::: bq
 ```
   $operator-or-punctuator$: @_one of_@
-         {        }        [        ]        (        )        @[`[:        :]`]{.add}@
+         {        }        [        ]        (        )        @[`[:        :]`]{.addu}@
          <:       :>       <%       %>       ;        :        ...
          ?        ::       .       .*        ->       ->*      ~
          !        +        -        *        /        %        ^        &        |
@@ -1788,7 +1787,7 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 :::
 
 
-### [lex.pptoken]
+### [lex.pptoken] Preprocessing tokens
 
 Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
 
@@ -1798,7 +1797,7 @@ Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
   --- Otherwise, if the next three characters are `<::` and the subsequent character is neither `:` nor `>`, the `<` is treated as a preprocessing token by itself and not as the first character of the alternative token `<:`.
 
 :::addu
-  --- Otherwise, if the next three characters are `[::` and the subsequence character is not `:`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
+  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
 :::
   ...
 :::
@@ -1831,14 +1830,14 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 ::: addu
 **Expression Splicing   [expr.prim.splice]**
 
-[#]{.pnum} In a `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
+[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
 
-[#]{.pnum} In a `$primary-expression$` of the form `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, or function template.
+[#]{.pnum} For a `$primary-expression$` of the form `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template.
 The meaning of such a construct is identical to that of a `$primary-expression$` of the form `$template-name$ < $template-argument-list$@~_opt_~@ >` where `$template-name$` denotes the reflected template or concept (ignoring access checking on the `$template-name$`).
 
-[#]{.pnum} If in a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` evaluates to a reflection for a variable, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a `$primary-expression$` of the form `$id-expression$` that would denote the reflected entity (ignoring access checking).
+[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for a variable, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a `$primary-expression$` of the form `$id-expression$` that would denote the reflected entity (ignoring access checking).
 
-[#]{.pnum} Otherwise, in a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection for a constant value and the expression shall evaluate to that value.
+[#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection for a constant value and the expression shall evaluate to that value.
 :::
 :::
 
