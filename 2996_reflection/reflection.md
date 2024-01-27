@@ -1953,7 +1953,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if they are reflections of the same namespace alias, alias template, or type alias, respectively.
 * [*.#]{.pnum} Otherwise, if neither operand is a reflection of an expression, then they compare equal if they are reflections of the same entity.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of an expression and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise (if both operands are reflections):
+* [*.#]{.pnum} Otherwise (if both operands are reflections of expressions):
   * [*.#.#]{.pnum} If both operands designate *id-expressions*, then they compare equal if they identify the same declared entity.
   * [*.#.#]{.pnum} Otherwise, if one operand designates an *id-expression*, then they compare unequal.
   * [*.#.#]{.pnum} Otherwise, the result is unspecified.
