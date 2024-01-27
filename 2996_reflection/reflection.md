@@ -2000,6 +2000,18 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 
 ## Library
 
+### [over.built] Built-in operators
+
+Add built-in operator candidates for `std::meta::info` to [over.built]{.sref}:
+
+::: bq
+[16]{.pnum} For every `T`, where `T` is a pointer-to-member type[, `std::meta::info`,]{.addu} or `std​::​nullptr_t`, there exist candidate operator functions of the form
+```cpp
+bool operator==(T, T);
+bool operator!=(T, T);
+```
+:::
+
 ### Header `<meta>` synopsis
 
 Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
