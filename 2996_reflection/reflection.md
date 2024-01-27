@@ -1932,6 +1932,36 @@ constexpr auto r = ^std::vector;
 :::
 :::
 
+### [expr.eq] Equality Operators
+
+Extend [expr.eq]{.sref}/2 to also handle `std::meta::info:
+
+::: bq
+[2]{.pnum} The converted operands shall have arithmetic, enumeration, pointer, or pointer-to-member type, or [type]{.rm} [types `std::meta::info` or ]{.addu} `std​::​nullptr_t`. The operators `==` and `!=` both yield `true` or `false`, i.e., a result of type `bool`. In each case below, the operands shall have the same type after the specified conversions have been applied.
+
+:::
+
+Add a new paragraph between [expr.eq]{.sref}/5 and /6:
+
+::: bq
+[5]{.pnum} Two operands of type `std​::​nullptr_t` or one operand of type `std​::​nullptr_t` and the other a null pointer constant compare equal.
+
+::: addu
+[*]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
+
+* [*.#]{.pnum} If one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
+* [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if they are reflections of the same namespace alias, alias template, or type alias, respectively.
+* [*.#]{.pnum} Otherwise, if neither operand is a reflection of an expression, then they compare equal if they are reflections of the same entity.
+* [*.#]{.pnum} Otherwise, if one operand is a reflection of an expression and the other is not, then they compare unequal.
+* [*.#]{.pnum} Otherwise (if both operands are reflections):
+  * [*.#.#]{.pnum} If both operands designate *id-expressions*, then they compare equal if they identify the same declared entity.
+  * [*.#.#]{.pnum} Otherwise, if one operand designates an *id-expression*, then they compare unequal.
+  * [*.#.#]{.pnum} Otherwise, the result is unspecified.
+:::
+
+[6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
+:::
+
 
 ### [expr.const] Constant Expressions
 
