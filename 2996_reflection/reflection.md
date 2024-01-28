@@ -2425,7 +2425,7 @@ consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Mandates*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of, the specialization designated by `r`, repectively.
+[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of, the specialization designated by `r`, respectively.
 
 [#]{.pnum} [*Example*:
 ```
@@ -2495,7 +2495,7 @@ consteval vector<info> enumerators_of(info enum_type);
 
 [#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declard.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declared.
 :::
 :::
 
@@ -2688,7 +2688,7 @@ consteval bool is_nothrow_invocable_r(info result_type, info type, span<const in
 :::
 
 
-### [meta.reflection.trans], Transformatinos between types
+### [meta.reflection.trans], Transformations between types
 
 ::: bq
 ::: addu
