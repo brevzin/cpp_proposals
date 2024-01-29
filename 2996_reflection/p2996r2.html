@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-01-27" />
+  <meta name="dcterms.date" content="2024-01-29" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-01-27</td>
+    <td>2024-01-29</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -555,6 +555,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
     <td>
       Wyatt Childers<br>&lt;<a href="mailto:wcc@edg.com" class="email">wcc@edg.com</a>&gt;<br>
       Peter Dimov<br>&lt;<a href="mailto:pdimov@gmail.com" class="email">pdimov@gmail.com</a>&gt;<br>
+      Dan Katz<br>&lt;<a href="mailto:dkatz85@bloomberg.net" class="email">dkatz85@bloomberg.net</a>&gt;<br>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
       Andrew Sutton<br>&lt;<a href="mailto:andrew.n.sutton@gmail.com" class="email">andrew.n.sutton@gmail.com</a>&gt;<br>
       Faisal Vali<br>&lt;<a href="mailto:faisalv@gmail.com" class="email">faisalv@gmail.com</a>&gt;<br>
@@ -618,7 +619,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#value_oft"><span class="toc-section-number">4.4.9</span> <code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code><span></span></a></li>
 <li><a href="#test_type-test_types"><span class="toc-section-number">4.4.10</span> <code class="sourceCode cpp">test_type</code>, <code class="sourceCode cpp">test_types</code><span></span></a></li>
 <li><a href="#reflect_value"><span class="toc-section-number">4.4.11</span> <code class="sourceCode cpp">reflect_value</code><span></span></a></li>
-<li><a href="#nsdm_description-define_class"><span class="toc-section-number">4.4.12</span> <code class="sourceCode cpp">nsdm_description</code>, <code class="sourceCode cpp">define_class</code><span></span></a></li>
+<li><a href="#data_member_description-define_class"><span class="toc-section-number">4.4.12</span> <code class="sourceCode cpp">data_member_description</code>, <code class="sourceCode cpp">define_class</code><span></span></a></li>
 <li><a href="#data-layout-reflection"><span class="toc-section-number">4.4.13</span> Data Layout Reflection<span></span></a></li>
 <li><a href="#other-type-traits"><span class="toc-section-number">4.4.14</span> Other Type Traits<span></span></a></li>
 </ul></li>
@@ -653,7 +654,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#meta.reflection.unary.prop.query-type-property-queries"><span class="toc-section-number">5.2.6.4</span> [meta.reflection.unary.prop.query] Type property queries<span></span></a></li>
 </ul></li>
 <li><a href="#meta.reflection.rel-type-relations"><span class="toc-section-number">5.2.7</span> [meta.reflection.rel], Type relations<span></span></a></li>
-<li><a href="#meta.reflection.trans-transformatinos-between-types"><span class="toc-section-number">5.2.8</span> [meta.reflection.trans], Transformatinos between types<span></span></a>
+<li><a href="#meta.reflection.trans-transformations-between-types"><span class="toc-section-number">5.2.8</span> [meta.reflection.trans], Transformations between types<span></span></a>
 <ul>
 <li><a href="#meta.reflection.trans.cv-const-volatile-modifications"><span class="toc-section-number">5.2.8.1</span> [meta.reflection.trans.cv], Const-volatile modifications<span></span></a></li>
 <li><a href="#meta.reflection.trans.ref-reference-modifications"><span class="toc-section-number">5.2.8.2</span> [meta.reflection.trans.ref], Reference modifications<span></span></a></li>
@@ -988,7 +989,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-3"><a href="#cb15-3"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span> <span class="kw">struct</span> Tuple <span class="op">{</span></span>
 <span id="cb15-4"><a href="#cb15-4"></a>  <span class="kw">struct</span> storage;</span>
 <span id="cb15-5"><a href="#cb15-5"></a></span>
-<span id="cb15-6"><a href="#cb15-6"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>storage, <span class="op">{</span>nsdm_description<span class="op">(^</span>Ts<span class="op">)...})))</span>;</span>
+<span id="cb15-6"><a href="#cb15-6"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>storage, <span class="op">{</span>data_member_description<span class="op">(^</span>Ts<span class="op">)...})))</span>;</span>
 <span id="cb15-7"><a href="#cb15-7"></a>  storage data;</span>
 <span id="cb15-8"><a href="#cb15-8"></a></span>
 <span id="cb15-9"><a href="#cb15-9"></a>  Tuple<span class="op">():</span> data<span class="op">{}</span> <span class="op">{}</span></span>
@@ -1004,13 +1005,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb15-19"><a href="#cb15-19"></a>    <span class="kw">using</span> type <span class="op">=</span> <span class="op">[:</span> types<span class="op">[</span>I<span class="op">]</span> <span class="op">:]</span>;</span>
 <span id="cb15-20"><a href="#cb15-20"></a>  <span class="op">}</span>;</span>
 <span id="cb15-21"><a href="#cb15-21"></a></span>
-<span id="cb15-22"><a href="#cb15-22"></a><span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info get_nth_nsdm<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r, std<span class="op">::</span><span class="dt">size_t</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-22"><a href="#cb15-22"></a><span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info get_nth_field<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r, std<span class="op">::</span><span class="dt">size_t</span> n<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb15-23"><a href="#cb15-23"></a>  <span class="cf">return</span> nonstatic_data_members_of<span class="op">(</span>r<span class="op">)[</span>n<span class="op">]</span>;</span>
 <span id="cb15-24"><a href="#cb15-24"></a><span class="op">}</span></span>
 <span id="cb15-25"><a href="#cb15-25"></a></span>
 <span id="cb15-26"><a href="#cb15-26"></a><span class="kw">template</span><span class="op">&lt;</span>std<span class="op">::</span><span class="dt">size_t</span> I, <span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb15-27"><a href="#cb15-27"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> get<span class="op">(</span>Tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span> <span class="op">&amp;</span>t<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">-&gt;</span> std<span class="op">::</span>tuple_element_t<span class="op">&lt;</span>I, Tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;&gt;&amp;</span> <span class="op">{</span></span>
-<span id="cb15-28"><a href="#cb15-28"></a>    <span class="cf">return</span> t<span class="op">.</span>data<span class="op">.[:</span>get_nth_nsdm<span class="op">(^</span><span class="kw">decltype</span><span class="op">(</span>t<span class="op">.</span>data<span class="op">)</span>, I<span class="op">):]</span>;</span>
+<span id="cb15-28"><a href="#cb15-28"></a>    <span class="cf">return</span> t<span class="op">.</span>data<span class="op">.[:</span>get_nth_field<span class="op">(^</span><span class="kw">decltype</span><span class="op">(</span>t<span class="op">.</span>data<span class="op">)</span>, I<span class="op">):]</span>;</span>
 <span id="cb15-29"><a href="#cb15-29"></a>  <span class="op">}</span></span>
 <span id="cb15-30"><a href="#cb15-30"></a><span class="co">// Similarly for other value categories...</span></span></code></pre></div>
 </blockquote>
@@ -1043,7 +1044,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb17-10"><a href="#cb17-10"></a>  <span class="kw">constexpr</span> <span class="op">~</span>U<span class="op">()</span> <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb17-11"><a href="#cb17-11"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
-<p>If we make <a href="#nsdm_description-define_class"><code class="sourceCode cpp">define_class</code></a> for a <code class="sourceCode cpp"><span class="kw">union</span></code> have this behavior, then we can implement a <code class="sourceCode cpp">variant</code> in a much more straightforward way than in current implementations. This is not a complete implementation of <code class="sourceCode cpp">std<span class="op">::</span>variant</code> (and cheats using libstdc++ internals, and also uses Boost.Mp11’s <code class="sourceCode cpp">mp_with_index</code>) but should demonstrate the idea:</p>
+<p>If we make <a href="#data_member_description-define_class"><code class="sourceCode cpp">define_class</code></a> for a <code class="sourceCode cpp"><span class="kw">union</span></code> have this behavior, then we can implement a <code class="sourceCode cpp">variant</code> in a much more straightforward way than in current implementations. This is not a complete implementation of <code class="sourceCode cpp">std<span class="op">::</span>variant</code> (and cheats using libstdc++ internals, and also uses Boost.Mp11’s <code class="sourceCode cpp">mp_with_index</code>) but should demonstrate the idea:</p>
 <blockquote>
 <div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb18-2"><a href="#cb18-2"></a><span class="kw">class</span> Variant <span class="op">{</span></span>
@@ -1051,13 +1052,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-4"><a href="#cb18-4"></a>    <span class="kw">struct</span> Empty <span class="op">{</span> <span class="op">}</span>;</span>
 <span id="cb18-5"><a href="#cb18-5"></a></span>
 <span id="cb18-6"><a href="#cb18-6"></a>    <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>Storage, <span class="op">{</span></span>
-<span id="cb18-7"><a href="#cb18-7"></a>        nsdm_description<span class="op">(^</span>Empty, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;empty&quot;</span><span class="op">})</span>,</span>
-<span id="cb18-8"><a href="#cb18-8"></a>        nsdm_description<span class="op">(^</span>Ts<span class="op">)...</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a>        data_member_description<span class="op">(^</span>Empty, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;empty&quot;</span><span class="op">})</span>,</span>
+<span id="cb18-8"><a href="#cb18-8"></a>        data_member_description<span class="op">(^</span>Ts<span class="op">)...</span></span>
 <span id="cb18-9"><a href="#cb18-9"></a>    <span class="op">})))</span>;</span>
 <span id="cb18-10"><a href="#cb18-10"></a></span>
 <span id="cb18-11"><a href="#cb18-11"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> std<span class="op">::</span>array<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)&gt;</span> types <span class="op">=</span> <span class="op">{^</span>Ts<span class="op">...}</span>;</span>
 <span id="cb18-12"><a href="#cb18-12"></a></span>
-<span id="cb18-13"><a href="#cb18-13"></a>    <span class="kw">static</span> <span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info get_nth_nsdm<span class="op">(</span>std<span class="op">::</span><span class="dt">size_t</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-13"><a href="#cb18-13"></a>    <span class="kw">static</span> <span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info get_nth_field<span class="op">(</span>std<span class="op">::</span><span class="dt">size_t</span> n<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb18-14"><a href="#cb18-14"></a>        <span class="cf">return</span> nonstatic_data_members_of<span class="op">(^</span>Storage<span class="op">)[</span>n<span class="op">+</span><span class="dv">1</span><span class="op">]</span>;</span>
 <span id="cb18-15"><a href="#cb18-15"></a>    <span class="op">}</span></span>
 <span id="cb18-16"><a href="#cb18-16"></a></span>
@@ -1075,18 +1076,18 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-28"><a href="#cb18-28"></a></span>
 <span id="cb18-29"><a href="#cb18-29"></a><span class="kw">public</span><span class="op">:</span></span>
 <span id="cb18-30"><a href="#cb18-30"></a>    <span class="kw">constexpr</span> Variant<span class="op">()</span> <span class="kw">requires</span> std<span class="op">::</span>is_default_constructible_v<span class="op">&lt;[:</span> types<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]&gt;</span></span>
-<span id="cb18-31"><a href="#cb18-31"></a>        <span class="co">// should this work: storage_{. [: get_nth_nsdm(0) :]{} }</span></span>
+<span id="cb18-31"><a href="#cb18-31"></a>        <span class="co">// should this work: storage_{. [: get_nth_field(0) :]{} }</span></span>
 <span id="cb18-32"><a href="#cb18-32"></a>        <span class="op">:</span> storage_<span class="op">{.</span>empty<span class="op">={}}</span></span>
 <span id="cb18-33"><a href="#cb18-33"></a>        , index_<span class="op">(</span><span class="dv">0</span><span class="op">)</span></span>
 <span id="cb18-34"><a href="#cb18-34"></a>    <span class="op">{</span></span>
-<span id="cb18-35"><a href="#cb18-35"></a>        std<span class="op">::</span>construct_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> get_nth_nsdm<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">:])</span>;</span>
+<span id="cb18-35"><a href="#cb18-35"></a>        std<span class="op">::</span>construct_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> get_nth_field<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">:])</span>;</span>
 <span id="cb18-36"><a href="#cb18-36"></a>    <span class="op">}</span></span>
 <span id="cb18-37"><a href="#cb18-37"></a></span>
 <span id="cb18-38"><a href="#cb18-38"></a>    <span class="kw">constexpr</span> <span class="op">~</span>Variant<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>is_trivially_destructible_v<span class="op">&lt;</span>Ts<span class="op">&gt;</span> <span class="kw">and</span> <span class="op">...)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb18-39"><a href="#cb18-39"></a>    <span class="kw">constexpr</span> <span class="op">~</span>Variant<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb18-40"><a href="#cb18-40"></a>        <span class="cf">if</span> <span class="op">(</span>index_ <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb18-41"><a href="#cb18-41"></a>            with_index<span class="op">([&amp;](</span><span class="kw">auto</span> I<span class="op">){</span></span>
-<span id="cb18-42"><a href="#cb18-42"></a>                std<span class="op">::</span>destroy_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> get_nth_nsdm<span class="op">(</span>I<span class="op">)</span> <span class="op">:])</span>;</span>
+<span id="cb18-42"><a href="#cb18-42"></a>                std<span class="op">::</span>destroy_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> get_nth_field<span class="op">(</span>I<span class="op">)</span> <span class="op">:])</span>;</span>
 <span id="cb18-43"><a href="#cb18-43"></a>            <span class="op">})</span>;</span>
 <span id="cb18-44"><a href="#cb18-44"></a>        <span class="op">}</span></span>
 <span id="cb18-45"><a href="#cb18-45"></a>    <span class="op">}</span></span>
@@ -1097,7 +1098,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-50"><a href="#cb18-50"></a>        <span class="op">:</span> storage_<span class="op">{.</span>empty<span class="op">={}}</span></span>
 <span id="cb18-51"><a href="#cb18-51"></a>        , index_<span class="op">(-</span><span class="dv">1</span><span class="op">)</span></span>
 <span id="cb18-52"><a href="#cb18-52"></a>    <span class="op">{</span></span>
-<span id="cb18-53"><a href="#cb18-53"></a>        std<span class="op">::</span>construct_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> get_nth_nsdm<span class="op">(</span>I<span class="op">)</span> <span class="op">:]</span>, <span class="op">(</span>T<span class="op">&amp;&amp;)</span>t<span class="op">)</span>;</span>
+<span id="cb18-53"><a href="#cb18-53"></a>        std<span class="op">::</span>construct_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> get_nth_field<span class="op">(</span>I<span class="op">)</span> <span class="op">:]</span>, <span class="op">(</span>T<span class="op">&amp;&amp;)</span>t<span class="op">)</span>;</span>
 <span id="cb18-54"><a href="#cb18-54"></a>        index_ <span class="op">=</span> <span class="op">(</span><span class="dt">int</span><span class="op">)</span>I;</span>
 <span id="cb18-55"><a href="#cb18-55"></a>    <span class="op">}</span></span>
 <span id="cb18-56"><a href="#cb18-56"></a></span>
@@ -1110,8 +1111,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-63"><a href="#cb18-63"></a>        , index_<span class="op">(-</span><span class="dv">1</span><span class="op">)</span></span>
 <span id="cb18-64"><a href="#cb18-64"></a>    <span class="op">{</span></span>
 <span id="cb18-65"><a href="#cb18-65"></a>        rhs<span class="op">.</span>with_index<span class="op">([&amp;](</span><span class="kw">auto</span> I<span class="op">){</span></span>
-<span id="cb18-66"><a href="#cb18-66"></a>            <span class="kw">constexpr</span> <span class="kw">auto</span> nsdm <span class="op">=</span> get_nth_nsdm<span class="op">(</span>I<span class="op">)</span>;</span>
-<span id="cb18-67"><a href="#cb18-67"></a>            std<span class="op">::</span>construct_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> nsdm <span class="op">:]</span>, rhs<span class="op">.</span>storage_<span class="op">.[:</span> nsdm <span class="op">:])</span>;</span>
+<span id="cb18-66"><a href="#cb18-66"></a>            <span class="kw">constexpr</span> <span class="kw">auto</span> field <span class="op">=</span> get_nth_field<span class="op">(</span>I<span class="op">)</span>;</span>
+<span id="cb18-67"><a href="#cb18-67"></a>            std<span class="op">::</span>construct_at<span class="op">(&amp;</span>storage_<span class="op">.[:</span> field <span class="op">:]</span>, rhs<span class="op">.</span>storage_<span class="op">.[:</span> field <span class="op">:])</span>;</span>
 <span id="cb18-68"><a href="#cb18-68"></a>            index_ <span class="op">=</span> I;</span>
 <span id="cb18-69"><a href="#cb18-69"></a>        <span class="op">})</span>;</span>
 <span id="cb18-70"><a href="#cb18-70"></a>    <span class="op">}</span></span>
@@ -1125,7 +1126,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb18-78"><a href="#cb18-78"></a>        <span class="op">}</span></span>
 <span id="cb18-79"><a href="#cb18-79"></a></span>
 <span id="cb18-80"><a href="#cb18-80"></a>        <span class="cf">return</span> mp_with_index<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)&gt;(</span>index_, <span class="op">[&amp;](</span><span class="kw">auto</span> I<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb18-81"><a href="#cb18-81"></a>            <span class="cf">return</span> std<span class="op">::</span>invoke<span class="op">((</span>F<span class="op">&amp;&amp;)</span>f,  storage_<span class="op">.[:</span> get_nth_nsdm<span class="op">(</span>I<span class="op">)</span> <span class="op">:])</span>;</span>
+<span id="cb18-81"><a href="#cb18-81"></a>            <span class="cf">return</span> std<span class="op">::</span>invoke<span class="op">((</span>F<span class="op">&amp;&amp;)</span>f,  storage_<span class="op">.[:</span> get_nth_field<span class="op">(</span>I<span class="op">)</span> <span class="op">:])</span>;</span>
 <span id="cb18-82"><a href="#cb18-82"></a>        <span class="op">})</span>;</span>
 <span id="cb18-83"><a href="#cb18-83"></a>    <span class="op">}</span></span>
 <span id="cb18-84"><a href="#cb18-84"></a><span class="op">}</span>;</span></code></pre></div>
@@ -1143,7 +1144,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>The question here is whether we should be should be able to directly initialize members of a defined union using a splicer, as in:</p>
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="op">:</span> storage<span class="op">{.[:</span> get_nth_nsdm<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">:]={}}</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1"></a><span class="op">:</span> storage<span class="op">{.[:</span> get_nth_field<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">:]={}}</span></span></code></pre></div>
 </blockquote>
 <p>Arguably, the answer should be yes - this would be consistent with how other accesses work.</p>
 <p><a href="https://godbolt.org/z/Efz5vsjaa">On Compiler Explorer</a>.</p>
@@ -1161,7 +1162,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb21-10"><a href="#cb21-10"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> new_members <span class="op">=</span> <span class="op">{}</span>;</span>
 <span id="cb21-11"><a href="#cb21-11"></a>  <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info member <span class="op">:</span> old_members<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb21-12"><a href="#cb21-12"></a>    <span class="kw">auto</span> array_type <span class="op">=</span> substitute<span class="op">(^</span>std<span class="op">::</span>array, <span class="op">{</span>type_of<span class="op">(</span>member<span class="op">)</span>, N <span class="op">})</span>;</span>
-<span id="cb21-13"><a href="#cb21-13"></a>    <span class="kw">auto</span> mem_descr <span class="op">=</span> nsdm_description<span class="op">(</span>array_type, <span class="op">{.</span>name <span class="op">=</span> name_of<span class="op">(</span>member<span class="op">)})</span>;</span>
+<span id="cb21-13"><a href="#cb21-13"></a>    <span class="kw">auto</span> mem_descr <span class="op">=</span> data_member_description<span class="op">(</span>array_type, <span class="op">{.</span>name <span class="op">=</span> name_of<span class="op">(</span>member<span class="op">)})</span>;</span>
 <span id="cb21-14"><a href="#cb21-14"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>mem_descr<span class="op">)</span>;</span>
 <span id="cb21-15"><a href="#cb21-15"></a>  <span class="op">}</span></span>
 <span id="cb21-16"><a href="#cb21-16"></a>  <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>define_class<span class="op">(</span></span>
@@ -1231,7 +1232,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb24-20"><a href="#cb24-20"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> new_members;</span>
 <span id="cb24-21"><a href="#cb24-21"></a>  <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info member <span class="op">:</span> nonstatic_data_members_of<span class="op">(</span>spec<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb24-22"><a href="#cb24-22"></a>    <span class="kw">auto</span> new_type <span class="op">=</span> template_arguments_of<span class="op">(</span>type_of<span class="op">(</span>member<span class="op">))[</span><span class="dv">0</span><span class="op">]</span>;</span>
-<span id="cb24-23"><a href="#cb24-23"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>nsdm_description<span class="op">(</span>new_type, <span class="op">{.</span>name<span class="op">=</span>name_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
+<span id="cb24-23"><a href="#cb24-23"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>data_member_description<span class="op">(</span>new_type, <span class="op">{.</span>name<span class="op">=</span>name_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
 <span id="cb24-24"><a href="#cb24-24"></a>  <span class="op">}</span></span>
 <span id="cb24-25"><a href="#cb24-25"></a>  <span class="cf">return</span> define_class<span class="op">(</span>opts, new_members<span class="op">)</span>;</span>
 <span id="cb24-26"><a href="#cb24-26"></a><span class="op">}</span></span>
@@ -1697,7 +1698,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb44-53"><a href="#cb44-53"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> has_linkage<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb44-54"><a href="#cb44-54"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_class_member<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb44-55"><a href="#cb44-55"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_namespace_member<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb44-56"><a href="#cb44-56"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_nsdm<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb44-56"><a href="#cb44-56"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_nonstatic_data_member<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb44-57"><a href="#cb44-57"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_static_member<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb44-58"><a href="#cb44-58"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_base<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb44-59"><a href="#cb44-59"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_namespace<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
@@ -1721,18 +1722,19 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb44-77"><a href="#cb44-77"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb44-78"><a href="#cb44-78"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_value<span class="op">(</span>T value<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb44-79"><a href="#cb44-79"></a></span>
-<span id="cb44-80"><a href="#cb44-80"></a>  <span class="co">// <a href="#nsdm_description-define_class">define_class</a></span></span>
-<span id="cb44-81"><a href="#cb44-81"></a>  <span class="kw">struct</span> nsdm_options_t;</span>
-<span id="cb44-82"><a href="#cb44-82"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> nsdm_description<span class="op">(</span>info class_type, nsdm_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb44-83"><a href="#cb44-83"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info class_type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb44-84"><a href="#cb44-84"></a></span>
-<span id="cb44-85"><a href="#cb44-85"></a>  <span class="co">// <a href="#data-layout-reflection">data layout</a></span></span>
-<span id="cb44-86"><a href="#cb44-86"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> offset_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
-<span id="cb44-87"><a href="#cb44-87"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> size_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
-<span id="cb44-88"><a href="#cb44-88"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_offset_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
-<span id="cb44-89"><a href="#cb44-89"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_size_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
-<span id="cb44-90"><a href="#cb44-90"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> alignment_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
-<span id="cb44-91"><a href="#cb44-91"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb44-80"><a href="#cb44-80"></a>  <span class="co">// <a href="#data_member_description-define_class">define_class</a></span></span>
+<span id="cb44-81"><a href="#cb44-81"></a>  <span class="kw">struct</span> data_member_options_t;</span>
+<span id="cb44-82"><a href="#cb44-82"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_description<span class="op">(</span>info class_type,</span>
+<span id="cb44-83"><a href="#cb44-83"></a>                                         data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb44-84"><a href="#cb44-84"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info class_type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb44-85"><a href="#cb44-85"></a></span>
+<span id="cb44-86"><a href="#cb44-86"></a>  <span class="co">// <a href="#data-layout-reflection">data layout</a></span></span>
+<span id="cb44-87"><a href="#cb44-87"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> offset_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
+<span id="cb44-88"><a href="#cb44-88"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> size_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
+<span id="cb44-89"><a href="#cb44-89"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_offset_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
+<span id="cb44-90"><a href="#cb44-90"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_size_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
+<span id="cb44-91"><a href="#cb44-91"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> alignment_of<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
+<span id="cb44-92"><a href="#cb44-92"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <h3 data-number="4.4.4" id="name_of-display_name_of-source_location_of"><span class="header-section-number">4.4.4</span> <code class="sourceCode cpp">name_of</code>, <code class="sourceCode cpp">display_name_of</code>, <code class="sourceCode cpp">source_location_of</code><a href="#name_of-display_name_of-source_location_of" class="self-link"></a></h3>
 <blockquote>
@@ -1799,7 +1801,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb51-10"><a href="#cb51-10"></a>  <span class="op">}</span></span>
 <span id="cb51-11"><a href="#cb51-11"></a></span>
 <span id="cb51-12"><a href="#cb51-12"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> nonstatic_data_members_of<span class="op">(</span>info class_type<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb51-13"><a href="#cb51-13"></a>    <span class="cf">return</span> members_of<span class="op">(</span>class_type, is_nsdm<span class="op">)</span>;</span>
+<span id="cb51-13"><a href="#cb51-13"></a>    <span class="cf">return</span> members_of<span class="op">(</span>class_type, is_nonstatic_data_member<span class="op">)</span>;</span>
 <span id="cb51-14"><a href="#cb51-14"></a>  <span class="op">}</span></span>
 <span id="cb51-15"><a href="#cb51-15"></a></span>
 <span id="cb51-16"><a href="#cb51-16"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> subobjects_of<span class="op">(</span>info class_type<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <span class="op">{</span></span>
@@ -1872,27 +1874,29 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb58-3"><a href="#cb58-3"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>This metafunction produces a reflection representing the constant value of the operand.</p>
-<h3 data-number="4.4.12" id="nsdm_description-define_class"><span class="header-section-number">4.4.12</span> <code class="sourceCode cpp">nsdm_description</code>, <code class="sourceCode cpp">define_class</code><a href="#nsdm_description-define_class" class="self-link"></a></h3>
+<h3 data-number="4.4.12" id="data_member_description-define_class"><span class="header-section-number">4.4.12</span> <code class="sourceCode cpp">data_member_description</code>, <code class="sourceCode cpp">define_class</code><a href="#data_member_description-define_class" class="self-link"></a></h3>
 <blockquote>
 <div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb59-2"><a href="#cb59-2"></a>  <span class="kw">struct</span> nsdm_options_t <span class="op">{</span></span>
+<span id="cb59-2"><a href="#cb59-2"></a>  <span class="kw">struct</span> data_member_options_t <span class="op">{</span></span>
 <span id="cb59-3"><a href="#cb59-3"></a>    optional<span class="op">&lt;</span>string_view<span class="op">&gt;</span> name;</span>
-<span id="cb59-4"><a href="#cb59-4"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> alignment;</span>
-<span id="cb59-5"><a href="#cb59-5"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> width;</span>
-<span id="cb59-6"><a href="#cb59-6"></a>  <span class="op">}</span>;</span>
-<span id="cb59-7"><a href="#cb59-7"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> nsdm_description<span class="op">(</span>info type, nsdm_options options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb59-8"><a href="#cb59-8"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info class_type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb59-9"><a href="#cb59-9"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb59-4"><a href="#cb59-4"></a>    optional<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;</span> is_static;</span>
+<span id="cb59-5"><a href="#cb59-5"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> alignment;</span>
+<span id="cb59-6"><a href="#cb59-6"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> width;</span>
+<span id="cb59-7"><a href="#cb59-7"></a>  <span class="op">}</span>;</span>
+<span id="cb59-8"><a href="#cb59-8"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_description<span class="op">(</span>info type,</span>
+<span id="cb59-9"><a href="#cb59-9"></a>                                         data_member_options options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb59-10"><a href="#cb59-10"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info class_type, span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb59-11"><a href="#cb59-11"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p><code class="sourceCode cpp">nsdm_description</code> returns a reflection of a description of a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well. If no <code class="sourceCode cpp">name</code> is provided, the name of the non-static data member is unspecified.</p>
-<p><code class="sourceCode cpp">define_class</code> takes the reflection of an incomplete class/struct/union type and a range of reflections of non-static data member descriptions and it completes the given class type with nonstatic data members as described (in the given order). The given reflection is returned. For now, only non-static data member reflections are supported (via <code class="sourceCode cpp">nsdm_description</code>) but the API takes in a range of <code class="sourceCode cpp">info</code> anticipating expanding this in the near future.</p>
+<p><code class="sourceCode cpp">data_member_description</code> returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no <code class="sourceCode cpp">name</code> is provided, the name of the data member is unspecified. If no <code class="sourceCode cpp">is_static</code> is provided, the data member is non-static.</p>
+<p><code class="sourceCode cpp">define_class</code> takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order). The given reflection is returned. For now, only data member reflections are supported (via <code class="sourceCode cpp">data_member_description</code>) but the API takes in a range of <code class="sourceCode cpp">info</code> anticipating expanding this in the near future.</p>
 <p>For example:</p>
 <blockquote>
 <div class="sourceCode" id="cb60"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1"></a><span class="kw">union</span> U;</span>
 <span id="cb60-2"><a href="#cb60-2"></a><span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>U, <span class="op">{</span></span>
-<span id="cb60-3"><a href="#cb60-3"></a>  nsdm_description<span class="op">(^</span><span class="dt">int</span><span class="op">)</span>,</span>
-<span id="cb60-4"><a href="#cb60-4"></a>  nsdm_description<span class="op">(^</span><span class="dt">char</span><span class="op">)</span>,</span>
-<span id="cb60-5"><a href="#cb60-5"></a>  nsdm_description<span class="op">(^</span><span class="dt">double</span><span class="op">)</span>,</span>
+<span id="cb60-3"><a href="#cb60-3"></a>  data_member_description<span class="op">(^</span><span class="dt">int</span><span class="op">)</span>,</span>
+<span id="cb60-4"><a href="#cb60-4"></a>  data_member_description<span class="op">(^</span><span class="dt">char</span><span class="op">)</span>,</span>
+<span id="cb60-5"><a href="#cb60-5"></a>  data_member_description<span class="op">(^</span><span class="dt">double</span><span class="op">)</span>,</span>
 <span id="cb60-6"><a href="#cb60-6"></a><span class="op">})))</span>;</span>
 <span id="cb60-7"><a href="#cb60-7"></a></span>
 <span id="cb60-8"><a href="#cb60-8"></a><span class="co">// U is now defined to the equivalent of</span></span>
@@ -1904,8 +1908,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb60-14"><a href="#cb60-14"></a></span>
 <span id="cb60-15"><a href="#cb60-15"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> S;</span>
 <span id="cb60-16"><a href="#cb60-16"></a><span class="kw">constexpr</span> <span class="kw">auto</span> U <span class="op">=</span> define_class<span class="op">(^</span>S<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, <span class="op">{</span></span>
-<span id="cb60-17"><a href="#cb60-17"></a>  nsdm_description<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
-<span id="cb60-18"><a href="#cb60-18"></a>  nsdm_description<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;j&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
+<span id="cb60-17"><a href="#cb60-17"></a>  data_member_description<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
+<span id="cb60-18"><a href="#cb60-18"></a>  data_member_description<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;j&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
 <span id="cb60-19"><a href="#cb60-19"></a><span class="op">})</span>;</span>
 <span id="cb60-20"><a href="#cb60-20"></a></span>
 <span id="cb60-21"><a href="#cb60-21"></a><span class="co">// S&lt;int&gt; is now defined to the equivalent of</span></span>
@@ -2161,7 +2165,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb72-37"><a href="#cb72-37"></a>  consteval bool has_template_arguments(info r);</span>
 <span id="cb72-38"><a href="#cb72-38"></a>  consteval auto is_class_member(info entity) -&gt; bool;</span>
 <span id="cb72-39"><a href="#cb72-39"></a>  consteval auto is_namespace_member(info entity) -&gt; bool;</span>
-<span id="cb72-40"><a href="#cb72-40"></a>  consteval bool is_nsdm(info r);</span>
+<span id="cb72-40"><a href="#cb72-40"></a>  consteval bool is_nonstatic_data_member(info r);</span>
 <span id="cb72-41"><a href="#cb72-41"></a>  consteval bool is_static_member(info r);</span>
 <span id="cb72-42"><a href="#cb72-42"></a>  consteval bool is_base(info r);</span>
 <span id="cb72-43"><a href="#cb72-43"></a>  consteval bool is_constructor(info r);</span>
@@ -2394,7 +2398,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">20</a></span> <em>Returns</em>: <code class="sourceCode cpp"><span class="kw">true</span></code> if <code class="sourceCode cpp">r</code> designates an instantiation of a function template, variable template, class template, or an alias template. Otherwise, <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb95"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb95-1"><a href="#cb95-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_class_member<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb95-2"><a href="#cb95-2"></a><span class="kw">consteval</span> <span class="kw">auto</span> is_namespace_member<span class="op">(</span>info entity<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb95-3"><a href="#cb95-3"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nsdm<span class="op">(</span>info r<span class="op">)</span>;</span>
+<span id="cb95-3"><a href="#cb95-3"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nonstatic_data_member<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb95-4"><a href="#cb95-4"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_static_member<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb95-5"><a href="#cb95-5"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_base<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb95-6"><a href="#cb95-6"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_constructor<span class="op">(</span>info r<span class="op">)</span>;</span>
@@ -2419,7 +2423,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="sourceCode" id="cb100"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb100-1"><a href="#cb100-1"></a><span class="kw">consteval</span> info template_of<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb100-2"><a href="#cb100-2"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_arguments_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">28</a></span> <em>Mandates</em>: <code class="sourceCode cpp">has_template_arguments<span class="op">(</span>r<span class="op">)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">29</a></span> <em>Returns</em>: A reflection of the template of <code class="sourceCode cpp">r</code>, and the reflections of the template arguments of, the specialization designated by <code class="sourceCode cpp">r</code>, repectively.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">29</a></span> <em>Returns</em>: A reflection of the template of <code class="sourceCode cpp">r</code>, and the reflections of the template arguments of, the specialization designated by <code class="sourceCode cpp">r</code>, respectively.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">30</a></span> [<em>Example</em>:</p>
 <div class="sourceCode" id="cb101"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb101-1"><a href="#cb101-1"></a>template &lt;class T, class U=T&gt; struct Pair { };</span>
 <span id="cb101-2"><a href="#cb101-2"></a>template &lt;class T&gt; using PairPtr = Pair&lt;T*&gt;;</span>
@@ -2448,13 +2452,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">6</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> members_of<span class="op">(</span>type, is_variable<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb105"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb105-1"><a href="#cb105-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">7</a></span> <em>Mandates</em>: <code class="sourceCode cpp">type</code> designates a type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">8</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> members_of<span class="op">(</span>type, is_nsdm<span class="op">)</span>;</code></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">8</a></span> <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> members_of<span class="op">(</span>type, is_nonstatic_data_member<span class="op">)</span>;</code></p>
 <div class="sourceCode" id="cb106"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb106-1"><a href="#cb106-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> subobjects_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">9</a></span> <em>Mandates</em>: <code class="sourceCode cpp">type</code> designates a type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_81" id="pnum_81">10</a></span> <em>Returns</em>: A <code class="sourceCode cpp">vector</code> containing all the reflections in <code class="sourceCode cpp">bases_of<span class="op">(</span>type<span class="op">)</span></code> followed by all the reflections in <code class="sourceCode cpp">nonstatic_data_members_of<span class="op">(</span>type<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb107"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb107-1"><a href="#cb107-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info enum_type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_82" id="pnum_82">11</a></span> <em>Mandates</em>: <code class="sourceCode cpp">enum_type</code> designates an enumeration.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">12</a></span> <em>Returns</em>: A <code class="sourceCode cpp">vector</code> containing the reflections of each enumerator of the enumeration designated by <code class="sourceCode cpp">enum_type</code>, in the order in which they are declard.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">12</a></span> <em>Returns</em>: A <code class="sourceCode cpp">vector</code> containing the reflections of each enumerator of the enumeration designated by <code class="sourceCode cpp">enum_type</code>, in the order in which they are declared.</p>
 </div>
 </blockquote>
 <h3 data-number="5.2.6" id="meta.reflection.unary-unary-type-traits"><span class="header-section-number">5.2.6</span> [meta.reflection.unary] Unary type traits<a href="#meta.reflection.unary-unary-type-traits" class="self-link"></a></h3>
@@ -2607,7 +2611,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_98" id="pnum_98">5</a></span> <span class="note"><span>[ <em>Note 1:</em> </span>If <code class="sourceCode cpp">t</code> is a reflection of the type <code class="sourceCode cpp"><span class="dt">int</span></code> and <code class="sourceCode cpp">u</code> is a reflection of an alias to the type <code class="sourceCode cpp"><span class="dt">int</span></code>, then <code class="sourceCode cpp">t <span class="op">==</span> u</code> is <code class="sourceCode cpp"><span class="kw">false</span></code> but <code class="sourceCode cpp">is_same<span class="op">(</span>t, u<span class="op">)</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>. <code class="sourceCode cpp">t <span class="op">==</span> dealias<span class="op">(</span>u<span class="op">)</span></code> is also <code class="sourceCode cpp"><span class="kw">true</span></code>.<span> — <em>end note</em> ]</span></span>.</p>
 </div>
 </blockquote>
-<h3 data-number="5.2.8" id="meta.reflection.trans-transformatinos-between-types"><span class="header-section-number">5.2.8</span> [meta.reflection.trans], Transformatinos between types<a href="#meta.reflection.trans-transformatinos-between-types" class="self-link"></a></h3>
+<h3 data-number="5.2.8" id="meta.reflection.trans-transformations-between-types"><span class="header-section-number">5.2.8</span> [meta.reflection.trans], Transformations between types<a href="#meta.reflection.trans-transformations-between-types" class="self-link"></a></h3>
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_99" id="pnum_99">1</a></span> Subclause [meta.reflection.trans] contains consteval functions that may be used to transform one type to another following some predefined rule.</p>

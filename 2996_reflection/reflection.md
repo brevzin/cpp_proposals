@@ -8,6 +8,8 @@ author:
       email: <wcc@edg.com>
     - name: Peter Dimov
       email: <pdimov@gmail.com>
+    - name: Dan Katz
+      email: <dkatz85@bloomberg.net>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Andrew Sutton
@@ -457,7 +459,7 @@ This example is based on a presentation by Matúš Chochlík.
 template<typename... Ts> struct Tuple {
   struct storage;
 
-  static_assert(is_type(define_class(^storage, {nsdm_description(^Ts)...})));
+  static_assert(is_type(define_class(^storage, {data_member_description(^Ts)...})));
   storage data;
 
   Tuple(): data{} {}
@@ -473,13 +475,13 @@ template<std::size_t I, typename... Ts>
     using type = [: types[I] :];
   };
 
-consteval std::meta::info get_nth_nsdm(std::meta::info r, std::size_t n) {
+consteval std::meta::info get_nth_field(std::meta::info r, std::size_t n) {
   return nonstatic_data_members_of(r)[n];
 }
 
 template<std::size_t I, typename... Ts>
   constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
-    return t.data.[:get_nth_nsdm(^decltype(t.data), I):];
+    return t.data.[:get_nth_field(^decltype(t.data), I):];
   }
 // Similarly for other value categories...
 ```
@@ -529,7 +531,7 @@ union U {
 ```
 :::
 
-If we make [`define_class`](#nsdm_description-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
+If we make [`define_class`](#data_member_description-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
 This is not a complete implementation of `std::variant` (and cheats using libstdc++ internals, and also uses Boost.Mp11's `mp_with_index`) but should demonstrate the idea:
 
 ::: bq
@@ -540,13 +542,13 @@ class Variant {
     struct Empty { };
 
     static_assert(is_type(define_class(^Storage, {
-        nsdm_description(^Empty, {.name="empty"}),
-        nsdm_description(^Ts)...
+        data_member_description(^Empty, {.name="empty"}),
+        data_member_description(^Ts)...
     })));
 
     static constexpr std::array<std::meta::info, sizeof...(Ts)> types = {^Ts...};
 
-    static consteval std::meta::info get_nth_nsdm(std::size_t n) {
+    static consteval std::meta::info get_nth_field(std::size_t n) {
         return nonstatic_data_members_of(^Storage)[n+1];
     }
 
@@ -564,18 +566,18 @@ class Variant {
 
 public:
     constexpr Variant() requires std::is_default_constructible_v<[: types[0] :]>
-        // should this work: storage_{. [: get_nth_nsdm(0) :]{} }
+        // should this work: storage_{. [: get_nth_field(0) :]{} }
         : storage_{.empty={}}
         , index_(0)
     {
-        std::construct_at(&storage_.[: get_nth_nsdm(0) :]);
+        std::construct_at(&storage_.[: get_nth_field(0) :]);
     }
 
     constexpr ~Variant() requires (std::is_trivially_destructible_v<Ts> and ...) = default;
     constexpr ~Variant() {
         if (index_ != -1) {
             with_index([&](auto I){
-                std::destroy_at(&storage_.[: get_nth_nsdm(I) :]);
+                std::destroy_at(&storage_.[: get_nth_field(I) :]);
             });
         }
     }
@@ -586,7 +588,7 @@ public:
         : storage_{.empty={}}
         , index_(-1)
     {
-        std::construct_at(&storage_.[: get_nth_nsdm(I) :], (T&&)t);
+        std::construct_at(&storage_.[: get_nth_field(I) :], (T&&)t);
         index_ = (int)I;
     }
 
@@ -599,8 +601,8 @@ public:
         , index_(-1)
     {
         rhs.with_index([&](auto I){
-            constexpr auto nsdm = get_nth_nsdm(I);
-            std::construct_at(&storage_.[: nsdm :], rhs.storage_.[: nsdm :]);
+            constexpr auto field = get_nth_field(I);
+            std::construct_at(&storage_.[: field :], rhs.storage_.[: field :]);
             index_ = I;
         });
     }
@@ -614,7 +616,7 @@ public:
         }
 
         return mp_with_index<sizeof...(Ts)>(index_, [&](auto I) -> decltype(auto) {
-            return std::invoke((F&&)f,  storage_.[: get_nth_nsdm(I) :]);
+            return std::invoke((F&&)f,  storage_.[: get_nth_field(I) :]);
         });
     }
 };
@@ -640,7 +642,7 @@ The question here is whether we should be should be able to directly initialize 
 
 ::: bq
 ```cpp
-: storage{.[: get_nth_nsdm(0) :]={}}
+: storage{.[: get_nth_field(0) :]={}}
 ```
 :::
 
@@ -664,7 +666,7 @@ consteval auto make_struct_of_arrays(std::meta::info type,
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
     auto array_type = substitute(^std::array, {type_of(member), N });
-    auto mem_descr = nsdm_description(array_type, {.name = name_of(member)});
+    auto mem_descr = data_member_description(array_type, {.name = name_of(member)});
     new_members.push_back(mem_descr);
   }
   return std::meta::define_class(
@@ -751,7 +753,7 @@ consteval auto spec_to_opts(std::meta::info opts,
   std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(nsdm_description(new_type, {.name=name_of(member)}));
+    new_members.push_back(data_member_description(new_type, {.name=name_of(member)}));
   }
   return define_class(opts, new_members);
 }
@@ -1384,7 +1386,7 @@ namespace std::meta {
   consteval auto has_linkage(info r) -> bool;
   consteval auto is_class_member(info entity) -> bool;
   consteval auto is_namespace_member(info entity) -> bool;
-  consteval auto is_nsdm(info entity) -> bool;
+  consteval auto is_nonstatic_data_member(info entity) -> bool;
   consteval auto is_static_member(info entity) -> bool;
   consteval auto is_base(info entity) -> bool;
   consteval auto is_namespace(info entity) -> bool;
@@ -1408,9 +1410,10 @@ namespace std::meta {
   template<typename T>
     consteval auto reflect_value(T value) -> info;
 
-  // @[define_class](#nsdm_description-define_class)@
-  struct nsdm_options_t;
-  consteval auto nsdm_description(info class_type, nsdm_options_t options = {}) -> info;
+  // @[define_class](#data_member_description-define_class)@
+  struct data_member_options_t;
+  consteval auto data_member_description(info class_type,
+                                         data_member_options_t options = {}) -> info;
   consteval auto define_class(info class_type, span<info const>) -> info;
 
   // @[data layout](#data-layout-reflection)@
@@ -1530,7 +1533,7 @@ namespace std::meta {
   }
 
   consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
-    return members_of(class_type, is_nsdm);
+    return members_of(class_type, is_nonstatic_data_member);
   }
 
   consteval auto subobjects_of(info class_type) -> vector<info> {
@@ -1658,26 +1661,28 @@ namespace std::meta {
 This metafunction produces a reflection representing the constant value of the operand.
 
 
-### `nsdm_description`, `define_class`
+### `data_member_description`, `define_class`
 
 :::bq
 ```c++
 namespace std::meta {
-  struct nsdm_options_t {
+  struct data_member_options_t {
     optional<string_view> name;
+    optional<bool> is_static;
     optional<int> alignment;
     optional<int> width;
   };
-  consteval auto nsdm_description(info type, nsdm_options options = {}) -> info;
+  consteval auto data_member_description(info type,
+                                         data_member_options options = {}) -> info;
   consteval auto define_class(info class_type, span<info const>) -> info;
 }
 ```
 :::
 
-`nsdm_description` returns a reflection of a description of a non-static data member of given type. Optional alignment, bit-field-width, and name can be provided as well. If no `name` is provided, the name of the non-static data member is unspecified.
+`data_member_description` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If no `is_static` is provided, the data member is non-static.
 
-`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of non-static data member descriptions and it completes the given class type with nonstatic data members as described (in the given order).
-The given reflection is returned. For now, only non-static data member reflections are supported (via `nsdm_description`) but the API takes in a range of `info` anticipating expanding this in the near future.
+`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order).
+The given reflection is returned. For now, only data member reflections are supported (via `data_member_description`) but the API takes in a range of `info` anticipating expanding this in the near future.
 
 For example:
 
@@ -1685,9 +1690,9 @@ For example:
 ```c++
 union U;
 static_assert(is_type(define_class(^U, {
-  nsdm_description(^int),
-  nsdm_description(^char),
-  nsdm_description(^double),
+  data_member_description(^int),
+  data_member_description(^char),
+  data_member_description(^double),
 })));
 
 // U is now defined to the equivalent of
@@ -1699,8 +1704,8 @@ static_assert(is_type(define_class(^U, {
 
 template<typename T> struct S;
 constexpr auto U = define_class(^S<int>, {
-  nsdm_description(^int, {.name="i", .align=64}),
-  nsdm_description(^int, {.name="j", .align=64}),
+  data_member_description(^int, {.name="i", .align=64}),
+  data_member_description(^int, {.name="j", .align=64}),
 });
 
 // S<int> is now defined to the equivalent of
@@ -2060,7 +2065,7 @@ namespace std::meta {
   consteval bool has_template_arguments(info r);
   consteval auto is_class_member(info entity) -> bool;
   consteval auto is_namespace_member(info entity) -> bool;
-  consteval bool is_nsdm(info r);
+  consteval bool is_nonstatic_data_member(info r);
   consteval bool is_static_member(info r);
   consteval bool is_base(info r);
   consteval bool is_constructor(info r);
@@ -2377,7 +2382,7 @@ consteval bool has_template_arguments(info r);
 ```cpp
 consteval auto is_class_member(info entity) -> bool;
 consteval auto is_namespace_member(info entity) -> bool;
-consteval bool is_nsdm(info r);
+consteval bool is_nonstatic_data_member(info r);
 consteval bool is_static_member(info r);
 consteval bool is_base(info r);
 consteval bool is_constructor(info r);
@@ -2479,7 +2484,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 
 [#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nsdm);`
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
 
 ```cpp
 consteval vector<info> subobjects_of(info type);
