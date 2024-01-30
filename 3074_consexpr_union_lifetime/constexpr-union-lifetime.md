@@ -280,38 +280,53 @@ With corresponding wording in [obj.lifetime]{.sref}:
 
 ::: bq
 ::: addu
-* [9]{.pnum} The class `uninitialized` is suitable for storage for an object of type `T` that is not initially initialized.
+[9]{.pnum} The class `uninitialized` is suitable for storage for an object of type `T` that is not initially initialized.
 
 ```cpp
 template<class T>
 class uninitialized {
-  T $value$;  // exposition-only
+  union { T $value$ };  // exposition-only
 
 public:
-  uninitialized(const uninitialized&);
-  uninitialized& operator=(const uninitialized&);
+  constexpr uninitialized();
+  constexpr uninitialized(const uninitialized&);
+  constexpr uninitialized& operator=(const uninitialized&);
+  constexpr ~uninitialized();
 
-  void* addr() noexcept { return addressof($value$); }
-  const void* addr() const noexcept { return addressof($value$); }
+  constexpr void* addr() noexcept { return addressof($value$); }
+  constexpr const void* addr() const noexcept { return addressof($value$); }
 
-  remove_extent_t<T>* ptr() noexcept { return static_cast<remove_extent_t<T>*>(addr()); }
-  const remove_extent_t<T>* ptr() const noexcept { return static_cast<const remove_extent_t<T>*>(addr()); }
+  constexpr remove_extent_t<T>* ptr() noexcept { return static_cast<remove_extent_t<T>*>(addr()); }
+  constexpr const remove_extent_t<T>* ptr() const noexcept { return static_cast<const remove_extent_t<T>*>(addr()); }
 
-  remove_extent_t<T>& ref() noexcept { return *ptr(); }
-  const remove_extent_t<T>& ref() const noexcept { return *ptr(); }
+  constexpr remove_extent_t<T>& ref() noexcept { return *ptr(); }
+  constexpr const remove_extent_t<T>& ref() const noexcept { return *ptr(); }
 };
 ```
 
-* [#]{.pnum} `uninitialized<T>` is a trivally default constructible and trivially destructible type.
-* [#]{.pnum} If `T` is an implicit-lifetime type, then the construction of `uninitialized<T>` also starts the lifetime of `$value$`.
-* [#]{.pnum} An object of type `T` and an object of type `uninitialized<T>` have distinct addresses ([intro.object]).
+[#]{.pnum} `uninitialized<T>` is a trivially default constructible and trivially destructible type.
+
+[#]{.pnum} If `T` is an implicit-lifetime type, then the construction of `uninitialized<T>` also starts the lifetime of `$value$`.
+
+[#]{.pnum} An object of type `T` and an object of type `uninitialized<T>` have distinct addresses ([intro.object]).
 
 ```cpp
-uninitialized(const uninitialized&);
-uninitialized& operator=(const uninitialized&);
+constexpr uninitialized();
+```
+[#]{.pnum} *Effects*: If `T` is an implicit-lifetime type, begins the lifetime of `$value$`. Otherwise, none. [The constructor of `T`, if any, is not called]{.note}
+
+```cpp
+constexpr uninitialized(const uninitialized&);
+constexpr uninitialized& operator=(const uninitialized&);
 ```
 
-* [#]{.pnum} If `T` is a trivially copyable type, then `uninitialized<T>` is a trivially copyable type. Otherwise, `uninitialized<T>` is not copyable.
+[#]{.pnum} If `T` is a trivially copyable type, then `uninitialized<T>` is a trivially copyable type. Otherwise, `uninitialized<T>` is not copyable.
+
+```cpp
+constexpr ~uninitialized();
+```
+
+[#]{.pnum} *Effects*: None. [The destructor of `T`, if any, is not called]{.note}
 :::
 :::
 
