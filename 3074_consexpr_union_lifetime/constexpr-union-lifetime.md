@@ -285,7 +285,7 @@ With corresponding wording in [obj.lifetime]{.sref}:
 ```cpp
 template<class T>
 class uninitialized {
-  [[no_unique_address]] T $value$;  // exposition-only
+  T $value$;  // exposition-only
 
 public:
   uninitialized(const uninitialized&);
