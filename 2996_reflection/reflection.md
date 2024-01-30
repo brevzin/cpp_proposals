@@ -1668,7 +1668,7 @@ This metafunction produces a reflection representing the constant value of the o
 namespace std::meta {
   struct data_member_options_t {
     optional<string_view> name;
-    optional<bool> is_static;
+    bool is_static = false;
     optional<int> alignment;
     optional<int> width;
   };
@@ -1679,7 +1679,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_description` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If no `is_static` is provided, the data member is non-static.
+`data_member_description` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_description`) but the API takes in a range of `info` anticipating expanding this in the near future.
