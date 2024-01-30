@@ -10,6 +10,10 @@ toc: true
 tag: constexpr
 ---
 
+# Revision History
+
+[@P3074R0] originally proposed the function `std::start_lifetime(p)`. This revision adds a new section discussing the [uninitialized storage problem](#the-uninitialized-storage-problem), which motivates a change in design to instead propose `std::uninitialized<T>`.
+
 # Introduction
 
 Consider the following example:
@@ -224,15 +228,8 @@ We could introduce another magic library type, `std::uninitialized<T>`, with an 
 ::: bq
 ```cpp
 template <typename T>
-class uninitialized {
-    T $storage$; // exposition only
-
-public:
-    constexpr auto ptr() -> remove_extent_t<T>*;
-    constexpr auto ptr() const -> remove_extent_t<T> const*;
-
-    constexpr auto ref() -> remove_extent_t<T>&;
-    constexpr auto ref() const -> remove_extent_t<T> const&;
+struct uninitialized {
+    union { T value; };
 };
 ```
 :::
@@ -271,7 +268,7 @@ namespace std {
 	                                      size_t n) noexcept;
 
 + template<class T>
-+   class uninitialized;                                                            // freestanding
++   struct uninitialized;                                                           // freestanding
 }
 ```
 :::
@@ -284,34 +281,24 @@ With corresponding wording in [obj.lifetime]{.sref}:
 
 ```cpp
 template<class T>
-class uninitialized {
-  union { T $value$ };  // exposition-only
+struct uninitialized {
+  union { T value };
 
-public:
   constexpr uninitialized();
   constexpr uninitialized(const uninitialized&);
   constexpr uninitialized& operator=(const uninitialized&);
   constexpr ~uninitialized();
-
-  constexpr void* addr() noexcept { return addressof($value$); }
-  constexpr const void* addr() const noexcept { return addressof($value$); }
-
-  constexpr remove_extent_t<T>* ptr() noexcept { return static_cast<remove_extent_t<T>*>(addr()); }
-  constexpr const remove_extent_t<T>* ptr() const noexcept { return static_cast<const remove_extent_t<T>*>(addr()); }
-
-  constexpr remove_extent_t<T>& ref() noexcept { return *ptr(); }
-  constexpr const remove_extent_t<T>& ref() const noexcept { return *ptr(); }
 };
 ```
 
 [#]{.pnum} `uninitialized<T>` is a trivially default constructible and trivially destructible type.
 
-[#]{.pnum} [An object of type `T` and the `$value$` subobject of `uninitialized<T>` have distinct addresses ([intro.object])]{.note}
+[#]{.pnum} [An object of type `T` and the `value` subobject of `uninitialized<T>` have distinct addresses ([intro.object])]{.note}
 
 ```cpp
 constexpr uninitialized();
 ```
-[#]{.pnum} *Effects*: If `T` is an implicit-lifetime type, begins the lifetime of `$value$`. Otherwise, none. [The constructor of `T`, if any, is not called]{.note}
+[#]{.pnum} *Effects*: If `T` is an implicit-lifetime type, begins the lifetime of `value`. Otherwise, none. [The constructor of `T`, if any, is not called]{.note}
 
 ```cpp
 constexpr uninitialized(const uninitialized&);
