@@ -306,9 +306,7 @@ public:
 
 [#]{.pnum} `uninitialized<T>` is a trivially default constructible and trivially destructible type.
 
-[#]{.pnum} If `T` is an implicit-lifetime type, then the construction of `uninitialized<T>` also starts the lifetime of `$value$`.
-
-[#]{.pnum} An object of type `T` and an object of type `uninitialized<T>` have distinct addresses ([intro.object]).
+[#]{.pnum} [An object of type `T` and the `$value$` subobject of `uninitialized<T>` have distinct addresses ([intro.object])]{.note}
 
 ```cpp
 constexpr uninitialized();
