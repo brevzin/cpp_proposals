@@ -1673,7 +1673,7 @@ namespace std::meta {
     optional<int> width;
   };
   consteval auto data_member_description(info type,
-                                         data_member_options options = {}) -> info;
+                                         data_member_options_t options = {}) -> info;
   consteval auto define_class(info class_type, span<info const>) -> info;
 }
 ```
