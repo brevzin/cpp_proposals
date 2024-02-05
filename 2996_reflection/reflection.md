@@ -459,7 +459,7 @@ This example is based on a presentation by Matúš Chochlík.
 template<typename... Ts> struct Tuple {
   struct storage;
 
-  static_assert(is_type(define_class(^storage, {data_member_description(^Ts)...})));
+  static_assert(is_type(define_class(^storage, {data_member_spec(^Ts)...})));
   storage data;
 
   Tuple(): data{} {}
@@ -531,7 +531,7 @@ union U {
 ```
 :::
 
-If we make [`define_class`](#data_member_description-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
+If we make [`define_class`](#data_member_spec-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
 This is not a complete implementation of `std::variant` (and cheats using libstdc++ internals, and also uses Boost.Mp11's `mp_with_index`) but should demonstrate the idea:
 
 ::: bq
@@ -542,8 +542,8 @@ class Variant {
     struct Empty { };
 
     static_assert(is_type(define_class(^Storage, {
-        data_member_description(^Empty, {.name="empty"}),
-        data_member_description(^Ts)...
+        data_member_spec(^Empty, {.name="empty"}),
+        data_member_spec(^Ts)...
     })));
 
     static constexpr std::array<std::meta::info, sizeof...(Ts)> types = {^Ts...};
@@ -666,7 +666,7 @@ consteval auto make_struct_of_arrays(std::meta::info type,
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
     auto array_type = substitute(^std::array, {type_of(member), N });
-    auto mem_descr = data_member_description(array_type, {.name = name_of(member)});
+    auto mem_descr = data_member_spec(array_type, {.name = name_of(member)});
     new_members.push_back(mem_descr);
   }
   return std::meta::define_class(
@@ -753,7 +753,7 @@ consteval auto spec_to_opts(std::meta::info opts,
   std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(data_member_description(new_type, {.name=name_of(member)}));
+    new_members.push_back(data_member_spec(new_type, {.name=name_of(member)}));
   }
   return define_class(opts, new_members);
 }
@@ -1410,10 +1410,10 @@ namespace std::meta {
   template<typename T>
     consteval auto reflect_value(T value) -> info;
 
-  // @[define_class](#data_member_description-define_class)@
+  // @[define_class](#data_member_spec-define_class)@
   struct data_member_options_t;
-  consteval auto data_member_description(info class_type,
-                                         data_member_options_t options = {}) -> info;
+  consteval auto data_member_spec(info class_type,
+                                  data_member_options_t options = {}) -> info;
   consteval auto define_class(info class_type, span<info const>) -> info;
 
   // @[data layout](#data-layout-reflection)@
@@ -1661,7 +1661,7 @@ namespace std::meta {
 This metafunction produces a reflection representing the constant value of the operand.
 
 
-### `data_member_description`, `define_class`
+### `data_member_spec`, `define_class`
 
 :::bq
 ```c++
@@ -1672,17 +1672,17 @@ namespace std::meta {
     optional<int> alignment;
     optional<int> width;
   };
-  consteval auto data_member_description(info type,
-                                         data_member_options_t options = {}) -> info;
+  consteval auto data_member_spec(info type,
+                                  data_member_options_t options = {}) -> info;
   consteval auto define_class(info class_type, span<info const>) -> info;
 }
 ```
 :::
 
-`data_member_description` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
+`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order).
-The given reflection is returned. For now, only data member reflections are supported (via `data_member_description`) but the API takes in a range of `info` anticipating expanding this in the near future.
+The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
 
 For example:
 
@@ -1690,9 +1690,9 @@ For example:
 ```c++
 union U;
 static_assert(is_type(define_class(^U, {
-  data_member_description(^int),
-  data_member_description(^char),
-  data_member_description(^double),
+  data_member_spec(^int),
+  data_member_spec(^char),
+  data_member_spec(^double),
 })));
 
 // U is now defined to the equivalent of
@@ -1704,8 +1704,8 @@ static_assert(is_type(define_class(^U, {
 
 template<typename T> struct S;
 constexpr auto U = define_class(^S<int>, {
-  data_member_description(^int, {.name="i", .align=64}),
-  data_member_description(^int, {.name="j", .align=64}),
+  data_member_spec(^int, {.name="i", .align=64}),
+  data_member_spec(^int, {.name="j", .align=64}),
 });
 
 // S<int> is now defined to the equivalent of
