@@ -1007,10 +1007,9 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (type_of(reflect_invoke(Pred, {reflect_value(^int)})) == ^bool)
+  requires (type_of(^([:Pred:](^int))) == ^bool)
 struct metatype {
-  // The underlying 'std::meta::info' value.
-  const std::meta::info value;
+  std::meta::info value;
 
   // Construction is ill-formed unless predicate is satisfied.
   consteval metatype(std::meta::info r) : value(r) {
@@ -1019,29 +1018,30 @@ struct metatype {
   }
 
   // Cast to 'std::meta::info' allows values of this type to be spliced.
-  consteval operator const std::meta::info&() const { return value; }
+  consteval operator std::meta::info() const { return value; }
 
   static consteval bool check(std::meta::info r) { return [:Pred:](r); }
-
-  static consteval metatype<Pred> make(std::meta::info r) { return {r}; }
 };
 
 // Type representing a "failure to match" any known metatypes.
-struct unmatched { static consteval unmatched make(...) { return {}; } };
+struct unmatched {
+  consteval unmatched(std::meta::info) {}
+  static consteval bool check(std::meta::info) { return true; }
+};
 
 // Returns the given reflection "enriched" with a more descriptive type.
 template <typename... Choices>
-constexpr auto enrich = [](std::meta::info r) consteval {
-  std::array checks = {^Choices::check...};
-  std::array ctors = {^Choices::make...};
+consteval std::meta::info enrich(std::meta::info r) {
+  std::array ctors = {members_of(^Choices, std::meta::is_constructor)[0]...,
+                      members_of(^unmatched, std::meta::is_constructor)[0]};
+  std::array checks = {^Choices::check..., ^unmatched::check};
 
-  auto choice = ^unmatched;
-  for (auto [check, make] : std::views::zip(checks, makes))
-    if (value_of<bool>(reflect_invoke(check, {reflect_value(r)}))) {
-      choice = make;
-      break;
-    }
-  return reflect_invoke(choice, {reflect_value(r)});
+  std::meta::info choice;
+  for (auto [check, ctor] : std::views::zip(checks, ctors))
+    if (value_of<bool>(reflect_invoke(check, {reflect_value(r)})))
+      return reflect_invoke(ctor, {reflect_value(r)});
+
+  std::unreachable();
 }
 ```
 :::
@@ -1059,14 +1059,15 @@ void PrintKind(fn_t) { std::println("function"); }
 void PrintKind(unmatched) { std::println("unknown kind"); }
 
 int main() {
-  constexpr auto enrich = ::enrich<type_t, fn_t>;
+  // Classifies any reflection as one of: Type, Function, or Unmatched.
+  auto enrich = [](std::meta::info r) { return ::enrich<type_t, fn_t>(r); };
 
   // Demonstration of using 'enrich' to select an overload.
-  Printer::PrintKind([:enrich(^int):]);   // "type"
-  Printer::PrintKind([:enrich(^main):]);  // "function"
-  Printer::PrintKind([:enrich(^3):]);     // "unknown kind"
-}
+  PrintKind([:enrich(^main):]);  // "function"
+  PrintKind([:enrich(^int):]);   // "type"
+  PrintKind([:enrich(^3):]);     // "unknown kind"
 ```
+:::
 
 Note that the `metatype` class can be generalized to wrap values of any literal type, or to wrap multiple values of possibly different types. This has been used, for instance, to select compile-time overloads based on: whether two integers share the same parity, the presence or absence of a value in an `optional`, the type of the value held by a `variant` or an `any`, or the syntactic form of a compile-time string.
 
@@ -1440,6 +1441,9 @@ namespace std::meta {
   // @[substitute](#substitute)@
   consteval auto substitute(info templ, span<info const> args) -> info;
 
+  // @[reflect_invoke](#reflect_invoke)@
+  consteval auto reflect_invoke(info target, span<info const> args) -> info;
+
    // @[value_of<T>](#value_oft)@
   template<typename T>
     consteval auto value_of(info) -> T;
@@ -1489,9 +1493,6 @@ namespace std::meta {
   // @[reflect_value](#reflect_value)@
   template<typename T>
     consteval auto reflect_value(T value) -> info;
-
-  // @[reflect_invoke](#reflect_invoke)@
-  consteval auto reflect_invoke(info target, span<info const> args) -> info;
 
   // @[define_class](#data_member_spec-define_class)@
   struct data_member_options_t;
@@ -1676,6 +1677,22 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 ```
 :::
 
+### `reflect_invoke`
+
+:::bq
+```c++
+namespace std::meta {
+  consteval auto reflect_invoke(info target, span<info const> args) -> info;
+}
+```
+:::
+
+This metafunction produces a reflection of the value returned by a call expression.
+
+Letting `F` be the entity reflected by `target`, and `A_0, ..., A_n` be the sequence of entities reflected by the values held by `args`: if the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
+
+For all other invocations, `reflect_invoke(target, args)` is ill-formed.
+
 ### `value_of<T>`
 
 :::bq
@@ -1742,23 +1759,6 @@ namespace std::meta {
 :::
 
 This metafunction produces a reflection representing the constant value of the operand.
-
-### `reflect_invoke`
-
-:::bq
-```c++
-namespace std::meta {
-  consteval auto reflect_invoke(info target, span<info const> args) -> info;
-}
-```
-:::
-
-This metafunction produces a reflection of the value returned by a call expression.
-
-Letting `F` be the entity reflected by `target`, and `A_0, ..., A_n` be the sequence of entities reflected by the values held by `args`: if the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
-
-For all other invocations, `reflect_invoke(target, args)` is ill-formed.
-
 
 ### `data_member_spec`, `define_class`
 
