@@ -1049,7 +1049,7 @@ A reflection can be "spliced" into source code using one of several _splicer_ fo
  - `template[: r :]` produces a _template-name_ corresponding to the template represented by `r`.
  - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
 
-The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work.)
+The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work).
 
 Attempting to splice a reflection value that does not meet the requirement of the splice is ill-formed.
 For example:
@@ -1060,18 +1060,13 @@ typename[: ^:: :] x = 0;  // Error.
 ```
 :::
 
-(This proposal does not at this time propose range-based splicers as described in P1240.
-We still believe that those are desirable.
-However, they are more complex to implement and they involve syntactic choices that benefit from being considered along with other proposals that introduce pack-like constructs in non-template contexts.
-Meanwhile, we found that many very useful techniques are enabled with just the basic splicers presented here.)
-
 ### Range Splicers
 
 The splicers described above all take a single object of type `std::meta::info` (described in more detail below).
 However, there are many cases where we don't have a single reflection, we have a range of reflections - and we want to splice them all in one go.
 For that, we need a different form of splicer: a range splicer.
 
-Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from above. It was demonstrates using a single splice, but it would be simpler if we had a range splice:
+Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from above. It was demonstrated using a single splice, but it would be simpler if we had a range splice:
 
 ::: cmptable
 ### With Single Splice
@@ -1137,6 +1132,7 @@ constexpr auto struct_to_tuple(T const& t) {
 ```
 :::
 
+(P1240 did propose range splicers.)
 
 ### Syntax discussion
 
@@ -1823,6 +1819,48 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 ```
 :::
 
+### [basic.types.general]
+
+Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
+
+::: bq
+[9]{.pnum} Arithmetic types (6.8.2), enumeration types, pointer types, pointer-to-member types (6.8.4),[ `std::meta::info`,]{.addu} `std::nullptr_t`, and cv-qualified (6.8.5) versions of these types are collectively called scalar types.
+:::
+
+Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
+
+::: bq
+::: addu
+
+[*]{.pnum} A type is *consteval-only* if it is:
+
+  - `std::meta::info`
+  - an array type with a consteval-only element type
+  - a class type with a consteval-only base class type or consteval-only nonstatic data member type
+  - a pointer or reference to a consteval-only type
+  - a function type with a consteval-only return type or a consteval-only parameter type
+
+An object of consteval-only type shall either end its lifetime during the evaluation of a manifestly constant-evaluated expression or conversion ([expr.const]{.sref}), or be a constexpr variable that is not odr-used ([basic.def.odr]{.sref}).
+
+:::
+:::
+
+### [basic.fundamental] Fundamental types
+
+Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as follows:
+
+::: bq
+::: addu
+
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represent a language element such as a type, a constant value, a nonstatic data member, etc.
+`sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
+[*Note*:
+Reflections are only meaningful during translation.
+The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]
+
+:::
+:::
+
 
 ### [expr.prim] Primary expressions
 
@@ -2027,6 +2065,8 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
 ```
 namespace std::meta {
+  using info = decltype(^::);
+ 
   // [meta.reflection.names], reflection names and locations
   consteval string_view name_of(info r);
   consteval string_view qualified_name_of(info r);
@@ -2232,6 +2272,15 @@ namespace std::meta {
   consteval info unwrap_ref_decay(info type);
 }
 ```
+:::
+:::
+
+### [meta.reflection.info] Reflections
+
+::: bq
+::: addu
+
+[#]{.pnum} The type `std::meta::info` is a synonym for the type produced by the reflection operator ([expr.reflect]{.sref}), and it has the characteristics describes in [basic.types.general]{.sref} and [expr.eq]{.sref}.
 :::
 :::
 
