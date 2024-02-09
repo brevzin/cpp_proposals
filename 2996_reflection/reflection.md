@@ -1832,13 +1832,14 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 ::: bq
 ::: addu
 
-[*]{.pnum} A type is *consteval-only* if it is:
+[*]{.pnum} A *consteval-only* is one of the following:
 
-  - `std::meta::info`
-  - an array type with a consteval-only element type
-  - a class type with a consteval-only base class type or consteval-only nonstatic data member type
-  - a pointer or reference to a consteval-only type
-  - a function type with a consteval-only return type or a consteval-only parameter type
+  - `std::meta::info`, or
+  - a pointer or reference to a consteval-only type, or
+  - an (possibly multi-dimensional) array of a consteval-only type, or
+  - a type pointer-to-member of class C of type M where C and/or M is a consteval-only type, or
+  - a function type with a consteval-only return type or a consteval-only parameter type, or
+  - a class type with a consteval-only base class type or consteval-only nonstatic data member type.
 
 An object of consteval-only type shall either end its lifetime during the evaluation of a manifestly constant-evaluated expression or conversion ([expr.const]{.sref}), or be a constexpr variable that is not odr-used ([basic.def.odr]{.sref}).
 
@@ -1861,6 +1862,17 @@ The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists t
 :::
 :::
 
+### [basic.lookup.argdep] Argument-dependent name lookup
+
+Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
+::: bq
+[3]{.pnum} ... The set of entities is determined in the following way:
+
+- If `T` is a fundamental type, its associated set of entities is empty.
+- [If `T` is `std::meta::info`, its associated set of entities is the singleton containing namespace `std::meta`.]{.addu}
+- If `T` is a class type ...
+
+:::
 
 ### [expr.prim] Primary expressions
 
