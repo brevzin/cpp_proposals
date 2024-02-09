@@ -1852,7 +1852,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 ::: bq
 ::: addu
 
-[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represent a language element such as a type, a constant value, a nonstatic data member, etc.
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 [*Note*:
 Reflections are only meaningful during translation.
