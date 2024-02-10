@@ -563,23 +563,16 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
+<li><a href="#introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
+<ul>
+<li><a href="#immediate-escalating-expressions"><span class="toc-section-number">1.1</span> Immediate-escalating expressions<span></span></a></li>
+<li><a href="#transient-allocations"><span class="toc-section-number">1.2</span> Transient allocations<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">2</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>C++20 introduced constexpr allocation, but in a limited form: any allocation must be deallocated during constant evaluation. Specifically, the rule in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5 is:</p>
-<blockquote>
-<p>An expression <code class="sourceCode cpp">E</code> is a core constant expression unless the evaluation of <code class="sourceCode cpp">E</code>, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">(5.1)</a></span> […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(5.18)</a></span> a <em>new-expression</em> ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(5.19)</a></span> a <em>delete-expression</em> ([expr.delete]), unless it deallocates a region of storage allocated within the evaluation of <code class="sourceCode cpp">E</code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.20)</a></span> a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​allocate</code> ([allocator.members]), unless the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5.21)</a></span> a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​deallocate</code> ([allocator.members]), unless it deallocates a region of storage allocated within the evaluation of <code class="sourceCode cpp">E</code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5.22)</a></span> […]</li>
-</ul>
-</blockquote>
+<p>C++20 introduced constexpr allocation, but in a limited form: any allocation must be deallocated during that constant evaluation.</p>
 <p>The intent of the rule is that no constexpr allocation persists to runtime. For more on why we currently need to avoid that, see Jeff Snyder’s <span class="citation" data-cites="P1974R0">[<a href="#ref-P1974R0" role="doc-biblioref">P1974R0</a>]</span> and also <span class="citation" data-cites="P2670R1">[<a href="#ref-P2670R1" role="doc-biblioref">P2670R1</a>]</span>.</p>
 <p>But the rule cited above does slightly more than prevent constexpr allocation to persist until runtime. The goal of this paper is to allow more examples of allocations that <em>do not</em> persist until runtime, that nevertheless are still rejected by the C++23 rules.</p>
 <p>For the purposes of this paper, we’ll consider the example of wanting to get the number of enumerators of a given enumeration. While the specific example is using reflection (<span class="citation" data-cites="P2996R1">[<a href="#ref-P2996R1" role="doc-biblioref">P2996R1</a>]</span>), there isn’t anything particularly reflection-specific about the example - it just makes for a good example. All you need to know about reflection to understand the example is that <code class="sourceCode cpp"><span class="op">^</span>E</code> gives you an object of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code> and that this function exists:</p>
@@ -698,7 +691,41 @@ The only difference between this and the previous row is that <code class="sourc
 <li>in the 2nd row, we are required to consider <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code> as a constant expression all by itself - even if <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code> is definitely a constant expression.</li>
 <li>in the 5th row, we are required to consider <code class="sourceCode cpp">es</code> as a non-transient constexpr allocation - even though it definitely does not persist until runtime, and thus does not actually cause any of the problems that non-transient constexpr allocation has to address.</li>
 </ul>
-<p>This paper seeks to address both of those problems.</p>
+<h2 data-number="1.1" id="immediate-escalating-expressions"><span class="header-section-number">1.1</span> Immediate-escalating expressions<a href="#immediate-escalating-expressions" class="self-link"></a></h2>
+<p>The wording in <span class="citation" data-cites="P2564R3">[<a href="#ref-P2564R3" role="doc-biblioref">P2564R3</a>]</span> introduced the term <em>immediate-escalating expression</em> in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">17</a></span> An expression or conversion is <em>immediate-escalating</em> if it is not initially in an immediate function context and it is either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(17.1)</a></span> a potentially-evaluated <em>id-expression</em> that denotes an immediate function that is not a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(17.2)</a></span> an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.</li>
+</ul>
+</blockquote>
+<p>In the second example:</p>
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f2<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="cf">return</span> enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span>;</span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The expression <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code> is immediate-escalating - it is an immediate invocation (<code class="sourceCode cpp">enumerators_of</code> is a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function) that is not a constant expression (because the temporary vector persists outside of this expression). This is what causes <code class="sourceCode cpp">f4</code> to become a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function template.</p>
+<p>But <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code> is not an immediate invocation (it simply has a subexpression that is an immediate invocation). However, if we were to define it as an immediate invocation - then it would not be an immediate-escalating expression anymore because it is actually a constant expression. And that would be enough to fix this example (as well as <code class="sourceCode cpp">f4</code> which would then itself not escalate to <code class="sourceCode cpp"><span class="kw">consteval</span></code> since it wouldn’t need to).</p>
+<p>Put differently: instead of escalating <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code> up to the nearest function, which we then try to make <code class="sourceCode cpp"><span class="kw">consteval</span></code> (and fail in the case of <code class="sourceCode cpp">f2</code> because <code class="sourceCode cpp"><span class="kw">constexpr</span></code> functions are not <em>immediate-escalating</em>), we only need to escalate up to the nearest enclosing expression that could be a constant expression.</p>
+<h2 data-number="1.2" id="transient-allocations"><span class="header-section-number">1.2</span> Transient allocations<a href="#transient-allocations" class="self-link"></a></h2>
+<p>The wording in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span> for rejecting non-transient allocations rejects an expression <code class="sourceCode cpp">E</code> as being a core constant expressions if <code class="sourceCode cpp">E</code> evaluates:</p>
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.18)</a></span> a <em>new-expression</em> ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5.20)</a></span> a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​allocate</code> ([allocator.members]), unless the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code>;</li>
+</ul>
+</blockquote>
+<p>That is - an allocation within <code class="sourceCode cpp">E</code> has to be transient to <code class="sourceCode cpp">E</code>. However, the rule we really want is that a constant allocation is transient to constant evaluation. In the fifth example:</p>
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f5<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> es <span class="op">=</span> enumerators_of<span class="op">(^</span>E<span class="op">)</span>;</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    <span class="cf">return</span> es<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+<p>The allocation in <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code> isn’t transient to that expression, but it is definitely destroyed within <code class="sourceCode cpp">f5</code>, which is <code class="sourceCode cpp"><span class="kw">consteval</span></code>. That’s important: if <code class="sourceCode cpp">f5</code> were <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, we’d have access to that allocation at runtime.</p>
+<p>We can loosen the restriction such that an allocation within <code class="sourceCode cpp">E</code> must be deallocated within <code class="sourceCode cpp">E</code> or, if <code class="sourceCode cpp">E</code> is in an immediate function context, the end of that context. This would be the end of the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="op">}</span></code> block or the end of the <code class="sourceCode cpp"><span class="kw">consteval</span></code> function. Such a loosening would allow <code class="sourceCode cpp">f5</code> above, but not if it’s <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, and not if <code class="sourceCode cpp">es</code> were also declared <code class="sourceCode cpp"><span class="kw">static</span></code>.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">2</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P1974R0">

@@ -12,18 +12,7 @@ tag: constexpr
 
 # Introduction
 
-C++20 introduced constexpr allocation, but in a limited form: any allocation must be deallocated during constant evaluation. Specifically, the rule in [expr.const]{.sref}/5 is:
-
-::: bq
-An expression `E` is a core constant expression unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
-
-* [5.1]{.pnum} [...]
-* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`;
-* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated within the evaluation of `E`;
-* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated within the evaluation of `E`;
-* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated within the evaluation of `E`;
-* [5.22]{.pnum} [...]
-:::
+C++20 introduced constexpr allocation, but in a limited form: any allocation must be deallocated during that constant evaluation.
 
 The intent of the rule is that no constexpr allocation persists to runtime. For more on why we currently need to avoid that, see Jeff Snyder's [@P1974R0] and also [@P2670R1].
 
@@ -122,7 +111,57 @@ Three of these rows are valid C++23 programs (modulo the fact that they're using
 * in the 2nd row, we are required to consider `enumerators_of(^E)` as a constant expression all by itself - even if `enumerators_of(^E).size()` is definitely a constant expression.
 * in the 5th row, we are required to consider `es` as a non-transient constexpr allocation - even though it definitely does not persist until runtime, and thus does not actually cause any of the problems that non-transient constexpr allocation has to address.
 
-This paper seeks to address both of those problems.
+## Immediate-escalating expressions
+
+The wording in [@P2564R3] introduced the term *immediate-escalating expression* in [expr.const]{.sref}:
+
+::: bq
+[17]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and it is either
+
+* [17.1]{.pnum} a potentially-evaluated *id-expression* that denotes an immediate function that is not a subexpression of an immediate invocation, or
+* [17.2]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+:::
+
+In the second example:
+
+::: bq
+```cpp
+constexpr int f2() {
+    return enumerators_of(^E).size();
+}
+```
+:::
+
+The expression `enumerators_of(^E)` is immediate-escalating - it is an immediate invocation (`enumerators_of` is a `consteval` function) that is not a constant expression (because the temporary vector persists outside of this expression). This is what causes `f4` to become a `consteval` function template.
+
+But `enumerators_of(^E).size()` is not an immediate invocation (it simply has a subexpression that is an immediate invocation). However, if we were to define it as an immediate invocation  - then it would not be an immediate-escalating expression anymore because it is actually a constant expression. And that would be enough to fix this example (as well as `f4` which would then itself not escalate to `consteval` since it wouldn't need to).
+
+Put differently: instead of escalating `enumerators_of(^E)` up to the nearest function, which we then try to make `consteval` (and fail in the case of `f2` because `constexpr` functions are not *immediate-escalating*), we only need to escalate up to the nearest enclosing expression that could be a constant expression.
+
+## Transient allocations
+
+The wording in [expr.const]{.sref} for rejecting non-transient allocations rejects an expression `E` as being a core constant expressions if `E` evaluates:
+
+::: bq
+* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`;
+* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated within the evaluation of `E`;
+:::
+
+That is - an allocation within `E` has to be transient to `E`. However, the rule we really want is that a constant allocation is transient to constant evaluation. In the fifth example:
+
+::: bq
+```cpp
+consteval int f5() {
+    constexpr auto es = enumerators_of(^E);
+    return es.size();
+}
+```
+:::
+
+The allocation in `enumerators_of(^E)` isn't transient to that expression, but it is definitely destroyed within `f5`, which is `consteval`. That's important: if `f5` were `constexpr`, we'd have access to that allocation at runtime.
+
+We can loosen the restriction such that an allocation within `E` must be deallocated within `E` or, if `E` is in an immediate function context, the end of that context. This would be the end of the `if consteval { }` block or the end of the `consteval` function. Such a loosening would allow `f5` above, but not if it's `constexpr`, and not if `es` were also declared `static`.
+
 
 ---
 references:
