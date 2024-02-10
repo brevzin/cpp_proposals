@@ -736,9 +736,12 @@ struct Flags {
   bool use_long;
 };
 
-// type that has a member optional<T> with some suitable constructors and members
 template <typename T, Flags flags>
-struct Option;
+struct Option {
+  std::optional<T> initializer = {};
+
+  // some suitable constructors and accessors for flags
+};
 
 // convert a type (all of whose non-static data members are specializations of Option)
 // to a type that is just the appropriate members.
