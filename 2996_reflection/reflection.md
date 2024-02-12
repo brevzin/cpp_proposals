@@ -1836,6 +1836,20 @@ Add a production to the grammar for `$attribute-specifier$` as follows:
 ```
 :::
 
+and update the grammar for balanced token as follows:
+
+::: bq
+```diff
+  $balanced-token$ :
+      ( $balanced-token-seq$@~_opt_~@ )
+      [ $balanced-token-seq$@~_opt_~@ ]
+      { $balanced-token-seq$@~_opt_~@ }
+-     any token other than a parenthesis, a bracket, or a brace
++     [: $balanced-token-seq$@~_opt_~@ :]
++     any token other than (, ), [, ], {, }, [:, or :]
+```
+:::
+
 Change a sentence in paragraph 4 of [dcl.attr.grammar] as follows:
 
 ::: bq
