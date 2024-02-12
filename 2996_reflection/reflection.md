@@ -1839,7 +1839,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
   - an (possibly multi-dimensional) array of a consteval-only type, or
   - a pointer-to-member type to a class `C` of type `M` where either `C` or `M` is a consteval-only type, or
   - a function type with a consteval-only return type or a consteval-only parameter type, or
-  - a class type with a consteval-only base class type or consteval-only nonstatic data member type.
+  - a class type with a consteval-only base class type or consteval-only non-static data member type.
 
 An object of consteval-only type shall either end its lifetime during the evaluation of a manifestly constant-evaluated expression or conversion ([expr.const]{.sref}), or be a constexpr variable that is not odr-used ([basic.def.odr]{.sref}).
 
