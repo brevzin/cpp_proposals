@@ -1052,7 +1052,7 @@ A reflection can be "spliced" into source code using one of several _splicer_ fo
  - `template[: r :]` produces a _template-name_ corresponding to the template represented by `r`.
  - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
 
-The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work.)
+The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work).
 
 Attempting to splice a reflection value that does not meet the requirement of the splice is ill-formed.
 For example:
@@ -1063,18 +1063,13 @@ typename[: ^:: :] x = 0;  // Error.
 ```
 :::
 
-(This proposal does not at this time propose range-based splicers as described in P1240.
-We still believe that those are desirable.
-However, they are more complex to implement and they involve syntactic choices that benefit from being considered along with other proposals that introduce pack-like constructs in non-template contexts.
-Meanwhile, we found that many very useful techniques are enabled with just the basic splicers presented here.)
-
 ### Range Splicers
 
 The splicers described above all take a single object of type `std::meta::info` (described in more detail below).
 However, there are many cases where we don't have a single reflection, we have a range of reflections - and we want to splice them all in one go.
 For that, we need a different form of splicer: a range splicer.
 
-Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from above. It was demonstrates using a single splice, but it would be simpler if we had a range splice:
+Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from above. It was demonstrated using a single splice, but it would be simpler if we had a range splice:
 
 ::: cmptable
 ### With Single Splice
@@ -1140,6 +1135,7 @@ constexpr auto struct_to_tuple(T const& t) {
 ```
 :::
 
+(P1240 did propose range splicers.)
 
 ### Syntax discussion
 
@@ -1826,6 +1822,62 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 ```
 :::
 
+### [basic.types.general]
+
+Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
+
+::: bq
+[9]{.pnum} Arithmetic types (6.8.2), enumeration types, pointer types, pointer-to-member types (6.8.4),[ `std::meta::info`,]{.addu} `std::nullptr_t`, and cv-qualified (6.8.5) versions of these types are collectively called scalar types.
+:::
+
+Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
+
+::: bq
+::: addu
+
+[*]{.pnum} A *consteval-only type* is one of the following:
+
+  - `std::meta::info`, or
+  - a pointer or reference to a consteval-only type, or
+  - an (possibly multi-dimensional) array of a consteval-only type, or
+  - a pointer-to-member type to a class `C` of type `M` where either `C` or `M` is a consteval-only type, or
+  - a function type with a consteval-only return type or a consteval-only parameter type, or
+  - a class type with a consteval-only base class type or consteval-only non-static data member type.
+
+An object of consteval-only type shall either end its lifetime during the evaluation of a manifestly constant-evaluated expression or conversion ([expr.const]{.sref}), or be a constexpr variable that is not odr-used ([basic.def.odr]{.sref}).
+
+:::
+:::
+
+### [basic.fundamental] Fundamental types
+
+Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as follows:
+
+::: bq
+::: addu
+
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
+`sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
+[*Note*:
+Reflections are only meaningful during translation.
+The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]
+
+:::
+:::
+
+### [basic.lookup.argdep] Argument-dependent name lookup
+
+Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
+::: bq
+[3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
+
+- [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
+::: addu
+- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+:::
+- [3.3]{.pnum} If `T` is a class type ...
+
+:::
 
 ### [expr.prim] Primary expressions
 
@@ -2030,6 +2082,8 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
 ```
 namespace std::meta {
+  using info = decltype(^::);
+
   // [meta.reflection.names], reflection names and locations
   consteval string_view name_of(info r);
   consteval string_view qualified_name_of(info r);
