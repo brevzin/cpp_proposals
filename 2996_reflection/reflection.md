@@ -1823,41 +1823,6 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 :::
 
 
-### [dcl.attr.grammar] Attribute syntax and semantics
-
-Add a production to the grammar for `$attribute-specifier$` as follows:
-
-::: bq
-```diff
-  $attribute-specifier$:
-     [ [ $attribute-using-prefix$@~_opt_~@ $attribute-list$ ] ]
-+    [ [ using $attribute-namespace$ :] ]
-     $alignment-specifier$
-```
-:::
-
-and update the grammar for balanced token as follows:
-
-::: bq
-```diff
-  $balanced-token$ :
-      ( $balanced-token-seq$@~_opt_~@ )
-      [ $balanced-token-seq$@~_opt_~@ ]
-      { $balanced-token-seq$@~_opt_~@ }
--     any token other than a parenthesis, a bracket, or a brace
-+     [: $balanced-token-seq$@~_opt_~@ :]
-+     any token other than (, ), [, ], {, }, [:, or :]
-```
-:::
-
-Change a sentence in paragraph 4 of [dcl.attr.grammar] as follows:
-
-::: bq
-
-[...]{.pnum} ... An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
-:::
-
-
 ### [basic.types.general]
 
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
@@ -1895,7 +1860,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 [*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 [Reflections are only meaningful during translation.
-The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
+The notion of consteval-only types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
 
 :::
 :::
@@ -1913,6 +1878,7 @@ Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
 - [3.3]{.pnum} If `T` is a class type ...
 
 :::
+
 
 ### [expr.prim] Primary expressions
 
@@ -2091,6 +2057,40 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 ::: addu
 [*]{.pnum} A *type alias* is either a name declared with the `typedef` specifier or a name introduced by an *alias-declaration*.
 :::
+:::
+
+### [dcl.attr.grammar] Attribute syntax and semantics
+
+Add a production to the grammar for `$attribute-specifier$` as follows:
+
+::: bq
+```diff
+  $attribute-specifier$:
+     [ [ $attribute-using-prefix$@~_opt_~@ $attribute-list$ ] ]
++    [ [ using $attribute-namespace$ :] ]
+     $alignment-specifier$
+```
+:::
+
+and update the grammar for balanced token as follows:
+
+::: bq
+```diff
+  $balanced-token$ :
+      ( $balanced-token-seq$@~_opt_~@ )
+      [ $balanced-token-seq$@~_opt_~@ ]
+      { $balanced-token-seq$@~_opt_~@ }
+-     any token other than a parenthesis, a bracket, or a brace
++     [: $balanced-token-seq$@~_opt_~@ :]
++     any token other than (, ), [, ], {, }, [:, or :]
+```
+:::
+
+Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
+
+::: bq
+
+[4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
 
 ## Library
