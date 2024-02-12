@@ -1145,7 +1145,7 @@ S-7 eventually agreed with the `[: ... :]` syntax --- with disambiguating tokens
 
 We propose `[:` and `:]` be single tokens rather than combinations of `[`, `]`, and `:`.
 Among others, it simplifies the handling of expressions like `arr[[:refl():]]`.
-On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged.
+On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged and another one to avoid breaking a (somewhat useless) attribute specifier of the form `[[using ns:]]`.
 
 A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators.
 However, there are other possibilities.
@@ -1822,6 +1822,28 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 ```
 :::
 
+
+### [dcl.attr.grammar] Attribute syntax and semantics
+
+Add a production to the grammar for `$attribute-specifier$` as follows:
+
+::: bq
+```diff
+  $attribute-specifier$:
+     [ [ $attribute-using-prefix$@~_opt_~@ $attribute-list$ ] ]
++    [ [ using $attribute-namespace$ :] ]
+     $alignment-specifier$
+```
+:::
+
+Change a sentence in paragraph 4 of [dcl.attr.grammar] as follows:
+
+::: bq
+
+[...]{.pnum} ... An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
+:::
+
+
 ### [basic.types.general]
 
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
@@ -1858,9 +1880,8 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 
 [*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
-[*Note*:
-Reflections are only meaningful during translation.
-The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]
+[Reflections are only meaningful during translation.
+The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
 
 :::
 :::
