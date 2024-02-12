@@ -1837,7 +1837,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
   - `std::meta::info`, or
   - a pointer or reference to a consteval-only type, or
   - an (possibly multi-dimensional) array of a consteval-only type, or
-  - a type pointer-to-member of class C of type M where C and/or M is a consteval-only type, or
+  - a pointer-to-member type to a class `C` of type `M` where either `C` or `M` is a consteval-only type, or
   - a function type with a consteval-only return type or a consteval-only parameter type, or
   - a class type with a consteval-only base class type or consteval-only nonstatic data member type.
 
