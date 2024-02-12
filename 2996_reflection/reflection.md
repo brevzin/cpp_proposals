@@ -1870,7 +1870,7 @@ Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
 
 - [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
 ::: addu
-- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing function `std::meta::is_type`.
+- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
 :::
 - [3.3]{.pnum} If `T` is a class type ...
 
@@ -2080,7 +2080,7 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 ```
 namespace std::meta {
   using info = decltype(^::);
- 
+
   // [meta.reflection.names], reflection names and locations
   consteval string_view name_of(info r);
   consteval string_view qualified_name_of(info r);
@@ -2286,15 +2286,6 @@ namespace std::meta {
   consteval info unwrap_ref_decay(info type);
 }
 ```
-:::
-:::
-
-### [meta.reflection.info] Reflections
-
-::: bq
-::: addu
-
-[#]{.pnum} The type `std::meta::info` is a synonym for the type produced by the reflection operator ([expr.reflect]{.sref}), and it has the characteristics describes in [basic.types.general]{.sref} and [expr.eq]{.sref}.
 :::
 :::
 
