@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-02-10" />
+  <meta name="dcterms.date" content="2024-02-12" />
   <title>Less transient constexpr allocation</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-02-10</td>
+    <td>2024-02-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -568,7 +568,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#immediate-escalating-expressions"><span class="toc-section-number">1.1</span> Immediate-escalating expressions<span></span></a></li>
 <li><a href="#transient-allocations"><span class="toc-section-number">1.2</span> Transient allocations<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography"><span class="toc-section-number">2</span> References<span></span></a></li>
+<li><a href="#proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording"><span class="toc-section-number">2.1</span> Wording<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -651,16 +655,14 @@ The only difference between this and the previous row is that <code class="sourc
 4
 </td>
 <td>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> E<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> f4<span class="op">()</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="op">{</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>    <span class="cf">return</span> enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span>;</span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="op">}</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a></span>
-<span id="cb5-6"><a href="#cb5-6"></a><span class="dt">int</span> main<span class="op">()</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="op">{</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> r4 <span class="op">=</span> f4<span class="op">&lt;</span>E<span class="op">&gt;()</span>;</span>
-<span id="cb5-9"><a href="#cb5-9"></a>    <span class="cf">return</span> r4;</span>
-<span id="cb5-10"><a href="#cb5-10"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> E<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> f4<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="cf">return</span> enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span>;</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="op">}</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> r4 <span class="op">=</span> f4<span class="op">&lt;</span>E<span class="op">&gt;()</span>;</span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="cf">return</span> r4;</span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
 ✅. Here <code class="sourceCode cpp">f4</code> is a <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function <em>template</em>, whereas <code class="sourceCode cpp">f2</code> was a regular <code class="sourceCode cpp"><span class="kw">constexpr</span></code> function. This matters because of <span class="citation" data-cites="P2564R3">[<a href="#ref-P2564R3" role="doc-biblioref">P2564R3</a>]</span> - the fact that <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code> isn’t a constant expression now causes <code class="sourceCode cpp">f4</code> to become a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function template - and thus we’re in the same state that we were in <code class="sourceCode cpp">f3</code>: it’s not <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code> that needs to be a core constant expression but rather all of <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code>.
@@ -726,7 +728,28 @@ The only difference between this and the previous row is that <code class="sourc
 </blockquote>
 <p>The allocation in <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code> isn’t transient to that expression, but it is definitely destroyed within <code class="sourceCode cpp">f5</code>, which is <code class="sourceCode cpp"><span class="kw">consteval</span></code>. That’s important: if <code class="sourceCode cpp">f5</code> were <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, we’d have access to that allocation at runtime.</p>
 <p>We can loosen the restriction such that an allocation within <code class="sourceCode cpp">E</code> must be deallocated within <code class="sourceCode cpp">E</code> or, if <code class="sourceCode cpp">E</code> is in an immediate function context, the end of that context. This would be the end of the <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="op">}</span></code> block or the end of the <code class="sourceCode cpp"><span class="kw">consteval</span></code> function. Such a loosening would allow <code class="sourceCode cpp">f5</code> above, but not if it’s <code class="sourceCode cpp"><span class="kw">constexpr</span></code>, and not if <code class="sourceCode cpp">es</code> were also declared <code class="sourceCode cpp"><span class="kw">static</span></code>.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">2</span> References<a href="#bibliography" class="self-link"></a></h1>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>There are two separate potential changes here, that would each make one of the attempts above well-formed:</p>
+<ol type="1">
+<li>we could <a href="#immediate-escalating-expressions">escalate</a> expressions to larger expressions, so that <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code> becomes a constant expression, or</li>
+<li>we could extend the notation of <a href="#transient-allocations">transient allocation</a> to include the full immediate context instead of just the constant evaluation</li>
+</ol>
+<p>The second of these is straightforward to word and provides a lot of value - since now particularly in the context of reflection you can declare a <code class="sourceCode cpp"><span class="kw">constexpr</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span></code> inside a <code class="sourceCode cpp"><span class="kw">consteval</span></code> function and use those contents as a constant expression. The first of these is complicated to word and does not provide as much value, as it is a limitation that is fairly easy to work around: either declare a local <code class="sourceCode cpp"><span class="kw">constexpr</span></code> variable, or change the function to be <code class="sourceCode cpp"><span class="kw">consteval</span></code> or a template.</p>
+<p>As such, this paper only proposes extending the notion of transience.</p>
+<h2 data-number="2.1" id="wording"><span class="header-section-number">2.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">5</a></span> An expression E is a core constant expression unless the evaluation of E, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(5.1)</a></span> […]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(5.18)</a></span> a <em>new-expression</em> ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated <span class="addu">either</span> within the evaluation of <code class="sourceCode cpp">E</code> <span class="addu">or, if <code class="sourceCode cpp">E</code> is in an immediate function content, within that context</span>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(5.19)</a></span> a <em>delete-expression</em> ([expr.delete]), unless it deallocates a region of storage allocated <span class="addu">either</span> within the evaluation of <code class="sourceCode cpp">E</code> <span class="addu">or, if <code class="sourceCode cpp">E</code> is in an immediate function content, within that context</span>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.20)</a></span> a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​allocate</code> ([allocator.members]), unless the allocated storage is deallocated <span class="addu">either</span> within the evaluation of <code class="sourceCode cpp">E</code> <span class="addu">or, if <code class="sourceCode cpp">E</code> is in an immediate function content, within that context</span>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(5.21)</a></span> a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​deallocate</code> ([allocator.members]), unless it deallocates a region of storage allocated <span class="addu">either</span> within the evaluation of <code class="sourceCode cpp">E</code> <span class="addu">or, if <code class="sourceCode cpp">E</code> is in an immediate function content, within that context</span>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(5.22)</a></span> […]</li>
+</ul>
+</blockquote>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P1974R0">
 <p>[P1974R0] Jeff Snyder, Louis Dionne, Daveed Vandevoorde. 2020-05-15. Non-transient constexpr allocation using propconst. <br />

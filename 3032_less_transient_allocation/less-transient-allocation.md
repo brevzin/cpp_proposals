@@ -77,13 +77,11 @@ The only difference between this and the previous row is that `f2` was `constexp
 </td></tr>
 <tr><td style="text-align: center;vertical-align: middle">4</td><td>
 ```cpp
-template<class E> constexpr int f4()
-{
+template<class E> constexpr int f4() {
     return enumerators_of(^E).size();
 }
 
-int main()
-{
+int main() {
     constexpr int r4 = f4<E>();
     return r4;
 }
@@ -160,8 +158,34 @@ consteval int f5() {
 
 The allocation in `enumerators_of(^E)` isn't transient to that expression, but it is definitely destroyed within `f5`, which is `consteval`. That's important: if `f5` were `constexpr`, we'd have access to that allocation at runtime.
 
-We can loosen the restriction such that an allocation within `E` must be deallocated within `E` or, if `E` is in an immediate function context, the end of that context. This would be the end of the `if consteval { }` block or the end of the `consteval` function. Such a loosening would allow `f5` above, but not if it's `constexpr`, and not if `es` were also declared `static`.
+We can loosen the restriction such that an allocation within `E` must be deallocated within `E` or, if `E` is in an immediate function context, the end of that context. This would be the end of the `if consteval { }` block or the end of the `consteval` function. Such a
+loosening would allow `f5` above, but not if it's `constexpr`, and not if `es` were also declared `static`.
 
+# Proposal
+
+There are two separate potential changes here, that would each make one of the attempts above well-formed:
+
+1. we could [escalate](#immediate-escalating-expressions) expressions to larger expressions, so that `enumerators_of(^E).size()` becomes a constant expression, or
+2. we could extend the notation of [transient allocation](#transient-allocations) to include the full immediate context instead of just the constant evaluation
+
+The second of these is straightforward to word and provides a lot of value - since now particularly in the context of reflection you can declare a `constexpr vector<info>` inside a `consteval` function and use those contents as a constant expression. The first of these is complicated to word and does not provide as much value, as it is a limitation that is fairly easy to work around: either declare a local `constexpr` variable, or change the function to be `consteval` or a template.
+
+As such, this paper only proposes extending the notion of transience.
+
+## Wording
+
+Change [expr.const]{.sref}/5:
+
+::: bq
+[5]{.pnum} An expression E is a core constant expression unless the evaluation of E, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
+
+* [5.1]{.pnum} [...]
+* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
+* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
+* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
+* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
+* [5.22]{.pnum} [...]
+:::
 
 ---
 references:
