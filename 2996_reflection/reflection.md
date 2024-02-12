@@ -1832,7 +1832,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 ::: bq
 ::: addu
 
-[*]{.pnum} A *consteval-only* is one of the following:
+[*]{.pnum} A *consteval-only type* is one of the following:
 
   - `std::meta::info`, or
   - a pointer or reference to a consteval-only type, or
