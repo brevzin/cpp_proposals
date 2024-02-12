@@ -1866,11 +1866,11 @@ The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists t
 
 Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
 ::: bq
-[3]{.pnum} ... The set of entities is determined in the following way:
+[3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
 - [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
 ::: addu
-- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing namespace `std::meta`.
+- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing function `std::meta::is_type`.
 :::
 - [3.3]{.pnum} If `T` is a class type ...
 
