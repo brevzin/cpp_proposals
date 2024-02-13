@@ -1238,6 +1238,45 @@ We propose a number of metafunctions declared in namespace `std::meta` to operat
 Adding metafunctions to an implementation is expected to be relatively "easy" compared to implementing the core language features described previously.
 However, despite offering a normal consteval C++ function interface, each on of these relies on "compiler magic" to a significant extent.
 
+### Constant evaluation order
+
+In C++23, "constant evaluation" produces pure values without observable side-effects and thus the order in which constant-evaluation occurs is immaterial.
+In fact, while the language is designed to permit constant evaluation to happen at compile time, an implementation is not strictly required to take advantage of that possibility.
+
+Some of the proposed metafunctions, however, have side-effects that have an effect of the remainder of the program.
+For example, we provide a `define_class` metafunction that provides a definition for a given class.
+Clearly, we want the effect of calling that metafunction to be "prompt" in a lexical-order sense.
+For example:
+
+:::bq
+```c++
+#include <meta>
+struct S;
+
+void g() {
+  static_assert(is_type(define_class(^S, {})));
+  S s;  // S should be defined at this point.
+}
+```
+:::
+
+
+Hence this proposal also introduces constraints on constant evaluation as follows...
+
+First, we identify a subset of manifestly constant-evaluated expressions and conversions characterized by the fact that their evaluation must occur and must succeed in a valid C++ program: We call these _plainly constant-evaluated_.
+We require that a programmer can count on those evaluations occurring exactly once and completing at translation time.
+
+Second, we sequence plainly constant-evaluated expressions and conversions within the lexical order.
+Specifically, we require that the evaluation of a plainly constant-evaluated expression or conversion occurs before the implementation checks the validity of source constructs lexically following that expression or conversion. 
+
+Those constraints are mostly intuitive, but they are a significant change to the underlying principles of the current standard in this respect.
+
+[@P2758] ("Emitting messages at compile time") also has to deal with side effects during constant evaluation.
+However, those effects ("output") are of a slightly different nature in the sense that they can be buffered until a manifestly constant-evaluated expression/conversion has completed.
+"Buffering" a class type completion is not practical (e.g., because other metafunctions may well depend on the completed class type).
+Still, we are now aware of incompatibilities between our proposal and [@P2758].
+
+
 ### Error-Handling in Reflection
 
 One important question we have to answer is: How do we handle errors in reflection metafunctions?
@@ -1778,12 +1817,14 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 :::bq
 
 [7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
-[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.]{.addu}
+[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.
+  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated.]{.addu}
 [...]
 
 [8]{.pnum} [...]
 All the required instantiations are performed to produce instantiation units.
-[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantion process.]{.addu}
+[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantiation process.
+  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated.]{.addu}
 [...]
 
 :::
@@ -1868,13 +1909,19 @@ The notion of consteval-only types (see [basic.types.general]{.sref}) exists to 
 ### [basic.lookup.argdep] Argument-dependent name lookup
 
 Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
+
 ::: bq
+
 [3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
 - [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
+
 ::: addu
+
 - [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+
 :::
+
 - [3.3]{.pnum} If `T` is a class type ...
 
 :::
