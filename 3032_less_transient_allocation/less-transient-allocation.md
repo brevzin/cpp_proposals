@@ -187,6 +187,10 @@ Change [expr.const]{.sref}/5:
 * [5.22]{.pnum} [...]
 :::
 
+# Acknowledgements
+
+Thank you to Peter Dimov for being Peter Dimov and coming up with all of these examples.
+
 ---
 references:
   - id: P2747R1
