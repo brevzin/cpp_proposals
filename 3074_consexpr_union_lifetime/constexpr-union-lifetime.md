@@ -281,6 +281,14 @@ So despite the fact that there was consensus to prefer a language solution over 
 
 Having had more time to consider it, I believe the library solution to be superior.
 
+## Existing Practice
+
+There are two similar features in other languages that I'm aware of.
+
+Rust has [`MaybeUninit<T>`](https://doc.rust-lang.org/std/mem/union.MaybeUninit.html) which is similar to what's proposed here as `std::uninitialized<T>`.
+
+Kotlin has a [`lateinit var`](https://kotlinlang.org/docs/properties.html#late-initialized-properties-and-variables) language feature, which is similar to some kind of language annotation (although additionally allows for checking whether it has been initialized, which the language feature would not provide).
+
 # Wording
 
 Add to [memory.syn]{.sref}:

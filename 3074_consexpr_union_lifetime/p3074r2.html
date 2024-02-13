@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-02-12" />
+  <meta name="dcterms.date" content="2024-02-13" />
   <title>std::uninitialized&lt;T&gt;</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-02-12</td>
+    <td>2024-02-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -572,6 +572,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#a-library-type-stduninitializedt"><span class="toc-section-number">3.1</span> A library type: <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code><span></span></a></li>
 <li><a href="#a-language-annotation"><span class="toc-section-number">3.2</span> A language annotation<span></span></a></li>
+<li><a href="#existing-practice"><span class="toc-section-number">3.3</span> Existing Practice<span></span></a></li>
 </ul></li>
 <li><a href="#wording"><span class="toc-section-number">4</span> Wording<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -812,6 +813,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </tbody>
 </table>
 <p>Having had more time to consider it, I believe the library solution to be superior.</p>
+<h2 data-number="3.3" id="existing-practice"><span class="header-section-number">3.3</span> Existing Practice<a href="#existing-practice" class="self-link"></a></h2>
+<p>There are two similar features in other languages that I’m aware of.</p>
+<p>Rust has <a href="https://doc.rust-lang.org/std/mem/union.MaybeUninit.html"><code class="sourceCode cpp">MaybeUninit<span class="op">&lt;</span>T<span class="op">&gt;</span></code></a> which is similar to what’s proposed here as <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
+<p>Kotlin has a <a href="https://kotlinlang.org/docs/properties.html#late-initialized-properties-and-variables"><code class="sourceCode cpp">lateinit var</code></a> language feature, which is similar to some kind of language annotation (although additionally allows for checking whether it has been initialized, which the language feature would not provide).</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add to <span>20.2.2 <a href="https://wg21.link/memory.syn">[memory.syn]</a></span>:</p>
 <blockquote>
