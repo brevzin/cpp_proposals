@@ -1,6 +1,6 @@
 ---
 title: "`std::uninitialized<T>`"
-document: P3074R1
+document: P3074R2
 date: today
 audience: EWG
 author:
@@ -13,6 +13,8 @@ tag: constexpr
 # Revision History
 
 [@P3074R0] originally proposed the function `std::start_lifetime(p)`. This revision adds a new section discussing the [uninitialized storage problem](#the-uninitialized-storage-problem), which motivates a change in design to instead propose `std::uninitialized<T>`.
+
+[@P3074R1] changed to propose `std::uninitialized<T>` and was discussed in an EWG telecon. There, the suggestion was made to make this a language feature, which this revision discusses and argues against. Also re-spelled `std::uninitialized<T>` to be a union instead of a class containing an anonymous union.
 
 # Introduction
 
@@ -240,6 +242,45 @@ As basically a better version of `std::aligned_storage`. Here is storage for a `
 
 Because the language would recognize this type, this would also solve the overlapping objects problem.
 
+## A language annotation
+
+During the EWG telecon in [January 2023](https://wiki.edg.com/bin/view/Wg21telecons2024/P3074R1-EWG), the suggestion was made that instead of a magic library type like `std::uninitialized<T>`, we could instead have some kind of language annotation to achieve the same effect.
+
+For example:
+
+::: bq
+```cpp
+template <typename T, size_t N>
+struct FixedVector {
+    // as a library feature
+    std::uninitialized<T[N]> lib;
+
+    //as a language feature, something like this
+    for storage T lang[N];
+    T storage[N] = for lang;
+    uninitialized T lang[N];
+
+    size_t size = 0;
+};
+```
+:::
+
+The advantage of the language syntax is that you can directly use `lang` - you would placement new onto `lang[0]`, you read from `lang[1]`, etc, whereas with the library syntax you have to placement new onto `lib.value[0]` and read from `lib.value[1]`, etc.
+
+However, an uninitialized object of type `T` really isn't the same thing as a `T`. `decltype(lang)` would have to be `T`, any kind of (imminent) reflection over this type would give you a `T`. But there might not actually be a `T` there yet, it behaves like a `union { T; }` rather than a `T`, so spelling it `T` strikes me as misleading.
+
+We would have to ensure that all the other member-wise algorithms we have today (the special member functions and the comparisons) use the "uninitialized `T`" meaning rather than the `T` meaning. And with reflection, that also means all future member-wise algorithms would have to account for this also - rather than rejecting `union`s.
+
+The syntactic benefits of the language syntax are nice, but this is a rarely used type for specific situations - so having slightly longer syntax (and really, `lib.value` is not especially cumbersome) is not only not a big downside here but could even be viewed as a benefit.
+
+So despite the fact that there was consensus to prefer a language solution over a library solution:
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|5|4|4|2|1|
+
+Having had more time to consider it, I believe the library solution to be superior.
+
 # Wording
 
 Add to [memory.syn]{.sref}:
@@ -268,7 +309,7 @@ namespace std {
 	                                      size_t n) noexcept;
 
 + template<class T>
-+   struct uninitialized;                                                           // freestanding
++   union uninitialized;                                                           // freestanding
 }
 ```
 :::
@@ -277,12 +318,12 @@ With corresponding wording in [obj.lifetime]{.sref}:
 
 ::: bq
 ::: addu
-[9]{.pnum} The class `uninitialized` is suitable for storage for an object of type `T` that is not initially initialized.
+[9]{.pnum} The union `uninitialized` is suitable for storage for an object of type `T` that is not initially initialized.
 
 ```cpp
 template<class T>
-struct uninitialized {
-  union { T value };
+union uninitialized {
+  T value;
 
   constexpr uninitialized();
   constexpr uninitialized(const uninitialized&);
@@ -317,12 +358,12 @@ constexpr ~uninitialized();
 
 ---
 references:
-  - id: P2747R1
-    citation-label: P2747R1
-    title: "`constexpr`` placement new"
+  - id: P3074R1
+    citation-label: P3074R1
+    title: "`std::uninitialized<T>`"
     author:
       - family: Barry Revzin
     issued:
       - year: 2023
-    URL: https://wg21.link/p2747r1
+    URL: https://wg21.link/p3074r1
 ---

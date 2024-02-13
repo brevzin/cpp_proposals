@@ -80,7 +80,7 @@
 - ![][~constexpr] P2996 Reflection for C++26: [p2996r0](2996_reflection/p2996r0.html) [p2996r1](2996_reflection/p2996r1.html) [p2996r2](2996_reflection/p2996r2.html)
 - ![][~ranges] P2997 Removing the common reference requirement from the indirectly invocable concepts: [p2997r0](2997_common_reference_algo/p2997r0.html)
 - ![][~constexpr] P3032 Less transient constexpr allocation: [p3032r0](3032_less_transient_allocation/p3032r0.html)
-- ![][~constexpr] P3074 <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>: [p3074r0](3074_consexpr_union_lifetime/p3074r0.html) [p3074r1](3074_consexpr_union_lifetime/p3074r1.html)
+- ![][~constexpr] P3074 <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>: [p3074r0](3074_consexpr_union_lifetime/p3074r0.html) [p3074r1](3074_consexpr_union_lifetime/p3074r1.html) [p3074r2](3074_consexpr_union_lifetime/p3074r2.html)
 
 [~ranges]: https://img.shields.io/badge/-ranges-brightgreen
 [~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet

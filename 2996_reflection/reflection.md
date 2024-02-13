@@ -1145,7 +1145,7 @@ S-7 eventually agreed with the `[: ... :]` syntax --- with disambiguating tokens
 
 We propose `[:` and `:]` be single tokens rather than combinations of `[`, `]`, and `:`.
 Among others, it simplifies the handling of expressions like `arr[[:refl():]]`.
-On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged.
+On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged and another one to avoid breaking a (somewhat useless) attribute specifier of the form `[[using ns:]]`.
 
 A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators.
 However, there are other possibilities.
@@ -1822,6 +1822,7 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 ```
 :::
 
+
 ### [basic.types.general]
 
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
@@ -1835,13 +1836,14 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 ::: bq
 ::: addu
 
-[*]{.pnum} A type is *consteval-only* if it is:
+[*]{.pnum} A *consteval-only type* is one of the following:
 
-  - `std::meta::info`
-  - an array type with a consteval-only element type
-  - a class type with a consteval-only base class type or consteval-only nonstatic data member type
-  - a pointer or reference to a consteval-only type
-  - a function type with a consteval-only return type or a consteval-only parameter type
+  - `std::meta::info`, or
+  - a pointer or reference to a consteval-only type, or
+  - an (possibly multi-dimensional) array of a consteval-only type, or
+  - a pointer-to-member type to a class `C` of type `M` where either `C` or `M` is a consteval-only type, or
+  - a function type with a consteval-only return type or a consteval-only parameter type, or
+  - a class type with a consteval-only base class type or consteval-only non-static data member type.
 
 An object of consteval-only type shall either end its lifetime during the evaluation of a manifestly constant-evaluated expression or conversion ([expr.const]{.sref}), or be a constexpr variable that is not odr-used ([basic.def.odr]{.sref}).
 
@@ -1855,13 +1857,26 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 ::: bq
 ::: addu
 
-[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represent a language element such as a type, a constant value, a nonstatic data member, etc.
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
-[*Note*:
-Reflections are only meaningful during translation.
-The notion of *consteval-only* types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]
+[Reflections are only meaningful during translation.
+The notion of consteval-only types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
 
 :::
+:::
+
+### [basic.lookup.argdep] Argument-dependent name lookup
+
+Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
+::: bq
+[3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
+
+- [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
+::: addu
+- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+:::
+- [3.3]{.pnum} If `T` is a class type ...
+
 :::
 
 
@@ -2044,6 +2059,40 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 :::
 :::
 
+### [dcl.attr.grammar] Attribute syntax and semantics
+
+Add a production to the grammar for `$attribute-specifier$` as follows:
+
+::: bq
+```diff
+  $attribute-specifier$:
+     [ [ $attribute-using-prefix$@~_opt_~@ $attribute-list$ ] ]
++    [ [ using $attribute-namespace$ :] ]
+     $alignment-specifier$
+```
+:::
+
+and update the grammar for balanced token as follows:
+
+::: bq
+```diff
+  $balanced-token$ :
+      ( $balanced-token-seq$@~_opt_~@ )
+      [ $balanced-token-seq$@~_opt_~@ ]
+      { $balanced-token-seq$@~_opt_~@ }
+-     any token other than a parenthesis, a bracket, or a brace
++     [: $balanced-token-seq$@~_opt_~@ :]
++     any token other than (, ), [, ], {, }, [:, or :]
+```
+:::
+
+Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
+
+::: bq
+
+[4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
+:::
+
 ## Library
 
 ### [over.built] Built-in operators
@@ -2069,7 +2118,7 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 ```
 namespace std::meta {
   using info = decltype(^::);
- 
+
   // [meta.reflection.names], reflection names and locations
   consteval string_view name_of(info r);
   consteval string_view qualified_name_of(info r);
@@ -2275,15 +2324,6 @@ namespace std::meta {
   consteval info unwrap_ref_decay(info type);
 }
 ```
-:::
-:::
-
-### [meta.reflection.info] Reflections
-
-::: bq
-::: addu
-
-[#]{.pnum} The type `std::meta::info` is a synonym for the type produced by the reflection operator ([expr.reflect]{.sref}), and it has the characteristics describes in [basic.types.general]{.sref} and [expr.eq]{.sref}.
 :::
 :::
 
