@@ -1271,10 +1271,10 @@ Specifically, we require that the evaluation of a plainly constant-evaluated exp
 
 Those constraints are mostly intuitive, but they are a significant change to the underlying principles of the current standard in this respect.
 
-[@P2758] ("Emitting messages at compile time") also has to deal with side effects during constant evaluation.
+[@P2758R1] ("Emitting messages at compile time") also has to deal with side effects during constant evaluation.
 However, those effects ("output") are of a slightly different nature in the sense that they can be buffered until a manifestly constant-evaluated expression/conversion has completed.
 "Buffering" a class type completion is not practical (e.g., because other metafunctions may well depend on the completed class type).
-Still, we are now aware of incompatibilities between our proposal and [@P2758].
+Still, we are now aware of incompatibilities between our proposal and [@P2758R1].
 
 
 ### Error-Handling in Reflection
