@@ -2134,7 +2134,7 @@ The `$cast-expression$` is not evaluated.
 
 * [#.#]{.pnum} If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
 
-  * [#.#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill formed.
+  * [#.#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
 
 * [#.#]{.pnum} If the operand is a constant expression, the result is a reflection for the resulting value.
 
