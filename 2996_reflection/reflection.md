@@ -53,6 +53,10 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
   - a number of `consteval` _metafunctions_ to work with reflections (including deriving other reflections), and
   - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
+(Note that this aims at something a little broader than pure "reflection".
+ We not only want to observe the structure of the program: We also want to ease generating code that depends on those observation.
+ That combination is sometimes referred to as "reflective metaprogramming", but within WG21 discussion the term "reflection" has often been used informally to refer to the same general idea.)
+
 This proposal is not intended to be the end-game as far as reflection and compile-time
 metaprogramming are concerned.  Instead, we expect it will be a useful core around which more
 powerful features will be added incrementally over time.  In particular, we believe that most
