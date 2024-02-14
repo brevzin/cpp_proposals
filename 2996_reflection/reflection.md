@@ -1032,6 +1032,9 @@ struct unmatched {
 // Returns the given reflection "enriched" with a more descriptive type.
 template <typename... Choices>
 consteval std::meta::info enrich(std::meta::info r) {
+  // Because we control the type, we know that the constructor taking info is
+  // the first constructor. The copy/move constructors are added at the }, so
+  // will be the last ones in the list.
   std::array ctors = {members_of(^Choices, std::meta::is_constructor)[0]...,
                       members_of(^unmatched, std::meta::is_constructor)[0]};
   std::array checks = {^Choices::check..., ^unmatched::check};

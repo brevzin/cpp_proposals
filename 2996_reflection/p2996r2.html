@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-02-12" />
+  <meta name="dcterms.date" content="2024-02-14" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-02-12</td>
+    <td>2024-02-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1475,17 +1475,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb30-25"><a href="#cb30-25"></a><span class="co">// Returns the given reflection &quot;enriched&quot; with a more descriptive type.</span></span>
 <span id="cb30-26"><a href="#cb30-26"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Choices<span class="op">&gt;</span></span>
 <span id="cb30-27"><a href="#cb30-27"></a><span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info enrich<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb30-28"><a href="#cb30-28"></a>  std<span class="op">::</span>array ctors <span class="op">=</span> <span class="op">{</span>members_of<span class="op">(^</span>Choices, std<span class="op">::</span>meta<span class="op">::</span>is_constructor<span class="op">)[</span><span class="dv">0</span><span class="op">]...</span>,</span>
-<span id="cb30-29"><a href="#cb30-29"></a>                      members_of<span class="op">(^</span>unmatched, std<span class="op">::</span>meta<span class="op">::</span>is_constructor<span class="op">)[</span><span class="dv">0</span><span class="op">]}</span>;</span>
-<span id="cb30-30"><a href="#cb30-30"></a>  std<span class="op">::</span>array checks <span class="op">=</span> <span class="op">{^</span>Choices<span class="op">::</span>check<span class="op">...</span>, <span class="op">^</span>unmatched<span class="op">::</span>check<span class="op">}</span>;</span>
-<span id="cb30-31"><a href="#cb30-31"></a></span>
-<span id="cb30-32"><a href="#cb30-32"></a>  std<span class="op">::</span>meta<span class="op">::</span>info choice;</span>
-<span id="cb30-33"><a href="#cb30-33"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">[</span>check, ctor<span class="op">]</span> <span class="op">:</span> std<span class="op">::</span>views<span class="op">::</span>zip<span class="op">(</span>checks, ctors<span class="op">))</span></span>
-<span id="cb30-34"><a href="#cb30-34"></a>    <span class="cf">if</span> <span class="op">(</span>value_of<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;(</span>reflect_invoke<span class="op">(</span>check, <span class="op">{</span>reflect_value<span class="op">(</span>r<span class="op">)})))</span></span>
-<span id="cb30-35"><a href="#cb30-35"></a>      <span class="cf">return</span> reflect_invoke<span class="op">(</span>ctor, <span class="op">{</span>reflect_value<span class="op">(</span>r<span class="op">)})</span>;</span>
-<span id="cb30-36"><a href="#cb30-36"></a></span>
-<span id="cb30-37"><a href="#cb30-37"></a>  std<span class="op">::</span>unreachable<span class="op">()</span>;</span>
-<span id="cb30-38"><a href="#cb30-38"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb30-28"><a href="#cb30-28"></a>  <span class="co">// Because we control the type, we know that the constructor taking info is</span></span>
+<span id="cb30-29"><a href="#cb30-29"></a>  <span class="co">// the first constructor. The copy/move constructors are added at the }, so</span></span>
+<span id="cb30-30"><a href="#cb30-30"></a>  <span class="co">// will be the last ones in the list.</span></span>
+<span id="cb30-31"><a href="#cb30-31"></a>  std<span class="op">::</span>array ctors <span class="op">=</span> <span class="op">{</span>members_of<span class="op">(^</span>Choices, std<span class="op">::</span>meta<span class="op">::</span>is_constructor<span class="op">)[</span><span class="dv">0</span><span class="op">]...</span>,</span>
+<span id="cb30-32"><a href="#cb30-32"></a>                      members_of<span class="op">(^</span>unmatched, std<span class="op">::</span>meta<span class="op">::</span>is_constructor<span class="op">)[</span><span class="dv">0</span><span class="op">]}</span>;</span>
+<span id="cb30-33"><a href="#cb30-33"></a>  std<span class="op">::</span>array checks <span class="op">=</span> <span class="op">{^</span>Choices<span class="op">::</span>check<span class="op">...</span>, <span class="op">^</span>unmatched<span class="op">::</span>check<span class="op">}</span>;</span>
+<span id="cb30-34"><a href="#cb30-34"></a></span>
+<span id="cb30-35"><a href="#cb30-35"></a>  std<span class="op">::</span>meta<span class="op">::</span>info choice;</span>
+<span id="cb30-36"><a href="#cb30-36"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">[</span>check, ctor<span class="op">]</span> <span class="op">:</span> std<span class="op">::</span>views<span class="op">::</span>zip<span class="op">(</span>checks, ctors<span class="op">))</span></span>
+<span id="cb30-37"><a href="#cb30-37"></a>    <span class="cf">if</span> <span class="op">(</span>value_of<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;(</span>reflect_invoke<span class="op">(</span>check, <span class="op">{</span>reflect_value<span class="op">(</span>r<span class="op">)})))</span></span>
+<span id="cb30-38"><a href="#cb30-38"></a>      <span class="cf">return</span> reflect_invoke<span class="op">(</span>ctor, <span class="op">{</span>reflect_value<span class="op">(</span>r<span class="op">)})</span>;</span>
+<span id="cb30-39"><a href="#cb30-39"></a></span>
+<span id="cb30-40"><a href="#cb30-40"></a>  std<span class="op">::</span>unreachable<span class="op">()</span>;</span>
+<span id="cb30-41"><a href="#cb30-41"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>We can leverage this machinery to select different function overloads based on the “type” of reflection provided as an argument.</p>
 <blockquote>
