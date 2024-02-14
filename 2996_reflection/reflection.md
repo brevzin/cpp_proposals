@@ -2228,16 +2228,30 @@ When applied to a `$namespace-name$`, the reflection produces a reflection for t
 
 [#]{.pnum} When applied to a `$cast-expression$`, the `$cast-expression$` shall be a constant expression ([expr.const]{.sref}) or an `$id-expression$` ([expr.prim.id]{.sref}) designating a variable, a function, an enumerator constant, or a nonstatic member.
 The `$cast-expression$` is not evaluated.
-If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
-If the operand is a constant expression, the result is a reflection for the resulting value.
-If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
+
+* [#.#]{.pnum} If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
+
+  * [#.#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
+
+* [#.#]{.pnum} If the operand is a constant expression, the result is a reflection for the resulting value.
+
+* [#.#]{.pnum} If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
 
 [ *Example*:
-```
-constexpr auto r = ^std::vector;
+```cpp
+template <typename T> void fn() requires (^T != ^int);
+template <typename T> void fn() requires (^T == ^int);
+template <typename T> void fn() requires (sizeof(T) == sizeof(int);
+
+constexpr auto R = ^fn<char>;     // OK
+constexpr auto S = ^fn<int>;      // error: cannot reflect an overload set
+
+constexpr auto r = ^std::vector;  // OK
 ```
 — *end example* ]
+
 :::
+
 :::
 
 ### [expr.eq] Equality Operators
