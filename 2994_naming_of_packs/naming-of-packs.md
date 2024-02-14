@@ -1,6 +1,6 @@
 ---
 title: "On the Naming of Packs"
-document: P2994R0
+document: P2994R1
 date: today
 audience: EWG
 author:
@@ -14,6 +14,10 @@ span.yellow {
     background-color: #ffff00;
 }
 </style>
+
+# Revision History
+
+Changed the proposal because it doesn't... actually work.
 
 # Introduction
 
@@ -77,7 +81,7 @@ Note that lambda capture isn't included in the above table, since `[pack...]` is
 
 [^exp]: For expansion statements, even though we've agreed on the `template for` syntax, there does not appear to be a published document that uses that syntax. Also, the last revision doesn't have support for expanding over a pack due to the lack of syntax - the three options presented here are various ideas that have come up in various conversations with people.
 
-# Proposal
+# An Idea
 
 I would like to suggest that rather than coming up with a bespoke syntax for every pack operation we need to do - that we instead come up with a bespoke syntax for _naming a pack_ [^name] and use _that_ syntax for each operation. This gives us orthogonality and consistency.
 
@@ -148,6 +152,66 @@ Here, all the syntaxes in the last column are the same as the syntaxes in the fi
 It is pretty likely that many people will prefer at least one syntax in the second column to its corresponding suggestion in the third column (I certainly do). But, on the whole, I think the consistency and orthogonality outweigh these small preferences.
 
 Incidentally, this syntax also avoids the potential ambiguity mentioned in [@P2662R2] for its syntax proposal (that having a parameter of `T...[1]` is valid syntax today, which with this proposal for indexing into the pack would instead be spelled `...T[1]` which is not valid today), although given that two compilers don't even support that syntax today makes this a very minor, footnote-level advantage.
+
+Or at least, I thought that this was a pretty good idea. But it does run into one very unfortunate problem. What does this mean:
+
+::: bq
+```cpp
+template for (auto x : ...pack[0])
+```
+:::
+
+There are two possible interpretations:
+
+1. This is a tuple-expansion over the tuple that is the 1st element from `pack` (`...pack[0]` is indexing into `pack`)
+2. This is a pack-expansion over the unexpanded pack expression `pack[0]` (i.e. `p[0]` for each `p` in `pack`).
+
+Now, you could come up with some way to disambiguate one of these over the other, where the other syntax requires parentheses. But requiring a disambiguation completely defeats the purpose of coming up with unique syntax! We can't have nice things because there are no nice things.
+
+This leaves us with, I think, two options: either we keep the existing pack indexing syntax or we introduce new syntax for pack-expansion. That is:
+
+<table>
+<tr><th/><th>Single Element</th><th>Keep Existing<br />Pack Indexing</th><th>Bespoke Syntax<br />for Pack Expansion</th></tr>
+<tr><th style="vertical-align:middle;">Indexing</th><td>
+```cpp
+elem[0]
+```
+</td><td>
+```cpp
+pack...[0]
+```
+</td><td>
+```cpp
+@[\.\.\.pack]{.yellow}@[0]
+```
+</td></tr>
+<tr><th style="vertical-align:middle;">Expansion Statement</th><td style="vertical-align:middle;">
+```cpp
+template for (auto x : elem)
+```
+</td><td >
+```cpp
+template for (auto x : @[\.\.\.pack]{.yellow}@)
+```
+</td><td style="vertical-align:middle;">
+```cpp
+template for ... (auto x : pack)
+```
+</td></tr>
+<tr><th style="vertical-align:middle;">Splice</th><td>
+```cpp
+[: elem :]
+```
+</td><td>
+```cpp
+[: @[\.\.\.pack]{.yellow}@ :] ...
+```
+</td><td>
+```cpp
+[: @[\.\.\.pack]{.yellow}@ :] ...
+```
+</td></tr>
+</table>
 
 Note that this syntax does lead to one obvious question:
 

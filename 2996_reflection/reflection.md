@@ -1267,14 +1267,14 @@ First, we identify a subset of manifestly constant-evaluated expressions and con
 We require that a programmer can count on those evaluations occurring exactly once and completing at translation time.
 
 Second, we sequence plainly constant-evaluated expressions and conversions within the lexical order.
-Specifically, we require that the evaluation of a plainly constant-evaluated expression or conversion occurs before the implementation checks the validity of source constructs lexically following that expression or conversion. 
+Specifically, we require that the evaluation of a plainly constant-evaluated expression or conversion occurs before the implementation checks the validity of source constructs lexically following that expression or conversion.
 
 Those constraints are mostly intuitive, but they are a significant change to the underlying principles of the current standard in this respect.
 
 [@P2758R1] ("Emitting messages at compile time") also has to deal with side effects during constant evaluation.
 However, those effects ("output") are of a slightly different nature in the sense that they can be buffered until a manifestly constant-evaluated expression/conversion has completed.
 "Buffering" a class type completion is not practical (e.g., because other metafunctions may well depend on the completed class type).
-Still, we are now aware of incompatibilities between our proposal and [@P2758R1].
+Still, we are not aware of incompatibilities between our proposal and [@P2758R1].
 
 
 ### Error-Handling in Reflection
