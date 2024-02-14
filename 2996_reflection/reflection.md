@@ -30,7 +30,8 @@ Since [@P2996R1], several changes to the overall library API:
 
 * added `qualified_name_of` (to partner with `name_of`)
 * removed `is_static` for being ambiguous, added `has_internal_linkage` (and `has_linkage` and `has_external_linkage`) and `is_static_member` instead
-* added `is_class_member` and `is_namespace_member`
+* added `is_class_member`, `is_namespace_member`, and `is_concept`
+* added `reflect_invoke`
 
 Since [@P2996R0]:
 
@@ -999,6 +1000,90 @@ Thus, the only instantiations of `TU_Ticket::Helper` occur because of the call t
 
 [On Compiler Explorer](https://godbolt.org/z/1vEjW4sTr).
 
+## Emulating typeful reflection
+Although we believe a single opaque `std::meta::info` type to be the best and most scalable foundation for reflection, we acknowledge the desire expressed by SG7 for future support for "typeful reflection". The following demonstrates one possible means of assembling a typeful reflection library, in which different classes of reflections are represented by distinct types, on top of the facilities proposed here.
+
+::: bq
+```cpp
+// Represents a 'std::meta::info' constrained by a predicate.
+template <std::meta::info Pred>
+  requires (type_of(^([:Pred:](^int))) == ^bool)
+struct metatype {
+  std::meta::info value;
+
+  // Construction is ill-formed unless predicate is satisfied.
+  consteval metatype(std::meta::info r) : value(r) {
+    if (![:Pred:](r))
+      throw "Reflection is not a member of this metatype";
+  }
+
+  // Cast to 'std::meta::info' allows values of this type to be spliced.
+  consteval operator std::meta::info() const { return value; }
+
+  static consteval bool check(std::meta::info r) { return [:Pred:](r); }
+};
+
+// Type representing a "failure to match" any known metatypes.
+struct unmatched {
+  consteval unmatched(std::meta::info) {}
+  static consteval bool check(std::meta::info) { return true; }
+};
+
+// Returns the given reflection "enriched" with a more descriptive type.
+template <typename... Choices>
+consteval std::meta::info enrich(std::meta::info r) {
+  // Because we control the type, we know that the constructor taking info is
+  // the first constructor. The copy/move constructors are added at the }, so
+  // will be the last ones in the list.
+  std::array ctors = {members_of(^Choices, std::meta::is_constructor)[0]...,
+                      members_of(^unmatched, std::meta::is_constructor)[0]};
+  std::array checks = {^Choices::check..., ^unmatched::check};
+
+  std::meta::info choice;
+  for (auto [check, ctor] : std::views::zip(checks, ctors))
+    if (value_of<bool>(reflect_invoke(check, {reflect_value(r)})))
+      return reflect_invoke(ctor, {reflect_value(r)});
+
+  std::unreachable();
+}
+```
+:::
+
+We can leverage this machinery to select different function overloads based on the "type" of reflection provided as an argument.
+
+::: bq
+```cpp
+using type_t = metatype<^std::meta::is_type>;
+using fn_t = metatype<^std::meta::is_function>;
+
+// Example of a function overloaded for different "types" of reflections.
+void PrintKind(type_t) { std::println("type"); }
+void PrintKind(fn_t) { std::println("function"); }
+void PrintKind(unmatched) { std::println("unknown kind"); }
+
+int main() {
+  // Classifies any reflection as one of: Type, Function, or Unmatched.
+  auto enrich = [](std::meta::info r) { return ::enrich<type_t, fn_t>(r); };
+
+  // Demonstration of using 'enrich' to select an overload.
+  PrintKind([:enrich(^main):]);  // "function"
+  PrintKind([:enrich(^int):]);   // "type"
+  PrintKind([:enrich(^3):]);     // "unknown kind"
+```
+:::
+
+Note that the `metatype` class can be generalized to wrap values of any literal type, or to wrap multiple values of possibly different types. This has been used, for instance, to select compile-time overloads based on: whether two integers share the same parity, the presence or absence of a value in an `optional`, the type of the value held by a `variant` or an `any`, or the syntactic form of a compile-time string.
+
+Achieving the same in C++23, with the same generality, would require spelling the argument(s) twice: first to obtain a "classification tag" to use as a template argument, and again to call the function, i.e.,
+
+::: bq
+```cpp
+Printer::PrintKind<classify(^int)>(^int).
+// or worse...
+fn<classify(Arg1, Arg2, Arg3)>(Arg1, Arg2, Arg3).
+```
+:::
+
 # Proposed Features
 
 ## The Reflection Operator (`^`)
@@ -1398,6 +1483,9 @@ namespace std::meta {
   // @[substitute](#substitute)@
   consteval auto substitute(info templ, span<info const> args) -> info;
 
+  // @[reflect_invoke](#reflect_invoke)@
+  consteval auto reflect_invoke(info target, span<info const> args) -> info;
+
    // @[value_of<T>](#value_oft)@
   template<typename T>
     consteval auto value_of(info) -> T;
@@ -1631,6 +1719,22 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 ```
 :::
 
+### `reflect_invoke`
+
+:::bq
+```c++
+namespace std::meta {
+  consteval auto reflect_invoke(info target, span<info const> args) -> info;
+}
+```
+:::
+
+This metafunction produces a reflection of the value returned by a call expression.
+
+Letting `F` be the entity reflected by `target`, and `A_0, ..., A_n` be the sequence of entities reflected by the values held by `args`: if the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
+
+For all other invocations, `reflect_invoke(target, args)` is ill-formed.
+
 ### `value_of<T>`
 
 :::bq
@@ -1697,7 +1801,6 @@ namespace std::meta {
 :::
 
 This metafunction produces a reflection representing the constant value of the operand.
-
 
 ### `data_member_spec`, `define_class`
 
