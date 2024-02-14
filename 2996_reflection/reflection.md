@@ -53,6 +53,10 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
   - a number of `consteval` _metafunctions_ to work with reflections (including deriving other reflections), and
   - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
+(Note that this aims at something a little broader than pure "reflection".
+ We not only want to observe the structure of the program: We also want to ease generating code that depends on those observations.
+ That combination is sometimes referred to as "reflective metaprogramming", but within WG21 discussion the term "reflection" has often been used informally to refer to the same general idea.)
+
 This proposal is not intended to be the end-game as far as reflection and compile-time
 metaprogramming are concerned.  Instead, we expect it will be a useful core around which more
 powerful features will be added incrementally over time.  In particular, we believe that most
@@ -151,7 +155,7 @@ Used like:
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
-  template for (constexpr auto e : std::meta::members_of(^E)) {
+  template for (constexpr auto e : std::meta::enumerators_of(^E)) {
     if (value == [:e:]) {
       return std::string(std::meta::name_of(e));
     }
@@ -200,7 +204,8 @@ typename[:^char:] c = '*';  // Same as: char c = '*';
 ```
 :::
 
-The `typename` prefix can be omitted in the same contexts as with dependent qualified names.  For example:
+The `typename` prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls _type-only contexts_.
+For example:
 
 :::bq
 ```c++
@@ -235,6 +240,58 @@ int main() {
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
 [On Compiler Explorer](https://godbolt.org/z/vT4rbva7M)
+
+Note that a "member access splice" like `s.[:member_number(1):]` is a more direct member access mechanism than the traditional syntax.
+It doesn't involve member name lookup, access checking, or --- if the spliced reflection value denotes a member function --- overload resolution.
+
+This proposal includes a number of consteval "metafunctions" that enable the introspection of various language constructs.
+Among those metafunctions is `std::meta::nonstatic_data_members_of` which returns a vector of reflection values that describe the nonstatic members of a given type.
+We could thus rewrite the above example as:
+
+:::bq
+```c++
+struct S { unsigned i:2, j:6; };
+
+consteval auto member_number(int n) {
+  return std::meta::nonstatic_data_members_of(^S)[n];
+}
+
+int main() {
+  S s{0, 0};
+  s.[:member_number(1):] = 42;  // Same as: s.j = 42;
+  s.[:member_number(5):] = 0;   // Error (member_number(5) is not a constant).
+}
+```
+:::
+
+[On Compiler Explorer](https://godbolt.org/z/Wb1vx7jqb)
+
+This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
+
+Another frequently-useful metafunction is `std::meta::name_of`, which returns a `std::string_view` describing the unqualified name of an entity denoted by a given reflection value.
+With such a facility, we could conceivably access nonstatic data members "by string":
+
+:::bq
+```c++
+struct S { unsigned i:2, j:6; };
+
+consteval auto member_named(std::string_view  name) {
+  for (std::meta::info field : nonstatic_data_members_of(^S)) {
+    if (name_of(field) == name) return field;
+  }
+}
+
+int main() {
+  S s{0, 0};
+  s.[:member_named("j"):] = 42;  // Same as: s.j = 42;
+  s.[:member_named("x"):] = 0;   // Error (member_named("x") is not a constant).
+}
+```
+:::
+
+
+[On Compiler Explorer](https://godbolt.org/z/dvYoreK9E)
+
 
 ## List of Types to List of Sizes
 
@@ -292,6 +349,10 @@ template<typename T, T N>
 
 [On Compiler Explorer](https://godbolt.org/z/bvPeqvaK5).
 
+Note that the memoization implicit in the template substitution process still applies.
+So having multiple uses of, e.g., `make_integer_sequence<int, 20>` will only involve one evaluation of `make_integer_seq_refl<int>(20)`.
+
+
 ## Getting Class Layout
 
 ::: bq
@@ -341,7 +402,7 @@ One of the most commonly requested facilities is to convert an enum value to a s
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
-  template for (constexpr auto e : std::meta::members_of(^E)) {
+  template for (constexpr auto e : std::meta::enumerators_of(^E)) {
     if (value == [:e:]) {
       return std::string(std::meta::name_of(e));
     }
@@ -363,7 +424,7 @@ We can also do the reverse in pretty much the same way:
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::optional<E> string_to_enum(std::string_view name) {
-  template for (constexpr auto e : std::meta::members_of(^E)) {
+  template for (constexpr auto e : std::meta::enumerators_of(^E)) {
     if (name == std::meta::name_of(e)) {
       return [:e:];
     }
@@ -382,7 +443,7 @@ template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
   constexpr auto enumerators =
-    std::meta::members_of(^E)
+    std::meta::enumerators_of(^E)
     | std::views::transform([](std::meta::info e){
         return std::pair<E, std::string>(std::meta::value_of<E>(e), std::meta::name_of(e));
       })
@@ -401,6 +462,16 @@ constexpr std::string enum_to_string(E value) {
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
 [On Compiler Explorer](https://godbolt.org/z/Y5va8MqzG).
+
+
+Many many variations of these functions are possible and beneficial depending on the needs of the client code.
+For example:
+
+  - the "<unnamed>" case could instead output a valid cast expression like "E(5)"
+  - a more sophisticated lookup algorithm could be selected at compile time depending on the length of `enumerators_of(^E)`
+  - a compact two-way persistent data structure could be generated to support both `enum_to_string` and `string_to_enum` with a minimal footprint
+  - etc.
+
 
 ## Parsing Command-Line Options
 
@@ -450,6 +521,7 @@ int main(int argc, char *argv[]) {
 This example is based on a presentation by Matúš Chochlík.
 
 [On Compiler Explorer](https://godbolt.org/z/G4dh3jq8a).
+
 
 ## A Simple Tuple Type
 
@@ -1447,6 +1519,13 @@ This paper is proposing that:
   This reflects the actual usage.
 * Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
   This is `C` has its own template arguments that can be reflected on.
+
+### Freestanding implementations
+
+
+Several important metafunctions, such as `std::meta::_nonstatic_data_members_of`, return a `std::vector` value.
+Unfortunately, that means that they are currently not usable in a freestanding environment.
+That is an highly undesirable limitation that we believe should be addressed by imbuing freestanding implementations with a more restricted `std::vector` (e.g., one that can only allocate at compile time).
 
 ### Synopsis
 
