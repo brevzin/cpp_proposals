@@ -435,26 +435,45 @@ constexpr std::optional<E> string_to_enum(std::string_view name) {
 ```
 :::
 
-But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation):
+But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation), which also demonstrates choosing a different algorithm based on the number of enumerators:
 
 ::: bq
 ```c++
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
-  constexpr auto enumerators =
-    std::meta::enumerators_of(^E)
-    | std::views::transform([](std::meta::info e){
-        return std::pair<E, std::string>(std::meta::value_of<E>(e), std::meta::name_of(e));
-      })
-    | std::ranges::to<std::map>();
+  constexpr auto get_pairs = []{
+    return std::meta::enumerators_of(^E)
+      | std::views::transform([](std::meta::info e){
+          return std::pair<E, std::string>(std::meta::value_of<E>(e), std::meta::name_of(e));
+        })
+  };
 
-  auto it = enumerators.find(value);
-  if (it != enumerators.end()) {
-    return it->second;
-  } else {
-    return "<unnamed>";
-  }
+  constexpr auto get_name = [](E value) -> std::optional<std::string> {
+    if constexpr (enumerators_of(^E).size() <= 7) {
+      // if there aren't many enumerators, use a vector with find_if()
+      constexpr auto enumerators = get_pairs() | std::ranges::to<std::vector>();
+      auto it = std::ranges::find_if(enumerators, [value](auto const& pr){
+        return pr.first == value;
+      };
+      if (it == enumerators.end()) {
+        return std::nullopt;
+      } else {
+        return it->second;
+      }
+    } else {
+      // if there are lots of enumerators, use a map with find()
+      constexpr auto enumerators = get_pairs() | std::ranges::to<std::map>();
+      auto it = enumerators.find(value);
+      if (it == enumerators.end()) {
+        return std::nullopt;
+      } else {
+        return it->second;
+      }
+    }
+  };
+
+  return get_name(value).value_or("<unnamed>");
 }
 ```
 :::
@@ -467,8 +486,7 @@ Note that this last version has lower complexity: While the versions using an ex
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
 For example:
 
-  - the "<unnamed>" case could instead output a valid cast expression like "E(5)"
-  - a more sophisticated lookup algorithm could be selected at compile time depending on the length of `enumerators_of(^E)`
+  - the `"<unnamed>"` case could instead output a valid cast expression like `"E(5)"`
   - a compact two-way persistent data structure could be generated to support both `enum_to_string` and `string_to_enum` with a minimal footprint
   - etc.
 
