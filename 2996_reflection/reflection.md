@@ -54,7 +54,7 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
   - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
 (Note that this aims at something a little broader than pure "reflection".
- We not only want to observe the structure of the program: We also want to ease generating code that depends on those observation.
+ We not only want to observe the structure of the program: We also want to ease generating code that depends on those observations.
  That combination is sometimes referred to as "reflective metaprogramming", but within WG21 discussion the term "reflection" has often been used informally to refer to the same general idea.)
 
 This proposal is not intended to be the end-game as far as reflection and compile-time
@@ -264,7 +264,7 @@ int main() {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/bKsrWd9K9)
+[On Compiler Explorer](https://godbolt.org/z/Wb1vx7jqb)
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
@@ -276,9 +276,8 @@ With such a facility, we could conceivably access nonstatic data members "by str
 struct S { unsigned i:2, j:6; };
 
 consteval auto member_named(std::string_view  name) {
-  std::vector<std::meta::info>  fields = nonstatic_data_members_of(^S);
-  for (int k = 0; ; ++k) {
-    if (name_of(fields[k]) == name) return fields[k];
+  for (std::meta::info field : nonstatic_data_members_of(^S)) {
+    if (name_of(field) == name) return field;
   }
 }
 
