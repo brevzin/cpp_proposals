@@ -290,7 +290,7 @@ int main() {
 :::
 
 
-[On Compiler Explorer](https://godbolt.org/z/5hjfa3qYo)
+[On Compiler Explorer](https://godbolt.org/z/dvYoreK9E)
 
 
 ## List of Types to List of Sizes
