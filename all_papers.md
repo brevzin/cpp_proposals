@@ -76,7 +76,7 @@
 - P2806 <code class="sourceCode cpp"><span class="cf">do</span></code>  expressions: [p2806r0](2806_do_expr/p2806r0.html) [p2806r1](2806_do_expr/p2806r1.html) [p2806r2](2806_do_expr/p2806r2.html)
 - P2944 Comparisons for  <code class="sourceCode cpp">reference_wrapper</code>: [p2944r0](2944_comparisons_for_reference_wrapper/p2944r0.html) [p2944r1](2944_comparisons_for_reference_wrapper/p2944r1.html) [p2944r2](2944_comparisons_for_reference_wrapper/p2944r2.html)
 - P2945 Additional format specifiers for  <code class="sourceCode cpp">time_point</code>: [p2945r0](2945_format_time_point/p2945r0.html)
-- P2994 On the Naming of Packs: [p2994r0](2994_naming_of_packs/p2994r0.html)
+- P2994 On the Naming of Packs: [p2994r0](2994_naming_of_packs/p2994r0.html) [p2994r1](2994_naming_of_packs/p2994r1.html)
 - ![][~constexpr] P2996 Reflection for C++26: [p2996r0](2996_reflection/p2996r0.html) [p2996r1](2996_reflection/p2996r1.html) [p2996r2](2996_reflection/p2996r2.html)
 - ![][~ranges] P2997 Removing the common reference requirement from the indirectly invocable concepts: [p2997r0](2997_common_reference_algo/p2997r0.html)
 - ![][~constexpr] P3032 Less transient constexpr allocation: [p3032r0](3032_less_transient_allocation/p3032r0.html)

@@ -168,104 +168,66 @@ There are two possible interpretations:
 
 Now, you could come up with some way to disambiguate one of these over the other, where the other syntax requires parentheses. But requiring a disambiguation completely defeats the purpose of coming up with unique syntax! We can't have nice things because there are no nice things.
 
-This leaves us with, I think, two options: either we keep the existing pack indexing syntax or we introduce new syntax for pack-expansion. That is:
 
-<table>
-<tr><th/><th>Single Element</th><th>Keep Existing<br />Pack Indexing</th><th>Bespoke Syntax<br />for Pack Expansion</th></tr>
-<tr><th style="vertical-align:middle;">Indexing</th><td>
-```cpp
-elem[0]
-```
-</td><td>
-```cpp
-pack...[0]
-```
-</td><td>
-```cpp
-@[\.\.\.pack]{.yellow}@[0]
-```
-</td></tr>
-<tr><th style="vertical-align:middle;">Expansion Statement</th><td style="vertical-align:middle;">
-```cpp
-template for (auto x : elem)
-```
-</td><td >
-```cpp
-template for (auto x : @[\.\.\.pack]{.yellow}@)
-```
-</td><td style="vertical-align:middle;">
-```cpp
-template for ... (auto x : pack)
-```
-</td></tr>
-<tr><th style="vertical-align:middle;">Splice</th><td>
-```cpp
-[: elem :]
-```
-</td><td>
-```cpp
-[: @[\.\.\.pack]{.yellow}@ :] ...
-```
-</td><td>
-```cpp
-[: @[\.\.\.pack]{.yellow}@ :] ...
-```
-</td></tr>
-</table>
+As a result, since I don't think there actually is a viable uniform syntax option, we're left with several different choices for each operation.
 
-Note that this syntax does lead to one obvious question:
+## Pack Indexing
 
-::: bq
+1. `pack...[0]`
+1. `...pack[0]`
+
+Here, given the lack of uniform syntax option, there doesn't seem to be any benefit to change from what's in the working draft. The only advantage I thought (2) had was the potential for uniformity. Pack indexing is a kind of expansion in a way, so the existing syntax makes sense.
+
+## Pack Expansion
+
+1. `template for (auto x : ...pack)`
+1. `template for (auto x : {pack...})`
+1. `template for ... (auto x : pack)`
+1. `for ... (auto x : pack)`
+
+Here, I think sticking with `template for` is better than not. Both the tuple-expansion and pack-expansion forms do expansion, both of which might do template instantiation, so having `template for` for both is sensible. The only question is where the dots go.
+
+I think it's also important to discuss order of evaluation here, since:
+
+::: cmptable
+### Expansion
 ```cpp
-template <typename... Ts>
-void foo(Ts... pack) {
-    // if this is how we get the first element of the pack
-    auto first = ...pack[0];
-
-    // ... and this is how we iterate over it
-    template for (auto elem : ... pack) { }
-
-    // ... then what does this mean??
-    auto wat = ...pack;
+template for (auto x : ...f(pack)) {
+  g(x);
 }
 ```
-:::
 
-Maybe there's something interesting that `...pack` might mean, like some language-tuple thing. I can't immediately come up with a use-case though. So I think a decent enough answer to that question is: it means nothing. It's just not allowed. In the same way that when invoking a non-static member function, `x.f(y)` is a valid expression but `x.f` by itself is not. If in the future, somebody finds a use-case, we can also make it work later. The various pack operations (indexing, expansion, reflection, splice) are just bespoke grammar rules that happen to share this common `...pack` syntax - despite `...pack` itself having no meaning.
-
-## Wording
-
-None of these proposals exist in the working draft today, so there's no wording to offer against the working draft. However, I can provide a diff against the [@P2662R2] wording, which is pretty small (the actual feature is unchanged, only the syntax for it, which is to say only the grammar).
-
-Change the grammar in [expr.prim.pack.index] (the rest of the description is fine):
-
-::: bq
-```diff
-$pack-index-expression$:
--   $identifer$ ... [ $constant-expression$ ]
-+   ... $identifer$ [ $constant-expression$ ]
+### Equivalent
+```cpp
+g(f(pack...[0]));
+g(f(pack...[1]));
+g(f(pack...[2]));
+// ...
 ```
 :::
 
-Change the grammar in [dcl.type.pack.indexing] (likewise, the rest of the description remains unchanged):
+That is, the expression being pack-expanded over is not evaluated `$N$` times up front, it is evaluated on demand for each iteration. The syntax in (2) - where we write `{pack...}` might suggest otherwise, which is otherwise my only reason to prefer (1) over (2), but it's a weak preference. I prefer (1) and (2) over (3) because the `...` are attached to the pack being expanded.
 
-::: bq
-```diff
-$pack-index-specifier$:
--   $typedef-name$ ... [ $constant-expression$ ]
-+   ... $typedef-name$ [ $constant-expression$ ]
-```
-:::
+## Range Splicing
 
-Change the example in [dcl.type.decltype] to use `...pack[0]` instead of `pack...[0]`.
+1. `[: ...r :]...`
+1. `...[: r :]...`
 
-Change the added sentence in [temp.type]:
+Here, we need different syntax for splicing a constexpr range of reflections than splicing a single element. And it seems much better to disambiguate the two using the same splice syntax (`[:` and `:]`) but with added ellipses rather than introducing a new kind of splice syntax.
 
-::: bq
-For a template parameter pack `T`, [`T...[$constant-expression$]`]{.rm} [`...T[$constant-expression$]`]{.addu} denotes a unique dependent type.
-:::
+It depends on how you think about splicing a range which syntax works out better. Personally, I prefer `[: ... r :]` since conceptually it seems like we're unpacking the range into the splice operator - rather than splicing the range itself.
 
-Remove the added annex C entry in [decl.array], since there's no longer any ambiguity.
+# Proposal
+
+This paper proposes that:
+
+* the syntax for pack indexing remain as `pack...[0]`
+* the syntax for pack expansion be `template for (auto x : ...pack)`
+* the syntax for range splicing be `[: ... r :]` (which produces an unexpanded pack)
+
+This gives us as least a little bit of uniformity, probably as much as we can get.
+
+Since this revision no longer suggests any changes to anything currently in the standard, there is no wording to provide.
 
 ---
 references:
