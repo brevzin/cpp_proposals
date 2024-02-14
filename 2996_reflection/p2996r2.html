@@ -804,7 +804,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb4-2"><a href="#cb4-2"></a><span class="kw">typename</span><span class="op">[:</span>r<span class="op">:]</span> x <span class="op">=</span> <span class="dv">42</span>;       <span class="co">// Same as: int x = 42;</span></span>
 <span id="cb4-3"><a href="#cb4-3"></a><span class="kw">typename</span><span class="op">[:^</span><span class="dt">char</span><span class="op">:]</span> c <span class="op">=</span> <span class="ch">&#39;*&#39;</span>;  <span class="co">// Same as: char c = &#39;*&#39;;</span></span></code></pre></div>
 </blockquote>
-<p>The <code class="sourceCode cpp"><span class="kw">typename</span></code> prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls <em>type-only contexts</em>. For example:</p>
+<p>The <code class="sourceCode cpp"><span class="kw">typename</span></code> prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls <em>type-only contexts</em>). For example:</p>
 <blockquote>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">using</span> MyType <span class="op">=</span> <span class="op">[:</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)&lt;</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">)?</span> <span class="op">^</span><span class="dt">long</span> <span class="op">:</span> <span class="op">^</span><span class="dt">int</span><span class="op">:]</span>;  <span class="co">// Implicit &quot;typename&quot; prefix.</span></span></code></pre></div>
 </blockquote>
@@ -848,7 +848,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">unsigned</span> i<span class="op">:</span><span class="dv">2</span>, j<span class="op">:</span><span class="dv">6</span>; <span class="op">}</span>;</span>
 <span id="cb8-2"><a href="#cb8-2"></a></span>
-<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">consteval</span> <span class="kw">auto</span> member_named<span class="op">(</span>std<span class="op">::</span>string_view  name<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">consteval</span> <span class="kw">auto</span> member_named<span class="op">(</span>std<span class="op">::</span>string_view name<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb8-4"><a href="#cb8-4"></a>  <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info field <span class="op">:</span> nonstatic_data_members_of<span class="op">(^</span>S<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb8-5"><a href="#cb8-5"></a>    <span class="cf">if</span> <span class="op">(</span>name_of<span class="op">(</span>field<span class="op">)</span> <span class="op">==</span> name<span class="op">)</span> <span class="cf">return</span> field;</span>
 <span id="cb8-6"><a href="#cb8-6"></a>  <span class="op">}</span></span>

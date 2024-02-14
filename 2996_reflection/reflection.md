@@ -204,7 +204,7 @@ typename[:^char:] c = '*';  // Same as: char c = '*';
 ```
 :::
 
-The `typename` prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls _type-only contexts_.
+The `typename` prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls _type-only contexts_).
 For example:
 
 :::bq
@@ -275,7 +275,7 @@ With such a facility, we could conceivably access nonstatic data members "by str
 ```c++
 struct S { unsigned i:2, j:6; };
 
-consteval auto member_named(std::string_view  name) {
+consteval auto member_named(std::string_view name) {
   for (std::meta::info field : nonstatic_data_members_of(^S)) {
     if (name_of(field) == name) return field;
   }
@@ -1159,6 +1159,7 @@ int main() {
   PrintKind([:enrich(^main):]);  // "function"
   PrintKind([:enrich(^int):]);   // "type"
   PrintKind([:enrich(^3):]);     // "unknown kind"
+}
 ```
 :::
 
