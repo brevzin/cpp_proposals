@@ -2098,7 +2098,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 ::: bq
 ::: addu
 
-[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 [Reflections are only meaningful during translation.
 The notion of consteval-only types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
@@ -2126,6 +2126,18 @@ Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
 
 :::
 
+### [basic.lookup.qual.general] General
+
+Extend [basic.lookup.qual.general]{.sref}/1 to cover `$splice-name-qualifer$`:
+
+::: bq
+[1]{.pnum} ... If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​::​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
+
+:::
+
+Extend [basic.lookup.qual.general]{.sref}/2.2 to cover `$splice-name-qualifer$`:
+
+* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-name-qualifier$ ::`]{.addu}
 
 ### [expr.prim] Primary expressions
 
@@ -2144,6 +2156,44 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 +    [: $constant-expression$ :]
 +    template[: $constant-expression$ :] < $template-argument-list$@~_opt_~@ >
 ```
+:::
+
+### [expr.prim.id.qual] Qualified names
+
+Add a production to the grammar for `$nested-name-specifier$` as follows:
+
+:::bq
+```diff
+  ...
+
+  $nested-name-specifier$:
+      ::
+      $type-name$ ::
+      $namespace-name$ ::
+      $computed-type-specifier$ ::
++     $splice-name-qualifier$ ::
+      $nested-name-specifier$ $identifier$ ::
+      $nested-name-specifier$ template@~_opt_~@ $simple-template-id$ ::
++
++ $splice-name-qualifier$:
++     [: $constant-expression$ :]
+```
+:::
+
+Extend [expr.prim.id.qual]{.sref}/1 to also cover splices:
+
+::: bq
+[1]{.pnum} The component names of a `$qualified-id$` are those of its `$nested-name-specifier$` and `$unqualified-id$`. The component names of a `$nested-name-specifier$` are its `$identifier$` (if any) and those of its `$type-name$`, `$namespace-name$`, `$simple-template-id$`, [and/or]{.rm} `$nested-name-specifier$`[, and/or the `$type-name$` or `$namespace-name$` of the entity reflected by the `$constant-expression$` of its `$splice-name-qualifier$`. For a `$nested-name-specifier$` having a `$splice-name-qualifier$` with a `$constant-expression$` that reflects the global namespace, the component names are the same as for `::`. The `$constant-expression$` of a `$splice-name-qualifier$` shall be a reflection of either a `$type-name$`, `$namespace-name$`, or the global namespace]{.addu}.
+
+:::
+
+Extend [expr.prim.id.qual]{sref}/3 to also cover splices:
+
+::: bq
+[3]{.pnum} The `$nested-name-specifier$` `​::`​ nominates the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` nominates the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-name-qualifier$` nominates the entity reflected by the `$constant-expression$` of the `$splice-name-qualifier$`.]{.addu} If a nested-name-specifier N is declarative and has a simple-template-id with a template argument list A that involves a template parameter, let T be the template nominated by N without A. T shall be a class template.
+
+...
+
 :::
 
 ### [expr.prim.splice] Expression splicing
@@ -2352,6 +2402,60 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 ::: bq
 
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
+:::
+
+### [temp.names] Names of template specializations
+
+Modify the grammar for `$template-argument$` as follows:
+
+::: bq
+```diff
++ $splice-template-argument$:
++     [: constant-expression :]
++
+  $template-argument$:
+      $constant-expression$
+      $type-id$
+      $id-expression$
+      $braced-init-list$
++     $splice-template-argument$
+```
+:::
+
+### [temp.arg.general] General
+
+Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
+
+::: bq
+[3]{.pnum} In a `$template-argument$` [which does not contain a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`. [In a `$template-argument$` containing a `$splice-template-argument$`, an ambiguity between a `$splice-template-argument$` and an expression is resolved to a `$splice-template-argument$`.]{.addu}
+
+:::
+
+### [temp.arg.type] Template type arguments
+
+Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
+
+::: bq
+[1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$`. A `$template-argument$` having a `$splice-template-argument$` for such a `$template-parameter$` is treated as if were a `$type-id$` nominating the type reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
+
+:::
+
+### [temp.arg.nontype] Template non-type arguments
+
+Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
+
+::: bq
+[2]{.pnum} The value of a non-type `$template-parameter$` _P_ of (possibly deduced) type `T` is determined from its template argument _A_ as follows. If `T` is not a class type and _A_ is [not]{.rm}[neither]{.addu} a `$braced-init-list$` [nor a `$splice-template-argument$`]{.addu}, _A_ shall be a converted constant expression ([expr.const]) of type `T`; the value of _P_ is _A_ (as converted).
+
+:::
+
+### [temp.arg.template] Template template arguments
+
+Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
+
+::: bq
+[1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
+
 :::
 
 ## Library
