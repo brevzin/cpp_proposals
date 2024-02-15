@@ -1080,9 +1080,9 @@ struct pair {
 
 template <class... Tags>
 consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
-    std::vector<std::meta::nsdm_description> nsdms;
+    std::vector<std::meta::info> nsdms;
     auto f = [&]<class Tag>(Tag tag){
-        nsdms.push_back(std::meta::nsdm_description(
+        nsdms.push_back(data_member_spec(
             dealias(^Tag::type),
             {.name=Tag::name()}));
 
