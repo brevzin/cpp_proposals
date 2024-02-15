@@ -1,6 +1,6 @@
 ---
 title: "Emitting messages at compile time"
-document: P2758R1
+document: P2758R2
 date: today
 audience: EWG
 author:
@@ -11,6 +11,8 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P2758R1], clarify the section about [SFINAE-friendliness](#errors-in-constraints), reduced the API to just one error function, and adding a [warning API](#warnings) as well.
 
 [@P2758R0] and [@P2741R0] were published at the same time and had a lot of overlap. Since then, [@P2741R3] was adopted. As such, this paper no longer needs to propose the same thing. That part of the paper has been removed. This revision now only adds library functions that emit messages at compile time.
 
@@ -540,40 +542,59 @@ Here, `g<2>()` is obviously fine and `g<3>()` will not satisfy the constraints a
 If substitution results in an invalid type or expression, the constraint is not satisfied. Otherwise, the lvalue-to-rvalue conversion is performed if necessary, and E shall be a constant expression of type `bool`.
 :::
 
-That is, `g<-1>()` is ill-formed, with our current rules. But loosening those rules to allow non-constants (still of type `bool`) would allow for more useful constructs like this. After all, the above is pretty conceptually similar to having written:
+That is, `g<-1>()` is ill-formed, with our current rules. That would be the consistent choice.
+
+If we want an error to bubble up such that `g<-1>()` would be SFINAE-friendly, that seems like an entirely different construct than `std::constexpr_error_str`: that would be an exception - that the condition could catch and swallow.
+
+## Warnings
+
+Consider the call:
 
 ::: bq
 ```cpp
-constexpr auto f(int i) -> std::optional<int> {
-    if (i < 0) {
-        return std::nullopt;
-    }
-    return i;
-}
-
-template <int I> requires (f(I) % 2 == 0)
-auto g() -> void;
+std::format("x={} and y=", x, y);
 ```
 :::
 
-And here, `g<-1>()` would be a substitute failure. So why not in the original? This question also ends up being closely tied into what it would mean to have constexpr exceptions.
+The user probably intended to format both `x` and `y`, but actually forgot to write the `{}` for the second argument. So this call has an extra argument that is not used by any of the formatters. This is, surprisingly to many people, not an error. This is by design - to handle use-cases like translation, where some of the arguments may not be used, which is an important use-case of `format`. (Note that the opposite case, not providing enough arguments, is a compile error).
+
+However, it is not a use-case that exists in every domain. For many users of `format`, the above (not consuming every format argument) is a bug.
+
+One approach that we could take is to allow the `format` library to flag potential misuses in a way that users can opt in to or opt out of. We even have a tool for that already: warnings! If the format library could issue a custom diagnostic, like:
+
+::: bq
+```cpp
+std::constexpr_warning(
+  "format-too-many-args",
+  "Format string consumed {} arguments but {} were provided.",
+  current_arg, total);
+```
+:::
+
+Then the implementation could let users opt in with `-Wformat-too-many-args` (or maybe opt out with `-Wno-format-too-many-args`, or maybe some other invocation).
+
+There are probably many such examples in many libraries. Giving library authors the power to warn users (and users the power to choose their warning granularity) seems very useful.
+
 
 # Proposal
 
 This paper proposes the following:
 
-1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str(msg)`
-2. Introduce two new compile-time error APIs, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(msg)` and `std::constexpr_fail_str(msg)` will both cause the program to be ill-formed. The second additionally causes the evaluation to not be a constant expression. EWG took a poll in February to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
+1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str(msg)`.
+2. Introduce a new compile-time error APIs, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(msg)` will both cause the program to be ill-formed additionally cause the expression to not be a constant expression. EWG took a poll in February 2023 to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
 
     |SF|F|N|A|SA|
     |-|-|-|-|-|
     |5|10|3|1|0|
 
-    This implies having a function that can make the program ill-formed, and a stronger one that also makes the constant evaluation fail to be a constant expression (to ensure that the next statement is not executed).
+    However, this design choice seems unmotivated and would require two differently-named error functions - first taking `string_view` now and then the full `format` API later. There is some precedent to this (e.g. Catch2 has `CHECK` and `REQUIRE` macros - the first of which cause a test to fail but continue running to print further diagnostics, while the second causes the test to fail and immediately halt execution), but in a constant evaluation context with the freedom to form arbitrary messages, I don't think this distinction is especially useful. The `REQUIRE` functionality is critical, the `CHECK` one less so.
 
-3. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
+3. Introduce a new compile time warning API that only has effect if manifestly constant evaluated: `std::constexpr_warning_str(tag, msg)`. This will emit a warning containing the provided message under the provided tag, which can be used in an implementation-defined way to control whether the diagnostic is emitted.
+
+4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
    a. `std::constexpr_print(fmt_str, args...)`
-   b. `std::constexpr_error(fmt_str, args...)` and `std::constexpr_fail(fmt_str, args...)`
+   a. `std::constexpr_warning(tag, fmt_str, args...)`
+   b. `std::constexpr_error(fmt_str, args...)`
    c. a `format`-specific helper `std::format_parse_error(fmt_str, args...)` that either calls `std::constexpr_error` or throws a `std::format_error`, depending on context.
 
 # Wording
@@ -593,8 +614,8 @@ namespace std {
   consteval bool is_within_lifetime(const auto*) noexcept;
 
 + constexpr void constexpr_print_str(string_view) noexcept;
++ constexpr void constexpr_warning_str(string_view, string_view) noexcept;
 + constexpr void constexpr_error_str(string_view) noexcept;
-+ constexpr void constexpr_fail_str(string_view) noexcept;
 
 }
 ```
@@ -610,12 +631,13 @@ constexpr void constexpr_print_str(string_view msg) noexcept;
 [6]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
 
 ```
-constexpr void constexpr_error_str(string_view msg) noexcept;
+constexpr void constexpr_warning_str(string_view tag, string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed and a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
 
+[#]{.pnum} *Recommended practice*: Implementations should issue a warning in such cases and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `tag`.
 ```
-constexpr void constexpr_fail_str(string_view msg) noexcept;
+constexpr void constexpr_error_str(string_view msg) noexcept;
 ```
 [#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed, a diagnostic message is issued including the text of `msg`, and the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
 :::
