@@ -2,7 +2,7 @@
 title: "Reflection for C++26"
 document: P2996R2
 date: today
-audience: EWG
+audience: EWG, LEWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
