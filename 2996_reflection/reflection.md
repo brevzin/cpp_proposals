@@ -1083,7 +1083,7 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
     std::vector<std::meta::info> nsdms;
     auto f = [&]<class Tag>(Tag tag){
         nsdms.push_back(std::meta::data_member_spec(
-            dealias(^typename Tag::type),
+            dealias(^Tag::type),
             {.name=Tag::name()}));
 
     };
