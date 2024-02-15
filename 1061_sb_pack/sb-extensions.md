@@ -522,6 +522,40 @@ The intent is that the `static_assert` declarations in `#1` and `#3` do not fire
 
 This brings up the question of what the boundary of dependence is.
 
+### More Templates
+
+The approach suggested by John Spicer is as follows. Consider this example (let `s@~i~@` just be some statements):
+
+::: bq
+```cpp
+void foo() {
+    auto [...xs] = C();
+    s@~0~@;
+    s@~1~@;
+    s@~2~@;
+}
+```
+:::
+
+Those statements get treated roughly as if they appeared in this context:
+
+::: bq
+```cpp
+void foo() {
+    auto [...xs] = C();
+    [&](auto... xs){
+        s@~0~@;
+        s@~1~@;
+        s@~2~@;
+    }(xs...);
+}
+```
+:::
+
+Of course, not exactly like that (we're not literally introducing a generic lambda, there's no added function scope, all of these statements are directly in `foo` so that `return`s work, etc.). But this is the model.
+
+Importantly, it helps answer all of the questions in the previous examples: do the `static_assert`s fire in the [Varna example addendum](#the-varna-example)? No, none of them fire.
+
 ## Namespace-scope packs
 
 In addition to non-dependent packs, this paper also seems like it would offer the ability to declare a pack at _namespace_ scope:
@@ -561,6 +595,12 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 > |     _attribute-specifier-seq_ _decl-specifier-seq_ _init-declarator-list_ `;`
 > |     _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _ref-qualifier_~opt~ <code>[</code> [_identifier-list_]{.rm} [_sb-identifier-list_]{.addu} <code>]</code> _initializer_ `;`
 
+:::
+
+Adjust [dcl.pre]{.sref}/11 to delay `static_assert`s here too:
+
+::: bq
+[11]{.pnum} In a *static_assert-declaration*, the *constant-expression* `E` is contextually converted to `bool` and the converted expression shall be a constant expression ([expr.const]). If the value of the expression `E` when so converted is `true` or the expression is evaluated [either]{.addu} in the context of a template definition [or in the locus of a structured binding pack declaration]{.addu}, the declaration has no effect and the *static_assert-message* is an unevaluated operand ([expr.context]). Otherwise, the *static_assert-declaration* fails and [...]
 :::
 
 Change [dcl.pre]{.sref} paragraph 8:
@@ -679,6 +719,45 @@ Change [dcl.struct.bind]{.sref} paragraph 5 to define a structured binding size:
 [5]{.pnum} Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
 :::
 
+Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity:
+
+::: bq
+[8]{.pnum} An entity is *templated* if it is
+
+* [#.#]{.pnum} a template,
+* [#.#]{.pnum} an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,
+* [#.#]{.pnum} a member of a templated entity,
+* [#.#]{.pnum} an enumerator for an enumeration that is a templated entity, [or]{.rm}
+* [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity[.]{.rm} [, or]{.addu}
+
+::: addu
+* [#.#]{.pnum} an entity whose declaration's locus is inhabited by the declaration of a structured binding pack.
+:::
+
+[A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.]{.note}
+
+::: addu
+[*Example*:
+```
+struct C { int j; long l; };
+
+int g() {
+    auto [ ... i ] = C{ 1, 2L };
+    return ( [c = i] () {
+        struct C {
+            int f() requires (sizeof(c) == sizeof(int)) { return 1; }
+            int f() requires (sizeof(c) != sizeof(int)) { return 2; }
+        };
+        return C{}.f();
+    } () + ...  + 0 );
+}
+
+int v = g(); // OK: v == 3
+```
+*-end example*]
+:::
+:::
+
 Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
 
 ::: bq
@@ -778,7 +857,7 @@ Bump `__cpp_structured_bindings` in [cpp.predefined]{.sref}:
 
 ```diff
 - __cpp_­structured_­bindings 201606L
-+ __cpp_­structured_­bindings 2023XXL
++ __cpp_­structured_­bindings 2024XXL
 ```
 
 # Acknowledgements
