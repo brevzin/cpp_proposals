@@ -2129,16 +2129,18 @@ Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
 
 ### [basic.lookup.qual.general] General
 
-Extend [basic.lookup.qual.general]{.sref}/1 to cover `$splice-name-qualifer$`:
+Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-name-qualifer$`:
 
 ::: bq
-[1]{.pnum} ... If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​::​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
+[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
 
-:::
+[2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
 
-Extend [basic.lookup.qual.general]{.sref}/2.2 to cover `$splice-name-qualifer$`:
-
+* [2.1]{.pnum} an *unqualified-id* or
 * [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-name-qualifier$ ::`]{.addu}
+
+in the *id-expression* of a class member access expression ([expr.ref]). [...]
+:::
 
 ### [expr.prim] Primary expressions
 
@@ -2165,8 +2167,6 @@ Add a production to the grammar for `$nested-name-specifier$` as follows:
 
 :::bq
 ```diff
-  ...
-
   $nested-name-specifier$:
       ::
       $type-name$ ::
@@ -2188,7 +2188,7 @@ Extend [expr.prim.id.qual]{.sref}/1 to also cover splices:
 
 :::
 
-Extend [expr.prim.id.qual]{sref}/3 to also cover splices:
+Extend [expr.prim.id.qual]{.sref}/3 to also cover splices:
 
 ::: bq
 [3]{.pnum} The `$nested-name-specifier$` `​::`​ nominates the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` nominates the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-name-qualifier$` nominates the entity reflected by the `$constant-expression$` of the `$splice-name-qualifier$`.]{.addu} If a nested-name-specifier N is declarative and has a simple-template-id with a template argument list A that involves a template parameter, let T be the template nominated by N without A. T shall be a class template.
