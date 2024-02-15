@@ -1083,7 +1083,7 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
     std::vector<std::meta::info> nsdms;
     auto f = [&]<class Tag>(Tag tag){
         nsdms.push_back(data_member_spec(
-            dealias(^Tag::type),
+            dealias(^typename Tag::type),
             {.name=Tag::name()}));
 
     };
@@ -1103,7 +1103,7 @@ int main() {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/GKM4947fM).
+[On Compiler Explorer](https://godbolt.org/z/nMx4M9sdT).
 
 
 ## Compile-Time Ticket Counter
