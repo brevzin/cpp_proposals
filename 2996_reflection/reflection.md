@@ -1779,7 +1779,7 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection designated a type that is a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
+If `r` is a reflection designated a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
 
 For example:
 
@@ -2940,7 +2940,7 @@ consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Mandates*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of, the specialization designated by `r`, respectively.
+[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of the specialization designated by `r`, respectively.
 
 [#]{.pnum} [*Example*:
 ```
