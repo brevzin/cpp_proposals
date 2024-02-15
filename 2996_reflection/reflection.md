@@ -1054,6 +1054,52 @@ Thus `f` is a function reference to the correct specialization of `struct_to_tup
 
 [On Compiler Explorer](https://godbolt.org/z/Moqf84nc1), with a different implementation than either of the above.
 
+## Named Tuple
+
+The tricky thing with implementing a named tuple is actually strings as non-type template parameters.
+Because you cannot just pass `"x"` into a non-type template parameter of the form `auto V`, that leaves us with two ways of specifying the constituents:
+
+1. Can introduce a `pair` type so that we can write `make_named_tuple<pair<int, "x">, pair<double, "y">>()`, or
+2. Can just do reflections all the way down so that we can write `make_named_tuple<^int, ^"x", ^double, ^"y">()`.
+
+We do not currently support splicing string literals (although that may change in the next revision), and the `pair` approach follows the similar pattern already shown with `define_class` (given a suitable `fixed_string` type):
+
+::: bq
+```cpp
+template <class T, fixed_string Name>
+struct pair {
+    static constexpr auto name() -> std::string_view { return Name.view(); }
+    using type = T;
+};
+
+template <class... Tags>
+consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
+    std::vector<std::meta::nsdm_description> nsdms;
+    auto f = [&]<class Tag>(Tag tag){
+        nsdms.push_back(std::meta::nsdm_description(
+            dealias(^Tag::type),
+            {.name=Tag::name()}));
+
+    };
+    (f(tags), ...);
+    return define_class(type, nsdms);
+}
+
+struct R;
+static_assert(is_type(make_named_tuple(^R, pair<int, "x">{}, pair<double, "y">())));
+
+static_assert(type_of(nonstatic_data_members_of(^R)[0]) == ^int);
+static_assert(type_of(nonstatic_data_members_of(^R)[1]) == ^double);
+
+int main() {
+    [[maybe_unused]] auto r = R{.x=1, .y=2.0};
+}
+```
+:::
+
+[On Compiler Explorer](https://godbolt.org/z/GKM4947fM).
+
+
 ## Compile-Time Ticket Counter
 
 The features proposed here make it a little easier to update a ticket counter at compile time.
