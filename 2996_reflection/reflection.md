@@ -32,6 +32,12 @@ Since [@P2996R1], several changes to the overall library API:
 * removed `is_static` for being ambiguous, added `has_internal_linkage` (and `has_linkage` and `has_external_linkage`) and `is_static_member` instead
 * added `is_class_member`, `is_namespace_member`, and `is_concept`
 * added `reflect_invoke`
+* added [all the type traits](#other-type-traits)
+
+Other paper changes:
+* some updates to examples, including a new examples which add a [named tuple](#named-tuple) and [emulate typeful reflection](#emulating-typeful-reflection).
+* more discussion of syntax, constant evaluation order, aliases, and freestanding.
+* adding lots of wording
 
 Since [@P2996R0]:
 
@@ -1086,7 +1092,7 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
 }
 
 struct R;
-static_assert(is_type(make_named_tuple(^R, pair<int, "x">{}, pair<double, "y">())));
+static_assert(is_type(make_named_tuple(^R, pair<int, "x">{}, pair<double, "y">{})));
 
 static_assert(type_of(nonstatic_data_members_of(^R)[0]) == ^int);
 static_assert(type_of(nonstatic_data_members_of(^R)[1]) == ^double);

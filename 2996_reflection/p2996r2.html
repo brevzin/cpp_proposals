@@ -691,7 +691,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>removed <code class="sourceCode cpp">is_static</code> for being ambiguous, added <code class="sourceCode cpp">has_internal_linkage</code> (and <code class="sourceCode cpp">has_linkage</code> and <code class="sourceCode cpp">has_external_linkage</code>) and <code class="sourceCode cpp">is_static_member</code> instead</li>
 <li>added <code class="sourceCode cpp">is_class_member</code>, <code class="sourceCode cpp">is_namespace_member</code>, and <code class="sourceCode cpp">is_concept</code></li>
 <li>added <code class="sourceCode cpp">reflect_invoke</code></li>
+<li>added <a href="#other-type-traits">all the type traits</a></li>
 </ul>
+<p>Other paper changes: * some updates to examples, including a new examples which add a <a href="#named-tuple">named tuple</a> and <a href="#emulating-typeful-reflection">emulate typeful reflection</a>. * more discussion of syntax, constant evaluation order, aliases, and freestanding. * adding lots of wording</p>
 <p>Since <span class="citation" data-cites="P2996R0">[<a href="#ref-P2996R0" role="doc-biblioref">P2996R0</a>]</span>:</p>
 <ul>
 <li>added links to Compiler Explorer demonstrating just about all of the examples</li>
@@ -1517,7 +1519,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb31-18"><a href="#cb31-18"></a><span class="op">}</span></span>
 <span id="cb31-19"><a href="#cb31-19"></a></span>
 <span id="cb31-20"><a href="#cb31-20"></a><span class="kw">struct</span> R;</span>
-<span id="cb31-21"><a href="#cb31-21"></a><span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>make_named_tuple<span class="op">(^</span>R, pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="st">&quot;x&quot;</span><span class="op">&gt;{}</span>, pair<span class="op">&lt;</span><span class="dt">double</span>, <span class="st">&quot;y&quot;</span><span class="op">&gt;())))</span>;</span>
+<span id="cb31-21"><a href="#cb31-21"></a><span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>make_named_tuple<span class="op">(^</span>R, pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="st">&quot;x&quot;</span><span class="op">&gt;{}</span>, pair<span class="op">&lt;</span><span class="dt">double</span>, <span class="st">&quot;y&quot;</span><span class="op">&gt;{})))</span>;</span>
 <span id="cb31-22"><a href="#cb31-22"></a></span>
 <span id="cb31-23"><a href="#cb31-23"></a><span class="kw">static_assert</span><span class="op">(</span>type_of<span class="op">(</span>nonstatic_data_members_of<span class="op">(^</span>R<span class="op">)[</span><span class="dv">0</span><span class="op">])</span> <span class="op">==</span> <span class="op">^</span><span class="dt">int</span><span class="op">)</span>;</span>
 <span id="cb31-24"><a href="#cb31-24"></a><span class="kw">static_assert</span><span class="op">(</span>type_of<span class="op">(</span>nonstatic_data_members_of<span class="op">(^</span>R<span class="op">)[</span><span class="dv">1</span><span class="op">])</span> <span class="op">==</span> <span class="op">^</span><span class="dt">double</span><span class="op">)</span>;</span>
