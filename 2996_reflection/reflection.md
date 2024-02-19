@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R2
+document: D2996R3
 date: today
 audience: EWG, LEWG
 author:
@@ -2093,7 +2093,7 @@ Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
   --- Otherwise, if the next three characters are `<::` and the subsequent character is neither `:` nor `>`, the `<` is treated as a preprocessing token by itself and not as the first character of the alternative token `<:`.
 
 :::addu
-  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
+  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:` or if the next three characters are `[:>`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
 :::
   ...
 :::
@@ -2313,7 +2313,7 @@ template<bool> struct X;
 consteval void g(std::meta::info r) {
   if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
   if (r == (^int) && true);  // OK
-  if (r == ^X < true);       // error: "<" is an angle bracket
+  if (r == ^X < true);       // error: < starts template argument list
   if (r == (^X) < true);     // OK
 }
 
@@ -2476,11 +2476,24 @@ Modify the grammar for `$template-argument$` as follows:
 ```
 :::
 
+
+Add a paragraph after paragraph 3 or [temp.names]:
+
+::: bq
+:::addu
+
+[*]{.pnum} A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a splicer of the form `template[: $constant-expression$ :]`.
+
+:::
+:::
+
+
 ### [temp.arg.general] General
 
 Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
 
 ::: bq
+
 [3]{.pnum} In a `$template-argument$` [which does not contain a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`. [In a `$template-argument$` containing a `$splice-template-argument$`, an ambiguity between a `$splice-template-argument$` and an expression is resolved to a `$splice-template-argument$`.]{.addu}
 
 :::
