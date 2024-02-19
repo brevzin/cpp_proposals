@@ -2,7 +2,7 @@
 title: "Reflection for C++26"
 document: P2996R2
 date: today
-audience: EWG
+audience: EWG, LEWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
@@ -32,6 +32,12 @@ Since [@P2996R1], several changes to the overall library API:
 * removed `is_static` for being ambiguous, added `has_internal_linkage` (and `has_linkage` and `has_external_linkage`) and `is_static_member` instead
 * added `is_class_member`, `is_namespace_member`, and `is_concept`
 * added `reflect_invoke`
+* added [all the type traits](#other-type-traits)
+
+Other paper changes:
+* some updates to examples, including a new examples which add a [named tuple](#named-tuple) and [emulate typeful reflection](#emulating-typeful-reflection).
+* more discussion of syntax, constant evaluation order, aliases, and freestanding.
+* adding lots of wording
 
 Since [@P2996R0]:
 
@@ -54,7 +60,7 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
   - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
 (Note that this aims at something a little broader than pure "reflection".
- We not only want to observe the structure of the program: We also want to ease generating code that depends on those observation.
+ We not only want to observe the structure of the program: We also want to ease generating code that depends on those observations.
  That combination is sometimes referred to as "reflective metaprogramming", but within WG21 discussion the term "reflection" has often been used informally to refer to the same general idea.)
 
 This proposal is not intended to be the end-game as far as reflection and compile-time
@@ -204,7 +210,7 @@ typename[:^char:] c = '*';  // Same as: char c = '*';
 ```
 :::
 
-The `typename` prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls _type-only contexts_.
+The `typename` prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls _type-only contexts_).
 For example:
 
 :::bq
@@ -264,7 +270,7 @@ int main() {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/bKsrWd9K9)
+[On Compiler Explorer](https://godbolt.org/z/Wb1vx7jqb)
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
@@ -275,10 +281,9 @@ With such a facility, we could conceivably access nonstatic data members "by str
 ```c++
 struct S { unsigned i:2, j:6; };
 
-consteval auto member_named(std::string_view  name) {
-  std::vector<std::meta::info>  fields = nonstatic_data_members_of(^S);
-  for (int k = 0; ; ++k) {
-    if (name_of(fields[k]) == name) return fields[k];
+consteval auto member_named(std::string_view name) {
+  for (std::meta::info field : nonstatic_data_members_of(^S)) {
+    if (name_of(field) == name) return field;
   }
 }
 
@@ -291,7 +296,7 @@ int main() {
 :::
 
 
-[On Compiler Explorer](https://godbolt.org/z/5hjfa3qYo)
+[On Compiler Explorer](https://godbolt.org/z/dvYoreK9E)
 
 
 ## List of Types to List of Sizes
@@ -436,26 +441,45 @@ constexpr std::optional<E> string_to_enum(std::string_view name) {
 ```
 :::
 
-But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation):
+But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation), which also demonstrates choosing a different algorithm based on the number of enumerators:
 
 ::: bq
 ```c++
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
-  constexpr auto enumerators =
-    std::meta::enumerators_of(^E)
-    | std::views::transform([](std::meta::info e){
-        return std::pair<E, std::string>(std::meta::value_of<E>(e), std::meta::name_of(e));
-      })
-    | std::ranges::to<std::map>();
+  constexpr auto get_pairs = []{
+    return std::meta::enumerators_of(^E)
+      | std::views::transform([](std::meta::info e){
+          return std::pair<E, std::string>(std::meta::value_of<E>(e), std::meta::name_of(e));
+        })
+  };
 
-  auto it = enumerators.find(value);
-  if (it != enumerators.end()) {
-    return it->second;
-  } else {
-    return "<unnamed>";
-  }
+  constexpr auto get_name = [](E value) -> std::optional<std::string> {
+    if constexpr (enumerators_of(^E).size() <= 7) {
+      // if there aren't many enumerators, use a vector with find_if()
+      constexpr auto enumerators = get_pairs() | std::ranges::to<std::vector>();
+      auto it = std::ranges::find_if(enumerators, [value](auto const& pr){
+        return pr.first == value;
+      };
+      if (it == enumerators.end()) {
+        return std::nullopt;
+      } else {
+        return it->second;
+      }
+    } else {
+      // if there are lots of enumerators, use a map with find()
+      constexpr auto enumerators = get_pairs() | std::ranges::to<std::map>();
+      auto it = enumerators.find(value);
+      if (it == enumerators.end()) {
+        return std::nullopt;
+      } else {
+        return it->second;
+      }
+    }
+  };
+
+  return get_name(value).value_or("<unnamed>");
 }
 ```
 :::
@@ -1037,6 +1061,52 @@ Thus `f` is a function reference to the correct specialization of `struct_to_tup
 
 [On Compiler Explorer](https://godbolt.org/z/Moqf84nc1), with a different implementation than either of the above.
 
+## Named Tuple
+
+The tricky thing with implementing a named tuple is actually strings as non-type template parameters.
+Because you cannot just pass `"x"` into a non-type template parameter of the form `auto V`, that leaves us with two ways of specifying the constituents:
+
+1. Can introduce a `pair` type so that we can write `make_named_tuple<pair<int, "x">, pair<double, "y">>()`, or
+2. Can just do reflections all the way down so that we can write `make_named_tuple<^int, ^"x", ^double, ^"y">()`.
+
+We do not currently support splicing string literals (although that may change in the next revision), and the `pair` approach follows the similar pattern already shown with `define_class` (given a suitable `fixed_string` type):
+
+::: bq
+```cpp
+template <class T, fixed_string Name>
+struct pair {
+    static constexpr auto name() -> std::string_view { return Name.view(); }
+    using type = T;
+};
+
+template <class... Tags>
+consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
+    std::vector<std::meta::info> nsdms;
+    auto f = [&]<class Tag>(Tag tag){
+        nsdms.push_back(data_member_spec(
+            dealias(^typename Tag::type),
+            {.name=Tag::name()}));
+
+    };
+    (f(tags), ...);
+    return define_class(type, nsdms);
+}
+
+struct R;
+static_assert(is_type(make_named_tuple(^R, pair<int, "x">{}, pair<double, "y">{})));
+
+static_assert(type_of(nonstatic_data_members_of(^R)[0]) == ^int);
+static_assert(type_of(nonstatic_data_members_of(^R)[1]) == ^double);
+
+int main() {
+    [[maybe_unused]] auto r = R{.x=1, .y=2.0};
+}
+```
+:::
+
+[On Compiler Explorer](https://godbolt.org/z/nMx4M9sdT).
+
+
 ## Compile-Time Ticket Counter
 
 The features proposed here make it a little easier to update a ticket counter at compile time.
@@ -1142,6 +1212,7 @@ int main() {
   PrintKind([:enrich(^main):]);  // "function"
   PrintKind([:enrich(^int):]);   // "type"
   PrintKind([:enrich(^3):]);     // "unknown kind"
+}
 ```
 :::
 
@@ -1709,7 +1780,7 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection designated a type that is a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
+If `r` is a reflection designated a specialization of some template, then `template_of(r)` is a reflection of that template and `template_arguments_of(r)` is a vector of the reflections of the template arguments. In other words, the preconditions on both is that `has_template_arguments(r)` is `true`.
 
 For example:
 
@@ -2081,7 +2152,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 ::: bq
 ::: addu
 
-[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc.
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 [Reflections are only meaningful during translation.
 The notion of consteval-only types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
@@ -2109,6 +2180,20 @@ Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
 
 :::
 
+### [basic.lookup.qual.general] General
+
+Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-name-qualifer$`:
+
+::: bq
+[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
+
+[2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
+
+* [2.1]{.pnum} an *unqualified-id* or
+* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-name-qualifier$ ::`]{.addu}
+
+in the *id-expression* of a class member access expression ([expr.ref]). [...]
+:::
 
 ### [expr.prim] Primary expressions
 
@@ -2127,6 +2212,42 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 +    [: $constant-expression$ :]
 +    template[: $constant-expression$ :] < $template-argument-list$@~_opt_~@ >
 ```
+:::
+
+### [expr.prim.id.qual] Qualified names
+
+Add a production to the grammar for `$nested-name-specifier$` as follows:
+
+:::bq
+```diff
+  $nested-name-specifier$:
+      ::
+      $type-name$ ::
+      $namespace-name$ ::
+      $computed-type-specifier$ ::
++     $splice-name-qualifier$ ::
+      $nested-name-specifier$ $identifier$ ::
+      $nested-name-specifier$ template@~_opt_~@ $simple-template-id$ ::
++
++ $splice-name-qualifier$:
++     [: $constant-expression$ :]
+```
+:::
+
+Extend [expr.prim.id.qual]{.sref}/1 to also cover splices:
+
+::: bq
+[1]{.pnum} The component names of a `$qualified-id$` are those of its `$nested-name-specifier$` and `$unqualified-id$`. The component names of a `$nested-name-specifier$` are its `$identifier$` (if any) and those of its `$type-name$`, `$namespace-name$`, `$simple-template-id$`, [and/or]{.rm} `$nested-name-specifier$`[, and/or the `$type-name$` or `$namespace-name$` of the entity reflected by the `$constant-expression$` of its `$splice-name-qualifier$`. For a `$nested-name-specifier$` having a `$splice-name-qualifier$` with a `$constant-expression$` that reflects the global namespace, the component names are the same as for `::`. The `$constant-expression$` of a `$splice-name-qualifier$` shall be a reflection of either a `$type-name$`, `$namespace-name$`, or the global namespace]{.addu}.
+
+:::
+
+Extend [expr.prim.id.qual]{.sref}/3 to also cover splices:
+
+::: bq
+[3]{.pnum} The `$nested-name-specifier$` `​::`​ nominates the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` nominates the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-name-qualifier$` nominates the entity reflected by the `$constant-expression$` of the `$splice-name-qualifier$`.]{.addu} If a nested-name-specifier N is declarative and has a simple-template-id with a template argument list A that involves a template parameter, let T be the template nominated by N without A. T shall be a class template.
+
+...
+
 :::
 
 ### [expr.prim.splice] Expression splicing
@@ -2211,16 +2332,30 @@ When applied to a `$namespace-name$`, the reflection produces a reflection for t
 
 [#]{.pnum} When applied to a `$cast-expression$`, the `$cast-expression$` shall be a constant expression ([expr.const]{.sref}) or an `$id-expression$` ([expr.prim.id]{.sref}) designating a variable, a function, an enumerator constant, or a nonstatic member.
 The `$cast-expression$` is not evaluated.
-If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
-If the operand is a constant expression, the result is a reflection for the resulting value.
-If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
+
+* [#.#]{.pnum} If the operand of the reflection operator is an `$id-expression$`, the result is a reflection for the indicated entity.
+
+  * [#.#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
+
+* [#.#]{.pnum} If the operand is a constant expression, the result is a reflection for the resulting value.
+
+* [#.#]{.pnum} If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
 
 [ *Example*:
-```
-constexpr auto r = ^std::vector;
+```cpp
+template <typename T> void fn() requires (^T != ^int);
+template <typename T> void fn() requires (^T == ^int);
+template <typename T> void fn() requires (sizeof(T) == sizeof(int);
+
+constexpr auto R = ^fn<char>;     // OK
+constexpr auto S = ^fn<int>;      // error: cannot reflect an overload set
+
+constexpr auto r = ^std::vector;  // OK
 ```
 — *end example* ]
+
 :::
+
 :::
 
 ### [expr.eq] Equality Operators
@@ -2321,6 +2456,60 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 ::: bq
 
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
+:::
+
+### [temp.names] Names of template specializations
+
+Modify the grammar for `$template-argument$` as follows:
+
+::: bq
+```diff
++ $splice-template-argument$:
++     [: constant-expression :]
++
+  $template-argument$:
+      $constant-expression$
+      $type-id$
+      $id-expression$
+      $braced-init-list$
++     $splice-template-argument$
+```
+:::
+
+### [temp.arg.general] General
+
+Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
+
+::: bq
+[3]{.pnum} In a `$template-argument$` [which does not contain a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`. [In a `$template-argument$` containing a `$splice-template-argument$`, an ambiguity between a `$splice-template-argument$` and an expression is resolved to a `$splice-template-argument$`.]{.addu}
+
+:::
+
+### [temp.arg.type] Template type arguments
+
+Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
+
+::: bq
+[1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$`. A `$template-argument$` having a `$splice-template-argument$` for such a `$template-parameter$` is treated as if were a `$type-id$` nominating the type reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
+
+:::
+
+### [temp.arg.nontype] Template non-type arguments
+
+Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
+
+::: bq
+[2]{.pnum} The value of a non-type `$template-parameter$` _P_ of (possibly deduced) type `T` is determined from its template argument _A_ as follows. If `T` is not a class type and _A_ is [not]{.rm}[neither]{.addu} a `$braced-init-list$` [nor a `$splice-template-argument$`]{.addu}, _A_ shall be a converted constant expression ([expr.const]) of type `T`; the value of _P_ is _A_ (as converted).
+
+:::
+
+### [temp.arg.template] Template template arguments
+
+Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
+
+::: bq
+[1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
+
 :::
 
 ## Library
@@ -2752,7 +2941,7 @@ consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Mandates*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of, the specialization designated by `r`, respectively.
+[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of the specialization designated by `r`, respectively.
 
 [#]{.pnum} [*Example*:
 ```
