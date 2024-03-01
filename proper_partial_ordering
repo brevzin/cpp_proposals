@@ -1,0 +1,20 @@
+Hi Barry,
+
+this is Tobias, the guy you helped last May in Aspen to write the DR on overloading relational operators with function templates.
+
+While preparing my flags library (https://github.com/tobias-loew/flags) for presentation to the Boost community, I stumbled over the following
+problem with std::partial_ordering:
+
+Consider a type, where the natural comparison is a partial order (e.g. a math. lattice, multi-dim Boolean algebra, other multi-dim spaces) and that order is provided via <=> to the user.
+- then all the default Compare predicates for sorted containers are broken, unless std::less is specialized for that type with a total order
+- and all the default Compare predicates for ranges algorithms are broken. (Fullstop! No way get around std::ranges::less invoking operator < .)
+
+So, silently, all ranges Compare-based algorithms are broken, unless you plug-in your own Compare everywhere!
+
+IMHO, there are two options to solve this problem:
+
+1. adding a std::proper_partial_ordering type, which cannot be used by std::less and std::ranges::less, thus forcing compilation errors when container/ranges-algorithms try to use the default Compare.
+
+2. additionally to 1., adding a customization point in std::ranges::less (and greater), where the user can supply a total order based on the type to compare.
+
+Do you think, one of the options could make it into the standard?
