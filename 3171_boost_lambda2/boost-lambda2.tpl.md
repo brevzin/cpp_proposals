@@ -257,6 +257,44 @@ namespace std {
 
 Add two new sections after [bitwise.operations]{.sref}:
 
+{% macro make_binary_func(name, op) %}
+```
+struct {{ name }} {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) {{op}} std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) {{op}} std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) {{op}} std::forward<U>(u)`.
+{% endmacro %}
+
+{% macro make_unary_func(name, op, is_prefix) %}
+{% set prefix = op if is_prefix else "" %}
+{% set postfix = "" if is_prefix else op %}
+```
+struct {{ name }} {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype({{prefix}}std::forward<T>(t){{postfix}});
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype({{prefix}}std::forward<T>(t){{postfix}});
+```
+
+[#]{.pnum} *Returns*: `{{prefix}}std::forward<T>(t){{postfix}}`.
+{% endmacro %}
+
 ::: bq
 ::: addu
 
@@ -282,329 +320,77 @@ template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
 
 #### Class `left_shift` [additional.operations.left_shift]
 
-```
-struct subscript {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) << std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) << std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) << std::forward<U>(u)`.
+{{ make_binary_func("left_shift", "<<") }}
 
 #### Class `right_shift` [additional.operations.right_shift]
 
-```
-struct right_shift {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) >> std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) >> std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) >> std::forward<U>(u)`.
+{{ make_binary_func("right_shift", ">>") }}
 
 #### Class `unary_plus` [additional.operations.unary_plus]
 
-```
-struct unary_plus {
-  template<class T> constexpr auto operator()(T&& t) const
-    -> decltype(+std::forward<T>(t));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T> constexpr auto operator()(T&& t) const
-  -> decltype(+std::forward<T>(t));
-```
-
-[#]{.pnum} *Returns*: `+std::forward<T>(t)`.
+{{ make_unary_func("unary_plus", "+", True) }}
 
 #### Class `dereference` [additional.operations.dereference]
 
-```
-struct dereference {
-  template<class T> constexpr auto operator()(T&& t) const
-    -> decltype(*std::forward<T>(t));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T> constexpr auto operator()(T&& t) const
-  -> decltype(*std::forward<T>(t));
-```
-
-[#]{.pnum} *Returns*: `*std::forward<T>(t)`.
+{{ make_unary_func("dereference", "*", True) }}
 
 #### Class `increment` [additional.operations.increment]
 
-```
-struct increment {
-  template<class T> constexpr auto operator()(T&& t) const
-    -> decltype(++std::forward<T>(t));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T> constexpr auto operator()(T&& t) const
-  -> decltype(++std::forward<T>(t));
-```
-
-[#]{.pnum} *Returns*: `++std::forward<T>(t)`.
+{{ make_unary_func("increment", "++", True) }}
 
 #### Class `decrement` [additional.operations.decrement]
 
-```
-struct decrement {
-  template<class T> constexpr auto operator()(T&& t) const
-    -> decltype(--std::forward<T>(t));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T> constexpr auto operator()(T&& t) const
-  -> decltype(--std::forward<T>(t));
-```
-
-[#]{.pnum} *Returns*: `--std::forward<T>(t)`.
+{{ make_unary_func("decrement", "--", True) }}
 
 #### Class `postfix_increment` [additional.operations.postfix_increment]
 
-```
-struct postfix_increment {
-  template<class T> constexpr auto operator()(T&& t) const
-    -> decltype(std::forward<T>(t)++);
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T> constexpr auto operator()(T&& t) const
-  -> decltype(std::forward<T>(t)++);
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t)++`.
+{{ make_unary_func("postfix_increment", "++", False) }}
 
 #### Class `postfix_decrement` [additional.operations.postfix_decrement]
 
-```
-struct postfix_decrement {
-  template<class T> constexpr auto operator()(T&& t) const
-    -> decltype(std::forward<T>(t)--);
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T> constexpr auto operator()(T&& t) const
-  -> decltype(std::forward<T>(t)--);
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t)--`.
+{{ make_unary_func("postfix_decrement", "--", False) }}
 
 ### Compound assignment operations [compound.operations]
 
 #### Class `plus_equal` [compound.operations.plus_equal]
 
-```
-struct plus_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) += std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) += std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) += std::forward<U>(u)`.
+{{ make_binary_func("plus_equal", "+=") }}
 
 #### Class `minus_equal` [compound.operations.minus_equal]
 
-```
-struct minus_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) -= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) -= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) -= std::forward<U>(u)`.
+{{ make_binary_func("minus_equal", "-=") }}
 
 #### Class `multiplies_equal` [compound.operations.multiplies_equal]
 
-```
-struct multiplies_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) *= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) *= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) *= std::forward<U>(u)`.
+{{ make_binary_func("multiplies_equal", "*=") }}
 
 #### Class `divides_equal` [compound.operations.divides_equal]
 
-```
-struct divides_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) /= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) /= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) /= std::forward<U>(u)`.
+{{ make_binary_func("divides_equal", "/=") }}
 
 #### Class `modulus_equal` [compound.operations.modulus_equal]
 
-```
-struct modulus_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) %= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) %= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) %= std::forward<U>(u)`.
+{{ make_binary_func("modulus_equal", "%=") }}
 
 #### Class `bit_and_equal` [compound.operations.bit_and_equal]
 
-```
-struct bit_and_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) &= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) &= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) &= std::forward<U>(u)`.
+{{ make_binary_func("bit_and_equal", "&=") }}
 
 #### Class `bit_or_equal` [compound.operations.bit_or_equal]
 
-```
-struct bit_or_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) |= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) |= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) |= std::forward<U>(u)`.
+{{ make_binary_func("bit_or_equal", "|=") }}
 
 #### Class `bit_xor_equal` [compound.operations.bit_xor_equal]
 
-```
-struct bit_xor_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) ^= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) ^= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) ^= std::forward<U>(u)`.
+{{ make_binary_func("bit_xor_equal", "^=") }}
 
 #### Class `left_shift_equal` [compound.operations.left_shift_equal]
 
-```
-struct left_shift_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) <<= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) <<= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) <<= std::forward<U>(u)`.
+{{ make_binary_func("left_shift_equal", "<<=") }}
 
 #### Class `right_shift_equal` [compound.operations.right_shift_equal]
 
-```
-struct right_shift_equal {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t) >>= std::forward<U>(u));
-
-  using is_transparent = $unspecified$;
-};
-```
-
-```
-template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-  -> decltype(std::forward<T>(t) >>= std::forward<U>(u));
-```
-
-[#]{.pnum} *Returns*: `std::forward<T>(t) >>= std::forward<U>(u)`.
+{{ make_binary_func("right_shift_equal", ">>=") }}
 
 :::
 :::
@@ -667,125 +453,42 @@ auto $placeholder$<J>::operator[](T&& t) const;
 
 [#]{.pnum} *Returns*: `bind(subscript(), *this, std::forward<T>(t))`.
 
+{% macro make_binary_operator(op, func) %}
 ```
-template<class A, class B> constexpr auto operator+(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(plus<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator-(A&& a, B&& b);
+template<class A, class B> constexpr auto operator{{ op }}(A&& a, B&& b);
 ```
 
-[#]{.pnum} *Returns*: `bind(minus<>(), std::forward<A>(a), std::forward<B>(b))`.
+[#]{.pnum} *Returns*: `bind({{ func }}, std::forward<A>(a), std::forward<B>(b))`.{% endmacro %}
 
+{% macro make_unary_operator(op, func) %}
 ```
-template<class A, class B> constexpr auto operator*(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(multiplies<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator/(A&& a, B&& b);
+template<class A> constexpr auto operator{{ op }}(A&& a);
 ```
 
-[#]{.pnum} *Returns*: `bind(divides<>(), std::forward<A>(a), std::forward<B>(b))`.
+[#]{.pnum} *Returns*: `bind({{ func }}, std::forward<A>(a))`.{% endmacro %}
 
-```
-template<class A, class B> constexpr auto operator%(A&& a, B&& b);
-```
+[#]{.pnum} Each operator function declared in this clause is constrained on at least one of the parameters having a type `T` which satisfies `is_placeholder_v<remove_cvref_t<T>> || is_bind_expression_v<remove_cvref_t<T>>` is `true`.
 
-[#]{.pnum} *Returns*: `bind(modulus<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A> constexpr auto operator-(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(negate<>(), std::forward<A>(a))`.
-
-```
-template<class A, class B> constexpr auto operator==(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(equal_to<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator!=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(not_equal_to<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator<(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(less<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator>(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(greater<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator<=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(less_equal<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator>=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(greater_equal<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator<=>(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(compare_three_way(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator&&(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(logical_and<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator||(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(logical_or<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A> constexpr auto operator!(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(logical_not<>(), std::forward<A>(a))`.
-
-```
-template<class A, class B> constexpr auto operator&(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_and<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator|(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_or<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator^(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_xor<>(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A> constexpr auto operator~(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_not<>(), std::forward<A>(a))`.
+{{ make_binary_operator("+", "plus<>()") }}
+{{ make_binary_operator("-", "minus<>()") }}
+{{ make_binary_operator("*", "multiplies<>()") }}
+{{ make_binary_operator("/", "divides<>()") }}
+{{ make_binary_operator("%", "modulus<>()") }}
+{{ make_unary_operator("-", "negate<>()") }}
+{{ make_binary_operator("==", "equal_to<>()") }}
+{{ make_binary_operator("!=", "not_equal_to<>()") }}
+{{ make_binary_operator("<", "less<>()") }}
+{{ make_binary_operator(">", "greater<>()") }}
+{{ make_binary_operator("<=", "less_equal<>()") }}
+{{ make_binary_operator(">=", "greater_equal<>()") }}
+{{ make_binary_operator("<=>", "compare_three_way()") }}
+{{ make_binary_operator("&&", "logical_and<>()") }}
+{{ make_binary_operator("||", "logical_or<>()") }}
+{{ make_unary_operator("!", "logical_not<>()") }}
+{{ make_binary_operator("&", "bit_and<>()") }}
+{{ make_binary_operator("|", "bit_or<>()") }}
+{{ make_binary_operator("^", "bit_xor<>()") }}
+{{ make_unary_operator("~", "bit_not<>()") }}
 
 ```
 template<class A, class B> constexpr auto operator<<(A&& a, B&& b);
@@ -821,29 +524,10 @@ template<class A, class B> constexpr auto operator>>(A& a, B&& b);
 
 [#]{.pnum} *Returns*: `bind(right_shift(), ref(a), std::forward<B>(b))`.
 
-```
-template<class A> constexpr auto operator+(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(unary_plus(), std::forward<A>(a))`.
-
-```
-template<class A> constexpr auto operator*(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(dereference(), std::forward<A>(a))`.
-
-```
-template<class A> constexpr auto operator++(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(increment(), std::forward<A>(a))`.
-
-```
-template<class A> constexpr auto operator--(A&& a);
-```
-
-[#]{.pnum} *Returns*: `bind(decrement(), std::forward<A>(a))`.
+{{ make_unary_operator("+", "unary_plus()") }}
+{{ make_unary_operator("*", "dereference()") }}
+{{ make_unary_operator("++", "increment()") }}
+{{ make_unary_operator("--", "decrement()") }}
 
 ```
 template<class A> constexpr auto operator++(A&& a, int);
@@ -857,65 +541,16 @@ template<class A> constexpr auto operator--(A&& a, int);
 
 [#]{.pnum} *Returns*: `bind(postfix_decrement(), std::forward<A>(a))`.
 
-```
-template<class A, class B> constexpr auto operator+=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(plus_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator-=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(minus_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator*=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(multiplies_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator/=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(divides_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator%=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(modulus_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator&=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_and_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator|=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_or_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator^=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(bit_xor_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator<<=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(left_shift_equal(), std::forward<A>(a), std::forward<B>(b))`.
-
-```
-template<class A, class B> constexpr auto operator>>=(A&& a, B&& b);
-```
-
-[#]{.pnum} *Returns*: `bind(right_shift_equal(), std::forward<A>(a), std::forward<B>(b))`.
+{{ make_binary_operator("+=", "plus_equal()") }}
+{{ make_binary_operator("-=", "minus_equal()") }}
+{{ make_binary_operator("*=", "multiplies_equal()") }}
+{{ make_binary_operator("/=", "divides_equal()") }}
+{{ make_binary_operator("%=", "modulus_equal()") }}
+{{ make_binary_operator("&=", "bit_and_equal()") }}
+{{ make_binary_operator("|=", "bit_or_equal()") }}
+{{ make_binary_operator("^=", "bit_xor_equal()") }}
+{{ make_binary_operator("<<=", "left_shift_equal()") }}
+{{ make_binary_operator(">>=", "right_shift_equal()") }}
 
 ```
 template<class A, class B> constexpr auto operator->*(A&& a, B&& b);
