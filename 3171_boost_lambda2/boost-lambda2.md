@@ -310,7 +310,7 @@ template<class A, class B> constexpr auto operator>>=(A&& a, B&& b);
 * [#.2]{.pnum} For a unary prefix operator, `@*F*~op~@(x)` returns `$op$ x`.
 * [#.2]{.pnum} For a unary postfix operator, `@*F*~op~@(x)` returns `x $op$`.
 
-[#]{.pnum} *Returns* `std::bind(@*F*~op~@, std::forward<A>(a)` for the unary operators and `std::bind(@*F*~op~@, std::forward<A>(a), std::forward<B>(b))` for the binary operators.
+[#]{.pnum} *Returns* `bind(@*F*~op~@, std::forward<A>(a)` for the unary operators and `bind(@*F*~op~@, std::forward<A>(a), std::forward<B>(b))` for the binary operators.
 
 ```
 template<class A, class B> constexpr auto operator->*(A&& a, B&& b);
