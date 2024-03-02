@@ -15,7 +15,7 @@ toc-depth: 4
 
 # Introduction
 
-As noted in [@P2760R0], there are a lot of function objects for operators in the standard library, but several operators are missing. This paper proposes to add the functionality for all the missing operators, but to do it in a different way than by adding function objects.
+As noted in [@P2760R0], there are a lot of function objects for operators in the standard library, but several operators are missing. This paper proposes to add the functionality for all the missing operators, but to also do it in a different way than simply by adding function objects.
 
 [@Boost.Lambda2] is a Boost library (writen by Peter) which makes it possible to write very terse, simple operations, by building upon the `std::bind` machinery. When Barry was implementing `std::views::zip` [@P2321R2], a range adaptor whose implementation requires forwarding various operators across a `tuple`, Boost.Lambda2 provided a very nice way to implement those operations. Here is a comparison between a hand-written lambda solution, function objects, and the placeholder solution that Lambda2 offers:
 
@@ -128,9 +128,9 @@ You can see more examples in the [@Boost.Lambda2] docs.
 
 # Proposal
 
-We propose to solve the issue of missing operator function objects in the standard library, as well as less-than-ergonomic lambda syntax for common predicates, by standardizing Boost.Lambda2.
+We propose to solve the issue of missing operator function objects in the standard library, as well as less-than-ergonomic lambda syntax for common predicates, by standardizing Boost.Lambda2. That is not a large proposal. The standard library already provides placeholders, `std::namespace::_1` and friends. The standard library also already provides `std::bind`, which is already implemented in a way that supports composition of bind expressions. All we need to do is add operators.
 
-This is not a large proposal. The standard library already provides placeholders, `std::namespace::_1` and friends. The standard library also already provides `std::bind`, which is already implemented in a way that supports composition of bind expressions. All we need to do is add operators.
+We additionally add the missing operator function objects.
 
 ## Implementation Experience
 
@@ -789,7 +789,7 @@ template<class A> constexpr auto operator~(A&& a);
 template<class A, class B> constexpr auto operator<<(A&& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `!std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `!is_base_of_v<ios_base, remove_cvref_t<A>>`.
 
 [#]{.pnum} *Returns*: `bind(left_shift(), std::forward<A>(a), std::forward<B>(b))`.
 
@@ -797,9 +797,9 @@ template<class A, class B> constexpr auto operator<<(A&& a, B&& b);
 template<class A, class B> constexpr auto operator<<(A& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>`.
 
-[#]{.pnum} *Returns*: `bind(left_shift(), std::ref(a), std::forward<B>(b))`.
+[#]{.pnum} *Returns*: `bind(left_shift(), ref(a), std::forward<B>(b))`.
 
 [#]{.pnum} *Remarks*: This overload allows expressions like `std::cout << _1 << '\n'` to work.
 
@@ -807,7 +807,7 @@ template<class A, class B> constexpr auto operator<<(A& a, B&& b);
 template<class A, class B> constexpr auto operator>>(A&& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `!std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `!is_base_of_v<ios_base, remove_cvref_t<A>>`.
 
 [#]{.pnum} *Returns*: `bind(right_shift(), std::forward<A>(a), std::forward<B>(b))`.
 
@@ -815,9 +815,9 @@ template<class A, class B> constexpr auto operator>>(A&& a, B&& b);
 template<class A, class B> constexpr auto operator>>(A& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>`.
 
-[#]{.pnum} *Returns*: `bind(right_shift(), std::ref(a), std::forward<B>(b))`.
+[#]{.pnum} *Returns*: `bind(right_shift(), ref(a), std::forward<B>(b))`.
 
 ```
 template<class A> constexpr auto operator+(A&& a);
