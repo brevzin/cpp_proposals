@@ -655,6 +655,8 @@ template <class... Args>
 decltype(auto) $placeholder$<J>::operator()(Args&&... args) const noexcept;
 ```
 
+[#]{.pnum} *Constraints*: `sizeof...(Args) >= J` is `true`.
+
 [#]{.pnum} *Returns*: `std::forward<Args>(args)...[J - 1]`.
 
 ```
@@ -789,7 +791,7 @@ template<class A> constexpr auto operator~(A&& a);
 template<class A, class B> constexpr auto operator<<(A&& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `!is_base_of_v<ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>` is `false`.
 
 [#]{.pnum} *Returns*: `bind(left_shift(), std::forward<A>(a), std::forward<B>(b))`.
 
@@ -797,7 +799,7 @@ template<class A, class B> constexpr auto operator<<(A&& a, B&& b);
 template<class A, class B> constexpr auto operator<<(A& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>` is `true`.
 
 [#]{.pnum} *Returns*: `bind(left_shift(), ref(a), std::forward<B>(b))`.
 
@@ -807,7 +809,7 @@ template<class A, class B> constexpr auto operator<<(A& a, B&& b);
 template<class A, class B> constexpr auto operator>>(A&& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `!is_base_of_v<ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>` is `false`.
 
 [#]{.pnum} *Returns*: `bind(right_shift(), std::forward<A>(a), std::forward<B>(b))`.
 
@@ -815,7 +817,7 @@ template<class A, class B> constexpr auto operator>>(A&& a, B&& b);
 template<class A, class B> constexpr auto operator>>(A& a, B&& b);
 ```
 
-[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>`.
+[#]{.pnum} *Constraints*: `is_base_of_v<ios_base, remove_cvref_t<A>>` is `true`.
 
 [#]{.pnum} *Returns*: `bind(right_shift(), ref(a), std::forward<B>(b))`.
 
