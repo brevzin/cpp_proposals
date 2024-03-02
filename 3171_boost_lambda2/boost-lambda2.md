@@ -138,6 +138,53 @@ Has been shipping in Boost since 1.77 (August 2021).
 
 ## Wording
 
+Extend [functional.syn]{.sref} to add the additional function objects:
+
+::: bq
+```diff
+namespace std {
+
+  // ...
+
+  // [bitwise.operations], bitwise operations
+  template<class T = void> struct bit_and;                                          // freestanding
+  template<class T = void> struct bit_or;                                           // freestanding
+  template<class T = void> struct bit_xor;                                          // freestanding
+  template<class T = void> struct bit_not;                                          // freestanding
+  template<> struct bit_and<void>;                                                  // freestanding
+  template<> struct bit_or<void>;                                                   // freestanding
+  template<> struct bit_xor<void>;                                                  // freestanding
+  template<> struct bit_not<void>;                                                  // freestanding
+
++ // [additional.operations], additional transparent operations
++ struct subscript;                                                                 // freestanding
++ struct left_shift;                                                                // freestanding
++ struct right_shift;                                                               // freestanding
++ struct unary_plus;                                                                // freestanding
++ struct dereference;                                                               // freestanding
++ struct increment;                                                                 // freestanding
++ struct decrement;                                                                 // freestanding
++ struct postfix_increment;                                                         // freestanding
++ struct postfix_decrement;                                                         // freestanding
++
++ // [compound.operations], compound assignment operations
++ struct plus_equal;                                                                // freestanding
++ struct minus_equal;                                                               // freestanding
++ struct multiplies_equal;                                                          // freestanding
++ struct divides_equal;                                                             // freestanding
++ struct modulus_equal;                                                             // freestanding
++ struct bit_and_equal;                                                             // freestanding
++ struct bit_or_equal;                                                              // freestanding
++ struct bit_xor_equal;                                                             // freestanding
++ struct left_shift_equal;                                                          // freestanding
++ struct right_shift_equal;                                                         // freestanding
+
+  // ...
+
+}
+```
+:::
+
 Extend [functional.syn]{.sref} to add operators:
 
 ::: bq
@@ -203,6 +250,360 @@ namespace std {
   // ...
 }
 ```
+:::
+
+Add two new sections after [bitwise.operations]{.sref}:
+
+::: bq
+::: addu
+
+### Additional operations [additional.operations]
+
+#### Class `subscript` [additional.operations.subscript]
+
+```
+struct subscript {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t)[std::forward<U>(u)]);
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t)[std::forward<U>(u)]);
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t)[std::forward<U>(u)]`.
+
+#### Class `left_shift` [additional.operations.left_shift]
+
+```
+struct subscript {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) << std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) << std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) << std::forward<U>(u)`.
+
+#### Class `right_shift` [additional.operations.right_shift]
+
+```
+struct right_shift {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) >> std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) >> std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) >> std::forward<U>(u)`.
+
+#### Class `unary_plus` [additional.operations.unary_plus]
+
+```
+struct unary_plus {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype(+std::forward<T>(t));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype(+std::forward<T>(t));
+```
+
+[#]{.pnum} *Returns*: `+std::forward<T>(t)`.
+
+#### Class `dereference` [additional.operations.dereference]
+
+```
+struct dereference {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype(*std::forward<T>(t));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype(*std::forward<T>(t));
+```
+
+[#]{.pnum} *Returns*: `*std::forward<T>(t)`.
+
+#### Class `increment` [additional.operations.increment]
+
+```
+struct increment {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype(++std::forward<T>(t));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype(++std::forward<T>(t));
+```
+
+[#]{.pnum} *Returns*: `++std::forward<T>(t)`.
+
+#### Class `decrement` [additional.operations.decrement]
+
+```
+struct decrement {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype(--std::forward<T>(t));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype(--std::forward<T>(t));
+```
+
+[#]{.pnum} *Returns*: `--std::forward<T>(t)`.
+
+#### Class `postfix_increment` [additional.operations.postfix_increment]
+
+```
+struct postfix_increment {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype(std::forward<T>(t)++);
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype(std::forward<T>(t)++);
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t)++`.
+
+#### Class `postfix_decrement` [additional.operations.postfix_decrement]
+
+```
+struct postfix_decrement {
+  template<class T> constexpr auto operator()(T&& t) const
+    -> decltype(std::forward<T>(t)--);
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T> constexpr auto operator()(T&& t) const
+  -> decltype(std::forward<T>(t)--);
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t)--`.
+
+### Compound assignment operations [compound.operations]
+
+#### Class `plus_equal` [compound.operations.plus_equal]
+
+```
+struct plus_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) += std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) += std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) += std::forward<U>(u)`.
+
+#### Class `minus_equal` [compound.operations.minus_equal]
+
+```
+struct minus_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) -= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) -= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) -= std::forward<U>(u)`.
+
+#### Class `multiplies_equal` [compound.operations.multiplies_equal]
+
+```
+struct multiplies_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) *= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) *= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) *= std::forward<U>(u)`.
+
+#### Class `divides_equal` [compound.operations.divides_equal]
+
+```
+struct divides_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) /= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) /= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) /= std::forward<U>(u)`.
+
+#### Class `modulus_equal` [compound.operations.modulus_equal]
+
+```
+struct modulus_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) %= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) %= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) %= std::forward<U>(u)`.
+
+#### Class `bit_and_equal` [compound.operations.bit_and_equal]
+
+```
+struct bit_and_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) &= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) &= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) &= std::forward<U>(u)`.
+
+#### Class `bit_or_equal` [compound.operations.bit_or_equal]
+
+```
+struct bit_or_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) |= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) |= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) |= std::forward<U>(u)`.
+
+#### Class `bit_xor_equal` [compound.operations.bit_xor_equal]
+
+```
+struct bit_xor_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) ^= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) ^= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) ^= std::forward<U>(u)`.
+
+#### Class `left_shift_equal` [compound.operations.left_shift_equal]
+
+```
+struct left_shift_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) <<= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) <<= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) <<= std::forward<U>(u)`.
+
+#### Class `right_shift_equal` [compound.operations.right_shift_equal]
+
+```
+struct right_shift_equal {
+  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+    -> decltype(std::forward<T>(t) >>= std::forward<U>(u));
+
+  using is_transparent = $unspecified$;
+};
+```
+
+```
+template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
+  -> decltype(std::forward<T>(t) >>= std::forward<U>(u));
+```
+
+[#]{.pnum} *Returns*: `std::forward<T>(t) >>= std::forward<U>(u)`.
+
+:::
 :::
 
 Extend [func.bind.place]{.sref}:
