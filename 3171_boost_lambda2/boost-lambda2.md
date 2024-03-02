@@ -225,7 +225,10 @@ namespace std {
 +   template<class A> constexpr auto operator~(A&&);
 +
 +   template<class A, class B> constexpr auto operator<<(A&&, B&&);
++   template<class A, class B> constexpr auto operator<<(A&, B&&);
++
 +   template<class A, class B> constexpr auto operator>>(A&&, B&&);
++   template<class A, class B> constexpr auto operator>>(A&, B&&);
 +
 +   template<class A> constexpr auto operator+(A&&);
 +   template<class A> constexpr auto operator*(A&&);
@@ -660,58 +663,257 @@ template <class T>
 auto $placeholder$<J>::operator[](T&& t) const;
 ```
 
-[#]{.pnum} Let `$F$` be a binary function object such that `$F$(x, y)` returns `x[y]`.
-
-[#]{.pnum} *Returns*: `bind($F$, *this, std::forward<T>(t))`.
+[#]{.pnum} *Returns*: `bind(subscript(), *this, std::forward<T>(t))`.
 
 ```
 template<class A, class B> constexpr auto operator+(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(plus<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator-(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(minus<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator*(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(multiplies<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator/(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(divides<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator%(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(modulus<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A> constexpr auto operator-(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(negate<>(), std::forward<A>(a))`.
+
+```
 template<class A, class B> constexpr auto operator==(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(equal_to<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator!=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(not_equal_to<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator<(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(less<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator>(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(greater<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator<=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(less_equal<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator>=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(greater_equal<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator<=>(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(compare_three_way(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator&&(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(logical_and<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator||(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(logical_or<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A> constexpr auto operator!(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(logical_not<>(), std::forward<A>(a))`.
+
+```
 template<class A, class B> constexpr auto operator&(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_and<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator|(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_or<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator^(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_xor<>(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A> constexpr auto operator~(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_not<>(), std::forward<A>(a))`.
+
+```
 template<class A, class B> constexpr auto operator<<(A&& a, B&& b);
+```
+
+[#]{.pnum} *Constraints*: `!std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+
+[#]{.pnum} *Returns*: `bind(left_shift(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
+template<class A, class B> constexpr auto operator<<(A& a, B&& b);
+```
+
+[#]{.pnum} *Constraints*: `std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+
+[#]{.pnum} *Returns*: `bind(left_shift(), std::ref(a), std::forward<B>(b))`.
+
+[#]{.pnum} *Remarks*: This overload allows expressions like `std::cout << _1 << '\n'` to work.
+
+```
 template<class A, class B> constexpr auto operator>>(A&& a, B&& b);
+```
+
+[#]{.pnum} *Constraints*: `!std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+
+[#]{.pnum} *Returns*: `bind(right_shift(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
+template<class A, class B> constexpr auto operator>>(A& a, B&& b);
+```
+
+[#]{.pnum} *Constraints*: `std::is_base_of_v<std::ios_base, remove_cvref_t<A>>`.
+
+[#]{.pnum} *Returns*: `bind(right_shift(), std::ref(a), std::forward<B>(b))`.
+
+```
 template<class A> constexpr auto operator+(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(unary_plus(), std::forward<A>(a))`.
+
+```
 template<class A> constexpr auto operator*(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(dereference(), std::forward<A>(a))`.
+
+```
 template<class A> constexpr auto operator++(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(increment(), std::forward<A>(a))`.
+
+```
 template<class A> constexpr auto operator--(A&& a);
+```
+
+[#]{.pnum} *Returns*: `bind(decrement(), std::forward<A>(a))`.
+
+```
 template<class A> constexpr auto operator++(A&& a, int);
+```
+
+[#]{.pnum} *Returns*: `bind(postfix_increment(), std::forward<A>(a))`.
+
+```
 template<class A> constexpr auto operator--(A&& a, int);
+```
+
+[#]{.pnum} *Returns*: `bind(postfix_decrement(), std::forward<A>(a))`.
+
+```
 template<class A, class B> constexpr auto operator+=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(plus_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator-=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(minus_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator*=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(multiplies_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator/=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(divides_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator%=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(modulus_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator&=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_and_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator|=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_or_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator^=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(bit_xor_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator<<=(A&& a, B&& b);
+```
+
+[#]{.pnum} *Returns*: `bind(left_shift_equal(), std::forward<A>(a), std::forward<B>(b))`.
+
+```
 template<class A, class B> constexpr auto operator>>=(A&& a, B&& b);
 ```
 
-[#]{.pnum} For each operator `op`, let `@*F*~op~@` be a function object such that:
-
-* [#.1]{.pnum} For a binary operator, `@*F*~op~@(x, y)` returns `x $op$ y`.
-* [#.2]{.pnum} For a unary prefix operator, `@*F*~op~@(x)` returns `$op$ x`.
-* [#.2]{.pnum} For a unary postfix operator, `@*F*~op~@(x)` returns `x $op$`.
-
-[#]{.pnum} *Returns* `bind(@*F*~op~@, std::forward<A>(a))` for the unary operators and `bind(@*F*~op~@, std::forward<A>(a), std::forward<B>(b))` for the binary operators.
+[#]{.pnum} *Returns*: `bind(right_shift_equal(), std::forward<A>(a), std::forward<B>(b))`.
 
 ```
 template<class A, class B> constexpr auto operator->*(A&& a, B&& b);
