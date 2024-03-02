@@ -130,13 +130,67 @@ You can see more examples in the [@Boost.Lambda2] docs.
 
 We propose to solve the issue of missing operator function objects in the standard library, as well as less-than-ergonomic lambda syntax for common predicates, by standardizing Boost.Lambda2. That is not a large proposal. The standard library already provides placeholders, `std::namespace::_1` and friends. The standard library also already provides `std::bind`, which is already implemented in a way that supports composition of bind expressions. All we need to do is add operators.
 
-We additionally add the missing operator function objects.
+We additionally add the missing operator function objects. Now, most of the missing operator function objects and placeholder operators are easy enough to add, except one: taking the address. `&_1` is a bit squeamish, although this actually seems like justified place to overload this operator. But as far as function objects go, the obvious name for it would be `std::addressof`. But this one already exists as an overloaded function template.
+
+This leaves us with two options:
+
+1. Respecify `std::addressof` as a customziation point object with the same behavior. This would be inconsistent with the other function objects (in all the other cases, we specify a type - `std::compare_three_way` is a type, the proposed `std::subscript` is a type, etc., whereas this would be the only object) and would break attempts to use `addressof` unqualified outside of `namespace std`.
+2. Come up with a new name for the object, such that `std::addressof(x)` and maybe `std::address_of{}(x)` are equivalent.
+
+We propose the former.
 
 ## Implementation Experience
 
 Has been shipping in Boost since 1.77 (August 2021).
 
 ## Wording
+
+Change [memory.syn]{.sref}:
+
+::: bq
+```diff
+namespace std {
+  // ...
+  // [specialized.addressof], addressof
+- template<class T>
+-   constexpr T* addressof(T& r) noexcept;                                          // freestanding
+- template<class T>
+-   const T* addressof(const T&&) = delete;                                         // freestanding
++ inline constexpr $unspecified$ addressof;                                           // freestanding
+  // ...
+}
+```
+:::
+
+Change [specialized.addressof]{.sref}:
+
+::: bq
+::: addu
+```
+struct $addressof_t$ { // exposition-only
+  template<class T>
+    constexpr T* operator()(T& r) const noexcept;
+  template<class T>
+    constexpr T* operator()(const T&&) const = delete;
+};
+
+inline constexpr $addressof_t$ addressof{};
+```
+
+```
+template<clsas T>
+  constexpr T* $addressof_t$::operator()(T& r) const noexcept;
+```
+:::
+::: rm
+```
+template<class T> constexpr T* addressof(T& r) noexcept;
+```
+:::
+[1]{.pnum} *Returns*: The actual address of the object or function referenced by `r`, even in the presence of an overloaded `operator&`.
+
+[#]{.pnum} *Remarks*: An expression `addressof(E)` is a constant subexpression ([defns.const.subexpr]) if `E` is an lvalue constant subexpression.
+:::
 
 Extend [functional.syn]{.sref} to add the additional function objects:
 
@@ -407,6 +461,7 @@ namespace std::placeholders {
 +     constexpr decltype(auto) operator()(Args&&... ) const noexcept;
 +  template <class T>
 +    constexpr auto operator[](T&& ) const;
++ constexpr auto operator&() const;
 + };
 
   $see below$ _1;
@@ -452,6 +507,13 @@ auto $placeholder$<J>::operator[](T&& t) const;
 ```
 
 [#]{.pnum} *Returns*: `bind(subscript(), *this, std::forward<T>(t))`.
+
+```
+template <int J>
+auto $placeholder$<J>::operator&() const;
+```
+
+[#]{.pnum} *Returns*: `bind(addressof, *this)`.
 
 {% macro make_binary_operator(op, func) %}
 ```

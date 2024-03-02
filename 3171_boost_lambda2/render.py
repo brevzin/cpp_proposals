@@ -1,3 +1,4 @@
 import jinja2
+import sys
 
-print(jinja2.Template(open("boost-lambda2.tpl.md").read()).render())
+print(jinja2.Template(open(sys.argv[1]).read()).render())
