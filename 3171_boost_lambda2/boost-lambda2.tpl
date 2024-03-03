@@ -128,7 +128,7 @@ You can see more examples in the [@Boost.Lambda2] docs.
 
 # Proposal
 
-We propose to solve the issue of missing operator function objects in the standard library, as well as less-than-ergonomic lambda syntax for common predicates, by standardizing Boost.Lambda2. That is not a large proposal. The standard library already provides placeholders, `std::namespace::_1` and friends. The standard library also already provides `std::bind`, which is already implemented in a way that supports composition of bind expressions. All we need to do is add operators.
+We propose to solve the issue of missing operator function objects in the standard library, as well as less-than-ergonomic lambda syntax for common predicates, by standardizing Boost.Lambda2. That is not a large proposal. The standard library already provides placeholders, `std::placeholders::_1` and friends. The standard library also already provides `std::bind`, which is already implemented in a way that supports composition of bind expressions. All we need to do is add operators.
 
 We additionally add the missing operator function objects. Now, most of the missing operator function objects and placeholder operators are easy enough to add, except one: taking an object's address.
 
