@@ -17,7 +17,7 @@ toc-depth: 4
 
 As noted in [@P2760R0], there are a lot of function objects for operators in the standard library, but several operators are missing. This paper proposes to add the functionality for all the missing operators, but to also do it in a different way than simply by adding function objects.
 
-[@Boost.Lambda2] is a Boost library (writen by Peter) which makes it possible to write very terse, simple operations, by building upon the `std::bind` machinery. When Barry was implementing `std::views::zip` [@P2321R2], a range adaptor whose implementation requires forwarding various operators across a `tuple`, Boost.Lambda2 provided a very nice way to implement those operations. Here is a comparison between a hand-written lambda solution, function objects, and the placeholder solution that Lambda2 offers:
+[@Boost.Lambda2] is a Boost library (written by Peter) which makes it possible to write very terse, simple operations, by building upon the `std::bind` machinery. When Barry was implementing `std::views::zip` [@P2321R2], a range adaptor whose implementation requires forwarding various operators across a `tuple`, Boost.Lambda2 provided a very nice way to implement those operations. Here is a comparison between a hand-written lambda solution, function objects, and the placeholder solution that Lambda2 offers:
 
 <table>
 <tr><th>Handwritten Lambdas</th><th>Named Function Objects</th><th>Boost.Lambda2</th></tr>
