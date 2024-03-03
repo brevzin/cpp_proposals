@@ -216,58 +216,58 @@ namespace std {
                .
     $see below$ _M;                                                                   // freestanding
 
-+   template<class A, class B> constexpr auto operator+(A&&, B&&);
-+   template<class A, class B> constexpr auto operator-(A&&, B&&);
-+   template<class A, class B> constexpr auto operator*(A&&, B&&);
-+   template<class A, class B> constexpr auto operator/(A&&, B&&);
-+   template<class A, class B> constexpr auto operator%(A&&, B&&);
-+   template<class A> constexpr auto operator-(A&&);
++   template<class A, class B> constexpr auto operator+(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator-(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator*(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator/(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator%(A&&, B&&);                  // freestanding
++   template<class A> constexpr auto operator-(A&&);                                // freestanding
 +
-+   template<class A, class B> constexpr auto operator==(A&&, B&&);
-+   template<class A, class B> constexpr auto operator!=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator<(A&&, B&&);
-+   template<class A, class B> constexpr auto operator>(A&&, B&&);
-+   template<class A, class B> constexpr auto operator<=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator>=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator<=>(A&&, B&&);
++   template<class A, class B> constexpr auto operator==(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator!=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator<(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator>(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator<=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator>=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator<=>(A&&, B&&);                // freestanding
 +
-+   template<class A, class B> constexpr auto operator&&(A&&, B&&);
-+   template<class A, class B> constexpr auto operator||(A&&, B&&);
-+   template<class A> constexpr auto operator!(A&&);
++   template<class A, class B> constexpr auto operator&&(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator||(A&&, B&&);                 // freestanding
++   template<class A> constexpr auto operator!(A&&);                                // freestanding
 +
-+   template<class A, class B> constexpr auto operator&(A&&, B&&);
-+   template<class A, class B> constexpr auto operator|(A&&, B&&);
-+   template<class A, class B> constexpr auto operator^(A&&, B&&);
-+   template<class A> constexpr auto operator~(A&&);
++   template<class A, class B> constexpr auto operator&(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator|(A&&, B&&);                  // freestanding
++   template<class A, class B> constexpr auto operator^(A&&, B&&);                  // freestanding
++   template<class A> constexpr auto operator~(A&&);                                // freestanding
 +
-+   template<class A, class B> constexpr auto operator<<(A&&, B&&);
-+   template<class A, class B> constexpr auto operator<<(A&, B&&);
++   template<class A, class B> constexpr auto operator<<(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator<<(A&, B&&);                  // freestanding
 +
-+   template<class A, class B> constexpr auto operator>>(A&&, B&&);
-+   template<class A, class B> constexpr auto operator>>(A&, B&&);
++   template<class A, class B> constexpr auto operator>>(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator>>(A&, B&&);                  // freestanding
 +
-+   template<class A> constexpr auto operator+(A&&);
-+   template<class A> constexpr auto operator*(A&&);
-+   template<class A> constexpr auto operator++(A&&);
-+   template<class A> constexpr auto operator--(A&&);
-+   template<class A> constexpr auto operator++(A&&, int);
-+   template<class A> constexpr auto operator--(A&&, int);
++   template<class A> constexpr auto operator+(A&&);                                // freestanding
++   template<class A> constexpr auto operator*(A&&);                                // freestanding
++   template<class A> constexpr auto operator++(A&&);                               // freestanding
++   template<class A> constexpr auto operator--(A&&);                               // freestanding
++   template<class A> constexpr auto operator++(A&&, int);                          // freestanding
++   template<class A> constexpr auto operator--(A&&, int);                          // freestanding
 +
-+   template<class A, class B> constexpr auto operator+=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator-=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator*=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator/=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator%=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator&=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator|=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator^=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator<<=(A&&, B&&);
-+   template<class A, class B> constexpr auto operator>>=(A&&, B&&);
++   template<class A, class B> constexpr auto operator+=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator-=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator*=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator/=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator%=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator&=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator|=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator^=(A&&, B&&);                 // freestanding
++   template<class A, class B> constexpr auto operator<<=(A&&, B&&);                // freestanding
++   template<class A, class B> constexpr auto operator>>=(A&&, B&&);                // freestanding
 +
-+   template<class A, class B> constexpr auto operator->*(A&&, B&&);
++   template<class A, class B> constexpr auto operator->*(A&&, B&&);                // freestanding
 +
-+   inline constexpr $unspecified$ first = $unspecified$;    // freestanding
-+   inline constexpr $unspecified$ second = $unspecifeid$;   // freestanding
++   inline constexpr $unspecified$ first = $unspecified$;                               // freestanding
++   inline constexpr $unspecified$ second = $unspecifeid$;                              // freestanding
   }
   // ...
 }
