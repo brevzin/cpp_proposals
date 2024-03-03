@@ -591,6 +591,16 @@ template<class A, class B> constexpr auto operator->*(A&& a, B&& b);
 :::
 :::
 
+## Feature-Test Macro
+
+Add an entry to [version.syn]{.sref} for this
+
+::: bq
+```diff
++ #define __cpp_lib_placeholder_operators 2024XXL // freestanding, also in <functional>
+```
+:::
+
 ---
 references:
     - id: Boost.Lambda2
