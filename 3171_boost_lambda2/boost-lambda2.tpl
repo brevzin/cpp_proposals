@@ -142,6 +142,12 @@ Second, the obvious name for a function object taking the address of an object w
 
 For now, we're going to punt on both problems and simply not support either a terse addressof on placeholders or providing an addressof function object.
 
+## Additional Details
+
+Boost.Lambda2 additionally provides two helper function objects: `first` and `second`, such that `_1->*first` gives you the first element of the type (as by `std::get<0>`) and `_1->*second` gives you the second. This is done by just providing function objects that perform these operations, similar to the proposed `get_key` and `get_value` [@P2769R1].
+
+Also, while most operators take forwarding references, there are two additional overloads of `>>` and `<<` which are special-cased such that operations like `std::cout << _1` work and capture `std::cout` by reference. The special-casing is necessary because otherwise `std::cout` would be captured by value, which is not allowed, and users would have to write `std::ref(std::cout) << _1`.
+
 ## Implementation Experience
 
 Has been shipping in Boost since 1.77 (August 2021).
@@ -259,6 +265,9 @@ namespace std {
 +   template<class A, class B> constexpr auto operator>>=(A&&, B&&);
 +
 +   template<class A, class B> constexpr auto operator->*(A&&, B&&);
++
++   inline constexpr $unspecified$ first = $unspecified$;    // freestanding
++   inline constexpr $unspecified$ second = $unspecifeid$;   // freestanding
   }
   // ...
 }
@@ -567,6 +576,18 @@ template<class A, class B> constexpr auto operator->*(A&& a, B&& b);
 ```
 
 [#]{.pnum} *Returns*: `bind(std::forward<B>(b), std::forward<A>(a))`.
+
+{% macro make_getter(name, idx) %}
+[#]{.pnum} The name `{{name}}` denotes a customization point object ([customization.point.object]). Given a subexpression `E`:
+
+* [#.1]{.pnum} If `E` has class or enumeration  type and `get<{{idx}}>(E)` is a valid expression where the meaning of `get` is established by performing argument-dependent lookup only ([basic.lookup.argdep]), then `{{name}}(E)` is expression-equivalent to `get<{{idx}}>(E)`.
+* [#.#]{.pnum} Otherwise, `{{name}}(E)` is ill-formed.
+
+{% endmacro %}
+
+{{ make_getter("first", 0) }}
+{{ make_getter("second", 1) }}
+
 :::
 :::
 

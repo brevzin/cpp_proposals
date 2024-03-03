@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-02" />
+  <meta name="dcterms.date" content="2024-03-03" />
   <title>Adding functionality to placeholder types</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-02</td>
+    <td>2024-03-03</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -568,8 +568,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
 <ul>
 <li><a href="#dealing-with-x"><span class="toc-section-number">2.1</span> Dealing with <code class="sourceCode cpp"><span class="op">&amp;</span>x</code><span></span></a></li>
-<li><a href="#implementation-experience"><span class="toc-section-number">2.2</span> Implementation Experience<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">2.3</span> Wording<span></span></a></li>
+<li><a href="#additional-details"><span class="toc-section-number">2.2</span> Additional Details<span></span></a></li>
+<li><a href="#implementation-experience"><span class="toc-section-number">2.3</span> Implementation Experience<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">2.4</span> Wording<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
 </ul>
@@ -674,9 +675,12 @@ Boost.Lambda2
 <p>We could potentially address this problem by adding in a function like <code class="sourceCode cpp">std<span class="op">::</span>placeholders<span class="op">::</span>addr<span class="op">(</span>x<span class="op">)</span></code> to mean addressof, so that instead of the cute <code class="sourceCode cpp"><span class="op">&amp;</span>_1</code> syntax you’d have to write <code class="sourceCode cpp">addr<span class="op">(</span>_1<span class="op">)</span></code>, which doesn’t have any issues with <code class="sourceCode cpp"><span class="op">&amp;</span></code>. Note that we cannot call this function <code class="sourceCode cpp">addressof</code> because while <code class="sourceCode cpp">addressof<span class="op">(</span>_1<span class="op">)</span></code> would be okay, <code class="sourceCode cpp">addressof<span class="op">(</span>addressof<span class="op">(</span>_1<span class="op">))</span></code> would become ambiguous (unless we also change <code class="sourceCode cpp">std<span class="op">::</span>addressof</code>, as we’re about to discuss).</p>
 <p>Second, the obvious name for a function object taking the address of an object would be <code class="sourceCode cpp">std<span class="op">::</span>addressof</code> - but that already exists, as a function template. We cannot change <code class="sourceCode cpp">std<span class="op">::</span>addressof</code> to be a type - that would break all code that uses it. We could potentially change it to be an object - that would break only ADL uses of it, but given the nature of <code class="sourceCode cpp">std<span class="op">::</span>addressof</code> those seem pretty unlikely to be common, so it’s potentially a feasible route to take. It would also allow <code class="sourceCode cpp">_1<span class="op">-&gt;*</span>std<span class="op">::</span>addressof</code> (in the absence of <code class="sourceCode cpp">addr<span class="op">(</span>_1<span class="op">)</span></code> or similar formulation) as a short-ish way of expressing this.</p>
 <p>For now, we’re going to punt on both problems and simply not support either a terse addressof on placeholders or providing an addressof function object.</p>
-<h2 data-number="2.2" id="implementation-experience"><span class="header-section-number">2.2</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="2.2" id="additional-details"><span class="header-section-number">2.2</span> Additional Details<a href="#additional-details" class="self-link"></a></h2>
+<p>Boost.Lambda2 additionally provides two helper function objects: <code class="sourceCode cpp">first</code> and <code class="sourceCode cpp">second</code>, such that <code class="sourceCode cpp">_1<span class="op">-&gt;*</span>first</code> gives you the first element of the type (as by <code class="sourceCode cpp">std<span class="op">::</span>get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;</span></code>) and <code class="sourceCode cpp">_1<span class="op">-&gt;*</span>second</code> gives you the second. This is done by just providing function objects that perform these operations, similar to the proposed <code class="sourceCode cpp">get_key</code> and <code class="sourceCode cpp">get_value</code> <span class="citation" data-cites="P2769R1">[<a href="#ref-P2769R1" role="doc-biblioref">P2769R1</a>]</span>.</p>
+<p>Also, while most operators take forwarding references, there are two additional overloads of <code class="sourceCode cpp"><span class="op">&gt;&gt;</span></code> and <code class="sourceCode cpp"><span class="op">&lt;&lt;</span></code> which are special-cased such that operations like <code class="sourceCode cpp">std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> _1</code> work and capture <code class="sourceCode cpp">std<span class="op">::</span>cout</code> by reference. The special-casing is necessary because otherwise <code class="sourceCode cpp">std<span class="op">::</span>cout</code> would be captured by value, which is not allowed, and users would have to write <code class="sourceCode cpp">std<span class="op">::</span>ref<span class="op">(</span>std<span class="op">::</span>cout<span class="op">)</span> <span class="op">&lt;&lt;</span> _1</code>.</p>
+<h2 data-number="2.3" id="implementation-experience"><span class="header-section-number">2.3</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Has been shipping in Boost since 1.77 (August 2021).</p>
-<h2 data-number="2.3" id="wording"><span class="header-section-number">2.3</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="2.4" id="wording"><span class="header-section-number">2.4</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>Extend <span>22.10.2 <a href="https://wg21.link/functional.syn">[functional.syn]</a></span> to add the additional function objects:</p>
 <blockquote>
 <div>
@@ -785,9 +789,12 @@ Boost.Lambda2
 <span id="cb11-58"><a href="#cb11-58"></a><span class="va">+   template&lt;class A, class B&gt; constexpr auto operator&gt;&gt;=(A&amp;&amp;, B&amp;&amp;);</span></span>
 <span id="cb11-59"><a href="#cb11-59"></a><span class="va">+</span></span>
 <span id="cb11-60"><a href="#cb11-60"></a><span class="va">+   template&lt;class A, class B&gt; constexpr auto operator-&gt;*(A&amp;&amp;, B&amp;&amp;);</span></span>
-<span id="cb11-61"><a href="#cb11-61"></a>  }</span>
-<span id="cb11-62"><a href="#cb11-62"></a>  // ...</span>
-<span id="cb11-63"><a href="#cb11-63"></a>}</span></code></pre></div>
+<span id="cb11-61"><a href="#cb11-61"></a><span class="va">+</span></span>
+<span id="cb11-62"><a href="#cb11-62"></a><span class="va">+   inline constexpr <em>unspecified</em> first = <em>unspecified</em>;    // freestanding</span></span>
+<span id="cb11-63"><a href="#cb11-63"></a><span class="va">+   inline constexpr <em>unspecified</em> second = <em>unspecifeid</em>;   // freestanding</span></span>
+<span id="cb11-64"><a href="#cb11-64"></a>  }</span>
+<span id="cb11-65"><a href="#cb11-65"></a>  // ...</span>
+<span id="cb11-66"><a href="#cb11-66"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 <p>Add two new sections after <span>22.10.11 <a href="https://wg21.link/bitwise.operations">[bitwise.operations]</a></span>:</p>
@@ -1119,6 +1126,16 @@ Boost.Lambda2
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">53</a></span> <em>Returns</em>: <code class="sourceCode cpp">bind<span class="op">(</span>right_shift_equal<span class="op">()</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>A<span class="op">&gt;(</span>a<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>B<span class="op">&gt;(</span>b<span class="op">))</span></code>.</p>
 <div class="sourceCode" id="cb95"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb95-1"><a href="#cb95-1"></a>template&lt;class A, class B&gt; constexpr auto operator-&gt;*(A&amp;&amp; a, B&amp;&amp; b);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">54</a></span> <em>Returns</em>: <code class="sourceCode cpp">bind<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>B<span class="op">&gt;(</span>b<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>A<span class="op">&gt;(</span>a<span class="op">))</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">55</a></span> The name <code class="sourceCode cpp">first</code> denotes a customization point object ([customization.point.object]). Given a subexpression <code class="sourceCode cpp">E</code>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">(55.1)</a></span> If <code class="sourceCode cpp">E</code> has class or enumeration type and <code class="sourceCode cpp">get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>E<span class="op">)</span></code> is a valid expression where the meaning of <code class="sourceCode cpp">get</code> is established by performing argument-dependent lookup only ([basic.lookup.argdep]), then <code class="sourceCode cpp">first<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <code class="sourceCode cpp">get<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;(</span>E<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">(55.2)</a></span> Otherwise, <code class="sourceCode cpp">first<span class="op">(</span>E<span class="op">)</span></code> is ill-formed.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">56</a></span> The name <code class="sourceCode cpp">second</code> denotes a customization point object ([customization.point.object]). Given a subexpression <code class="sourceCode cpp">E</code>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">(56.1)</a></span> If <code class="sourceCode cpp">E</code> has class or enumeration type and <code class="sourceCode cpp">get<span class="op">&lt;</span><span class="dv">1</span><span class="op">&gt;(</span>E<span class="op">)</span></code> is a valid expression where the meaning of <code class="sourceCode cpp">get</code> is established by performing argument-dependent lookup only ([basic.lookup.argdep]), then <code class="sourceCode cpp">second<span class="op">(</span>E<span class="op">)</span></code> is expression-equivalent to <code class="sourceCode cpp">get<span class="op">&lt;</span><span class="dv">1</span><span class="op">&gt;(</span>E<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">(56.2)</a></span> Otherwise, <code class="sourceCode cpp">second<span class="op">(</span>E<span class="op">)</span></code> is ill-formed.</li>
+</ul>
 </div>
 </blockquote>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span> References<a href="#bibliography" class="self-link"></a></h1>
@@ -1138,6 +1155,10 @@ Boost.Lambda2
 <div id="ref-P2760R0">
 <p>[P2760R0] Barry Revzin. 2023-09-17. A Plan for C++26 Ranges. <br />
 <a href="https://wg21.link/p2760r0">https://wg21.link/p2760r0</a></p>
+</div>
+<div id="ref-P2769R1">
+<p>[P2769R1] Ruslan Arutyunyan, Alexey Kukanov. 2023-05-17. get_element customization point object. <br />
+<a href="https://wg21.link/p2769r1">https://wg21.link/p2769r1</a></p>
 </div>
 </div>
 </div>
