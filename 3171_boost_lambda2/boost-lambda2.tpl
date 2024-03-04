@@ -114,7 +114,7 @@ Or if the `x` coordinate is 0:
 // hand-written lambda (31 characters)
 find_if(points, [](Point p){ return p.x == 0; })
 
-// using projection (!2 characters, but cryptic)
+// using projection (12 characters, but cryptic)
 find(points, 0, &Point::x);
 
 // Boost.Lambda 2 (19 characters)
