@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-04" />
+  <meta name="dcterms.date" content="2024-03-05" />
   <title>Adding functionality to placeholder types</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-04</td>
+    <td>2024-03-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -804,8 +804,8 @@ Boost.Lambda2
 <h3 id="additional-operations-additional.operations">Additional operations [additional.operations]<a href="#additional-operations-additional.operations" class="self-link"></a></h3>
 <h4 id="class-subscript-additional.operations.subscript">Class <code class="sourceCode cpp">subscript</code> [additional.operations.subscript]<a href="#class-subscript-additional.operations.subscript" class="self-link"></a></h4>
 <div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1"></a>struct subscript {</span>
-<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class T, class U&gt; constexpr auto operator()(T&amp;&amp; t, U&amp;&amp; u) const</span>
-<span id="cb12-3"><a href="#cb12-3"></a>    -&gt; decltype(std::forward&lt;T&gt;(t)[std::forward&lt;U&gt;(u)]);</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  template&lt;class T, class... U&gt; constexpr auto operator()(T&amp;&amp; t, U&amp;&amp;... u) const</span>
+<span id="cb12-3"><a href="#cb12-3"></a>    -&gt; decltype(std::forward&lt;T&gt;(t)[std::forward&lt;U&gt;(u)...]);</span>
 <span id="cb12-4"><a href="#cb12-4"></a></span>
 <span id="cb12-5"><a href="#cb12-5"></a>  using is_transparent = <em>unspecified</em>;</span>
 <span id="cb12-6"><a href="#cb12-6"></a>};</span></code></pre></div>
@@ -1004,8 +1004,8 @@ Boost.Lambda2
 <span id="cb50-4"><a href="#cb50-4"></a><span class="va">+ struct <em>placeholder</em> { // exposition only</span></span>
 <span id="cb50-5"><a href="#cb50-5"></a><span class="va">+   template &lt;class... Args&gt;</span></span>
 <span id="cb50-6"><a href="#cb50-6"></a><span class="va">+     constexpr decltype(auto) operator()(Args&amp;&amp;... ) const noexcept;</span></span>
-<span id="cb50-7"><a href="#cb50-7"></a><span class="va">+  template &lt;class T&gt;</span></span>
-<span id="cb50-8"><a href="#cb50-8"></a><span class="va">+    constexpr auto operator[](T&amp;&amp; ) const;</span></span>
+<span id="cb50-7"><a href="#cb50-7"></a><span class="va">+  template &lt;class... T&gt;</span></span>
+<span id="cb50-8"><a href="#cb50-8"></a><span class="va">+    constexpr auto operator[](T&amp;&amp;...) const;</span></span>
 <span id="cb50-9"><a href="#cb50-9"></a><span class="va">+ };</span></span>
 <span id="cb50-10"><a href="#cb50-10"></a></span>
 <span id="cb50-11"><a href="#cb50-11"></a>  <em>see below</em> _1;</span>
@@ -1036,9 +1036,9 @@ Boost.Lambda2
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">5</a></span> <em>Constraints</em>: <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Args<span class="op">)</span> <span class="op">&gt;=</span> J</code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">6</a></span> <em>Returns</em>: <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...[</span>J <span class="op">-</span> <span class="dv">1</span><span class="op">]</span></code>.</p>
 <div class="sourceCode" id="cb54"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb54-1"><a href="#cb54-1"></a>template &lt;int J&gt;</span>
-<span id="cb54-2"><a href="#cb54-2"></a>template &lt;class T&gt;</span>
-<span id="cb54-3"><a href="#cb54-3"></a>auto <em>placeholder</em>&lt;J&gt;::operator[](T&amp;&amp; t) const;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">bind<span class="op">(</span>subscript<span class="op">()</span>, <span class="op">*</span><span class="kw">this</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">))</span></code>.</p>
+<span id="cb54-2"><a href="#cb54-2"></a>template &lt;class... T&gt;</span>
+<span id="cb54-3"><a href="#cb54-3"></a>auto <em>placeholder</em>&lt;J&gt;::operator[](T&amp;&amp;... t) const;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">7</a></span> <em>Returns</em>: <code class="sourceCode cpp">bind<span class="op">(</span>subscript<span class="op">()</span>, <span class="op">*</span><span class="kw">this</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)...)</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">8</a></span> Each operator function declared in this clause is constrained on at least one of the parameters having a type <code class="sourceCode cpp">T</code> which satisfies <code class="sourceCode cpp">is_placeholder_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span> <span class="op">||</span> is_bind_expression_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></code> is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb55-1"><a href="#cb55-1"></a>template&lt;class A, class B&gt; constexpr auto operator+(A&amp;&amp; a, B&amp;&amp; b);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">9</a></span> <em>Returns</em>: <code class="sourceCode cpp">bind<span class="op">(</span>plus<span class="op">&lt;&gt;()</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>A<span class="op">&gt;(</span>a<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span>B<span class="op">&gt;(</span>b<span class="op">))</span></code>.</p>

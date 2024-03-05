@@ -323,8 +323,8 @@ template<class T> constexpr auto operator()(T&& t) const
 
 ```
 struct subscript {
-  template<class T, class U> constexpr auto operator()(T&& t, U&& u) const
-    -> decltype(std::forward<T>(t)[std::forward<U>(u)]);
+  template<class T, class... U> constexpr auto operator()(T&& t, U&&... u) const
+    -> decltype(std::forward<T>(t)[std::forward<U>(u)...]);
 
   using is_transparent = $unspecified$;
 };
@@ -424,8 +424,8 @@ namespace std::placeholders {
 + struct $placeholder$ { // exposition only
 +   template <class... Args>
 +     constexpr decltype(auto) operator()(Args&&... ) const noexcept;
-+  template <class T>
-+    constexpr auto operator[](T&& ) const;
++  template <class... T>
++    constexpr auto operator[](T&&...) const;
 + };
 
   $see below$ _1;
@@ -466,11 +466,11 @@ decltype(auto) $placeholder$<J>::operator()(Args&&... args) const noexcept;
 
 ```
 template <int J>
-template <class T>
-auto $placeholder$<J>::operator[](T&& t) const;
+template <class... T>
+auto $placeholder$<J>::operator[](T&&... t) const;
 ```
 
-[#]{.pnum} *Returns*: `bind(subscript(), *this, std::forward<T>(t))`.
+[#]{.pnum} *Returns*: `bind(subscript(), *this, std::forward<T>(t)...)`.
 
 {% macro make_binary_operator(op, func) %}
 ```
