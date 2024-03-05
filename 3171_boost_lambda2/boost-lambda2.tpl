@@ -148,6 +148,24 @@ Boost.Lambda2 additionally provides two helper function objects: `first` and `se
 
 Also, while most operators take forwarding references, there are two additional overloads of `>>` and `<<` which are special-cased such that operations like `std::cout << _1` work and capture `std::cout` by reference. The special-casing is necessary because otherwise `std::cout` would be captured by value, which is not allowed, and users would have to write `std::ref(std::cout) << _1`.
 
+We propose the new function objects as transparent, non-templated types. This follows the precedent of `compare_three_way`.
+
+## Placeholder Associated Namespaces
+
+Due to the way name lookup in the presence of using directives works, for the operators to be reliably found,
+placeholders and bind expressions (the types returned from `std::bind`) need to have `std::placeholders` as
+an associated namespace, even if `using namespace std::placeholders;` is in effect.
+
+This already happens to be true (by chance) under libc++, where `_1` is of type `std::placeholders::__ph<1>`, and `std::bind(f, _1)` is of type `std::__bind<void(&)(int), std::placeholders::__ph<1> const&>`. It's
+however not true for libstdc++ (`std::_Placeholder<1>` and `std::_Bind<void(*)(int)(std::_Placeholder<1>)>`, respectively) or MSSTL (`std::_Ph<1>` and `std::_Binder<std::_Unforced,void (__cdecl&)(int),std::_Ph<1> const &>`).
+
+Since the types of the standard placeholders and the bind expressions produced by `std::bind` are deliberately left unspecified by the standard, it would be conforming for implementations to change the types of e.g. `_1`
+to either refer to a type in `std::placeholders`, or otherwise have `std::placeholders` as the associated namespace. Their old types can be retained for compatibility, and will continue to work because `std::is_placeholder`
+is specialized for them. (The same holds for the return type of `std::bind`, if it's changed to also have `std::placeholders` as the associated namespace in the unlikely event of users wanting to do something like
+`std::bind(f, 1) == std::bind(g, 1)`.)
+
+At the moment we don't yet propose formal wording for this associated namespace requirement, because we aren't sure whether we need one, or if we do, what form will be preferred.
+
 ## Implementation Experience
 
 Has been shipping in Boost since 1.77 (August 2021).
