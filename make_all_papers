@@ -6,6 +6,7 @@ import collections
 import sys
 import frontmatter
 from bs4 import BeautifulSoup
+import jinja2
 
 def get_title(filename):
     with open(filename) as f:
@@ -49,28 +50,56 @@ for filename in glob.glob(f'*/*.html'):
     else:
         others.append((base, filename))
 
-out = open('all_papers.md', 'w')
-print('# Papers with Numbers', file=out)
 titles = {847: "Deducing `this`"}
+
+template = jinja2.Template(open("all_papers.tpl").read())
+numbered_papers = []
+
+badges = {
+    "ranges": "-ranges-brightgreen",
+    "constexpr": "-constexpr-blueviolet",
+    "spaceship": "-%3C%3D%3E-yellow"
+}
+
 for num in sorted(papers):
     vals = sorted(papers[num])
     title = titles.get(num)
     if title is None:
         title = get_title(vals[-1][-1])
-    all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, _, filename) in vals)
+
+    current = {"number": f"P{num:04}", "title": title}
+    current["revisions"] = [{"href": filename, "name": f"{pd}{num:04}r{rev}"} for (rev, pd, _, filename) in vals]
 
     tag = vals[-1][2]
-    if tag is None:
-        tag_str = ''
-    else:
-        tag_str = f'![][~{tag}] '
-    print(f'- {tag_str}P{num:04} {title}: {all_revs}', file=out)
+    if tag is not None:
+        current["badge"] = badges[tag]
 
-print(file=out)
-print('[~ranges]: https://img.shields.io/badge/-ranges-brightgreen', file=out)
-print('[~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet', file=out)
-print('[~spaceship]: https://img.shields.io/badge/-%3C%3D%3E-yellow', file=out)
-print(file=out)
-print('# Other Papers', file=out)
-for (base, filename) in sorted(others):
-    print(f'- {get_title(filename)}: [{base}]({filename})', file=out)
+    numbered_papers.append(current)
+
+print(template.render({"numbered_papers": numbered_papers}), file=open("all_papers.html", "w"))
+
+# out = open('all_papers.md', 'w')
+# print('# Papers with Numbers', file=out)
+# titles = {847: "Deducing `this`"}
+# for num in sorted(papers):
+#     vals = sorted(papers[num])
+#     title = titles.get(num)
+#     if title is None:
+#         title = get_title(vals[-1][-1])
+#     all_revs = ' '.join(f'[{pd}{num:04d}r{rev}]({filename})' for (rev, pd, _, filename) in vals)
+
+#     tag = vals[-1][2]
+#     if tag is None:
+#         tag_str = ''
+#     else:
+#         tag_str = f'![][~{tag}] '
+#     print(f'- {tag_str}P{num:04} {title}: {all_revs}', file=out)
+
+# print(file=out)
+# print('[~ranges]: https://img.shields.io/badge/-ranges-brightgreen', file=out)
+# print('[~constexpr]: https://img.shields.io/badge/-constexpr-blueviolet', file=out)
+# print('[~spaceship]: https://img.shields.io/badge/-%3C%3D%3E-yellow', file=out)
+# print(file=out)
+# print('# Other Papers', file=out)
+# for (base, filename) in sorted(others):
+#     print(f'- {get_title(filename)}: [{base}]({filename})', file=out)
