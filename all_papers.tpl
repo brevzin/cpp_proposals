@@ -45,7 +45,7 @@
       <h1 id="papers-with-numbers">Papers with Numbers</h1>
 <ul>
   {% for paper in numbered_papers %}
-    <li>{% if paper.badge %}<img src="https://img.shields.io/badge/{{paper.badge}}" alt="" />{% endif %}{{paper.number}} {{paper.title}}: {% for rev in paper.revisions %}<a href="{{rev.href}}">{{rev.name}}</a> {% endfor %}</li>
+    <li>{% if paper.badge %}<img src="https://img.shields.io/badge/{{paper.badge}}" alt="" /> {% endif %}<a href="https://wg21.link/{{paper.number}}/github">{{paper.number}}</a> {{paper.title}}: {% for rev in paper.revisions %}<a href="{{rev.href}}">{{rev.name}}</a> {% endfor %}</li>
   {% endfor %}
 </ul>
 
