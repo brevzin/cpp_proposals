@@ -26,6 +26,10 @@ tag: constexpr
 
 # Revision History
 
+Since [@P2996R2]:
+
+* added `accessible_members_of` variants to restore a TS-era agreement
+
 Since [@P2996R1], several changes to the overall library API:
 
 * added `qualified_name_of` (to partner with `name_of`)
@@ -2606,10 +2610,17 @@ namespace std::meta {
   template<class... Fs>
     consteval vector<info> members_of(info type, Fs... filters);
   template<class... Fs>
+    consteval vector<info> accessible_members_of(info type, Fs... filters);
+  template<class... Fs>
     consteval vector<info> bases_of(info type, Fs... filters);
+  template<class... Fs>
+    consteval vector<info> accessible_bases_of(info type, Fs... filters);
   consteval vector<info> static_data_members_of(info type);
+  consteval vector<info> accessible_static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
+  consteval vector<info> accessible_nonstatic_data_members_of(info type);
   consteval vector<info> subobjects_of(info type);
+  consteval vector<info> accessible_subobjects_of(info type);
   consteval vector<info> enumerators_of(info enum_type);
 
   // [meta.reflection.unary.cat], primary type categories
@@ -2798,7 +2809,7 @@ consteval bool is_private(info r);
 ```cpp
 consteval bool is_accessible(info r);
 ```
-[#]{.pnum} *Returns*: TODO
+[#]{.pnum} *Returns*: `true` if `r` designates a class member or base class that is accessible at the point of the immediate invocation ([expr.const]) that resulted in the evaluation of `is_accessible(r)`.  Otherwise, `false`.
 
 ```cpp
 consteval bool is_virtual(info r);
@@ -2982,7 +2993,16 @@ template<class... Fs>
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
-Data members are returned in the order in which they are declared, but the order of member functions and member types is unspecified. [Base classes are not members.]{.note}
+Nonstatic data members are returned in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
+
+```cpp
+template<class... Fs>
+  consteval vector<info> accessible_members_of(info r, Fs... filters);
+```
+[#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
+
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `is_accessible(m) && (filters(m) && ...)` is `true`.
+Nonstatic data members are returned in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
 template<class... Fs>
@@ -2991,7 +3011,17 @@ template<class... Fs>
 
 [#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes, if any, of `C` such that `(filters(class_type) && ...)` is `true`.
+[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
+The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
+
+```cpp
+template<class... Fs>
+  consteval vector<info> accessible_bases_of(info type, Fs... filters);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
+
+[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `is_accessible(b) && (filters(b) && ...)` is `true`.
 The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
 
 ```cpp
@@ -3003,6 +3033,14 @@ consteval vector<info> static_data_members_of(info type);
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
 ```cpp
+consteval vector<info> accessible_static_data_members_of(info type);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, std::meta::is_variable, std::meta::is_accessible);`
+
+```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
@@ -3011,12 +3049,28 @@ consteval vector<info> nonstatic_data_members_of(info type);
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
 
 ```cpp
+consteval vector<info> accessible_nonstatic_data_members_of(info type);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, std::meta::is_nonstatic_data_member, std::meta::is_accessible);`
+
+```cpp
 consteval vector<info> subobjects_of(info type);
 ```
 
 [#]{.pnum} *Mandates*: `type` designates a type.
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
+
+```cpp
+consteval vector<info> accessible_subobjects_of(info type);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> enumerators_of(info enum_type);
