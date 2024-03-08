@@ -129,10 +129,6 @@ At the very least, this is an issue we have to solve in the library (whether by 
 
 The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today:
 
-|a|b|
-|-|-|
-|c|d|
-
 <table>
 <thead>
 <tr class="header" style="text-align:center"><th><strong>`?:`</th><th><strong>`T`</th><th><strong>`T const`</th><th><strong>`T&`</th><th><strong>`T const&`</th><th><strong>`T&&`</th><th><strong>`T const&&`</th></tr>
