@@ -33,7 +33,7 @@ using cref = decltype(true ? make<T>() : make<T const&>());
 ```
 :::
 
-What do you expect the type of `cref<T>` to be? Well, it's obviously some kind of a `T` (since both sides are `T`, so nothing to convert). It cannot be `T&` (which cannot bind to either operand). It could potentially have been `T const&`, but then we'd have to do _conditional_ lifetime extension - which would be interesting but something the language doesn't support. If we didn't do conditional lifetime extension then this would just unconditionally dangle, which is terrible. That likewise rules out `T&&` and `T const&&`.
+What do you expect the type of `cref<T>` to be? Well, it's obviously some kind of a `T` (since both sides are `T`, so nothing to convert). It cannot be `T&` (which cannot bind to either operand) or `T&&` (which cannot bind to `T const&`). It could potentially have been `T const&` (to do conditional lifetime extension) but it would be odd to elevate the prvalue to lvalue in this context. `T const&&` is a type that most people never think of, and I think in this context we should also not think about it.
 
 I think at this point many people would expect that this leaves `T` amongst the options and conclude that `cref<T>` is simply `T`. But it turns out that's not quite the case. For *scalar types*, `cref<T>` is `T`. But for *class types*, `cref<T>` is actually `T const`.
 
