@@ -683,7 +683,7 @@ copy construction then move assignment
 <p>This isn’t just unnecessary wrapping and template instantiation - this now means instead of a range of prvalues, we end up with a range of <em>const</em> prvalues - which means copying when we could have potentially been moving.</p>
 <p>At the very least, this is an issue we have to solve in the library (whether by special-casing this in the <code class="sourceCode cpp"><em>constant-iterator</em></code> logic or, less desirably, in the <code class="sourceCode cpp">common_reference</code> logic). But this isn’t uniquely a problem with <code class="sourceCode cpp">views<span class="op">::</span>as_const</code>, it’s simply the utility in which I first ran into this issue.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="status-quo"><span class="header-section-number">2</span> Status Quo<a href="#status-quo" class="self-link"></a></h1>
-<p>The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today:</p>
+<p>The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today for <em>scalar</em> types:</p>
 <table>
 <thead>
 <tr class="header" style="text-align:center">

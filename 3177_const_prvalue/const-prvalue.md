@@ -128,7 +128,7 @@ At the very least, this is an issue we have to solve in the library (whether by 
 
 # Status Quo
 
-The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today:
+The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today for *scalar* types:
 
 <table>
 <thead>
