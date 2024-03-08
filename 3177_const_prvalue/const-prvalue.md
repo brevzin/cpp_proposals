@@ -128,23 +128,25 @@ At the very least, this is an issue we have to solve in the library (whether by 
 
 # Status Quo
 
-The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today for *scalar* types:
+The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today for scalar vs class types:
 
 <table>
 <thead>
 <tr class="header" style="text-align:center"><th><strong>`?:`</th><th><strong>`T`</th><th><strong>`T const`</th><th><strong>`T&`</th><th><strong>`T const&`</th><th><strong>`T&&`</th><th><strong>`T const&&`</th></tr>
 </thead>
 <tbody>
-<tr style="text-align:center"><th>`T`</th><td>`T`</td><td class="yellow">`T`</td><td>`T`</td><td class="orange">`T`</td><td>`T`</td><td class="orange">`T`</td></tr>
-<tr style="text-align:center"><th>`T const`</td><td></td><td  class="yellow">`T`</td><td  class="yellow">`T`</td><td class="yellow">`T`</td><td  class="yellow">`T`</td><td  class="yellow">`T`</td></tr>
-<tr style="text-align:center"><th>`T&`</td><td></td><td></td><td>`T&`</td><td>`T const&`</td><td>`T`</td><td class="orange">`T`</td></tr>
-<tr style="text-align:center"><th>`T const&`</td><td></td><td></td><td></td><td>`T const&`</td><td class="orange">`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T`</th><td>`T`</td><td class="yellow">`T` | `T const`</td><td>`T`</td><td class="orange">`T` | `T const`</td><td>`T`</td><td class="orange">`T` | `T const`</td></tr>
+<tr style="text-align:center"><th>`T const`</td><td></td><td class="yellow">`T` | `T const`</td><td class="yellow">`T` | `T const`</td><td class="yellow">`T` | `T const`</td><td class="yellow">`T` | `T const`</td><td class="yellow">`T` | `T const`</td></tr>
+<tr style="text-align:center"><th>`T&`</td><td></td><td></td><td>`T&`</td><td>`T const&`</td><td>`T`</td><td class="orange">`T` | `T const`</td></tr>
+<tr style="text-align:center"><th>`T const&`</td><td></td><td></td><td></td><td>`T const&`</td><td class="orange">`T` | `T const`</td><td class="orange">`T` | `T const`</td></tr>
 <tr style="text-align:center"><th>`T&&`</td><td></td><td></td><td></td><td></td><td>`T&&`</td><td>`T const&&`</td></tr>
 <tr style="text-align:center"><th>`T const&&`</td><td></td><td></td><td></td><td></td><td></td><td>`T const&&`</td></tr>
 </tbody>
 </table>
 
-For most of the entries, the result of the conditional operator is the same regardless of whether `T` is a scalar type or a class type. For all of the marked entries (whether [yellow]{.yellow} or [orange]{.orange}), the current behavior is that scalar types produce `T` and class types produce `T const`. These themselves can be divided into two groups:
+For most of the entries, the result of the conditional operator is the same regardless of whether `T` is a scalar type or a class type. For all of the marked entries (whether [yellow]{.yellow} or [orange]{.orange}), the current behavior is that scalar types produce `T` and class types produce `T const`.
+
+These themselves can be divided into two groups:
 
 * the entries marked [yellow]{.yellow} have one operand that starts out as a const prvalue (i.e. `T const`).
 * the entries marked [orange]{.orange} have neither operand operand as a const prvalue.
@@ -157,10 +159,52 @@ For those entries marked [yellow]{.yellow}, there was *already* a const prvalue.
 
 There are two potential proposals here: the *weak* proposal and the *strong* proposal.
 
-The *weak* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should only be a const prvalue if at least one of the operands is a const prvalue. Otherwise, it should be a non-const prvalue.
+The *weak* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should only be a const prvalue if at least one of the operands is a const prvalue. Otherwise, it should be a non-const prvalue. That is, we change the [orange]{.orange} entries below to be `T` for both scalar and class types:
 
-The *strong* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should never be a const prvalue (i.e. do as the `int`s do).
+<table>
+<thead>
+<tr class="header" style="text-align:center"><th><strong>`?:`</th><th><strong>`T`</th><th><strong>`T const`</th><th><strong>`T&`</th><th><strong>`T const&`</th><th><strong>`T&&`</th><th><strong>`T const&&`</th></tr>
+</thead>
+<tbody>
+<tr style="text-align:center"><th>`T`</th><td>`T`</td><td>`T` | `T const`</td><td>`T`</td><td class="orange">`T`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const`</td><td></td><td>`T` | `T const`</td><td>`T` | `T const`</td><td>`T` | `T const`</td><td>`T` | `T const`</td><td>`T` | `T const`</td></tr>
+<tr style="text-align:center"><th>`T&`</td><td></td><td></td><td>`T&`</td><td>`T const&`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const&`</td><td></td><td></td><td></td><td>`T const&`</td><td class="orange">`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T&&`</td><td></td><td></td><td></td><td></td><td>`T&&`</td><td>`T const&&`</td></tr>
+<tr style="text-align:center"><th>`T const&&`</td><td></td><td></td><td></td><td></td><td></td><td>`T const&&`</td></tr>
+</tbody>
+</table>
 
-Put differently, the weak proposal only addresses the [orange]{.orange} entries. The strong proposal addresses both the [orange]{.orange} and [yellow]{.yellow} ones. The weak proposal is sufficient to address the [pessimizing assignment issue](#pessimizing-assignment) and the [const wrapping issue](#extra-wrapping).
+The *strong* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should never be a const prvalue (i.e. do as the `int`s do). That is, we change all of the [orange]{.orange} and [yellow]{.yellow} entries to just be `T` for both scalar and class types:
 
-Notably, one odd quirk of the strong proposal is that the type of `cond<T, T>` is `T` for all types, value categories, and const. Except one: `T const`. In the strong proposal, `cond<T const, T const>` becomes `T`. Now, it technically is already just `T` for scalar types - but it's not possible to even have a const prvalue of scalar type, so this doesn't really matter. So we could alter the strong proposal to say that `cond<T, U>` is only ever a const prvalue in the specific case of `cond<T const, T const>` - otherwise all prvalues are non-const. This would still technically give different answers between scalar and class types, but not in a meaningfully observed way.
+<table>
+<thead>
+<tr class="header" style="text-align:center"><th><strong>`?:`</th><th><strong>`T`</th><th><strong>`T const`</th><th><strong>`T&`</th><th><strong>`T const&`</th><th><strong>`T&&`</th><th><strong>`T const&&`</th></tr>
+</thead>
+<tbody>
+<tr style="text-align:center"><th>`T`</th><td>`T`</td><td class="yellow">`T`</td><td>`T`</td><td class="orange">`T`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const`</td><td></td><td class="yellow">`T`</td><td class="yellow">`T`</td><td class="yellow">`T`</td><td class="yellow">`T`</td><td class="yellow">`T`</td></tr>
+<tr style="text-align:center"><th>`T&`</td><td></td><td></td><td>`T&`</td><td>`T const&`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const&`</td><td></td><td></td><td></td><td>`T const&`</td><td class="orange">`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T&&`</td><td></td><td></td><td></td><td></td><td>`T&&`</td><td>`T const&&`</td></tr>
+<tr style="text-align:center"><th>`T const&&`</td><td></td><td></td><td></td><td></td><td></td><td>`T const&&`</td></tr>
+</tbody>
+</table>
+
+The weak proposal is sufficient to address the [pessimizing assignment issue](#pessimizing-assignment) and the [const wrapping issue](#extra-wrapping).
+
+Notably, one odd quirk of the strong proposal is that the type of `cond<T, T>` is `T` for all types, value categories, and const. Except one: `T const`. In the strong proposal, `cond<T const, T const>` becomes `T`. Now, it technically is already just `T` for scalar types - but it's not possible to even have a const prvalue of scalar type, so this doesn't really matter. So we could alter the strong proposal to say that `cond<T, U>` is only ever a const prvalue in the specific case of `cond<T const, T const>` - otherwise all prvalues are non-const. This would still technically give different answers between scalar and class types, but not in a meaningfully observed way. This last version would produce this outcome (preserving the status quo for specifically `cond<T const, T const>`):
+
+<table>
+<thead>
+<tr class="header" style="text-align:center"><th><strong>`?:`</th><th><strong>`T`</th><th><strong>`T const`</th><th><strong>`T&`</th><th><strong>`T const&`</th><th><strong>`T&&`</th><th><strong>`T const&&`</th></tr>
+</thead>
+<tbody>
+<tr style="text-align:center"><th>`T`</th><td>`T`</td><td class="yellow">`T`</td><td>`T`</td><td class="orange">`T`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const`</td><td></td><td>`T` | `T const`</td><td class="yellow">`T`</td><td class="yellow">`T`</td><td class="yellow">`T`</td><td class="yellow">`T`</td></tr>
+<tr style="text-align:center"><th>`T&`</td><td></td><td></td><td>`T&`</td><td>`T const&`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const&`</td><td></td><td></td><td></td><td>`T const&`</td><td class="orange">`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T&&`</td><td></td><td></td><td></td><td></td><td>`T&&`</td><td>`T const&&`</td></tr>
+<tr style="text-align:center"><th>`T const&&`</td><td></td><td></td><td></td><td></td><td></td><td>`T const&&`</td></tr>
+</tbody>
+</table>
