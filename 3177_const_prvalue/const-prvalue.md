@@ -28,8 +28,11 @@ The issue at hand is about this:
 template <class T>
 auto make() -> T;
 
+template <class T, class U>
+using cond = decltype(true ? make<T>() : make<U>());
+
 template <class T>
-using cref = decltype(true ? make<T>() : make<T const&>());
+using cref = cond<T, T consT&>;
 ```
 :::
 
@@ -109,13 +112,11 @@ template <class T>
 auto make() -> T;
 
 template <class I>
-using const_reference_t = decltype(true
-    ? make<iter_value_t<I> const&&>()
-    : make<iter_reference_t<I>>());
+using const_reference_t = cond<iter_value_t<I> const&&, iter_reference_t<I>>;
 ```
 :::
 
-Which, for `Priterator<T>`, is `decltype(true ? make<T const&&>() : make<T>())`.
+Which, for `Priterator<T>`, is `cond<T const&&, T>`.
 
 This is the same construct we saw at the beginning of the paper, just that it's a `T const&&` instead of a `T const&`. But the rules end up being the same: if `T` is a scalar type, `const_reference_t<T>` is `T`. If `T` is a class type, then `const_reference_t<T>` is `T const`.
 
@@ -160,6 +161,6 @@ The *weak* proposal: if both operands have the same underlying type (excluding v
 
 The *strong* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should never be a const prvalue (i.e. do as the `int`s do).
 
-Put differently, the weak proposal only addresses the [orange]{.orange} entries. The strong proposal addresses both the [orange]{.orange} and [yellow]{.yellow} ones.
+Put differently, the weak proposal only addresses the [orange]{.orange} entries. The strong proposal addresses both the [orange]{.orange} and [yellow]{.yellow} ones. The weak proposal is sufficient to address the [pessimizing assignment issue](#pessimizing-assignment) and the [const wrapping issue](#extra-wrapping).
 
-The weak proposal is sufficient to address the [pessimizing assignment issue](#pessimizing-assignment) and the [const wrapping issue](#extra-wrapping).
+Notably, one odd quirk of the strong proposal is that the type of `cond<T, T>` is `T` for all types, value categories, and const. Except one: `T const`. In the strong proposal, `cond<T const, T const>` becomes `T`. Now, it technically is already just `T` for scalar types - but it's not possible to even have a const prvalue of scalar type, so this doesn't really matter. So we could alter the strong proposal to say that `cond<T, U>` is only ever a const prvalue in the specific case of `cond<T const, T const>` - otherwise all prvalues are non-const. This would still technically give different answers between scalar and class types, but not in a meaningfully observed way.
