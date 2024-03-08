@@ -32,7 +32,7 @@ template <class T, class U>
 using cond = decltype(true ? make<T>() : make<U>());
 
 template <class T>
-using cref = cond<T, T consT&>;
+using cref = cond<T, T const&>;
 ```
 :::
 
