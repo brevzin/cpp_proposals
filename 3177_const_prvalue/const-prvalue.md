@@ -9,6 +9,13 @@ author:
 toc: true
 ---
 
+<style type="text/css">
+td.orange { background-color: #ffa500; }
+td.yellow { background-color: #ffff00; }
+span.orange { background-color: #ffa500; }
+span.yellow { background-color: #ffff00; }
+</style>
+
 # Introduction
 
 The conditional (or ternary) operator ([expr.cond]{.sref}) is one of the most surprisingly complex parts of the language. The goal of this paper is to fix a surprising interaction in it, that is also causing an issue that we'd otherwise have to resolve in the library.
@@ -122,23 +129,32 @@ At the very least, this is an issue we have to solve in the library (whether by 
 
 The conditional operator between two operands of the same underlying type (excluding value category and const-ness) produces the following today:
 
-|?:|`T`|`T const`|`T&`|`T const&`|`T&&`|`T const&&`|
-|-|-|-|-|-|-|-|
-|`T`|`T`|`T`❔|`T`|`T`❌|`T`|`T`❌|
-|`T const`||`T`❔|`T`❔|`T`❔|`T`❔|`T`❔|
-|`T&`|||`T&`|`T const&`|`T`|`T`❌|
-|`T const&`||||`T const&`|`T`❌|`T`❌|
-|`T&&`|||||`T&&`|`T const&&`|
-|`T const&&`||||||`T const&&`|
+|a|b|
+|-|-|
+|c|d|
 
-For most of the entries, the result of the conditional operator is the same regardless of whether `T` is a scalar type or a class type. For all of the marked entries (whether ❔ or ❌), the current behavior is that scalar types produce `T` and class types produce `T const`. These themselves can be divided into two groups:
+<table>
+<thead>
+<tr class="header" style="text-align:center"><th><strong>`?:`</th><th><strong>`T`</th><th><strong>`T const`</th><th><strong>`T&`</th><th><strong>`T const&`</th><th><strong>`T&&`</th><th><strong>`T const&&`</th></tr>
+</thead>
+<tbody>
+<tr style="text-align:center"><th>`T`</th><td>`T`</td><td class="yellow">`T`</td><td>`T`</td><td class="orange">`T`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const`</td><td></td><td  class="yellow">`T`</td><td  class="yellow">`T`</td><td class="yellow">`T`</td><td  class="yellow">`T`</td><td  class="yellow">`T`</td></tr>
+<tr style="text-align:center"><th>`T&`</td><td></td><td></td><td>`T&`</td><td>`T const&`</td><td>`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T const&`</td><td></td><td></td><td></td><td>`T const&`</td><td class="orange">`T`</td><td class="orange">`T`</td></tr>
+<tr style="text-align:center"><th>`T&&`</td><td></td><td></td><td></td><td></td><td>`T&&`</td><td>`T const&&`</td></tr>
+<tr style="text-align:center"><th>`T const&&`</td><td></td><td></td><td></td><td></td><td></td><td>`T const&&`</td></tr>
+</tbody>
+</table>
 
-* the entries marked ❔ have one operand that starts out as a const prvalue (i.e. `T const`).
-* the entries marked ❌ have neither operand operand as a const prvalue.
+For most of the entries, the result of the conditional operator is the same regardless of whether `T` is a scalar type or a class type. For all of the marked entries (whether [yellow]{.yellow} or [orange]{.orange}), the current behavior is that scalar types produce `T` and class types produce `T const`. These themselves can be divided into two groups:
 
-Now, for those entries marked ❌ (including the two cases examined in this paper so far in the first row), the language is materializing a const prvalue itself. This just seems erroneous - the language shouldn't be doing this.
+* the entries marked [yellow]{.yellow} have one operand that starts out as a const prvalue (i.e. `T const`).
+* the entries marked [orange]{.orange} have neither operand operand as a const prvalue.
 
-For those entries marked ❔, there was *already* a const prvalue. Here the question is different. Did the user really intend to create a const prvalue? If they did, we should respect that intention. It's not entirely without merit to do so - it used to be an recommendation for functions to return `T const` so that `f() = x;` would be ill-formed. Although that recommendation went out of style with the addition of move semantics (since doing so pessimizes assignment from `f()`) and with the adoption of ref-qualifiers for assignment - although these still don't seem to be very widely used. These cases also strike me as less important overall, simply because const prvalues don't come up very often (and will come up even less if we fix the ❌s).
+Now, for those entries marked [orange]{.orange} (including the two cases examined in this paper so far in the first row), the language is materializing a const prvalue itself. This just seems erroneous - the language shouldn't be doing this.
+
+For those entries marked [yellow]{.yellow}, there was *already* a const prvalue. Here the question is different. Did the user really intend to create a const prvalue? If they did, maybe we should respect that intention. It's not entirely without merit to do so - it used to be a recommendation for functions to return `T const` so that `f() = x;` would be ill-formed. Although that recommendation went out of style with the adoption of move semantics (since doing so pessimizes assignment from `f()`) and with the adoption of ref-qualifiers for assignment (although these still don't seem to be very widely used). These cases also strike me as less important overall, simply because const prvalues don't come up very often (and will come up even less if we fix the [orange]{.orange}s).
 
 # Proposal
 
@@ -147,5 +163,7 @@ There are two potential proposals here: the *weak* proposal and the *strong* pro
 The *weak* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should only be a const prvalue if at least one of the operands is a const prvalue. Otherwise, it should be a non-const prvalue.
 
 The *strong* proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should never be a const prvalue (i.e. do as the `int`s do).
+
+Put differently, the weak proposal only addresses the [orange]{.orange} entries. The strong proposal addresses both the [orange]{.orange} and [yellow]{.yellow} ones.
 
 The weak proposal is sufficient to address the [pessimizing assignment issue](#pessimizing-assignment) and the [const wrapping issue](#extra-wrapping).

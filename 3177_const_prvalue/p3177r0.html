@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-07" />
+  <meta name="dcterms.date" content="2024-03-08" />
   <title>const prvalues in the conditional operator</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-07</td>
+    <td>2024-03-08</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -573,6 +573,12 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
+<style type="text/css">
+td.orange { background-color: #ffa500; }
+td.yellow { background-color: #ffff00; }
+span.orange { background-color: #ffa500; }
+span.yellow { background-color: #ffff00; }
+</style>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>The conditional (or ternary) operator (<span>7.6.16 <a href="https://wg21.link/expr.cond">[expr.cond]</a></span>) is one of the most surprisingly complex parts of the language. The goal of this paper is to fix a surprising interaction in it, that is also causing an issue that we’d otherwise have to resolve in the library.</p>
 <p>The issue at hand is about this:</p>
@@ -681,96 +687,184 @@ copy construction then move assignment
 <thead>
 <tr class="header">
 <th><div style="text-align:center">
-<strong>?:</strong>
+<strong>a</strong>
 </div></th>
 <th><div style="text-align:center">
-<strong><code class="sourceCode cpp">T</code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">T <span class="kw">const</span></code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">T<span class="op">&amp;</span></code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code></strong>
-</div></th>
-<th><div style="text-align:center">
-<strong><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code></strong>
+<strong>b</strong>
 </div></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code class="sourceCode cpp">T</code></td>
-<td><code class="sourceCode cpp">T</code></td>
-<td><code class="sourceCode cpp">T</code>❔</td>
-<td><code class="sourceCode cpp">T</code></td>
-<td><code class="sourceCode cpp">T</code>❌</td>
-<td><code class="sourceCode cpp">T</code></td>
-<td><code class="sourceCode cpp">T</code>❌</td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">T <span class="kw">const</span></code></td>
-<td></td>
-<td><code class="sourceCode cpp">T</code>❔</td>
-<td><code class="sourceCode cpp">T</code>❔</td>
-<td><code class="sourceCode cpp">T</code>❔</td>
-<td><code class="sourceCode cpp">T</code>❔</td>
-<td><code class="sourceCode cpp">T</code>❔</td>
-</tr>
-<tr class="odd">
-<td><code class="sourceCode cpp">T<span class="op">&amp;</span></code></td>
-<td></td>
-<td></td>
-<td><code class="sourceCode cpp">T<span class="op">&amp;</span></code></td>
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code></td>
-<td><code class="sourceCode cpp">T</code></td>
-<td><code class="sourceCode cpp">T</code>❌</td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code></td>
-<td></td>
-<td></td>
-<td></td>
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code></td>
-<td><code class="sourceCode cpp">T</code>❌</td>
-<td><code class="sourceCode cpp">T</code>❌</td>
-</tr>
-<tr class="odd">
-<td><code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td><code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code></td>
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code></td>
-</tr>
-<tr class="even">
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code></td>
+<td>c</td>
+<td>d</td>
 </tr>
 </tbody>
 </table>
-<p>For most of the entries, the result of the conditional operator is the same regardless of whether <code class="sourceCode cpp">T</code> is a scalar type or a class type. For all of the marked entries (whether ❔ or ❌), the current behavior is that scalar types produce <code class="sourceCode cpp">T</code> and class types produce <code class="sourceCode cpp">T <span class="kw">const</span></code>. These themselves can be divided into two groups:</p>
+<table>
+<thead>
+<tr class="header" style="text-align:center">
+<th>
+<strong><code class="sourceCode cpp"><span class="op">?:</span></code>
+</th>
+<th>
+<strong><code class="sourceCode cpp">T</code>
+</th>
+<th>
+<strong><code class="sourceCode cpp">T <span class="kw">const</span></code>
+</th>
+<th>
+<strong><code class="sourceCode cpp">T<span class="op">&amp;</span></code>
+</th>
+<th>
+<strong><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>
+</th>
+<th>
+<strong><code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>
+</th>
+<th>
+<strong><code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr style="text-align:center">
+<th>
+<code class="sourceCode cpp">T</code>
+</th>
+<td>
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="yellow">
+<code class="sourceCode cpp">T</code>
+</td>
+<td>
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="orange">
+<code class="sourceCode cpp">T</code>
+</td>
+<td>
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="orange">
+<code class="sourceCode cpp">T</code>
+</td>
+</tr>
+<tr style="text-align:center">
+<th>
+<code class="sourceCode cpp">T <span class="kw">const</span></code>
+</td>
+<td>
+</td>
+<td class="yellow">
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="yellow">
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="yellow">
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="yellow">
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="yellow">
+<code class="sourceCode cpp">T</code>
+</td>
+</tr>
+<tr style="text-align:center">
+<th>
+<code class="sourceCode cpp">T<span class="op">&amp;</span></code>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+<code class="sourceCode cpp">T<span class="op">&amp;</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="orange">
+<code class="sourceCode cpp">T</code>
+</td>
+</tr>
+<tr style="text-align:center">
+<th>
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>
+</td>
+<td class="orange">
+<code class="sourceCode cpp">T</code>
+</td>
+<td class="orange">
+<code class="sourceCode cpp">T</code>
+</td>
+</tr>
+<tr style="text-align:center">
+<th>
+<code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+<code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>
+</td>
+<td>
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code>
+</td>
+</tr>
+<tr style="text-align:center">
+<th>
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;&amp;</span></code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For most of the entries, the result of the conditional operator is the same regardless of whether <code class="sourceCode cpp">T</code> is a scalar type or a class type. For all of the marked entries (whether <span class="yellow">yellow</span> or <span class="orange">orange</span>), the current behavior is that scalar types produce <code class="sourceCode cpp">T</code> and class types produce <code class="sourceCode cpp">T <span class="kw">const</span></code>. These themselves can be divided into two groups:</p>
 <ul>
-<li>the entries marked ❔ have one operand that starts out as a const prvalue (i.e. <code class="sourceCode cpp">T <span class="kw">const</span></code>).</li>
-<li>the entries marked ❌ have neither operand operand as a const prvalue.</li>
+<li>the entries marked <span class="yellow">yellow</span> have one operand that starts out as a const prvalue (i.e. <code class="sourceCode cpp">T <span class="kw">const</span></code>).</li>
+<li>the entries marked <span class="orange">orange</span> have neither operand operand as a const prvalue.</li>
 </ul>
-<p>Now, for those entries marked ❌ (including the two cases examined in this paper so far in the first row), the language is materializing a const prvalue itself. This just seems erroneous - the language shouldn’t be doing this.</p>
-<p>For those entries marked ❔, there was <em>already</em> a const prvalue. Here the question is different. Did the user really intend to create a const prvalue? If they did, we should respect that intention. It’s not entirely without merit to do so - it used to be an recommendation for functions to return <code class="sourceCode cpp">T <span class="kw">const</span></code> so that <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">=</span> x;</code> would be ill-formed. Although that recommendation went out of style with the addition of move semantics (since doing so pessimizes assignment from <code class="sourceCode cpp">f<span class="op">()</span></code>) and with the adoption of ref-qualifiers for assignment - although these still don’t seem to be very widely used. These cases also strike me as less important overall, simply because const prvalues don’t come up very often (and will come up even less if we fix the ❌s).</p>
+<p>Now, for those entries marked <span class="orange">orange</span> (including the two cases examined in this paper so far in the first row), the language is materializing a const prvalue itself. This just seems erroneous - the language shouldn’t be doing this.</p>
+<p>For those entries marked <span class="yellow">yellow</span>, there was <em>already</em> a const prvalue. Here the question is different. Did the user really intend to create a const prvalue? If they did, maybe we should respect that intention. It’s not entirely without merit to do so - it used to be a recommendation for functions to return <code class="sourceCode cpp">T <span class="kw">const</span></code> so that <code class="sourceCode cpp">f<span class="op">()</span> <span class="op">=</span> x;</code> would be ill-formed. Although that recommendation went out of style with the adoption of move semantics (since doing so pessimizes assignment from <code class="sourceCode cpp">f<span class="op">()</span></code>) and with the adoption of ref-qualifiers for assignment (although these still don’t seem to be very widely used). These cases also strike me as less important overall, simply because const prvalues don’t come up very often (and will come up even less if we fix the <span class="orange">orange</span>s).</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>There are two potential proposals here: the <em>weak</em> proposal and the <em>strong</em> proposal.</p>
 <p>The <em>weak</em> proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should only be a const prvalue if at least one of the operands is a const prvalue. Otherwise, it should be a non-const prvalue.</p>
 <p>The <em>strong</em> proposal: if both operands have the same underlying type (excluding value category and const), then the result of the conditional operator should never be a const prvalue (i.e. do as the <code class="sourceCode cpp"><span class="dt">int</span></code>s do).</p>
+<p>Put differently, the weak proposal only addresses the <span class="orange">orange</span> entries. The strong proposal addresses both the <span class="orange">orange</span> and <span class="yellow">yellow</span> ones.</p>
 <p>The weak proposal is sufficient to address the <a href="#pessimizing-assignment">pessimizing assignment issue</a> and the <a href="#extra-wrapping">const wrapping issue</a>.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
