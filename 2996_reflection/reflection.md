@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R2
+document: D2996R3
 date: today
 audience: EWG, LEWG
 author:
@@ -25,6 +25,10 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P2996R2]:
+
+* added `accessible_members_of` variants to restore a TS-era agreement
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -492,7 +496,8 @@ Note that this last version has lower complexity: While the versions using an ex
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
 For example:
 
-  - the `"<unnamed>"` case could instead output a valid cast expression like `"E(5)"`
+  - the "<unnamed>" case could instead output a valid cast expression like "E(5)"
+  - a more sophisticated lookup algorithm could be selected at compile time depending on the length of `enumerators_of(^E)`
   - a compact two-way persistent data structure could be generated to support both `enum_to_string` and `string_to_enum` with a minimal footprint
   - etc.
 
@@ -2092,7 +2097,7 @@ Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
   --- Otherwise, if the next three characters are `<::` and the subsequent character is neither `:` nor `>`, the `<` is treated as a preprocessing token by itself and not as the first character of the alternative token `<:`.
 
 :::addu
-  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
+  --- Otherwise, if the next three characters are `[::` and the subsequent character is not `:` or if the next three characters are `[:>`, the `[` is treated as a preprocessing token by itself and not as the first character of the preprocessing token `[:`.
 :::
   ...
 :::
@@ -2312,7 +2317,7 @@ template<bool> struct X;
 consteval void g(std::meta::info r) {
   if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
   if (r == (^int) && true);  // OK
-  if (r == ^X < true);       // error: "<" is an angle bracket
+  if (r == ^X < true);       // error: < starts template argument list
   if (r == (^X) < true);     // OK
 }
 
@@ -2475,11 +2480,24 @@ Modify the grammar for `$template-argument$` as follows:
 ```
 :::
 
+
+Add a paragraph after paragraph 3 of [temp.names]{.sref}:
+
+::: bq
+:::addu
+
+[*]{.pnum} A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a splicer of the form `template[: $constant-expression$ :]`.
+
+:::
+:::
+
+
 ### [temp.arg.general] General
 
 Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
 
 ::: bq
+
 [3]{.pnum} In a `$template-argument$` [which does not contain a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`. [In a `$template-argument$` containing a `$splice-template-argument$`, an ambiguity between a `$splice-template-argument$` and an expression is resolved to a `$splice-template-argument$`.]{.addu}
 
 :::
@@ -2592,10 +2610,17 @@ namespace std::meta {
   template<class... Fs>
     consteval vector<info> members_of(info type, Fs... filters);
   template<class... Fs>
+    consteval vector<info> accessible_members_of(info type, Fs... filters);
+  template<class... Fs>
     consteval vector<info> bases_of(info type, Fs... filters);
+  template<class... Fs>
+    consteval vector<info> accessible_bases_of(info type, Fs... filters);
   consteval vector<info> static_data_members_of(info type);
+  consteval vector<info> accessible_static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
+  consteval vector<info> accessible_nonstatic_data_members_of(info type);
   consteval vector<info> subobjects_of(info type);
+  consteval vector<info> accessible_subobjects_of(info type);
   consteval vector<info> enumerators_of(info enum_type);
 
   // [meta.reflection.unary.cat], primary type categories
@@ -2784,7 +2809,7 @@ consteval bool is_private(info r);
 ```cpp
 consteval bool is_accessible(info r);
 ```
-[#]{.pnum} *Returns*: TODO
+[#]{.pnum} *Returns*: `true` if `r` designates a class member or base class that is accessible at the point of the immediate invocation ([expr.const]) that resulted in the evaluation of `is_accessible(r)`.  Otherwise, `false`.
 
 ```cpp
 consteval bool is_virtual(info r);
@@ -2968,7 +2993,14 @@ template<class... Fs>
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
-Data members are returned in the order in which they are declared, but the order of member functions and member types is unspecified. [Base classes are not members.]{.note}
+Non-static data members are returned in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
+
+```cpp
+template<class... Fs>
+  consteval vector<info> accessible_members_of(info r, Fs... filters);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(r, is_accessible, filters...);`
 
 ```cpp
 template<class... Fs>
@@ -2977,8 +3009,15 @@ template<class... Fs>
 
 [#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes, if any, of `C` such that `(filters(class_type) && ...)` is `true`.
+[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
 The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
+
+```cpp
+template<class... Fs>
+  consteval vector<info> accessible_bases_of(info type, Fs... filters);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return bases_of(r, is_accessible, filters...);`
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
@@ -2989,6 +3028,14 @@ consteval vector<info> static_data_members_of(info type);
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
 ```cpp
+consteval vector<info> accessible_static_data_members_of(info type);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable, is_accessible);`
+
+```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
@@ -2997,12 +3044,28 @@ consteval vector<info> nonstatic_data_members_of(info type);
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
 
 ```cpp
+consteval vector<info> accessible_nonstatic_data_members_of(info type);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member, is_accessible);`
+
+```cpp
 consteval vector<info> subobjects_of(info type);
 ```
 
 [#]{.pnum} *Mandates*: `type` designates a type.
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
+
+```cpp
+consteval vector<info> accessible_subobjects_of(info type);
+```
+
+[#]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> enumerators_of(info enum_type);
