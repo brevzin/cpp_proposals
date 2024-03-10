@@ -29,6 +29,8 @@ tag: constexpr
 Since [@P2996R2]:
 
 * added `accessible_members_of` variants to restore a TS-era agreement
+* expanded `reflect_invoke` to operate on member functions
+* expanded `value_of` to operate on functions and lambdas
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -1205,7 +1207,7 @@ using fn_t = metatype<^std::meta::is_function>;
 
 // Example of a function overloaded for different "types" of reflections.
 void PrintKind(type_t) { std::println("type"); }
-void PrintKind(fn_t) { std::println("function"); }
+void PrintKind(template_t) { std::println("template"); }
 void PrintKind(unmatched) { std::println("unknown kind"); }
 
 int main() {
@@ -1213,9 +1215,9 @@ int main() {
   auto enrich = [](std::meta::info r) { return ::enrich<type_t, fn_t>(r); };
 
   // Demonstration of using 'enrich' to select an overload.
-  PrintKind([:enrich(^main):]);  // "function"
-  PrintKind([:enrich(^int):]);   // "type"
-  PrintKind([:enrich(^3):]);     // "unknown kind"
+  PrintKind([:enrich(^metatype):]);  // "template"
+  PrintKind([:enrich(^type_t):]);    // "type"
+  PrintKind([:enrich(^3):]);         // "unknown kind"
 }
 ```
 :::
@@ -1886,9 +1888,19 @@ namespace std::meta {
 
 This metafunction produces a reflection of the value returned by a call expression.
 
-Letting `F` be the entity reflected by `target`, and `A_0, ..., A_n` be the sequence of entities reflected by the values held by `args`: if the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
+If any value held by `args` is not a reflection of a constant value, then `reflect_invoke(target, args)` is not a constant expression. Otherwise it is evaluated by the following rules, where `F` is the entity reflected by `target` and `A_0, ..., A_n` is the sequence of values reflected by the elements indexed by `args`.
 
-For all other invocations, `reflect_invoke(target, args)` is ill-formed.
+If `F` is a non-static member function or non-static member function template, `A_0` is a reflection of a value not of a pointer type, and the expression `A_0.F(A_1, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, then `reflect_invoke(target, args)` evaluates to a reflection of the value `A_0.F(A_1, ..., A_N)`.
+
+If `F` is a non-static member function or non-static member function template, `A_0` is a reflection of a value of a pointer type, and the expression `A_0->F(A_1, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, then `reflect_invoke(target, args)` evaluates to a reflection of the value `A_0->F(A_1, ..., A_N)`.
+
+If `F` is a pointer to a non-static member function, `A_0` is a reflection of a value not of a pointer type, and the expression `A_0.*F(A_1, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, then `reflect_invoke(target, args)` evaluates to a reflection of the value `A_0.*F(A_1, ..., A_N)`.
+
+If `F` is a pointer to a non-static member function, `A_0` is a reflection of a value of a pointer type, and the expression `A_0->*F(A_1, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, then `reflect_invoke(target, args)` evaluates to a reflection of the value `A_0->*F(A_1, ..., A_N)`.
+
+If the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
+
+For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
 
 ### `value_of<T>`
 
@@ -1900,18 +1912,24 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection for a constant-expression or a constant-valued entity of type `T`, `value_of<T>(r)` evaluates to that constant value.
+If `r` is a reflection of a constant-expression or a constant-valued entity of type `T`, `value_of<T>(r)` evaluates to that constant value.
 
-If `r` is a reflection for a variable of non-reference type `T`, `value_of<T&>(r)` and `value_of<T const&>(r)` are lvalues referring to that variable.
-If the variable is usable in constant expressions [expr.const], `value_of<T>(r)` evaluates to its value.
+If `r` is a reflection of a variable of non-reference type `T`, then `value_of<T&>(r)` and `value_of<T const&>(r)` are lvalues referring to that variable.
+If the variable is usable in constant expressions [expr.const], then `value_of<T>(r)` evaluates to its value.
 
-If `r` is a reflection for a variable of reference type `T` usable in constant-expressions, `value_of<T>(r)` evaluates to that reference.
+If `r` is a reflection of a variable of reference type `T` usable in constant-expressions, then `value_of<T>(r)` evaluates to that reference.
 
-If `r` is a reflection of an enumerator constant of type `E`, `value_of<E>(r)` evaluates to the value of that enumerator.
+If `r` is a reflection of a function, or pointer to a function, of type `R(A_0, ... A_n)`, then `value_of<R(*)(A_0, ..., A_n)>(r)` evaluates to a pointer to that function.
 
-If `r` is a reflection of a non-bit-field non-reference non-static member of type `M` in a class `C`, `value_of<M C::*>(r)` is the pointer-to-member value for that nonstatic member.
+If `r` is a reflection of a non-static member function, or pointer to a non-static member function, and `T` is the type for a pointer to the reflected member function, then `value_of<T>(r)` evaluates to a pointer to the member function.
 
-For other reflection values `r`, `value_of<T>(r)` is ill-formed.
+If `r` is a reflection of a lambda expression, or the closure object of a lambda expression, and the entity reflected by `r` is convertible to `T`, then `value_of<T>(r)` evaluates to `static_cast<T>(r)`.
+
+If `r` is a reflection of an enumerator constant of type `E`, then `value_of<E>(r)` evaluates to the value of that enumerator.
+
+If `r` is a reflection of a non-bit-field non-reference non-static member of type `M` in a class `C`, then `value_of<M C::*>(r)` is the pointer-to-member value for that nonstatic member.
+
+For other reflection values `r`, then`value_of<T>(r)` is ill-formed.
 
 The function template `value_of` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity reflected by its operand.
@@ -2014,6 +2032,8 @@ constexpr auto U = define_class(^S<int>, {
 
 When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
 This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
+
+If `class_type` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
 ### Data Layout Reflection
 :::bq
@@ -2428,6 +2448,15 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 :::
 :::
 
+### [dcl.fct.def.delete] Deleted definitions
+
+Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of deleted functions:
+
+::: bq
+
+[2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator]{.addu}, is ill-formed.
+:::
+
 ### [dcl.attr.grammar] Attribute syntax and semantics
 
 Add a production to the grammar for `$attribute-specifier$` as follows:
@@ -2838,7 +2867,7 @@ consteval bool is_defaulted(info r);
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared explicit. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function or member function template that is declared explicit. Otherwise, `false`.
 
 ```cpp
 consteval bool is_bit_field(info r);
@@ -2990,27 +3019,30 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 template<class... Fs>
   consteval vector<info> members_of(info r, Fs... filters);
 ```
+
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
-Non-static data members are returned in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
+Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> accessible_members_of(info r, Fs... filters);
+  consteval vector<info> accessible_members_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(r, is_accessible, filters...);`
+[#]{.pnum} *Mandates*: `type` is a reflection designating a type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_accessible, filters...);`
 
 ```cpp
 template<class... Fs>
   consteval vector<info> bases_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a type and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
-The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
+The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
 template<class... Fs>
@@ -3023,7 +3055,7 @@ template<class... Fs>
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
