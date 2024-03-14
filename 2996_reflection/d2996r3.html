@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-10" />
+  <meta name="dcterms.date" content="2024-03-13" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-10</td>
+    <td>2024-03-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -760,6 +760,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb1-19"><a href="#cb1-19"></a>  <span class="op">}</span></span>
 <span id="cb1-20"><a href="#cb1-20"></a>  <span class="cf">return</span> substitute<span class="op">(^</span>__impl<span class="op">::</span>replicator, args<span class="op">)</span>;</span>
 <span id="cb1-21"><a href="#cb1-21"></a><span class="op">}</span></span></code></pre></div>
+<p>Lastly, Bloomberg has released an open-source experimental fork of Clang implementing most of this proposal, which can be found here: https://github.com/bloomberg/clang-p2996. This implementation is likewise available on Compiler Explorer (again thank you, Matt Godbolt), and will continue to evolve alongside this paper.</p>
 </blockquote>
 <p>Used like:</p>
 <table>
@@ -2084,7 +2085,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>If <code class="sourceCode cpp">r</code> is a reflection of a variable of reference type <code class="sourceCode cpp">T</code> usable in constant-expressions, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">&gt;(</span>r<span class="op">)</span></code> evaluates to that reference.</p>
 <p>If <code class="sourceCode cpp">r</code> is a reflection of a function, or pointer to a function, of type <code class="sourceCode cpp">R<span class="op">(</span>A_0, <span class="op">...</span> A_n<span class="op">)</span></code>, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>R<span class="op">(*)(</span>A_0, <span class="op">...</span>, A_n<span class="op">)&gt;(</span>r<span class="op">)</span></code> evaluates to a pointer to that function.</p>
 <p>If <code class="sourceCode cpp">r</code> is a reflection of a non-static member function, or pointer to a non-static member function, and <code class="sourceCode cpp">T</code> is the type for a pointer to the reflected member function, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">&gt;(</span>r<span class="op">)</span></code> evaluates to a pointer to the member function.</p>
-<p>If <code class="sourceCode cpp">r</code> is a reflection of a lambda expression, or the closure object of a lambda expression, and the entity reflected by <code class="sourceCode cpp">r</code> is convertible to <code class="sourceCode cpp">T</code>, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">&gt;(</span>r<span class="op">)</span></code> evaluates to <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">&gt;(</span>r<span class="op">)</span></code>.</p>
+<p>If <code class="sourceCode cpp">r</code> is a reflection of a lambda expression with no capture, or the closure object of such a lambda expression, and the entity reflected by <code class="sourceCode cpp">r</code> has a non-template conversion function of type <code class="sourceCode cpp">T</code>, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">*&gt;(</span>r<span class="op">)</span></code> evaluates to a pointer to that conversion function.</p>
 <p>If <code class="sourceCode cpp">r</code> is a reflection of an enumerator constant of type <code class="sourceCode cpp">E</code>, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>E<span class="op">&gt;(</span>r<span class="op">)</span></code> evaluates to the value of that enumerator.</p>
 <p>If <code class="sourceCode cpp">r</code> is a reflection of a non-bit-field non-reference non-static member of type <code class="sourceCode cpp">M</code> in a class <code class="sourceCode cpp">C</code>, then <code class="sourceCode cpp">value_of<span class="op">&lt;</span>M C<span class="op">::*&gt;(</span>r<span class="op">)</span></code> is the pointer-to-member value for that nonstatic member.</p>
 <p>For other reflection values <code class="sourceCode cpp">r</code>, then<code class="sourceCode cpp">value_of<span class="op">&lt;</span>T<span class="op">&gt;(</span>r<span class="op">)</span></code> is ill-formed.</p>

@@ -157,6 +157,10 @@ consteval auto expand(R range) {
   return substitute(^__impl::replicator, args);
 }
 ```
+
+Lastly, Bloomberg has released an open-source experimental fork of Clang implementing most of this proposal, which can be found here:
+https://github.com/bloomberg/clang-p2996. This implementation is likewise available on Compiler Explorer (again thank you, Matt Godbolt), and will continue to evolve alongside this paper.
+
 :::
 
 Used like:
@@ -1923,7 +1927,7 @@ If `r` is a reflection of a function, or pointer to a function, of type `R(A_0, 
 
 If `r` is a reflection of a non-static member function, or pointer to a non-static member function, and `T` is the type for a pointer to the reflected member function, then `value_of<T>(r)` evaluates to a pointer to the member function.
 
-If `r` is a reflection of a lambda expression, or the closure object of a lambda expression, and the entity reflected by `r` is convertible to `T`, then `value_of<T>(r)` evaluates to `static_cast<T>(r)`.
+If `r` is a reflection of a lambda expression with no capture, or the closure object of such a lambda expression, and the entity reflected by `r` has a non-template conversion function of type `T`, then `value_of<T*>(r)` evaluates to a pointer to that conversion function.
 
 If `r` is a reflection of an enumerator constant of type `E`, then `value_of<E>(r)` evaluates to the value of that enumerator.
 
