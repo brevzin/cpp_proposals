@@ -1204,7 +1204,7 @@ We can leverage this machinery to select different function overloads based on t
 ::: bq
 ```cpp
 using type_t = metatype<^std::meta::is_type>;
-using fn_t = metatype<^std::meta::is_function>;
+using template_t = metatype<^std::meta::is_template>;
 
 // Example of a function overloaded for different "types" of reflections.
 void PrintKind(type_t) { std::println("type"); }
@@ -1213,7 +1213,8 @@ void PrintKind(unmatched) { std::println("unknown kind"); }
 
 int main() {
   // Classifies any reflection as one of: Type, Function, or Unmatched.
-  auto enrich = [](std::meta::info r) { return ::enrich<type_t, fn_t>(r); };
+  auto enrich = [](std::meta::info r) { return ::enrich<type_t,
+                                                        template_t>(r); };
 
   // Demonstration of using 'enrich' to select an overload.
   PrintKind([:enrich(^metatype):]);  // "template"

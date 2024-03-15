@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-14" />
+  <meta name="dcterms.date" content="2024-03-15" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-14</td>
+    <td>2024-03-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1614,7 +1614,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>We can leverage this machinery to select different function overloads based on the “type” of reflection provided as an argument.</p>
 <blockquote>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1"></a><span class="kw">using</span> type_t <span class="op">=</span> metatype<span class="op">&lt;^</span>std<span class="op">::</span>meta<span class="op">::</span>is_type<span class="op">&gt;</span>;</span>
-<span id="cb34-2"><a href="#cb34-2"></a><span class="kw">using</span> fn_t <span class="op">=</span> metatype<span class="op">&lt;^</span>std<span class="op">::</span>meta<span class="op">::</span>is_function<span class="op">&gt;</span>;</span>
+<span id="cb34-2"><a href="#cb34-2"></a><span class="kw">using</span> template_t <span class="op">=</span> metatype<span class="op">&lt;^</span>std<span class="op">::</span>meta<span class="op">::</span>is_template<span class="op">&gt;</span>;</span>
 <span id="cb34-3"><a href="#cb34-3"></a></span>
 <span id="cb34-4"><a href="#cb34-4"></a><span class="co">// Example of a function overloaded for different &quot;types&quot; of reflections.</span></span>
 <span id="cb34-5"><a href="#cb34-5"></a><span class="dt">void</span> PrintKind<span class="op">(</span>type_t<span class="op">)</span> <span class="op">{</span> std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;type&quot;</span><span class="op">)</span>; <span class="op">}</span></span>
@@ -1623,13 +1623,14 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb34-8"><a href="#cb34-8"></a></span>
 <span id="cb34-9"><a href="#cb34-9"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb34-10"><a href="#cb34-10"></a>  <span class="co">// Classifies any reflection as one of: Type, Function, or Unmatched.</span></span>
-<span id="cb34-11"><a href="#cb34-11"></a>  <span class="kw">auto</span> enrich <span class="op">=</span> <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">::</span>enrich<span class="op">&lt;</span>type_t, fn_t<span class="op">&gt;(</span>r<span class="op">)</span>; <span class="op">}</span>;</span>
-<span id="cb34-12"><a href="#cb34-12"></a></span>
-<span id="cb34-13"><a href="#cb34-13"></a>  <span class="co">// Demonstration of using &#39;enrich&#39; to select an overload.</span></span>
-<span id="cb34-14"><a href="#cb34-14"></a>  PrintKind<span class="op">([:</span>enrich<span class="op">(^</span>metatype<span class="op">):])</span>;  <span class="co">// &quot;template&quot;</span></span>
-<span id="cb34-15"><a href="#cb34-15"></a>  PrintKind<span class="op">([:</span>enrich<span class="op">(^</span>type_t<span class="op">):])</span>;    <span class="co">// &quot;type&quot;</span></span>
-<span id="cb34-16"><a href="#cb34-16"></a>  PrintKind<span class="op">([:</span>enrich<span class="op">(^</span><span class="dv">3</span><span class="op">):])</span>;         <span class="co">// &quot;unknown kind&quot;</span></span>
-<span id="cb34-17"><a href="#cb34-17"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb34-11"><a href="#cb34-11"></a>  <span class="kw">auto</span> enrich <span class="op">=</span> <span class="op">[](</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">::</span>enrich<span class="op">&lt;</span>type_t,</span>
+<span id="cb34-12"><a href="#cb34-12"></a>                                                        template_t<span class="op">&gt;(</span>r<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb34-13"><a href="#cb34-13"></a></span>
+<span id="cb34-14"><a href="#cb34-14"></a>  <span class="co">// Demonstration of using &#39;enrich&#39; to select an overload.</span></span>
+<span id="cb34-15"><a href="#cb34-15"></a>  PrintKind<span class="op">([:</span>enrich<span class="op">(^</span>metatype<span class="op">):])</span>;  <span class="co">// &quot;template&quot;</span></span>
+<span id="cb34-16"><a href="#cb34-16"></a>  PrintKind<span class="op">([:</span>enrich<span class="op">(^</span>type_t<span class="op">):])</span>;    <span class="co">// &quot;type&quot;</span></span>
+<span id="cb34-17"><a href="#cb34-17"></a>  PrintKind<span class="op">([:</span>enrich<span class="op">(^</span><span class="dv">3</span><span class="op">):])</span>;         <span class="co">// &quot;unknown kind&quot;</span></span>
+<span id="cb34-18"><a href="#cb34-18"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 <p>Note that the <code class="sourceCode cpp">metatype</code> class can be generalized to wrap values of any literal type, or to wrap multiple values of possibly different types. This has been used, for instance, to select compile-time overloads based on: whether two integers share the same parity, the presence or absence of a value in an <code class="sourceCode cpp">optional</code>, the type of the value held by a <code class="sourceCode cpp">variant</code> or an <code class="sourceCode cpp">any</code>, or the syntactic form of a compile-time string.</p>
 <p>Achieving the same in C++23, with the same generality, would require spelling the argument(s) twice: first to obtain a “classification tag” to use as a template argument, and again to call the function, i.e.,</p>
