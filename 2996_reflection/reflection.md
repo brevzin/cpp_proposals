@@ -29,6 +29,8 @@ tag: constexpr
 Since [@P2996R2]:
 
 * added `accessible_members_of` variants to restore a TS-era agreement
+* expanded `value_of` to operate on functions
+* added Godbolt links to Clang/P2996 implementation
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -123,12 +125,13 @@ Other advantages of a single opaque type include:
 Lock3 implemented the equivalent of much that is proposed here in a fork of Clang (specifically, it worked with the P1240 proposal, but also included several other capabilities including a first-class injection mechanism).
 
 EDG has an ongoing implementation of this proposal that is currently available on Compiler Explorer (thank you, Matt Godbolt).
-Nearly all of the examples below have links to compiler explorer demonstrating them.
 
-The implementation is not complete (notably, for debugging purposes, `name_of(^int)` yields an empty string and `name_of(^std::optional<std::string>)` yields `"optional"`, neither of which are what we want).
-The implementation will evolve along with this paper.
-The EDG implementation also lacks some of the other language features we would like to be able to take advantage of.
-In particular, it does not support expansion statements.
+Additionally, Bloomberg has open sourced a fork of Clang which provides a second implementation of this proposal, also available on Compiler Explorer (again thank you, Matt Godbolt), which can be found here: [https://github.com/bloomberg/clang-p2996](https://github.com/bloomberg/clang-p2996).
+
+Nearly all of the examples below have links to Compiler Explorer demonstrating them in both the EDG and Clang.
+
+Neither implementation is complete (notably, splicing of templates has not yet been implemented), both have their "quirks", and both will evolve alongside this paper.
+They also lack some of the other proposed language features that dovetail well with reflection; most notably, expansion statements are absent.
 A workaround that will be used in the linked implementations of examples is the following facility:
 
 ::: bq
@@ -155,6 +158,7 @@ consteval auto expand(R range) {
   return substitute(^__impl::replicator, args);
 }
 ```
+
 :::
 
 Used like:
@@ -223,7 +227,7 @@ using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typenam
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/13anqE1Pa).
+On Compiler Explorer: [EDG](https://godbolt.org/z/13anqE1Pa), [Clang](https://godbolt.org/z/zn4vnjqzb).
 
 
 ## Selecting Members
@@ -249,7 +253,7 @@ int main() {
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
-[On Compiler Explorer](https://godbolt.org/z/vT4rbva7M)
+On Compiler Explorer: [EDG](https://godbolt.org/z/WEYae451z), [Clang](https://godbolt.org/z/dhrdd14P1).
 
 Note that a "member access splice" like `s.[:member_number(1):]` is a more direct member access mechanism than the traditional syntax.
 It doesn't involve member name lookup, access checking, or --- if the spliced reflection value denotes a member function --- overload resolution.
@@ -274,7 +278,7 @@ int main() {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/Wb1vx7jqb)
+On Compiler Explorer: [EDG](https://godbolt.org/z/Wb1vx7jqb), [Clang](https://godbolt.org/z/TeGrhv7nz).
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
@@ -299,8 +303,7 @@ int main() {
 ```
 :::
 
-
-[On Compiler Explorer](https://godbolt.org/z/dvYoreK9E)
+On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://godbolt.org/z/nYvc9ddr1).
 
 
 ## List of Types to List of Sizes
@@ -332,7 +335,7 @@ constexpr auto sizes = []<template<class...> class L, class... T>(L<T...>) {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/4xz9Wsa8f).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4xz9Wsa8f), [Clang](https://godbolt.org/z/nnrrYTTW9).
 
 ## Implementing `make_integer_sequence`
 
@@ -357,7 +360,7 @@ template<typename T, T N>
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/bvPeqvaK5).
+On Compiler Explorer: [EDG](https://godbolt.org/z/bvPeqvaK5), [Clang](https://godbolt.org/z/ae3n8Phnn).
 
 Note that the memoization implicit in the template substitution process still applies.
 So having multiple uses of, e.g., `make_integer_sequence<int, 20>` will only involve one evaluation of `make_integer_seq_refl<int>(20)`.
@@ -401,7 +404,7 @@ where Xd would be std::array<member_descriptor, 3>{@{@
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/rbbWY99TM).
+On Compiler Explorer: [EDG](https://godbolt.org/z/rbbWY99TM), [Clang](https://godbolt.org/z/YEn3ojjWq).
 
 ## Enum to String
 
@@ -490,7 +493,7 @@ constexpr std::string enum_to_string(E value) {
 
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
-[On Compiler Explorer](https://godbolt.org/z/Y5va8MqzG).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Y5va8MqzG), [Clang](https://godbolt.org/z/Kfqc77rMq).
 
 
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
@@ -549,7 +552,7 @@ int main(int argc, char *argv[]) {
 
 This example is based on a presentation by Matúš Chochlík.
 
-[On Compiler Explorer](https://godbolt.org/z/G4dh3jq8a).
+On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://godbolt.org/z/xae9n6z5G).
 
 
 ## A Simple Tuple Type
@@ -592,7 +595,7 @@ template<std::size_t I, typename... Ts>
 This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_class` takes a reflection for an incomplete class or union plus a vector of nonstatic data member descriptions, and completes the give class or union type to have the described members.
 
-[On Compiler Explorer](https://godbolt.org/z/4P15rnbxh).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4P15rnbxh), [Clang](https://godbolt.org/z/cT116Wb31).
 
 ## A Simple Variant Type
 
@@ -750,7 +753,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work.
 
-[On Compiler Explorer](https://godbolt.org/z/Efz5vsjaa).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/9bjd6rGjT).
 
 ## Struct to Struct of Arrays
 
@@ -803,7 +806,7 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_class` is put to good use.
 
-[On Compiler Explorer](https://godbolt.org/z/8rT77KxjP).
+On Compiler Explorer: [EDG](https://godbolt.org/z/8rT77KxjP), [Clang](https://godbolt.org/z/senWPW3eY).
 
 
 ## Parsing Command-Line Options II
@@ -918,7 +921,7 @@ struct Clap {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/1esbcq4jq).
+On Compiler Explorer: [EDG](https://godbolt.org/z/1esbcq4jq), [Clang](https://godbolt.org/z/s943aezKs).
 
 ## A Universal Formatter
 
@@ -1063,7 +1066,7 @@ However, determining the instance of `struct_to_tuple_helper` that is needed is 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `value_of`.
 Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
 
-[On Compiler Explorer](https://godbolt.org/z/Moqf84nc1), with a different implementation than either of the above.
+On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/Moqf84nc1), [Clang](https://godbolt.org/z/1s7aj5r69).
 
 ## Named Tuple
 
@@ -1108,7 +1111,7 @@ int main() {
 ```
 :::
 
-[On Compiler Explorer](https://godbolt.org/z/nMx4M9sdT).
+On Compiler Explorer: [EDG](https://godbolt.org/z/nMx4M9sdT), [Clang](https://godbolt.org/z/TK71ThhM5).
 
 
 ## Compile-Time Ticket Counter
@@ -1145,7 +1148,7 @@ int z = TU_Ticket::next();  // z initialized to 2.
 Note that this relies on the fact that a call to `substitute` returns a specialization of a template, but doesn't trigger the instantiation of that specialization.
 Thus, the only instantiations of `TU_Ticket::Helper` occur because of the call to `nonstatic_data_members_of` (which is a singleton representing the lone `value` member).
 
-[On Compiler Explorer](https://godbolt.org/z/1vEjW4sTr).
+On Compiler Explorer: [EDG](https://godbolt.org/z/1vEjW4sTr), [Clang](https://godbolt.org/z/3Y3T1Y7Ya).
 
 ## Emulating typeful reflection
 Although we believe a single opaque `std::meta::info` type to be the best and most scalable foundation for reflection, we acknowledge the desire expressed by SG7 for future support for "typeful reflection". The following demonstrates one possible means of assembling a typeful reflection library, in which different classes of reflections are represented by distinct types, on top of the facilities proposed here.
@@ -1201,21 +1204,22 @@ We can leverage this machinery to select different function overloads based on t
 ::: bq
 ```cpp
 using type_t = metatype<^std::meta::is_type>;
-using fn_t = metatype<^std::meta::is_function>;
+using template_t = metatype<^std::meta::is_template>;
 
 // Example of a function overloaded for different "types" of reflections.
 void PrintKind(type_t) { std::println("type"); }
-void PrintKind(fn_t) { std::println("function"); }
+void PrintKind(template_t) { std::println("template"); }
 void PrintKind(unmatched) { std::println("unknown kind"); }
 
 int main() {
   // Classifies any reflection as one of: Type, Function, or Unmatched.
-  auto enrich = [](std::meta::info r) { return ::enrich<type_t, fn_t>(r); };
+  auto enrich = [](std::meta::info r) { return ::enrich<type_t,
+                                                        template_t>(r); };
 
   // Demonstration of using 'enrich' to select an overload.
-  PrintKind([:enrich(^main):]);  // "function"
-  PrintKind([:enrich(^int):]);   // "type"
-  PrintKind([:enrich(^3):]);     // "unknown kind"
+  PrintKind([:enrich(^metatype):]);  // "template"
+  PrintKind([:enrich(^type_t):]);    // "type"
+  PrintKind([:enrich(^3):]);         // "unknown kind"
 }
 ```
 :::
@@ -1231,6 +1235,8 @@ Printer::PrintKind<classify(^int)>(^int).
 fn<classify(Arg1, Arg2, Arg3)>(Arg1, Arg2, Arg3).
 ```
 :::
+
+On Compiler Explorer: [Clang](https://godbolt.org/z/Ejeh8vWYs).
 
 # Proposed Features
 
@@ -1888,7 +1894,7 @@ This metafunction produces a reflection of the value returned by a call expressi
 
 Letting `F` be the entity reflected by `target`, and `A_0, ..., A_n` be the sequence of entities reflected by the values held by `args`: if the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
 
-For all other invocations, `reflect_invoke(target, args)` is ill-formed.
+For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
 
 ### `value_of<T>`
 
@@ -1907,9 +1913,13 @@ If the variable is usable in constant expressions [expr.const], `value_of<T>(r)`
 
 If `r` is a reflection for a variable of reference type `T` usable in constant-expressions, `value_of<T>(r)` evaluates to that reference.
 
-If `r` is a reflection of an enumerator constant of type `E`, `value_of<E>(r)` evaluates to the value of that enumerator.
+If `r` is a reflection for a function, or pointer to a function, of type `R(A_0, ... A_n)`, `value_of<R(*)(A_0, ..., A_n)>(r)` evaluates to a pointer to that function.
 
-If `r` is a reflection of a non-bit-field non-reference non-static member of type `M` in a class `C`, `value_of<M C::*>(r)` is the pointer-to-member value for that nonstatic member.
+If `r` is a reflection for a non-static member function, or pointer to a non-static member function, and `T` is the type for a pointer to the reflected member function, `value_of<T>(r)` evaluates to a pointer to the member function.
+
+If `r` is a reflection for an enumerator constant of type `E`, `value_of<E>(r)` evaluates to the value of that enumerator.
+
+If `r` is a reflection for a non-bit-field non-reference non-static member of type `M` in a class `C`, `value_of<M C::*>(r)` is the pointer-to-member value for that nonstatic member.
 
 For other reflection values `r`, `value_of<T>(r)` is ill-formed.
 
@@ -2014,6 +2024,8 @@ constexpr auto U = define_class(^S<int>, {
 
 When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
 This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
+
+If `class_type` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
 ### Data Layout Reflection
 :::bq
@@ -2428,6 +2440,15 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 :::
 :::
 
+### [dcl.fct.def.delete] Deleted definitions
+
+Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of deleted functions:
+
+::: bq
+
+[2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator]{.addu}, is ill-formed.
+:::
+
 ### [dcl.attr.grammar] Attribute syntax and semantics
 
 Add a production to the grammar for `$attribute-specifier$` as follows:
@@ -2838,7 +2859,7 @@ consteval bool is_defaulted(info r);
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared explicit. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function or member function template that is declared explicit. Otherwise, `false`.
 
 ```cpp
 consteval bool is_bit_field(info r);
@@ -2990,27 +3011,30 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 template<class... Fs>
   consteval vector<info> members_of(info r, Fs... filters);
 ```
+
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
-Non-static data members are returned in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
+Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> accessible_members_of(info r, Fs... filters);
+  consteval vector<info> accessible_members_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(r, is_accessible, filters...);`
+[#]{.pnum} *Mandates*: `type` is a reflection designating a type.
+
+[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_accessible, filters...);`
 
 ```cpp
 template<class... Fs>
   consteval vector<info> bases_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type and `(std::predicate<Fs, info> && ...)` is `true`.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a type and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
-The base classes are returned in the order in which they appear the *base-specifier-list* of `C`.
+The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
 template<class... Fs>
@@ -3023,7 +3047,7 @@ template<class... Fs>
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
