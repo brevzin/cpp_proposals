@@ -3145,7 +3145,7 @@ consteval bool can_substitute(info templ, span<const info> arguments);
 
 [#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or expressions designated by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: `true` if `Z<Args...>` does not lead to a substitution failure. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
 [#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
 
