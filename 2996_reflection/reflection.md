@@ -31,6 +31,8 @@ Since [@P2996R2]:
 * added `accessible_members_of` variants to restore a TS-era agreement
 * expanded `value_of` to operate on functions
 * added Godbolt links to Clang/P2996 implementation
+* added `can_substitute`
+* added explanation of a naming issue with the [type traits](#other-type-traits)
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -1642,6 +1644,7 @@ namespace std::meta {
   consteval auto enumerators_of(info enum_type) -> vector<info>;
 
   // @[substitute](#substitute)@
+  consteval auto can_substitute(info templ, span<info const> args) -> bool;
   consteval auto substitute(info templ, span<info const> args) -> info;
 
   // @[reflect_invoke](#reflect_invoke)@
@@ -1850,6 +1853,7 @@ The template `bases_of` returns the direct base classes of the class type repres
 :::bq
 ```c++
 namespace std::meta {
+  consteval auto can_substitute(info templ, span<info const> args) -> bool;
   consteval auto substitute(info templ, span<info const> args) -> info;
 }
 ```
@@ -1879,6 +1883,9 @@ constexpr auto r = substitute(^S, std::vector{^int});  // Okay.
 typename[:r:] si;  // Error: T::X is invalid for T = int.
 ```
 :::
+
+`can_substitute(templ, args)` simply checks if the substitution can succeed (with the same caveat about instantiations outside of the immediate context).
+If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will be ill-formed.
 
 ### `reflect_invoke`
 
@@ -2666,6 +2673,10 @@ namespace std::meta {
   consteval vector<info> accessible_subobjects_of(info type);
   consteval vector<info> enumerators_of(info enum_type);
 
+  // [meta.reflection.substitute], reflection substitution
+  consteval bool can_substitute(info templ, span<const info> arguments);
+  consteval info substitute(info templ, span<const info> arguments);
+
   // [meta.reflection.unary.cat], primary type categories
   consteval bool is_void(info type);
   consteval bool is_null_pointer(info type);
@@ -3120,6 +3131,34 @@ consteval vector<info> enumerators_of(info enum_type);
 [#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declared.
+:::
+:::
+
+### [meta.reflection.substitute] Reflection substitution
+
+::: bq
+::: addu
+```cpp
+consteval bool can_substitute(info templ, span<const info> arguments);
+```
+[1]{.pnum} *Mandates*: `templ` designates a template.
+
+[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or expressions designated by the elements of `arguments`.
+
+[#]{.pnum} *Returns*: `true` if `Z<Args...>` does not lead to a substitution failure. Otherwise, `false`.
+
+[#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
+
+```cpp
+consteval info substitute(info templ, span<const info> arguments);
+```
+
+[#]{.pnum} *Mandates*: `can_substitute(templ, arguments)` is `true`.
+
+[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or expressions designated by the elements of `arguments`.
+
+[#]{.pnum} *Returns*: `^Z<Args...>`.
+
 :::
 :::
 
