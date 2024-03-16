@@ -2075,6 +2075,28 @@ Having `std::meta::meow` for every trait `std::meow` is more straightforward and
 There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
 So we're doing it.
 
+Now, one thing that came up is that the straightforward thing we want to do is to simply add a `std::meta::meow` for every trait `std::meow` and word it appropriately. That's what the current wording in this revision does.
+However, we've run into a conflict.
+The standard library type traits are all *type* traits - they only accept types.
+As such, their names are simply things like `std::is_pointer`, `std::is_const`, `std::is_lvalue_reference`, and so forth.
+Renaming it to `std::is_pointer_type`, for instance, would be a waste of characters since there's nothing else the argument could be save for a type.
+But this is no longer the case.
+Consider `std::meta::is_function(e)`, which is currently actually specified twice in our wording having two different meanings:
+
+1. A consteval function equivalent of the type trait `std::is_function<T>`, such that `std::meta::is_function(e)` mandates that `e` reflect a type and checks if that type is a function type.
+  This is the same category of type trait as the ones mentioned above.
+2. A new kind of reflection query `std::meta::is_function(e)` which asks if `e` is the reflection of a function (as opposed to a type or a namespace or a template, etc.).
+  This is the same category of query as `std::meta::is_template` or `std::meta::is_concept` or `std::meta::is_namespace`.
+
+Both of these are useful, yet they mean different things entirely - the first is ill-formed when passed a reflection of a function (as opposed to a function type), and the second would simply answer `false` for the reflection of _any_ type (function type or otherwise).
+So what do we do?
+
+Probably the most straightforward choice would be to suffix all of the type traits with `_type`.
+That is: `std::is_pointer<T>` because `std::meta::is_pointer_type(^T)`, `std::is_arithmetic<T>` becomes `std::meta::is_arithmetic_type(^T)`, and so forth.
+The advantage of this approach is that it very likely just works, also opening the door to making a more general `std::meta::is_const(e)` that checks not just if `e` is a `const`-qualified type but also if it's a `const`-qualified object or a `const`-qualified member, etc.
+The disadvantage is that the suffixed names would not be familiar - we're much more familiar with the name `is_copy_constructible` than we would be with `is_copy_constructible_type`.
+
+This needs more thought, but we do have to decide something.
 
 # Proposed Wording
 
@@ -2178,7 +2200,7 @@ The notion of consteval-only types (see [basic.types.general]{.sref}) exists to 
 
 ### [basic.lookup.argdep] Argument-dependent name lookup
 
-Add a bullet after the first in paragraph 3 of [basic.lookup.argdep] as follows:
+Add a bullet after the first in paragraph 3 of [basic.lookup.argdep]{.sref} as follows:
 
 ::: bq
 
@@ -2483,6 +2505,18 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
 
+### [over.built] Built-in operators
+
+Add built-in operator candidates for `std::meta::info` to [over.built]{.sref}:
+
+::: bq
+[16]{.pnum} For every `T`, where `T` is a pointer-to-member type[, `std::meta::info`,]{.addu} or `std​::​nullptr_t`, there exist candidate operator functions of the form
+```cpp
+bool operator==(T, T);
+bool operator!=(T, T);
+```
+:::
+
 ### [temp.names] Names of template specializations
 
 Modify the grammar for `$template-argument$` as follows:
@@ -2547,22 +2581,10 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
 ::: bq
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
-
 :::
+
 
 ## Library
-
-### [over.built] Built-in operators
-
-Add built-in operator candidates for `std::meta::info` to [over.built]{.sref}:
-
-::: bq
-[16]{.pnum} For every `T`, where `T` is a pointer-to-member type[, `std::meta::info`,]{.addu} or `std​::​nullptr_t`, there exist candidate operator functions of the form
-```cpp
-bool operator==(T, T);
-bool operator!=(T, T);
-```
-:::
 
 ### Header `<meta>` synopsis
 
@@ -2612,8 +2634,8 @@ namespace std::meta {
   consteval bool is_alias_template(info r);
   consteval bool is_concept(info r);
   consteval bool has_template_arguments(info r);
-  consteval auto is_class_member(info entity) -> bool;
-  consteval auto is_namespace_member(info entity) -> bool;
+  consteval bool is_class_member(info entity);
+  consteval bool is_namespace_member(info entity);
   consteval bool is_nonstatic_data_member(info r);
   consteval bool is_static_member(info r);
   consteval bool is_base(info r);
@@ -2936,8 +2958,8 @@ consteval bool has_template_arguments(info r);
 
 
 ```cpp
-consteval auto is_class_member(info entity) -> bool;
-consteval auto is_namespace_member(info entity) -> bool;
+consteval bool is_class_member(info entity);
+consteval bool is_namespace_member(info entity);
 consteval bool is_nonstatic_data_member(info r);
 consteval bool is_static_member(info r);
 consteval bool is_base(info r);
