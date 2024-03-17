@@ -748,7 +748,7 @@ Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity:
 * [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity[.]{.rm} [, or]{.addu}
 
 ::: addu
-* [#.#]{.pnum} an entity defined or created in an implicit template scope ([basic.scope.template]).
+* [#.#]{.pnum} an entity defined or created within an implicit template scope ([basic.scope.template]).
 :::
 
 [A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.]{.note}
