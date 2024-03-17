@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R7
+document: D1061R8
 date: today
 audience: CWG
 author:
@@ -571,6 +571,23 @@ Structured bindings in namespace scope are a little odd to begin with, since the
 
 # Wording
 
+Introduce a new form of scope in [basic.scope]{.sref}:
+
+::: bq
+::: addu
+### Implicit Template Scope
+
+[1]{.pnum} A declaration of a structured binding pack ([dcl.struct.bind]) introduces an *implicit template scope* that includes the declaration. An implicit template scope is a template definition.
+
+[#]{.pnum} If such a declaration is at block scope ([basic.scope.block]), the implicit template scope behaves as a block scope. Otherwise, if such a declaration is at namespace scope ([basic.scope.namespace]), it behaves as a namespace scope.
+
+[#]{.pnum} If a declaration that is a name-independent declaration and that binds a name in an implicit template scope S potentially conflicts with a declaration whose target
+scope is S, any immediately enclosing implicit template scopes of S, or the innermost enclosing scope of S that is not an implicit template scope, the program is ill-formed.
+
+[#]{.pnum} At the close of an implicit template scope, if the scope is not inside of an enclosing template definition, it is immediately instantiated ([temp.pre]).
+:::
+:::
+
 Add a drive-by fix to [expr.prim.fold]{.sref} after paragraph 3:
 
 ::: bq
@@ -731,7 +748,7 @@ Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity:
 * [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity[.]{.rm} [, or]{.addu}
 
 ::: addu
-* [#.#]{.pnum} an entity whose declaration's locus is inhabited by the declaration of a structured binding pack.
+* [#.#]{.pnum} an entity defined or created in an implicit template block scope ([basic.scope.template]).
 :::
 
 [A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.]{.note}
