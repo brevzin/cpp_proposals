@@ -28,11 +28,13 @@ tag: constexpr
 
 Since [@P2996R2]:
 
+* many wording changes, additions, and improvements
 * added `accessible_members_of` variants to restore a TS-era agreement
 * expanded `value_of` to operate on functions
 * added Godbolt links to Clang/P2996 implementation
 * added `can_substitute`
 * added explanation of a naming issue with the [type traits](#other-type-traits)
+* added an alternative [named tuple](#named-tuple) implementation
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -948,7 +950,7 @@ struct universal_formatter {
 
     template for (constexpr auto base : bases_of(^T)) {
       delim();
-      out = std::format_to(out, "{}", static_cast<[:base:] const&>(t));
+      out = std::format_to(out, "{}", static_cast<[:type_of(base):] const&>(t));
     }
 
     template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
@@ -975,7 +977,9 @@ int main() {
 ```
 :::
 
-This example is not implemented on compiler explorer at this time, but only because of issues compiling both `std::format` and `fmt::format.`
+On Compiler Explorer: [Clang](https://godbolt.org/z/z4oq9xdK9).
+
+Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is `static_cast<[: type_of(base) const& :]>(t)`. This both means explicitly specifying the `const`-ness of the type in the cast explicitly but also means that access will be checked. As a result, while the Boost.Describe version formats `Z` even with a `private` base `Y` as desired, in the linked Clang implementation `Y` is actually made a public base (alternatively `Z` could have made `universal_formatter` a `friend`).
 
 ## Implementing member-wise `hash_append`
 
@@ -2234,21 +2238,19 @@ The notion of consteval-only types (see [basic.types.general]{.sref}) exists to 
 
 ### [basic.lookup.argdep] Argument-dependent name lookup
 
-Add a bullet after the first in paragraph 3 of [basic.lookup.argdep]{.sref} as follows:
+Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this must precede the fundamental type bullet, because `meta::info` is a fundamental type]{.ednote}:
 
 ::: bq
 
 [3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
-- [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
-
 ::: addu
 
-- [3.2]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
 
 :::
-
-- [3.3]{.pnum} If `T` is a class type ...
+- [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
+- [3.2]{.pnum} If `T` is a class type ...
 
 :::
 

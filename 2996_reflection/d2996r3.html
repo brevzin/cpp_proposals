@@ -691,11 +691,13 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span> Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>Since <span class="citation" data-cites="P2996R2">[<a href="#ref-P2996R2" role="doc-biblioref">P2996R2</a>]</span>:</p>
 <ul>
+<li>many wording changes, additions, and improvements</li>
 <li>added <code class="sourceCode cpp">accessible_members_of</code> variants to restore a TS-era agreement</li>
 <li>expanded <code class="sourceCode cpp">value_of</code> to operate on functions</li>
 <li>added Godbolt links to Clang/P2996 implementation</li>
 <li>added <code class="sourceCode cpp">can_substitute</code></li>
 <li>added explanation of a naming issue with the <a href="#other-type-traits">type traits</a></li>
+<li>added an alternative <a href="#named-tuple">named tuple</a> implementation</li>
 </ul>
 <p>Since <span class="citation" data-cites="P2996R1">[<a href="#ref-P2996R1" role="doc-biblioref">P2996R1</a>]</span>, several changes to the overall library API:</p>
 <ul>
@@ -1409,7 +1411,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb27-15"><a href="#cb27-15"></a></span>
 <span id="cb27-16"><a href="#cb27-16"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> base <span class="op">:</span> bases_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb27-17"><a href="#cb27-17"></a>      delim<span class="op">()</span>;</span>
-<span id="cb27-18"><a href="#cb27-18"></a>      out <span class="op">=</span> std<span class="op">::</span>format_to<span class="op">(</span>out, <span class="st">&quot;{}&quot;</span>, <span class="kw">static_cast</span><span class="op">&lt;[:</span>base<span class="op">:]</span> <span class="kw">const</span><span class="op">&amp;&gt;(</span>t<span class="op">))</span>;</span>
+<span id="cb27-18"><a href="#cb27-18"></a>      out <span class="op">=</span> std<span class="op">::</span>format_to<span class="op">(</span>out, <span class="st">&quot;{}&quot;</span>, <span class="kw">static_cast</span><span class="op">&lt;[:</span>type_of<span class="op">(</span>base<span class="op">):]</span> <span class="kw">const</span><span class="op">&amp;&gt;(</span>t<span class="op">))</span>;</span>
 <span id="cb27-19"><a href="#cb27-19"></a>    <span class="op">}</span></span>
 <span id="cb27-20"><a href="#cb27-20"></a></span>
 <span id="cb27-21"><a href="#cb27-21"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> mem <span class="op">:</span> nonstatic_data_members_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
@@ -1434,7 +1436,8 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <span id="cb27-40"><a href="#cb27-40"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, Z<span class="op">())</span>; <span class="co">// Z{X{.m1 = 1}, Y{.m2 = 2}, .m3 = 3, .m4 = 4}</span></span>
 <span id="cb27-41"><a href="#cb27-41"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>This example is not implemented on compiler explorer at this time, but only because of issues compiling both <code class="sourceCode cpp">std<span class="op">::</span>format</code> and <code class="sourceCode cpp">fmt<span class="op">::</span>format<span class="op">.</span></code></p>
+<p>On Compiler Explorer: <a href="https://godbolt.org/z/z4oq9xdK9">Clang</a>.</p>
+<p>Note that currently, we do not have the ability to access a base class subobject using the <code class="sourceCode cpp">t<span class="op">.[:</span> base <span class="op">:]</span></code> syntax - which means that the only way to get at the base is <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:]&gt;(</span>t<span class="op">)</span></code>. This both means explicitly specifying the <code class="sourceCode cpp"><span class="kw">const</span></code>-ness of the type in the cast explicitly but also means that access will be checked. As a result, while the Boost.Describe version formats <code class="sourceCode cpp">Z</code> even with a <code class="sourceCode cpp"><span class="kw">private</span></code> base <code class="sourceCode cpp">Y</code> as desired, in the linked Clang implementation <code class="sourceCode cpp">Y</code> is actually made a public base (alternatively <code class="sourceCode cpp">Z</code> could have made <code class="sourceCode cpp">universal_formatter</code> a <code class="sourceCode cpp"><span class="kw">friend</span></code>).</p>
 <h2 data-number="3.13" id="implementing-member-wise-hash_append"><span class="header-section-number">3.13</span> Implementing member-wise <code class="sourceCode cpp">hash_append</code><a href="#implementing-member-wise-hash_append" class="self-link"></a></h2>
 <p>Based on the <span class="citation" data-cites="N3980">[<a href="#ref-N3980" role="doc-biblioref">N3980</a>]</span> API:</p>
 <blockquote>
@@ -2294,19 +2297,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </div>
 </blockquote>
 <h3 data-number="5.1.6" id="basic.lookup.argdep-argument-dependent-name-lookup"><span class="header-section-number">5.1.6</span> [basic.lookup.argdep] Argument-dependent name lookup<a href="#basic.lookup.argdep-argument-dependent-name-lookup" class="self-link"></a></h3>
-<p>Add a bullet after the first in paragraph 3 of <span>6.5.4 <a href="https://wg21.link/basic.lookup.argdep">[basic.lookup.argdep]</a></span> as follows:</p>
+<p>Add a bullet to paragraph 3 of <span>6.5.4 <a href="https://wg21.link/basic.lookup.argdep">[basic.lookup.argdep]</a></span> as follows <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: this must precede the fundamental type bullet, because <code class="sourceCode default">meta::info</code> is a fundamental type ]</span>:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">3</a></span> … Any <code class="sourceCode cpp"><em>typedef-name</em></code>s and <code class="sourceCode cpp"><em>using-declaration</em></code>s used to specify the types do not contribute to this set. The set of entities is determined in the following way:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(3.1)</a></span> If <code class="sourceCode cpp">T</code> is a fundamental type, its associated set of entities is empty.</li>
-</ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(3.2)</a></span> If <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, its associated set of entities is the singleton containing the function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_type</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(3.0)</a></span> If <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>, its associated set of entities is the singleton containing the function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_type</code>.</li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.3)</a></span> If <code class="sourceCode cpp">T</code> is a class type …</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(3.1)</a></span> If <code class="sourceCode cpp">T</code> is a fundamental type, its associated set of entities is empty.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.2)</a></span> If <code class="sourceCode cpp">T</code> is a class type …</li>
 </ul>
 </blockquote>
 <h3 data-number="5.1.7" id="basic.lookup.qual.general-general"><span class="header-section-number">5.1.7</span> [basic.lookup.qual.general] General<a href="#basic.lookup.qual.general-general" class="self-link"></a></h3>
