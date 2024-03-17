@@ -2599,7 +2599,7 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 Add to the list of never-type-dependent expression forms in [temp.dep.expr]{.sref}/4:
 
 :::bq
-```
+```diff
      $literal$
      sizeof $unary-expression$
      sizeof ( $type-id$ )
@@ -2621,7 +2621,7 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 :::bq
 :::addu
 
-[#]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
+[9]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
 
 :::
 :::
@@ -2633,7 +2633,21 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 Add at the end of [temp.dep.constexpr]{.sref}/2 (before the note):
 
 :::bq
-[2}{.pnum} ... [A `$reflect-expression$` is value dependent if the operand of the reflection operator is a type-dependent or value-dependent expression or if that operand is a dependent `$type-id$`.]{.addu}
+[2]{.pnum} An *id-expression* is value-dependent if:
+
+* [2.1]{.pnum} [...]
+
+Expressions of the following form are value-dependent if the *unary-expression* or *expression* is type-dependent or the *type-id* is dependent:
+```
+sizeof unary-expression
+sizeof ( type-id )
+typeid ( expression )
+typeid ( type-id )
+alignof ( type-id )
+noexcept ( expression )
+```
+
+[A `$reflect-expression$` is value dependent if the operand of the reflection operator is a type-dependent or value-dependent expression or if that operand is a dependent `$type-id$`.]{.addu}
 :::
 
 
@@ -2642,7 +2656,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 :::bq
 :::addu
 
-[#]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
+[6]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
 
 :::
 :::
@@ -3045,7 +3059,7 @@ consteval info type_of(info r);
 
 [#]{.pnum} *Mandates*: `r` designates a typed entity.
 
-[#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not of a type alias reflection.
+[#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
 
 ```cpp
 consteval info parent_of(info r);
