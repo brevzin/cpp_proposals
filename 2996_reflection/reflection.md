@@ -1115,6 +1115,33 @@ int main() {
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/nMx4M9sdT), [Clang](https://godbolt.org/z/TK71ThhM5).
 
+Alternatively, can side-step the question of non-type template parameters entirely by keeping everything in the value domain:
+
+::: bq
+```cpp
+consteval auto make_named_tuple(std::meta::info type,
+                                std::initializer_list<std::pair<std::meta::info, std::string_view>> members) {
+    std::vector<std::meta::data_member_spec> nsdms;
+    for (auto [type, name] : members) {
+        nsdms.push_back(data_member_spec(type, {.name=name}));
+    }
+    return define_class(type, nsdms);
+}
+
+struct R;
+static_assert(is_type(make_named_tuple(^R, {{^int, "x"}, {^double, "y"}})));
+
+static_assert(type_of(nonstatic_data_members_of(^R)[0]) == ^int);
+static_assert(type_of(nonstatic_data_members_of(^R)[1]) == ^double);
+
+int main() {
+    [[maybe_unused]] auto r = R{.x=1, .y=2.0};
+}
+```
+:::
+
+On Compiler Explorer: [EDG and Clang](https://godbolt.org/z/dPcsaTEv6) (the EDG and Clang implementations differ only in Clang having the updated `data_member_spec` API that returns an `info`).
+
 
 ## Compile-Time Ticket Counter
 
