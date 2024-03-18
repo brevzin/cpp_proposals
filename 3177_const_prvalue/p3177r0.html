@@ -569,10 +569,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li><a href="#extra-wrapping"><span class="toc-section-number">1.2</span> Extra Wrapping<span></span></a></li>
 </ul></li>
 <li><a href="#status-quo"><span class="toc-section-number">2</span> Status Quo<span></span></a></li>
-<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
-<ul>
-<li><a href="#wording"><span class="toc-section-number">3.1</span> Wording<span></span></a></li>
-</ul></li>
+<li><a href="#proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
@@ -1309,37 +1306,6 @@ copy construction then move assignment
 </tr>
 </tbody>
 </table>
-<h2 data-number="3.1" id="wording"><span class="header-section-number">3.1</span> Wording<a href="#wording" class="self-link"></a></h2>
-<p>The wording in <span>7.6.16 <a href="https://wg21.link/expr.cond">[expr.cond]</a></span> in general is quite difficult, but regardless of which approach we select here, the wording will be to insert a new paragraph between paragraphs 3 and 4 that completely handles this case.</p>
-<p>For the strong proposal:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">3</a></span> Otherwise, if the second and third operand are glvalue bit-fields of the same value category and of types <em>cv1</em> <code class="sourceCode cpp">T</code> and <em>cv2</em> <code class="sourceCode cpp">T</code>, respectively, the operands are considered to be of type <em>cv</em> <code class="sourceCode cpp">T</code> for the remainder of this subclause, where <em>cv</em> is the union of <em>cv1</em> and <em>cv2</em>.</p>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">π</a></span> Otherwise, if the second and third operand are of types <em>cv1</em> <code class="sourceCode cpp">T</code> and <em>cv2</em> <code class="sourceCode cpp">T</code>, respectively, then let <em>cv</em> be the union of <em>cv1</em> and <em>cv2</em>:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(π.1)</a></span> If both operands are lvalues, then the result is an lvalue of type <em>cv</em> <code class="sourceCode cpp">T</code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(π.2)</a></span> Otherwise, if both operands are xvalues, then the result is an xvalue of type <em>cv</em> <code class="sourceCode cpp">T</code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(π.3)</a></span> Otherwise, the result is a prvalue of type <code class="sourceCode cpp">T</code>.</li>
-</ul>
-</div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">4</a></span> Otherwise, if the second and third operand have different types and either has (possibly cv-qualified) class type, or if both are glvalues of the same value category and the same type except for cv-qualification, an attempt is made to form an implicit conversion sequence from each of those operands to the type of the other.</p>
-</blockquote>
-<p>For the weak proposal, that last sub-bullet becomes:</p>
-<blockquote>
-<div class="addu">
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(π.3)</a></span> Otherwise, the result is a prvalue of type <em>cv</em> <code class="sourceCode cpp">T</code>.</li>
-</ul>
-</div>
-</blockquote>
-<p>For the version of the strong proposal that preserves const prvalues only if both operands are const prvalues:</p>
-<blockquote>
-<div class="addu">
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(π.4)</a></span> Otherwise, the result is a prvalue of type <code class="sourceCode cpp"><span class="kw">const</span> T</code> if both operands are of type <code class="sourceCode cpp"><span class="kw">const</span> T</code> and <code class="sourceCode cpp">T</code> otherwise.</li>
-</ul>
-</div>
-</blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-P2278R4">
