@@ -1674,6 +1674,14 @@ namespace std::meta {
   consteval auto subobjects_of(info class_type) -> vector<info>;
   consteval auto enumerators_of(info enum_type) -> vector<info>;
 
+  template<typename ...Fs>
+    consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
+  consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
+
   // @[substitute](#substitute)@
   consteval auto can_substitute(info templ, span<info const> args) -> bool;
   consteval auto substitute(info templ, span<info const> args) -> info;
@@ -1864,6 +1872,14 @@ namespace std::meta {
   }
 
   consteval auto enumerators_of(info enum_type) -> vector<info>;
+
+  template<typename ...Fs>
+    consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
+  consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
 }
 ```
 :::
@@ -1877,6 +1893,8 @@ E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
+
+Each variant named `accessible_meow_of` simply returns the result of `meow_of` filtered on `is_accessible`. Note that this might change to be `is_accessible_from(e, context)` rather than simply `is_accessible(e)`.
 
 
 ### `substitute`
