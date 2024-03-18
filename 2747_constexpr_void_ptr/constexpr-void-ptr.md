@@ -1,6 +1,6 @@
 ---
 title: "`constexpr` placement new"
-document: P2747R2
+document: D2747R2
 date: today
 audience: EWG
 author:
@@ -20,7 +20,7 @@ R0 [@P2747R0] of this paper proposed three related features:
 
 Since then, [@P2738R1] was adopted in Varna, which resolves problem #1. Separately, #3 is kind of a separate issue and there are ongoing conversations about how to handle this in order to make `inplace_vector` [@P0843R9] actually during during constant evaluation for all types. So this paper refocuses to just solve problem #2 and has been renamed accordingly.
 
-Since [@P2747R1], fixed the wording.
+Since [@P2747R1], included support for arrays (yet another benefit over `std::construct_at`).
 
 # Introduction
 
@@ -121,9 +121,35 @@ Placement new is only unsafe because the language allows you to do practically a
 
 Now that we have support for `static_cast<T*>(static_cast<void*>(p))`, we can adopt the same rules to make placement new work.
 
+Additionally, `std::construct_at` does not support arrays (see also [@LWG3436]), but we can make it work with placement without much issue - another reason the language is simply better:
+
+::: bq
+```cpp
+int* p = std::allocator<int>{}.allocate(3);
+
+new (p) int[]{1, 2, 3};       // ok
+new (p + 1) int[]{2, 3};      // error (in this paper)
+new (p) int[]{1, 2, 3, 4, 5}; // error
+```
+:::
+
+Note that the smaller array case could probably be made to work, but I'm not aware of a strong reason to want it - so it seems like a good start to allow the correct-size array case and reject the wrong-size array case for both directions of wrong size.
+
 # Wording
 
 Today, we have an exception for `std::construct_at` and `std::ranges::construct_at` to avoid evaluating the placement new that they do internally. But once we allow placement new, we no longer need an exception for those cases - we simply need to move the lifetime requirement from the exception into the general rule for placement new.
+
+Clarify that implicit object creation does not happen during constant evaluation in [intro.object]{.sref}/14:
+
+::: bq
+[14]{.pnum} [An]{.rm} [Except during constant evaluation, an]{.addu} operation that begins the lifetime of an array of `unsigned char` or `std​::​byte` implicitly creates objects within the region of storage occupied by the array.
+
+[*Note 5*: The array object provides storage for these objects. — *end note*]
+
+[Any]{.rm} [Except during constant evaluation, any]{.addu} implicit or explicit invocation of a function named `operator new` or `operator new[]` implicitly creates objects in the returned region of storage and returns a pointer to a suitable created object.
+
+[*Note 6*: Some functions in the C++ standard library implicitly create objects ([obj.lifetime], [c.malloc], [mem.res.public], [bit.cast], [cstring.syn]). — *end note*]
+:::
 
 Change [expr.new]{.sref}/15:
 
@@ -145,7 +171,7 @@ Change [expr.const]{.sref}/5.18 (paragraph 14 here for context was the [@P2738R1
 * [5.18]{.pnum} a *new-expression* ([expr.new]{.sref}), unless [either]{.addu}
   * [5.18.1]{.pnum} the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`[, or]{.addu}
   * [5.18.2]{.pnum} [the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type `T`, where]{.addu}
-    * [5.18.2.1]{.pnum} [the placement argument to the *new-expression* points to an object that is pointer-interconvertible with an object of type `T`, and]{.addu}
+    * [5.18.2.1]{.pnum} [the placement argument to the *new-expression* points to an object that is pointer-interconvertible with an object of type `T` or, if `T` is an array type, with the first element of an object of type `T`, and]{.addu}
     * [5.#.#.#]{.pnum} [the placement argument points to storage whose duration began within the evaluation of `E`]{.addu};
 :::
 

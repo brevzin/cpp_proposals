@@ -534,7 +534,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P2747R2</td>
+    <td>D2747R2</td>
   </tr>
   <tr>
     <td>Date:</td>
@@ -577,7 +577,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <li>Better handling an array of uninitialized objects</li>
 </ol>
 <p>Since then, <span class="citation" data-cites="P2738R1">[<a href="#ref-P2738R1" role="doc-biblioref">P2738R1</a>]</span> was adopted in Varna, which resolves problem #1. Separately, #3 is kind of a separate issue and there are ongoing conversations about how to handle this in order to make <code class="sourceCode cpp">inplace_vector</code> <span class="citation" data-cites="P0843R9">[<a href="#ref-P0843R9" role="doc-biblioref">P0843R9</a>]</span> actually during during constant evaluation for all types. So this paper refocuses to just solve problem #2 and has been renamed accordingly.</p>
-<p>Since <span class="citation" data-cites="P2747R1">[<a href="#ref-P2747R1" role="doc-biblioref">P2747R1</a>]</span>, fixed the wording.</p>
+<p>Since <span class="citation" data-cites="P2747R1">[<a href="#ref-P2747R1" role="doc-biblioref">P2747R1</a>]</span>, included support for arrays (yet another benefit over <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code>).</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span> Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Consider this implementation of <code class="sourceCode cpp">std<span class="op">::</span>uninitialized_copy</code>, partially adjusted from <a href="https://en.cppreference.com/w/cpp/memory/uninitialized_copy">cppreference</a>:</p>
 <blockquote>
@@ -686,11 +686,27 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 </blockquote>
 <p>Placement new is only unsafe because the language allows you to do practically anything - want to placement new a <code class="sourceCode cpp">std<span class="op">::</span>string</code> into a <code class="sourceCode cpp"><span class="dt">double</span><span class="op">*</span></code>? Sure, why not. But during constant evaluation we already have a way of limiting operations to those that make sense - we can require that the pointer we’re constructing into actually is a <code class="sourceCode cpp">T<span class="op">*</span></code>. The fact that we have to go through a <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code> to get there doesn’t make it unsafe.</p>
 <p>Now that we have support for <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">*&gt;(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">*&gt;(</span>p<span class="op">))</span></code>, we can adopt the same rules to make placement new work.</p>
+<p>Additionally, <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code> does not support arrays (see also <span class="citation" data-cites="LWG3436">[<a href="#ref-LWG3436" role="doc-biblioref">LWG3436</a>]</span>), but we can make it work with placement without much issue - another reason the language is simply better:</p>
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span><span class="op">*</span> p <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;{}.</span>allocate<span class="op">(</span><span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">new</span> <span class="op">(</span>p<span class="op">)</span> <span class="dt">int</span><span class="op">[]{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;       <span class="co">// ok</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="kw">new</span> <span class="op">(</span>p <span class="op">+</span> <span class="dv">1</span><span class="op">)</span> <span class="dt">int</span><span class="op">[]{</span><span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;      <span class="co">// error (in this paper)</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">new</span> <span class="op">(</span>p<span class="op">)</span> <span class="dt">int</span><span class="op">[]{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span><span class="op">}</span>; <span class="co">// error</span></span></code></pre></div>
+</blockquote>
+<p>Note that the smaller array case could probably be made to work, but I’m not aware of a strong reason to want it - so it seems like a good start to allow the correct-size array case and reject the wrong-size array case for both directions of wrong size.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Today, we have an exception for <code class="sourceCode cpp">std<span class="op">::</span>construct_at</code> and <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>construct_at</code> to avoid evaluating the placement new that they do internally. But once we allow placement new, we no longer need an exception for those cases - we simply need to move the lifetime requirement from the exception into the general rule for placement new.</p>
+<p>Clarify that implicit object creation does not happen during constant evaluation in <span>6.7.2 <a href="https://wg21.link/intro.object">[intro.object]</a></span>/14:</p>
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">14</a></span> <span class="rm" style="color: #bf0303"><del>An</del></span> <span class="addu">Except during constant evaluation, an</span> operation that begins the lifetime of an array of <code class="sourceCode cpp"><span class="dt">unsigned</span> <span class="dt">char</span></code> or <code class="sourceCode cpp">std​<span class="op">::</span>​byte</code> implicitly creates objects within the region of storage occupied by the array.</p>
+<p>[<em>Note 5</em>: The array object provides storage for these objects. — <em>end note</em>]</p>
+<p><span class="rm" style="color: #bf0303"><del>Any</del></span> <span class="addu">Except during constant evaluation, any</span> implicit or explicit invocation of a function named <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">new</span></code> or <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">new</span><span class="op">[]</span></code> implicitly creates objects in the returned region of storage and returns a pointer to a suitable created object.</p>
+<p>[<em>Note 6</em>: Some functions in the C++ standard library implicitly create objects ([obj.lifetime], [c.malloc], [mem.res.public], [bit.cast], [cstring.syn]). — <em>end note</em>]</p>
+</blockquote>
 <p>Change <span>7.6.2.8 <a href="https://wg21.link/expr.new">[expr.new]</a></span>/15:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">15</a></span> During an evaluation of a constant expression, a call to <span class="rm" style="color: #bf0303"><del>an</del></span> <span class="addu">a replaceable</span> allocation function is always omitted <span class="addu">([expr.const])</span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">15</a></span> During an evaluation of a constant expression, a call to <span class="rm" style="color: #bf0303"><del>an</del></span> <span class="addu">a replaceable</span> allocation function is always omitted <span class="addu">([expr.const])</span>.</p>
 <div class="rm" style="color: #bf0303">
 <p><span class="note"><span>[ <em>Note 1:</em> </span> Only new-expressions that would otherwise result in a call to a replaceable global allocation function can be evaluated in constant expressions ([expr.const]).<span> — <em>end note</em> ]</span></span></p>
 </div>
@@ -698,17 +714,17 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5.18 (paragraph 14 here for context was the <span class="citation" data-cites="P2738R1">[<a href="#ref-P2738R1" role="doc-biblioref">P2738R1</a>]</span> fix to allow converting from <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code> to <code class="sourceCode cpp">T<span class="op">*</span></code> during constant evaluation, as adjusted by <span class="citation" data-cites="CWG2755">[<a href="#ref-CWG2755" role="doc-biblioref">CWG2755</a>]</span>):</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(5.14)</a></span> a conversion from a prvalue <code class="sourceCode cpp">P</code> of type “pointer to cv <code class="sourceCode cpp"><span class="dt">void</span></code>” to a “<code class="sourceCode cpp"><em>cv1</em></code> pointer to <code class="sourceCode cpp">T</code>”, where <code class="sourceCode cpp">T</code> is not <code class="sourceCode cpp"><em>cv2</em> <span class="dt">void</span></code>, unless <code class="sourceCode cpp">P</code> points to an object whose type is similar to <code class="sourceCode cpp">T</code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.15)</a></span> …</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5.16)</a></span> …</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5.17)</a></span> …</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(5.18)</a></span> a <em>new-expression</em> (<span>7.6.2.8 <a href="https://wg21.link/expr.new">[expr.new]</a></span>), unless <span class="addu">either</span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.14)</a></span> a conversion from a prvalue <code class="sourceCode cpp">P</code> of type “pointer to cv <code class="sourceCode cpp"><span class="dt">void</span></code>” to a “<code class="sourceCode cpp"><em>cv1</em></code> pointer to <code class="sourceCode cpp">T</code>”, where <code class="sourceCode cpp">T</code> is not <code class="sourceCode cpp"><em>cv2</em> <span class="dt">void</span></code>, unless <code class="sourceCode cpp">P</code> points to an object whose type is similar to <code class="sourceCode cpp">T</code>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5.15)</a></span> …</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5.16)</a></span> …</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(5.17)</a></span> …</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(5.18)</a></span> a <em>new-expression</em> (<span>7.6.2.8 <a href="https://wg21.link/expr.new">[expr.new]</a></span>), unless <span class="addu">either</span>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(5.18.1)</a></span> the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code><span class="addu">, or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(5.18.2)</a></span> <span class="addu">the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type <code class="sourceCode cpp">T</code>, where</span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(5.18.1)</a></span> the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of <code class="sourceCode cpp">E</code><span class="addu">, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.18.2)</a></span> <span class="addu">the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type <code class="sourceCode cpp">T</code>, where</span>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.18.2.1)</a></span> <span class="addu">the placement argument to the <em>new-expression</em> points to an object that is pointer-interconvertible with an object of type <code class="sourceCode cpp">T</code>, and</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(5.18.2.2)</a></span> <span class="addu">the placement argument points to storage whose duration began within the evaluation of <code class="sourceCode cpp">E</code></span>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(5.18.2.1)</a></span> <span class="addu">the placement argument to the <em>new-expression</em> points to an object that is pointer-interconvertible with an object of type <code class="sourceCode cpp">T</code> or, if <code class="sourceCode cpp">T</code> is an array type, with the first element of an object of type <code class="sourceCode cpp">T</code>, and</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(5.18.2.2)</a></span> <span class="addu">the placement argument points to storage whose duration began within the evaluation of <code class="sourceCode cpp">E</code></span>;</li>
 </ul></li>
 </ul></li>
 </ul>
@@ -716,31 +732,35 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>Remove the special case for <code class="sourceCode cpp">construct_at</code> in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/6:</p>
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">6</a></span> For the purposes of determining whether an expression <code class="sourceCode cpp">E</code> is a core constant expression, the evaluation of the body of a member function of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as defined in [allocator.members], where T is a literal type, is ignored. <span class="rm" style="color: #bf0303"><del>Similarly, the evaluation of the body of <span><code class="sourceCode default">std​::​construct_at</code></span> or <span><code class="sourceCode default">std​::​ranges​::​construct_at</code></span> is considered to include only the initialization of the <span><code class="sourceCode default">T</code></span> object if the first argument (of type <span><code class="sourceCode default">T*</code></span>) points to storage allocated with <span><code class="sourceCode default">std​::​allocator&lt;T&gt;</code></span> or to an object whose lifetime began within the evaluation of <span><code class="sourceCode default">E</code></span>.</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">6</a></span> For the purposes of determining whether an expression <code class="sourceCode cpp">E</code> is a core constant expression, the evaluation of the body of a member function of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span></code> as defined in [allocator.members], where T is a literal type, is ignored. <span class="rm" style="color: #bf0303"><del>Similarly, the evaluation of the body of <span><code class="sourceCode default">std​::​construct_at</code></span> or <span><code class="sourceCode default">std​::​ranges​::​construct_at</code></span> is considered to include only the initialization of the <span><code class="sourceCode default">T</code></span> object if the first argument (of type <span><code class="sourceCode default">T*</code></span>) points to storage allocated with <span><code class="sourceCode default">std​::​allocator&lt;T&gt;</code></span> or to an object whose lifetime began within the evaluation of <span><code class="sourceCode default">E</code></span>.</del></span></li>
 </ul>
 </blockquote>
 <p>Change <span>17.6.2 <a href="https://wg21.link/new.syn">[new.syn]</a></span> to mark the placement new functions <code class="sourceCode cpp"><span class="kw">constexpr</span></code>:</p>
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1"></a>// all freestanding</span>
-<span id="cb6-2"><a href="#cb6-2"></a>namespace std {</span>
-<span id="cb6-3"><a href="#cb6-3"></a>// [new.delete], storage allocation and deallocation</span>
-<span id="cb6-4"><a href="#cb6-4"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new  (std::size_t size, void* ptr) noexcept;</span>
-<span id="cb6-5"><a href="#cb6-5"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span>
-<span id="cb6-6"><a href="#cb6-6"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1"></a>// all freestanding</span>
+<span id="cb7-2"><a href="#cb7-2"></a>namespace std {</span>
+<span id="cb7-3"><a href="#cb7-3"></a>// [new.delete], storage allocation and deallocation</span>
+<span id="cb7-4"><a href="#cb7-4"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new  (std::size_t size, void* ptr) noexcept;</span>
+<span id="cb7-5"><a href="#cb7-5"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span>
+<span id="cb7-6"><a href="#cb7-6"></a>}</span></code></pre></div>
 </blockquote>
 <p>And likewise in <span>17.6.3.4 <a href="https://wg21.link/new.delete.placement">[new.delete.placement]</a></span>:</p>
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new(std::size_t size, void* ptr) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">ptr</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new(std::size_t size, void* ptr) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">2</a></span> <em>Returns</em>: <code class="sourceCode cpp">ptr</code>.</p>
 <p>…</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">ptr</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">ptr</code>.</p>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
 <div id="ref-CWG2755">
 <p>[CWG2755] Jens Maurer. 2023-06-28. Incorrect wording applied by P2738R1. <br />
 <a href="https://wg21.link/cwg2755">https://wg21.link/cwg2755</a></p>
+</div>
+<div id="ref-LWG3436">
+<p>[LWG3436] Jonathan Wakely. std::construct_at should support arrays. <br />
+<a href="https://wg21.link/lwg3436">https://wg21.link/lwg3436</a></p>
 </div>
 <div id="ref-P0784R7">
 <p>[P0784R7] Daveed Vandevoorde, Peter Dimov,Louis Dionne, Nina Ranns, Richard Smith, Daveed Vandevoorde. 2019-07-22. More constexpr containers. <br />
