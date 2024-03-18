@@ -1,2 +1,2 @@
-p2747r1.html : constexpr-void-ptr.md
+p2747r2.html : constexpr-void-ptr.md
 include ../md/mpark-wg21.mk

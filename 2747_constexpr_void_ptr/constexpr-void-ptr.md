@@ -1,6 +1,6 @@
 ---
 title: "`constexpr` placement new"
-document: P2747R1
+document: P2747R2
 date: today
 audience: EWG
 author:
@@ -19,6 +19,8 @@ R0 [@P2747R0] of this paper proposed three related features:
 3. Better handling an array of uninitialized objects
 
 Since then, [@P2738R1] was adopted in Varna, which resolves problem #1. Separately, #3 is kind of a separate issue and there are ongoing conversations about how to handle this in order to make `inplace_vector` [@P0843R9] actually during during constant evaluation for all types. So this paper refocuses to just solve problem #2 and has been renamed accordingly.
+
+Since [@P2747R1], fixed the wording.
 
 # Introduction
 
@@ -123,6 +125,16 @@ Now that we have support for `static_cast<T*>(static_cast<void*>(p))`, we can ad
 
 Today, we have an exception for `std::construct_at` and `std::ranges::construct_at` to avoid evaluating the placement new that they do internally. But once we allow placement new, we no longer need an exception for those cases - we simply need to move the lifetime requirement from the exception into the general rule for placement new.
 
+Change [expr.new]{.sref}/15:
+
+::: bq
+[15]{.pnum} During an evaluation of a constant expression, a call to [an]{.rm} [a replaceable]{.addu} allocation function is always omitted [([expr.const])]{.addu}.
+
+::: rm
+[ Only new-expressions that would otherwise result in a call to a replaceable global allocation function can be evaluated in constant expressions ([expr.const]).]{.note}
+:::
+:::
+
 Change [expr.const]{.sref}/5.18 (paragraph 14 here for context was the [@P2738R1] fix to allow converting from `void*` to `T*` during constant evaluation, as adjusted by [@CWG2755]):
 
 ::: bq
@@ -131,12 +143,42 @@ Change [expr.const]{.sref}/5.18 (paragraph 14 here for context was the [@P2738R1
 * [5.16]{.pnum} ...
 * [5.17]{.pnum} ...
 * [5.18]{.pnum} a *new-expression* ([expr.new]{.sref}), unless [either]{.addu}
-  * the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`[, or]{.addu}
-  * [the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type `T`, the provided pointer points to an object whose type is similar to `T`, and the pointer either points to storage allocated with `std::allocator<T>` or to an object whose lifetime began within the evaluation of `E`]{.addu};
+  * [5.18.1]{.pnum} the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated within the evaluation of `E`[, or]{.addu}
+  * [5.18.2]{.pnum} [the selected allocation function is a non-allocating form ([new.delete.placement]) with an allocated type `T`, where]{.addu}
+    * [5.18.2.1]{.pnum} [the placement argument to the *new-expression* points to an object that is pointer-interconvertible with an object of type `T`, and]{.addu}
+    * [5.#.#.#]{.pnum} [the placement argument points to storage whose duration began within the evaluation of `E`]{.addu};
 :::
 
 Remove the special case for `construct_at` in [expr.const]{.sref}/6:
 
 ::: bq
 * [6]{.pnum} For the purposes of determining whether an expression `E` is a core constant expression, the evaluation of the body of a member function of `std​::​allocator<T>` as defined in [allocator.members], where T is a literal type, is ignored. [Similarly, the evaluation of the body of `std​::​construct_at` or `std​::​ranges​::​construct_at` is considered to include only the initialization of the `T` object if the first argument (of type `T*`) points to storage allocated with `std​::​allocator<T>` or to an object whose lifetime began within the evaluation of `E`.]{.rm}
+:::
+
+Change [new.syn]{.sref} to mark the placement new functions `constexpr`:
+
+::: bq
+```
+// all freestanding
+namespace std {
+// [new.delete], storage allocation and deallocation
+[[nodiscard]] @[constexpr]{.addu}@ void* operator new  (std::size_t size, void* ptr) noexcept;
+[[nodiscard]] @[constexpr]{.addu}@ void* operator new[](std::size_t size, void* ptr) noexcept;
+}
+```
+:::
+
+And likewise in [new.delete.placement]{.sref}:
+
+::: bq
+```
+[[nodiscard]] @[constexpr]{.addu}@ void* operator new(std::size_t size, void* ptr) noexcept;
+```
+[2]{.pnum} *Returns*: `ptr`.
+
+...
+```
+[[nodiscard]] @[constexpr]{.addu}@ void* operator new[](std::size_t size, void* ptr) noexcept;
+```
+[5]{.pnum} *Returns*: `ptr`.
 :::
