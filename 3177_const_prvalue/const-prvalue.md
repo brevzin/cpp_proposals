@@ -208,3 +208,40 @@ Notably, one odd quirk of the strong proposal is that the type of `cond<T, T>` i
 <tr style="text-align:center"><th>`T const&&`</td><td></td><td></td><td></td><td></td><td></td><td>`T const&&`</td></tr>
 </tbody>
 </table>
+
+## Wording
+
+The wording in [expr.cond]{.sref} in general is quite difficult, but regardless of which approach we select here, the wording will be to insert a new paragraph between paragraphs 3 and 4 that completely handles this case.
+
+For the strong proposal:
+
+::: bq
+[3]{.pnum} Otherwise, if the second and third operand are glvalue bit-fields of the same value category and of types *cv1* `T` and *cv2* `T`, respectively, the operands are considered to be of type *cv* `T` for the remainder of this subclause, where *cv* is the union of *cv1* and *cv2*.
+
+::: addu
+[π]{.pnum} Otherwise, if the second and third operand are of types *cv1* `T` and *cv2* `T`, respectively, then let *cv* be the union of *cv1* and *cv2*:
+
+* [π.1]{.pnum} If both operands are lvalues, then the result is an lvalue of type *cv* `T`.
+* [π.#]{.pnum} Otherwise, if both operands are xvalues, then the result is an xvalue of type *cv* `T`.
+* [π.#]{.pnum} Otherwise, the result is a prvalue of type `T`.
+:::
+
+[4]{.pnum} Otherwise, if the second and third operand have different types and either has (possibly cv-qualified) class type, or if both are glvalues of the same value category and the same type except for cv-qualification, an attempt is made to form an implicit conversion sequence from each of those operands to the type of the other.
+:::
+
+
+For the weak proposal, that last sub-bullet becomes:
+
+::: bq
+::: addu
+* [π.3]{.pnum} Otherwise, the result is a prvalue of type *cv* `T`.
+:::
+:::
+
+For the version of the strong proposal that preserves const prvalues only if both operands are const prvalues:
+
+::: bq
+::: addu
+* [π.#]{.pnum} Otherwise, the result is a prvalue of type `const T` if both operands are of type `const T` and `T` otherwise.
+:::
+:::
