@@ -1,6 +1,6 @@
 ---
 title: "`constexpr` placement new"
-document: D2747R2
+document: P2747R2
 date: today
 audience: EWG
 author:
@@ -187,9 +187,9 @@ Change [new.syn]{.sref} to mark the placement new functions `constexpr`:
 ```
 // all freestanding
 namespace std {
-// [new.delete], storage allocation and deallocation
-[[nodiscard]] @[constexpr]{.addu}@ void* operator new  (std::size_t size, void* ptr) noexcept;
-[[nodiscard]] @[constexpr]{.addu}@ void* operator new[](std::size_t size, void* ptr) noexcept;
+  // [new.delete], storage allocation and deallocation
+  [[nodiscard]] @[constexpr]{.addu}@ void* operator new  (std::size_t size, void* ptr) noexcept;
+  [[nodiscard]] @[constexpr]{.addu}@ void* operator new[](std::size_t size, void* ptr) noexcept;
 }
 ```
 :::
@@ -207,4 +207,25 @@ And likewise in [new.delete.placement]{.sref}:
 [[nodiscard]] @[constexpr]{.addu}@ void* operator new[](std::size_t size, void* ptr) noexcept;
 ```
 [5]{.pnum} *Returns*: `ptr`.
+:::
+
+## Feature-Test Macro
+
+Bump the value of `__cpp_constexpr` in [cpp.predefined]{.sref}:
+
+::: bq
+```diff
+- __cpp_constexpr @[202306L]{.diffdel}@
++ __cpp_constexpr @[2024XXL]{.diffins}@
+```
+:::
+
+And add a new `__cpp_lib_constexpr_new` in [version.syn]{.sref}:
+
+::: bq
+::: addu
+```
+#define __cpp_lib_constexpr_new 2024XXL // freestanding, also in <new>
+```
+:::
 :::

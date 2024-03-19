@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-18" />
+  <meta name="dcterms.date" content="2024-03-19" />
   <title>constexpr placement new</title>
   <style>
       code{white-space: pre-wrap;}
@@ -534,11 +534,11 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D2747R2</td>
+    <td>P2747R2</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-18</td>
+    <td>2024-03-19</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -565,7 +565,10 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <ul>
 <li><a href="#revision-history"><span class="toc-section-number">1</span> Revision History<span></span></a></li>
 <li><a href="#introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
-<li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a></li>
+<li><a href="#wording"><span class="toc-section-number">3</span> Wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro"><span class="toc-section-number">3.1</span> Feature-Test Macro<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
@@ -739,9 +742,9 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1"></a>// all freestanding</span>
 <span id="cb7-2"><a href="#cb7-2"></a>namespace std {</span>
-<span id="cb7-3"><a href="#cb7-3"></a>// [new.delete], storage allocation and deallocation</span>
-<span id="cb7-4"><a href="#cb7-4"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new  (std::size_t size, void* ptr) noexcept;</span>
-<span id="cb7-5"><a href="#cb7-5"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span>
+<span id="cb7-3"><a href="#cb7-3"></a>  // [new.delete], storage allocation and deallocation</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  [[nodiscard]] <span class="addu">constexpr</span> void* operator new  (std::size_t size, void* ptr) noexcept;</span>
+<span id="cb7-5"><a href="#cb7-5"></a>  [[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span>
 <span id="cb7-6"><a href="#cb7-6"></a>}</span></code></pre></div>
 </blockquote>
 <p>And likewise in <span>17.6.3.4 <a href="https://wg21.link/new.delete.placement">[new.delete.placement]</a></span>:</p>
@@ -751,6 +754,20 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <p>…</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1"></a>[[nodiscard]] <span class="addu">constexpr</span> void* operator new[](std::size_t size, void* ptr) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">5</a></span> <em>Returns</em>: <code class="sourceCode cpp">ptr</code>.</p>
+</blockquote>
+<h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Bump the value of <code class="sourceCode cpp">__cpp_constexpr</code> in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1"></a><span class="st">- __cpp_constexpr <span class="diffdel">202306L</span></span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="va">+ __cpp_constexpr <span class="diffins">2024XXL</span></span></span></code></pre></div>
+</div>
+</blockquote>
+<p>And add a new <code class="sourceCode cpp">__cpp_lib_constexpr_new</code> in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1"></a>#define __cpp_lib_constexpr_new 2024XXL // freestanding, also in &lt;new&gt;</span></code></pre></div>
+</div>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span> References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references hanging-indent" role="doc-bibliography">
