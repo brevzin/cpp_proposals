@@ -948,7 +948,7 @@ struct universal_formatter {
       first = false;
     };
 
-    template for (constexpr auto base : bases_of(^T)) {
+    template for (constexpr auto base : base_subobjects_of(^T)) {
       delim();
       out = std::format_to(out, "{}", static_cast<[:type_of(base):] const&>(t));
     }
@@ -1664,11 +1664,11 @@ namespace std::meta {
   consteval auto template_of(info r) -> info;
   consteval auto template_arguments_of(info r) -> vector<info>;
 
-  // @[member queries](#members_of-static_data_members_of-nonstatic_data_members_of-bases_of-enumerators_of-subobjects_of)@
+  // @[member queries](#members_of-static_data_members_of-nonstatic_data_members_of-base_subobjects_of-enumerators_of-subobjects_of)@
   template<typename ...Fs>
     consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto base_subobjects_of(info class_type, Fs ...filters) -> vector<info>;
   consteval auto static_data_members_of(info class_type) -> vector<info>;
   consteval auto nonstatic_data_members_of(info class_type) -> vector<info>;
   consteval auto subobjects_of(info class_type) -> vector<info>;
@@ -1677,7 +1677,7 @@ namespace std::meta {
   template<typename ...Fs>
     consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto accessible_base_subobjects_of(info class_type, Fs ...filters) -> vector<info>;
   consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
   consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
   consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
@@ -1846,7 +1846,7 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 
 
 
-### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
+### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `base_subobjects_of`, `enumerators_of`, `subobjects_of`
 
 :::bq
 ```c++
@@ -1855,7 +1855,7 @@ namespace std::meta {
     consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto base_subobjects_of(info class_type, Fs ...filters) -> vector<info>;
 
   consteval auto static_data_members_of(info class_type) -> vector<info> {
     return members_of(class_type, is_variable);
@@ -1866,7 +1866,7 @@ namespace std::meta {
   }
 
   consteval auto subobjects_of(info class_type) -> vector<info> {
-    auto subobjects = bases_of(class_type);
+    auto subobjects = base_subobjects_of(class_type);
     subobjects.append_range(nonstatic_data_members_of(class_type));
     return subobjects;
   }
@@ -1876,7 +1876,7 @@ namespace std::meta {
   template<typename ...Fs>
     consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto accessible_base_subobjects_of(info class_type, Fs ...filters) -> vector<info>;
   consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
   consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
   consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
@@ -1890,7 +1890,7 @@ Anonymous unions appear as a nonstatic data member of corresponding union type.
 If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
 E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
 
-The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
+The template `base_subobjects_of` returns the direct base subobjects of the class type represented by its first argument, in declaration order.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
@@ -2781,9 +2781,9 @@ namespace std::meta {
   template<class... Fs>
     consteval vector<info> accessible_members_of(info type, Fs... filters);
   template<class... Fs>
-    consteval vector<info> bases_of(info type, Fs... filters);
+    consteval vector<info> base_subobjects_of(info type, Fs... filters);
   template<class... Fs>
-    consteval vector<info> accessible_bases_of(info type, Fs... filters);
+    consteval vector<info> accessible_base_subobjects_of(info type, Fs... filters);
   consteval vector<info> static_data_members_of(info type);
   consteval vector<info> accessible_static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
@@ -3180,7 +3180,7 @@ template<class... Fs>
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> bases_of(info type, Fs... filters);
+  consteval vector<info> base_subobjects_of(info type, Fs... filters);
 ```
 
 [#]{.pnum} *Mandates*: `type` is a reflection designating a type and `(std::predicate<Fs, info> && ...)` is `true`.
@@ -3190,10 +3190,10 @@ The base classes are indexed in the order in which they appear in the *base-spec
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> accessible_bases_of(info type, Fs... filters);
+  consteval vector<info> accessible_base_subobjects_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return bases_of(r, is_accessible, filters...);`
+[#]{.pnum} *Effects*: Equivalent to: `return base_subobjects_of(r, is_accessible, filters...);`
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
@@ -3233,7 +3233,7 @@ consteval vector<info> subobjects_of(info type);
 
 [#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `base_subobjects_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> accessible_subobjects_of(info type);
@@ -3241,7 +3241,7 @@ consteval vector<info> accessible_subobjects_of(info type);
 
 [#]{.pnum} *Mandates*: `type` designates a type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_base_subobjects_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> enumerators_of(info enum_type);
