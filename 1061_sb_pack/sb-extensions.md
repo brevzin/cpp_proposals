@@ -571,71 +571,55 @@ Structured bindings in namespace scope are a little odd to begin with, since the
 
 # Wording
 
-Introduce a new form of scope in [basic.scope]{.sref}:
-
-::: bq
-::: addu
-### Implicit Template Scope
-
-[1]{.pnum} A declaration of a structured binding pack ([dcl.struct.bind]) introduces an *implicit template scope* that includes the declaration. An implicit template scope is a template definition.
-
-[#]{.pnum} If such a declaration is at block scope ([basic.scope.block]), the implicit template scope behaves as a block scope. Otherwise, if such a declaration is at namespace scope ([basic.scope.namespace]), it behaves as a namespace scope.
-
-[#]{.pnum} If a declaration that is a name-independent declaration and that binds a name in an implicit template scope S potentially conflicts with a declaration whose target
-scope is S, any immediately enclosing implicit template scopes of S, or the innermost enclosing scope of S that is not an implicit template scope, the program is ill-formed.
-
-[#]{.pnum} At the close of an implicit template scope, if the scope is not inside of an enclosing template definition, it is immediately instantiated ([temp.pre]).
-:::
-:::
-
 Add a drive-by fix to [expr.prim.fold]{.sref} after paragraph 3:
 
 ::: bq
 [π]{.pnum} [A fold expression is a pack expansion.]{.addu}
 :::
 
+Change the grammar in range-based in [stmt.iter.general]{.sref} for to use the new factored out structured binding declaration term (about to be introduced):
+
+::: bq
+```diff
+  $for-range-declaration$:
+    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $declarator$
+-   $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ $identifier-list$ ]
++   $sb-declaration$
+```
+:::
+
 Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 
 ::: bq
+```diff
++ $sb-identifier$:
++     ...@~opt~@ $identifier$
++
++ $sb-identifier-list$:
++     $sb-identifier$
++     $sb-identifier-list$, $sb-identifier$
++
++ $sb-declaration$:
++    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*sb-identifier-list*]{.diffins}@ ]
 
-> | [_sb-pack-identifier_:]{.addu}
-> |     [`...` _identifier_]{.addu}
-
-> | [_sb-identifier-list_:]{.addu}
-> |     [_identifier_]{.addu}
-> |     [_sb-pack-identifier_]{.addu}
-> |     [_sb-identifier-list_ `,` _identifier_]{.addu}
-> |     [_sb-identifier-list_ `,` _sb-pack-identifier_]{.addu}
-> |
-> | _simple-declaration_:
-> |     _decl-specifier-seq_ _init-declarator-list_~opt~ `;`
-> |     _attribute-specifier-seq_ _decl-specifier-seq_ _init-declarator-list_ `;`
-> |     _attribute-specifier-seq_~opt~ _decl-specifier-seq_ _ref-qualifier_~opt~ <code>[</code> [_identifier-list_]{.rm} [_sb-identifier-list_]{.addu} <code>]</code> _initializer_ `;`
-
+  $simple-declaration$:
+      $decl-specifier-seq$ $init-declarator-list$@~opt~@;
+      $attribute-specifier-seq$ $decl-specifier-seq$ $init-declarator-list$;
+-     $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*identifier-list*]{.diffdel}@ ] $initializer$ ;
++     $sb-declaration$ $initializer$ ;
+```
 :::
 
-Adjust [dcl.pre]{.sref}/11 to delay `static_assert`s here too:
+Change [dcl.pre]{.sref}/6:
 
 ::: bq
-[11]{.pnum} In a *static_assert-declaration*, the *constant-expression* `E` is contextually converted to `bool` and the converted expression shall be a constant expression ([expr.const]). If the value of the expression `E` when so converted is `true` or the expression is evaluated [either]{.addu} in the context of a template definition [or in the locus of a structured binding pack declaration]{.addu}, the declaration has no effect and the *static_assert-message* is an unevaluated operand ([expr.context]). Otherwise, the *static_assert-declaration* fails and [...]
-:::
-
-Change [dcl.pre]{.sref} paragraph 8:
-
-::: bq
-[8]{.pnum} A _simple-declaration_ with an [_identifier-list_]{.rm}
-[_sb-identifier-list_]{.addu} is called a structured binding declaration (
-[dcl.struct.bind]). The _decl-specifier-seq_ shall contain only the
-_type-specifier_ `auto` and _cv-qualifiers_. The _initializer_ shall be of the
- form "`= $assignment-expression$`", of the form "`{ $assignment-expression$ }`",
-or of the form "`( $assignment-expression$ )`", where the
-_assignment-expression_ is of array or non-union class type.
+[6]{.pnum} A *simple-declaration* with an [*identifier-list*]{.rm} [*sb-identifier-list*]{.addu} is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall not appear at namespace scope.]{.addu}
 :::
 
 Extend [dcl.fct]{.sref}/5:
 
 ::: bq
-[5]{.pnum} The type of a function is determined using the following rules. The type of each parameter (including function parameter packs[, after immediately expanding structured binding packs ([temp.variadic])]{.addu}) is determined from its own _parameter-declaration_ ([dcl.decl]). After determining the type of each parameter, any parameter of type “array of T” or of function type T is adjusted to be “pointer to T”. After producing the list of parameter types, any top-level cv-qualifiers modifying a parameter type are deleted when forming the function type. The resulting list of transformed parameter types and the presence or absence of the ellipsis or a function parameter pack is the function's parameter-type-list.
+[5]{.pnum} The type of a function is determined using the following rules. The type of each parameter (including function parameter packs), is determined from its own _parameter-declaration_ ([dcl.decl]). After determining the type of each parameter, any parameter of type “array of T” or of function type T is adjusted to be “pointer to T”. After producing the list of parameter types, any top-level cv-qualifiers modifying a parameter type are deleted when forming the function type. The resulting list of transformed parameter types and the presence or absence of the ellipsis or a function parameter pack is the function's parameter-type-list.
 
 [Note 3: This transformation does not affect the types of the parameters. For example, `int(*)(const int p, decltype(p)*)` and `int(*)(int, const int*)` are identical types. — end note]
 [Example 2:
@@ -652,15 +636,11 @@ Extend [dcl.fct]{.sref}/5:
   void h(int x(const int));       // #3
   void h(int (*)(int)) {}         // defines #3
 
-+ struct C {
-+   int i;
-+   long l;
-+ };
-+ auto [...v] = C{ 1, 0 };
-+ C k(int, long);              // #4
-+ C k(decltype(v)... p) {      // defines #4
-+   return C{p...};            // non-dependent function parameter pack p
-+                              // is instantiated immediately ([temp.variadic])
++ void k(int ,int);               // #4
++ void m() {
++   struct C { int i, j; };
++   auto [... elems] = C{};
++   void k(decltype(elems)...);   // redeclares #4
 + }
 ```
 — end example]
@@ -669,7 +649,7 @@ Extend [dcl.fct]{.sref}/5:
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
-[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [A *structured binding* is either an *identifier* of the *sb-identifier-list* or an element of the pack introduced by an *sb-pack-identifier*. The declaration shall contain at most one _sb-pack-identifier_.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [A *structured binding* is either an *identifier* of the *sb-identifier-list* or, if the *identifier* is preceded by an ellipsis, or an element of the pack introduced by that *sb-identifier*.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
@@ -678,8 +658,8 @@ the terms "structured binding size" and SB~_i_~:
 
 ::: bq
 ::: addu
-[1+1]{.pnum} The _structured binding size_ of a type `E` is the required
-number of names that need to be introduced by the structured binding
+[1+1]{.pnum} The _structured binding size_ of a type is the
+number of structured bindings that need to be introduced by the structured binding
 declaration, as defined below. If there is no structured binding pack, then
 the number of elements in the _sb-identifier-list_ shall be equal to the
 structured binding size. Otherwise, the number of elements of the structured
@@ -736,9 +716,13 @@ Change [dcl.struct.bind]{.sref} paragraph 5 to define a structured binding size:
 [5]{.pnum} Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
 :::
 
-Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity:
+Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity, first introducing the term *implicit template region*:
 
 ::: bq
+::: addu
+[7a]{.pnum} A declaration of a structured binding pack ([dcl.struct.bind]) introduces an *implicit template region* that includes the declaration if that declaration does not already introduce a templated entity (see below). An implicit template region ends at the end of the scope that the structured binding declaration inhabits or, if the declaration is at namespace scope, at the end of the translation unit. An implicit template region is a template definition. At the end of the implicit template region, it is immediately instantiated ([temp.pre]).
+:::
+
 [8]{.pnum} An entity is *templated* if it is
 
 * [#.#]{.pnum} a template,
@@ -748,22 +732,25 @@ Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity:
 * [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity[.]{.rm} [, or]{.addu}
 
 ::: addu
-* [#.#]{.pnum} an entity defined or created within an implicit template scope ([basic.scope.template]).
+* [#.#]{.pnum} an entity defined or created within an implicit template region.
 :::
 
 [A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.]{.note}
 
 ::: addu
-[*Example*:
+[*Example*: The following example assumes that `char` and `int` have different size.
 ```
-struct C { int j; long l; };
+struct C { char j; int l; };
 
 int g() {
-    auto [ ... i ] = C{ 1, 2L };
+    auto [ ... i ] = C{ 'x', 42 }; // #1
     return ( [c = i] () {
+        // the local class C is a templated entity because
+        // it is defined within the implicit template region
+        // created at #1
         struct C {
-            int f() requires (sizeof(c) == sizeof(int)) { return 1; }
-            int f() requires (sizeof(c) != sizeof(int)) { return 2; }
+            int f() requires (sizeof(c) == 1) { return 1; }
+            int f() requires (sizeof(c) != 1) { return 2; }
         };
         return C{}.f();
     } () + ...  + 0 );
@@ -866,6 +853,14 @@ sizeof ... ( identifier )
 fold-expression
 ```
 [unless the *identifier* is a non-dependent pack, or all of the packs expanded in the *fold-expression* are non-dependent packs.]{.addu}
+:::
+
+Add a new paragraph at the end of [temp.point]{.sref}:
+
+::: bq
+::: addu
+[*]{.pnum} For an implicit template region, the point of instantiation is at the end of the region.
+:::
 :::
 
 ## Feature-Test Macro

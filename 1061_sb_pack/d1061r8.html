@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-17" />
+  <meta name="dcterms.date" content="2024-03-19" />
   <title>Structured Bindings can introduce a Pack</title>
   <style>
       code{white-space: pre-wrap;}
@@ -538,7 +538,7 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-17</td>
+    <td>2024-03-19</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -987,92 +987,84 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 </blockquote>
 <p>Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared <code class="sourceCode cpp"><span class="kw">inline</span></code>. A structured binding pack at namespace scope adds that much more complexity. However, rejecting it would be a very odd kind of restriction that would be surprising. If users want to do this, they should be able to. EWG also explicitly polled this question in a telecon, with a strong preference for allowing such namespace-scope declarations.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>Introduce a new form of scope in <span>6.4 <a href="https://wg21.link/basic.scope">[basic.scope]</a></span>:</p>
-<blockquote>
-<div class="addu">
-<h3 id="implicit-template-scope">Implicit Template Scope<a href="#implicit-template-scope" class="self-link"></a></h3>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span> A declaration of a structured binding pack ([dcl.struct.bind]) introduces an <em>implicit template scope</em> that includes the declaration. An implicit template scope is a template definition.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span> If such a declaration is at block scope ([basic.scope.block]), the implicit template scope behaves as a block scope. Otherwise, if such a declaration is at namespace scope ([basic.scope.namespace]), it behaves as a namespace scope.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span> If a declaration that is a name-independent declaration and that binds a name in an implicit template scope S potentially conflicts with a declaration whose target scope is S, any immediately enclosing implicit template scopes of S, or the innermost enclosing scope of S that is not an implicit template scope, the program is ill-formed.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span> At the close of an implicit template scope, if the scope is not inside of an enclosing template definition, it is immediately instantiated ([temp.pre]).</p>
-</div>
-</blockquote>
 <p>Add a drive-by fix to <span>7.5.6 <a href="https://wg21.link/expr.prim.fold">[expr.prim.fold]</a></span> after paragraph 3:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">π</a></span> <span class="addu">A fold expression is a pack expansion.</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">π</a></span> <span class="addu">A fold expression is a pack expansion.</span></p>
+</blockquote>
+<p>Change the grammar in range-based in <span>8.6.1 <a href="https://wg21.link/stmt.iter.general">[stmt.iter.general]</a></span> for to use the new factored out structured binding declaration term (about to be introduced):</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>  <em>for-range-declaration</em>:</span>
+<span id="cb24-2"><a href="#cb24-2"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>declarator</em></span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="st">-   <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <em>identifier-list</em> ]</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="va">+   <em>sb-declaration</em></span></span></code></pre></div>
+</div>
 </blockquote>
 <p>Add a new grammar option for <em>simple-declaration</em> to <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>:</p>
 <blockquote>
-<blockquote>
-<div class="line-block"><span class="addu"><em>sb-pack-identifier</em>:</span><br />
-    <span class="addu"><code class="sourceCode cpp"><span class="op">...</span></code> <em>identifier</em></span></div>
+<div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1"></a><span class="va">+ <em>sb-identifier</em>:</span></span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="va">+     ...<sub>opt</sub> <em>identifier</em></span></span>
+<span id="cb25-3"><a href="#cb25-3"></a><span class="va">+</span></span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="va">+ <em>sb-identifier-list</em>:</span></span>
+<span id="cb25-5"><a href="#cb25-5"></a><span class="va">+     <em>sb-identifier</em></span></span>
+<span id="cb25-6"><a href="#cb25-6"></a><span class="va">+     <em>sb-identifier-list</em>, <em>sb-identifier</em></span></span>
+<span id="cb25-7"><a href="#cb25-7"></a><span class="va">+</span></span>
+<span id="cb25-8"><a href="#cb25-8"></a><span class="va">+ <em>sb-declaration</em>:</span></span>
+<span id="cb25-9"><a href="#cb25-9"></a><span class="va">+    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffins"><em>sb-identifier-list</em></span> ]</span></span>
+<span id="cb25-10"><a href="#cb25-10"></a></span>
+<span id="cb25-11"><a href="#cb25-11"></a>  <em>simple-declaration</em>:</span>
+<span id="cb25-12"><a href="#cb25-12"></a>      <em>decl-specifier-seq</em> <em>init-declarator-list</em><sub>opt</sub>;</span>
+<span id="cb25-13"><a href="#cb25-13"></a>      <em>attribute-specifier-seq</em> <em>decl-specifier-seq</em> <em>init-declarator-list</em>;</span>
+<span id="cb25-14"><a href="#cb25-14"></a><span class="st">-     <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffdel"><em>identifier-list</em></span> ] <em>initializer</em> ;</span></span>
+<span id="cb25-15"><a href="#cb25-15"></a><span class="va">+     <em>sb-declaration</em> <em>initializer</em> ;</span></span></code></pre></div>
+</div>
 </blockquote>
+<p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>/6:</p>
 <blockquote>
-<div class="line-block"><span class="addu"><em>sb-identifier-list</em>:</span><br />
-    <span class="addu"><em>identifier</em></span><br />
-    <span class="addu"><em>sb-pack-identifier</em></span><br />
-    <span class="addu"><em>sb-identifier-list</em> <code class="sourceCode cpp">,</code> <em>identifier</em></span><br />
-    <span class="addu"><em>sb-identifier-list</em> <code class="sourceCode cpp">,</code> <em>sb-pack-identifier</em></span><br />
-<br />
-<em>simple-declaration</em>:<br />
-    <em>decl-specifier-seq</em> <em>init-declarator-list</em><sub>opt</sub> <code class="sourceCode cpp">;</code><br />
-    <em>attribute-specifier-seq</em> <em>decl-specifier-seq</em> <em>init-declarator-list</em> <code class="sourceCode cpp">;</code><br />
-    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> <code>[</code> <span class="rm" style="color: #bf0303"><del><em>identifier-list</em></del></span> <span class="addu"><em>sb-identifier-list</em></span> <code>]</code> <em>initializer</em> <code class="sourceCode cpp">;</code></div>
-</blockquote>
-</blockquote>
-<p>Adjust <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>/11 to delay <code class="sourceCode cpp"><span class="kw">static_assert</span></code>s here too:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">11</a></span> In a <em>static_assert-declaration</em>, the <em>constant-expression</em> <code class="sourceCode cpp">E</code> is contextually converted to <code class="sourceCode cpp"><span class="dt">bool</span></code> and the converted expression shall be a constant expression ([expr.const]). If the value of the expression <code class="sourceCode cpp">E</code> when so converted is <code class="sourceCode cpp"><span class="kw">true</span></code> or the expression is evaluated <span class="addu">either</span> in the context of a template definition <span class="addu">or in the locus of a structured binding pack declaration</span>, the declaration has no effect and the <em>static_assert-message</em> is an unevaluated operand ([expr.context]). Otherwise, the <em>static_assert-declaration</em> fails and […]</p>
-</blockquote>
-<p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span> paragraph 8:</p>
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">8</a></span> A <em>simple-declaration</em> with an <span class="rm" style="color: #bf0303"><del><em>identifier-list</em></del></span> <span class="addu"><em>sb-identifier-list</em></span> is called a structured binding declaration ( [dcl.struct.bind]). The <em>decl-specifier-seq</em> shall contain only the <em>type-specifier</em> <code class="sourceCode cpp"><span class="kw">auto</span></code> and <em>cv-qualifiers</em>. The <em>initializer</em> shall be of the form “<code class="sourceCode cpp"><span class="op">=</span> <em>assignment-expression</em></code>”, of the form “<code class="sourceCode cpp"><span class="op">{</span> <em>assignment-expression</em> <span class="op">}</span></code>”, or of the form “<code class="sourceCode cpp"><span class="op">(</span> <em>assignment-expression</em> <span class="op">)</span></code>”, where the <em>assignment-expression</em> is of array or non-union class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">6</a></span> A <em>simple-declaration</em> with an <span class="rm" style="color: #bf0303"><del><em>identifier-list</em></del></span> <span class="addu"><em>sb-identifier-list</em></span> is called a structured binding declaration ([dcl.struct.bind]). Each <em>decl-specifier</em> in the <em>decl-specifier-seq</em> shall be <code class="sourceCode cpp"><span class="kw">static</span></code>, <code class="sourceCode cpp"><span class="kw">thread_local</span></code>, <code class="sourceCode cpp"><span class="kw">auto</span></code> ([dcl.spec.auto]), or a <em>cv</em>-qualifier. <span class="addu">The declaration shall contain at most one <em>sb-identifier</em> whose <em>identifier</em> is preceded by an ellipsis. If the declaration contains any such <em>sb-identifier</em>, it shall not appear at namespace scope.</span></p>
 </blockquote>
 <p>Extend <span>9.3.4.6 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/5:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">5</a></span> The type of a function is determined using the following rules. The type of each parameter (including function parameter packs<span class="addu">, after immediately expanding structured binding packs ([temp.variadic])</span>) is determined from its own <em>parameter-declaration</em> ([dcl.decl]). After determining the type of each parameter, any parameter of type “array of T” or of function type T is adjusted to be “pointer to T”. After producing the list of parameter types, any top-level cv-qualifiers modifying a parameter type are deleted when forming the function type. The resulting list of transformed parameter types and the presence or absence of the ellipsis or a function parameter pack is the function’s parameter-type-list.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">5</a></span> The type of a function is determined using the following rules. The type of each parameter (including function parameter packs), is determined from its own <em>parameter-declaration</em> ([dcl.decl]). After determining the type of each parameter, any parameter of type “array of T” or of function type T is adjusted to be “pointer to T”. After producing the list of parameter types, any top-level cv-qualifiers modifying a parameter type are deleted when forming the function type. The resulting list of transformed parameter types and the presence or absence of the ellipsis or a function parameter pack is the function’s parameter-type-list.</p>
 <p>[Note 3: This transformation does not affect the types of the parameters. For example, <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span><span class="kw">const</span> <span class="dt">int</span> p, <span class="kw">decltype</span><span class="op">(</span>p<span class="op">)*)</span></code> and <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span><span class="dt">int</span>, <span class="kw">const</span> <span class="dt">int</span><span class="op">*)</span></code> are identical types. — end note] [Example 2:</p>
 <div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1"></a>  void f(char*);                  // #1</span>
-<span id="cb24-2"><a href="#cb24-2"></a>  void f(char[]) {}               // defines #1</span>
-<span id="cb24-3"><a href="#cb24-3"></a>  void f(const char*) {}          // OK, another overload</span>
-<span id="cb24-4"><a href="#cb24-4"></a>  void f(char *const) {}          // error: redefines #1</span>
-<span id="cb24-5"><a href="#cb24-5"></a></span>
-<span id="cb24-6"><a href="#cb24-6"></a>  void g(char(*)[2]);             // #2</span>
-<span id="cb24-7"><a href="#cb24-7"></a>  void g(char[3][2]) {}           // defines #2</span>
-<span id="cb24-8"><a href="#cb24-8"></a>  void g(char[3][3]) {}           // OK, another overload</span>
-<span id="cb24-9"><a href="#cb24-9"></a></span>
-<span id="cb24-10"><a href="#cb24-10"></a>  void h(int x(const int));       // #3</span>
-<span id="cb24-11"><a href="#cb24-11"></a>  void h(int (*)(int)) {}         // defines #3</span>
-<span id="cb24-12"><a href="#cb24-12"></a></span>
-<span id="cb24-13"><a href="#cb24-13"></a><span class="va">+ struct C {</span></span>
-<span id="cb24-14"><a href="#cb24-14"></a><span class="va">+   int i;</span></span>
-<span id="cb24-15"><a href="#cb24-15"></a><span class="va">+   long l;</span></span>
-<span id="cb24-16"><a href="#cb24-16"></a><span class="va">+ };</span></span>
-<span id="cb24-17"><a href="#cb24-17"></a><span class="va">+ auto [...v] = C{ 1, 0 };</span></span>
-<span id="cb24-18"><a href="#cb24-18"></a><span class="va">+ C k(int, long);              // #4</span></span>
-<span id="cb24-19"><a href="#cb24-19"></a><span class="va">+ C k(decltype(v)... p) {      // defines #4</span></span>
-<span id="cb24-20"><a href="#cb24-20"></a><span class="va">+   return C{p...};            // non-dependent function parameter pack p</span></span>
-<span id="cb24-21"><a href="#cb24-21"></a><span class="va">+                              // is instantiated immediately ([temp.variadic])</span></span>
-<span id="cb24-22"><a href="#cb24-22"></a><span class="va">+ }</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1"></a>  void f(char*);                  // #1</span>
+<span id="cb26-2"><a href="#cb26-2"></a>  void f(char[]) {}               // defines #1</span>
+<span id="cb26-3"><a href="#cb26-3"></a>  void f(const char*) {}          // OK, another overload</span>
+<span id="cb26-4"><a href="#cb26-4"></a>  void f(char *const) {}          // error: redefines #1</span>
+<span id="cb26-5"><a href="#cb26-5"></a></span>
+<span id="cb26-6"><a href="#cb26-6"></a>  void g(char(*)[2]);             // #2</span>
+<span id="cb26-7"><a href="#cb26-7"></a>  void g(char[3][2]) {}           // defines #2</span>
+<span id="cb26-8"><a href="#cb26-8"></a>  void g(char[3][3]) {}           // OK, another overload</span>
+<span id="cb26-9"><a href="#cb26-9"></a></span>
+<span id="cb26-10"><a href="#cb26-10"></a>  void h(int x(const int));       // #3</span>
+<span id="cb26-11"><a href="#cb26-11"></a>  void h(int (*)(int)) {}         // defines #3</span>
+<span id="cb26-12"><a href="#cb26-12"></a></span>
+<span id="cb26-13"><a href="#cb26-13"></a><span class="va">+ void k(int ,int);               // #4</span></span>
+<span id="cb26-14"><a href="#cb26-14"></a><span class="va">+ void m() {</span></span>
+<span id="cb26-15"><a href="#cb26-15"></a><span class="va">+   struct C { int i, j; };</span></span>
+<span id="cb26-16"><a href="#cb26-16"></a><span class="va">+   auto [... elems] = C{};</span></span>
+<span id="cb26-17"><a href="#cb26-17"></a><span class="va">+   void k(decltype(elems)...);   // redeclares #4</span></span>
+<span id="cb26-18"><a href="#cb26-18"></a><span class="va">+ }</span></span></code></pre></div>
 </div>
 <p>— end example]</p>
 </blockquote>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 1:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">1</a></span> A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, …<span class="addu">, v<sub>N-1</sub></span> of the <span class="rm" style="color: #bf0303"><del><i>identifier-list</i></del></span> <span class="addu"><i>sb-identifier-list</i></span> as names ([basic.scope.declarative]) <span class="rm" style="color: #bf0303"><del>of <em>structured bindings</em></del></span>. <span class="addu">A <em>structured binding</em> is either an <em>identifier</em> of the <em>sb-identifier-list</em> or an element of the pack introduced by an <em>sb-pack-identifier</em>. The declaration shall contain at most one <em>sb-pack-identifier</em>.</span> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span> A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, …<span class="addu">, v<sub>N-1</sub></span> of the <span class="rm" style="color: #bf0303"><del><i>identifier-list</i></del></span> <span class="addu"><i>sb-identifier-list</i></span> as names ([basic.scope.declarative]) <span class="rm" style="color: #bf0303"><del>of <em>structured bindings</em></del></span>. <span class="addu">A <em>structured binding</em> is either an <em>identifier</em> of the <em>sb-identifier-list</em> or, if the <em>identifier</em> is preceded by an ellipsis, or an element of the pack introduced by that <em>sb-identifier</em>.</span> Let <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>.</p>
 </blockquote>
 <p>Introduce new paragraphs after <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 1, introducing the terms “structured binding size” and SB<sub><em>i</em></sub>:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">1+1</a></span> The <em>structured binding size</em> of a type <code class="sourceCode cpp">E</code> is the required number of names that need to be introduced by the structured binding declaration, as defined below. If there is no structured binding pack, then the number of elements in the <em>sb-identifier-list</em> shall be equal to the structured binding size. Otherwise, the number of elements of the structured binding pack is the structured binding size less the number of non-pack elements in the <em>sb-identifier-list</em> and the number of non-pack elements shall be no more than the structured binding size.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1+2</a></span> Let SB<sub><em>i</em></sub> denote the <em>i</em><sup>th</sup> structured binding in the structured binding declaration after expanding the structured binding pack, if any. [ <em>Note</em>: If there is no structured binding pack, then SB<sub><em>i</em></sub> denotes v<sub><em>i</em></sub>. - <em>end note</em> ] [ <em>Example</em>:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1"></a>struct C { int x, y, z; };</span>
-<span id="cb25-2"><a href="#cb25-2"></a></span>
-<span id="cb25-3"><a href="#cb25-3"></a>auto [a, b, c] = C(); // SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
-<span id="cb25-4"><a href="#cb25-4"></a>auto [d, ...e] = C(); // SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two identifiers: SB<sub>1</sub> and SB<sub>2</sub></span>
-<span id="cb25-5"><a href="#cb25-5"></a>auto [...f, g] = C(); // the pack f (v<sub>0</sub>) contains two identifiers: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span>
-<span id="cb25-6"><a href="#cb25-6"></a>auto [h, i, j, k, ...l] = C(); // error: structured binding size is too small</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1+1</a></span> The <em>structured binding size</em> of a type is the number of structured bindings that need to be introduced by the structured binding declaration, as defined below. If there is no structured binding pack, then the number of elements in the <em>sb-identifier-list</em> shall be equal to the structured binding size. Otherwise, the number of elements of the structured binding pack is the structured binding size less the number of non-pack elements in the <em>sb-identifier-list</em> and the number of non-pack elements shall be no more than the structured binding size.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">1+2</a></span> Let SB<sub><em>i</em></sub> denote the <em>i</em><sup>th</sup> structured binding in the structured binding declaration after expanding the structured binding pack, if any. [ <em>Note</em>: If there is no structured binding pack, then SB<sub><em>i</em></sub> denotes v<sub><em>i</em></sub>. - <em>end note</em> ] [ <em>Example</em>:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>struct C { int x, y, z; };</span>
+<span id="cb27-2"><a href="#cb27-2"></a></span>
+<span id="cb27-3"><a href="#cb27-3"></a>auto [a, b, c] = C(); // SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
+<span id="cb27-4"><a href="#cb27-4"></a>auto [d, ...e] = C(); // SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two identifiers: SB<sub>1</sub> and SB<sub>2</sub></span>
+<span id="cb27-5"><a href="#cb27-5"></a>auto [...f, g] = C(); // the pack f (v<sub>0</sub>) contains two identifiers: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span>
+<span id="cb27-6"><a href="#cb27-6"></a>auto [h, i, j, k, ...l] = C(); // error: structured binding size is too small</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
@@ -1080,69 +1072,75 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 </blockquote>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 3 to define a structured binding size and extend the example:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">3</a></span> If <code class="sourceCode cpp">E</code> is an array type with element type <code>T</code>, <span class="rm" style="color: #bf0303"><del>the number of elements in the <i>identifier-list</i> shall be</del></span> <span class="addu">the structured binding size of <code class="sourceCode cpp">E</code> is</span> equal to the number of elements of <code class="sourceCode cpp">E</code>. Each <span class="rm" style="color: #bf0303"><del><i>v<sub>i</sub></i></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>. [<em>Note</em>: The top-level <em>cv</em>-qualifiers of <code class="sourceCode cpp">T</code> are <em>cv</em>. — <em>end note</em>] [<em>Example</em>:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">3</a></span> If <code class="sourceCode cpp">E</code> is an array type with element type <code>T</code>, <span class="rm" style="color: #bf0303"><del>the number of elements in the <i>identifier-list</i> shall be</del></span> <span class="addu">the structured binding size of <code class="sourceCode cpp">E</code> is</span> equal to the number of elements of <code class="sourceCode cpp">E</code>. Each <span class="rm" style="color: #bf0303"><del><i>v<sub>i</sub></i></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>. [<em>Note</em>: The top-level <em>cv</em>-qualifiers of <code class="sourceCode cpp">T</code> are <em>cv</em>. — <em>end note</em>] [<em>Example</em>:</p>
 <div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1"></a>auto f() -&gt; int(&amp;)[2];</span>
-<span id="cb26-2"><a href="#cb26-2"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
-<span id="cb26-3"><a href="#cb26-3"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
-<span id="cb26-4"><a href="#cb26-4"></a></span>
-<span id="cb26-5"><a href="#cb26-5"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
-<span id="cb26-6"><a href="#cb26-6"></a><span class="va">+ auto [a, ...b, c] = g();      // a is the first element of the array, b is a pack containing the second and</span></span>
-<span id="cb26-7"><a href="#cb26-7"></a><span class="va">+                               // third elements, and c is the fourth element</span></span>
-<span id="cb26-8"><a href="#cb26-8"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb28-1"><a href="#cb28-1"></a>auto f() -&gt; int(&amp;)[2];</span>
+<span id="cb28-2"><a href="#cb28-2"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
+<span id="cb28-3"><a href="#cb28-3"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
+<span id="cb28-4"><a href="#cb28-4"></a></span>
+<span id="cb28-5"><a href="#cb28-5"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="va">+ auto [a, ...b, c] = g();      // a is the first element of the array, b is a pack containing the second and</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a><span class="va">+                               // third elements, and c is the fourth element</span></span>
+<span id="cb28-8"><a href="#cb28-8"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
 </div>
 <p>— <em>end example</em>]</p>
 </blockquote>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 4 to define a structured binding size:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">4</a></span> Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E&gt;</code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E&gt;::value</code> shall be a well-formed integral constant expression and the <span class="rm" style="color: #bf0303"><del>number of elements in the <i>identifier-list</i> shall be</del></span> <span class="addu">structured binding size of <code class="sourceCode cpp">E</code> is</span> equal to the value of that expression. […] Each <span class="rm" style="color: #bf0303"><del><i>v<sub>i</sub></i></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue of type <code class>T<sub>i</sub></code> that refers to the object bound to <code class>r<sub>i</sub></code>; the referenced type is <code class>T<sub>i</sub></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span> Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E&gt;</code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E&gt;::value</code> shall be a well-formed integral constant expression and the <span class="rm" style="color: #bf0303"><del>number of elements in the <i>identifier-list</i> shall be</del></span> <span class="addu">structured binding size of <code class="sourceCode cpp">E</code> is</span> equal to the value of that expression. […] Each <span class="rm" style="color: #bf0303"><del><i>v<sub>i</sub></i></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue of type <code class>T<sub>i</sub></code> that refers to the object bound to <code class>r<sub>i</sub></code>; the referenced type is <code class>T<sub>i</sub></code>.</p>
 </blockquote>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span> paragraph 5 to define a structured binding size:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">5</a></span> Otherwise, all of <code class="sourceCode cpp">E</code>’s non-static data members shall be direct members of <code class="sourceCode cpp">E</code> or of the same base class of <code class="sourceCode cpp">E</code>, well-formed when named as <code>e.name</code> in the context of the structured binding, <code class="sourceCode cpp">E</code> shall not have an anonymous union member, and the <span class="rm" style="color: #bf0303"><del>number of elements in the <i>identifier-list</i> shall be</del></span> <span class="addu">structured binding size of <code class="sourceCode cpp">E</code> is</span> equal to the number of non-static data members of <code class="sourceCode cpp">E</code>. Designating the non-static data members of <code class="sourceCode cpp">E</code> as <code class>m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each <span class="rm" style="color: #bf0303"><del><code class>v<sub>i</i></code></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue that refers to the member <code class>m<sub>i</sub></code> of <code class="sourceCode cpp">E</code> and whose type is <i>cv</i> <code class>T<sub>i</sub></code>, where <code class>T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class>T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span> Otherwise, all of <code class="sourceCode cpp">E</code>’s non-static data members shall be direct members of <code class="sourceCode cpp">E</code> or of the same base class of <code class="sourceCode cpp">E</code>, well-formed when named as <code>e.name</code> in the context of the structured binding, <code class="sourceCode cpp">E</code> shall not have an anonymous union member, and the <span class="rm" style="color: #bf0303"><del>number of elements in the <i>identifier-list</i> shall be</del></span> <span class="addu">structured binding size of <code class="sourceCode cpp">E</code> is</span> equal to the number of non-static data members of <code class="sourceCode cpp">E</code>. Designating the non-static data members of <code class="sourceCode cpp">E</code> as <code class>m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each <span class="rm" style="color: #bf0303"><del><code class>v<sub>i</i></code></del></span> <span class="addu">SB<sub><em>i</em></sub></span> is the name of an lvalue that refers to the member <code class>m<sub>i</sub></code> of <code class="sourceCode cpp">E</code> and whose type is <i>cv</i> <code class>T<sub>i</sub></code>, where <code class>T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class>T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.</p>
 </blockquote>
-<p>Change <span>13.1 <a href="https://wg21.link/temp.pre">[temp.pre]</a></span>/8 to extend the notion of what is a templated entity:</p>
+<p>Change <span>13.1 <a href="https://wg21.link/temp.pre">[temp.pre]</a></span>/8 to extend the notion of what is a templated entity, first introducing the term <em>implicit template region</em>:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">8</a></span> An entity is <em>templated</em> if it is</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">7a</a></span> A declaration of a structured binding pack ([dcl.struct.bind]) introduces an <em>implicit template region</em> that includes the declaration if that declaration does not already introduce a templated entity (see below). An implicit template region ends at the end of the scope that the structured binding declaration inhabits or, if the declaration is at namespace scope, at the end of the translation unit. An implicit template region is a template definition. At the end of the implicit template region, it is immediately instantiated ([temp.pre]).</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">8</a></span> An entity is <em>templated</em> if it is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(8.1)</a></span> a template,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(8.2)</a></span> an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(8.3)</a></span> a member of a templated entity,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(8.4)</a></span> an enumerator for an enumeration that is a templated entity, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(8.5)</a></span> the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(8.1)</a></span> a template,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(8.2)</a></span> an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(8.3)</a></span> a member of a templated entity,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(8.4)</a></span> an enumerator for an enumeration that is a templated entity, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(8.5)</a></span> the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">, or</span></li>
 </ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(8.6)</a></span> an entity defined or created within an implicit template scope ([basic.scope.template]).</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(8.6)</a></span> an entity defined or created within an implicit template region.</li>
 </ul>
 </div>
 <p><span class="note"><span>[ <em>Note 1:</em> </span>A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.<span> — <em>end note</em> ]</span></span></p>
 <div class="addu">
-<p>[<em>Example</em>:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1"></a>struct C { int j; long l; };</span>
-<span id="cb27-2"><a href="#cb27-2"></a></span>
-<span id="cb27-3"><a href="#cb27-3"></a>int g() {</span>
-<span id="cb27-4"><a href="#cb27-4"></a>    auto [ ... i ] = C{ 1, 2L };</span>
-<span id="cb27-5"><a href="#cb27-5"></a>    return ( [c = i] () {</span>
-<span id="cb27-6"><a href="#cb27-6"></a>        struct C {</span>
-<span id="cb27-7"><a href="#cb27-7"></a>            int f() requires (sizeof(c) == sizeof(int)) { return 1; }</span>
-<span id="cb27-8"><a href="#cb27-8"></a>            int f() requires (sizeof(c) != sizeof(int)) { return 2; }</span>
-<span id="cb27-9"><a href="#cb27-9"></a>        };</span>
-<span id="cb27-10"><a href="#cb27-10"></a>        return C{}.f();</span>
-<span id="cb27-11"><a href="#cb27-11"></a>    } () + ...  + 0 );</span>
-<span id="cb27-12"><a href="#cb27-12"></a>}</span>
-<span id="cb27-13"><a href="#cb27-13"></a></span>
-<span id="cb27-14"><a href="#cb27-14"></a>int v = g(); // OK: v == 3</span></code></pre></div>
+<p>[<em>Example</em>: The following example assumes that <code class="sourceCode cpp"><span class="dt">char</span></code> and <code class="sourceCode cpp"><span class="dt">int</span></code> have different size.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>struct C { char j; int l; };</span>
+<span id="cb29-2"><a href="#cb29-2"></a></span>
+<span id="cb29-3"><a href="#cb29-3"></a>int g() {</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    auto [ ... i ] = C{ &#39;x&#39;, 42 }; // #1</span>
+<span id="cb29-5"><a href="#cb29-5"></a>    return ( [c = i] () {</span>
+<span id="cb29-6"><a href="#cb29-6"></a>        // the local class C is a templated entity because</span>
+<span id="cb29-7"><a href="#cb29-7"></a>        // it is defined within the implicit template region</span>
+<span id="cb29-8"><a href="#cb29-8"></a>        // created at #1</span>
+<span id="cb29-9"><a href="#cb29-9"></a>        struct C {</span>
+<span id="cb29-10"><a href="#cb29-10"></a>            int f() requires (sizeof(c) == 1) { return 1; }</span>
+<span id="cb29-11"><a href="#cb29-11"></a>            int f() requires (sizeof(c) != 1) { return 2; }</span>
+<span id="cb29-12"><a href="#cb29-12"></a>        };</span>
+<span id="cb29-13"><a href="#cb29-13"></a>        return C{}.f();</span>
+<span id="cb29-14"><a href="#cb29-14"></a>    } () + ...  + 0 );</span>
+<span id="cb29-15"><a href="#cb29-15"></a>}</span>
+<span id="cb29-16"><a href="#cb29-16"></a></span>
+<span id="cb29-17"><a href="#cb29-17"></a>int v = g(); // OK: v == 3</span></code></pre></div>
 <p><em>-end example</em>]</p>
 </div>
 </blockquote>
 <p>Add a new clause to <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>, after paragraph 3:</p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3+</a></span> A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more structured bindings ([dcl.struct.bind]). <i>[ Example</i></p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
-<span id="cb28-2"><a href="#cb28-2"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
-<span id="cb28-3"><a href="#cb28-3"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">3+</a></span> A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more structured bindings ([dcl.struct.bind]). <i>[ Example</i></p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
+<span id="cb30-2"><a href="#cb30-2"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
+<span id="cb30-3"><a href="#cb30-3"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span></code></pre></div>
 <ul>
 <li><em>end example]</em></li>
 </ul>
@@ -1150,40 +1148,40 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 </blockquote>
 <p>In <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>, change paragraph 4:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span> A <em>pack</em> is a template parameter pack, a function parameter pack, <span class="rm" style="color: #bf0303"><del>or</del></span> an <em>init-capture</em> pack<span class="addu">, or a structured binding pack</span>. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an <em>init-capture</em> pack is the number of elements in the pack expansion of its <em>initializer</em>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">4</a></span> A <em>pack</em> is a template parameter pack, a function parameter pack, <span class="rm" style="color: #bf0303"><del>or</del></span> an <em>init-capture</em> pack<span class="addu">, or a structured binding pack</span>. The number of elements of a template parameter pack or a function parameter pack is the number of arguments provided for the parameter pack. The number of elements of an <em>init-capture</em> pack is the number of elements in the pack expansion of its <em>initializer</em>.</p>
 </blockquote>
 <p>In <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>, paragraph 5 (describing pack expansions) remains unchanged.</p>
 <p>In <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>, add a bullet to paragraph 8:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">8</a></span> Such an element, in the context of the instantiation, is interpreted as follows:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">8</a></span> Such an element, in the context of the instantiation, is interpreted as follows:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(8.1)</a></span> if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the <i>i</i><sup>th</sup> corresponding type or value template argument;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(8.2)</a></span> if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; <span class="rm" style="color: #bf0303"><del>otherwise</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(8.3)</a></span> if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">; otherwise</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(8.4)</a></span> <span class="addu">if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(8.1)</a></span> if the pack is a template parameter pack, the element is a template parameter ([temp.param]) of the corresponding kind (type or non-type) designating the <i>i</i><sup>th</sup> corresponding type or value template argument;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(8.2)</a></span> if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; <span class="rm" style="color: #bf0303"><del>otherwise</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(8.3)</a></span> if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">; otherwise</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(8.4)</a></span> <span class="addu">if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.</span></li>
 </ul>
 </blockquote>
 <p>Add a new paragraph after <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span></p>
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">12</a></span> If all of the packs expanded by a pack expansion are not dependent, the pack expansion is instantiated immediately.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">12</a></span> If all of the packs expanded by a pack expansion are not dependent, the pack expansion is instantiated immediately.</p>
 <p>[ <em>Example:</em></p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1"></a>struct C { };</span>
-<span id="cb29-2"><a href="#cb29-2"></a></span>
-<span id="cb29-3"><a href="#cb29-3"></a>void g(...); // #1</span>
-<span id="cb29-4"><a href="#cb29-4"></a></span>
-<span id="cb29-5"><a href="#cb29-5"></a>template &lt;typename T&gt;</span>
-<span id="cb29-6"><a href="#cb29-6"></a>void f() {</span>
-<span id="cb29-7"><a href="#cb29-7"></a>    C arr[1];</span>
-<span id="cb29-8"><a href="#cb29-8"></a>    auto [...e] = arr;</span>
-<span id="cb29-9"><a href="#cb29-9"></a>    g(e...); // calls #1</span>
-<span id="cb29-10"><a href="#cb29-10"></a>}</span>
-<span id="cb29-11"><a href="#cb29-11"></a></span>
-<span id="cb29-12"><a href="#cb29-12"></a>void g(C); // #2</span>
-<span id="cb29-13"><a href="#cb29-13"></a></span>
-<span id="cb29-14"><a href="#cb29-14"></a>int main() {</span>
-<span id="cb29-15"><a href="#cb29-15"></a>    f&lt;int&gt;();</span>
-<span id="cb29-16"><a href="#cb29-16"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1"></a>struct C { };</span>
+<span id="cb31-2"><a href="#cb31-2"></a></span>
+<span id="cb31-3"><a href="#cb31-3"></a>void g(...); // #1</span>
+<span id="cb31-4"><a href="#cb31-4"></a></span>
+<span id="cb31-5"><a href="#cb31-5"></a>template &lt;typename T&gt;</span>
+<span id="cb31-6"><a href="#cb31-6"></a>void f() {</span>
+<span id="cb31-7"><a href="#cb31-7"></a>    C arr[1];</span>
+<span id="cb31-8"><a href="#cb31-8"></a>    auto [...e] = arr;</span>
+<span id="cb31-9"><a href="#cb31-9"></a>    g(e...); // calls #1</span>
+<span id="cb31-10"><a href="#cb31-10"></a>}</span>
+<span id="cb31-11"><a href="#cb31-11"></a></span>
+<span id="cb31-12"><a href="#cb31-12"></a>void g(C); // #2</span>
+<span id="cb31-13"><a href="#cb31-13"></a></span>
+<span id="cb31-14"><a href="#cb31-14"></a>int main() {</span>
+<span id="cb31-15"><a href="#cb31-15"></a>    f&lt;int&gt;();</span>
+<span id="cb31-16"><a href="#cb31-16"></a>}</span></code></pre></div>
 <ul>
 <li><em>end example</em> ]</li>
 </ul>
@@ -1191,32 +1189,38 @@ Implementing <code class="sourceCode cpp">std<span class="op">::</span>apply<spa
 </blockquote>
 <p>Add a bullet to <span>13.8.3.3 <a href="https://wg21.link/temp.dep.expr">[temp.dep.expr]</a></span>/3:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">3</a></span> An <em>id-expression</em> is type-dependent if it is a <em>template-id</em> that is not a concept-id and is dependent; or if its terminal name is</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">3</a></span> An <em>id-expression</em> is type-dependent if it is a <em>template-id</em> that is not a concept-id and is dependent; or if its terminal name is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(3.1)</a></span> associated by name lookup with one or more declarations declared with a dependent type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(3.2)</a></span> associated by name lookup with a non-type template-parameter declared with a type that contains a placeholder type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(3.3)</a></span> associated by name lookup with a variable declared with a type that contains a placeholder type ([dcl.spec.auto]) where the initializer is type-dependent,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(3.4)</a></span> associated by name lookup with one or more declarations of member functions of a class that is the current instantiation declared with a return type that contains a placeholder type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(3.5)</a></span> associated by name lookup with a structured binding declaration ([dcl.struct.bind]) whose brace-or-equal-initializer is type-dependent,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(3.5b)</a></span> <span class="addu">associated by name lookup with a pack, unless that pack is a non-type template parameter pack whose types are non-dependent,</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(3.6)</a></span> associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a lambda-expression that has an explicit object parameter whose type is dependent ([dcl.fct]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(3.7)</a></span> the identifier <strong>func</strong> ([dcl.fct.def.general]), where any enclosing function is a template, a member of a class template, or a generic lambda,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(3.8)</a></span> a conversion-function-id that specifies a dependent type, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(3.9)</a></span> dependent</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(3.1)</a></span> associated by name lookup with one or more declarations declared with a dependent type,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(3.2)</a></span> associated by name lookup with a non-type template-parameter declared with a type that contains a placeholder type,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(3.3)</a></span> associated by name lookup with a variable declared with a type that contains a placeholder type ([dcl.spec.auto]) where the initializer is type-dependent,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(3.4)</a></span> associated by name lookup with one or more declarations of member functions of a class that is the current instantiation declared with a return type that contains a placeholder type,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(3.5)</a></span> associated by name lookup with a structured binding declaration ([dcl.struct.bind]) whose brace-or-equal-initializer is type-dependent,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(3.5b)</a></span> <span class="addu">associated by name lookup with a pack, unless that pack is a non-type template parameter pack whose types are non-dependent,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(3.6)</a></span> associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a lambda-expression that has an explicit object parameter whose type is dependent ([dcl.fct]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(3.7)</a></span> the identifier <strong>func</strong> ([dcl.fct.def.general]), where any enclosing function is a template, a member of a class template, or a generic lambda,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(3.8)</a></span> a conversion-function-id that specifies a dependent type, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(3.9)</a></span> dependent</li>
 </ul>
 </blockquote>
 <p>Add a carve-out for in <span>13.8.3.4 <a href="https://wg21.link/temp.dep.constexpr">[temp.dep.constexpr]</a></span>/4:</p>
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">4</a></span> Expressions of the following form are value-dependent:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1"></a>sizeof ... ( identifier )</span>
-<span id="cb30-2"><a href="#cb30-2"></a>fold-expression</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">4</a></span> Expressions of the following form are value-dependent:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb32-1"><a href="#cb32-1"></a>sizeof ... ( identifier )</span>
+<span id="cb32-2"><a href="#cb32-2"></a>fold-expression</span></code></pre></div>
 <p><span class="addu">unless the <em>identifier</em> is a non-dependent pack, or all of the packs expanded in the <em>fold-expression</em> are non-dependent packs.</span></p>
+</blockquote>
+<p>Add a new paragraph at the end of <span>13.8.4.1 <a href="https://wg21.link/temp.point">[temp.point]</a></span>:</p>
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">*</a></span> For an implicit template region, the point of instantiation is at the end of the region.</p>
+</div>
 </blockquote>
 <h2 data-number="4.1" id="feature-test-macro"><span class="header-section-number">4.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Bump <code class="sourceCode cpp">__cpp_structured_bindings</code> in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <div>
-<div class="sourceCode" id="cb31"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb31-1"><a href="#cb31-1"></a><span class="st">- __cpp_­structured_­bindings 201606L</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a><span class="va">+ __cpp_­structured_­bindings 2024XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb33-1"><a href="#cb33-1"></a><span class="st">- __cpp_­structured_­bindings 201606L</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a><span class="va">+ __cpp_­structured_­bindings 2024XXL</span></span></code></pre></div>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span> Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Michael Park and Tomasz Kamiński for their helpful feedback. Thanks to Richard Smith for help with the wording. Thanks especially to Jason Rice for the implementation.</p>
