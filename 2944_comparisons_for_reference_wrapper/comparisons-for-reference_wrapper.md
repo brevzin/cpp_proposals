@@ -1,6 +1,6 @@
 ---
 title: "Comparisons for `reference_wrapper`"
-document: P2944R2
+document: P2944R3
 date: today
 audience: LEWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2944R2], wording fixes.
 
 Since [@P2944R1], added section on [ambiguity](#ambiguity-issues) and updated wording accordingly.
 
@@ -242,6 +244,12 @@ Here, the added comparison operators would be valid, and wouldn't constrain away
 
 This would be the only case where any behavior would change.
 
+## Constraints vs Mandates
+
+Surprisingly, the status quo today is that for standard library types `std::pair`, `std::tuple`, etc., the spaceship operator is constrained (by way of `$synth-three-way-result$<T>`) but the equality operators and existing relational operators actually are *Mandated* instead. There does not seem to be a particularly good reason for this. It kind of just happened - the relational comparisons became constrained by way of my [@P1614R2], and the equality ones just weren't touched. It would make a lot more sense to have all of them constrained, so that `std::equality_comparable<std::tuple<T>>` wasn't just `true` for all `T` (well, except `void` and incomplete types).
+
+This paper proposes as a drive-by to also make all the comparison operators *Constrained* instead of *Mandated*.
+
 # Proposal
 
 Add `==` and `<=>` to `std::reference_wrapper<T>` so that `std::reference_wrapper<T>` is always comparable when `T` is, regardless of how `T`'s comparisons are defined.
@@ -282,6 +290,14 @@ Change [refwrap.general]{.sref}:
 +   friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper, reference_wrapper<const T>);
   };
 ```
+
+...
+
+[3]{.pnum} The template parameter `T` of `reference_wrapper` may be an incomplete type.
+
+::: addu
+[Using the comparison operators described in subclause [refwrap.comparisons] with `T` being an incomplete type can lead to an ill-formed program with no diagnostic required ([temp.point], [temp.constr.atomic])]{.note}
+:::
 :::
 
 Add a new clause, [refwrap.comparisons], after [refwrap.invoke]{.sref}:
@@ -292,7 +308,7 @@ Add a new clause, [refwrap.comparisons], after [refwrap.invoke]{.sref}:
 friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);
 ```
 
-[#]{.pnum} *Mandates*: The expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
+[1]{.pnum} *Constraints*: The expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
 
 [#]{.pnum} *Returns*: `x.get() == y.get()`.
 
@@ -300,7 +316,7 @@ friend constexpr bool operator==(reference_wrapper x, reference_wrapper y);
 friend constexpr bool operator==(reference_wrapper x, const T& y);
 ```
 
-[#]{.pnum} *Mandates*: The expression `x.get() == y` is well-formed and its result is convertible to `bool`.
+[#]{.pnum} *Constraints*: The expression `x.get() == y` is well-formed and its result is convertible to `bool`.
 
 [#]{.pnum} *Returns*: `x.get() == y`.
 
@@ -308,9 +324,7 @@ friend constexpr bool operator==(reference_wrapper x, const T& y);
 friend constexpr bool operator==(reference_wrapper x, reference_wrapper<const T> y);
 ```
 
-[#]{.pnum} *Constraints*: `is_const_v<T>` is `false`.
-
-[#]{.pnum} *Mandates*: The expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
+[#]{.pnum} *Constraints*: `is_const_v<T>` is `false` and the expression `x.get() == y.get()` is well-formed and its result is convertible to `bool`.
 
 [#]{.pnum} *Returns*: `x.get() == y.get()`.
 
@@ -335,21 +349,7 @@ friend constexpr $synth-three-way-result$<T> operator<=>(reference_wrapper x, re
 :::
 :::
 
-## Feature-test macro
-
-We don't have a feature-test macro for `std::reference_wrapper<T>`, and there doesn't seem like a good one to bump for this, so let's add a new one to [version.syn]{.sref}
-
-::: bq
-```diff
-+ #define __cpp_lib_reference_wrapper 20XXXXL // also in <functional>
-```
-:::
-
-## Constraints vs Mandates
-
-The wording here uses *Mandates* for the equality comparison, even though the spaceship operator is constrained (by way of `$synth-three-way-result$<T>`). This is, surprisingly, consistent with the other standard library types (`std::pair`, `std::tuple`, etc.). There does not seem to be a particularly good reason for this. It kind of just happened - the relational comparisons became constrained by way of my [@P1614R2], and the equality ones just weren't touched. It would make a lot more sense to have all of them constrained, so that `std::equality_comparable<std::tuple<T>>` wasn't just `true` for all `T` (well, except `void` and incomplete types).
-
-If we agree that we should just consistently constrain all the comparison operators, then we should additionally make the following wording changes (in addition to changing the *Mandates* to a *Constraints* above):
+And then additional drive-by changes for existing library types as follows.
 
 In [pairs.spec]{.sref}/1:
 
@@ -425,4 +425,22 @@ In [variant.relops]{.sref}, change all the *Mandates* to *Constraints*:
 [9]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) <= get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
 
 [11]{.pnum} [*Mandates*]{.rm} [*Constraints*]{.addu}: `get<i>(v) >= get<i>(w)` is a valid expression that is convertible to `bool`, for all `i`.
+:::
+
+## Feature-test macro
+
+We don't have a feature-test macro for `std::reference_wrapper<T>`, and there doesn't seem like a good one to bump for this, so let's add a new one to [version.syn]{.sref}
+
+::: bq
+```diff
++ #define __cpp_lib_reference_wrapper 20XXXXL // freestanding, also in <functional>
+```
+:::
+
+Likewise, let's add a new one for the other standard library types described above:
+
+::: bq
+```diff
++ #define __cpp_lib_constrained_equality 20XXXXL // freestanding, also in <utility>, <tuple>, <optional>, <variant>
+```
 :::
