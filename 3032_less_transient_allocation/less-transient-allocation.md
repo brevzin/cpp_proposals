@@ -191,6 +191,17 @@ Change [expr.const]{.sref}/5:
 * [5.22]{.pnum} [...]
 :::
 
+## Feature-Test Macro
+
+Bump the value of `__cpp_constexpr` in [cpp.predefined]{.sref}:
+
+::: bq
+```diff
+- __cpp_constexpr @[202306L]{.diffdel}@
++ __cpp_constexpr @[2024XXL]{.diffins}@
+```
+:::
+
 # Acknowledgements
 
 Thank you to Peter Dimov for being Peter Dimov and coming up with all of these examples.
