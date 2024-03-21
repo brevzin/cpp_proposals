@@ -1,6 +1,6 @@
 ---
 title: "Less transient constexpr allocation"
-document: P3032R0
+document: D3032R1
 date: today
 audience: EWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+Since [@P3032R0], fixed wording.
 
 # Introduction
 
@@ -180,10 +184,10 @@ Change [expr.const]{.sref}/5:
 [5]{.pnum} An expression E is a core constant expression unless the evaluation of E, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [5.1]{.pnum} [...]
-* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
-* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
-* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
-* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function content, within that context]{.addu};
+* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
+* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
+* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
+* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
 * [5.22]{.pnum} [...]
 :::
 
