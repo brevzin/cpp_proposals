@@ -13,6 +13,8 @@ toc: true
 
 # Revision History
 
+R8 re-adds the namespace-scope exclusion, and more wording updates.
+
 R7 attempts to word the post-Varna version.
 
 R6 has added wording changes and adds some more complicated examples to motivate how to actually word this paper.
@@ -567,7 +569,17 @@ auto [... parts] = Point{1, 2};
 ```
 :::
 
-Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity. However, rejecting it would be a very odd kind of restriction that would be surprising. If users want to do this, they should be able to. EWG also explicitly polled this question in a telecon, with a strong preference for allowing such namespace-scope declarations.
+Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity.
+
+Now, EWG originally [voted to remove this restriction](https://github.com/cplusplus/papers/issues/294#issuecomment-1234578812) in a telecon - on the basis that it seemed like an artificial restriction and that the rules for how to use this feature should be uniform across all uses of structured bindings. However, during Core wording review of this paper in the Tokyo meeting, a lot of issues with this approach surfaced.
+
+Introducing a structured binding pack into a function makes the region of that function into a template. This has consequences, but those consequences are localized to _just_ the part of _that_ function that follows the structured binding declaration.
+
+Introducing a structured binding pack at namespace scope makes _your entire program_ into a template. With enormous downstream consequences. Because unlike a function where we have a clear end to the region (the end of the block scope), even closing the namespace isn't sufficient because the namespace could still be reopened again later! Code that you have in one header could *change lookup rules* if it is included after another header that happened to add a namespace-scope pack. Even if your header never referenced that pack. If you had any non-depenent `if constexpr` conditions, they suddenly become dependent, and those bodies suddenly can become discarded.
+
+Perhaps there is a way to divine some way to word this feature such that this doesn't happen, but that seems to be a very large amount of work necessary that far exceeds the potential utility thereof. It is not clear if anybody wants this, and it certainly does not seem worth delaying this paper further to attempt to add support for it.
+
+Thus, this paper proposes that structured binding packs be limited to block scope.
 
 # Wording
 
@@ -613,7 +625,7 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 Change [dcl.pre]{.sref}/6:
 
 ::: bq
-[6]{.pnum} A *simple-declaration* with an [*identifier-list*]{.rm} [*sb-identifier-list*]{.addu} is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall not appear at namespace scope.]{.addu}
+[6]{.pnum} A *simple-declaration* with an [*identifier-list*]{.rm} [*sb-identifier-list*]{.addu} is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall not inhabit a namespace scope.]{.addu}
 :::
 
 Extend [dcl.fct]{.sref}/5:
@@ -636,7 +648,7 @@ Extend [dcl.fct]{.sref}/5:
   void h(int x(const int));       // #3
   void h(int (*)(int)) {}         // defines #3
 
-+ void k(int ,int);               // #4
++ void k(int, int);               // #4
 + void m() {
 +   struct C { int i, j; };
 +   auto [... elems] = C{};
@@ -649,7 +661,7 @@ Extend [dcl.fct]{.sref}/5:
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
-[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [A *structured binding* is either an *identifier* of the *sb-identifier-list* or, if the *identifier* is preceded by an ellipsis, or an element of the pack introduced by that *sb-identifier*.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [An *sb-identifier* that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an *sb-identifier* that does not contain an ellipsis or an element of a structured binding pack.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
@@ -658,13 +670,13 @@ the terms "structured binding size" and SB~_i_~:
 
 ::: bq
 ::: addu
-[1+1]{.pnum} The _structured binding size_ of a type is the
+[1+1]{.pnum} The _structured binding size_ of `E`, as defined below, is the
 number of structured bindings that need to be introduced by the structured binding
-declaration, as defined below. If there is no structured binding pack, then
+declaration. If there is no structured binding pack, then
 the number of elements in the _sb-identifier-list_ shall be equal to the
-structured binding size. Otherwise, the number of elements of the structured
-binding pack is the structured binding size less the number of non-pack elements in the
- _sb-identifier-list_ and the number of non-pack elements shall be no more than the structured binding size.
+structured binding size of `E`. Otherwise, the number of elements of the structured
+binding pack is the structured binding size of `E` less the number of non-pack elements in the
+ _sb-identifier-list_; the number of non-pack elements shall be no more than the structured binding size of `E`.
 
 [1+2]{.pnum} Let SB~_i_~ denote the _i_^th^ structured binding in the structured binding declaration after
 expanding the structured binding pack, if any. [ _Note_: If there is no
@@ -673,10 +685,11 @@ structured binding pack, then SB~_i_~ denotes v~_i_~. - _end note_ ] [ _Example_
 ```
 struct C { int x, y, z; };
 
-auto [a, b, c] = C(); // SB@~0~@ is a, SB@~1~@ is b, and SB@~2~@ is c
-auto [d, ...e] = C(); // SB@~0~@ is d, the pack e (v@~1~@) contains two identifiers: SB@~1~@ and SB@~2~@
-auto [...f, g] = C(); // the pack f (v@~0~@) contains two identifiers: SB@~0~@ and SB@~1~@, and SB@~2~@ is g
-auto [h, i, j, k, ...l] = C(); // error: structured binding size is too small
+auto [a, b, c] = C(); // OK, SB@~0~@ is a, SB@~1~@ is b, and SB@~2~@ is c
+auto [d, ...e] = C(); // OK, SB@~0~@ is d, the pack e (v@~1~@) contains two structured bindings: SB@~1~@ and SB@~2~@
+auto [...f, g] = C(); // OK, the pack f (v@~0~@) contains two structured bindings: SB@~0~@ and SB@~1~@, and SB@~2~@ is g
+auto [h, i, j, ...k] = C(); // OK, the pack k is empty
+auto [l, m, n, o, ...p] = C(); // error: structured binding size is too small
 ```
 
 - _end example_ ]
@@ -696,8 +709,8 @@ auto [ x, y ] = f();            // x and y refer to elements in a copy of the ar
 auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f's return value
 
 + auto g() -> int(&)[4];
-+ auto [a, ...b, c] = g();      // a is the first element of the array, b is a pack containing the second and
-+                               // third elements, and c is the fourth element
++ auto [a, ...b, c] = g();      // a names the first element of the array, b is a pack referring to the second and
++                               // third elements, and c names the fourth element
 + auto& [...e] = g();           // e is a pack referring to the four elements of the array
 ```
 
@@ -720,7 +733,7 @@ Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity, f
 
 ::: bq
 ::: addu
-[7a]{.pnum} A declaration of a structured binding pack ([dcl.struct.bind]) introduces an *implicit template region* that includes the declaration if that declaration does not already introduce a templated entity (see below). An implicit template region ends at the end of the scope that the structured binding declaration inhabits or, if the declaration is at namespace scope, at the end of the translation unit. An implicit template region is a template definition. At the end of the implicit template region, it is immediately instantiated ([temp.pre]).
+[7a]{.pnum} An *implicit template region* is a subregion of a block scope. An implicit template region is a template definition. At the end of an implicit template region, it is immediately instantiated ([temp.pre]). A declaration of a structured binding pack ([dcl.struct.bind]) that is not a templated entity (see below) introduces an implicit template region that includes the declaration of the structured binding pack and ends at the end of the scope that the structured binding declaration inhabits.
 :::
 
 [8]{.pnum} An entity is *templated* if it is
@@ -745,20 +758,41 @@ struct C { char j; int l; };
 int g() {
     auto [ ... i ] = C{ 'x', 42 }; // #1
     return ( [c = i] () {
-        // the local class C is a templated entity because
+        // The local class L is a templated entity because
         // it is defined within the implicit template region
-        // created at #1
-        struct C {
+        // created at #1.
+        struct L {
             int f() requires (sizeof(c) == 1) { return 1; }
             int f() requires (sizeof(c) != 1) { return 2; }
         };
-        return C{}.f();
+        return L{}.f();
     } () + ...  + 0 );
 }
 
-int v = g(); // OK: v == 3
+int v = g(); // OK, v == 3
 ```
 *-end example*]
+
+[ *Example:*
+```
+struct C { };
+
+void g(...); // #1
+
+template <typename T>
+void f() {
+    C arr[1];
+    auto [...e] = arr;
+    g(e...); // calls #2
+}
+
+void g(C); // #2
+
+int main() {
+    f<int>();
+}
+```
+- *end example* ]
 :::
 :::
 
@@ -766,7 +800,7 @@ Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
 
 ::: bq
 ::: addu
-[3+]{.pnum} A <i>structured binding pack</i> is an <i>identifier</i> that introduces zero or more structured bindings ([dcl.struct.bind]). <i>[ Example</i>
+[3+]{.pnum} A *structured binding pack* is an *sb-identifier* that introduces zero or more structured bindings ([dcl.struct.bind]). <i>[ Example</i>
 
 ```
 auto foo() -> int(&)[2];
@@ -795,36 +829,7 @@ In [temp.variadic]{.sref}, add a bullet to paragraph 8:
 <i>i</i><sup>th</sup> corresponding type or value template argument;
 * [8.2]{.pnum} if the pack is a function parameter pack, the element is an <i>id-expression</i> designating the  <i>i</i><sup>th</sup> function parameter that resulted from instantiation of the function parameter pack declaration; [otherwise]{.rm}
 * [8.3]{.pnum} if the pack is an <i>init-capture</i> pack, the element is an <i>id-expression</i> designating the variable introduced by the <i>i</i><sup>th</sup>th <i>init-capture</i> that resulted from instantiation of the <i>init-capture</i> pack[.]{.rm} [; otherwise]{.addu}
-* [8.4]{.pnum} [ if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding that resulted from the structured binding declaration.]{.addu}
-:::
-
-Add a new paragraph after [temp.variadic]{.sref}
-
-::: bq
-::: addu
-[12]{.pnum} If all of the packs expanded by a pack expansion are not dependent, the pack expansion is instantiated immediately.
-
-[ *Example:*
-```
-struct C { };
-
-void g(...); // #1
-
-template <typename T>
-void f() {
-    C arr[1];
-    auto [...e] = arr;
-    g(e...); // calls #1
-}
-
-void g(C); // #2
-
-int main() {
-    f<int>();
-}
-```
-- *end example* ]
-:::
+* [8.4]{.pnum} [ if the pack is a structured binding pack, the element is an <i>id-expression</i> designating the <i>i</i><sup>th</sup> structured binding in the pack that resulted from the structured binding declaration.]{.addu}
 :::
 
 Add a bullet to [temp.dep.expr]{.sref}/3:
@@ -852,14 +857,14 @@ Add a carve-out for in [temp.dep.constexpr]{.sref}/4:
 sizeof ... ( identifier )
 fold-expression
 ```
-[unless the *identifier* is a non-dependent pack, or all of the packs expanded in the *fold-expression* are non-dependent packs.]{.addu}
+[unless the *identifier* is a structured binding pack whose initializer is not dependent.]{.addu}
 :::
 
 Add a new paragraph at the end of [temp.point]{.sref}:
 
 ::: bq
 ::: addu
-[*]{.pnum} For an implicit template region, the point of instantiation is at the end of the region.
+[*]{.pnum} For an implicit template region, the point of instantiation immediately follows the namespace scope declaration or definition that encloses the region.
 :::
 :::
 
