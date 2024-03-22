@@ -1,6 +1,6 @@
 ---
 title: "Less transient constexpr allocation"
-document: D3032R1
+document: P3032R1
 date: today
 audience: EWG
 author:
@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-Since [@P3032R0], fixed wording.
+Since [@P3032R0], fixed wording, added feature-test macro.
 
 # Introduction
 
