@@ -596,7 +596,7 @@ Change the grammar in range-based in [stmt.iter.general]{.sref} for to use the n
   $for-range-declaration$:
     $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $declarator$
 -   $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ $identifier-list$ ]
-+   $sb-declaration$
++   $structured-binding-declaration$
 ```
 :::
 
@@ -611,14 +611,14 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
 +     $sb-identifier$
 +     $sb-identifier-list$, $sb-identifier$
 +
-+ $sb-declaration$:
++ $structured-binding-declaration$:
 +    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*sb-identifier-list*]{.diffins}@ ]
 
   $simple-declaration$:
       $decl-specifier-seq$ $init-declarator-list$@~opt~@;
       $attribute-specifier-seq$ $decl-specifier-seq$ $init-declarator-list$;
 -     $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*identifier-list*]{.diffdel}@ ] $initializer$ ;
-+     $sb-declaration$ $initializer$ ;
++     $structured-binding-declaration$ $initializer$ ;
 ```
 :::
 
