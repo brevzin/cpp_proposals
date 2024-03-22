@@ -1,6 +1,6 @@
 ---
 title: "Removing the common reference requirement from the indirectly invocable concepts"
-document: P2997R0
+document: P2997R1
 date: today
 audience: LEWG, SG9
 author:
@@ -11,6 +11,10 @@ author:
 toc: true
 tag: ranges
 ---
+
+# Revision History
+
+Since [@P2997R0], added feature-test macro.
 
 # Introduction
 
@@ -338,6 +342,18 @@ namespace std {
 -     strict_weak_order<F&, iter_common_reference_t<I1>, iter_common_reference_t<I2>>;
 +     strict_weak_order<F&, iter_reference_t<I1>, iter_reference_t<I2>>@[;]{.diffins}@
 }
+```
+:::
+
+## Feature-Test Macro
+
+Bump `__cpp_lib_ranges` in [version.syn]{.sref}:
+
+::: bq
+```diff
+- #define __cpp_lib_ranges                            @[202302L]{.diffdel}@
++ #define __cpp_lib_ranges                            @[2024XXL]{.diffins}@
+    // also in <algorithm>, <functional>, <iterator>, <memory>, <ranges>
 ```
 :::
 
