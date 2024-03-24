@@ -13,7 +13,7 @@ toc: true
 
 # Revision History
 
-R8 re-adds the namespace-scope exclusion, and more wording updates.
+R8 re-adds the [namespace-scope exclusion](#namespace-scope-packs), and more wording updates. Also rebases the wording to account for [@P0609R3].
 
 R7 attempts to word the post-Varna version.
 
@@ -579,7 +579,7 @@ Introducing a structured binding pack at namespace scope makes _your entire prog
 
 Perhaps there is a way to divine some way to word this feature such that this doesn't happen, but that seems to be a very large amount of work necessary that far exceeds the potential utility thereof. It is not clear if anybody wants this, and it certainly does not seem worth delaying this paper further to attempt to add support for it.
 
-Thus, this paper proposes that structured binding packs be limited to block scope.
+Thus, this paper proposes that structured binding packs be limited to block scope. This decision was confirmed with EWG at the [Tokyo meeting](https://github.com/cplusplus/papers/issues/294#issuecomment-2014848854).
 
 # Wording
 
@@ -589,43 +589,32 @@ Add a drive-by fix to [expr.prim.fold]{.sref} after paragraph 3:
 [π]{.pnum} [A fold expression is a pack expansion.]{.addu}
 :::
 
-Change the grammar in range-based in [stmt.iter.general]{.sref} for to use the new factored out structured binding declaration term (about to be introduced):
+Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref} (note that this accounts for [@P0609R3] by renaming the grammar productions prefixed with `$attributed$` to `$sb$`):
 
 ::: bq
 ```diff
-  $for-range-declaration$:
-    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $declarator$
--   $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ $identifier-list$ ]
-+   $structured-binding-declaration$
-```
-:::
-
-Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref}:
-
-::: bq
-```diff
+- $attributed-identifier$:
+-     $identifier$ $attribute-specifier-seq$@~opt~@
 + $sb-identifier$:
-+     ...@~opt~@ $identifier$
++     @[`...`~opt~]{.diffins}@ $identifier$ $attribute-specifier-seq$@~opt~@
 +
+- $attributed-identifier-list$:
+-     $attributed-identifier$
+-     $attributed-identifier-list$, $attributed-identifier$
 + $sb-identifier-list$:
 +     $sb-identifier$
 +     $sb-identifier-list$, $sb-identifier$
-+
-+ $structured-binding-declaration$:
-+    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*sb-identifier-list*]{.diffins}@ ]
 
-  $simple-declaration$:
-      $decl-specifier-seq$ $init-declarator-list$@~opt~@;
-      $attribute-specifier-seq$ $decl-specifier-seq$ $init-declarator-list$;
--     $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*identifier-list*]{.diffdel}@ ] $initializer$ ;
-+     $structured-binding-declaration$ $initializer$ ;
+  $structured-binding-declaration$:
+-    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*attributed-identifier-list*]{.diffdel}@ ]
++    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$ $ref-qualifier$@~opt~@ [ @[*sb-identifier-list*]{.diffins}@ ]
 ```
 :::
 
 Change [dcl.pre]{.sref}/6:
 
 ::: bq
-[6]{.pnum} A *simple-declaration* with an [*identifier-list*]{.rm} [*sb-identifier-list*]{.addu} is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall not inhabit a namespace scope.]{.addu}
+[6]{.pnum} A *simple-declaration* with a `$structured-binding-declaration$` is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall inhabit a block scope.]{.addu}
 :::
 
 Extend [dcl.fct]{.sref}/5:
@@ -661,7 +650,7 @@ Extend [dcl.fct]{.sref}/5:
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: bq
-[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>identifier-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [An *sb-identifier* that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an *sb-identifier* that does not contain an ellipsis or an element of a structured binding pack.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>attribute-identifier-list-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. The optional $attribute-specifier-seq$ of an $sb-identifier$ appertains to the structured binding so introduced. [An *sb-identifier* that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an *sb-identifier* that does not contain an ellipsis or an element of a structured binding pack.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
@@ -700,7 +689,7 @@ Change [dcl.struct.bind]{.sref} paragraph 3 to define a structured binding size 
 extend the example:
 
 ::: bq
-[3]{.pnum} If `E` is an array type with element type <code>T</code>, [the number of elements in the <i>identifier-list</i> shall be]{.rm} [the structured binding size of `E` is]{.addu} equal to the number of elements of `E`. Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
+[3]{.pnum} If `E` is an array type with element type <code>T</code>, [the number of elements in the <i>attributed-identifier-list</i> shall be]{.rm} [the structured binding size of `E` is]{.addu} equal to the number of elements of `E`. Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the element <i>i</i> of the array and whose type is <code>T</code>; the referenced type is <code>T</code>.
 [_Note_: The top-level _cv_-qualifiers of `T` are _cv_. — _end note_] [_Example_:
 
 ```diff
@@ -720,13 +709,13 @@ auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array refe
 Change [dcl.struct.bind]{.sref} paragraph 4 to define a structured binding size:
 
 ::: bq
-[4]{.pnum} Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the value of that expression. [...] Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
+[4]{.pnum} Otherwise, if the <i>qualified-id</i> <code>std::tuple_size&lt;E></code> names a complete type, the expression <code class="language-cpp">std::tuple_size&lt;E>::value</code> shall be a well-formed integral constant expression and the [number of elements in the <i>attributed-identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the value of that expression. [...] Each [<i>v<sub>i</sub></i>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue of type <code class="">T<sub>i</sub></code> that refers to the object bound to <code class="">r<sub>i</sub></code>; the referenced type is <code class="">T<sub>i</sub></code>.
 :::
 
 Change [dcl.struct.bind]{.sref} paragraph 5 to define a structured binding size:
 
 ::: bq
-[5]{.pnum} Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
+[5]{.pnum} Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>attributed-identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
 :::
 
 Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity, first introducing the term *implicit template region*:
@@ -909,4 +898,14 @@ references:
     issued:
       - year: 2007
     URL: https://www.python.org/dev/peps/pep-3132/
+  - id: P0609R3
+    citation-label: P0609R3
+    title: "Attributes for Structured Bindings"
+    author:
+      - family: Aaron Ballman
+    issued:
+      - year: 2024
+        month: 03
+        day: 21
+    URL: https://wg21.link/p0609r3
 ---
