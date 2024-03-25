@@ -23,6 +23,13 @@ div.std.ins blockquote {
 
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
 
+div.std blockquote del { text-decoration: line-through;
+    color: #000000; background-color: #FFC8EB;
+    border: none; }
+
+code del { border: 1px solid #ECB3C7; }
+
+
 </style>
 
 # Revision History
