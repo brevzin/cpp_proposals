@@ -21,9 +21,7 @@ div.std.ins blockquote {
     border: 1px solid #B3EBB3;
   }
 
-div.std.ins2 blockquote {
-    color: #000000; background-color: #C9FBC9;
-    border: 1px solid #B3EBB3; }
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
 
 </style>
 
