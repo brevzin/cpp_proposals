@@ -488,7 +488,7 @@ margin: 5em;
 }
 #refs code{padding-left: 0px; text-indent: 0px;}
 :root {
---diff-ins: #e6ffed;
+--diff-ins: #C9FBC9;
 --diff-strongins: #acf2bd;
 --diff-del: #ffdddd;
 --diff-strongdel: #ff8888;
@@ -604,6 +604,21 @@ Acknowledgements<span></span></a></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
+<style type="text/css">
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+    border: 1px solid #D1D1D1;
+    padding-left: 0.5em; padding-right: 0.5em; }
+
+div.std.ins blockquote {
+    color: #000000; background-color: #C8FFC8;
+    border: 1px solid #B3EBB3;
+  }
+
+div.std.ins2 blockquote {
+    color: #000000; background-color: #C9FBC9;
+    border: 1px solid #B3EBB3; }
+
+</style>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>R8 re-adds the <a href="#namespace-scope-packs">namespace-scope
@@ -1188,16 +1203,19 @@ meeting</a>.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add a drive-by fix to <span>7.5.6 <a href="https://wg21.link/expr.prim.fold">[expr.prim.fold]</a></span>
 after paragraph 3:</p>
+<div class="std ins">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">π</a></span>
 <span class="addu">A fold expression is a pack expansion.</span></p>
 </blockquote>
+</div>
 <p>Add a new grammar option for <em>simple-declaration</em> to <span>9.1
 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span> (note that this
 accounts for <span class="citation" data-cites="P0609R3">[<a href="https://wg21.link/p0609r3" role="doc-biblioref">P0609R3</a>]</span> by renaming the grammar
 productions prefixed with
 <code class="sourceCode cpp"><em>attributed</em></code> to
 <code class="sourceCode cpp"><em>sb</em></code>):</p>
+<div class="std">
 <blockquote>
 <div>
 <div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="st">- <em>attributed-identifier</em>:</span></span>
@@ -1217,7 +1235,9 @@ productions prefixed with
 <span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffins"><em>sb-identifier-list</em></span> ]</span></span></code></pre></div>
 </div>
 </blockquote>
+</div>
 <p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>/6:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">6</a></span>
 A <em>simple-declaration</em> with a
@@ -1233,7 +1253,9 @@ declaration shall contain at most one <em>sb-identifier</em> whose
 contains any such <em>sb-identifier</em>, it shall inhabit a block
 scope.</span></p>
 </blockquote>
+</div>
 <p>Extend <span>9.3.4.6 <a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>/5:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">5</a></span>
 The type of a function is determined using the following rules. The type
@@ -1249,10 +1271,36 @@ parameter-type-list.</p>
 <p>[Note 3: This transformation does not affect the types of the
 parameters. For example, <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span><span class="kw">const</span> <span class="dt">int</span> p, <span class="kw">decltype</span><span class="op">(</span>p<span class="op">)*)</span></code>
 and <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span><span class="dt">int</span>, <span class="kw">const</span> <span class="dt">int</span><span class="op">*)</span></code>
-are identical types. — end note] [Example 2:]</p>
+are identical types. — end note]</p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  void f(char*);                  // #1</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  void f(char[]) {}               // defines #1</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  void f(const char*) {}          // OK, another overload</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  void f(char *const) {}          // error: redefines #1</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  void g(char(*)[2]);             // #2</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  void g(char[3][2]) {}           // defines #2</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  void g(char[3][3]) {}           // OK, another overload</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  void h(int x(const int));       // #3</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  void h(int (*)(int)) {}         // defines #3</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ void k(int, int);               // #4</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ void m() {</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="va">+   struct C { int i, j; };</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   auto [... elems] = C{};</span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="va">+   void k(decltype(elems)...);   // redeclares #4</span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
+</div>
+<span> — <em>end example</em> ]</span>
+</div>
 </blockquote>
+</div>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>
 paragraph 1:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span>
 A structured binding declaration introduces the <i>identifier</i>s
@@ -1268,11 +1316,12 @@ binding</em> is either an <em>sb-identifier</em> that does not contain
 an ellipsis or an element of a structured binding pack.</span> Let
 <i>cv</i> denote the <i>cv-qualifiers</i> in the <i>decl-specifier-seq</i>.</p>
 </blockquote>
+</div>
 <p>Introduce new paragraphs after <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>
 paragraph 1, introducing the terms “structured binding size” and
 SB<sub><em>i</em></sub>:</p>
+<div class="std ins">
 <blockquote>
-<div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1+1</a></span>
 The <em>structured binding size</em> of
 <code class="sourceCode cpp">E</code>, as defined below, is the number
@@ -1290,12 +1339,24 @@ Let SB<sub><em>i</em></sub> denote the <em>i</em><sup>th</sup>
 structured binding in the structured binding declaration after expanding
 the structured binding pack, if any. [ <em>Note</em>: If there is no
 structured binding pack, then SB<sub><em>i</em></sub> denotes
-v<sub><em>i</em></sub>. - <em>end note</em> ] [ <em>Example</em>:]</p>
+v<sub><em>i</em></sub>. - <em>end note</em> ]</p>
+<div class="example">
+<span>[ <em>Example 2:</em> </span>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>struct C { int x, y, z; };</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>auto [a, b, c] = C(); // OK, SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>auto [d, ...e] = C(); // OK, SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two structured bindings: SB<sub>1</sub> and SB<sub>2</sub></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>auto [...f, g] = C(); // OK, the pack f (v<sub>0</sub>) contains two structured bindings: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>auto [h, i, j, ...k] = C(); // OK, the pack k is empty</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>auto [l, m, n, o, ...p] = C(); // error: structured binding size is too small</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
 </div>
 </blockquote>
+</div>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>
 paragraph 3 to define a structured binding size and extend the
 example:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">3</a></span>
 If <code class="sourceCode cpp">E</code> is an array type with element
@@ -1308,10 +1369,26 @@ that refers to the element <i>i</i> of the array and whose type is
 <code>T</code>; the referenced type is <code>T</code>. [<em>Note</em>:
 The top-level <em>cv</em>-qualifiers of
 <code class="sourceCode cpp">T</code> are <em>cv</em>. — <em>end
-note</em>] [<em>Example</em>:]</p>
+note</em>]</p>
+<div class="example">
+<span>[ <em>Example 3:</em> </span>
+<div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>auto f() -&gt; int(&amp;)[2];</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto [a, ...b, c] = g();      // a names the first element of the array, b is a pack referring to the second and</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="va">+                               // third elements, and c names the fourth element</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
+</div>
+<span> — <em>end example</em> ]</span>
+</div>
 </blockquote>
+</div>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>
 paragraph 4 to define a structured binding size:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span>
 Otherwise, if the <i>qualified-id</i>
@@ -1326,8 +1403,10 @@ type <code class>T<sub>i</sub></code> that refers to the object bound
 to <code class>r<sub>i</sub></code>; the referenced type is
 <code class>T<sub>i</sub></code>.</p>
 </blockquote>
+</div>
 <p>Change <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>
 paragraph 5 to define a structured binding size:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
 Otherwise, all of <code class="sourceCode cpp">E</code>’s non-static
@@ -1353,9 +1432,11 @@ lvalue that refers to the member <code class>m<sub>i</sub></code> of
 the referenced type is <i>cv</i> <code class>T<sub>i</sub></code>.
 The lvalue is a bit-field if that member is a bit-field.</p>
 </blockquote>
+</div>
 <p>Change <span>13.1 <a href="https://wg21.link/temp.pre">[temp.pre]</a></span>/8 to extend the
 notion of what is a templated entity, first introducing the term
 <em>implicit template region</em>:</p>
+<div class="std">
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">7a</a></span>
@@ -1396,25 +1477,72 @@ local or block variable, or a friend function defined in a templated
 entity is a templated entity.<span> — <em>end
 note</em> ]</span></span></p>
 <div class="addu">
-<p>[<em>Example</em>: The following example assumes that
+<div class="example">
+<p><span>[ <em>Example 4:</em> </span>The following example assumes that
 <code class="sourceCode cpp"><span class="dt">char</span></code> and
 <code class="sourceCode cpp"><span class="dt">int</span></code> have
-different size.]</p>
-<p>[ <em>Example:</em>]</p>
+different size.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">char</span> j; <span class="dt">int</span> l; <span class="op">}</span>;</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="ch">&#39;x&#39;</span>, <span class="dv">42</span> <span class="op">}</span>; <span class="co">// #1</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span> <span class="op">[</span>c <span class="op">=</span> i<span class="op">]</span> <span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">// The local class L is a templated entity because</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// it is defined within the implicit template region</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// created at #1.</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> L <span class="op">{</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">2</span>; <span class="op">}</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> L<span class="op">{}.</span>f<span class="op">()</span>;</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">()</span> <span class="op">+</span> <span class="op">...</span>  <span class="op">+</span> <span class="dv">0</span> <span class="op">)</span>;</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v <span class="op">=</span> g<span class="op">()</span>; <span class="co">// OK, v == 3</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+<div class="example">
+<span>[ <em>Example 5:</em> </span>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">(...)</span>; <span class="co">// #1</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    C arr<span class="op">[</span><span class="dv">1</span><span class="op">]</span>;</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>e<span class="op">]</span> <span class="op">=</span> arr;</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    g<span class="op">(</span>e<span class="op">...)</span>; <span class="co">// calls #2</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">(</span>C<span class="op">)</span>; <span class="co">// #2</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>    f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>;</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
 </div>
 </blockquote>
+</div>
 <p>Add a new clause to <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>, after
 paragraph 3:</p>
+<div class="std ins">
 <blockquote>
-<div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">3+</a></span>
 A <em>structured binding pack</em> is an <em>sb-identifier</em> that
-introduces zero or more structured bindings ([dcl.struct.bind]). <i>[
-Example</i>]_</p>
+introduces zero or more structured bindings ([dcl.struct.bind]).</p>
+<div class="example">
+<span>[ <em>Example 6:</em> </span>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
 </div>
 </blockquote>
+</div>
 <p>In <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>,
 change paragraph 4:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">4</a></span>
 A <em>pack</em> is a template parameter pack, a function parameter pack,
@@ -1426,10 +1554,12 @@ parameter pack. The number of elements of an <em>init-capture</em> pack
 is the number of elements in the pack expansion of its
 <em>initializer</em>.</p>
 </blockquote>
+</div>
 <p>In <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>,
 paragraph 5 (describing pack expansions) remains unchanged.</p>
 <p>In <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>, add a
 bullet to paragraph 8:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">8</a></span>
 Such an element, in the context of the instantiation, is interpreted as
@@ -1458,7 +1588,9 @@ structured binding in the pack that resulted from the structured binding
 declaration.</span></li>
 </ul>
 </blockquote>
+</div>
 <p>Add a bullet to <span>13.8.3.3 <a href="https://wg21.link/temp.dep.expr">[temp.dep.expr]</a></span>/3:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">3</a></span>
 An <em>id-expression</em> is type-dependent if it is a
@@ -1492,39 +1624,47 @@ associated by name lookup with an entity captured by copy
 ([expr.prim.lambda.capture]) in a lambda-expression that has an explicit
 object parameter whose type is dependent ([dcl.fct]),</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(3.7)</a></span>
-the identifier <strong>func</strong> ([dcl.fct.def.general]), where any
-enclosing function is a template, a member of a class template, or a
-generic lambda,</li>
+the identifier
+<code class="sourceCode cpp"><span class="ot">__func__</span></code>
+([dcl.fct.def.general]), where any enclosing function is a template, a
+member of a class template, or a generic lambda,</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(3.8)</a></span>
 a conversion-function-id that specifies a dependent type, or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(3.9)</a></span>
 dependent</li>
 </ul>
 </blockquote>
+</div>
 <p>Add a carve-out for in <span>13.8.3.4 <a href="https://wg21.link/temp.dep.constexpr">[temp.dep.constexpr]</a></span>/4:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">4</a></span>
 Expressions of the following form are value-dependent:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>sizeof ... ( identifier )</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>fold-expression</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>sizeof ... ( identifier )</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>fold-expression</span></code></pre></div>
 <p><span class="addu">unless the <em>identifier</em> is a structured
 binding pack whose initializer is not dependent.</span></p>
 </blockquote>
+</div>
 <p>Add a new paragraph at the end of <span>13.8.4.1 <a href="https://wg21.link/temp.point">[temp.point]</a></span>:</p>
+<div class="std ins">
 <blockquote>
-<div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">*</a></span>
 For an implicit template region, the point of instantiation immediately
 follows the namespace scope declaration or definition that encloses the
 region.</p>
-</div>
 </blockquote>
+</div>
 <h2 data-number="4.1" id="feature-test-macro"><span class="header-section-number">4.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Bump <code class="sourceCode cpp">__cpp_structured_bindings</code> in
 <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
+<div class="std">
+<blockquote>
 <div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­structured_­bindings 201606L</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­structured_­bindings 2024XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­structured_­bindings 201606L</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­structured_­bindings 2024XXL</span></span></code></pre></div>
+</div>
+</blockquote>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span>
 Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>

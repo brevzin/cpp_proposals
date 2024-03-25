@@ -29,6 +29,9 @@ def bq(elem, doc):
     if elem.classes == ['bq']:
         return pf.BlockQuote(*elem.content)
 
+    if 'std' in elem.classes:
+        return pf.Div(pf.BlockQuote(*elem.content), classes=elem.classes)
+
 def sha1(x):
     return hashlib.sha1(x.encode(sys.getfilesystemencoding())).hexdigest()
 
