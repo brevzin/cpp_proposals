@@ -392,6 +392,8 @@ Bump the value of `__cpp_constexpr` in [cpp.predefined]{.sref}:
 
 Thank you to Peter Dimov for being Peter Dimov and coming up with all of these examples.
 
+Thank you to Hubert Tong for noticing that the wording was wrong and Richard Smith for helping to fix it.
+
 ---
 references:
   - id: P2747R1
