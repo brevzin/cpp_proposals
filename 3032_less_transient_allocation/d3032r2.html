@@ -1155,19 +1155,26 @@ evaluation of <code class="addu">E</code>;</li>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>consteval int o() {</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    constexpr int* n = new int(21); // ok, because deallocated at #1</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    constexpr int* n = new int(21); // ok, #1</span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    int a = *n;</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    delete n;                       // #1</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    delete n;                       // #2</span>
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    return a;</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>consteval int e() {</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    constexpr int* r = new int(2022); // ok, #3</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    return *r;</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>static_assert(o() == 21);   // ok, because allocation at #1 is deallocated at #2</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>static_assert(e() == 2022); // error: allocation at #3 is not deallocated</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(5.19)</a></span>
-a <em>delete-expression</em> ([expr.delete]), unless <span class="addu">either <code class="sourceCode cpp">E</code> is in an
-immediate function context or</span> it deallocates a region of storage
-allocated within the evaluation of
+a <em>delete-expression</em> ([expr.delete]), unless it deallocates a
+region of storage allocated within the evaluation of
 <code class="sourceCode cpp">E</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(5.20)</a></span>
 a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​allocate</code>
@@ -1177,10 +1184,9 @@ context or</span> the allocated storage is deallocated within the
 evaluation of <code class="sourceCode cpp">E</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(5.21)</a></span>
 a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​deallocate</code>
-([allocator.members]), unless <span class="addu">either
-<code class="sourceCode cpp">E</code> is in an immediate function
-context or</span> it deallocates a region of storage allocated within
-the evaluation of <code class="sourceCode cpp">E</code>;</li>
+([allocator.members]), unless it deallocates a region of storage
+allocated within the evaluation of
+<code class="sourceCode cpp">E</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(5.22)</a></span>
 […]</li>
 </ul>
@@ -1194,11 +1200,19 @@ A <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 specifier used in an object declaration declares the object as const.
 Such an object shall have literal type and shall be initialized. In any
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
-variable declaration, <span class="addu">either</span> the
-full-expression of the initialization shall be a constant expression
-([expr.const]) <span class="addu">or the variable shall have automatic
-storage duration and be declared within an immediate function
-context</span>. A
+variable declaration, <span class="addu">either</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(6.1)</a></span>
+the full-expression of the initialization shall be a constant expression
+([expr.const]) <span class="addu">, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(6.2)</a></span>
+<span class="addu">the variable shall have automatic storage duration,
+be declared within an immediate function context, and the
+full-expression of the initialization shall be a core constant
+expression ([expr.const])</span>.</li>
+</ul>
+<p><span class="addu">Except for an automatic storage duration variable
+declared in an immediate function context, a</span> <span class="rm" style="color: #bf0303"><del>A</del></span>
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variable that is an object, as well as any temporary to which a
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>

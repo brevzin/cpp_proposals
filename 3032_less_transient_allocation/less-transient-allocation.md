@@ -328,25 +328,38 @@ constexpr int f() {
 }
 
 consteval int o() {
-    constexpr int* n = new int(21); // ok, because deallocated at #1
+    constexpr int* n = new int(21); // ok, #1
     int a = *n;
-    delete n;                       // #1
+    delete n;                       // #2
     return a;
 }
+
+consteval int e() {
+    constexpr int* r = new int(2022); // ok, #3
+    return *r;
+}
+
+static_assert(o() == 21);   // ok, because allocation at #1 is deallocated at #2
+static_assert(e() == 2022); // error: allocation at #3 is not deallocated
 ```
 :::
 :::
 
-* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless [either `E` is in an immediate function context or]{.addu} it deallocates a region of storage allocated within the evaluation of `E`;
+* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated within the evaluation of `E`;
 * [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless [either `E` is in an immediate function context or]{.addu} the allocated storage is deallocated within the evaluation of `E`;
-* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless [either `E` is in an immediate function context or]{.addu} it deallocates a region of storage allocated within the evaluation of `E`;
+* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated within the evaluation of `E`;
 * [5.22]{.pnum} [...]
 :::
 
 Change [dcl.constexpr]{.sref}/6:
 
 ::: std
-[6]{.pnum} A `constexpr` specifier used in an object declaration declares the object as const. Such an object shall have literal type and shall be initialized. In any `constexpr` variable declaration, [either]{.addu} the full-expression of the initialization shall be a constant expression ([expr.const]) [ or the variable shall have automatic storage duration and be declared within an immediate function context]{.addu}. A `constexpr` variable that is an object, as well as any temporary to which a `constexpr` reference is bound, shall have constant destruction.
+[6]{.pnum} A `constexpr` specifier used in an object declaration declares the object as const. Such an object shall have literal type and shall be initialized. In any `constexpr` variable declaration, [either]{.addu}
+
+* [6.1]{.pnum} the full-expression of the initialization shall be a constant expression ([expr.const]) [, or]{.addu}
+* [6.2]{.pnum} [the variable shall have automatic storage duration, be declared within an immediate function context, and the full-expression of the initialization shall be a core constant expression ([expr.const])]{.addu}.
+
+[Except for an automatic storage duration variable declared in an immediate function context, a]{.addu} [A]{.rm} `constexpr` variable that is an object, as well as any temporary to which a `constexpr` reference is bound, shall have constant destruction.
 
 ::: example4
 ```diff
