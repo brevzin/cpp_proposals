@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-25" />
+  <meta name="dcterms.date" content="2024-03-26" />
   <title>Less transient constexpr allocation</title>
   <style>
       code{white-space: pre-wrap;}
@@ -545,7 +545,7 @@ allocation</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-25</td>
+    <td>2024-03-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1107,11 +1107,9 @@ not know. Instead he suggests this wording:</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(5.18)</a></span>
 a <em>new-expression</em> ([expr.new]), unless the selected allocation
 function is a replaceable global allocation function
-([new.delete.single], [new.delete.array]) and the allocated storage is
-deallocated <span class="addu">either</span> within the evaluation of
-<code class="sourceCode cpp">E</code> <span class="addu">or
-<code class="sourceCode cpp">E</code> is in an immediate function
-context</span>;</p>
+([new.delete.single], [new.delete.array]) and <span class="addu">either</span> the allocated storage is deallocated within
+the evaluation of <code class="sourceCode cpp">E</code><span class="addu">, or <code class="sourceCode cpp">E</code> is in an
+immediate function context</span>;</p>
 </blockquote>
 </div>
 <p>He points out that the actual call to
@@ -1143,11 +1141,10 @@ following:</p>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(5.18)</a></span>
 a <em>new-expression</em> ([expr.new]), unless the selected allocation
 function is a replaceable global allocation function
-([new.delete.single], [new.delete.array]) and the allocated storage is
-deallocated <span class="addu">either</span> within the evaluation of
-<code class="sourceCode cpp">E</code> <span class="addu">or
+([new.delete.single], [new.delete.array]) and <span class="addu">either
 <code class="sourceCode cpp">E</code> is in an immediate function
-context</span>;</li>
+context or</span> the allocated storage is deallocated within the
+evaluation of <code class="addu">E</code>;</li>
 </ul>
 <div class="ins">
 <div class="example">
@@ -1168,23 +1165,22 @@ context</span>;</li>
 </div>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(5.19)</a></span>
-a <em>delete-expression</em> ([expr.delete]), unless it deallocates a
-region of storage allocated <span class="addu">either</span> within the
-evaluation of <code class="sourceCode cpp">E</code> <span class="addu">or <code class="sourceCode cpp">E</code> is in an immediate
-function context</span>;</li>
+a <em>delete-expression</em> ([expr.delete]), unless <span class="addu">either <code class="sourceCode cpp">E</code> is in an
+immediate function context or</span> it deallocates a region of storage
+allocated within the evaluation of
+<code class="sourceCode cpp">E</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(5.20)</a></span>
 a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​allocate</code>
-([allocator.members]), unless the allocated storage is deallocated <span class="addu">either</span> within the evaluation of
-<code class="sourceCode cpp">E</code> <span class="addu">or
+([allocator.members]), unless <span class="addu">either
 <code class="sourceCode cpp">E</code> is in an immediate function
-context</span>;</li>
+context or</span> the allocated storage is deallocated within the
+evaluation of <code class="sourceCode cpp">E</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(5.21)</a></span>
 a call to an instance of <code class="sourceCode cpp">std​<span class="op">::</span>​allocator<span class="op">&lt;</span>T<span class="op">&gt;</span>​<span class="op">::</span>​deallocate</code>
-([allocator.members]), unless it deallocates a region of storage
-allocated <span class="addu">either</span> within the evaluation of
-<code class="sourceCode cpp">E</code> <span class="addu">or
+([allocator.members]), unless <span class="addu">either
 <code class="sourceCode cpp">E</code> is in an immediate function
-context</span>;</li>
+context or</span> it deallocates a region of storage allocated within
+the evaluation of <code class="sourceCode cpp">E</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(5.22)</a></span>
 […]</li>
 </ul>

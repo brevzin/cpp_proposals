@@ -294,7 +294,7 @@ consteval void f(bool b) {
 Noting that it's impossible to tell - it depends on `b`, which the constant evaluator does not know. Instead he suggests this wording:
 
 ::: std
-[5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+[5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and [either]{.addu} the allocated storage is deallocated within the evaluation of `E`[, or `E` is in an immediate function context]{.addu};
 :::
 
 He points out that the actual call to `f` still has to be a constant expression, and so this leak rule still applies there. Neither leaks-to-runtime nor compile-time leaks are possible. So this wording change is more correct.
@@ -317,7 +317,7 @@ Change [expr.const]{.sref}/5:
 [5]{.pnum} An expression E is a *core constant expression* unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [5.1]{.pnum} [...]
-* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and [either `E` is in an immediate function context or]{.addu} the allocated storage is deallocated within the evaluation of `E`{.addu};
 
 ::: ins
 ::: example
@@ -337,9 +337,9 @@ consteval int o() {
 :::
 :::
 
-* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
-* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
-* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless [either `E` is in an immediate function context or]{.addu} it deallocates a region of storage allocated within the evaluation of `E`;
+* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless [either `E` is in an immediate function context or]{.addu} the allocated storage is deallocated within the evaluation of `E`;
+* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless [either `E` is in an immediate function context or]{.addu} it deallocates a region of storage allocated within the evaluation of `E`;
 * [5.22]{.pnum} [...]
 :::
 
