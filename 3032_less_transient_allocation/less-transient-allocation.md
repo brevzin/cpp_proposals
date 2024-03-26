@@ -1,6 +1,6 @@
 ---
 title: "Less transient constexpr allocation"
-document: P3032R1
+document: D3032R2
 date: today
 audience: EWG
 author:
@@ -10,7 +10,35 @@ toc: true
 tag: constexpr
 ---
 
+<style type="text/css">
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+    border: 1px solid #D1D1D1;
+    padding-left: 0.5em; padding-right: 0.5em; }
+
+div.std.ins blockquote {
+    color: #000000; background-color: #C8FFC8;
+    border: 1px solid #B3EBB3;
+  }
+
+div.ins > div.example {
+    color: #000000; background-color: #C8FFC8;
+    border: 1px solid #B3EBB3;
+  }
+
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+
+div.std blockquote del { text-decoration: line-through;
+    color: #000000; background-color: #FFC8EB;
+    border: none; }
+
+code del { border: 1px solid #ECB3C7; }
+
+
+</style>
+
 # Revision History
+
+Since [@P3032R1], fixed wording and extended the feature.
 
 Since [@P3032R0], fixed wording, added feature-test macro.
 
@@ -24,7 +52,7 @@ But the rule cited above does slightly more than prevent constexpr allocation to
 
 For the purposes of this paper, we'll consider the example of wanting to get the number of enumerators of a given enumeration. While the specific example is using reflection ([@P2996R1]), there isn't anything particularly reflection-specific about the example - it just makes for a good example. All you need to know about reflection to understand the example is that `^E` gives you an object of type `std::meta::info` and that this function exists:
 
-::: bq
+::: std
 ```cpp
 namespace std::meta {
   using info = /* ... */;
@@ -126,7 +154,7 @@ The wording in [@P2564R3] introduced the term *immediate-escalating expression* 
 
 In the second example:
 
-::: bq
+::: std
 ```cpp
 constexpr int f2() {
     return enumerators_of(^E).size();
@@ -151,7 +179,7 @@ The wording in [expr.const]{.sref} for rejecting non-transient allocations rejec
 
 That is - an allocation within `E` has to be transient to `E`. However, the rule we really want is that a constant allocation is transient to constant evaluation. In the fifth example:
 
-::: bq
+::: std
 ```cpp
 consteval int f5() {
     constexpr auto es = enumerators_of(^E);
@@ -176,26 +204,184 @@ The second of these is straightforward to word and provides a lot of value - sin
 
 As such, this paper only proposes extending the notion of transience.
 
+## Constant Expression vs Core Constant Expression
+
+Right before plenary in Tokyo, Hubert Tong pointed out an important omission in the wording of this paper: it completely failed to solve the problem.
+
+While the wording relaxes the rules for a *core constant expression*, it did not touch two other important rules: the definition of a *constant expression* and the requirements for the initialization of a `constexpr` variable.
+
+Specifically, the existing rule in [dcl.constexpr]{.sref}/6 requires that:
+
+::: std
+[6]{.pnum} ... In any constexpr variable declaration, the full-expression of the initialization shall be a constant expression ([expr.const]).
+:::
+
+where the term "constant expression" is defined in [expr.const]{.sref}/14:
+
+::: std
+[14]{.pnum} A *constant expression* is either a glvalue core constant expression that refers to an entity that is a permitted result of a constant expression (as defined below), or a prvalue core constant expression whose value satisfies the following constraints:
+
+* [14.#]{.pnum} if the value is an object of class type, each non-static data member of reference type refers to an entity that is a permitted result of a constant expression,
+* [14.#]{.pnum} if the value is an object of scalar type, it does not have an indeterminate value ([basic.indet]),
+* [14.#]{.pnum} if the value is of pointer type, it contains the address of an object with static storage duration, the address past the end of such an object ([expr.add]), the address of a non-immediate function, or a null pointer value,
+* [14.#]{.pnum} if the value is of pointer-to-member-function type, it does not designate an immediate function, and
+* [14.#]{.pnum} if the value is an object of class or array type, each subobject satisfies these constraints for the value.
+
+An entity is a *permitted result of a constant expression* if it is an object with static storage duration that either is not a temporary object or is a temporary object whose value satisfies the above constraints, or if it is a non-immediate function.
+:::
+
+Attempting to declare a local `constexpr` variable to point to some allocation would violate this rule - we do not meet the requirements set out above.
+
+However, before we go about trying to figure out how to relax the rule to allow allocations in automatic storage duration `constexpr` variables in immediate function contexts - Richard Smith pointed out another issue. This time not so much a *mistake* as a missed opportunity: allocations aren't the only example of results that are not permitted today but could be allowed if they're entirely within an immediate function context. For instance, taking a pointer to an immediate function. We have to prevent that from leaking to runtime, but if we're in a `consteval` function - there's nothing to prevent:
+
+::: std
+```cpp
+consteval void f() {}
+consteval void g() {
+  // Ought to be valid, but isn't a constant expression, because
+  // compile-time-only state escapes... into a compile-time-only context.
+  constexpr auto *p = f;
+  p();
+}
+```
+:::
+
+So now we have multiple ways in which we need to relax this rule. How do we go about doing it? We could be very precise in carving out specifically what we need - but this has a cost. We could fail to carve out enough, and have to keep refining the rule. But more importantly, the status quo is that we have two clear terms with clear usage: *core constant expression* and *constant expression*. Any attempt to introduce a third term in between them simply adds complexity. Is it worth doing so?
+
+Let's say that instead we go all the way. If an automatic storage `constexpr` variable is declared in an immediate function context, its initializer does *not* have to be a constant expression - it only has to be a core constant expression. This allows the allocation examples that were the original motivation of the paper, and this allows the immediate function example that Richard brought up. It does also allow some weird cases:
+
+::: std
+```cpp
+consteval int f(int n) {
+  constexpr int &r = n; // ill-formed, becomes well-formed
+  return r;
+}
+
+struct S {
+  constexpr S() {}
+  int i;
+};
+
+consteval void g() {
+  constexpr S s; // ill-formed, becomes well-formed
+}
+```
+:::
+
+Both of these cases are... odd. They are rejected today for being an invalid permitted result (`n` doesn't have static storage duration) and indeterminate (`s.i` isn't initialized), respectively. And allowing them isn't great. But also any attempt to actually use `r` and `s` here in a constant expression won't work anyway. So we're not losing anything in terms of correctness.
+
+I think on the whole it's better to stick with the simpler and easier-to-understand rule, even as it allows some odd and pointless code.
+
+## Incomplete Prior Wording
+
+Also pointed out by Richard, the original wording changing [expr.const]{.sref}/5 as follows:
+
+::: std
+[5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
+:::
+
+Richard pointed out this example, asking if it's valid:
+
+::: std
+```cpp
+consteval void f(bool b) {
+  constexpr int *p = new int;
+  if (b) delete p;
+}
+```
+:::
+
+Noting that it's impossible to tell - it depends on `b`, which the constant evaluator does not know. Instead he suggests this wording:
+
+::: std
+[5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+:::
+
+He points out that the actual call to `f` still has to be a constant expression, and so this leak rule still applies there. Neither leaks-to-runtime nor compile-time leaks are possible. So this wording change is more correct.
+
+Richard also points out that this allows this nonsensical function, but if you can't observe a leak, does it really leak?
+
+::: std
+```cpp
+consteval void f() {
+  if (false) { constexpr int *p = new int; }
+}
+```
+:::
+
 ## Wording
 
 Change [expr.const]{.sref}/5:
 
-::: bq
-[5]{.pnum} An expression E is a core constant expression unless the evaluation of E, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
+::: std
+[5]{.pnum} An expression E is a *core constant expression* unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [5.1]{.pnum} [...]
-* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
-* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
-* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
-* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or, if `E` is in an immediate function context, within that context]{.addu};
+* [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+
+::: ins
+::: example
+```
+constexpr int f() {
+    constexpr int* i = new int(1);  // error: allocation is neither deallocated within this
+    return *i;                      // evaluation nor within an immediate function context
+}
+
+consteval int o() {
+    constexpr int* n = new int(21); // ok, because deallocated at #1
+    int a = *n;
+    delete n;                       // #1
+    return a;
+}
+```
+:::
+:::
+
+* [5.19]{.pnum} a *delete-expression* ([expr.delete]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+* [5.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is deallocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
+* [5.21]{.pnum} a call to an instance of `std​::​allocator<T>​::​deallocate` ([allocator.members]), unless it deallocates a region of storage allocated [either]{.addu} within the evaluation of `E` [or `E` is in an immediate function context]{.addu};
 * [5.22]{.pnum} [...]
+:::
+
+Change [dcl.constexpr]{.sref}/6:
+
+::: std
+[6]{.pnum} A `constexpr` specifier used in an object declaration declares the object as const. Such an object shall have literal type and shall be initialized. In any `constexpr` variable declaration, [either]{.addu} the full-expression of the initialization shall be a constant expression ([expr.const]) [ or the variable shall have automatic storage duration and be declared within an immediate function context]{.addu}. A `constexpr` variable that is an object, as well as any temporary to which a `constexpr` reference is bound, shall have constant destruction.
+
+::: example4
+```diff
+  struct pixel {
+    int x, y;
+  };
+  constexpr pixel ur = { 1294, 1024 };    // OK
+  constexpr pixel origin;                 // error: initializer missing
+
++ consteval int f() {
++   constexpr pixel* q = new pixel{3, 4}; // ok
++   int result = q->x + q->y;
++   delete q;
++   return result;
++ }
++
++ constexpr void g() {
++   constexpr pixel* p = new pixel{1, 2}; // error: not a constant expression
++   delete p;
++   constexpr auto pf = f; // error: not a constant expression
++ }
++
++ consteval int h() {
++   constexpr auto pf = f; // ok
++   return pf();
++ }
+```
+:::
 :::
 
 ## Feature-Test Macro
 
 Bump the value of `__cpp_constexpr` in [cpp.predefined]{.sref}:
 
-::: bq
+::: std
 ```diff
 - __cpp_constexpr @[202306L]{.diffdel}@
 + __cpp_constexpr @[2024XXL]{.diffins}@
