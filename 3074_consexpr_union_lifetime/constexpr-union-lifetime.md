@@ -383,7 +383,7 @@ union U2 { string s; };
 union U3 { string s; };
 
 // non-trivial default constructor
-// trivial destructor
+// deleted destructor
 union U4 { string s = "hello"; }
 ```
 :::
@@ -427,7 +427,7 @@ Change [class.dtor]{.sref}/7-8:
 
 * [8.1]{.pnum} the destructor is not virtual,
 * [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
-* [8.3]{.pnum} [either `X` is a union or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
+* [8.3]{.pnum} [either `X` is a union with no default member initializer or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
 :::
 
 
