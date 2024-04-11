@@ -235,7 +235,7 @@ During the EWG telecon in [January 2023](https://wiki.edg.com/bin/view/Wg21telec
 
 For example:
 
-::: bq
+::: std
 ```cpp
 template <typename T, size_t N>
 struct FixedVector {
@@ -374,17 +374,27 @@ trivial union U1 { string s; };
 // deleted default constructor
 // deleted destructor
 union U2 { string s; };
+
+// trivial default constructor
+// starts lifetime of s
+// trivial destructor
+trivial union U3 { string s[10]; }
 ```
 
 ### just make it work
 ```cpp
 // trivial default constructor
 // trivial destructor
-union U3 { string s; };
+union U4 { string s; };
 
 // non-trivial default constructor
 // deleted destructor
-union U4 { string s = "hello"; }
+union U5 { string s = "hello"; }
+
+// trivial default constructor
+// starts lifetime of s
+// trivial destructor
+union U6 { string s[10]; }
 ```
 :::
 
