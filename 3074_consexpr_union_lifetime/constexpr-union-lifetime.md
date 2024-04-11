@@ -1,6 +1,6 @@
 ---
-title: "`std::uninitialized<T>`"
-document: P3074R2
+title: "Trivial unions (was `std::uninitialized<T>`)"
+document: P3074R3
 date: today
 audience: EWG
 author:
@@ -16,11 +16,13 @@ tag: constexpr
 
 [@P3074R1] changed to propose `std::uninitialized<T>` and was discussed in an EWG telecon. There, the suggestion was made to make this a language feature, which this revision discusses and argues against. Also re-spelled `std::uninitialized<T>` to be a union instead of a class containing an anonymous union.
 
+[@P3074R2] still argued for `std::uninitialized<T>`. This revision changes to instead proposing a language change to unions to solve the problems presented.
+
 # Introduction
 
 Consider the following example:
 
-::: bq
+::: std
 ```cpp
 template <typename T, size_t N>
 struct FixedVector {
@@ -60,7 +62,7 @@ Getting this example to work would allow `std::inplace_vector` ([@P0843R9]) to s
 
 A closely related problem to the above is: how do you do uninitialized storage? The straightforward implementation would be to do:
 
-::: bq
+::: std
 ```cpp
 template <class T>
 struct BufferStorage {
@@ -80,7 +82,7 @@ This approach generally works, but it has two limitations:
 
 What I mean by the second one is basically given this structure:
 
-:::bq
+:::std
 ```cpp
 struct Empty { };
 
@@ -94,7 +96,7 @@ If we initialize the `Empty` that `buffer_storage` is intended to have, then `Su
 
 An alternative approach to storage is to use a `union`:
 
-:::bq
+:::std
 ```cpp
 template <class T>
 struct UnionStorage {
@@ -117,7 +119,7 @@ So it seems that the `UnionStorage` approach is strictly superior: it will work 
 
 We can work around this by simply adding an empty constructor and destructor (as shown earlier as well):
 
-:::bq
+:::std
 ```cpp
 template <class T>
 struct UnionStorage2 {
@@ -200,34 +202,19 @@ While the union storage solution solves some language problems for us, the buffe
 A previous revision of this paper [@P3074R0] talked about three potential solutions to this problem:
 
 1. a library solution (add a `std::uninitialized<T>`)
-2. just make it work (change the union rules to implicitly start the lifetime of the first alternative, if it's an implicit-lifetime type)
-3. add a library function to explicitly start lifetime
+2. a language solution (add some annotation to members to mark them uninitialized)
+3. just make it work (change the union rules to implicitly start the lifetime of the first alternative, if it's an implicit-lifetime type)
+4. add a library function to explicitly start lifetime
 
-That paper proposed a new function `std::start_lifetime(p)` that was that third option. However, with the addition of the overlapping subobjects problem and the realization that the union solution has overhead compared to the buffer storage solution, it would be more desirable to solve both problems in one go.
+That paper proposed a new function `std::start_lifetime(p)` that was that fourth option. However, with the addition of the overlapping subobjects problem and the realization that the union solution has overhead compared to the buffer storage solution, it would be more desirable to solve both problems in one go.
 
-Now, (2) is no longer a meaningful option because we can't really "just make it work" since attempting to change the union rules with regards to trivial destruction would be quite a language change and an ABI break.
-
-Similarly, (3) doesn't really address the storage problem. In order to make the `union` solution work out, we'd need to add another way to tell the compiler that we want our constructor and destructor to be trivial - not deleted - regardless of the alternatives. Perhaps that ends up being something like this:
-
-::: bq
-```cpp
-template <class T>
-struct UnionStorageFuture {
-    union { [[uninitialized]] T value; };
-    constexpr UnionStorageFuture() { std::start_lifetime(&value); }
-};
-```
-:::
-
-However, now we need two features - some way to mark the alternative and some way to start its lifetime. That, inherently, doesn't seem like a great solution.
-
-Which seems to leave only one solution to the problem, which is easier to use anyway:
+Let's go over some of the solutions.
 
 ## A library type: `std::uninitialized<T>`
 
 We could introduce another magic library type, `std::uninitialized<T>`, with an interface like:
 
-::: bq
+::: std
 ```cpp
 template <typename T>
 struct uninitialized {
@@ -238,7 +225,7 @@ struct uninitialized {
 
 As basically a better version of `std::aligned_storage`. Here is storage for a `T`, that implicitly begins its lifetime if `T` is an implicit-lifetime-type, but otherwise will not actually initialize it for you - you have to do that yourself. Likewise it will not destroy it for you, you have to do that yourself too. This type would be specified to always be trivially default constructible and trivially destructible. It would be trivially copyable if `T` is trivially copyable, otherwise not copyable.
 
-`std::inplace_vector<T, N>` would then have a `std::uninitialized<T[N]>` and go ahead and `std::construct_at` (or, with [@P2747R1], simply placement-new) into the appropriate elements of that array and everything would just work.
+`std::inplace_vector<T, N>` would then have a `std::uninitialized<T[N]>` and go ahead and `std::construct_at` (or, with [@P2747R2], simply placement-new) into the appropriate elements of that array and everything would just work.
 
 Because the language would recognize this type, this would also solve the overlapping objects problem.
 
@@ -258,6 +245,7 @@ struct FixedVector {
     //as a language feature, something like this
     for storage T lang[N];
     T storage[N] = for lang;
+    T storage[N] = void;
     uninitialized T lang[N];
 
     size_t size = 0;
@@ -267,19 +255,93 @@ struct FixedVector {
 
 The advantage of the language syntax is that you can directly use `lang` - you would placement new onto `lang[0]`, you read from `lang[1]`, etc, whereas with the library syntax you have to placement new onto `lib.value[0]` and read from `lib.value[1]`, etc.
 
-However, an uninitialized object of type `T` really isn't the same thing as a `T`. `decltype(lang)` would have to be `T`, any kind of (imminent) reflection over this type would give you a `T`. But there might not actually be a `T` there yet, it behaves like a `union { T; }` rather than a `T`, so spelling it `T` strikes me as misleading.
-
-We would have to ensure that all the other member-wise algorithms we have today (the special member functions and the comparisons) use the "uninitialized `T`" meaning rather than the `T` meaning. And with reflection, that also means all future member-wise algorithms would have to account for this also - rather than rejecting `union`s.
-
-The syntactic benefits of the language syntax are nice, but this is a rarely used type for specific situations - so having slightly longer syntax (and really, `lib.value` is not especially cumbersome) is not only not a big downside here but could even be viewed as a benefit.
-
-So despite the fact that there was consensus to prefer a language solution over a library solution:
+In that telecon, there was preference (including by me) for the language solution:
 
 |SF|F|N|A|SA|
 |-|-|-|-|-|
 |5|4|4|2|1|
 
-Having had more time to consider it, I believe the library solution to be superior.
+However, an uninitialized object of type `T` really isn't the same thing as a `T`. `decltype(lang)` would have to be `T`, any kind of (imminent) reflection over this type would give you a `T`. But there might not actually be a `T` there yet, it behaves like a `union { T; }` rather than a `T`, so spelling it `T` strikes me as misleading.
+
+We would have to ensure that all the other member-wise algorithms we have today (the special member functions and the comparisons) use the "uninitialized `T`" meaning rather than the `T` meaning. And with reflection, that also means all future member-wise algorithms would have to account for this also - rather than rejecting `union`s. This seems to open the door to a lot of mistakes.
+
+The syntactic benefits of the language syntax are nice, but this is a rarely used type for specific situations - so having slightly longer syntax (and really, `lib.value` is not especially cumbersome) is not only not a big downside here but could even be viewed as a benefit.
+
+For this reason, R2 of this paper still proposed `std::uninitialized<T>` as the solution in preference to any language annotation. This did not go over well in [Tokyo](https://github.com/cplusplus/papers/issues/1734#issuecomment-2012474793), where again there was preference for the language solution:
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|6|7|3|4|2|
+
+This leads to...
+
+## Just make it work
+
+Now, for the `inplace_vector` problem, today's `union` is insufficient:
+
+::: std
+```cpp
+template <typename T, size_t N>
+struct FixedVector {
+    union { T storage[N]; };
+    size_t size = 0;
+};
+```
+:::
+
+Similarly a simple `union { T storage; }` is insufficient for the uninitialized storage problem.
+
+There are three reasons for this:
+
+1. the default constructor can be deleted (this can be easily worked around though)
+2. the default constructor does not start the lifetime of implicit lifetime types
+3. the destructor can be deleted (this can be worked around by providing a no-op destructor, which has ABI cost that cannot be worked around)
+
+However, what if instead of coming up with a solution for these problems, we just... made it work?
+
+That is, change the union rules as follows:
+
+|member|status quo|new rule|
+|-|-|-|
+|default constructor<br/>(absent default member initializers)|If all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|If the first alternative is an implicit-lifetime type, trivial and starts the lifetime of that alternative and sets it as the active member.<br/>Otherwise, if all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|
+|destructor|If all the alternatives are trivially destructible, trivial.<br/>Otherwise, deleted.|If the first alternative is an implicit-lifetime type or if all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|
+
+This attempt at a minimal extension works fine for the `inplace_vector` example where we want a union holding a `T[N]`. Such a union would become trivially default constructible (and start the lifetime of the array) and trivially destructible, as desired. But it has odd effects for the typical uninitialized storage case:
+
+::: std
+```cpp
+// default constructor and destructor are both deleted
+union U1 { std::string s; };
+
+// default constructor and destructor are both trivial
+union U2 { std::string a[1]; };
+```
+:::
+
+For uninitialized storage, we really want trivial construction/destruction. And it would be nice to not have to resort to having members of type `T[1]` instead of `T` to achieve this. But I really don't think it's a good idea to just make all unions trivially constructible and destructible. Seems a bit too late for that. However...
+
+## Trivial Unions
+
+What if we introduced a new kind of union, with special annotation? That is:
+
+::: std
+```cpp
+template <typename T, size_t N>
+struct FixedVector {
+    trivial union { T storage[N]; };
+    size_t size = 0;
+};
+```
+:::
+
+With the rule that a trivial union is just always trivially default constructible, trivially destructible, and, if the first alternative is implicit-lifetime, starts the lifetime of that alternative (and sets it to be the active member).
+
+This is a language solution that doesn't have any of the consequences for memberwise algorithms - since we're still a `union`. It provides a clean solution to the uninitialized storage problem, the aliasing problem, and the constexpr `inplace_vector` storage problem. Without having to deal with potentially changing behavior of existing unions.
+
+This brings up the question about default member initializers. Should a `trivial union` be allowed to have a default member initializer? I don't think so. If you're initializing the thing, it's not really uninitialized storage anymore. Use a regular union.
+
+An alternative spelling for this might be `uninitialized union` instead of `trivial union`.
+
 
 ## Existing Practice
 
@@ -289,83 +351,188 @@ Rust has [`MaybeUninit<T>`](https://doc.rust-lang.org/std/mem/union.MaybeUninit.
 
 Kotlin has a [`lateinit var`](https://kotlinlang.org/docs/properties.html#late-initialized-properties-and-variables) language feature, which is similar to some kind of language annotation (although additionally allows for checking whether it has been initialized, which the language feature would not provide).
 
-# Wording
+D has the ability to initialize a variable to `void`, as in `int x = void;` This leaves `x` uninitialized. However, this feature only affects construction - not destruction. A member `T[N] storage = void;` would leave the array uninitialized, but would destroy the whole array in the destructor. So not really suitable for this particular purpose.
 
-Add to [memory.syn]{.sref}:
+# Proposal
 
-::: bq
+This paper now proposes support for a new kind of union: [trivial union](#trivial-unions) with the following rules:
+
+* a `union` may be declared `trivial`. If any declaration contains `trivial`, all declarations must contain `trivial`.
+* a `trivial union` shall not have any default member initializers.
+* a `trivial union` is trivially default constructible. If the first alternative has implicit-lifetime type, this also begins the lifetime of that alternative and sets it as the active member.
+* a `trivial union` is trivially destructible.
+
+An alternative design would be to change all existing `union`s to have this behavior (except still allowing default member initializers). That is:
+
+::: cmptable
+### trivial union
+```cpp
+// trivial default constructor
+// trivial destructor
+trivial union U1 { string s; };
+
+// deleted default constructor
+// deleted destructor
+union U2 { string s; };
+```
+
+### just make it work
+```cpp
+// trivial default constructor
+// trivial destructor
+union U3 { string s; };
+
+// non-trivial default constructor
+// trivial destructor
+union U4 { string s = "hello"; }
+```
+:::
+
+It's worth discussing both options. Unions already have very sharp edges, so perhaps this added protection of deleting the default constructor and destructor aren't really super useful - that's probably not the feature that really saves you.
+
+Note that just making work will change some code from ill-formed to well-formed, whereas introducing a `trivial union` will not change the meaning of any existing code.
+
+## Wording for just making it work
+
+Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be removed because such cases become trivially default constructible too]{.ednote}
+
+::: std
+[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is a non-union class and]{.addu}:
+
+* [2.1]{.pnum} any non-static data member with no default member initializer ([class.mem]) is of reference type,
+* [2.2]{.pnum} any [non-variant]{.rm} non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
+* [2.3]{.pnum} [`X` is a union and all of its variant members are of const-qualified type (or possibly multi-dimensional array thereof),]{.rm}
+* [2.4]{.pnum} [`X` is a non-union class and all members of any anonymous union member are of const-qualified type (or possibly multi-dimensional array thereof)]{.rm},
+* [2.5]{.pnum} any potentially constructed subobject, except for a non-static data member with a brace-or-equal-initializer [or a variant member of a union where another non-static data member has a brace-or-equal-initializer]{.rm}, has class type `M` (or possibly multi-dimensional array thereof) and overload resolution ([over.match]) as applied to find `M`'s corresponding constructor either does not result in a usable candidate ([over.match.general]) [or, in the case of a variant member, selects a non-trivial function,]{.rm} or
+
+[3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
+
+* [3.1]{.pnum} [its class]{.rm} [`X`]{.addu} has no virtual functions ([class.virtual]) and no virtual base classes ([class.mi]), and
+* [3.2]{.pnum} no non-static data member of [its class]{.rm} [`X`]{.addu} has a default member initializer ([class.mem]), and
+* [3.3]{.pnum} all the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial default constructors, and
+* [3.4]{.pnum} [either `X` is a union or ]{.addu} for all the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
+
+Otherwise, the default constructor is *non-trivial*. [If the default constructor of a union class `X` is trivial and the first variant member of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member [It becomes the active member of the union]{.note}.]{.addu}
+:::
+
+Change [class.dtor]{.sref}/7-8:
+
+::: std
+[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if [`X` is a non-union class and]{.addu}:
+
+* [7.1]{.pnum} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) and `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial,]{.rm}
+* [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
+
+[8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
+
+* [8.1]{.pnum} the destructor is not virtual,
+* [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
+* [8.3]{.pnum} [either `X` is a union or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
+:::
+
+
+## Wording for `trivial union`
+
+Add `trivial` to the identifiers with special meaning table in [lex.name]{.sref}:
+
+:::std
 ```diff
-namespace std {
-  // ...
-  // [obj.lifetime], explicit lifetime management
-  template<class T>
-    T* start_lifetime_as(void* p) noexcept;                                         // freestanding
-  template<class T>
-    const T* start_lifetime_as(const void* p) noexcept;                             // freestanding
-  template<class T>
-    volatile T* start_lifetime_as(volatile void* p) noexcept;                       // freestanding
-  template<class T>
-    const volatile T* start_lifetime_as(const volatile void* p) noexcept;           // freestanding
-  template<class T>
-    T* start_lifetime_as_array(void* p, size_t n) noexcept;                         // freestanding
-  template<class T>
-    const T* start_lifetime_as_array(const void* p, size_t n) noexcept;             // freestanding
-  template<class T>
-    volatile T* start_lifetime_as_array(volatile void* p, size_t n) noexcept;       // freestanding
-  template<class T>
-    const volatile T* start_lifetime_as_array(const volatile void* p,               // freestanding
-	                                      size_t n) noexcept;
-
-+ template<class T>
-+   union uninitialized;                                                           // freestanding
-}
+  final
+  import
+  module
+  override
++ trivial
 ```
 :::
 
-With corresponding wording in [obj.lifetime]{.sref}:
+Change [class.pre]{.sref} to add the ability to declare a `union` trivial:
 
-::: bq
-::: addu
-[9]{.pnum} The union `uninitialized` is suitable for storage for an object of type `T` that is not initially initialized.
-
-```cpp
-template<class T>
-union uninitialized {
-  T value;
-
-  constexpr uninitialized();
-  constexpr uninitialized(const uninitialized&);
-  constexpr uninitialized& operator=(const uninitialized&);
-  constexpr ~uninitialized();
-};
+::: std
+```diff
+  $class-key$:
+    class
+    struct
+-   union
++   trivial@~opt~@ union
 ```
-
-[#]{.pnum} `uninitialized<T>` is a trivially default constructible and trivially destructible type.
-
-[#]{.pnum} [An object of type `T` and the `value` subobject of `uninitialized<T>` have distinct addresses ([intro.object])]{.note}
-
-```cpp
-constexpr uninitialized();
-```
-[#]{.pnum} *Effects*: If `T` is an implicit-lifetime type, begins the lifetime of `value`. Otherwise, none. [The constructor of `T`, if any, is not called]{.note}
-
-```cpp
-constexpr uninitialized(const uninitialized&);
-constexpr uninitialized& operator=(const uninitialized&);
-```
-
-[#]{.pnum} If `T` is a trivially copyable type, then `uninitialized<T>` is a trivially copyable type. Otherwise, `uninitialized<T>` is not copyable.
-
-```cpp
-constexpr ~uninitialized();
-```
-
-[#]{.pnum} *Effects*: None. [The destructor of `T`, if any, is not called]{.note}
 :::
+
+Add to the end of [class.pre]{.sref}:
+
+::: {.std .ins}
+[8]{.pnum} A `$class-key$` shall only contain `trivial` when used in a `$class-head$`. If any declaration of a union includes `trivial`, then all declarations shall include `trivial`.
+:::
+
+Add to [class.union.general]{.sref}/1:
+
+::: std
+[1]{.pnum} A *union* is a class defined with the `$class-key$` `union`. [A *trivial union* is a union defined with the `$class-key$` `trivial union`. A trivial union shall not have a default member initializer.]{.addu}
+:::
+
+Change [class.union.anon]{.sref}/1:
+
+::: std
+[1]{.pnum} A union of the form
+```diff
+- union { $member-specification$ } ;
++ trivial@~opt~@ union { $member-specification$ } ;
+```
+is called an *anonymous union* [...]
+:::
+
+Change [class.default.ctor]{.sref}/2-3.
+
+::: std
+[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is not a trivial union]{.addu}:
+
+* [2.1]{.pnum} [...]
+
+[3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
+
+* [3.1]{.pnum} [its class]{.rm} [`X`]{.addu} has no virtual functions ([class.virtual]) and no virtual base classes ([class.mi]), and
+* [3.2]{.pnum} no non-static data member of [its class]{.rm} [`X`]{.addu} has a default member initializer ([class.mem]), and
+* [3.3]{.pnum} all the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial default constructors, and
+* [3.4]{.pnum} [either `X` is a trivial union or ]{.addu} for all the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
+
+Otherwise, the default constructor is *non-trivial*. [If the default constructor of a trivial union `X` is trivial and the first variant member of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member [It becomes the active member of the union]{.note}.]{.addu}
+:::
+
+Change [class.dtor]{.sref}/7-8:
+
+::: std
+[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if [`X` is not a trivial union and]{.addu}:
+
+* [7.1]{.pnum} [...]
+
+[8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
+
+* [8.1]{.pnum} the destructor is not virtual,
+* [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
+* [8.3]{.pnum} [either `X` is a trivial union or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
+:::
+
+## Feature-Test Macro
+
+Either way, we need a new feature-test macro. Add a new macro to [cpp.predefined]{.sref}:
+
+::: {.std .ins}
+```
+__cpp_trivial_union 2024XXL
+```
 :::
 
 ---
 references:
+  - id: P2747R2
+    citation-label: P2747R2
+    title: "`constexpr` placement new"
+    author:
+      - family: Barry Revzin
+    issued:
+      - year: 2024
+        month: 03
+        day: 19
+    URL: https://wg21.link/p2747r2
   - id: P3074R1
     citation-label: P3074R1
     title: "`std::uninitialized<T>`"
