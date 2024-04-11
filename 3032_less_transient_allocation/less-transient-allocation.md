@@ -272,6 +272,41 @@ Both of these cases are... odd. They are rejected today for being an invalid per
 
 I think on the whole it's better to stick with the simpler and easier-to-understand rule, even as it allows some odd and pointless code.
 
+## Mutation
+
+Consider the following example:
+
+::: std
+```cpp
+consteval void f(int n) {
+    constexpr int* a = new int(n); // ill-formed
+    constexpr int* b = new int(1); // #1
+    int c[*b];                     // #2
+    ++*b;                          // #3
+    int d[*b];                     // #4
+    delete b;
+}
+```
+:::
+
+The declaration of `a` is already ill-formed, so we don't have to do anything here.
+
+Now, if the declaration of `c` is ill-formed (at `#2`), then we lose the point of declaring the local `constexpr` variable. We really do want it to be usable as a constant expression.
+
+However, at the very least the declaration of `d` has to be ill-formed - this cannot be valid code that both declares an `int[1]` and an `int[2]`. There are two ways we can get there:
+
+1. We can reject `#1` as being insufficiently constant. This gets into the issues that `propconst` was trying to solve [@P1974R0].
+2. We can reject `#3` for doing mutation.
+
+It would be nice to not have to go full `propconst` just to solve this particular issue. We're entirely within the realm of the constant evaluator, so this problem is just simpler than having to deal with constexpr allocation that leaks to runtime. And we very nearly already have wording to reject `#3`, that's [expr.const]{.sref}/5.16:
+
+::: std
+* [5.16]{.pnum} a modification of an object ([expr.ass], [expr.post.incr], [expr.pre.incr]) unless it is applied to a non-volatile lvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`;
+:::
+
+It's just that here, `*b` did actually begin its lifetime within `E` (the call to `f`), so we don't violate this rule. We should simply extend this rule to be able to reject this case.
+
+
 ## Incomplete Prior Wording
 
 Also pointed out by Richard, the original wording changing [expr.const]{.sref}/5 as follows:
@@ -317,6 +352,32 @@ Change [expr.const]{.sref}/5:
 [5]{.pnum} An expression E is a *core constant expression* unless the evaluation of `E`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [5.1]{.pnum} [...]
+* [5.16]{.pnum} a modification of an object ([expr.ass], [expr.post.incr], [expr.pre.incr]) unless it is applied to a non-volatile lvalue of literal type that refers to a non-volatile object whose lifetime began within the evaluation of `E`;
+* [5.16b]{.pnum} [a modification of an object ([expr.ass], [expr.post.incr], [expr.pre.incr]) whose lifetime began within the evaluation of the initializer for a constexpr variable `V`, unless `E` occurs within the initialization or destruction of `V` or of a temporary object whose lifetime is extended to that of `V`;]{.addu}
+
+::: ins
+::: example
+```
+constexpr int f(int n) {
+    constexpr int* p = new int(1); // #1
+    ++n;      // ok, lifetime of n began within E
+    ++*p;     // error: modification of object whose lifetime began within
+              // initializer of constexpr variable at #1
+    delete p; // ok
+    constexpr int q = []{ // #2
+        int i = 0;
+        ++i;  // ok: modification of an object whose lifetime begin within E
+              // this E occurs within the initialization of constexpr variable
+              // declared at #2
+        return i;
+    }();
+    return n + q;
+}
+```
+:::
+:::
+
+* [5.17]{.pnum} [...]
 * [5.18]{.pnum} a *new-expression* ([expr.new]), unless the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and [either `E` is in an immediate function context or]{.addu} the allocated storage is deallocated within the evaluation of `E`{.addu};
 
 ::: ins
