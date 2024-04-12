@@ -1,5 +1,5 @@
 ---
-title: "Trivial unions (was `std::uninitialized<T>`)"
+title: "`trivial union` (was `std::uninitialized<T>`)"
 document: P3074R3
 date: today
 audience: EWG
