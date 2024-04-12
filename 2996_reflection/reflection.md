@@ -950,7 +950,7 @@ struct universal_formatter {
 
     template for (constexpr auto base : bases_of(^T)) {
       delim();
-      out = std::format_to(out, "{}", static_cast<[:type_of(base):] const&>(t));
+      out = std::format_to(out, "{}", (typename [: type_of(base) :] const&)(t));
     }
 
     template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
@@ -963,23 +963,26 @@ struct universal_formatter {
   }
 };
 
+struct B { int m0 = 0; };
 struct X { int m1 = 1; };
 struct Y { int m2 = 2; };
 class Z : public X, private Y { int m3 = 3; int m4 = 4; };
 
+template <> struct std::formatter<B> : universal_formatter { };
 template <> struct std::formatter<X> : universal_formatter { };
 template <> struct std::formatter<Y> : universal_formatter { };
 template <> struct std::formatter<Z> : universal_formatter { };
 
 int main() {
-    std::println("{}", Z()); // Z{X{.m1 = 1}, Y{.m2 = 2}, .m3 = 3, .m4 = 4}
+    std::println("{}", Z());
+      // Z{X{B{.m0=0}, .m1 = 1}, Y{{.m0=0}, .m2 = 2}, .m3 = 3, .m4 = 4}
 }
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/z4oq9xdK9).
+On Compiler Explorer: [Clang](https://godbolt.org/z/rbs6K78WG).
 
-Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is `static_cast<[: type_of(base) const& :]>(t)`. This both means explicitly specifying the `const`-ness of the type in the cast explicitly but also means that access will be checked. As a result, while the Boost.Describe version formats `Z` even with a `private` base `Y` as desired, in the linked Clang implementation `Y` is actually made a public base (alternatively `Z` could have made `universal_formatter` a `friend`).
+Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is either to use a proper cast `static_cast<[: type_of(base) const& :]>(t)` (which both means explicitly specifying the `const`-ness of the type in the cast explicitly but also means that access will be checked) or, to avoid the access issue, to use the C-style case `([: type_of(base) const& :])t` (which many people find unsavory).
 
 ## Implementing member-wise `hash_append`
 

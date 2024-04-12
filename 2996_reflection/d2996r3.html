@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-04-21" />
+  <meta name="dcterms.date" content="2024-05-02" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -560,7 +560,7 @@ code del { border: 1px solid #ECB3C7; }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-04-21</td>
+    <td>2024-05-02</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1743,7 +1743,7 @@ example.</p>
 <span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> base <span class="op">:</span> bases_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>      delim<span class="op">()</span>;</span>
-<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>      out <span class="op">=</span> std<span class="op">::</span>format_to<span class="op">(</span>out, <span class="st">&quot;{}&quot;</span>, <span class="kw">static_cast</span><span class="op">&lt;[:</span>type_of<span class="op">(</span>base<span class="op">):]</span> <span class="kw">const</span><span class="op">&amp;&gt;(</span>t<span class="op">))</span>;</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>      out <span class="op">=</span> std<span class="op">::</span>format_to<span class="op">(</span>out, <span class="st">&quot;{}&quot;</span>, <span class="op">(</span><span class="kw">typename</span> <span class="op">[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="op">:]</span> <span class="kw">const</span><span class="op">&amp;)(</span>t<span class="op">))</span>;</span>
 <span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> mem <span class="op">:</span> nonstatic_data_members_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
@@ -1756,33 +1756,31 @@ example.</p>
 <span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> m1 <span class="op">=</span> <span class="dv">1</span>; <span class="op">}</span>;</span>
-<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Y <span class="op">{</span> <span class="dt">int</span> m2 <span class="op">=</span> <span class="dv">2</span>; <span class="op">}</span>;</span>
-<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Z <span class="op">:</span> <span class="kw">public</span> X, <span class="kw">private</span> Y <span class="op">{</span> <span class="dt">int</span> m3 <span class="op">=</span> <span class="dv">3</span>; <span class="dt">int</span> m4 <span class="op">=</span> <span class="dv">4</span>; <span class="op">}</span>;</span>
-<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>X<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>Y<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>Z<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb27-38"><a href="#cb27-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-39"><a href="#cb27-39" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb27-40"><a href="#cb27-40" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, Z<span class="op">())</span>; <span class="co">// Z{X{.m1 = 1}, Y{.m2 = 2}, .m3 = 3, .m4 = 4}</span></span>
-<span id="cb27-41"><a href="#cb27-41" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">{</span> <span class="dt">int</span> m0 <span class="op">=</span> <span class="dv">0</span>; <span class="op">}</span>;</span>
+<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> m1 <span class="op">=</span> <span class="dv">1</span>; <span class="op">}</span>;</span>
+<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Y <span class="op">{</span> <span class="dt">int</span> m2 <span class="op">=</span> <span class="dv">2</span>; <span class="op">}</span>;</span>
+<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Z <span class="op">:</span> <span class="kw">public</span> X, <span class="kw">private</span> Y <span class="op">{</span> <span class="dt">int</span> m3 <span class="op">=</span> <span class="dv">3</span>; <span class="dt">int</span> m4 <span class="op">=</span> <span class="dv">4</span>; <span class="op">}</span>;</span>
+<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>B<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>X<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb27-38"><a href="#cb27-38" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>Y<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb27-39"><a href="#cb27-39" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>Z<span class="op">&gt;</span> <span class="op">:</span> universal_formatter <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb27-40"><a href="#cb27-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-41"><a href="#cb27-41" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb27-42"><a href="#cb27-42" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, Z<span class="op">())</span>;</span>
+<span id="cb27-43"><a href="#cb27-43" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Z{X{B{.m0=0}, .m1 = 1}, Y{{.m0=0}, .m2 = 2}, .m3 = 3, .m4 = 4}</span></span>
+<span id="cb27-44"><a href="#cb27-44" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>On Compiler Explorer: <a href="https://godbolt.org/z/z4oq9xdK9">Clang</a>.</p>
+<p>On Compiler Explorer: <a href="https://godbolt.org/z/rbs6K78WG">Clang</a>.</p>
 <p>Note that currently, we do not have the ability to access a base
 class subobject using the <code class="sourceCode cpp">t<span class="op">.[:</span> base <span class="op">:]</span></code>
-syntax - which means that the only way to get at the base is <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:]&gt;(</span>t<span class="op">)</span></code>.
-This both means explicitly specifying the
+syntax - which means that the only way to get at the base is either to
+use a proper cast <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:]&gt;(</span>t<span class="op">)</span></code>
+(which both means explicitly specifying the
 <code class="sourceCode cpp"><span class="kw">const</span></code>-ness
 of the type in the cast explicitly but also means that access will be
-checked. As a result, while the Boost.Describe version formats
-<code class="sourceCode cpp">Z</code> even with a
-<code class="sourceCode cpp"><span class="kw">private</span></code> base
-<code class="sourceCode cpp">Y</code> as desired, in the linked Clang
-implementation <code class="sourceCode cpp">Y</code> is actually made a
-public base (alternatively <code class="sourceCode cpp">Z</code> could
-have made <code class="sourceCode cpp">universal_formatter</code> a
-<code class="sourceCode cpp"><span class="kw">friend</span></code>).</p>
+checked) or, to avoid the access issue, to use the C-style case <code class="sourceCode cpp"><span class="op">([:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:])</span>t</code>
+(which many people find unsavory).</p>
 <h2 data-number="3.13" id="implementing-member-wise-hash_append"><span class="header-section-number">3.13</span> Implementing member-wise
 <code class="sourceCode cpp">hash_append</code><a href="#implementing-member-wise-hash_append" class="self-link"></a></h2>
 <p>Based on the <span class="citation" data-cites="N3980">[<a href="https://wg21.link/n3980" role="doc-biblioref">N3980</a>]</span>
@@ -3643,7 +3641,7 @@ If this <code class="sourceCode cpp"><em>id-expression</em></code> names
 an overload set <code class="sourceCode cpp">S</code>, and if the
 assignment of <code class="sourceCode cpp">S</code> to an invented
 variable of type <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">auto</span></code>
-(<span>9.2.9.7.2 <a href="https://wg21.link/dcl.type.auto.deduct">[dcl.type.auto.deduct]</a></span>)
+(<span>9.2.9.6.2 <a href="https://wg21.link/dcl.type.auto.deduct">[dcl.type.auto.deduct]</a></span>)
 would select a unique candidate function
 <code class="sourceCode cpp">F</code> from
 <code class="sourceCode cpp">S</code>, the result is a reflection of
