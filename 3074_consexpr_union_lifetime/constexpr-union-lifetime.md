@@ -340,7 +340,20 @@ This is a language solution that doesn't have any of the consequences for member
 
 This brings up the question about default member initializers. Should a `trivial union` be allowed to have a default member initializer? I don't think so. If you're initializing the thing, it's not really uninitialized storage anymore. Use a regular union.
 
-An alternative spelling for this might be `uninitialized union` instead of `trivial union`.
+An alternative spelling for this might be `uninitialized union` instead of `trivial union`. An alternative alternative would be to instead provide a different way of declaring the constructor and destructor:
+
+::: std
+```cpp
+union U {
+  U() = trivial;
+  ~U() = trivial;
+
+  T storage[N];
+};
+```
+:::
+
+This is explicit (unlike [just making it work](#just-make-it-work)), but seems unnecessary much to type compared to a single `trivial` token - and these things really aren't orthogonal. Plus it wouldn't allow for anonymous trivial unions, which seems like a nice usability gain.
 
 
 ## Existing Practice
@@ -430,7 +443,7 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 * [3.3]{.pnum} all the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial default constructors, and
 * [3.4]{.pnum} [either `X` is a union or ]{.addu} for all the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
 
-Otherwise, the default constructor is *non-trivial*. [If the default constructor of a union class `X` is trivial and the first variant member of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member [It becomes the active member of the union]{.note}.]{.addu}
+Otherwise, the default constructor is *non-trivial*. [If the default constructor of a union `X` is trivial and the first variant member of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member [It becomes the active member of the union]{.note}.]{.addu}
 :::
 
 Change [class.dtor]{.sref}/7-8:
@@ -478,7 +491,7 @@ Change [class.pre]{.sref} to add the ability to declare a `union` trivial:
 Add to the end of [class.pre]{.sref}:
 
 ::: {.std .ins}
-[8]{.pnum} A `$class-key$` shall only contain `trivial` when used in a `$class-head$`. If any declaration of a union `U` has a `trivial` specifier, then all declarations of `U` shall contain `trivial` [This includes those declarations that use an `$elaborated-type-specifier$.`]{.note}.
+[8]{.pnum} A `$class-key$` shall only contain `trivial` when used in a `$class-head$`. If any declaration of a union `U` has a `trivial` specifier, then all declarations of `U` shall contain `trivial` [This includes those declarations that use an `$elaborated-type-specifier$`, which cannot provide the `trivial` specifier.]{.note}.
 :::
 
 Add to [class.union.general]{.sref}/1:
@@ -501,7 +514,7 @@ is called an *anonymous union* [...]
 Change [class.default.ctor]{.sref}/2-3.
 
 ::: std
-[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is not a trivial union]{.addu}:
+[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is not a trivial union and]{.addu}:
 
 * [2.1]{.pnum} [...]
 
@@ -551,12 +564,4 @@ references:
         month: 03
         day: 19
     URL: https://wg21.link/p2747r2
-  - id: P3074R1
-    citation-label: P3074R1
-    title: "`std::uninitialized<T>`"
-    author:
-      - family: Barry Revzin
-    issued:
-      - year: 2023
-    URL: https://wg21.link/p3074r1
 ---
