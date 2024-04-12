@@ -1150,10 +1150,10 @@ anymore. Use a regular union.</p>
 <p>An alternative spelling for this might be <code class="sourceCode cpp">uninitialized <span class="kw">union</span></code>
 instead of <code class="sourceCode cpp">trivial <span class="kw">union</span></code>.</p>
 <h2 data-number="3.5" id="existing-practice"><span class="header-section-number">3.5</span> Existing Practice<a href="#existing-practice" class="self-link"></a></h2>
-<p>There are two similar features in other languages that I’m aware
+<p>There are three similar features in other languages that I’m aware
 of.</p>
 <p>Rust has <a href="https://doc.rust-lang.org/std/mem/union.MaybeUninit.html"><code class="sourceCode cpp">MaybeUninit<span class="op">&lt;</span>T<span class="op">&gt;</span></code></a>
-which is similar to what’s proposed here as <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
+which is similar to what’s described here as <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
 <p>Kotlin has a <a href="https://kotlinlang.org/docs/properties.html#late-initialized-properties-and-variables"><code class="sourceCode cpp">lateinit var</code></a>
 language feature, which is similar to some kind of language annotation
 (although additionally allows for checking whether it has been
@@ -1171,10 +1171,11 @@ purpose.</p>
 <p>This paper now proposes support for a new kind of union: <a href="#trivial-unions">trivial union</a> with the following rules:</p>
 <ul>
 <li>a <code class="sourceCode cpp"><span class="kw">union</span></code>
-may be declared <code class="sourceCode cpp">trivial</code>. If any
-declaration contains <code class="sourceCode cpp">trivial</code>, all
-declarations must contain
-<code class="sourceCode cpp">trivial</code>.</li>
+may be declared <code class="sourceCode cpp">trivial</code> (this is a
+context-sensitive keyword). If any declaration of a union
+<code class="sourceCode cpp">U</code> contains
+<code class="sourceCode cpp">trivial</code>, every declaration of
+<code class="sourceCode cpp">U</code> must do so.</li>
 <li>a <code class="sourceCode cpp">trivial <span class="kw">union</span></code>
 shall not have any default member initializers.</li>
 <li>a <code class="sourceCode cpp">trivial <span class="kw">union</span></code> is
@@ -1184,6 +1185,20 @@ alternative and sets it as the active member.</li>
 <li>a <code class="sourceCode cpp">trivial <span class="kw">union</span></code> is
 trivially destructible.</li>
 </ul>
+<p>The syntax is <code class="sourceCode cpp">trivial <span class="kw">union</span></code>
+instead of <code class="sourceCode cpp"><span class="kw">union</span> trivial</code>
+(which might be more consistent with the use of
+<code class="sourceCode cpp"><span class="kw">final</span></code>)
+because the former allows an anonymous union declaration as <code class="sourceCode cpp">trivial <span class="kw">union</span> <span class="op">{</span> T n; <span class="op">}</span></code>
+whereas <code class="sourceCode cpp"><span class="kw">union</span> trivial <span class="op">{</span> T n; <span class="op">}</span></code>
+is already a valid declaration today. Nor can you put the
+<code class="sourceCode cpp">trivial</code> even later - as in <code class="sourceCode cpp"><span class="kw">union</span> <span class="op">{</span> T n; <span class="op">}</span> trivial</code>
+since now that is declaring a variable.</p>
+<p>A better syntax that wouldn’t lead to conversations about
+context-sensitive keywords would be <code class="sourceCode cpp"><span class="kw">union</span> <span class="op">[[</span><span class="at">trivial</span><span class="op">]]</span></code>.</p>
+<p>Another potential choice of word instead of
+<code class="sourceCode cpp">trivial</code> here would be
+<code class="sourceCode cpp">uninitialized</code>.</p>
 <p>An alternative design would be to change all existing
 <code class="sourceCode cpp"><span class="kw">union</span></code>s to
 have this behavior (except still allowing default member initializers).
@@ -1204,33 +1219,35 @@ That is:</p>
 <td><div>
 
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>trivial <span class="kw">union</span> U1 <span class="op">{</span> string s; <span class="op">}</span>;</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted default constructor</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted destructor</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U2 <span class="op">{</span> string s; <span class="op">}</span>;</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">// starts lifetime of s</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>trivial <span class="kw">union</span> U3 <span class="op">{</span> string s<span class="op">[</span><span class="dv">10</span><span class="op">]</span>; <span class="op">}</span></span></code></pre></div>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">// does not start lifetime of s</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>trivial <span class="kw">union</span> U1 <span class="op">{</span> string s; <span class="op">}</span>;</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted default constructor</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted destructor</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U2 <span class="op">{</span> string s; <span class="op">}</span>;</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co">// starts lifetime of s</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>trivial <span class="kw">union</span> U3 <span class="op">{</span> string s<span class="op">[</span><span class="dv">10</span><span class="op">]</span>; <span class="op">}</span></span></code></pre></div>
 
 </div></td>
 <td><div>
 
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U4 <span class="op">{</span> string s; <span class="op">}</span>;</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">// non-trivial default constructor</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted destructor</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U5 <span class="op">{</span> string s <span class="op">=</span> <span class="st">&quot;hello&quot;</span>; <span class="op">}</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">// starts lifetime of s</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U6 <span class="op">{</span> string s<span class="op">[</span><span class="dv">10</span><span class="op">]</span>; <span class="op">}</span></span></code></pre></div>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">// does not start lifetime of s</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U4 <span class="op">{</span> string s; <span class="op">}</span>;</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">// non-trivial default constructor</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted destructor</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U5 <span class="op">{</span> string s <span class="op">=</span> <span class="st">&quot;hello&quot;</span>; <span class="op">}</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">// starts lifetime of s</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U6 <span class="op">{</span> string s<span class="op">[</span><span class="dv">10</span><span class="op">]</span>; <span class="op">}</span></span></code></pre></div>
 
 </div></td>
 </tr>
@@ -1391,9 +1408,12 @@ trivial:</p>
 A <code class="sourceCode cpp"><em>class-key</em></code> shall only
 contain <code class="sourceCode cpp">trivial</code> when used in a
 <code class="sourceCode cpp"><em>class-head</em></code>. If any
-declaration of a union includes
-<code class="sourceCode cpp">trivial</code>, then all declarations shall
-include <code class="sourceCode cpp">trivial</code>.</p>
+declaration of a union <code class="sourceCode cpp">U</code> has a
+<code class="sourceCode cpp">trivial</code> specifier, then all
+declarations of <code class="sourceCode cpp">U</code> shall contain
+<code class="sourceCode cpp">trivial</code> <span class="note"><span>[ <em>Note 1:</em> </span>This includes those
+declarations that use an <code class="sourceCode cpp"><em>elaborated-type-specifier</em><span class="op">.</span></code><span>
+— <em>end note</em> ]</span></span>.</p>
 </blockquote>
 </div>
 <p>Add to <span>11.5.1 <a href="https://wg21.link/class.union.general">[class.union.general]</a></span>/1:</p>
@@ -1456,7 +1476,7 @@ constructor.</li>
 <code class="sourceCode cpp">X</code> is trivial and the first variant
 member of <code class="sourceCode cpp">X</code> has implicit-lifetime
 type ([basic.types.general]), the default constructor begins the
-lifetime of that member <span class="note"><span>[ <em>Note 1:</em>
+lifetime of that member <span class="note"><span>[ <em>Note 2:</em>
 </span>It becomes the active member of the union<span> — <em>end
 note</em> ]</span></span>.</span></p>
 </blockquote>

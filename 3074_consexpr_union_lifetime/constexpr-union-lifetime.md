@@ -345,9 +345,9 @@ An alternative spelling for this might be `uninitialized union` instead of `triv
 
 ## Existing Practice
 
-There are two similar features in other languages that I'm aware of.
+There are three similar features in other languages that I'm aware of.
 
-Rust has [`MaybeUninit<T>`](https://doc.rust-lang.org/std/mem/union.MaybeUninit.html) which is similar to what's proposed here as `std::uninitialized<T>`.
+Rust has [`MaybeUninit<T>`](https://doc.rust-lang.org/std/mem/union.MaybeUninit.html) which is similar to what's described here as `std::uninitialized<T>`.
 
 Kotlin has a [`lateinit var`](https://kotlinlang.org/docs/properties.html#late-initialized-properties-and-variables) language feature, which is similar to some kind of language annotation (although additionally allows for checking whether it has been initialized, which the language feature would not provide).
 
@@ -357,10 +357,16 @@ D has the ability to initialize a variable to `void`, as in `int x = void;` This
 
 This paper now proposes support for a new kind of union: [trivial union](#trivial-unions) with the following rules:
 
-* a `union` may be declared `trivial`. If any declaration contains `trivial`, all declarations must contain `trivial`.
+* a `union` may be declared `trivial` (this is a context-sensitive keyword). If any declaration of a union `U` contains `trivial`, every declaration of `U` must do so.
 * a `trivial union` shall not have any default member initializers.
 * a `trivial union` is trivially default constructible. If the first alternative has implicit-lifetime type, this also begins the lifetime of that alternative and sets it as the active member.
 * a `trivial union` is trivially destructible.
+
+The syntax is `trivial union` instead of `union trivial` (which might be more consistent with the use of `final`) because the former allows an anonymous union declaration as `trivial union { T n; }` whereas `union trivial { T n; }` is already a valid declaration today. Nor can you put the `trivial` even later - as in `union { T n; } trivial` since now that is declaring a variable.
+
+A better syntax that wouldn't lead to conversations about context-sensitive keywords would be `union [[trivial]]`.
+
+Another potential choice of word instead of `trivial` here would be `uninitialized`.
 
 An alternative design would be to change all existing `union`s to have this behavior (except still allowing default member initializers). That is:
 
@@ -368,6 +374,7 @@ An alternative design would be to change all existing `union`s to have this beha
 ### trivial union
 ```cpp
 // trivial default constructor
+// does not start lifetime of s
 // trivial destructor
 trivial union U1 { string s; };
 
@@ -384,6 +391,7 @@ trivial union U3 { string s[10]; }
 ### just make it work
 ```cpp
 // trivial default constructor
+// does not start lifetime of s
 // trivial destructor
 union U4 { string s; };
 
@@ -470,7 +478,7 @@ Change [class.pre]{.sref} to add the ability to declare a `union` trivial:
 Add to the end of [class.pre]{.sref}:
 
 ::: {.std .ins}
-[8]{.pnum} A `$class-key$` shall only contain `trivial` when used in a `$class-head$`. If any declaration of a union includes `trivial`, then all declarations shall include `trivial`.
+[8]{.pnum} A `$class-key$` shall only contain `trivial` when used in a `$class-head$`. If any declaration of a union `U` has a `trivial` specifier, then all declarations of `U` shall contain `trivial` [This includes those declarations that use an `$elaborated-type-specifier$.`]{.note}.
 :::
 
 Add to [class.union.general]{.sref}/1:
