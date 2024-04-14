@@ -195,18 +195,21 @@ del(B*):
 
 That's a big difference in code-gen, due to the need to put a cookie in the allocation so that the corresponding `delete[]` knows how many elements there so that their destructors (even though they do nothing!) can be invoked.
 
-While the union storage solution solves some language problems for us, the buffer storage solution can lead to more efficient code - because `StorageBuffer<T>` is always trivially trivially destructible. It would be nice if he had a good solution to all of these problems - and that solution was also the most efficient one.
+While the union storage solution solves some language problems for us, the buffer storage solution can lead to more efficient code - because `StorageBuffer<T>` is always trivially destructible. It would be nice if he had a good solution to all of these problems - and that solution was also the most efficient one.
 
 # Design Space
 
-A previous revision of this paper [@P3074R0] talked about three potential solutions to this problem:
+There are several potential solutions in this space:
 
 1. a library solution (add a `std::uninitialized<T>`)
-2. a language solution (add some annotation to members to mark them uninitialized)
+2. a language solution (add some annotation to members to mark them uninitialized, as distinct from `union`s)
 3. just make it work (change the union rules to implicitly start the lifetime of the first alternative, if it's an implicit-lifetime type)
-4. add a library function to explicitly start lifetime
+4. introduce a new kind of union
+5. provide an explicit function to start lifetime of a union alternative (`std::start_lifetime`).
 
-That paper proposed a new function `std::start_lifetime(p)` that was that fourth option. However, with the addition of the overlapping subobjects problem and the realization that the union solution has overhead compared to the buffer storage solution, it would be more desirable to solve both problems in one go.
+The first revision of this paper ([@P3074R0]) proposed that last option. However, with the addition of the overlapping subobjects problem and the realization that the union solution has overhead compared to the buffer storage solution, it would be more desirable to solve both problems in one go. That is, it's not enough to just start the lifetime of the alternative, we also want a trivially constructible/destructible solution for uninitialized storage.
+
+[@P3074R1] and [@P3074R2] proposed the first solution (`std::uninitialized<T>`). This revision proposes the third or fourth.
 
 Let's go over some of the solutions.
 
