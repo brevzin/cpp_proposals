@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: D1061R8
+document: P1061R8
 date: today
 audience: CWG
 author:
@@ -10,27 +10,6 @@ author:
       email: <cxx@kayari.org>
 toc: true
 ---
-
-<style type="text/css">
-div.std blockquote { color: #000000; background-color: #F1F1F1;
-    border: 1px solid #D1D1D1;
-    padding-left: 0.5em; padding-right: 0.5em; }
-
-div.std.ins blockquote {
-    color: #000000; background-color: #C8FFC8;
-    border: 1px solid #B3EBB3;
-  }
-
-div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-
-div.std blockquote del { text-decoration: line-through;
-    color: #000000; background-color: #FFC8EB;
-    border: none; }
-
-code del { border: 1px solid #ECB3C7; }
-
-
-</style>
 
 # Revision History
 
@@ -60,12 +39,14 @@ introduced pack need not be the trailing identifier.
 
 Function parameter packs and tuples are conceptually very similar. Both are heterogeneous sequences of objects. Some problems are easier to solve with a parameter pack, some are easier to solve with a `tuple`. Today, it's trivial to convert a pack to a `tuple`, but it's somewhat more involved to convert a `tuple` to a pack. You have to go through `std::apply()` [@N3915]:
 
+::: std
 ```c++
 std::tuple<A, B, C> tup = ...;
 std::apply([&](auto&&... elems){
     // now I have a pack
 }, tup);
 ```
+:::
 
 This is great for cases where we just need to call a [non-overloaded] function or function object, but rapidly becomes much more awkward as we dial up the complexity. Not to mention if I want to return from the outer scope based on what these elements have to be.
 
@@ -117,6 +98,7 @@ Regardless of which option you dislike the least, both are limited to only `std:
 
 We propose to extend the structured bindings syntax to allow the user to introduce a pack as (at most) one of the identifiers:
 
+::: std
 ```c++
 std::tuple<X, Y, Z> f();
 
@@ -128,6 +110,7 @@ auto [x, ...rest, z] = f();  // proposed: x is an X, rest is a pack of length on
                              //   consisting of the Y, z is a Z
 auto [...a, ...b] = f();     // ill-formed: multiple packs
 ```
+:::
 
 
 If we additionally add the structured binding customization machinery to `std::integer_sequence`, this could greatly simplify generic code:
@@ -239,6 +222,7 @@ auto dot_product(P p, Q q) {
 
 Not only are these implementations more concise, but they are also more functional. I can just as easily use `apply()` with user-defined types as I can with `std::tuple`:
 
+::: std
 ```cpp
 struct Point {
     int x, y, z;
@@ -249,12 +233,14 @@ double calc(int, int, int);
 
 double result = std::apply(calc, getPoint()); // ill-formed today, ok with proposed implementation
 ```
+:::
 
 ## Other Languages
 
 Python 2 had always allowed for a syntax similar to C++17 structured bindings,
 where you have to provide all the identifiers:
 
+::: std
 ```python
 >>> a, b, c, d, e = range(5) # ok
 >>> a, *b = range(3)
@@ -263,11 +249,13 @@ where you have to provide all the identifiers:
        ^
 SyntaxError: invalid syntax
 ```
+:::
 
 But you could not do any more than that. Python 3 went one step further by way
  of PEP-3132 [@PEP.3132]. That proposal allowed for a single starred
 identifier to be used, which would bind to all the elements as necessary:
 
+::: std
 ```python
 >>> a, *b, c = range(5)
 >>> a
@@ -277,6 +265,7 @@ identifier to be used, which would bind to all the elements as necessary:
 >>> b
 [1, 2, 3]
 ```
+:::
 
 The Python 3 behavior is synonymous with what is being proposed here. Notably,
 from that PEP:
@@ -296,7 +285,7 @@ was changed in R1.
 Unfortunately, this proposal has some implementation complexity. The
 issue is not so much this aspect:
 
-::: bq
+::: std
 ```cpp
 template <typeanme Tuple>
 auto sum_template(Tuple tuple) {
@@ -312,7 +301,7 @@ with packs is just a normal thing.
 
 The problem is this aspect:
 
-::: bq
+::: std
 ```cpp
 auto sum_non_template(SomeConreteType tuple) {
     auto [...elems] = tuple;
@@ -332,7 +321,7 @@ many examples of introducing packs in non-template contexts as well - through
 the notion of a _reflection range_. That paper introduces several reifiers that
 can manipilate a newly-introduced pack, such as:
 
-::: bq
+::: std
 ```cpp
 std::meta::info t_args[] = { ^int, ^42 };
 template<typename T, T> struct X {};
@@ -363,15 +352,11 @@ It is also [available on Compiler Explorer](https://godbolt.org/z/Tnz4e1dY9).
 
 ## Handling non-dependent packs in the wording
 
-The strategy the wording takes to handle `sum_non_template` above is to
-designate `elems` as a _non-dependent pack_ and to state that non-dependent
-packs are instantiated immediately. In that example, `elems` is obviously
-non-dependent (nothing anywhere is dependent), so we just instantiate the
-_fold-expression_ immediately.
+The strategy the wording takes to handle is to introduce the concept of an "implicit template region." A structured binding pack declaration introduces an implicit template region (if it's not already a templated entity), so that all entities declared within that scope are templated. This is important for a bunch of examples that we'll shortly see. That implicit template region is instantiated at the end of the region.
 
-But defining "non-dependent pack" is non-trivial. Examples from Richard Smith:
+Example from Richard Smith:
 
-::: bq
+::: std
 ```cpp
 template<int> struct X { using type = int; };
 template<typename T> void f() {
@@ -382,63 +367,25 @@ template<typename T> void f() {
 ```
 :::
 
-Is `X<sizeof...(v)>` a dependent type or is the pack `v` expanded eagerly because
-we already know its size?
+Is `X<sizeof...(v)>` a dependent type or is the pack `v` expanded eagerly because we already know its size? In this case we say a `sizeof...(e)` expression is _value-dependent_ unless its referring to a structured binding pack whose initializer is not dependent. `Y()` isn't dependent, so `sizeof...(v)` isn't value dependent, so we don't need `typename` here.
 
-One approach could be to say that packs are instantiated immediately only if
-they appear outside of _any_ template. But then:
+That rule likewise handles this case:
 
-::: bq
+::: std
 ```cpp
 struct Z { int a, b; };
 template <typename T> void g() {
   auto [...v] = Z();
-  X<sizeof...(v)>::type x; // need typename or no?
+  X<sizeof...(v)>::type x; // typename unnecessary
 }
 ```
 :::
-
-Here, despite being in a template, nothing is actually dependent.
-
-I think the right line to draw here is to follow [@CWG2074] - which asks about
-this example:
-
-::: quote
-```cpp
-template<typename T>
-void f() {
-    struct X {
-      typedef int type;
-  #ifdef DEPENDENT
-      T x;
-  #endif
-    };
-  X::type y;    // #1
-}
-
-void g() { f<int>(); }
-```
-
-there is implementation variance in the treatment of `#1`, but whether or not
-`DEPENDENT` is defined appears to make no difference.
-
-[...]
-
-Perhaps the right answer is that the types should be dependent but a member of
-the current instantiation, permitting name lookup without typename.
-:::
-
-I think the best rule would be to follow the suggested answer in this core issue:
-a structured binding pack is dependent if: the type of its initializer
-(the `E` in [dcl.struct.bind]{.sref}) is dependent and it is not a member of the
-current instantiaton. This would make neither of the `...v` packs dependent,
-which seems conceptually correct.
 
 ### The Issaquah Example
 
 Here is an interesting example, courtesy of Christof Meerwald:
 
-::: bq
+::: std
 ```cpp
 struct C
 {
@@ -462,13 +409,13 @@ auto x = ( ... + (D<decltype(v)>::f<1>(2)) );
 ```
 :::
 
-This example demonstrates the need for having `typename` and/or `template` to disambiguate, even if we're not in a template context.
+This example demonstrates the need for having `typename` and/or `template` to disambiguate, even if we're not in a template context. `v` still needs to behave like a regular function parameter pack in this context - it still needs to be depenent.
 
 ### The Varna Example
 
 Here is an interesting example, also courtesy of Christof Meerwald:
 
-::: bq
+::: std
 ```cpp
 struct C { int j; long l; };
 
@@ -499,7 +446,7 @@ What happens here? Core's intent is that this example is valid - the first `stat
 
 Here's an addendum from Jason Merrill, Jens Maurer, and John Spicer, slightly altered and somewhat gratuitously formatted hoping that it's possible to understand:
 
-::: bq
+::: std
 ```cpp
 struct C { int j; long ; };
 
@@ -549,7 +496,7 @@ This brings up the question of what the boundary of dependence is.
 
 The approach suggested by John Spicer is as follows. Consider this example (let `s@~i~@` just be some statements):
 
-::: bq
+::: std
 ```cpp
 void foo() {
     auto [...xs] = C();
@@ -562,7 +509,7 @@ void foo() {
 
 Those statements get treated roughly as if they appeared in this context:
 
-::: bq
+::: std
 ```cpp
 void foo() {
     auto [...xs] = C();
@@ -575,7 +522,7 @@ void foo() {
 ```
 :::
 
-Of course, not exactly like that (we're not literally introducing a generic lambda, there's no added function scope, all of these statements are directly in `foo` so that `return`s work, etc.). But this is the model.
+Of course, not exactly like that (we're not literally introducing a generic lambda, there's no added function scope, all of these statements are directly in `foo` so that `return`s work, etc.). But this is the model: a structured binding pack, if not already a templated entity, introduces an _implicit template region_.
 
 Importantly, it helps answer all of the questions in the previous examples: do the `static_assert`s fire in the [Varna example addendum](#the-varna-example)? No, none of them fire.
 
@@ -672,7 +619,7 @@ Extend [dcl.fct]{.sref}/5:
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: std
-[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>attribute-identifier-list-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. The optional $attribute-specifier-seq$ of an $sb-identifier$ appertains to the structured binding so introduced. [An *sb-identifier* that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an *sb-identifier* that does not contain an ellipsis or an element of a structured binding pack.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
+[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>attribute-identifier-list-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. The optional `$attribute-specifier-seq$` of an [`$attributed-identifier$`]{.rm} [`$sb-identifier$`]{.addu} appertains to the structured binding so introduced. [An *sb-identifier* that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an *sb-identifier* that does not contain an ellipsis or an element of a structured binding pack.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
 > in the <i>decl-specifier-seq</i>.
 :::
 
@@ -891,6 +838,8 @@ Bump `__cpp_structured_bindings` in [cpp.predefined]{.sref}:
 Thanks to Michael Park and Tomasz Kamiński for their helpful feedback. Thanks to
 Richard Smith for help with the wording. Thanks especially to Jason Rice for the
 implementation.
+
+Thanks to John Spicer, Christof Meerwald, Jens Maurer, and everyone else in Core for the wording help, mind-melting examples, and getting this paper in shape.
 
 ---
 references:

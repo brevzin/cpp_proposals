@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-24" />
+  <meta name="dcterms.date" content="2024-04-14" />
   <title>Structured Bindings can introduce a Pack</title>
   <style>
       code{white-space: pre-wrap;}
@@ -526,6 +526,22 @@ padding-left: 20px;
 }
 code.diff span.va { color: #000000; background-color: var(--diff-ins); }
 code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.std blockquote del { text-decoration: line-through;
+color: #000000; background-color: #FFC8EB;
+border: none; }
+code del { border: 1px solid #ECB3C7; }
 </style>
   <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
   
@@ -541,11 +557,11 @@ introduce a Pack</h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D1061R8</td>
+    <td>P1061R8</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-24</td>
+    <td>2024-04-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -604,26 +620,6 @@ Acknowledgements<span></span></a></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
-<style type="text/css">
-div.std blockquote { color: #000000; background-color: #F1F1F1;
-    border: 1px solid #D1D1D1;
-    padding-left: 0.5em; padding-right: 0.5em; }
-
-div.std.ins blockquote {
-    color: #000000; background-color: #C8FFC8;
-    border: 1px solid #B3EBB3;
-  }
-
-div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-
-div.std blockquote del { text-decoration: line-through;
-    color: #000000; background-color: #FFC8EB;
-    border: none; }
-
-code del { border: 1px solid #ECB3C7; }
-
-
-</style>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>R8 re-adds the <a href="#namespace-scope-packs">namespace-scope
@@ -657,10 +653,14 @@ somewhat more involved to convert a
 <code class="sourceCode cpp">tuple</code> to a pack. You have to go
 through <code class="sourceCode cpp">std<span class="op">::</span>apply<span class="op">()</span></code>
 <span class="citation" data-cites="N3915">[<a href="https://wg21.link/n3915" role="doc-biblioref">N3915</a>]</span>:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>tuple<span class="op">&lt;</span>A, B, C<span class="op">&gt;</span> tup <span class="op">=</span> <span class="op">...</span>;</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>apply<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;...</span> elems<span class="op">){</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now I have a pack</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>, tup<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
 <p>This is great for cases where we just need to call a [non-overloaded]
 function or function object, but rapidly becomes much more awkward as we
 dial up the complexity. Not to mention if I want to return from the
@@ -714,6 +714,8 @@ there are.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>We propose to extend the structured bindings syntax to allow the user
 to introduce a pack as (at most) one of the identifiers:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>tuple<span class="op">&lt;</span>X, Y, Z<span class="op">&gt;</span> f<span class="op">()</span>;</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[</span>x,y,z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;          <span class="co">// OK today</span></span>
@@ -723,6 +725,8 @@ to introduce a pack as (at most) one of the identifiers:</p>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[</span>x, <span class="op">...</span>rest, z<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;  <span class="co">// proposed: x is an X, rest is a pack of length one</span></span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                             <span class="co">//   consisting of the Y, z is a Z</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[...</span>a, <span class="op">...</span>b<span class="op">]</span> <span class="op">=</span> f<span class="op">()</span>;     <span class="co">// ill-formed: multiple packs</span></span></code></pre></div>
+</blockquote>
+</div>
 <p>If we additionally add the structured binding customization machinery
 to <code class="sourceCode cpp">std<span class="op">::</span>integer_sequence</code>,
 this could greatly simplify generic code:</p>
@@ -840,6 +844,8 @@ more functional. I can just as easily use
 <code class="sourceCode cpp">apply<span class="op">()</span></code> with
 user-defined types as I can with
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Point <span class="op">{</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x, y, z;</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
@@ -848,19 +854,27 @@ user-defined types as I can with
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> calc<span class="op">(</span><span class="dt">int</span>, <span class="dt">int</span>, <span class="dt">int</span><span class="op">)</span>;</span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> result <span class="op">=</span> std<span class="op">::</span>apply<span class="op">(</span>calc, getPoint<span class="op">())</span>; <span class="co">// ill-formed today, ok with proposed implementation</span></span></code></pre></div>
+</blockquote>
+</div>
 <h2 data-number="3.1" id="other-languages"><span class="header-section-number">3.1</span> Other Languages<a href="#other-languages" class="self-link"></a></h2>
 <p>Python 2 had always allowed for a syntax similar to C++17 structured
 bindings, where you have to provide all the identifiers:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, b, c, d, e <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>) <span class="co"># ok</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, <span class="op">*</span>b <span class="op">=</span> <span class="bu">range</span>(<span class="dv">3</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  File <span class="st">&quot;&lt;stdin&gt;&quot;</span>, line <span class="dv">1</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    a, <span class="op">*</span>b <span class="op">=</span> <span class="bu">range</span>(<span class="dv">3</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>       <span class="op">^</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="pp">SyntaxError</span>: invalid syntax</span></code></pre></div>
+</blockquote>
+</div>
 <p>But you could not do any more than that. Python 3 went one step
 further by way of PEP-3132 <span class="citation" data-cites="PEP.3132">[<a href="https://www.python.org/dev/peps/pep-3132/" role="doc-biblioref">PEP.3132</a>]</span>. That proposal allowed for a
 single starred identifier to be used, which would bind to all the
 elements as necessary:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, <span class="op">*</span>b, c <span class="op">=</span> <span class="bu">range</span>(<span class="dv">5</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span></span>
@@ -868,6 +882,8 @@ elements as necessary:</p>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> b</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span></code></pre></div>
+</blockquote>
+</div>
 <p>The Python 3 behavior is synonymous with what is being proposed here.
 Notably, from that PEP:</p>
 <blockquote>
@@ -884,6 +900,7 @@ item, which was changed in R1.</p>
 <h2 data-number="3.2" id="implementation-burden"><span class="header-section-number">3.2</span> Implementation Burden<a href="#implementation-burden" class="self-link"></a></h2>
 <p>Unfortunately, this proposal has some implementation complexity. The
 issue is not so much this aspect:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>typeanme Tuple<span class="op">&gt;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> sum_template<span class="op">(</span>Tuple tuple<span class="op">)</span> <span class="op">{</span></span>
@@ -891,16 +908,19 @@ issue is not so much this aspect:</p>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> elems<span class="op">)</span>;</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>This part is more or less straightforward - we have a dependent type
 and we introduce a pack from it, but we’re already in a template context
 where dealing with packs is just a normal thing.</p>
 <p>The problem is this aspect:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> sum_non_template<span class="op">(</span>SomeConreteType tuple<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>elems<span class="op">]</span> <span class="op">=</span> tuple;</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(...</span> <span class="op">+</span> elems<span class="op">)</span>;</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>We have not yet in the history of C++ had this notion of packs
 outside of dependent contexts. This is completely novel, and imposes a
 burden on implementations to have to track packs outside of templates
@@ -911,6 +931,7 @@ C++ in one form or other fairly soon. Reflection, in the latest form of
 introducing packs in non-template contexts as well - through the notion
 of a <em>reflection range</em>. That paper introduces several reifiers
 that can manipilate a newly-introduced pack, such as:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info t_args<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span> <span class="op">^</span><span class="dt">int</span>, <span class="op">^</span><span class="dv">42</span> <span class="op">}</span>;</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T, T<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{}</span>;</span>
@@ -918,6 +939,7 @@ that can manipilate a newly-introduced pack, such as:</p>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span>, <span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">struct</span> Y <span class="op">{}</span>;</span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>Y<span class="op">&lt;...[:</span>t_args<span class="op">:]...&gt;</span> y; <span class="co">// Error: same as &quot;Y&lt;int, 42&gt; y;&quot;.</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>As with the structured bindings example in this paper - we have a
 non-dependent object outside of a template that we’re using to introduce
 a pack.</p>
@@ -937,16 +959,14 @@ As far as we’ve been able to ascertain, it works great.</p>
 Compiler Explorer</a>.</p>
 <h2 data-number="3.4" id="handling-non-dependent-packs-in-the-wording"><span class="header-section-number">3.4</span> Handling non-dependent packs in
 the wording<a href="#handling-non-dependent-packs-in-the-wording" class="self-link"></a></h2>
-<p>The strategy the wording takes to handle
-<code class="sourceCode cpp">sum_non_template</code> above is to
-designate <code class="sourceCode cpp">elems</code> as a
-<em>non-dependent pack</em> and to state that non-dependent packs are
-instantiated immediately. In that example,
-<code class="sourceCode cpp">elems</code> is obviously non-dependent
-(nothing anywhere is dependent), so we just instantiate the
-<em>fold-expression</em> immediately.</p>
-<p>But defining “non-dependent pack” is non-trivial. Examples from
-Richard Smith:</p>
+<p>The strategy the wording takes to handle is to introduce the concept
+of an “implicit template region.” A structured binding pack declaration
+introduces an implicit template region (if it’s not already a templated
+entity), so that all entities declared within that scope are templated.
+This is important for a bunch of examples that we’ll shortly see. That
+implicit template region is instantiated at the end of the region.</p>
+<p>Example from Richard Smith:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="kw">using</span> type <span class="op">=</span> <span class="dt">int</span>; <span class="op">}</span>;</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
@@ -955,105 +975,90 @@ Richard Smith:</p>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  X<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>v<span class="op">)&gt;::</span>type x; <span class="co">// need typename or no?</span></span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>Is <code class="sourceCode cpp">X<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>v<span class="op">)&gt;</span></code>
 a dependent type or is the pack <code class="sourceCode cpp">v</code>
-expanded eagerly because we already know its size?</p>
-<p>One approach could be to say that packs are instantiated immediately
-only if they appear outside of <em>any</em> template. But then:</p>
+expanded eagerly because we already know its size? In this case we say a
+<code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>e<span class="op">)</span></code>
+expression is <em>value-dependent</em> unless its referring to a
+structured binding pack whose initializer is not dependent.
+<code class="sourceCode cpp">Y<span class="op">()</span></code> isn’t
+dependent, so <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>v<span class="op">)</span></code>
+isn’t value dependent, so we don’t need
+<code class="sourceCode cpp"><span class="kw">typename</span></code>
+here.</p>
+<p>That rule likewise handles this case:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Z <span class="op">{</span> <span class="dt">int</span> a, b; <span class="op">}</span>;</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> <span class="op">[...</span>v<span class="op">]</span> <span class="op">=</span> Z<span class="op">()</span>;</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  X<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>v<span class="op">)&gt;::</span>type x; <span class="co">// need typename or no?</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  X<span class="op">&lt;</span><span class="kw">sizeof</span><span class="op">...(</span>v<span class="op">)&gt;::</span>type x; <span class="co">// typename unnecessary</span></span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>Here, despite being in a template, nothing is actually dependent.</p>
-<p>I think the right line to draw here is to follow <span class="citation" data-cites="CWG2074">[<a href="https://wg21.link/cwg2074" role="doc-biblioref">CWG2074</a>]</span> - which asks about this
-example:</p>
-<div class="quote">
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> X <span class="op">{</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">typedef</span> <span class="dt">int</span> type;</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="pp">#ifdef DEPENDENT</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>      T x;</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="pp">#endif</span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  X<span class="op">::</span>type y;    <span class="co">// #1</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span> f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>; <span class="op">}</span></span></code></pre></div>
-<p>there is implementation variance in the treatment of
-<code class="sourceCode cpp"><span class="pp">#1</span></code>, but
-whether or not <code class="sourceCode cpp">DEPENDENT</code> is defined
-appears to make no difference.</p>
-<p>[…]</p>
-<p>Perhaps the right answer is that the types should be dependent but a
-member of the current instantiation, permitting name lookup without
-typename.</p>
 </div>
-<p>I think the best rule would be to follow the suggested answer in this
-core issue: a structured binding pack is dependent if: the type of its
-initializer (the <code class="sourceCode cpp">E</code> in <span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>)
-is dependent and it is not a member of the current instantiaton. This
-would make neither of the
-<code class="sourceCode cpp"><span class="op">...</span>v</code> packs
-dependent, which seems conceptually correct.</p>
 <h3 data-number="3.4.1" id="the-issaquah-example"><span class="header-section-number">3.4.1</span> The Issaquah Example<a href="#the-issaquah-example" class="self-link"></a></h3>
 <p>Here is an interesting example, courtesy of Christof Meerwald:</p>
+<div class="std">
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i;</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">long</span> l;</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">{</span></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span> J<span class="op">&gt;</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D<span class="op">&lt;</span><span class="dt">long</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="dt">int</span> f;</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> v <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="dv">1</span>, <span class="dv">0</span> <span class="op">}</span>;</span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> x <span class="op">=</span> <span class="op">(</span> <span class="op">...</span> <span class="op">+</span> <span class="op">(</span>D<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>v<span class="op">)&gt;::</span>f<span class="op">&lt;</span><span class="dv">1</span><span class="op">&gt;(</span><span class="dv">2</span><span class="op">))</span> <span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i;</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">long</span> l;</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">{</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span> J<span class="op">&gt;</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D<span class="op">&lt;</span><span class="dt">long</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="dt">int</span> f;</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> v <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="dv">1</span>, <span class="dv">0</span> <span class="op">}</span>;</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> x <span class="op">=</span> <span class="op">(</span> <span class="op">...</span> <span class="op">+</span> <span class="op">(</span>D<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>v<span class="op">)&gt;::</span>f<span class="op">&lt;</span><span class="dv">1</span><span class="op">&gt;(</span><span class="dv">2</span><span class="op">))</span> <span class="op">)</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>This example demonstrates the need for having
 <code class="sourceCode cpp"><span class="kw">typename</span></code>
 and/or
 <code class="sourceCode cpp"><span class="kw">template</span></code> to
-disambiguate, even if we’re not in a template context.</p>
+disambiguate, even if we’re not in a template context.
+<code class="sourceCode cpp">v</code> still needs to behave like a
+regular function parameter pack in this context - it still needs to be
+depenent.</p>
 <h3 data-number="3.4.2" id="the-varna-example"><span class="header-section-number">3.4.2</span> The Varna Example<a href="#the-varna-example" class="self-link"></a></h3>
 <p>Here is an interesting example, also courtesy of Christof
 Meerwald:</p>
+<div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">int</span> j; <span class="dt">long</span> l; <span class="op">}</span>;</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="dv">1</span>, <span class="dv">2</span><span class="bu">L</span> <span class="op">}</span>;</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span> <span class="op">[</span>c <span class="op">=</span> i<span class="op">]</span> <span class="op">()</span> <span class="op">{</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">&gt;</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">))</span> <span class="op">{</span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// error?</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> C <span class="op">{</span></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>            <span class="co">// error, not templated?</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">))</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">// error, not templated?</span></span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">!=</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">))</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">2</span>; <span class="op">}</span></span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> C<span class="op">{}.</span>f<span class="op">()</span>;</span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">()</span> <span class="op">+</span> <span class="op">...</span>  <span class="op">+</span> <span class="dv">0</span> <span class="op">)</span>;</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a><span class="co">// error?</span></span>
-<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v <span class="op">=</span> g<span class="op">()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">int</span> j; <span class="dt">long</span> l; <span class="op">}</span>;</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="dv">1</span>, <span class="dv">2</span><span class="bu">L</span> <span class="op">}</span>;</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span> <span class="op">[</span>c <span class="op">=</span> i<span class="op">]</span> <span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">&gt;</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// error?</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>            <span class="co">// error, not templated?</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">))</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">// error, not templated?</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">!=</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">))</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">2</span>; <span class="op">}</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> C<span class="op">{}.</span>f<span class="op">()</span>;</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">()</span> <span class="op">+</span> <span class="op">...</span>  <span class="op">+</span> <span class="dv">0</span> <span class="op">)</span>;</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="co">// error?</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v <span class="op">=</span> g<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>What happens here? Core’s intent is that this example is valid - the
 first <code class="sourceCode cpp"><span class="kw">static_assert</span></code>
 declaration does not fire, this declares two different types
@@ -1063,40 +1068,42 @@ declaration does not fire, this declares two different types
 <p>Here’s an addendum from Jason Merrill, Jens Maurer, and John Spicer,
 slightly altered and somewhat gratuitously formatted hoping that it’s
 possible to understand:</p>
+<div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">int</span> j; <span class="dt">long</span> ; <span class="op">}</span>;</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="dv">1</span>, <span class="dv">2</span><span class="bu">L</span> <span class="op">}</span>;</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>i<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #1</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>      <span class="co">// E1</span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>      <span class="op">[]{</span></span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>              <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #2</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>          <span class="cf">return</span> <span class="dv">1</span>;</span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>      <span class="op">}()</span></span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>      <span class="op">*</span></span>
-<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>      <span class="co">// E2</span></span>
-<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>      <span class="op">[</span>c<span class="op">=</span>i<span class="op">]{</span></span>
-<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">&gt;</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">))</span> <span class="op">{</span></span>
-<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>              <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #3</span></span>
-<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
-<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>              <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #4</span></span>
-<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
-<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>          <span class="cf">return</span> <span class="dv">2</span>;</span>
-<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>      <span class="op">}()</span></span>
-<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> <span class="op">...</span> <span class="op">+</span> <span class="dv">0</span><span class="op">)</span></span>
-<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">int</span> j; <span class="dt">long</span> ; <span class="op">}</span>;</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="dv">1</span>, <span class="dv">2</span><span class="bu">L</span> <span class="op">}</span>;</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">...(</span>i<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #1</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>      <span class="co">// E1</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>      <span class="op">[]{</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>              <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #2</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>          <span class="cf">return</span> <span class="dv">1</span>;</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>      <span class="op">}()</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>      <span class="op">*</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>      <span class="co">// E2</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>      <span class="op">[</span>c<span class="op">=</span>i<span class="op">]{</span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">&gt;</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">long</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>              <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #3</span></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>          <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>              <span class="kw">static_assert</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>; <span class="co">// #4</span></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>          <span class="cf">return</span> <span class="dv">2</span>;</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>      <span class="op">}()</span></span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> <span class="op">...</span> <span class="op">+</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>The expression <code class="sourceCode cpp">E1</code> (that first
 immediately-invoked lambda) is completely non-dependent, no template
 packs, no structured binding packs, no packs of any kind. The expression
@@ -1133,31 +1140,37 @@ is.</p>
 <p>The approach suggested by John Spicer is as follows. Consider this
 example (let <code class="sourceCode cpp">s<sub>i</sub></code> just be
 some statements):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> foo<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>xs<span class="op">]</span> <span class="op">=</span> C<span class="op">()</span>;</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    s<sub>0</sub>;</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    s<sub>1</sub>;</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    s<sub>2</sub>;</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Those statements get treated roughly as if they appeared in this
+context:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> foo<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>xs<span class="op">]</span> <span class="op">=</span> C<span class="op">()</span>;</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    s<sub>0</sub>;</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    s<sub>1</sub>;</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    s<sub>2</sub>;</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">...</span> xs<span class="op">){</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        s<sub>0</sub>;</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        s<sub>1</sub>;</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        s<sub>2</sub>;</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}(</span>xs<span class="op">...)</span>;</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
-<p>Those statements get treated roughly as if they appeared in this
-context:</p>
-<blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> foo<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>xs<span class="op">]</span> <span class="op">=</span> C<span class="op">()</span>;</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">...</span> xs<span class="op">){</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        s<sub>0</sub>;</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        s<sub>1</sub>;</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        s<sub>2</sub>;</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}(</span>xs<span class="op">...)</span>;</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
+</div>
 <p>Of course, not exactly like that (we’re not literally introducing a
 generic lambda, there’s no added function scope, all of these statements
 are directly in <code class="sourceCode cpp">foo</code> so that
 <code class="sourceCode cpp"><span class="cf">return</span></code>s
-work, etc.). But this is the model.</p>
+work, etc.). But this is the model: a structured binding pack, if not
+already a templated entity, introduces an <em>implicit template
+region</em>.</p>
 <p>Importantly, it helps answer all of the questions in the previous
 examples: do the <code class="sourceCode cpp"><span class="kw">static_assert</span></code>s
 fire in the <a href="#the-varna-example">Varna example addendum</a>? No,
@@ -1167,8 +1180,8 @@ none of them fire.</p>
 would offer the ability to declare a pack at <em>namespace</em>
 scope:</p>
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Point <span class="op">{</span> <span class="dt">int</span> x, y; <span class="op">}</span>;</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[...</span> parts<span class="op">]</span> <span class="op">=</span> Point<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Point <span class="op">{</span> <span class="dt">int</span> x, y; <span class="op">}</span>;</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> <span class="op">[...</span> parts<span class="op">]</span> <span class="op">=</span> Point<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 <p>Structured bindings in namespace scope are a little odd to begin
 with, since they currently cannot be declared
@@ -1223,21 +1236,21 @@ productions prefixed with
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="st">- <em>attributed-identifier</em>:</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="st">-     <em>identifier</em> <em>attribute-specifier-seq</em><sub>opt</sub></span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>sb-identifier</em>:</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="va">+     <span class="diffins"><code class="sourceCode cpp"><span class="op">...</span></code><sub>opt</sub></span> <em>identifier</em> <em>attribute-specifier-seq</em><sub>opt</sub></span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="st">- <em>attributed-identifier-list</em>:</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="st">-     <em>attributed-identifier</em></span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="st">-     <em>attributed-identifier-list</em>, <em>attributed-identifier</em></span></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>sb-identifier-list</em>:</span></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="va">+     <em>sb-identifier</em></span></span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="va">+     <em>sb-identifier-list</em>, <em>sb-identifier</em></span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>  <em>structured-binding-declaration</em>:</span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="st">-    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffdel"><em>attributed-identifier-list</em></span> ]</span></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffins"><em>sb-identifier-list</em></span> ]</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="st">- <em>attributed-identifier</em>:</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="st">-     <em>identifier</em> <em>attribute-specifier-seq</em><sub>opt</sub></span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>sb-identifier</em>:</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="va">+     <span class="diffins"><code class="sourceCode cpp"><span class="op">...</span></code><sub>opt</sub></span> <em>identifier</em> <em>attribute-specifier-seq</em><sub>opt</sub></span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="st">- <em>attributed-identifier-list</em>:</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="st">-     <em>attributed-identifier</em></span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="st">-     <em>attributed-identifier-list</em>, <em>attributed-identifier</em></span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>sb-identifier-list</em>:</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="va">+     <em>sb-identifier</em></span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="va">+     <em>sb-identifier-list</em>, <em>sb-identifier</em></span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>  <em>structured-binding-declaration</em>:</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="st">-    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffdel"><em>attributed-identifier-list</em></span> ]</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em> <em>ref-qualifier</em><sub>opt</sub> [ <span class="diffins"><em>sb-identifier-list</em></span> ]</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1280,24 +1293,24 @@ are identical types. — end note]</p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  void f(char*);                  // #1</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  void f(char[]) {}               // defines #1</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  void f(const char*) {}          // OK, another overload</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  void f(char *const) {}          // error: redefines #1</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  void g(char(*)[2]);             // #2</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  void g(char[3][2]) {}           // defines #2</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  void g(char[3][3]) {}           // OK, another overload</span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  void h(int x(const int));       // #3</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  void h(int (*)(int)) {}         // defines #3</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ void k(int, int);               // #4</span></span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ void m() {</span></span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="va">+   struct C { int i, j; };</span></span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   auto [... elems] = C{};</span></span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="va">+   void k(decltype(elems)...);   // redeclares #4</span></span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>  void f(char*);                  // #1</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  void f(char[]) {}               // defines #1</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  void f(const char*) {}          // OK, another overload</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  void f(char *const) {}          // error: redefines #1</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  void g(char(*)[2]);             // #2</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  void g(char[3][2]) {}           // defines #2</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  void g(char[3][3]) {}           // OK, another overload</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  void h(int x(const int));       // #3</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  void h(int (*)(int)) {}         // defines #3</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ void k(int, int);               // #4</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ void m() {</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="va">+   struct C { int i, j; };</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   auto [... elems] = C{};</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="va">+   void k(decltype(elems)...);   // redeclares #4</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
 </div>
 <span> — <em>end example</em> ]</span>
 </div>
@@ -1313,9 +1326,11 @@ v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, …<span class="addu">,
 v<sub>N-1</sub></span> of the <span class="rm" style="color: #bf0303"><del><i>attribute-identifier-list-list</i></del></span>
 <span class="addu"><i>sb-identifier-list</i></span> as names
 ([basic.scope.declarative]) <span class="rm" style="color: #bf0303"><del>of <em>structured
-bindings</em></del></span>. The optional $attribute-specifier-seq$ of an
-$sb-identifier$ appertains to the structured binding so introduced.
-<span class="addu">An <em>sb-identifier</em> that contains an ellipsis
+bindings</em></del></span>. The optional
+<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code> of
+an <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>attributed-identifier</em></code></span></del></span>
+<span class="addu"><code class="sourceCode cpp"><em>sb-identifier</em></code></span>
+appertains to the structured binding so introduced. <span class="addu">An <em>sb-identifier</em> that contains an ellipsis
 introduces a structured binding pack ([temp.variadic]). A <em>structured
 binding</em> is either an <em>sb-identifier</em> that does not contain
 an ellipsis or an element of a structured binding pack.</span> Let
@@ -1347,13 +1362,13 @@ structured binding pack, then SB<sub><em>i</em></sub> denotes
 v<sub><em>i</em></sub>. - <em>end note</em> ]</p>
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>struct C { int x, y, z; };</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>auto [a, b, c] = C(); // OK, SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>auto [d, ...e] = C(); // OK, SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two structured bindings: SB<sub>1</sub> and SB<sub>2</sub></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>auto [...f, g] = C(); // OK, the pack f (v<sub>0</sub>) contains two structured bindings: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>auto [h, i, j, ...k] = C(); // OK, the pack k is empty</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>auto [l, m, n, o, ...p] = C(); // error: structured binding size is too small</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>struct C { int x, y, z; };</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>auto [a, b, c] = C(); // OK, SB<sub>0</sub> is a, SB<sub>1</sub> is b, and SB<sub>2</sub> is c</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>auto [d, ...e] = C(); // OK, SB<sub>0</sub> is d, the pack e (v<sub>1</sub>) contains two structured bindings: SB<sub>1</sub> and SB<sub>2</sub></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>auto [...f, g] = C(); // OK, the pack f (v<sub>0</sub>) contains two structured bindings: SB<sub>0</sub> and SB<sub>1</sub>, and SB<sub>2</sub> is g</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>auto [h, i, j, ...k] = C(); // OK, the pack k is empty</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>auto [l, m, n, o, ...p] = C(); // error: structured binding size is too small</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </blockquote>
@@ -1378,14 +1393,14 @@ note</em>]</p>
 <div class="example">
 <span>[ <em>Example 3:</em> </span>
 <div>
-<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>auto f() -&gt; int(&amp;)[2];</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto [a, ...b, c] = g();      // a names the first element of the array, b is a pack referring to the second and</span></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="va">+                               // third elements, and c names the fourth element</span></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>auto f() -&gt; int(&amp;)[2];</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>auto&amp; [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f&#39;s return value</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto g() -&gt; int(&amp;)[4];</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto [a, ...b, c] = g();      // a names the first element of the array, b is a pack referring to the second and</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="va">+                               // third elements, and c names the fourth element</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="va">+ auto&amp; [...e] = g();           // e is a pack referring to the four elements of the array</span></span></code></pre></div>
 </div>
 <span> — <em>end example</em> ]</span>
 </div>
@@ -1487,43 +1502,43 @@ note</em> ]</span></span></p>
 <code class="sourceCode cpp"><span class="dt">char</span></code> and
 <code class="sourceCode cpp"><span class="dt">int</span></code> have
 different size.</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">char</span> j; <span class="dt">int</span> l; <span class="op">}</span>;</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="ch">&#39;x&#39;</span>, <span class="dv">42</span> <span class="op">}</span>; <span class="co">// #1</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span> <span class="op">[</span>c <span class="op">=</span> i<span class="op">]</span> <span class="op">()</span> <span class="op">{</span></span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">// The local class L is a templated entity because</span></span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// it is defined within the implicit template region</span></span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// created at #1.</span></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> L <span class="op">{</span></span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span></span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">2</span>; <span class="op">}</span></span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> L<span class="op">{}.</span>f<span class="op">()</span>;</span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">()</span> <span class="op">+</span> <span class="op">...</span>  <span class="op">+</span> <span class="dv">0</span> <span class="op">)</span>;</span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v <span class="op">=</span> g<span class="op">()</span>; <span class="co">// OK, v == 3</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">char</span> j; <span class="dt">int</span> l; <span class="op">}</span>;</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span> <span class="op">...</span> i <span class="op">]</span> <span class="op">=</span> C<span class="op">{</span> <span class="ch">&#39;x&#39;</span>, <span class="dv">42</span> <span class="op">}</span>; <span class="co">// #1</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span> <span class="op">[</span>c <span class="op">=</span> i<span class="op">]</span> <span class="op">()</span> <span class="op">{</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">// The local class L is a templated entity because</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// it is defined within the implicit template region</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// created at #1.</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">struct</span> L <span class="op">{</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> f<span class="op">()</span> <span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>c<span class="op">)</span> <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">2</span>; <span class="op">}</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> L<span class="op">{}.</span>f<span class="op">()</span>;</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">()</span> <span class="op">+</span> <span class="op">...</span>  <span class="op">+</span> <span class="dv">0</span> <span class="op">)</span>;</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v <span class="op">=</span> g<span class="op">()</span>; <span class="co">// OK, v == 3</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 <div class="example">
 <span>[ <em>Example 5:</em> </span>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">(...)</span>; <span class="co">// #1</span></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    C arr<span class="op">[</span><span class="dv">1</span><span class="op">]</span>;</span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>e<span class="op">]</span> <span class="op">=</span> arr;</span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    g<span class="op">(</span>e<span class="op">...)</span>; <span class="co">// calls #2</span></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">(</span>C<span class="op">)</span>; <span class="co">// #2</span></span>
-<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>    f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>;</span>
-<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">(...)</span>; <span class="co">// #1</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    C arr<span class="op">[</span><span class="dv">1</span><span class="op">]</span>;</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>e<span class="op">]</span> <span class="op">=</span> arr;</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>    g<span class="op">(</span>e<span class="op">...)</span>; <span class="co">// calls #2</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">(</span>C<span class="op">)</span>; <span class="co">// #2</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>    f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span>;</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1538,9 +1553,9 @@ A <em>structured binding pack</em> is an <em>sb-identifier</em> that
 introduces zero or more structured bindings ([dcl.struct.bind]).</p>
 <div class="example">
 <span>[ <em>Example 6:</em> </span>
-<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>auto foo() -&gt; int(&amp;)[2];</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>auto [...a] = foo();          // a is a structured binding pack containing 2 elements</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </blockquote>
@@ -1645,8 +1660,8 @@ dependent</li>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">4</a></span>
 Expressions of the following form are value-dependent:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>sizeof ... ( identifier )</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>fold-expression</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>sizeof ... ( identifier )</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>fold-expression</span></code></pre></div>
 <p><span class="addu">unless the <em>identifier</em> is a structured
 binding pack whose initializer is not dependent.</span></p>
 </blockquote>
@@ -1666,8 +1681,8 @@ region.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­structured_­bindings 201606L</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­structured_­bindings 2024XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­structured_­bindings 201606L</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­structured_­bindings 2024XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1676,13 +1691,12 @@ Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Michael Park and Tomasz Kamiński for their helpful
 feedback. Thanks to Richard Smith for help with the wording. Thanks
 especially to Jason Rice for the implementation.</p>
+<p>Thanks to John Spicer, Christof Meerwald, Jens Maurer, and everyone
+else in Core for the wording help, mind-melting examples, and getting
+this paper in shape.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
-<div id="ref-CWG2074" class="csl-entry" role="doc-biblioentry">
-[CWG2074] Richard Smith. 2015-01-20. Type-dependence of local class of
-function template. <a href="https://wg21.link/cwg2074"><div class="csl-block">https://wg21.link/cwg2074</div></a>
-</div>
 <div id="ref-N3915" class="csl-entry" role="doc-biblioentry">
 [N3915] Peter Sommerlad. 2014-02-14. apply() call a function with
 arguments from a tuple (V3). <a href="https://wg21.link/n3915"><div class="csl-block">https://wg21.link/n3915</div></a>
