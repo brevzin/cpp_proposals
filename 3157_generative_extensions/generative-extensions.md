@@ -1,5 +1,5 @@
 ---
-title: "Generative Extensions for Reflection P3157R1"
+title: "Generative Extensions for Reflection"
 document: P3157R1
 date: today
 audience: EWG, SG7
