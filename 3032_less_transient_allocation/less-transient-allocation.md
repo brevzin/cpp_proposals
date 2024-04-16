@@ -1,6 +1,6 @@
 ---
-title: "Less transient constexpr allocation"
-document: D3032R2
+title: "Less transient constexpr allocation (and more consteval relaxation)"
+document: P3032R2
 date: today
 audience: EWG
 author:
@@ -10,37 +10,11 @@ toc: true
 tag: constexpr
 ---
 
-<style type="text/css">
-div.std blockquote { color: #000000; background-color: #F1F1F1;
-    border: 1px solid #D1D1D1;
-    padding-left: 0.5em; padding-right: 0.5em; }
-
-div.std.ins blockquote {
-    color: #000000; background-color: #C8FFC8;
-    border: 1px solid #B3EBB3;
-  }
-
-div.ins > div.example {
-    color: #000000; background-color: #C8FFC8;
-    border: 1px solid #B3EBB3;
-  }
-
-div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-
-div.std blockquote del { text-decoration: line-through;
-    color: #000000; background-color: #FFC8EB;
-    border: none; }
-
-code del { border: 1px solid #ECB3C7; }
-
-
-</style>
-
 # Revision History
 
-Since [@P3032R1], fixed wording and extended the feature.
+[@P3032R2]: [@P3032R1] of this paper was actually on the Straw Polls page in Tokyo. Richard Smith pointed out one issue with the wording, and then Hubert Tong pointed out a much bigger issue with the wording - and it was pulled. This revision expands the description of the problem and addresses the wording issues. R1 also did not address the question of [escalating expressions](#immediate-escalating-expressions), but this proposal expands on that too.
 
-Since [@P3032R0], fixed wording, added feature-test macro.
+[@P3032R1]: fixed wording, added feature-test macro.
 
 # Introduction
 
@@ -193,18 +167,9 @@ The allocation in `enumerators_of(^E)` isn't transient to that expression, but i
 We can loosen the restriction such that an allocation within `E` must be deallocated within `E` or, if `E` is in an immediate function context, the end of that context. This would be the end of the `if consteval { }` block or the end of the `consteval` function. Such a
 loosening would allow `f5` above, but not if it's `constexpr`, and not if `es` were also declared `static`.
 
-# Proposal
+Now, allowing the declaration of `es` here has numerous other issues that are worth considering.
 
-There are two separate potential changes here, that would each make one of the attempts above well-formed:
-
-1. we could [escalate](#immediate-escalating-expressions) expressions to larger expressions, so that `enumerators_of(^E).size()` becomes a constant expression, or
-2. we could extend the notation of [transient allocation](#transient-allocations) to include the full immediate context instead of just the constant evaluation
-
-The second of these is straightforward to word and provides a lot of value - since now particularly in the context of reflection you can declare a `constexpr vector<info>` inside a `consteval` function and use those contents as a constant expression. The first of these is complicated to word and does not provide as much value, as it is a limitation that is fairly easy to work around: either declare a local `constexpr` variable, or change the function to be `consteval` or a template.
-
-As such, this paper only proposes extending the notion of transience.
-
-## Constant Expression vs Core Constant Expression
+### Constant Expression vs Core Constant Expression
 
 Right before plenary in Tokyo, Hubert Tong pointed out an important omission in the wording of this paper: it completely failed to solve the problem.
 
@@ -272,7 +237,7 @@ Both of these cases are... odd. They are rejected today for being an invalid per
 
 I think on the whole it's better to stick with the simpler and easier-to-understand rule, even as it allows some odd and pointless code.
 
-## Mutation
+### Mutation
 
 Consider the following example:
 
@@ -306,6 +271,92 @@ It would be nice to not have to go full `propconst` just to solve this particula
 
 It's just that here, `*b` did actually begin its lifetime within `E` (the call to `f`), so we don't violate this rule. We should simply extend this rule to be able to reject this case.
 
+### Is this actually to preserve constants?
+
+This was the original motivating example presented in this paper:
+
+::: std
+```cpp
+consteval int f5() {
+    constexpr auto es = enumerators_of(^E);
+    return es.size();
+}
+```
+:::
+
+Here we don't actually need `es.size()` to be a _constant expression_ - it is enough for it to be a _core constant expression_. So is it worth going through extra hoops to make it so that `es` is usable in constant expressions (i.e. have `es.size()` and `es[0]` both be constants) or is it sufficient for it to simply be a core constant expression?
+
+I think it's worth it.
+
+One problem is how to have constant data. Let's say you have a function that produces some data that you want to keep around at runtime as a lookup table:
+
+::: std
+```cpp
+constexpr auto get_useful_data() -> std::vector<Data>;
+```
+:::
+
+We don't have non-transient constexpr allocation, so we cannot declare a global `constexpr std::vector<Data>` to hold onto that. We need to hold it as an array. Specifically a `std::array<Data, N>`, since `Data[N]` isn't something you can return from a function. But how do you get `N`? One option is this:
+
+::: std
+```cpp
+constexpr auto get_useful_data_as_array() {
+    constexpr size_t N = get_useful_data().size();
+
+    // let's just assume for simplicity that Data is regular
+    std::array<Data, N> data;
+    std::ranges::copy(get_useful_data(), data.begin());
+    return data;
+}
+```
+:::
+
+This works, but relies on calling `get_useful_data()` twice. What if it's computationally expensive? Sure it's not expensive at _runtime_, but build times matter too. Attempting to avoid that double invocation leads to some elaborate solutions (e.g. [this one](https://www.youtube.com/watch?v=ABg4_EV5L3w)). And it'd be nice if we could just avoid that entirely:
+
+::: std
+```cpp
+consteval auto get_useful_data_as_array() {
+    // ill-formed today, proposed OK
+    constexpr std::vector<Data> v = get_useful_data();
+
+    // okay, because v is a constant
+    std::array<Data, v.size()> data;
+    std::ranges::copy(v, data.begin());
+    return data;
+}
+```
+:::
+
+This is arguably the obvious solution to this problem (well, aside from being able to have non-transient constexpr allocation). You can see a concrete example of this in [@P2996R2]:
+
+::: std
+```cpp
+template <typename S>
+consteval auto get_layout() {
+  constexpr auto members = nonstatic_data_members_of(^S);
+  std::array<member_descriptor, members.size()> layout;
+  for (int i = 0; i < members.size(); ++i) {
+      layout[i] = {.offset=offset_of(members[i]), .size=size_of(members[i])};
+  }
+  return layout;
+}
+```
+:::
+
+
+
+# Proposal
+
+There are two separate potential changes here, that would each make one of the attempts above well-formed:
+
+1. we could [escalate](#immediate-escalating-expressions) expressions to larger expressions, so that `enumerators_of(^E).size()` becomes a constant expression, or
+2. we could extend the notation of [transient allocation](#transient-allocations) to include the full immediate context instead of just the constant evaluation
+
+The second of these is straightforward to word and provides a lot of value - since now particularly in the context of reflection you can declare a `constexpr vector<info>` inside a `consteval` function and use those contents as a constant expression.
+
+The first of these is a little more complicated and doesn't provide as much value. It's a limitation that is fairly easy to work around: either declare a local `constexpr` variable, or change the function to be `consteval` or a template. However, it is pretty annoying to have to do so - and it would be nice if we kept pushing `consteval` evaluation more in the direction of "it just works." Following [@P2564R3], the rules here are already pretty complicated - but the advantage of that is that users simply don't have to learn them if more things just work.
+
+This paper proposes solving both problems. That is, all five examples in the [intro](#introduction) will be valid.
 
 ## Incomplete Prior Wording
 
@@ -412,6 +463,107 @@ static_assert(e() == 2022); // error: allocation at #3 is not deallocated
 * [5.22]{.pnum} [...]
 :::
 
+Change [expr.const]{.sref}/16-18:
+
+::: std
+[16]{.pnum} An expression or conversion is in an *immediate function context* if it is potentially evaluated and either:
+
+* [16.1]{.pnum} its innermost enclosing non-block scope is a function parameter scope of an immediate function,
+* [16.2]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
+* [16.3]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the compound-statement of a consteval if statement ([stmt.if]).
+
+An invocation is an *immediate invocation* if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression. [An expression is an immediate invocation if it is a constant expression, has a subexpression that would otherwise be immediate-escalating (see below), and does not have a subexpression that would also meet these criteria.]{.addu}
+
+[17]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and it is either
+
+* [17.1]{.pnum} a potentially-evaluated *id-expression* that denotes an immediate function that is not a subexpression of an immediate invocation, or
+* [17.2]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+
+[18]{.pnum} An *immediate-escalating* function is
+
+* [18.1]{.pnum} the call operator of a lambda that is not declared with the consteval specifier,
+* [18.2]{.pnum} a defaulted special member function that is not declared with the consteval specifier, or
+* [18.3]{.pnum} a function that results from the instantiation of a templated entity defined with the constexpr specifier.
+
+An immediate-escalating expression shall appear only in an immediate-escalating function.
+
+[19]{.pnum} An immediate function is a function or constructor that is
+
+* [19.1]{.pnum} declared with the consteval specifier, or
+* [19.2]{.pnum} an immediate-escalating function F whose function body contains an immediate-escalating expression E such that E's innermost enclosing non-block scope is F's function parameter scope.
+
+[ Default member initializers used to initialize a base or member subobject ([class.base.init]) are considered to be part of the function body ([dcl.fct.def.general]).]{.note11}
+
+::: example9
+```diff
+  consteval int id(int i) { return i; }
+  constexpr char id(char c) { return c; }
+
+  template<class T>
+  constexpr int f(T t) {
+    return t + id(t);
+  }
+
+  auto a = &f<char>;              // OK, f<char> is not an immediate function
+  auto b = &f<int>;               // error: f<int> is an immediate function
+
+  static_assert(f(3) == 6);       // OK
+
+  template<class T>
+  constexpr int g(T t) {          // g<int> is not an immediate function
+    return t + id(42);            // because id(42) is already a constant
+  }
+
+  template<class T, class F>
+  constexpr bool is_not(T t, F f) {
+    return not f(t);
+  }
+
+  consteval bool is_even(int i) { return i % 2 == 0; }
+
+  static_assert(is_not(5, is_even));      // OK
+
+  int x = 0;
+
+  template<class T>
+  constexpr T h(T t = id(x)) {    // h<int> is not an immediate function
+                                  // id(x) is not evaluated when parsing the default argument ([dcl.fct.default], [temp.inst])
+      return t;
+  }
+
+  template<class T>
+  constexpr T hh() {              // hh<int> is an immediate function because of the invocation
+    return h<T>();                // of the immediate function id in the default argument of h<int>
+  }
+
+  int i = hh<int>();              // error: hh<int>() is an immediate-escalating expression
+                                  // outside of an immediate-escalating function
+
+  struct A {
+    int x;
+    int y = id(x);
+  };
+
+  template<class T>
+  constexpr int k(int) {          // k<int> is not an immediate function because A(42) is a
+    return A(42).y;               // constant expression and thus not immediate-escalating
+  }
+
++ consteval std::vector<int> get_data();
++
++ constexpr int get_size1() {
++   constexpr auto v = get_data(); // error: get_data() is an immediate-escalating expression
++                                  // outside of an immediate-escalating function
++   return v.size();
++ }
++
++ constexpr int get_size2() {
++   return get_data().size();      // OK, get_data().size() is an immediate invocation that is
++                                  // a constant expression
++ }
+```
+:::
+
 Change [dcl.constexpr]{.sref}/6:
 
 ::: std
@@ -466,7 +618,7 @@ Bump the value of `__cpp_constexpr` in [cpp.predefined]{.sref}:
 
 Thank you to Peter Dimov for being Peter Dimov and coming up with all of these examples.
 
-Thank you to Hubert Tong for noticing that the wording was wrong and Richard Smith for helping to fix it.
+Thank you to Hubert Tong for noticing that the wording was wrong and Richard Smith for helping to fix it. Thanks to Jason Merrill for help with phrasing the immediate-escalating wording.
 
 ---
 references:
@@ -478,4 +630,24 @@ references:
     issued:
       - year: 2023
     URL: https://wg21.link/p2747r1
+  - id: P3032R1
+    citation-label: P3032R1
+    title: "Less transient constexpr allocation"
+    author:
+      - family: Barry Revzin
+    issued:
+      - year: 2023
+        month: 03
+        day: 21
+    URL: https://wg21.link/p3032r1
+  - id: P3032R2
+    citation-label: P3032R2
+    title: "Less transient constexpr allocation (and more consteval relaxation)"
+    author:
+      - family: Barry Revzin
+    issued:
+      - year: 2024
+        month: 04
+        day: 16
+    URL: https://wg21.link/p3032r2
 ---
