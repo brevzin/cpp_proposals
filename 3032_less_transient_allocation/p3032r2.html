@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-03-27" />
-  <title>Less transient constexpr allocation</title>
+  <meta name="dcterms.date" content="2024-04-16" />
+  <title>Less transient constexpr allocation (and more consteval
+relaxation)</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -526,6 +527,22 @@ padding-left: 20px;
 }
 code.diff span.va { color: #000000; background-color: var(--diff-ins); }
 code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.std blockquote del { text-decoration: line-through;
+color: #000000; background-color: #FFC8EB;
+border: none; }
+code del { border: 1px solid #ECB3C7; }
 </style>
   <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
   
@@ -537,15 +554,15 @@ code.diff span.st { color: #000000; background-color: var(--diff-del); }
 <div class="wrapper">
 <header id="title-block-header">
 <h1 class="title" style="text-align:center">Less transient constexpr
-allocation</h1>
+allocation (and more consteval relaxation)</h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D3032R2</td>
+    <td>P3032R2</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-03-27</td>
+    <td>2024-04-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -576,17 +593,21 @@ History<span></span></a></li>
 <li><a href="#immediate-escalating-expressions" id="toc-immediate-escalating-expressions"><span class="toc-section-number">2.1</span> Immediate-escalating
 expressions<span></span></a></li>
 <li><a href="#transient-allocations" id="toc-transient-allocations"><span class="toc-section-number">2.2</span> Transient
-allocations<span></span></a></li>
+allocations<span></span></a>
+<ul>
+<li><a href="#constant-expression-vs-core-constant-expression" id="toc-constant-expression-vs-core-constant-expression"><span class="toc-section-number">2.2.1</span> Constant Expression vs Core
+Constant Expression<span></span></a></li>
+<li><a href="#mutation" id="toc-mutation"><span class="toc-section-number">2.2.2</span> Mutation<span></span></a></li>
+<li><a href="#is-this-actually-to-preserve-constants" id="toc-is-this-actually-to-preserve-constants"><span class="toc-section-number">2.2.3</span> Is this actually to preserve
+constants?<span></span></a></li>
+</ul></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
-<li><a href="#constant-expression-vs-core-constant-expression" id="toc-constant-expression-vs-core-constant-expression"><span class="toc-section-number">3.1</span> Constant Expression vs Core
-Constant Expression<span></span></a></li>
-<li><a href="#mutation" id="toc-mutation"><span class="toc-section-number">3.2</span> Mutation<span></span></a></li>
-<li><a href="#incomplete-prior-wording" id="toc-incomplete-prior-wording"><span class="toc-section-number">3.3</span> Incomplete Prior
+<li><a href="#incomplete-prior-wording" id="toc-incomplete-prior-wording"><span class="toc-section-number">3.1</span> Incomplete Prior
 Wording<span></span></a></li>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">3.4</span> Wording<span></span></a></li>
-<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">3.5</span> Feature-Test
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">3.2</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">3.3</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
 <li><a href="#acknowledgements" id="toc-acknowledgements"><span class="toc-section-number">4</span>
@@ -594,36 +615,16 @@ Acknowledgements<span></span></a></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
-<style type="text/css">
-div.std blockquote { color: #000000; background-color: #F1F1F1;
-    border: 1px solid #D1D1D1;
-    padding-left: 0.5em; padding-right: 0.5em; }
-
-div.std.ins blockquote {
-    color: #000000; background-color: #C8FFC8;
-    border: 1px solid #B3EBB3;
-  }
-
-div.ins > div.example {
-    color: #000000; background-color: #C8FFC8;
-    border: 1px solid #B3EBB3;
-  }
-
-div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-
-div.std blockquote del { text-decoration: line-through;
-    color: #000000; background-color: #FFC8EB;
-    border: none; }
-
-code del { border: 1px solid #ECB3C7; }
-
-
-</style>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P3032R1">[<a href="#ref-P3032R1" role="doc-biblioref"><strong>P3032R1?</strong></a>]</span>, fixed
-wording and extended the feature.</p>
-<p>Since <span class="citation" data-cites="P3032R0">[<a href="https://wg21.link/p3032r0" role="doc-biblioref">P3032R0</a>]</span>, fixed wording, added
+<p><span class="citation" data-cites="P3032R2">[<a href="https://wg21.link/p3032r2" role="doc-biblioref">P3032R2</a>]</span>: <span class="citation" data-cites="P3032R1">[<a href="https://wg21.link/p3032r1" role="doc-biblioref">P3032R1</a>]</span> of this paper was actually on
+the Straw Polls page in Tokyo. Richard Smith pointed out one issue with
+the wording, and then Hubert Tong pointed out a much bigger issue with
+the wording - and it was pulled. This revision expands the description
+of the problem and addresses the wording issues. R1 also did not address
+the question of <a href="#immediate-escalating-expressions">escalating
+expressions</a>, but this proposal expands on that too.</p>
+<p><span class="citation" data-cites="P3032R1">[<a href="https://wg21.link/p3032r1" role="doc-biblioref">P3032R1</a>]</span>: fixed wording, added
 feature-test macro.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -924,33 +925,11 @@ function. Such a loosening would allow
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
 and not if <code class="sourceCode cpp">es</code> were also declared
 <code class="sourceCode cpp"><span class="kw">static</span></code>.</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>There are two separate potential changes here, that would each make
-one of the attempts above well-formed:</p>
-<ol type="1">
-<li>we could <a href="#immediate-escalating-expressions">escalate</a>
-expressions to larger expressions, so that <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code>
-becomes a constant expression, or</li>
-<li>we could extend the notation of <a href="#transient-allocations">transient allocation</a> to include the
-full immediate context instead of just the constant evaluation</li>
-</ol>
-<p>The second of these is straightforward to word and provides a lot of
-value - since now particularly in the context of reflection you can
-declare a <code class="sourceCode cpp"><span class="kw">constexpr</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span></code>
-inside a
-<code class="sourceCode cpp"><span class="kw">consteval</span></code>
-function and use those contents as a constant expression. The first of
-these is complicated to word and does not provide as much value, as it
-is a limitation that is fairly easy to work around: either declare a
-local
-<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
-variable, or change the function to be
-<code class="sourceCode cpp"><span class="kw">consteval</span></code> or
-a template.</p>
-<p>As such, this paper only proposes extending the notion of
-transience.</p>
-<h2 data-number="3.1" id="constant-expression-vs-core-constant-expression"><span class="header-section-number">3.1</span> Constant Expression vs Core
-Constant Expression<a href="#constant-expression-vs-core-constant-expression" class="self-link"></a></h2>
+<p>Now, allowing the declaration of
+<code class="sourceCode cpp">es</code> here has numerous other issues
+that are worth considering.</p>
+<h3 data-number="2.2.1" id="constant-expression-vs-core-constant-expression"><span class="header-section-number">2.2.1</span> Constant Expression vs Core
+Constant Expression<a href="#constant-expression-vs-core-constant-expression" class="self-link"></a></h3>
 <p>Right before plenary in Tokyo, Hubert Tong pointed out an important
 omission in the wording of this paper: it completely failed to solve the
 problem.</p>
@@ -1075,7 +1054,7 @@ correctness.</p>
 <p>I think on the whole it’s better to stick with the simpler and
 easier-to-understand rule, even as it allows some odd and pointless
 code.</p>
-<h2 data-number="3.2" id="mutation"><span class="header-section-number">3.2</span> Mutation<a href="#mutation" class="self-link"></a></h2>
+<h3 data-number="2.2.2" id="mutation"><span class="header-section-number">2.2.2</span> Mutation<a href="#mutation" class="self-link"></a></h3>
 <p>Consider the following example:</p>
 <div class="std">
 <blockquote>
@@ -1137,7 +1116,117 @@ actually begin its lifetime within <code class="sourceCode cpp">E</code>
 (the call to <code class="sourceCode cpp">f</code>), so we don’t violate
 this rule. We should simply extend this rule to be able to reject this
 case.</p>
-<h2 data-number="3.3" id="incomplete-prior-wording"><span class="header-section-number">3.3</span> Incomplete Prior Wording<a href="#incomplete-prior-wording" class="self-link"></a></h2>
+<h3 data-number="2.2.3" id="is-this-actually-to-preserve-constants"><span class="header-section-number">2.2.3</span> Is this actually to preserve
+constants?<a href="#is-this-actually-to-preserve-constants" class="self-link"></a></h3>
+<p>This was the original motivating example presented in this paper:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f5<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> es <span class="op">=</span> enumerators_of<span class="op">(^</span>E<span class="op">)</span>;</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> es<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Here we don’t actually need <code class="sourceCode cpp">es<span class="op">.</span>size<span class="op">()</span></code>
+to be a <em>constant expression</em> - it is enough for it to be a
+<em>core constant expression</em>. So is it worth going through extra
+hoops to make it so that <code class="sourceCode cpp">es</code> is
+usable in constant expressions (i.e. have <code class="sourceCode cpp">es<span class="op">.</span>size<span class="op">()</span></code>
+and <code class="sourceCode cpp">es<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+both be constants) or is it sufficient for it to simply be a core
+constant expression?</p>
+<p>I think it’s worth it.</p>
+<p>One problem is how to have constant data. Let’s say you have a
+function that produces some data that you want to keep around at runtime
+as a lookup table:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> get_useful_data<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span>Data<span class="op">&gt;</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>We don’t have non-transient constexpr allocation, so we cannot
+declare a global <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>Data<span class="op">&gt;</span></code>
+to hold onto that. We need to hold it as an array. Specifically a <code class="sourceCode cpp">std<span class="op">::</span>array<span class="op">&lt;</span>Data, N<span class="op">&gt;</span></code>,
+since <code class="sourceCode cpp">Data<span class="op">[</span>N<span class="op">]</span></code>
+isn’t something you can return from a function. But how do you get
+<code class="sourceCode cpp">N</code>? One option is this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> get_useful_data_as_array<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">size_t</span> N <span class="op">=</span> get_useful_data<span class="op">().</span>size<span class="op">()</span>;</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// let&#39;s just assume for simplicity that Data is regular</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>array<span class="op">&lt;</span>Data, N<span class="op">&gt;</span> data;</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>get_useful_data<span class="op">()</span>, data<span class="op">.</span>begin<span class="op">())</span>;</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data;</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This works, but relies on calling <code class="sourceCode cpp">get_useful_data<span class="op">()</span></code>
+twice. What if it’s computationally expensive? Sure it’s not expensive
+at <em>runtime</em>, but build times matter too. Attempting to avoid
+that double invocation leads to some elaborate solutions (e.g. <a href="https://www.youtube.com/watch?v=ABg4_EV5L3w">this one</a>). And
+it’d be nice if we could just avoid that entirely:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> get_useful_data_as_array<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ill-formed today, proposed OK</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>Data<span class="op">&gt;</span> v <span class="op">=</span> get_useful_data<span class="op">()</span>;</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// okay, because v is a constant</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>array<span class="op">&lt;</span>Data, v<span class="op">.</span>size<span class="op">()&gt;</span> data;</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>v, data<span class="op">.</span>begin<span class="op">())</span>;</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data;</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This is arguably the obvious solution to this problem (well, aside
+from being able to have non-transient constexpr allocation). You can see
+a concrete example of this in <span class="citation" data-cites="P2996R2">[<a href="https://wg21.link/p2996r2" role="doc-biblioref">P2996R2</a>]</span>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> S<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> get_layout<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> members <span class="op">=</span> nonstatic_data_members_of<span class="op">(^</span>S<span class="op">)</span>;</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>array<span class="op">&lt;</span>member_descriptor, members<span class="op">.</span>size<span class="op">()&gt;</span> layout;</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> members<span class="op">.</span>size<span class="op">()</span>; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      layout<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> <span class="op">{.</span>offset<span class="op">=</span>offset_of<span class="op">(</span>members<span class="op">[</span>i<span class="op">])</span>, <span class="op">.</span>size<span class="op">=</span>size_of<span class="op">(</span>members<span class="op">[</span>i<span class="op">])}</span>;</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> layout;</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>There are two separate potential changes here, that would each make
+one of the attempts above well-formed:</p>
+<ol type="1">
+<li>we could <a href="#immediate-escalating-expressions">escalate</a>
+expressions to larger expressions, so that <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">).</span>size<span class="op">()</span></code>
+becomes a constant expression, or</li>
+<li>we could extend the notation of <a href="#transient-allocations">transient allocation</a> to include the
+full immediate context instead of just the constant evaluation</li>
+</ol>
+<p>The second of these is straightforward to word and provides a lot of
+value - since now particularly in the context of reflection you can
+declare a <code class="sourceCode cpp"><span class="kw">constexpr</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span></code>
+inside a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+function and use those contents as a constant expression.</p>
+<p>The first of these is a little more complicated and doesn’t provide
+as much value. It’s a limitation that is fairly easy to work around:
+either declare a local
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable, or change the function to be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> or
+a template. However, it is pretty annoying to have to do so - and it
+would be nice if we kept pushing
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+evaluation more in the direction of “it just works.” Following <span class="citation" data-cites="P2564R3">[<a href="https://wg21.link/p2564r3" role="doc-biblioref">P2564R3</a>]</span>, the rules here are already
+pretty complicated - but the advantage of that is that users simply
+don’t have to learn them if more things just work.</p>
+<p>This paper proposes solving both problems. That is, all five examples
+in the <a href="#introduction">intro</a> will be valid.</p>
+<h2 data-number="3.1" id="incomplete-prior-wording"><span class="header-section-number">3.1</span> Incomplete Prior Wording<a href="#incomplete-prior-wording" class="self-link"></a></h2>
 <p>Also pointed out by Richard, the original wording changing <span>7.7
 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5 as
 follows:</p>
@@ -1156,10 +1245,10 @@ context, within that context</span>;</p>
 <p>Richard pointed out this example, asking if it’s valid:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> f<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span>;</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>b<span class="op">)</span> <span class="kw">delete</span> p;</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> f<span class="op">(</span><span class="dt">bool</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span>;</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>b<span class="op">)</span> <span class="kw">delete</span> p;</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Noting that it’s impossible to tell - it depends on
@@ -1184,12 +1273,12 @@ change is more correct.</p>
 but if you can’t observe a leak, does it really leak?</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span>; <span class="op">}</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span> <span class="op">{</span> <span class="kw">constexpr</span> <span class="dt">int</span> <span class="op">*</span>p <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span>; <span class="op">}</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<h2 data-number="3.4" id="wording"><span class="header-section-number">3.4</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="3.2" id="wording"><span class="header-section-number">3.2</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/5:</p>
 <div class="std">
 <blockquote>
@@ -1219,21 +1308,21 @@ temporary object whose lifetime is extended to that of
 <div class="ins">
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>constexpr int f(int n) {</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    constexpr int* p = new int(1); // #1</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    ++n;      // ok, lifetime of n began within E</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    ++*p;     // error: modification of object whose lifetime began within</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>              // initializer of constexpr variable at #1</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    delete p; // ok</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    constexpr int q = []{ // #2</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        int i = 0;</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        ++i;  // ok: modification of an object whose lifetime begin within E</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>              // this E occurs within the initialization of constexpr variable</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>              // declared at #2</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        return i;</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    }();</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    return n + q;</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>constexpr int f(int n) {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    constexpr int* p = new int(1); // #1</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    ++n;      // ok, lifetime of n began within E</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    ++*p;     // error: modification of object whose lifetime began within</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>              // initializer of constexpr variable at #1</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    delete p; // ok</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    constexpr int q = []{ // #2</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        int i = 0;</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        ++i;  // ok: modification of an object whose lifetime begin within E</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>              // this E occurs within the initialization of constexpr variable</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>              // declared at #2</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        return i;</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    }();</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    return n + q;</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1251,25 +1340,25 @@ evaluation of <code class="addu">E</code>;</li>
 <div class="ins">
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>constexpr int f() {</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    constexpr int* i = new int(1);  // error: allocation is neither deallocated within this</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    return *i;                      // evaluation nor within an immediate function context</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>consteval int o() {</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    constexpr int* n = new int(21); // ok, #1</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    int a = *n;</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    delete n;                       // #2</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    return a;</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>consteval int e() {</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    constexpr int* r = new int(2022); // ok, #3</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    return *r;</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>static_assert(o() == 21);   // ok, because allocation at #1 is deallocated at #2</span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>static_assert(e() == 2022); // error: allocation at #3 is not deallocated</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>constexpr int f() {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    constexpr int* i = new int(1);  // error: allocation is neither deallocated within this</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    return *i;                      // evaluation nor within an immediate function context</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>consteval int o() {</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    constexpr int* n = new int(21); // ok, #1</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    int a = *n;</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    delete n;                       // #2</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    return a;</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>consteval int e() {</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    constexpr int* r = new int(2022); // ok, #3</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    return *r;</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>static_assert(o() == 21);   // ok, because allocation at #1 is deallocated at #2</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>static_assert(e() == 2022); // error: allocation at #3 is not deallocated</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1294,20 +1383,155 @@ allocated within the evaluation of
 </ul>
 </blockquote>
 </div>
+<p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/16-18:</p>
+<p>::: std <span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">16</a></span>
+An expression or conversion is in an <em>immediate function context</em>
+if it is potentially evaluated and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(16.1)</a></span>
+its innermost enclosing non-block scope is a function parameter scope of
+an immediate function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(16.2)</a></span>
+it is a subexpression of a manifestly constant-evaluated expression or
+conversion, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(16.3)</a></span>
+its enclosing statement is enclosed ([stmt.pre]) by the
+compound-statement of a consteval if statement ([stmt.if]).</li>
+</ul>
+<p>An invocation is an <em>immediate invocation</em> if it is a
+potentially-evaluated explicit or implicit invocation of an immediate
+function and is not in an immediate function context. An aggregate
+initialization is an immediate invocation if it evaluates a default
+member initializer that has a subexpression that is an
+immediate-escalating expression. <span class="addu">An expression is an
+immediate invocation if it is a constant expression, has a subexpression
+that would otherwise be immediate-escalating (see below), and does not
+have a subexpression that would also meet these criteria.</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">17</a></span>
+An expression or conversion is <em>immediate-escalating</em> if it is
+not initially in an immediate function context and it is either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(17.1)</a></span>
+a potentially-evaluated <em>id-expression</em> that denotes an immediate
+function that is not a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(17.2)</a></span>
+an immediate invocation that is not a constant expression and is not a
+subexpression of an immediate invocation.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">18</a></span>
+An <em>immediate-escalating</em> function is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(18.1)</a></span>
+the call operator of a lambda that is not declared with the consteval
+specifier,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(18.2)</a></span>
+a defaulted special member function that is not declared with the
+consteval specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(18.3)</a></span>
+a function that results from the instantiation of a templated entity
+defined with the constexpr specifier.</li>
+</ul>
+<p>An immediate-escalating expression shall appear only in an
+immediate-escalating function.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">19</a></span>
+An immediate function is a function or constructor that is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(19.1)</a></span>
+declared with the consteval specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(19.2)</a></span>
+an immediate-escalating function F whose function body contains an
+immediate-escalating expression E such that E’s innermost enclosing
+non-block scope is F’s function parameter scope.</li>
+</ul>
+<p><span class="note11"><span>[ <em>Note 11:</em> </span> Default member
+initializers used to initialize a base or member subobject
+([class.base.init]) are considered to be part of the function body
+([dcl.fct.def.general]).<span> — <em>end note</em> ]</span></span></p>
+<div class="example9">
+<span>[ <em>Example 9:</em> </span>
+<div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>  consteval int id(int i) { return i; }</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  constexpr char id(char c) { return c; }</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  constexpr int f(T t) {</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    return t + id(t);</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  auto a = &amp;f&lt;char&gt;;              // OK, f&lt;char&gt; is not an immediate function</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  auto b = &amp;f&lt;int&gt;;               // error: f&lt;int&gt; is an immediate function</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  static_assert(f(3) == 6);       // OK</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  constexpr int g(T t) {          // g&lt;int&gt; is not an immediate function</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    return t + id(42);            // because id(42) is already a constant</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>  template&lt;class T, class F&gt;</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>  constexpr bool is_not(T t, F f) {</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    return not f(t);</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  consteval bool is_even(int i) { return i % 2 == 0; }</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>  static_assert(is_not(5, is_even));      // OK</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>  int x = 0;</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>  constexpr T h(T t = id(x)) {    // h&lt;int&gt; is not an immediate function</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>                                  // id(x) is not evaluated when parsing the default argument ([dcl.fct.default], [temp.inst])</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>      return t;</span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>  constexpr T hh() {              // hh&lt;int&gt; is an immediate function because of the invocation</span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>    return h&lt;T&gt;();                // of the immediate function id in the default argument of h&lt;int&gt;</span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>  int i = hh&lt;int&gt;();              // error: hh&lt;int&gt;() is an immediate-escalating expression</span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>                                  // outside of an immediate-escalating function</span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a>  struct A {</span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a>    int x;</span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a>    int y = id(x);</span>
+<span id="cb21-47"><a href="#cb21-47" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb21-48"><a href="#cb21-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-49"><a href="#cb21-49" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb21-50"><a href="#cb21-50" aria-hidden="true" tabindex="-1"></a>  constexpr int k(int) {          // k&lt;int&gt; is not an immediate function because A(42) is a</span>
+<span id="cb21-51"><a href="#cb21-51" aria-hidden="true" tabindex="-1"></a>    return A(42).y;               // constant expression and thus not immediate-escalating</span>
+<span id="cb21-52"><a href="#cb21-52" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-53"><a href="#cb21-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-54"><a href="#cb21-54" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval std::vector&lt;int&gt; get_data();</span></span>
+<span id="cb21-55"><a href="#cb21-55" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb21-56"><a href="#cb21-56" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr int get_size1() {</span></span>
+<span id="cb21-57"><a href="#cb21-57" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr auto v = get_data(); // error: get_data() is an immediate-escalating expression</span></span>
+<span id="cb21-58"><a href="#cb21-58" aria-hidden="true" tabindex="-1"></a><span class="va">+                                  // outside of an immediate-escalating function</span></span>
+<span id="cb21-59"><a href="#cb21-59" aria-hidden="true" tabindex="-1"></a><span class="va">+   return v.size();</span></span>
+<span id="cb21-60"><a href="#cb21-60" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb21-61"><a href="#cb21-61" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb21-62"><a href="#cb21-62" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr int get_size2() {</span></span>
+<span id="cb21-63"><a href="#cb21-63" aria-hidden="true" tabindex="-1"></a><span class="va">+   return get_data().size();      // OK, get_data().size() is an immediate invocation that is</span></span>
+<span id="cb21-64"><a href="#cb21-64" aria-hidden="true" tabindex="-1"></a><span class="va">+                                  // a constant expression</span></span>
+<span id="cb21-65"><a href="#cb21-65" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
+</div>
+<span> — <em>end example</em> ]</span>
+</div>
 <p>Change <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>/6:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">6</a></span>
 A <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 specifier used in an object declaration declares the object as const.
 Such an object shall have literal type and shall be initialized. In any
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variable declaration, <span class="addu">either</span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(6.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(6.1)</a></span>
 the full-expression of the initialization shall be a constant expression
 ([expr.const]) <span class="addu">, or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(6.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(6.2)</a></span>
 <span class="addu">the variable shall have automatic storage duration,
 be declared within an immediate function context, and the
 full-expression of the initialization shall be a core constant
@@ -1322,42 +1546,42 @@ reference is bound, shall have constant destruction.</p>
 <div class="example4">
 <span>[ <em>Example 4:</em> </span>
 <div>
-<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  struct pixel {</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    int x, y;</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  constexpr pixel ur = { 1294, 1024 };    // OK</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  constexpr pixel origin;                 // error: initializer missing</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval int f() {</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr pixel* q = new pixel{3, 4}; // ok</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="va">+   int result = q-&gt;x + q-&gt;y;</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="va">+   delete q;</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="va">+   return result;</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void g() {</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr pixel* p = new pixel{1, 2}; // error: not a constant expression</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   delete p;</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr auto pf = f; // error: not a constant expression</span></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval int h() {</span></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr auto pf = f; // ok</span></span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="va">+   return pf();</span></span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>  struct pixel {</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    int x, y;</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  constexpr pixel ur = { 1294, 1024 };    // OK</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  constexpr pixel origin;                 // error: initializer missing</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval int f() {</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr pixel* q = new pixel{3, 4}; // ok</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="va">+   int result = q-&gt;x + q-&gt;y;</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="va">+   delete q;</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="va">+   return result;</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void g() {</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr pixel* p = new pixel{1, 2}; // error: not a constant expression</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   delete p;</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr auto pf = f; // error: not a constant expression</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval int h() {</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr auto pf = f; // ok</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="va">+   return pf();</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
 </div>
 <span> — <em>end example</em> ]</span>
 </div>
 </blockquote>
 </div>
-<h2 data-number="3.5" id="feature-test-macro"><span class="header-section-number">3.5</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="3.3" id="feature-test-macro"><span class="header-section-number">3.3</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Bump the value of <code class="sourceCode cpp">__cpp_constexpr</code>
 in <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_constexpr <span class="diffdel">202306L</span></span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_constexpr <span class="diffins">2024XXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_constexpr <span class="diffdel">202306L</span></span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_constexpr <span class="diffins">2024XXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1366,7 +1590,8 @@ Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thank you to Peter Dimov for being Peter Dimov and coming up with all
 of these examples.</p>
 <p>Thank you to Hubert Tong for noticing that the wording was wrong and
-Richard Smith for helping to fix it.</p>
+Richard Smith for helping to fix it. Thanks to Jason Merrill for help
+with phrasing the immediate-escalating wording.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
@@ -1385,9 +1610,18 @@ Non-transient constexpr allocation using propconst. <a href="https://wg21.link/p
 [P2996R1] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde. 2023-12-18. Reflection for C++26. <a href="https://wg21.link/p2996r1"><div class="csl-block">https://wg21.link/p2996r1</div></a>
 </div>
-<div id="ref-P3032R0" class="csl-entry" role="doc-biblioentry">
-[P3032R0] Barry Revzin. 2024-02-13. Less transient constexpr allocation.
-<a href="https://wg21.link/p3032r0"><div class="csl-block">https://wg21.link/p3032r0</div></a>
+<div id="ref-P2996R2" class="csl-entry" role="doc-biblioentry">
+[P2996R2] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-02-15. Reflection for
+C++26. <a href="https://wg21.link/p2996r2"><div class="csl-block">https://wg21.link/p2996r2</div></a>
+</div>
+<div id="ref-P3032R1" class="csl-entry" role="doc-biblioentry">
+[P3032R1] Barry Revzin. 2023-03-21. Less transient constexpr allocation.
+<a href="https://wg21.link/p3032r1"><div class="csl-block">https://wg21.link/p3032r1</div></a>
+</div>
+<div id="ref-P3032R2" class="csl-entry" role="doc-biblioentry">
+[P3032R2] Barry Revzin. 2024-04-16. Less transient constexpr allocation
+(and more consteval relaxation). <a href="https://wg21.link/p3032r2"><div class="csl-block">https://wg21.link/p3032r2</div></a>
 </div>
 </div>
 </div>
