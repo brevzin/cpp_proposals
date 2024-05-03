@@ -2528,6 +2528,58 @@ Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of de
 [2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator]{.addu}, is ill-formed.
 :::
 
+### [enum.udecl] The `using enum` declaration
+
+Extend the grammar for `$using-enum-declarator$` as follows:
+
+::: bq
+```diff
+  $using-enum-declaration$:
+     using enum $using-enum-declarator$ ;
+
++ $splice-enum-name$:
++    [: $constant-expression$ :]
++
+  $using-enum-declarator$:
+     $nested-name-specifier$@~_opt_~@ $identifier$
+     $nested-name-specifier$@~_opt_~@ $simple-template-id$
++    $splice-enum-name$
+```
+:::
+
+Modify paragraph 1 of [enum.udecl]{.sref} as follows:
+
+::: bq
+
+[1]{.pnum} A `$using-enum-declarator$` [not consisting of a `$splice-enum-name$`]{.addu} names the set of declarations found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) for the `$using-enum-declarator$`. [A `$using-enum-declarator$` containing a `$splice-enum-name$` names the entity reflected by the `$constant-expression$`. ]{.addu}  The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
+:::
+
+### [namespace.udir] Using namespace directive
+
+Modify the grammar for `$using-directive$` as follows:
+
+::: bq
+```diff
++ $splice-namespace-name$:
++    [: $constant-expression$ :]
++
++ $namespace-declarator$:
++    $nested-name-specifier$@~_opt_~@ $namespace-name$
++    $splice-namespace-name$
++
+  $using-directive$:
+-    $attribute-specifier-seq$@~_opt_~@ using namespace $nested-name-specifier@~_opt_~@ $namespace-name$
++    $attribute-specifier-seq$@~_opt_~@ using namespace $namespace-declarator$
+```
+:::
+
+Add the following to paragraph 1 of [namespace.udir]{.sref}, prior to the note:
+
+::: bq
+[1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope. [A `$namespace-declarator$` not consisting of a `$splice-namespace-name$` nominates the namespace found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) and shall not contain a dependent `$nested-name-specifier$`. A `$namespace-declarator$` consisting of a `$splice-namespace-name$` shall contain a non-dependent `$constant-expression$` that reflects a namespace, and nominates the namespace reflected by the `$constant-expression$`.]{.addu}
+:::
+
+
 ### [dcl.attr.grammar] Attribute syntax and semantics
 
 Add a production to the grammar for `$attribute-specifier$` as follows:
@@ -3104,7 +3156,7 @@ consteval bool is_special_member(info r);
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` designates a typed entity.
+[#]{.pnum} *Mandates*: `r` designates a typed entity. `r` does not designate a constructor or destructor.
 
 [#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
 
