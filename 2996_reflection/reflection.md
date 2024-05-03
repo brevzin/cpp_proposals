@@ -982,7 +982,12 @@ int main() {
 
 On Compiler Explorer: [Clang](https://godbolt.org/z/rbs6K78WG).
 
-Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is either to use a proper cast `static_cast<[: type_of(base) const& :]>(t)` (which both means explicitly specifying the `const`-ness of the type in the cast explicitly but also means that access will be checked) or, to avoid the access issue, to use the C-style case `([: type_of(base) const& :])t` (which many people find unsavory).
+Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is to use a cast:
+
+*  `static_cast<[: type_of(base) const& :]>(t)`, or
+*  `(typename [: type_of(base) :] const&)t`
+
+Both have to explicitly specify the `const`-ness of the type in the cast. The `static_cast` additionally has to check access. The C-style cast is one many people find unsavory, though in this case it avoids checking access - but requires writing `typename` since this isn't a type-only context.
 
 ## Implementing member-wise `hash_append`
 

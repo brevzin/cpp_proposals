@@ -1774,13 +1774,22 @@ example.</p>
 <p>On Compiler Explorer: <a href="https://godbolt.org/z/rbs6K78WG">Clang</a>.</p>
 <p>Note that currently, we do not have the ability to access a base
 class subobject using the <code class="sourceCode cpp">t<span class="op">.[:</span> base <span class="op">:]</span></code>
-syntax - which means that the only way to get at the base is either to
-use a proper cast <code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:]&gt;(</span>t<span class="op">)</span></code>
-(which both means explicitly specifying the
+syntax - which means that the only way to get at the base is to use a
+cast:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:]&gt;(</span>t<span class="op">)</span></code>,
+or</li>
+<li><code class="sourceCode cpp"><span class="op">(</span><span class="kw">typename</span> <span class="op">[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="op">:]</span> <span class="kw">const</span><span class="op">&amp;)</span>t</code></li>
+</ul>
+<p>Both have to explicitly specify the
 <code class="sourceCode cpp"><span class="kw">const</span></code>-ness
-of the type in the cast explicitly but also means that access will be
-checked) or, to avoid the access issue, to use the C-style case <code class="sourceCode cpp"><span class="op">([:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">:])</span>t</code>
-(which many people find unsavory).</p>
+of the type in the cast. The
+<code class="sourceCode cpp"><span class="kw">static_cast</span></code>
+additionally has to check access. The C-style cast is one many people
+find unsavory, though in this case it avoids checking access - but
+requires writing
+<code class="sourceCode cpp"><span class="kw">typename</span></code>
+since this isn’t a type-only context.</p>
 <h2 data-number="3.13" id="implementing-member-wise-hash_append"><span class="header-section-number">3.13</span> Implementing member-wise
 <code class="sourceCode cpp">hash_append</code><a href="#implementing-member-wise-hash_append" class="self-link"></a></h2>
 <p>Based on the <span class="citation" data-cites="N3980">[<a href="https://wg21.link/n3980" role="doc-biblioref">N3980</a>]</span>
