@@ -2448,7 +2448,7 @@ The `$cast-expression$` is not evaluated.
 ```cpp
 template <typename T> void fn() requires (^T != ^int);
 template <typename T> void fn() requires (^T == ^int);
-template <typename T> void fn() requires (sizeof(T) == sizeof(int);
+template <typename T> void fn() requires (sizeof(T) == sizeof(int));
 
 constexpr auto R = ^fn<char>;     // OK
 constexpr auto S = ^fn<int>;      // error: cannot reflect an overload set
