@@ -2412,12 +2412,13 @@ Parentheses can be introduced to force the `$cast-expression$` interpretation.
 static_assert(is_type(^int()));    // ^ applies to the type-id "int()"; not the cast "int()"
 static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())"
 
-template<bool> struct X;
-consteval void g(std::meta::info r) {
+template<bool> struct X {};
+bool operator<(std::meta::info, X<false>);
+consteval void g(std::meta::info r, X<false> xv) {
   if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
   if (r == (^int) && true);  // OK
-  if (r == ^X < true);       // error: < starts template argument list
-  if (r == (^X) < true);     // OK
+  if (^X < xv);       // error: < starts template argument list
+  if ((^X) < xv);     // OK
 }
 
 
