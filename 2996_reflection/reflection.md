@@ -1466,7 +1466,7 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any constant value
   - any template
   - any namespace
-  - no reflection at all (i.e., the null reflection when default-constructed)
+  - the null reflection (when default-constructed)
 
 Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to functions, variables or structured bindings).  For example:
 
@@ -1510,8 +1510,8 @@ std::string name1 = name_of(^S);             // Also okay.
 ```
 :::
 
-The default constructor of type `std::meta::info` is defined and accessible. It constructs a _null reflection_ object. A null reflection is equal to any other
-null reflection and is different from any other reflection that refers to one of the mentioned entities. For example:
+Zero-initializing an object of type `std::meta::info` gives it a null reflection value. A null reflection value is equal to any other
+null reflection value and is different from any other reflection that refers to one of the mentioned entities. For example:
 
 :::bq
 ```c++
