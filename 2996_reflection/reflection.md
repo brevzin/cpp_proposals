@@ -1510,8 +1510,9 @@ std::string name1 = name_of(^S);             // Also okay.
 ```
 :::
 
-Zero-initializing an object of type `std::meta::info` gives it a null reflection value. A null reflection value is equal to any other
-null reflection value and is different from any other reflection that refers to one of the mentioned entities. For example:
+Default constructing or value-initializing an object of type `std::meta::info` gives it a null reflection value.
+A null reflection value is equal to any other null reflection value and is different from any other reflection that refers to one of the mentioned entities.
+For example:
 
 :::bq
 ```c++
