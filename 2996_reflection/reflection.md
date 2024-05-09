@@ -139,7 +139,7 @@ Neither implementation is complete (notably, splicing of templates has not yet b
 They also lack some of the other proposed language features that dovetail well with reflection; most notably, expansion statements are absent.
 A workaround that will be used in the linked implementations of examples is the following facility:
 
-::: bq
+::: std
 ```cpp
 namespace __impl {
   template<auto... vals>
@@ -215,7 +215,7 @@ A number of our examples here show a few other language features that we hope to
 
 Our first example is not meant to be compelling but to show how to go back and forth between the reflection domain and the grammatical domain:
 
-::: bq
+::: std
 ```c++
 constexpr auto r = ^int;
 typename[:r:] x = 42;       // Same as: int x = 42;
@@ -315,7 +315,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://go
 
 Here, `sizes` will be a `std::array<std::size_t, 3>` initialized with `{sizeof(int), sizeof(float), sizeof(double)}`:
 
-::: bq
+::: std
 ```c++
 constexpr std::array types = {^int, ^float, ^double};
 constexpr std::array sizes = []{
@@ -328,7 +328,7 @@ constexpr std::array sizes = []{
 
 Compare this to the following type-based approach, which produces the same array `sizes`:
 
-::: bq
+::: std
 ```c++
 template<class...> struct list {};
 
@@ -373,7 +373,7 @@ So having multiple uses of, e.g., `make_integer_sequence<int, 20>` will only inv
 
 ## Getting Class Layout
 
-::: bq
+::: std
 ```c++
 struct member_descriptor
 {
@@ -415,7 +415,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/rbbWY99TM), [Clang](https://go
 
 One of the most commonly requested facilities is to convert an enum value to a string (this example relies on expansion statements):
 
-::: bq
+::: std
 ```c++
 template <typename E>
   requires std::is_enum_v<E>
@@ -437,7 +437,7 @@ static_assert(enum_to_string(Color(42)) == "<unnamed>");
 
 We can also do the reverse in pretty much the same way:
 
-::: bq
+::: std
 ```c++
 template <typename E>
   requires std::is_enum_v<E>
@@ -455,7 +455,7 @@ constexpr std::optional<E> string_to_enum(std::string_view name) {
 
 But we don't have to use expansion statements - we can also use algorithms. For instance, `enum_to_string` can also be implemented this way (this example relies on non-transient constexpr allocation), which also demonstrates choosing a different algorithm based on the number of enumerators:
 
-::: bq
+::: std
 ```c++
 template <typename E>
   requires std::is_enum_v<E>
@@ -514,7 +514,7 @@ For example:
 
 Our next example shows how a command-line option parser could work by automatically inferring flags based on member names. A real command-line parser would of course be more complex, this is just the beginning.
 
-::: bq
+::: std
 ```c++
 template<typename Opts>
 auto parse_options(std::span<std::string_view const> args) -> Opts {
@@ -607,7 +607,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/4P15rnbxh), [Clang](https://go
 Similarly to how we can implement a tuple using `define_class` to create on the fly a type with one member for each `Ts...`, we can implement a variant that simply defines a `union` instead of a `struct`.
 One difference here is how the destructor of a `union` is currently defined:
 
-::: bq
+::: std
 ```cpp
 union U1 {
   int i;
@@ -625,7 +625,7 @@ union U2 {
 This is a problem because we need to define this thing... somehow.
 However, for the purposes of `define_class`, there really is only one reasonable option to choose here:
 
-::: bq
+::: std
 ```cpp
 template <class... Ts>
 union U {
@@ -644,7 +644,7 @@ union U {
 If we make [`define_class`](#data_member_spec-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
 This is not a complete implementation of `std::variant` (and cheats using libstdc++ internals, and also uses Boost.Mp11's `mp_with_index`) but should demonstrate the idea:
 
-::: bq
+::: std
 ```cpp
 template <typename... Ts>
 class Variant {
@@ -735,7 +735,7 @@ public:
 
 Effectively, `Variant<T, U>` synthesizes a union type `Storage` which looks like this:
 
-::: bq
+::: std
 ```cpp
 union Storage {
     Empty empty;
@@ -750,7 +750,7 @@ union Storage {
 
 The question here is whether we should be should be able to directly initialize members of a defined union using a splicer, as in:
 
-::: bq
+::: std
 ```cpp
 : storage{.[: get_nth_field(0) :]={}}
 ```
@@ -762,7 +762,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://go
 
 ## Struct to Struct of Arrays
 
-::: bq
+::: std
 ```c++
 #include <meta>
 #include <array>
@@ -791,7 +791,7 @@ using struct_of_arrays = [: make_struct_of_arrays(^T, ^N) :];
 
 Example:
 
-::: bq
+::: std
 ```c++
 struct point {
   float x;
@@ -820,7 +820,7 @@ Now that we've seen a couple examples of using `std::meta::define_class` to crea
 
 This is the opening example for [clap](https://docs.rs/clap/latest/clap/) (Rust's **C**ommand **L**ine **A**rgument **P**arser):
 
-::: bq
+::: std
 ```c++
 struct Args : Clap {
   Option<std::string, {.use_short=true, .use_long=true}> name;
@@ -839,7 +839,7 @@ int main(int argc, char** argv) {
 
 Which we can implement like this:
 
-::: bq
+::: std
 ```c++
 struct Flags {
   bool use_short;
@@ -932,7 +932,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/1esbcq4jq), [Clang](https://go
 
 This example is taken from Boost.Describe:
 
-::: bq
+::: std
 ```cpp
 struct universal_formatter {
   constexpr auto parse(auto& ctx) { return ctx.begin(); }
@@ -994,7 +994,7 @@ Both have to explicitly specify the `const`-ness of the type in the cast. The `s
 
 Based on the [@N3980] API:
 
-::: bq
+::: std
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
@@ -1009,7 +1009,7 @@ void hash_append(H& algo, T const& t) {
 
 This approach requires allowing packs in structured bindings [@P1061R5], but can also be written using `std::make_index_sequence`:
 
-::: bq
+::: std
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
@@ -1029,7 +1029,7 @@ constexpr auto struct_to_tuple(T const& t) {
 
 An alternative approach is:
 
-::: bq
+::: std
 ```cpp
 consteval auto struct_to_tuple_type(info type) -> info {
   return substitute(^std::tuple,
@@ -1093,7 +1093,7 @@ Because you cannot just pass `"x"` into a non-type template parameter of the for
 
 We do not currently support splicing string literals (although that may change in the next revision), and the `pair` approach follows the similar pattern already shown with `define_class` (given a suitable `fixed_string` type):
 
-::: bq
+::: std
 ```cpp
 template <class T, fixed_string Name>
 struct pair {
@@ -1130,7 +1130,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/nMx4M9sdT), [Clang](https://go
 
 Alternatively, can side-step the question of non-type template parameters entirely by keeping everything in the value domain:
 
-::: bq
+::: std
 ```cpp
 consteval auto make_named_tuple(std::meta::info type,
                                 std::initializer_list<std::pair<std::meta::info, std::string_view>> members) {
@@ -1161,7 +1161,7 @@ On Compiler Explorer: [EDG and Clang](https://godbolt.org/z/dPcsaTEv6) (the EDG 
 The features proposed here make it a little easier to update a ticket counter at compile time.
 This is not an ideal implementation (we'd prefer direct support for compile-time —-- i.e., `consteval` --- variables), but it shows how compile-time mutable state surfaces in new ways.
 
-::: bq
+::: std
 ```cpp
 class TU_Ticket {
   template<int N> struct Helper {
@@ -1195,7 +1195,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/1vEjW4sTr), [Clang](https://go
 ## Emulating typeful reflection
 Although we believe a single opaque `std::meta::info` type to be the best and most scalable foundation for reflection, we acknowledge the desire expressed by SG7 for future support for "typeful reflection". The following demonstrates one possible means of assembling a typeful reflection library, in which different classes of reflections are represented by distinct types, on top of the facilities proposed here.
 
-::: bq
+::: std
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
@@ -1243,7 +1243,7 @@ consteval std::meta::info enrich(std::meta::info r) {
 
 We can leverage this machinery to select different function overloads based on the "type" of reflection provided as an argument.
 
-::: bq
+::: std
 ```cpp
 using type_t = metatype<^std::meta::is_type>;
 using template_t = metatype<^std::meta::is_template>;
@@ -1270,7 +1270,7 @@ Note that the `metatype` class can be generalized to wrap values of any literal 
 
 Achieving the same in C++23, with the same generality, would require spelling the argument(s) twice: first to obtain a "classification tag" to use as a template argument, and again to call the function, i.e.,
 
-::: bq
+::: std
 ```cpp
 Printer::PrintKind<classify(^int)>(^int).
 // or worse...
@@ -1390,7 +1390,7 @@ make_tuple(t.[: ... members :]...)
 
 would evaluate as
 
-::: bq
+::: std
 ```c++
 make_tuple(t.[:members[0]:], t.[:members[1]:], ..., t.[:members[$N-1$]:])
 ```
@@ -1404,7 +1404,7 @@ Especially since, as this paper's examples demonstrate, a lot can be done withou
 Another way to work around a lack of range splicing would be to implement `with_size<N>(f)`, which would behave like `f(integral_constant<size_t, 0>{}, integral_constant<size_t, 0>{}, ..., integral_constant<size_t, N-1>{})`.
 Which is enough for a tolerable implementation:
 
-::: bq
+::: std
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
@@ -1433,7 +1433,7 @@ However, there are other possibilities.
 For example, now that `$`{.op} is available in the basic source character set, we might consider `@[$]{.op}@<$expr$>`.
 This is somewhat natural to those of us that have used systems where `$`{.op} is used to expand placeholders in document templates.  For example:
 
-::: bq
+::: std
 ```c++
 @[$]{.op}@select_type(3) *ptr = nullptr;
 ```
@@ -1448,7 +1448,7 @@ That has the advantage to catch unfortunate errors while keeping a single rule a
 
 The type `std::meta::info` can be defined as follows:
 
-::: bq
+::: std
 ```c++
 namespace std {
   namespace meta {
@@ -1471,7 +1471,7 @@ In our initial proposal a value of type `std::meta::info` can represent:
 
 Notably absent at this time are general non-constant expressions (that aren't *expression-id*s referring to functions, variables or structured bindings).  For example:
 
-::: bq
+::: std
 ```c++
 int x = 0;
 void g() {
@@ -1603,7 +1603,7 @@ This becomes another situation where we need to decide an error handling mechani
 
 There is one interesting example to consider to decide between `std::expected` and exceptions here:
 
-::: bq
+::: std
 ```cpp
 template <typename T>
   requires (template_of(^T) == ^std::optional)
@@ -1627,7 +1627,7 @@ Despite these concerns (and the requirement of a whole new language feature), we
 
 Consider
 
-::: bq
+::: std
 ```cpp
 using A = int;
 ```
@@ -1640,7 +1640,7 @@ With reflection as proposed in this paper, that will no longer be the case.
 
 This opens up the question of how various other metafunctions handle aliases and it is worth going over a few examples:
 
-::: bq
+::: std
 ```cpp
 using A = int;
 using B = std::unique_ptr<int>;
@@ -1669,7 +1669,7 @@ That is an highly undesirable limitation that we believe should be addressed by 
 
 Here is a synopsis for the proposed library API. The functions will be explained below.
 
-::: bq
+::: std
 ```c++
 namespace std::meta {
   // @[name and location](#name_of-display_name_of-source_location_of)@
@@ -1818,7 +1818,7 @@ If `r` is a reflection designating a typed entity, `type_of(r)` is a reflection 
 If `r` is already a type, `type_of(r)` is not a constant expression.
 This can be used to implement the C `typeof` feature (which works on both types and expressions and strips qualifiers):
 
-::: bq
+::: std
 ```cpp
 consteval auto do_typeof(std::meta::info r) -> std::meta::info {
   return remove_cvref(is_type(r) ? r : type_of(r));
@@ -1834,7 +1834,7 @@ If `r` designates an alias, `dealias(r)` designates the underlying entity.
 Otherwise, `dealias(r)` produces `r`.
 `dealias` is recursive - it strips all aliases:
 
-::: bq
+::: std
 ```cpp
 using X = int;
 using Y = X;
@@ -1846,7 +1846,7 @@ static_assert(dealias(^Y) == ^int);
 
 ### `template_of`, `template_arguments_of`
 
-::: bq
+::: std
 ```c++
 namespace std::meta {
   consteval auto template_of(info r) -> info;
@@ -1859,7 +1859,7 @@ If `r` is a reflection designated a specialization of some template, then `templ
 
 For example:
 
-::: bq
+::: std
 ```c++
 std::vector<int> v = {1, 2, 3};
 static_assert(template_of(type_of(^v)) == ^std::vector);
@@ -1936,7 +1936,7 @@ If the template is a concept template, the result is a reflection of a constant 
 
 For example:
 
-::: bq
+::: std
 ```c++
 constexpr auto r = substitute(^std::vector, std::vector{^int});
 using T = [:r:]; // Ok, T is std::vector<int>
@@ -2071,7 +2071,7 @@ The given reflection is returned. For now, only data member reflections are supp
 
 For example:
 
-::: bq
+::: std
 ```c++
 union U;
 static_assert(is_type(define_class(^U, {
@@ -2204,7 +2204,7 @@ All the required instantiations are performed to produce instantiation units.
 
 Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
 
-::: bq
+::: std
   ...
 
   --- Otherwise, if the next three characters are `<::` and the subsequent character is neither `:` nor `>`, the `<` is treated as a preprocessing token by itself and not as the first character of the alternative token `<:`.
@@ -2219,7 +2219,7 @@ Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
 
 Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operators]{.sref} to include splicer delimiters:
 
-::: bq
+::: std
 ```
   $operator-or-punctuator$: @_one of_@
          {        }        [        ]        (        )        @[`[:        :]`]{.addu}@
@@ -2239,13 +2239,13 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
 
-::: bq
+::: std
 [9]{.pnum} Arithmetic types (6.8.2), enumeration types, pointer types, pointer-to-member types (6.8.4),[ `std::meta::info`,]{.addu} `std::nullptr_t`, and cv-qualified (6.8.5) versions of these types are collectively called scalar types.
 :::
 
 Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 
-::: bq
+::: std
 ::: addu
 
 [*]{.pnum} A *consteval-only type* is one of the following:
@@ -2266,7 +2266,7 @@ An object of consteval-only type shall either end its lifetime during the evalua
 
 Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as follows:
 
-::: bq
+::: std
 ::: addu
 
 [*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a constant value, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
@@ -2281,7 +2281,7 @@ The notion of consteval-only types (see [basic.types.general]{.sref}) exists to 
 
 Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this must precede the fundamental type bullet, because `meta::info` is a fundamental type]{.ednote}:
 
-::: bq
+::: std
 
 [3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
@@ -2299,7 +2299,7 @@ Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this mus
 
 Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-name-qualifer$`:
 
-::: bq
+::: std
 [1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
 
 [2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
@@ -2314,7 +2314,7 @@ in the *id-expression* of a class member access expression ([expr.ref]). [...]
 
 Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 
-::: bq
+::: std
 ```diff
   $primary-expression$:
      $literal$
@@ -2351,14 +2351,14 @@ Add a production to the grammar for `$nested-name-specifier$` as follows:
 
 Extend [expr.prim.id.qual]{.sref}/1 to also cover splices:
 
-::: bq
+::: std
 [1]{.pnum} The component names of a `$qualified-id$` are those of its `$nested-name-specifier$` and `$unqualified-id$`. The component names of a `$nested-name-specifier$` are its `$identifier$` (if any) and those of its `$type-name$`, `$namespace-name$`, `$simple-template-id$`, [and/or]{.rm} `$nested-name-specifier$`[, and/or the `$type-name$` or `$namespace-name$` of the entity reflected by the `$constant-expression$` of its `$splice-name-qualifier$`. For a `$nested-name-specifier$` having a `$splice-name-qualifier$` with a `$constant-expression$` that reflects the global namespace, the component names are the same as for `::`. The `$constant-expression$` of a `$splice-name-qualifier$` shall be a reflection of either a `$type-name$`, `$namespace-name$`, or the global namespace]{.addu}.
 
 :::
 
 Extend [expr.prim.id.qual]{.sref}/3 to also cover splices:
 
-::: bq
+::: std
 [3]{.pnum} The `$nested-name-specifier$` `​::`​ nominates the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` nominates the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-name-qualifier$` nominates the entity reflected by the `$constant-expression$` of the `$splice-name-qualifier$`.]{.addu} If a nested-name-specifier N is declarative and has a simple-template-id with a template argument list A that involves a template parameter, let T be the template nominated by N without A. T shall be a class template.
 
 ...
@@ -2369,7 +2369,7 @@ Extend [expr.prim.id.qual]{.sref}/3 to also cover splices:
 
 Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 
-::: bq
+::: std
 ::: addu
 **Expression Splicing   [expr.prim.splice]**
 
@@ -2389,7 +2389,7 @@ The meaning of such a construct is identical to that of a `$primary-expression$`
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
 
-::: bq
+::: std
 [1]{.pnum} Expressions with unary operators group right-to-left.
 ```diff
   $unary-expression$:
@@ -2411,7 +2411,7 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
 
 Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
-::: bq
+::: std
 ::: addu
 **The Reflection Operator   [expr.reflect]**
 
@@ -2424,7 +2424,9 @@ That reflection represents its operand.
 Parentheses can be introduced to force the `$cast-expression$` interpretation.
 
 
-[#]{.pnum} [*Example*
+[#]{.pnum}
+
+::: example
 ```
 static_assert(is_type(^int()));    // ^ applies to the type-id "int()"; not the cast "int()"
 static_assert(!is_type(^(int()))); // ^ applies to the the cast-expression "(int())"
@@ -2440,7 +2442,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 
 ```
--*end example*]
+:::
 
 [#]{.pnum} When applied to `::`, the reflection operator produces a reflection for the global namespace.
 When applied to a `$namespace-name$`, the reflection produces a reflection for the indicated namespace or namespace alias.
@@ -2462,7 +2464,7 @@ The `$cast-expression$` is not evaluated.
 
 * [#.#]{.pnum} If the operand is both an `$id-expression$` and a constant expression, the result is a reflection for both the indicated entity and the expression's (constant) value.
 
-[ *Example*:
+::: example
 ```cpp
 template <typename T> void fn() requires (^T != ^int);
 template <typename T> void fn() requires (^T == ^int);
@@ -2473,7 +2475,7 @@ constexpr auto S = ^fn<int>;      // error: cannot reflect an overload set
 
 constexpr auto r = ^std::vector;  // OK
 ```
-— *end example* ]
+:::
 
 :::
 
@@ -2483,14 +2485,14 @@ constexpr auto r = ^std::vector;  // OK
 
 Extend [expr.eq]{.sref}/2 to also handle `std::meta::info:
 
-::: bq
+::: std
 [2]{.pnum} The converted operands shall have arithmetic, enumeration, pointer, or pointer-to-member type, or [type]{.rm} [types `std::meta::info` or ]{.addu} `std​::​nullptr_t`. The operators `==` and `!=` both yield `true` or `false`, i.e., a result of type `bool`. In each case below, the operands shall have the same type after the specified conversions have been applied.
 
 :::
 
 Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
-::: bq
+::: std
 [5]{.pnum} Two operands of type `std​::​nullptr_t` or one operand of type `std​::​nullptr_t` and the other a null pointer constant compare equal.
 
 ::: addu
@@ -2537,7 +2539,7 @@ Add a new paragraph after the definition of _manifestly constant-evaluated_ [exp
 
 Introduce the term "type alias" to [dcl.typedef]{.sref}:
 
-::: bq
+::: std
 [1]{.pnum} [...] A name declared with the `typedef` specifier becomes a typedef-name. A typedef-name names the type associated with the identifier ([dcl.decl]) or simple-template-id ([temp.pre]); a typedef-name is thus a synonym for another type. A typedef-name does not introduce a new type the way a class declaration ([class.name]) or enum declaration ([dcl.enum]) does.
 
 [2]{.pnum} A *typedef-name* can also be introduced by an alias-declaration. The identifier following the using keyword is not looked up; it becomes a typedef-name and the optional attribute-specifier-seq following the identifier appertains to that typedef-name. Such a typedef-name has the same semantics as if it were introduced by the typedef specifier. In particular, it does not define a new type.
@@ -2551,7 +2553,7 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 
 Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
 
-::: bq
+::: std
 [6]{.pnum} To *zero-initialize* an object or reference of type `T` means:
 
 * [6.0]{.pnum} [if `T` is `std::meta::info`, the object is initialied to a null reflection value;]{.addu}
@@ -2576,7 +2578,7 @@ Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for
 
 Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of deleted functions:
 
-::: bq
+::: std
 
 [2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator]{.addu}, is ill-formed.
 :::
@@ -2585,7 +2587,7 @@ Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of de
 
 Extend the grammar for `$using-enum-declarator$` as follows:
 
-::: bq
+::: std
 ```diff
   $using-enum-declaration$:
      using enum $using-enum-declarator$ ;
@@ -2602,7 +2604,7 @@ Extend the grammar for `$using-enum-declarator$` as follows:
 
 Modify paragraph 1 of [enum.udecl]{.sref} as follows:
 
-::: bq
+::: std
 
 [1]{.pnum} A `$using-enum-declarator$` [not consisting of a `$splice-enum-name$`]{.addu} names the set of declarations found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) for the `$using-enum-declarator$`. [A `$using-enum-declarator$` containing a `$splice-enum-name$` names the entity reflected by the `$constant-expression$`. ]{.addu}  The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
 :::
@@ -2611,7 +2613,7 @@ Modify paragraph 1 of [enum.udecl]{.sref} as follows:
 
 Modify the grammar for `$using-directive$` as follows:
 
-::: bq
+::: std
 ```diff
 + $splice-namespace-name$:
 +    [: $constant-expression$ :]
@@ -2628,7 +2630,7 @@ Modify the grammar for `$using-directive$` as follows:
 
 Add the following to paragraph 1 of [namespace.udir]{.sref}, prior to the note:
 
-::: bq
+::: std
 [1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope. [A `$namespace-declarator$` not consisting of a `$splice-namespace-name$` nominates the namespace found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) and shall not contain a dependent `$nested-name-specifier$`. A `$namespace-declarator$` consisting of a `$splice-namespace-name$` shall contain a non-dependent `$constant-expression$` that reflects a namespace, and nominates the namespace reflected by the `$constant-expression$`.]{.addu}
 :::
 
@@ -2637,7 +2639,7 @@ Add the following to paragraph 1 of [namespace.udir]{.sref}, prior to the note:
 
 Add a production to the grammar for `$attribute-specifier$` as follows:
 
-::: bq
+::: std
 ```diff
   $attribute-specifier$:
      [ [ $attribute-using-prefix$@~_opt_~@ $attribute-list$ ] ]
@@ -2648,7 +2650,7 @@ Add a production to the grammar for `$attribute-specifier$` as follows:
 
 and update the grammar for balanced token as follows:
 
-::: bq
+::: std
 ```diff
   $balanced-token$ :
       ( $balanced-token-seq$@~_opt_~@ )
@@ -2662,7 +2664,7 @@ and update the grammar for balanced token as follows:
 
 Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 
-::: bq
+::: std
 
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
@@ -2671,7 +2673,7 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 
 Add built-in operator candidates for `std::meta::info` to [over.built]{.sref}:
 
-::: bq
+::: std
 [16]{.pnum} For every `T`, where `T` is a pointer-to-member type[, `std::meta::info`,]{.addu} or `std​::​nullptr_t`, there exist candidate operator functions of the form
 ```cpp
 bool operator==(T, T);
@@ -2683,7 +2685,7 @@ bool operator!=(T, T);
 
 Modify the grammar for `$template-argument$` as follows:
 
-::: bq
+::: std
 ```diff
 + $splice-template-argument$:
 +     [: constant-expression :]
@@ -2700,7 +2702,7 @@ Modify the grammar for `$template-argument$` as follows:
 
 Add a paragraph after paragraph 3 of [temp.names]{.sref}:
 
-::: bq
+::: std
 :::addu
 
 [*]{.pnum} A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a splicer of the form `template[: $constant-expression$ :]`.
@@ -2713,7 +2715,7 @@ Add a paragraph after paragraph 3 of [temp.names]{.sref}:
 
 Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
 
-::: bq
+::: std
 
 [3]{.pnum} In a `$template-argument$` [which does not contain a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`. [In a `$template-argument$` containing a `$splice-template-argument$`, an ambiguity between a `$splice-template-argument$` and an expression is resolved to a `$splice-template-argument$`.]{.addu}
 
@@ -2723,7 +2725,7 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 
 Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 
-::: bq
+::: std
 [1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$`. A `$template-argument$` having a `$splice-template-argument$` for such a `$template-parameter$` is treated as if were a `$type-id$` nominating the type reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
 
 :::
@@ -2732,7 +2734,7 @@ Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 
 Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
 
-::: bq
+::: std
 [2]{.pnum} The value of a non-type `$template-parameter$` _P_ of (possibly deduced) type `T` is determined from its template argument _A_ as follows. If `T` is not a class type and _A_ is [not]{.rm}[neither]{.addu} a `$braced-init-list$` [nor a `$splice-template-argument$`]{.addu}, _A_ shall be a converted constant expression ([expr.const]) of type `T`; the value of _P_ is _A_ (as converted).
 
 :::
@@ -2741,7 +2743,7 @@ Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
 
 Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
-::: bq
+::: std
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
 :::
 
@@ -2821,7 +2823,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
-::: bq
+::: std
 ::: addu
 **Header `<meta>` synopsis**
 
@@ -3050,7 +3052,7 @@ namespace std::meta {
 
 ### [meta.reflection.names] Reflection names and locations
 
-::: bq
+::: std
 ::: addu
 ```cpp
 consteval string_view name_of(info r);
@@ -3074,7 +3076,7 @@ consteval source_location source_location_of(info r);
 
 ### [meta.reflection.queries] Reflection queries
 
-::: bq
+::: std
 ::: addu
 ```cpp
 consteval bool is_public(info r);
@@ -3227,7 +3229,9 @@ consteval info dealias(info r);
 
 [#]{.pnum} *Returns*: If `r` designates a type alias or a namespace alias, a reflection designating the underlying entity. Otherwise, `r`.
 
-[#]{.pnum} [*Example*
+[#]{.pnum}
+
+::: example
 ```
 using X = int;
 using Y = X;
@@ -3235,7 +3239,7 @@ static_assert(dealias(^int) == ^int);
 static_assert(dealias(^X) == ^int);
 static_assert(dealias(^Y) == ^int);
 ```
--*end example*]
+:::
 
 ```cpp
 consteval info template_of(info r);
@@ -3245,7 +3249,9 @@ consteval vector<info> template_arguments_of(info r);
 
 [#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of the specialization designated by `r`, respectively.
 
-[#]{.pnum} [*Example*:
+[#]{.pnum}
+
+::: example
 ```
 template <class T, class U=T> struct Pair { };
 template <class T> using PairPtr = Pair<T*>;
@@ -3256,13 +3262,13 @@ static_assert(template_arguments_of(^Pair<int>).size() == 2);
 static_assert(template_of(^PairPtr<int>) == ^PairPtr);
 static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 ```
--*end example*]
+:::
 :::
 :::
 
 ### [meta.reflection.member.queries], Reflection member queries
 
-::: bq
+::: std
 ::: addu
 ```cpp
 template<class... Fs>
@@ -3360,7 +3366,7 @@ consteval vector<info> enumerators_of(info enum_type);
 
 ### [meta.reflection.substitute] Reflection substitution
 
-::: bq
+::: std
 ::: addu
 ```cpp
 consteval bool can_substitute(info templ, span<const info> arguments);
@@ -3388,7 +3394,7 @@ consteval info substitute(info templ, span<const info> arguments);
 
 ### [meta.reflection.unary] Unary type traits
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
@@ -3398,7 +3404,7 @@ consteval info substitute(info templ, span<const info> arguments);
 
 #### [meta.reflection.unary.cat] Primary type categories
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$` defined in this clause, `std::meta::$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
 
@@ -3419,7 +3425,9 @@ consteval bool is_class(info type);
 consteval bool is_function(info type);
 ```
 
-[2]{.pnum} [*Example*
+[2]{.pnum}
+
+::: example
 ```
 // an example implementation
 namespace std::meta {
@@ -3428,13 +3436,13 @@ namespace std::meta {
   }
 }
 ```
-*-end example*]
+:::
 :::
 :::
 
 #### [meta.reflection.unary.comp] Composite type categories
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$` defined in this clause, `std::meta::$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
 
@@ -3452,7 +3460,7 @@ consteval bool is_member_pointer(info type);
 
 #### [meta.reflection.unary.prop] Type properties
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
 
@@ -3529,7 +3537,7 @@ consteval bool reference_converts_from_temporary(info dst_type, info src_type);
 
 #### [meta.reflection.unary.prop.query] Type property queries
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$PROP$` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
 
@@ -3545,7 +3553,7 @@ consteval size_t extent(info type, unsigned i = 0);
 
 ### [meta.reflection.rel], Type relations
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} The consteval functions specified in this clause may be used to query relationships between types at compile time.
 
@@ -3577,14 +3585,14 @@ consteval bool is_nothrow_invocable_r(info result_type, info type, span<const in
 
 ### [meta.reflection.trans], Transformations between types
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.trans] contains consteval functions that may be used to transform one type to another following some predefined rule.
 :::
 :::
 
 #### [meta.reflection.trans.cv], Const-volatile modifications
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
 
@@ -3601,7 +3609,7 @@ consteval info add_cv(info type);
 
 #### [meta.reflection.trans.ref], Reference modifications
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
 
@@ -3615,7 +3623,7 @@ consteval info add_rvalue_reference(info type);
 
 #### [meta.reflection.trans.sign], Sign modifications
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
 ```cpp
@@ -3627,7 +3635,7 @@ consteval info make_unsigned(info type);
 
 #### [meta.reflection.trans.arr], Array modifications
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
 ```cpp
@@ -3638,7 +3646,7 @@ consteval info remove_all_extents(info type);
 :::
 
 #### [meta.reflection.trans.ptr], Pointer modifications
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
 ```cpp
@@ -3652,7 +3660,7 @@ consteval info add_pointer(info type);
 
 [There are four transformations that are deliberately omitted here. `type_identity` and `enable_if` are not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
 
