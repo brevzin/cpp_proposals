@@ -35,6 +35,7 @@ Since [@P2996R2]:
 * added `can_substitute`
 * added explanation of a naming issue with the [type traits](#other-type-traits)
 * added an alternative [named tuple](#named-tuple) implementation
+* made default/value/zero-initializing a `meta::info` yield a null reflection
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -2417,6 +2418,8 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
+[#]{.pnum} Every value of type `std::meta::info` is either a reflection of some operand or a *null reflection value*.
+
 [#]{.pnum} An ambiguity can arise between the interpretation of the operand of the reflection operator as a `$type-id$` or a `$cast-expression$`; in such cases, the `$type-id$` treatment is chosen.
 Parentheses can be introduced to force the `$cast-expression$` interpretation.
 
@@ -2493,7 +2496,9 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 ::: addu
 [*]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
 
-* [*.#]{.pnum} If one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
+* [*.#]{.pnum} If both operands are null reflection values, then they compare equal.
+* [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
+* [*.#]{.pnum} Otherwise, if one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
 * [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if they are reflections of the same namespace alias, alias template, or type alias, respectively.
 * [*.#]{.pnum} Otherwise, if neither operand is a reflection of an expression, then they compare equal if they are reflections of the same entity.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of an expression and the other is not, then they compare unequal.
@@ -2540,6 +2545,31 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 ::: addu
 [*]{.pnum} A *type alias* is either a name declared with the `typedef` specifier or a name introduced by an *alias-declaration*.
 :::
+:::
+
+### [dcl.init.general] Initialiezers (General)
+
+Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
+
+::: bq
+[6]{.pnum} To *zero-initialize* an object or reference of type `T` means:
+
+* [6.0]{.pnum} [if `T` is `std::meta::info`, the object is initialied to a null reflection value;]{.addu}
+* [6.1]{.pnum} if `T` is a scalar type ([basic.types.general]), the object is initialized to the value obtained by converting the integer literal `0` (zero) to `T`;
+* [6.2]{.pnum} [...]
+
+[7]{.pnum} To *default-initialize* an object of type `T` means:
+
+* [7.1]{.pnum} If `T` is a (possibly cv-qualified) class type ([class]), [...]
+* [7.2]{.pnum} If T is an array type, [...]
+* [7.*]{.pnum} [If `T` is `std::meta::info`, the object is zero-initialized.]{.addu}
+* [7.3]{.pnum} Otherwise, no initialization is performed.
+
+[8]{.pnum} A class type `T` is *const-default-constructible* if [`T` is `std::meta::info`,]{.addu} default-initialization of `T` would invoke a user-provided constructor of T (not inherited from a base class)[,]{.addu} or if
+
+* [8.1]{.pnum} [...]
+
+[9]{.pnum} To value-initialize an object of type T means: [...]
 :::
 
 ### [dcl.fct.def.delete] Deleted definitions
@@ -3641,11 +3671,13 @@ consteval info unwrap_reference(info type);
 consteval info unwrap_ref_decay(info type);
 ```
 
-[#]{.pnum} [*Example*:
+[#]{.pnum}
 
+::: example
 ```cpp
 // example implementation
 consteval info unwrap_reference(info type) {
+  type = dealias(type);
   if (has_template_arguments(type) && template_of(type) == ^reference_wrapper) {
     return add_lvalue_reference(template_arguments_of(type)[0]);
   } else {
@@ -3653,7 +3685,7 @@ consteval info unwrap_reference(info type) {
   }
 }
 ```
+:::
 
-*-end example*]
 :::
 :::
