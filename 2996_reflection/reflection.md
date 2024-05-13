@@ -2747,6 +2747,21 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
 :::
 
+### [temp.type] Type equivalence
+
+Extend *template-argument-equivalent* to handle `std::meta::info`:
+
+::: std
+[2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
+
+* [2.1]{.pnum} they are of integral type and their values are the same, or
+* [2.2]{.pnum} they are of floating-point type and their values are identical, or
+* [2.3]{.pnum} they are of type `std​::​nullptr_t`, or
+* [2.*]{.pnum} [they are of type `std::meta::info` and they compare equal, or]{.addu}
+* [2.4]{.pnum} they are of enumeration type and their values are the same, or
+* [2.5]{.pnum} [...]
+:::
+
 
 ### [temp.dep.expr] Type-dependent expressions
 
