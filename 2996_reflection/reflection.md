@@ -1499,6 +1499,17 @@ S<^y> sy;  // S<^y> has internal name linkage.
 ```
 :::
 
+Objects of type `std::meta::info` can be contextually converted to `bool` so they can be tested with the `if` statement. Conversion results in `false` for the null
+reflection and in `true` for all other reflection values. For example:
+
+:::bq
+```c++
+struct S;
+static_assert(^S);
+static_assert(!std::meta::info());
+```
+:::
+
 Namespace `std::meta` is associated with type `std::meta::info`: That allows the core meta functions to be invoked without explicit qualification.
 For example:
 
