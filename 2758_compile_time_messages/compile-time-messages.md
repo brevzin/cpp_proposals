@@ -1,6 +1,6 @@
 ---
 title: "Emitting messages at compile time"
-document: P2758R2
+document: P2758R3
 date: today
 audience: EWG
 author:
@@ -12,87 +12,21 @@ tag: constexpr
 
 # Revision History
 
-Since [@P2758R1], clarify the section about [SFINAE-friendliness](#errors-in-constraints), reduced the API to just one error function, and adding a [warning API](#warnings) as well.
+For R3: Clean-up the paper to account for other papers ([@P2741R3] and [@P2738R1]) being adopted. More discussion of tags, which are added to every API. Expanding wording.
 
-[@P2758R0] and [@P2741R0] were published at the same time and had a lot of overlap. Since then, [@P2741R3] was adopted. As such, this paper no longer needs to propose the same thing. That part of the paper has been removed. This revision now only adds library functions that emit messages at compile time.
+For [@P2758R2]: clarify the section about [SFINAE-friendliness](#errors-in-constraints), reduced the API to just one error function, and adding a [warning API](#warnings) as well.
+
+For [@P2758R1]: [@P2758R0] and [@P2741R0] were published at the same time and had a lot of overlap. Since then, [@P2741R3] was adopted. As such, this paper no longer needs to propose the same thing. That part of the paper has been removed. This revision now only adds library functions that emit messages at compile time.
 
 # Introduction
 
-Currently, our ability to provide diagnostics to users is pretty limited. There are two kinds of errors I want to talk about here: static assertions and forced constant evaluation failures.
+Currently, our ability to provide diagnostics to users is pretty limited. There are two ways that libraries can provide diagnostics to users right now.
 
-## `static_assert`
+First, there is `static_assert`. At the time of writing the initial revision of this paper, `static_assert` was limited to only accepting a string literal. However, since then, [@P2741R3] has been adopted for C++26, which allows uesr-generated messages. That is a fantastic improvement.
 
-We can use `static_assert`, but the only message we can provide is a string literal. This is useful (better than nothing), but is frequently insufficient. Consider:
+The second way is via forced constant evaluation failures. Consider the example:
 
-::: bq
-```cpp
-template <typename T>
-void foo(T t) {
-    static_assert(sizeof(T) == 8, "All types must have size 8");
-    // ...
-}
-```
-:::
-
-What happens when I try to call `foo('c')`? These are the error messages I get:
-
-* MSVC:
-  ```
-  <source>(6): error C2338: static_assert failed: 'All types must have size 8'
-  <source>(11): note: see reference to function template instantiation 'void foo<char>(T)' being compiled
-          with
-          [
-              T=char
-          ]
-  ```
-* GCC:
-  ```
-  <source>: In instantiation of 'void foo(T) [with T = char]':
-  <source>:11:8:   required from here
-  <source>:6:29: error: static assertion failed: All types must have size 8
-      6 |     static_assert(sizeof(T) == 8, "All types must have size 8");
-        |                   ~~~~~~~~~~^~~~
-  <source>:6:29: note: the comparison reduces to '(1 == 8)'
-  ```
-* Clang:
-  ```
-  <source>:6:5: error: static assertion failed due to requirement 'sizeof(char) == 8': All types must have size 8
-      static_assert(sizeof(T) == 8, "All types must have size 8");
-      ^             ~~~~~~~~~~~~~~
-  <source>:11:5: note: in instantiation of function template specialization 'foo<char>' requested here
-      foo('c');
-      ^
-  <source>:6:29: note: expression evaluates to '1 == 8'
-      static_assert(sizeof(T) == 8, "All types must have size 8");
-                    ~~~~~~~~~~^~~~
-  ```
-
-In this case, there are two additional useful pieces of information, neither of which I can provide in a string literal: what `T` is and what `sizeof(T)` is. In this case, all three compilers do tell me what `T` is (gcc and MSVC explicitly, clang in a way that you can figure out) and two of them also tell me what `sizeof(T)` is. So that's not too bad.
-
-But consider this slight variation:
-
-::: bq
-```cpp
-template <typename T>
-void foo(T t) {
-    using U = std::remove_pointer_t<T>;
-    static_assert(sizeof(U) == 8, "All types must have size 8");
-    // ...
-}
-```
-:::
-
-Think of `std::remove_pointer_t<T>` as representative of any kind of transformation. With this change, now only clang tells me that `U=char`.
-
-That's good of clang and gcc to provide this extra information, but there's only so much that we can rely on compilers for. Generally speaking, at the point of assertion, the programmer writing it is going to have a better sense of what's useful than the compiler author - who needs to come up with something general purpose that works well in all cases. That's a tough line to walk - printing all the information that's useful without printing so much information that it's impossible to actually find the useful bits.
-
-The compilers are doing better with every release, but in specific situations, the programmer will know what's important and can provide more and better information. If only they had any ability to do so.
-
-## Forced constant evaluation failures
-
-Consider the example:
-
-::: bq
+::: std
 ```cpp
 auto f() -> std::string {
     return std::format("{} {:d}", 5, "not a number");
@@ -189,7 +123,7 @@ The problem here is that the only way to "fail" here is to do something that isn
 
 Imagine how much easier this would be for the end-user to determine the problem and then fix if the compiler error you got was something like this:
 
-::: bq
+::: std
 ```
 format("{} {:d}", int, const char*)
              ^         ^
@@ -221,93 +155,28 @@ That is the question. Basically, when it comes to emitting some kind of text (vi
 
 But there's also a bigger issue: while I said above that we have a useful `format` in `constexpr`, that wasn't _entirely_ accurate. The parsing logic is completely `constexpr` (to great effect), but the formatting logic currently is not. Neither `std::format` nor `fmt::format` are declared `constexpr` today. In order to be able to even consider the question of using `std::format` for generating compile-time strings, we have to first ask to what extent this is even feasible.
 
-I think there are currently two limitations (excluding just adding `constexpr` everywhere and possibly dealing with some algorithms that happen to not be `constexpr`-friendly):
+Initially (as of R0 of this paper), I think there were currently two limitations (excluding just adding `constexpr` everywhere and possibly dealing with some algorithms that happen to not be `constexpr`-friendly):
 
 1. formatting floating-point types is not possible right now (we made the integral part of `std::to_chars()` `constexpr` [@P2291R3], but not the floating point).
-2. `fmt::format` and `std::format` rely on type erasing user-defined types, and that's currently impossible to do at `constexpr` time.
+2. `fmt::format` and `std::format` rely on type erasing user-defined types, which was not possible to do at compile time due to needing to cast back from `void*`.
 
-I am not in a position to say how hard the first of the two is (it's probably pretty hard?), but I have a separate paper addressing the second [@P2747R0]. If we can do any kind of type erasure at all, then it's probably not too much work to get the rest of format working - even if we ignore floating point entirely. Without compile-time type erasure, it's still possible to write just a completely different consteval formatting API - but I doubt people would be too happy about having to redo all that work.
+I am not in a position to say how hard the first of the two is (it's probably pretty hard?), but the second has already been resolved with the adoption of [@P2738R1] (and already implemented in at least gcc and clang). That's probably not too much work to get the rest of format working - even if we ignore floating point entirely. Without compile-time type erasure, it's still possible to write just a completely different consteval formatting API - but I doubt people would be too happy about having to redo all that work.
 
 We will eventually have `constexpr std::format`, I'm just hoping that we can do so with as little overhead on the library implementation itself (in terms of lines of code) as possible.
 
-# Improving `static_assert`
-
-There are basically two approaches we can take to generalizing the kinds of output `static_assert` can produce.
-
-We can allow any constant expression that is some kind of range of `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`. Like this one:
-
-::: bq
-```cpp
-static_assert(cond, std::format("The value is {}", 42));
-```
-:::
-
-Or we can embed `std::format` into the declaration itself:
-
-::: bq
-```cpp
-static_assert(cond, "The value is {}", 42);
-```
-:::
-
-The latter is definitely more ergonomic than the former, but only because you don't have to write the call to `std::format`. However, it has a couple problems.
-
-One big problem is: what does this mean?
-
-::: bq
-```cpp
-static_assert(cond, "T{} must be a valid expression.");
-```
-:::
-
-Today, that's a valid declaration. But that isn't a valid format string without format arguments - you'd have to escape the braces to get the same behavior. We could resolve this issue by saying that:
-
-* `static_assert(cond, $string-literal$)` is the existing behavior
-* `static_assert(cond, $string-literal$, $expression-list$...)` where `$expression-list$` contains at least one expression is the new behavior
-
-This seems... not great. Rust went this approach before and recently changed it in the 2021 edition. From [panic macro consistency](https://doc.rust-lang.org/edition-guide/rust-2021/panic-macro-consistency.html):
-
-::: quote
-The `panic!()`{.language-rust} macro is one of Rust's most well known macros. However, it has some subtle surprises that we can't just change due to backwards compatibility.
-
-```rust
-// Rust 2018
-panic!("{}", 1); // Ok, panics with the message "1"
-panic!("{}"); // Ok, panics with the message "{}"
-```
-
-[...]
-
-This will especially be a problem once implicit format arguments are stabilized. That feature will make `println!("hello {name}")`{.language-rust} a short-hand for `println!("hello {}", name)`{.language-rust}. However, `panic!("hello {name}")`{.language-rust} would not work as expected, since `panic!()`{.language-rust} doesn't process a single argument as format string.
-
-To avoid that confusing situation, Rust 2021 features a more consistent `panic!()`{.language-rust} macro. The new `panic!()`{.language-rust} macro will no longer accept arbitrary expressions as the only argument. It will, just like `println!()`{.language-rust}, always process the first argument as format string.
-:::
-
-Generally speaking, probably not a great idea to adopt a language design that another language is explicitly moving away from.
-
-And we, unfortunately, also can't simply change the meaning of existing `static_assert` declarations in order to start treating them uniformly as format strings. If we had some mechanism to break source compatibility in an opt-in way (like, say, Rust editions), then that's something we could consider. But we don't, so we can't.
-
-This approach has another problem, which is tying in a complex library mechanism into a language feature. But I'm not really sure it's worth dwelling on in light of the fact that we can't really go this route anyway.
-
-That leaves the other idea - requiring the user to write `std::format` themselves:
-
-::: bq
-```cpp
-static_assert(cond, std::format("The value is {}", 42));
-```
-:::
-
-Tedious, but at least it makes a facility possible that currently is not. In order to specify this, we'd need to extend the definition of `static_assert`. Which [@P2741R3] has already done for us.
-
 # Improving compile-time diagnostics
 
-While in `static_assert`, I don't think we can have a `std::format()`-based API, for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:
+While in `static_assert`, I'm not sure that we can adopt a `std::format()`-based API [^ynot], for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:
 
-::: bq
+[^ynot]: A previous revision of the paper [explained why](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2758r2.html#improving-static_assert): `static_assert(cond, "T{} must be valid expression")` is a valid assertion today. Adopting the `format` API would break this assertion - were it to fire. However, given that this is a static assertion, perhaps there's room to maneuver here.
+
+::: std
 ```cpp
 namespace std {
   template<class... Args>
     constexpr void constexpr_print(format_string<Args...> fmt, Args&&... args);
+  template<class... Args>
+    constexpr void constexpr_warn(format_string<Args...> fmt, Args&&... args);
   template<class... Args>
     constexpr void constexpr_error(format_string<Args...> fmt, Args&&... args);
 }
@@ -316,10 +185,11 @@ namespace std {
 
 But we'll probably still need a lower-level API as well. Something these facilities can be implemented on top of, that we might want to expose to users anyway in case they want to use something other than `std::format` for their formatting needs. Perhaps something like this:
 
-::: bq
+::: std
 ```cpp
 namespace std {
   constexpr void constexpr_print_str(string_view);
+  constexpr void constexpr_warn_str(string_view);
   constexpr void constexpr_error_str(string_view);
 }
 ```
@@ -415,7 +285,7 @@ that is allowed to be non-constant) and thus `s` would not be statically initial
 
 Now, my guiding principle here is that if we take some code that currently works and does some constant evaluation, and add to that code a `constexpr_print` statement, the _only_ change in behavior should be the addition of output during compile time. For instance:
 
-::: bq
+::: std
 ```cpp
 constexpr auto f(int i) -> int {
     std::constexpr_print("Called f({})\n", i);
@@ -434,7 +304,7 @@ I think buffer-then-commit is right approach. But also for the first example, th
 
 An interesting follow-on is what happens here:
 
-::: bq
+::: std
 ```cpp
 constexpr auto f(int i) -> int {
     if (i < 0) {
@@ -456,7 +326,7 @@ That seems undesirable: this is, after all, an error that we have the opportunit
 
 We also have to consider the predictability question for error-handling. Here's that same example again:
 
-::: bq
+::: std
 ```cpp
 template<typename> constexpr int g(int i) {
     if (i < 0) {
@@ -489,7 +359,7 @@ But the question is, _how_ do you want to fail? There are so many different ways
 
 Which fallback depends entirely on the circumstance. For `formatter<T>::parse`, one of my motivating examples here, we have to throw a `std::format_error` in this situation. The right pattern there would probably be:
 
-::: bq
+::: std
 ```cpp
 if consteval {
     std::constexpr_error("Bad specifier {}", *it);
@@ -501,7 +371,7 @@ if consteval {
 
 Which can be easily handled in its own API:
 
-::: bq
+::: std
 ```cpp
 template <typename... Args>
 constexpr void format_parse_failure(format_string<Args...> fmt, Args&&... args) {
@@ -522,7 +392,7 @@ But that's a format-specific solution. But a similar pattern works just fine for
 
 Let's take a look again at the example I showed [earlier](#predictability):
 
-::: bq
+::: std
 ```cpp
 constexpr auto f(int i) -> int {
     if (i < 0) {
@@ -546,23 +416,23 @@ That is, `g<-1>()` is ill-formed, with our current rules. That would be the cons
 
 If we want an error to bubble up such that `g<-1>()` would be SFINAE-friendly, that seems like an entirely different construct than `std::constexpr_error_str`: that would be an exception - that the condition could catch and swallow.
 
-## Warnings
+## Warnings and Tagging
 
 Consider the call:
 
-::: bq
+::: std
 ```cpp
 std::format("x={} and y=", x, y);
 ```
 :::
 
-The user probably intended to format both `x` and `y`, but actually forgot to write the `{}` for the second argument. So this call has an extra argument that is not used by any of the formatters. This is, surprisingly to many people, not an error. This is by design - to handle use-cases like translation, where some of the arguments may not be used, which is an important use-case of `format`. (Note that the opposite case, not providing enough arguments, is a compile error).
+The user probably intended to format both `x` and `y`, but actually forgot to write the `{}` for the second argument. Which means that this call has an extra argument that is not used by any of the formatters. This is, surprisingly to many people, not an error. This is by design - to handle use-cases like translation, where some of the arguments may not be used, which is an important use-case of `format`. (Note that the opposite case, not providing enough arguments, is a compile error).
 
 However, it is not a use-case that exists in every domain. For many users of `format`, the above (not consuming every format argument) is a bug.
 
 One approach that we could take is to allow the `format` library to flag potential misuses in a way that users can opt in to or opt out of. We even have a tool for that already: warnings! If the format library could issue a custom diagnostic, like:
 
-::: bq
+::: std
 ```cpp
 std::constexpr_warning(
   "format-too-many-args",
@@ -573,15 +443,30 @@ std::constexpr_warning(
 
 Then the implementation could let users opt in with `-Wformat-too-many-args` (or maybe opt out with `-Wno-format-too-many-args`, or maybe some other invocation).
 
+Moreover, even if *some* parts of your application do translation, many others might not. Perhaps rather than globally adding `-Wno-format-too-many-args`, an implementation would allow a `#pragma` to enable (or disable) this particular warning for the duration of a translation unit. Implementations already do this sort of thing, which is exactly what we want. All we need to do is allow a library author to provide a tag.
+
 There are probably many such examples in many libraries. Giving library authors the power to warn users (and users the power to choose their warning granularity) seems very useful.
 
+### Tag Restrictions
+
+During an [SG-16 telecon](https://github.com/sg16-unicode/sg16-meetings/tree/master?tab=readme-ov-file#april-10th-2024), there was some discussion on what the requirements are of the tag we want to pass to `std::constexpr_warning`. For instance, should this be a core language facility so that we can require a string literal?
+
+Unfortunately, I don't think we can require a string literal - since that would prohibit future evolution to add the format API on top of `std::constexpr_warning_str` and friends. Such an API would need to forward its argument down to the hypothetical core language feature, at which point we lose "string-literal-ness." We should, however, strongly encourage users to only use string literal tags.
+
+But we do have to have requirements on the tag, since this is going to be something that we want to expose externally as described above - whether as a command-line flag or `#pragma`. So no quotes, semicolons, or other characters with special meaning in command line shells.
+
+My opening bid is that (and I am obviously not a text guy): a tag is only allowed to contain: `A-Z`{.x}, `a-z`, `0-9`{.x}, `_`, and `-`{.x}. That's a pretty limited set, but it's probably sufficient for the use-case and should not cause problems on shells, etc.
+
+### Tagging in other interfaces
+
+[@P2758R2] only introduced a `tag` parameter for `warning` but not for `print` or `error`. SG-16 suggested that each of the interfaces should also accept a tag that could be used to either suppress diagnostics or elevate to an error. This revision adds those parameters as well (for `print`, optionally, for `warning` and `error`, mandatory).
 
 # Proposal
 
 This paper proposes the following:
 
-1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str(msg)`.
-2. Introduce a new compile-time error APIs, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(msg)` will both cause the program to be ill-formed additionally cause the expression to not be a constant expression. EWG took a poll in February 2023 to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
+1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str([tag,], msg)`.
+2. Introduce a new compile-time error APIs, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(tag, msg)` will both cause the program to be ill-formed additionally cause the expression to not be a constant expression, emitting the message under the provided tag (which can be used in an implementation-defined way to control whether the diagnostic is emitted). EWG took a poll in February 2023 to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
 
     |SF|F|N|A|SA|
     |-|-|-|-|-|
@@ -591,19 +476,25 @@ This paper proposes the following:
 
 3. Introduce a new compile time warning API that only has effect if manifestly constant evaluated: `std::constexpr_warning_str(tag, msg)`. This will emit a warning containing the provided message under the provided tag, which can be used in an implementation-defined way to control whether the diagnostic is emitted.
 
-4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with:
-   a. `std::constexpr_print(fmt_str, args...)`
-   a. `std::constexpr_warning(tag, fmt_str, args...)`
-   b. `std::constexpr_error(fmt_str, args...)`
-   c. a `format`-specific helper `std::format_parse_error(fmt_str, args...)` that either calls `std::constexpr_error` or throws a `std::format_error`, depending on context.
+4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with `std::format`-friendly alternatives.
 
 # Wording
 
 We don't quite have `constexpr std::format` yet (although with the addition of [@P2738R1] we're probably nearly the whole way there), so the wording here only includes (1) and (2) above - with the understanding that a separate paper will materialize to produce a `constexpr std::format` and then another separate paper will add `std::constexpr_print` and `std::constexpr_error` (the nicer names, with the more user-friendly semantics).
 
+Add to [intro.compliance.general]:
+
+::: std
+[2]{.pnum} [...] Furthermore, a conforming implementation shall not accept:
+
+* [2.4]{.pnum} a preprocessing translation unit containing a `#error` preprocessing directive ([cpp.error]) [or]{.rm} [,]{.addu}
+* [2.5]{.pnum} a translation unit with a `$static_assert-declaration$` that fails ([dcl.pre]) [.]{.rm} [, or]{.addu}
+* [2.*]{.pnum} [a translation unit which evaluated a call to `std::constexpr_error_str` ([meta.const.msg]) during constant evaluation.]{.addu}
+:::
+
 Add to [meta.type.synop]{.sref}:
 
-::: bq
+::: std
 ```diff
 // all freestanding
 namespace std {
@@ -613,33 +504,67 @@ namespace std {
   constexpr bool is_constant_evaluated() noexcept;
   consteval bool is_within_lifetime(const auto*) noexcept;
 
++ // [meta.const.msg], emitting messages at compile time
++ struct $tag-string$; // exposition-only
++
 + constexpr void constexpr_print_str(string_view) noexcept;
-+ constexpr void constexpr_warning_str(string_view, string_view) noexcept;
-+ constexpr void constexpr_error_str(string_view) noexcept;
++ constexpr void constexpr_print_str($tag-string$, string_view) noexcept;
++ constexpr void constexpr_warning_str($tag-string$, string_view) noexcept;
++ constexpr void constexpr_error_str($tag-string$, string_view) noexcept;
 
 }
 ```
 :::
 
-Add to [meta.const.eval]{.sref}:
+Add a new clause after [meta.const.eval]{.sref} named "Emitting messages at compile time":
 
-::: bq
+::: std
 ::: addu
+[1]{.pnum} The facilities in this subclause are used to emit messages at compile time.
+
+[#]{.pnum} A call to any of the functions defined in this subclause may produce a diagnostic message during constant evaluation. The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
+
+```
+struct $tag-string$ { // exposiion-only
+private:
+  string_view $str$;  // exposition-only
+
+public:
+  template<class T> consteval $tag-string$(const T& s);
+};
+```
+
+```
+template<class T> consteval $tag-string$(const T& s);
+```
+
+[#]{.pnum} *Constraints*: `const T&` models `convertible_to<string_view>`.
+
+[#]{.pnum} *Effects*: Direct-non-list-initializes `$str$` with `s`.
+
+[#]{.pnum} *Remarks*: A call to this function is not a core constant expression unless every character in `$str$` is either a `$nondigit$`, a `$digit$`, or a `-`.
+
+
 ```
 constexpr void constexpr_print_str(string_view msg) noexcept;
-```
-[6]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
-
-```
-constexpr void constexpr_warning_str(string_view tag, string_view msg) noexcept;
+constexpr void constexpr_print_str($tag-string$ tag, string_view msg) noexcept;
 ```
 [#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
 
-[#]{.pnum} *Recommended practice*: Implementations should issue a warning in such cases and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `tag`.
+[#]{.pnum} *Recommended practice*: Implementations should include the text of `$tag$.$str$`, if provided, in the diagnostic.
+
 ```
-constexpr void constexpr_error_str(string_view msg) noexcept;
+constexpr void constexpr_warning_str($tag-string$ tag, string_view msg) noexcept;
+```
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
+
+[#]{.pnum} *Recommended practice*: Implementations should issue a warning in such cases and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `$tag$.$str$`.
+```
+constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
 ```
 [#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed, a diagnostic message is issued including the text of `msg`, and the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
+
+[#]{.pnum} *Recommended practice*: Implementations should include the text of `$tag$.$str$` in the diagnostic.
 :::
 :::
 
