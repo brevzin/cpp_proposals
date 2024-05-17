@@ -120,7 +120,7 @@ The Lock3 implementation of reflection facilities based on [@P1240R2] (and other
 
 Change [dcl.pre]{.sref}:
 
-::: bq
+::: std
 ```diff
   $block-declaration$:
     $simple-declaration$
@@ -145,7 +145,7 @@ Change [dcl.pre]{.sref}:
 
 And then after [dcl.pre]{.sref}/13:
 
-::: bq
+::: std
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
 
 ::: addu
