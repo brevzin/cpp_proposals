@@ -102,7 +102,7 @@ template<typename... Ts> struct Tuple {
 ```
 :::
 
-In this example, there is just a single expression statement being evaluated.  However, we are anticipating reflection code where more complex statement sequences will be used.
+In this example, there is just a single expression statement being evaluated.  However, we are anticipating reflection code where more complex statement sequences will be used (you can see eome examples in previous papers, e.g. [@P1717R0] [@P2237R0]).
 
 We did consider other syntax variations such as
 
