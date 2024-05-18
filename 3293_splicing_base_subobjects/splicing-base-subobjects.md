@@ -13,23 +13,23 @@ toc: true
 
 # Introduction
 
-[@P2996R3] proposing many different forms of splicing, including splicing a non-static data member. However, it does not yet support splicing a base class subobject.
+There are many contexts in which it is useful to perform the same operation on each subobject of an object in sequence. These include serialization or [formatting](https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_print_function) or [hashing](https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_hash_value).
 
-This means that iterating over the `std::meta::subobjects_of` a type does not allow for uniform access to all of those subobjects:
+[@P2996R3] seems like it gives us an ideal solution to this problem, in the form of being able to iterate over all the subobjects of an object and splicing accesses to them. However, it is not quite complete:
 
 ::: std
 ```cpp
 template <class T, class F>
 void for_each_subobject(T const& obj, F f) {
     template for (constexpr auto sub : subobjects_of(^T)) {
-      f(obj.[:sub:]); // this is valid for non-static data members
-                      // but not for base classes
+      f(obj.[:sub:]); // this is valid syntax for non-static data members
+                      // but is invalid for base classes subobjects
     }
 }
 ```
 :::
 
-Instead we have to handle bases distinctly:
+Instead we have to handle bases separately from the non-static data members:
 
 ::: std
 ```cpp

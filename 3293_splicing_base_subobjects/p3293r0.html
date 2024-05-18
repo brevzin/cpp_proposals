@@ -593,23 +593,27 @@ subobject</h1>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p><span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> proposing many different forms
-of splicing, including splicing a non-static data member. However, it
-does not yet support splicing a base class subobject.</p>
-<p>This means that iterating over the <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>subobjects_of</code>
-a type does not allow for uniform access to all of those subobjects:</p>
+<p>There are many contexts in which it is useful to perform the same
+operation on each subobject of an object in sequence. These include
+serialization or <a href="https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_print_function">formatting</a>
+or <a href="https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_hash_value">hashing</a>.</p>
+<p><span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> seems like it gives us an ideal
+solution to this problem, in the form of being able to iterate over all
+the subobjects of an object and splicing accesses to them. However, it
+is not quite complete:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> F<span class="op">&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> for_each_subobject<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj, F f<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> sub <span class="op">:</span> subobjects_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span>obj<span class="op">.[:</span>sub<span class="op">:])</span>; <span class="co">// this is valid for non-static data members</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                      <span class="co">// but not for base classes</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span>obj<span class="op">.[:</span>sub<span class="op">:])</span>; <span class="co">// this is valid syntax for non-static data members</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                      <span class="co">// but is invalid for base classes subobjects</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>Instead we have to handle bases distinctly:</p>
+<p>Instead we have to handle bases separately from the non-static data
+members:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> F<span class="op">&gt;</span></span>
