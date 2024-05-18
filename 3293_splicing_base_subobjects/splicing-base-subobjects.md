@@ -98,7 +98,7 @@ But this feels a bit silly? Why should we have to write this?
 
 # Proposal
 
-We propose to define `obj.[:mem:]` for `mem` being a reflection of a base class of the `obj` as being an access to that base class subobject.
+We propose to define `obj.[:mem:]` (where `mem` is a reflection of a base class of the type of `obj`) as being an access to that base class subobject, in the same way that `obj.[:nsdm:]` (where `nsdm` is a reflection of a non-static data member) is an access to that data member.
 
 Additionally `&[:mem:]` where `mem` is a reflection of a base class `B` of type `T` should yield a `B T::*` with appropriate offset.
 
