@@ -139,7 +139,7 @@ Change [dcl.pre]{.sref}:
     static_assert ( $constant-expression$ , $static_assert-message$ ) ;
 
 + $consteval-block-declaration$:
-+   consteval { $statement-seq$@~opt~@ }
++   consteval $compound-statement$
 ```
 :::
 
@@ -151,11 +151,11 @@ And then after [dcl.pre]{.sref}/13:
 ::: addu
 [*]{.pnum} The `$consteval-block-declaration$`
 ```cpp
-consteval { $statement-seq$@~opt~@ }
+consteval $compound-statement$
 ```
 is equivalent to
 ```cpp
-static_assert(([]() -> void consteval { $statement-seq$@~opt~@ }(), true));
+static_assert(([]() -> void consteval $compound-statement$(), true));
 ```
 [Such a `$static_assert-declaration$` never fails.]{.note}
 :::
