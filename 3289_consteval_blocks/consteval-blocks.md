@@ -226,8 +226,8 @@ Adjust the grammar in [class.mem.general]{.sref} and the rule in p3:
 * [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacant-declaration$`.]{.addu}
 :::
 
-And similar in [class.union.anon]{.sref}/1:
+And similar in [class.union.anon]{.sref}/1. [This refactor allows putting in an `$empty-declaration$` into an anonymous union, which is kind of a consistency drive by with other classes.]{.ednote}
 
 ::: std
-[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaratoin$`]{.addu}.  [...]
+[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu}.  [...]
 :::
