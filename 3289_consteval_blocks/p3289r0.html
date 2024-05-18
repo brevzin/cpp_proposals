@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-17" />
+  <meta name="dcterms.date" content="2024-05-18" />
   <title>consteval blocks</title>
   <style>
       code{white-space: pre-wrap;}
@@ -561,7 +561,7 @@ blocks</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-17</td>
+    <td>2024-05-18</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -727,40 +727,103 @@ Implementation Status<a href="#implementation-status" class="self-link"></a></h1
 this feature. The EDG front end is expected to add this feature shortly
 as part of its reflection extensions.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The
+simplest way to do the wording is to add a
+<code class="sourceCode default">consteval</code> block as a
+<em>kind</em> of
+<code class="sourceCode default"><em>static_assert-declaration</em></code>.
+That’s the minimal diff. However, it’s kind of weird to say that a
+<code class="sourceCode default">consteval</code> block literally is a
+<code class="sourceCode default">static_assert</code> - even if we
+specify the former in terms of the latter. So we’d rather take a few
+more words to get somewhere that feels more sensible. Plus this change
+reduces a lot of duplication between
+<code class="sourceCode default"><em>empty-declaration</em></code> and
+<code class="sourceCode default"><em>static_assert-declaration</em></code>,
+which are treated the same in a lot of places anyway. ]</span></p>
+<p>Change <span>6.2 <a href="https://wg21.link/basic.def">[basic.def]</a></span>/2:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span>
+Each entity declared by a
+<code class="sourceCode cpp"><em>declaration</em></code> is also defined
+by that <code class="sourceCode cpp"><em>declaration</em></code>
+unless:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(2.1)</a></span>
+it declares a function without specifying the function’s body
+([dcl.fct.def]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.2)</a></span>
+[…]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.13)</a></span>
+it is a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span></del></span>
+<span class="addu"><code class="sourceCode cpp"><em>vacant-declaration</em></code></span>
+([dcl.pre]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(2.14)</a></span>
+it is an
+<code class="sourceCode cpp"><em>attribute-declaration</em></code>
+([dcl.pre]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(2.15)</a></span>
+<span class="rm" style="color: #bf0303"><del>it is an
+<span><code class="sourceCode default"><em>empty-declaration</em></code></span>
+([dcl.pre]),</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.16)</a></span>
+[…]</li>
+</ul>
+</blockquote>
+</div>
 <p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>  <em>block-declaration</em>:</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <em>simple-declaration</em></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <em>asm-declaration</em></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <em>namespace-alias-definition</em></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <em>using-declaration</em></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <em>using-enum-declaration</em></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <em>using-directive</em></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <em>static_assert-declaration</em></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>consteval-block-declaration</em></span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <em>static_assert-declaration</em>:</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> ) ;</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> , <em>static_assert-message</em> ) ;</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>consteval-block-declaration</em>:</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval <em>compound-statement</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>  <em>name-declaration</em>:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <em>block-declaration</em></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <em>nodeclspec-function-declaration</em></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <em>function-definition</em></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <em>friend-type-declaration</em></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <em>template-declaration</em></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <em>deduction-guide</em></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <em>linkage-specification</em></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <em>namespace-definition</em></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>empty-declaration</em></span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <em>attribute-declaration</em></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <em>module-import-declaration</em></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <em>block-declaration</em>:</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <em>simple-declaration</em></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <em>asm-declaration</em></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <em>namespace-alias-definition</em></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <em>using-declaration</em></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <em>using-enum-declaration</em></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <em>using-directive</em></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>static_assert-declaration</em></span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacant-declaration</em></span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>vacant-declaration</em>:</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>static_assert-declaration</em></span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>empty-declaration</em></span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>consteval-block-declaration</em></span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>  <em>static_assert-declaration</em>:</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> ) ;</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> , <em>static_assert-message</em> ) ;</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>consteval-block-declaration</em>:</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval <em>compound-statement</em></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
 <p>And then after <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>/13:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">13</a></span>
 <em>Recommended practice</em>: When a
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
 fails, […]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">*</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">*</a></span>
 The
 <code class="sourceCode cpp"><em>consteval-block-declaration</em></code></p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <em>compound-statement</em></span></code></pre></div>
@@ -770,9 +833,66 @@ The
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
 never fails.<span> — <em>end note</em> ]</span></span></p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">14</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">14</a></span>
 An <code class="sourceCode cpp"><em>empty-declaration</em></code> has no
 effect.</p>
+</blockquote>
+</div>
+<p>Adjust the grammar in <span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>
+and the rule in p3:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  <em>member-declaration</em>:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>decl-specifier-seq</em><sub>opt</sub> <em>member-declarator-list</em><sub>opt</sub>;</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <em>function-definition</em></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <em>friend-type-declaration</em></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <em>using-declaration</em></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <em>using-enum-declaration</em></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>static_assert-declaration</em></span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacant-declaration</em></span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <em>template-declaration</em></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <em>explicit-specialization</em></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <em>deduction-guide</em></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>empty-declaration</em></span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">3</a></span>
+A <code class="sourceCode cpp"><em>member-declaration</em></code> does
+not declare new members of the class if it is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1)</a></span>
+a friend declaration ([class.friend]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.2)</a></span>
+a <code class="sourceCode cpp"><em>deduction-guide</em></code>
+([temp.deduct.guide]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(3.3)</a></span>
+a <code class="sourceCode cpp"><em>template-declaration</em></code>
+whose declaration is one of the above,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.4)</a></span>
+a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span>,</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.5)</a></span>
+a <code class="sourceCode cpp"><em>using-declaration</em></code>
+([namespace.udecl]) , or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(3.6)</a></span>
+<span class="rm" style="color: #bf0303"><del>an
+<span><code class="sourceCode default"><em>empty-declaration</em></code></span>.</del></span>
+<span class="addu">a
+<code class="sourceCode cpp"><em>vacant-declaration</em></code>.</span></li>
+</ul>
+</blockquote>
+</div>
+<p>And similar in <span>11.5.2 <a href="https://wg21.link/class.union.anon">[class.union.anon]</a></span>/1:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">1</a></span>
+[…] Each <code class="sourceCode cpp"><em>member-declaration</em></code>
+in the <code class="sourceCode cpp"><em>member-specification</em></code>
+of an anonymous union shall either define one or more public non-static
+data members or be a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span></del></span>
+<span class="addu"><code class="sourceCode cpp"><em>vacant-declaratoin</em></code></span>.
+[…]</p>
 </blockquote>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>

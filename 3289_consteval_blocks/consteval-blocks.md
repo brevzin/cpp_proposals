@@ -118,10 +118,38 @@ The Lock3 implementation of reflection facilities based on [@P1240R2] (and other
 
 # Wording
 
+[The simplest way to do the wording is to add a `consteval` block as a _kind_ of `$static_assert-declaration$`. That's the minimal diff. However, it's kind of weird to say that a `consteval` block literally is a `static_assert` - even if we specify the former in terms of the latter. So we'd rather take a few more words to get somewhere that feels more sensible. Plus this change reduces a lot of duplication between `$empty-declaration$` and `$static_assert-declaration$`, which are treated the same in a lot of places anyway.]{.ednote}
+
+Change [basic.def]{.sref}/2:
+
+::: std
+[2]{.pnum} Each entity declared by a `$declaration$` is also defined by that `$declaration$` unless:
+
+* [2.1]{.pnum} it declares a function without specifying the function's body ([dcl.fct.def]),
+* [2.2]{.pnum} [...]
+* [2.13]{.pnum} it is a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu} ([dcl.pre]),
+* [2.14]{.pnum} it is an `$attribute-declaration$` ([dcl.pre]),
+* [2.15]{.pnum} [it is an `$empty-declaration$` ([dcl.pre]),]{.rm}
+* [2.16]{.pnum} [...]
+:::
+
 Change [dcl.pre]{.sref}:
 
 ::: std
 ```diff
+  $name-declaration$:
+    $block-declaration$
+    $nodeclspec-function-declaration$
+    $function-definition$
+    $friend-type-declaration$
+    $template-declaration$
+    $deduction-guide$
+    $linkage-specification$
+    $namespace-definition$
+-   $empty-declaration$
+    $attribute-declaration$
+    $module-import-declaration$
+
   $block-declaration$:
     $simple-declaration$
     $asm-declaration$
@@ -129,10 +157,15 @@ Change [dcl.pre]{.sref}:
     $using-declaration$
     $using-enum-declaration$
     $using-directive$
-    $static_assert-declaration$
-+   $consteval-block-declaration$
+-   $static_assert-declaration$
     $alias-declaration$
     $opaque-enum-declaration$
++   $vacant-declaration$
+
++ $vacant-declaration$:
++    $static_assert-declaration$
++    $empty-declaration$
++    $consteval-block-declaration$
 
   $static_assert-declaration$:
     static_assert ( $constant-expression$ ) ;
@@ -161,4 +194,40 @@ static_assert(([]() -> void consteval $compound-statement$(), true));
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.
+:::
+
+Adjust the grammar in [class.mem.general]{.sref} and the rule in p3:
+
+::: std
+```diff
+  $member-declaration$:
+    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$@~opt~@ $member-declarator-list$@~opt~@;
+    $function-definition$
+    $friend-type-declaration$
+    $using-declaration$
+    $using-enum-declaration$
+-   $static_assert-declaration$
++   $vacant-declaration$
+    $template-declaration$
+    $explicit-specialization$
+    $deduction-guide$
+    $alias-declaration$
+    $opaque-enum-declaration$
+-   $empty-declaration$
+```
+
+[3]{.pnum} A `$member-declaration$` does not declare new members of the class if it is
+
+* [#.#]{.pnum} a friend declaration ([class.friend]),
+* [#.#]{.pnum} a `$deduction-guide$` ([temp.deduct.guide]),
+* [#.#]{.pnum} a `$template-declaration$` whose declaration is one of the above,
+* [#.#]{.pnum} a [`$static_assert-declaration$`,]{.rm}
+* [#.#]{.pnum} a `$using-declaration$` ([namespace.udecl]) , or
+* [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacant-declaration$`.]{.addu}
+:::
+
+And similar in [class.union.anon]{.sref}/1:
+
+::: std
+[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaratoin$`]{.addu}.  [...]
 :::
