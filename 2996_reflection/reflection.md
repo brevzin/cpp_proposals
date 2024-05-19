@@ -37,6 +37,7 @@ Since [@P2996R2]:
 * added an alternative [named tuple](#named-tuple) implementation
 * made default/value/zero-initializing a `meta::info` yield a null reflection
 * added addressed splicing, which is implemented but was omitted from the paper
+* added another overload to `reflect_invoke` to support template arguments
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -1757,6 +1758,7 @@ namespace std::meta {
 
   // @[reflect_invoke](#reflect_invoke)@
   consteval auto reflect_invoke(info target, span<info const> args) -> info;
+  consteval auto reflect_invoke(info target, span<info const> tmpl_args, span<info const> args) -> info;
 
    // @[value_of<T>](#value_oft)@
   template<typename T>
@@ -2011,15 +2013,17 @@ If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will
 ```c++
 namespace std::meta {
   consteval auto reflect_invoke(info target, span<info const> args) -> info;
+  consteval auto reflect_invoke(info target, span<info const> tmpl_args, span<info const> args) -> info;
 }
 ```
 :::
 
-This metafunction produces a reflection of the value returned by a call expression.
+These metafunctions produces a reflection of the value returned by a call expression.
 
-Letting `F` be the entity reflected by `target`, and `A_0, ..., A_n` be the sequence of entities reflected by the values held by `args`: if the expression `F(A_0, ..., A_N)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A_0, ..., A_N)`.
+For the first overload: Letting `F` be the entity reflected by `target`, and `A@~0~@, A@~1~@, ..., A@~N~@` be the sequence of entities reflected by the values held by `args`: if the expression `F(A@~0~@, A@~1~@, ..., A@~N~@)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a constant value, then `reflect_invoke(target, args)` evaluates to a reflection of the constant value `F(A@~0~@, A@~1~@, ..., A@~N~@)`. For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
 
-For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
+The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
+
 
 ### `value_of<T>`
 
