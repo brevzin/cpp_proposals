@@ -1061,9 +1061,196 @@ consteval auto postfix_increment() -> void {
 
 The syntax here is, unsurprisingly, largely the same. We're mostly writing C++ code. The difference is that we no longer need to pre-declare the functions we're using and the feature set is smaller. While declaring `T` as part of the fragment is certainly convenient, we're shooting for a smaller feature.
 
-## Logging Vector: Can we clone a type?
+## Logging Vector: Cloning a Type
 
-TODO.
+The goal here is we want to implement a type `LoggingVector<T>` which behaves like `std::vector<T>` in all respects except that it prints the function being called.
+
+We start with this:
+
+::: std
+```cpp
+template <typename T>
+class LoggingVector {
+    std::vector<T> impl;
+
+public:
+    LoggingVector(std::vector<T> v) : impl(std::move(v)) { }
+
+    consteval {
+        for (std::meta::info fun : /* public, non-special member functions */) {
+            inject(@tokens {
+                declare [: $(decl_of(fun)) ] {
+                    // ...
+                }
+            });
+        }
+    }
+};
+```
+:::
+
+We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the token sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. So instead we introduce a new kind of splice: a declaration splice. We already have `typename [: e :]` and `template [: e :]` in other contexts, so `declare [: e :]` at least fits within the family of splicers.
+
+Now, we have two problems to solve in the body (as well as a few more problems we'll get to later).
+
+First, we need to print the name of the function we're calling. This is easy, since we have the function and can just ask for its name.
+
+Second, we need to actually forward the parameters of the function into our member `impl`. This is not easy:
+
+::: std
+```cpp
+consteval {
+    for (std::meta::info fun : /* public, non-special member functions */) {
+        inject(@tokens {
+            declare [: $(decl_of(fun)) ] {
+                std::println("Calling {}", $(name_of(fun)));
+                return impl.[: $(fun) :](/* ???? */);
+            }
+        });
+    }
+}
+```
+:::
+
+This is where the ability of token sequences to be concatenated from purely sequences of tokens really gives us a lot of value. How do we forward the parameters along? We don't even have the parameter names here - the declaration that we're cloning might not even _have_ parameter names. But with the ability to just ask for the parameters themselves (which [@P3096R0] should provide), we can get reflections to those parameters, and we can splice those reflections:
+
+::: std
+```cpp
+consteval {
+    for (std::meta::info fun : /* public, non-special member functions */) {
+        auto argument_list = @tokens { };
+        bool first = true;
+        for (auto param : parameters_of(fun)) {
+            if (not first) {
+                argument_list += @tokens { , };
+            }
+            first = false;
+            argument_list += @tokens {
+                static_cast<$(type_of(param))&&>([: $(param) :])
+            };
+        }
+
+        inject(@tokens {
+            declare [: $(decl_of(fun)) ] {
+                std::println("Calling {}", $(name_of(fun)));
+                return impl.[: $(fun) :]( $(argument_list) );
+            }
+        });
+    }
+}
+```
+:::
+
+The `argument_list` is simply building up the token sequence `[: p0 :], [: p1 :], [: p2 :], ..., [: pN :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
+
+Once we have those tokens, we can concatenate this token sequence using the same `$()` quoting operator that we've used for other problems and we're done.
+
+Note that we didn't actually have to implement it this way - we could've concatenated the entire token sequence piecewise. But this structure allows factoring out parameter-forwarding into its own function:
+
+::: std
+```cpp
+consteval auto forward_parameters(std::meta::info fun) -> std::meta::info {
+    auto argument_list = @tokens { };
+    bool first = true;
+    for (auto param : parameters_of(fun)) {
+        if (not first) {
+            argument_list += @tokens { , };
+        }
+        first = false;
+        argument_list += @tokens {
+            static_cast<$(type_of(param))&&>([: $(param) :])
+        };
+    }
+    return argument_list;
+}
+```
+:::
+
+And then:
+
+::: std
+```cpp
+consteval {
+    for (std::meta::info fun : /* public, non-special member functions */) {
+        inject(@tokens {
+            declare [: $(decl_of(fun)) ] {
+                std::println("Calling {}", $(name_of(fun)));
+                return impl.[: $(fun) :]( $(forward_parameters(fun)) );
+            }
+        });
+    }
+}
+```
+:::
+
+However, we've still got some work to do.
+
+## Logging Vector II: Cloning with Modifications
+
+The above implementation already gets us a great deal of functionality, and should create code that looks something like this:
+
+::: std
+```cpp
+template <typename T>
+class LoggingVector {
+    std::vector<T> impl;
+
+public:
+    LoggingVector(std::vector<T> v) : impl(std::move(v)) { }
+
+    auto clear() -> void {
+        std::println("Calling {}", "clear");
+        return impl.clear();
+    }
+
+    auto push_back(T const& value) -> void {
+        std::println("Calling {}", "push_back");
+        return impl.push_back(static_cast<T const&>(value));
+    }
+
+    auto push_back(T&& value) -> void {
+        std::println("Calling {}", "push_back");
+        return impl.push_back(static_cast<T&&>(value));
+    }
+
+    // ...
+};
+```
+:::
+
+For a lot of `std::vector'`s member functions, we're done. But some need some more work. One of the functions we're emitting is member `swap`:
+
+::: std
+```cpp
+template <typename T>
+class LoggingVector {
+    std::vector<T> impl;
+
+public:
+    // ...
+
+    auto swap(std::vector<T>& other) noexcept(/* ... */) -> void {
+        std::println("Calling {}", "swap");
+        return impl.swap(other); // <== omitting the cast here for readability
+    }
+
+    // ...
+};
+```
+:::
+
+But this... isn't right. Or rather, it could potentially be right in some design, but it's not what we want to do. We don't want `LoggingVector<int>` to be swappable with `std::vector<int>`... we want it to be swappable with itself. What we actually want to do is emit this:
+
+::: std
+```cpp
+    auto swap(LoggingVector<T>& other) noexcept(/* ... */) -> void {
+        std::println("Calling {}", "swap");
+        return impl.swap(other.impl);
+    }
+```
+:::
+
+Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that?
 
 ---
 references:
