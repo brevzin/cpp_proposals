@@ -1095,7 +1095,7 @@ Now, we have two problems to solve in the body (as well as a few more problems w
 
 First, we need to print the name of the function we're calling. This is easy, since we have the function and can just ask for its name.
 
-Second, we need to actually forward the parameters of the function into our member `impl`. This is not easy:
+Second, we need to actually forward the parameters of the function into our member `impl`. This is, seemingly, very hard:
 
 ::: std
 ```cpp
@@ -1143,9 +1143,9 @@ consteval {
 
 The `argument_list` is simply building up the token sequence `[: p0 :], [: p1 :], [: p2 :], ..., [: pN :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
 
-Once we have those tokens, we can concatenate this token sequence using the same `$()` quoting operator that we've used for other problems and we're done.
+Once we have those tokens, we can concatenate this token sequence using the same `$()` quoting operator that we've used for other problems and we're done. Token sequences are just a sequence of tokens - so we simply need to be able to produce that sequence.
 
-Note that we didn't actually have to implement it this way - we could've concatenated the entire token sequence piecewise. But this structure allows factoring out parameter-forwarding into its own function:
+Note that we didn't actually have to implement it using a separate `argument_list` local variable - we could've concatenated the entire token sequence piecewise. But this structure allows factoring out parameter-forwarding into its own function:
 
 ::: std
 ```cpp

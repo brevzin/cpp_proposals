@@ -2017,8 +2017,8 @@ problems we’ll get to later).</p>
 <p>First, we need to print the name of the function we’re calling. This
 is easy, since we have the function and can just ask for its name.</p>
 <p>Second, we need to actually forward the parameters of the function
-into our member <code class="sourceCode cpp">impl</code>. This is not
-easy:</p>
+into our member <code class="sourceCode cpp">impl</code>. This is,
+seemingly, very hard:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
@@ -2074,8 +2074,11 @@ no checking of fragment correctness. Just building up the right
 tokens.</p>
 <p>Once we have those tokens, we can concatenate this token sequence
 using the same <code class="sourceCode cpp"><span class="er">$</span><span class="op">()</span></code>
-quoting operator that we’ve used for other problems and we’re done.</p>
-<p>Note that we didn’t actually have to implement it this way - we
+quoting operator that we’ve used for other problems and we’re done.
+Token sequences are just a sequence of tokens - so we simply need to be
+able to produce that sequence.</p>
+<p>Note that we didn’t actually have to implement it using a separate
+<code class="sourceCode cpp">argument_list</code> local variable - we
 could’ve concatenated the entire token sequence piecewise. But this
 structure allows factoring out parameter-forwarding into its own
 function:</p>
