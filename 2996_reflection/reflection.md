@@ -1355,6 +1355,8 @@ In the same way that `&C::mem` can produce a pointer, pointer to member data, po
 *  Otherwise, if `r` is a reflection of a static member function, a function, or a non-static member function with an explicit object parameter, `&[:r:]` is a pointer to function
 *  Otherwise, if `r` is a reflection of a non-static member function with an implicit object parameter, `&[:r:]` is a pointer to member function.
 
+For most members, this doesn't even require any additional wording since that's just what you get when you take the address of the splice based on the current rules we have today.
+
 Now, the interesting question is what does this mean when `r` is the reflection of a constructor or destructor? Consider the type:
 
 ::: std
