@@ -231,3 +231,15 @@ And similar in [class.union.anon]{.sref}/1. [This refactor allows putting in an 
 ::: std
 [1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu}.  [...]
 :::
+
+## Feature-Test Macro
+
+Add to the table in [cpp.predefined]{.sref}:
+
+::: std
+```diff
+  __cpp_consteval       202211L
++ __cpp_consteval_block 2024XXL
+  __cpp_constinit       201907L
+```
+:::
