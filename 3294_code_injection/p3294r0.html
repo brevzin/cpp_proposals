@@ -611,7 +611,9 @@ Type<span></span></a></li>
 <li><a href="#logging-vector-ii-cloning-with-modifications" id="toc-logging-vector-ii-cloning-with-modifications"><span class="toc-section-number">3.5</span> Logging Vector II: Cloning with
 Modifications<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
+<li><a href="#hygienic-macros" id="toc-hygienic-macros"><span class="toc-section-number">4</span> Hygienic
+Macros<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
@@ -2339,15 +2341,156 @@ and then in the call-forwarding we need to forward not
 but rather
 <code class="sourceCode cpp">other<span class="op">.</span>impl</code>.
 How can we do that?</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
+<p>TODO</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="hygienic-macros"><span class="header-section-number">4</span>
+Hygienic Macros<a href="#hygienic-macros" class="self-link"></a></h1>
+<p>C macros have a (well-deserved) bad reputation in the C++ community.
+This is because they have some intractable problems:</p>
+<ul>
+<li>C macros don’t follow any scoping rules, and can change any code,
+anywhere. This is why they do not leak into or out of C++ modules.</li>
+<li>The C preprocessor is a language unto itself, that doesn’t
+understand C++ syntax, with limited functionality that is very tedious
+to program in.</li>
+</ul>
+<p>We think that C++ does need a code manipulation mechanism, and that
+token sequences can provide a much better solution than C macros.</p>
+<p>Consider the problem of forwarding. Forwarding an argument in C++, in
+the vast majority of uses, looks like <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span></code>,
+where <code class="sourceCode cpp">T</code> is actually the type <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>t<span class="op">)</span></code>.
+This is annoying to have to write, the operation is simply forwarding an
+argument but we need to provide two names anyway, and also has the
+downside of having to instantiate a function template (although
+compilers are moving towards making that a builtin).</p>
+<p>Barry at some point proposed a specific language feature for this
+use-case (<span class="citation" data-cites="P0644R1">[<a href="https://wg21.link/p0644r1" role="doc-biblioref">P0644R1</a>]</span>). Later, there was a proposal
+for a hygienic macro system <span class="citation" data-cites="P1221R1">[<a href="https://wg21.link/p1221r1" role="doc-biblioref">P1221R1</a>]</span> in which forwarding would be
+implemented like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> fwd<span class="op">(</span><span class="kw">using</span> <span class="kw">auto</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&amp;&amp;&gt;(</span>x<span class="op">)</span>;</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> old_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&gt;(</span>x<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd<span class="op">(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>With token sequences, we can achieve similar syntax:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(@</span>tokens x<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><span class="er">$</span><span class="op">(</span>x<span class="op">))&amp;&amp;&gt;(</span><span class="er">$</span><span class="op">(</span>x<span class="op">))</span>;</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f2 <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd2<span class="op">!(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The logic here is that <code class="sourceCode cpp">fwd2<span class="op">!(</span>x<span class="op">)</span></code>
+is syntactic sugar for <code class="sourceCode cpp">inject<span class="op">(</span>fwd2<span class="op">(@</span>tokens <span class="op">{</span> x <span class="op">}))</span></code>.
+We’re taking a page out of Rust’s book and suggesting that invoking a
+“macro” with an exclamation point does the injection. Seems nice to both
+have convenient syntax for token manipulation and a syntactic marker for
+it on the call-site.</p>
+<p>We would have to figure out what we would want <code class="sourceCode cpp">fwd2<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span></code>
+to do. One of the issues of C macros is not understand C++ token syntax,
+so this argument would have to be parenthesized. But if we want to
+operate on the token level, this seems like a given.</p>
+<p>Of course, <code class="sourceCode cpp">fwd2</code> is a regular C++
+function. You have to invoke it through the usual C++ scoping rules, so
+it does not suffer that problem from C macros. And then the body is a
+regular C++ function too, so writing complex token manipulation is just
+a matter of writing complex C++ code - which is a lot easier than
+writing complex C preprocessor code.</p>
+<p>Consider a different example (borrowed from <a href="https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/">here</a>):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(@</span>tokens a,</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>                         <span class="op">@</span>tokens b<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sa <span class="op">=</span> <span class="er">$</span><span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> va <span class="op">=</span> <span class="er">$</span><span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sb <span class="op">=</span> <span class="er">$</span><span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> vb <span class="op">=</span> <span class="er">$</span><span class="op">(</span>b<span class="op">)</span>;</span>
+<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
+<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb57-15"><a href="#cb57-15" aria-hidden="true" tabindex="-1"></a>                    sa, va,</span>
+<span id="cb57-16"><a href="#cb57-16" aria-hidden="true" tabindex="-1"></a>                    sb, vb,</span>
+<span id="cb57-17"><a href="#cb57-17" aria-hidden="true" tabindex="-1"></a>                    <span class="er">$</span><span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
+<span id="cb57-18"><a href="#cb57-18" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb57-19"><a href="#cb57-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb57-20"><a href="#cb57-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb57-21"><a href="#cb57-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb57-22"><a href="#cb57-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>With the expectation that:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Written Code</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Injected Code</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>assert_eq<span class="op">!(</span><span class="dv">42</span>, factorial<span class="op">(</span><span class="dv">3</span><span class="op">))</span>;</span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> sa <span class="op">=</span> <span class="st">&quot;42&quot;</span>;</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> va <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> sb <span class="op">=</span> <span class="st">&quot;factorial(3)&quot;</span>;</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> vb <span class="op">=</span> factorial<span class="op">(</span><span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a>            stderr,</span>
+<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a>            sa, va,</span>
+<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a>            sb, vb,</span>
+<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">/* some source location */</span><span class="op">)</span>;</span>
+<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">while</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<p>You can write this as a regular C macro today, but we bet it’s a
+little nicer to read using this language facility.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P0644R1" class="csl-entry" role="doc-biblioentry">
+[P0644R1] Barry Revzin. 2017-10-08. Forward without forward. <a href="https://wg21.link/p0644r1"><div class="csl-block">https://wg21.link/p0644r1</div></a>
+</div>
 <div id="ref-P0707R4" class="csl-entry" role="doc-biblioentry">
 [P0707R4] Herb Sutter. 2019-06-17. Metaclasses: Generative C++. <a href="https://wg21.link/p0707r4"><div class="csl-block">https://wg21.link/p0707r4</div></a>
 </div>
 <div id="ref-P0712R0" class="csl-entry" role="doc-biblioentry">
 [P0712R0] Andrew Sutton, Herb Sutter. 2017-06-18. Implementing language
 support for compile-time programming. <a href="https://wg21.link/p0712r0"><div class="csl-block">https://wg21.link/p0712r0</div></a>
+</div>
+<div id="ref-P1221R1" class="csl-entry" role="doc-biblioentry">
+[P1221R1] Jason Rice. 2018-10-03. Parametric Expressions. <a href="https://wg21.link/p1221r1"><div class="csl-block">https://wg21.link/p1221r1</div></a>
 </div>
 <div id="ref-P1717R0" class="csl-entry" role="doc-biblioentry">
 [P1717R0] Andrew Sutton, Wyatt Childers. 2019-06-17. Compile-time

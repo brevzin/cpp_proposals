@@ -1413,6 +1413,113 @@ But this... isn't right. Or rather, it could potentially be right in some design
 
 Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that?
 
+TODO
+
+# Hygienic Macros
+
+C macros have a (well-deserved) bad reputation in the C++ community. This is because they have some intractable problems:
+
+* C macros don't follow any scoping rules, and can change any code, anywhere. This is why they do not leak into or out of C++ modules.
+* The C preprocessor is a language unto itself, that doesn't understand C++ syntax, with limited functionality that is very tedious to program in.
+
+We think that C++ does need a code manipulation mechanism, and that token sequences can provide a much better solution than C macros.
+
+Consider the problem of forwarding. Forwarding an argument in C++, in the vast majority of uses, looks like `std::forward<T>(t)`, where `T` is actually the type `decltype(t)`. This is annoying to have to write, the operation is simply forwarding an argument but we need to provide two names anyway, and also has the downside of having to instantiate a function template (although compilers are moving towards making that a builtin).
+
+Barry at some point proposed a specific language feature for this use-case ([@P0644R1]). Later, there was a proposal for a hygienic macro system [@P1221R1] in which forwarding would be implemented like this:
+
+::: std
+```cpp
+using fwd(using auto x) {
+    return static_cast<decltype(x)&&>(x);
+}
+
+auto old_f = [](auto&& x) { return std::forward<decltype(x)>(x); };
+auto new_f = [](auto&& x) { return fwd(x); };
+```
+:::
+
+With token sequences, we can achieve similar syntax:
+
+::: std
+```cpp
+consteval auto fwd2(@tokens x) -> info {
+    return @tokens {
+        static_cast<decltype($(x))&&>($(x));
+    };
+}
+
+auto new_f2 = [](auto&& x) { return fwd2!(x); };
+```
+:::
+
+The logic here is that `fwd2!(x)` is syntactic sugar for `inject(fwd2(@tokens { x }))`. We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
+
+We would have to figure out what we would want `fwd2!(std::pair<int, int>{1, 2})` to do. One of the issues of C macros is not understand C++ token syntax, so this argument would have to be parenthesized. But if we want to operate on the token level, this seems like a given.
+
+Of course, `fwd2` is a regular C++ function. You have to invoke it through the usual C++ scoping rules, so it does not suffer that problem from C macros. And then the body is a regular C++ function too, so writing complex token manipulation is just a matter of writing complex C++ code - which is a lot easier than writing complex C preprocessor code.
+
+Consider a different example (borrowed from [here](https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/)):
+
+::: std
+```cpp
+consteval auto assert_eq(@tokens a,
+                         @tokens b) -> info {
+    return @tokens {
+        do {
+            auto sa = $(stringify(a));
+            auto va = $(a);
+
+            auto sb = $(stringify(b));
+            auto vb = $(b);
+
+            if (not (va == vb)) {
+                std::println(
+                    stderr,
+                    "{} ({}) == {} ({}) failed at {}",
+                    sa, va,
+                    sb, vb,
+                    $(source_location_of(a)));
+                std::abort();
+            }
+        } while (false);
+    };
+}
+```
+:::
+
+With the expectation that:
+
+::: cmptable
+### Written Code
+```cpp
+assert_eq!(42, factorial(3));
+```
+
+### Injected Code
+```cpp
+do {
+    auto sa = "42";
+    auto va = 42;
+
+    auto sb = "factorial(3)";
+    auto vb = factorial(3);
+
+    if (not (va == vb)) {
+        std::println(
+            stderr,
+            "{} ({}) == {} ({}) failed at {}",
+            sa, va,
+            sb, vb,
+            /* some source location */);
+        std::abort();
+    }
+} while(false);
+```
+:::
+
+You can write this as a regular C macro today, but we bet it's a little nicer to read using this language facility.
+
 ---
 references:
   - id: P2996R3
