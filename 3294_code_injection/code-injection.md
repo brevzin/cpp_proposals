@@ -11,6 +11,7 @@ author:
     - name: Daveed Vandevoorde
       email: <daveed@edg.com>
 toc: true
+toc-depth: 2
 ---
 
 # Introduction
@@ -344,6 +345,17 @@ That is, we create a custom context type that we pass in as a non-type template 
 
 This solution... might be workable. But it's already pretty complicated and the problem we're trying to solve really isn't. As a result, we believe that the spec API is somewhat of a dead end when it comes to extending injection support.
 
+### Disposition
+
+It's hard to view favorably a design for the long-term future of code injection with which we cannot even figure out how to inject functions. Even if we could, this design scales poorly with the language: we need a library for API for many language constructs, and C++ is a language with a lot of kinds. That makes for a large barrier to entry for metaprogramming that we would like to avoid.
+
+Nevertheless, the spec API does have one thing going for it: it is quite simple. At the very least, we think we should extend the spec model in P2996 in the following ways:
+
+* extend `data_member_spec` to support all data members (static/constexpr/inline, attributes, access, and initializer).
+* add `alias_spec` and `base_class_spec`
+
+These are the simple cases, and we can get a lot done with the simple cases, even without a full solution.
+
 ## The CodeReckons API
 
 The [CodeReckons](https://lists.isocpp.org/sg7/2024/04/0507.php) approach provides a very different injection mechanism than what is in P2996 or what has been described in any of the metaprogramming papers. We can run through these three examples and see what they look like. Here, we will use the actual syntax as implemented in that compiler.
@@ -443,6 +455,81 @@ In the spec API, we struggled how to write a function that takes a `string const
 But the result is... extremely verbose. This is a lot of code, that doesn't seem like it would scale very well. The setter alone (which is just trying to do something like `self.m_author = x;`) is already 14 lines of code and is fairly complicated. We think it's important that code injection still look like writing C++ code, not live at the AST level.
 
 Nevertheless, this API does actually work. Whereas the spec API is still, at best, just a guess.
+
+### Postfix Increment
+
+For postfix increment, we want to inject the single function:
+
+::: std
+```cpp
+auto operator++(int) -> T {
+    auto tmp = *this;
+    ++*this;
+    return tmp;
+}
+```
+:::
+
+We rely on the type to provide the correct prefix increment. With the CodeReckons API, that looks [like this](https://cppmeta.codereckons.com/tools/z/71To7o):
+
+::: std
+```cpp
+consteval auto postfix_increment(class_builder& b) -> void {
+    method_prototype mp;
+    append_parameter(mp, "x", ^int);
+    object_type(mp, decl_of(b));
+    return_type(mp, decl_of(b));
+
+    append_method(b, operator_kind::post_inc, mp,
+        [](method_builder& b){
+            // auto tmp = *this;
+            auto tmp = append_var(b, "tmp", auto_ty,
+                make_deref_expr(make_this_expr(b)));
+            // ++*this;
+            append_expr(b,
+                make_operator_expr(
+                    operator_kind::pre_inc,
+                    make_deref_expr(make_this_expr(b))));
+            // return tmp;
+            append_return(b, make_decl_ref_expr(tmp));
+        });
+}
+
+struct C {
+    int i;
+
+    auto operator++() -> C& {
+        ++i;
+        return *this;
+    }
+
+    % postfix_increment();
+};
+```
+:::
+
+As with the property example above, having an AST-based API is extremely verbose. It might be useful to simply compare the statement we want to generate with the code that we require to write to generate that statement:
+
+::: std
+```cpp
+// auto tmp = *this;
+   auto tmp = append_var(b, "tmp", auto_ty, make_deref_expr(make_this_expr(b)));
+
+// ++*this;
+   append_expr(b, make_operator_expr(operator_kind::pre_inc, make_deref_expr(make_this_expr(b))));
+
+// return tmp;
+   append_return(b, make_decl_ref_expr(tmp));
+```
+:::
+
+### Disposition
+
+We believe an important goal for code injection is that the code being injected looks like C++. This is the best way to ensure both a low barrier to entry for using the facility as well as easing language evolution in the future. We do not want to have to have to add a mirror API to the reflection library for every language facility we add.
+
+The CodeReckons API has the significant and not-to-be-minimized property that it, unlike the Spec API, works. It is also arguably easy to _read_ the code in question to figure out what is going on. In our experiments with simply giving people code snippets to people with no context and asking them what the snippet does, people were able to figure it out.
+
+However, in our experience it is pretty difficult to _write_ the code precisely because it needs to be written at a different layer than C++ code usually is written in and the abstraction penalty (in terms of code length) is so large. We will compare this AST-based API to a few other ideas in the following sections to give a sense of what we mean here.
 
 ## String Injection
 
@@ -544,6 +631,37 @@ struct Book {
 }
 ```
 :::
+
+### Postfix Increment
+
+Similarly, the postfix increment implementation just writes itself. In this case, we can even return `auto` so don't even need to bother with how to spell the return type:
+
+::: std
+```cpp
+consteval auto postfix_increment() -> void {
+    inject(R"(
+        auto operator++(int) {
+            auto tmp = *this;
+            ++*this;
+            return tmp;
+        }
+    )");
+}
+
+struct C {
+    int i;
+
+    auto operator++() -> C& {
+        ++i;
+        return *this;
+    }
+
+    consteval { postfix_increment(); }
+};
+```
+:::
+
+### Disposition
 
 Can pretty much guarantee that strings have the lowest possible barrier to entry of any code injection API. Which is a benefit that is not to be taken lightly! It is not surprising that D and Jai both have string-based injection mechanisms.
 
@@ -749,12 +867,50 @@ consteval auto property(meta::info type, std::string name)
 
 ### Postfix increment
 
-One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Here is how you have to implement it using the CodeReckons approach and using fragments:
+One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Postfix increment ends up being much simpler to implement with fragments than properties - due to not having to deal with any quoted names. But it does surface the issue of name lookup in fragments:
+
+::: std
+```cpp
+consteval auto postfix_increment() {
+    -> fragment struct T {
+        requires T& operator++();
+
+        auto operator++(int) -> T {
+            auto tmp = *this;
+            ++*this;
+            return tmp;
+        }
+    };
+}
+
+struct C {
+    int i;
+
+    auto operator++() -> C& {
+        ++i;
+        return *this;
+    }
+
+    consteval { postfix_increment(); }
+};
+```
+:::
+
+Here we're using the actual fragments syntax as in the [linked implementation](https://godbolt.org/z/r1v3e43sd).
+
+Now, the rule in the fragments implementation is that the fragments themselves are checked. This includes name lookup. So any name used in the body of the fragment has to be found and pre-declared, which is what we're doing in the `requires` clause there. The implementation right now appears to have a bug with respect to operators (if you change the body to calling `inc(*this)`, it does get flagged), which is why it's commented out in the link.
+
+### Disposition
+
+The fragment model seems substantially easier to program in than the CodeReckons model. We're actually writing C++ code. Consider the difference here between the CodeReckons solution and the Fragments solution to postfix increment:
 
 ::: cmptable
 ### [CodeReckons](https://cppmeta.codereckons.com/tools/z/71To7o)
 ```cpp
 consteval auto postfix_increment(class_builder& b) -> void {
+
+
+
     method_prototype mp;
     append_parameter(mp, "x", ^int);
     object_type(mp, decl_of(b));
@@ -794,21 +950,24 @@ consteval auto postfix_increment() {
         requires T& operator++();
 
         auto operator++(int) -> T {
+
+
+
+
+
+
             auto tmp = *this;
+
+
             ++*this;
+
+
+
+
             return tmp;
         }
     };
 }
-
-
-
-
-
-
-
-
-
 
 struct C {
     int i;
@@ -823,11 +982,13 @@ struct C {
 ```
 :::
 
-Here we're using the actual fragments syntax as in the linked implementation. In this case, we don't have to quite anything - there is just a very nice way of getting the type of the class that we are injecting to. In this case the name `T` binds to `C`.
+We lined up the fragment implementation to roughly correspond to the CodeReckons API on the left. With the code written out like this, it's easy to understand the CodeReckons API. But it takes no time at all to understand (or write) the fragments code on the right - it's just C++ already.
 
-Now, the rule in the fragments implementation is that the fragments themselves are checked. This includes name lookup. So any name used in the body of the fragment has to be found and pre-declared, which is what we're doing in the `requires` clause there. The implementation right now appears to have a bug with respect to operators (if you change the body to calling `inc(*this)`, it does get flagged), which is why it's commented out in the link.
+We also think it's a better idea than the string injection model, since we want something with structure that isn't just missing some parts of the language (the processor)  and plays nicely with tools (like syntax highlighters).
 
-In any case, the fragment model seems substantially easier to program in than the CodeReckons model. We're actually writing C++ code. But we think the fragment model still isn't quite right. By nobly trying to diagnose errors at the point of fragment declaration, it adds a complexity to the fragment model in a way that we don't think carries its weight. The fragment papers ([@P1717R0] and [@P2237R0]) each go into some detail of different approaches of how to do name checking at the point of fragment declaration. They are all complicated.
+But we think the fragment model still isn't quite right. By nobly trying to diagnose errors at the point of fragment declaration, it adds a complexity to the fragment model in a way that we don't think carries its weight. The fragment papers ([@P1717R0] and [@P2237R0]) each go into some detail of different approaches of how to do name checking at the point of fragment declaration. They are all complicated.
+
+We basically want something between strings and fragments.
 
 # Token Sequences
 
