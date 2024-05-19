@@ -2225,7 +2225,7 @@ This needs more thought, but we do have to decide something.
 
 ## Language
 
-### [lex.phases] Phases of translation
+### [lex.phases]{.sref} Phases of translation {-}
 
 Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
@@ -2244,7 +2244,7 @@ All the required instantiations are performed to produce instantiation units.
 
 :::
 
-### [lex.pptoken] Preprocessing tokens
+### [lex.pptoken]{.sref} Preprocessing tokens {-}
 
 Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
 
@@ -2259,7 +2259,7 @@ Add a bullet after [lex.pptoken]{.sref} bullet (3.2):
   ...
 :::
 
-### [lex.operators] Operators and punctuators
+### [lex.operators]{.sref} Operators and punctuators {-}
 
 Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operators]{.sref} to include splicer delimiters:
 
@@ -2278,8 +2278,40 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 ```
 :::
 
+### [basic.lookup.argdep]{.sref} Argument-dependent name lookup {-}
 
-### [basic.types.general]
+Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this must precede the fundamental type bullet, because `meta::info` is a fundamental type]{.ednote}:
+
+::: std
+
+[3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
+
+::: addu
+
+- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+
+:::
+- [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
+- [3.2]{.pnum} If `T` is a class type ...
+
+:::
+
+### [basic.lookup.qual.general]{.sref} General {-}
+
+Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-name-qualifer$`:
+
+::: std
+[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
+
+[2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
+
+* [2.1]{.pnum} an *unqualified-id* or
+* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-name-qualifier$ ::`]{.addu}
+
+in the *id-expression* of a class member access expression ([expr.ref]). [...]
+:::
+
+### [basic.types.general]{.sref} General {-}
 
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
 
@@ -2306,7 +2338,7 @@ An object of consteval-only type shall either end its lifetime during the evalua
 :::
 :::
 
-### [basic.fundamental] Fundamental types
+### [basic.fundamental]{.sref} Fundamental types {-}
 
 Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as follows:
 
@@ -2321,40 +2353,7 @@ The notion of consteval-only types (see [basic.types.general]{.sref}) exists to 
 :::
 :::
 
-### [basic.lookup.argdep] Argument-dependent name lookup
-
-Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this must precede the fundamental type bullet, because `meta::info` is a fundamental type]{.ednote}:
-
-::: std
-
-[3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
-
-::: addu
-
-- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
-
-:::
-- [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
-- [3.2]{.pnum} If `T` is a class type ...
-
-:::
-
-### [basic.lookup.qual.general] General
-
-Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-name-qualifer$`:
-
-::: std
-[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
-
-[2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
-
-* [2.1]{.pnum} an *unqualified-id* or
-* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-name-qualifier$ ::`]{.addu}
-
-in the *id-expression* of a class member access expression ([expr.ref]). [...]
-:::
-
-### [expr.prim] Primary expressions
+### [expr.prim]{.sref} Primary expressions {-}
 
 Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 
@@ -2373,7 +2372,7 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 ```
 :::
 
-### [expr.prim.id.qual] Qualified names
+### [expr.prim.id.qual]{.sref} Qualified names {-}
 
 Add a production to the grammar for `$nested-name-specifier$` as follows:
 
@@ -2409,7 +2408,7 @@ Extend [expr.prim.id.qual]{.sref}/3 to also cover splices:
 
 :::
 
-### [expr.prim.splice] Expression splicing
+### 7.5.8* [expr.prim.splice] Expression splicing {-}
 
 Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 
@@ -2429,7 +2428,7 @@ The meaning of such a construct is identical to that of a `$primary-expression$`
 :::
 
 
-### [expr.unary.general]
+### [expr.unary.general]{.sref} General {-}
 
 Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new operator:
 
@@ -2451,7 +2450,7 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
 ```
 :::
 
-### [expr.reflect] The reflection operator
+### 7.6.2.10* [expr.reflect] The reflection operator {-}
 
 Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
@@ -2525,7 +2524,7 @@ constexpr auto r = ^std::vector;  // OK
 
 :::
 
-### [expr.eq] Equality Operators
+### [expr.eq]{.sref} Equality Operators {-}
 
 Extend [expr.eq]{.sref}/2 to also handle `std::meta::info:
 
@@ -2558,7 +2557,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 :::
 
 
-### [expr.const] Constant Expressions
+### [expr.const]{.sref} Constant Expressions {-}
 
 Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]{.sref}/20:
 
@@ -2579,7 +2578,7 @@ Add a new paragraph after the definition of _manifestly constant-evaluated_ [exp
 :::
 :::
 
-### [dcl.typedef] The `typedef` specifier
+### [dcl.typedef]{.sref} The `typedef` specifier {-}
 
 Introduce the term "type alias" to [dcl.typedef]{.sref}:
 
@@ -2593,7 +2592,7 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 :::
 :::
 
-### [dcl.init.general] Initializers (General)
+### [dcl.init.general]{.sref} Initializers (General) {-}
 
 Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
 
@@ -2618,7 +2617,7 @@ Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for
 [9]{.pnum} To value-initialize an object of type T means: [...]
 :::
 
-### [dcl.fct.def.delete] Deleted definitions
+### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
 
 Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of deleted functions:
 
@@ -2627,7 +2626,7 @@ Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of de
 [2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator]{.addu}, is ill-formed.
 :::
 
-### [enum.udecl] The `using enum` declaration
+### [enum.udecl]{.sref} The `using enum` declaration {-}
 
 Extend the grammar for `$using-enum-declarator$` as follows:
 
@@ -2653,7 +2652,7 @@ Modify paragraph 1 of [enum.udecl]{.sref} as follows:
 [1]{.pnum} A `$using-enum-declarator$` [not consisting of a `$splice-enum-name$`]{.addu} names the set of declarations found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) for the `$using-enum-declarator$`. [A `$using-enum-declarator$` containing a `$splice-enum-name$` names the entity reflected by the `$constant-expression$`. ]{.addu}  The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
 :::
 
-### [namespace.udir] Using namespace directive
+### [namespace.udir]{.sref} Using namespace directive {-}
 
 Modify the grammar for `$using-directive$` as follows:
 
@@ -2679,7 +2678,7 @@ Add the following to paragraph 1 of [namespace.udir]{.sref}, prior to the note:
 :::
 
 
-### [dcl.attr.grammar] Attribute syntax and semantics
+### [dcl.attr.grammar]{.sref} Attribute syntax and semantics {-}
 
 Add a production to the grammar for `$attribute-specifier$` as follows:
 
@@ -2713,7 +2712,7 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
 
-### [over.built] Built-in operators
+### [over.built]{.sref} Built-in operators {-}
 
 Add built-in operator candidates for `std::meta::info` to [over.built]{.sref}:
 
@@ -2725,7 +2724,7 @@ bool operator!=(T, T);
 ```
 :::
 
-### [temp.names] Names of template specializations
+### [temp.names]{.sref} Names of template specializations {-}
 
 Modify the grammar for `$template-argument$` as follows:
 
@@ -2755,7 +2754,7 @@ Add a paragraph after paragraph 3 of [temp.names]{.sref}:
 :::
 
 
-### [temp.arg.general] General
+### [temp.arg.general]{.sref} General {-}
 
 Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
 
@@ -2765,7 +2764,7 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 
 :::
 
-### [temp.arg.type] Template type arguments
+### [temp.arg.type]{.sref} Template type arguments {-}
 
 Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 
@@ -2774,7 +2773,7 @@ Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 
 :::
 
-### [temp.arg.nontype] Template non-type arguments
+### [temp.arg.nontype]{.sref} Template non-type arguments {-}
 
 Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
 
@@ -2783,7 +2782,7 @@ Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
 
 :::
 
-### [temp.arg.template] Template template arguments
+### [temp.arg.template]{.sref} Template template arguments {-}
 
 Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
@@ -2791,7 +2790,7 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template reflected by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
 :::
 
-### [temp.type] Type equivalence
+### [temp.type]{.sref} Type equivalence {-}
 
 Extend *template-argument-equivalent* to handle `std::meta::info`:
 
@@ -2807,7 +2806,7 @@ Extend *template-argument-equivalent* to handle `std::meta::info`:
 :::
 
 
-### [temp.dep.expr] Type-dependent expressions
+### [temp.dep.expr]{.sref} Type-dependent expressions {-}
 
 Add to the list of never-type-dependent expression forms in [temp.dep.expr]{.sref}/4:
 
@@ -2841,7 +2840,7 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 
 
 
-### [temp.dep.constexpr] Value-dependent expressions
+### [temp.dep.constexpr]{.sref} Value-dependent expressions {-}
 
 Add at the end of [temp.dep.constexpr]{.sref}/2 (before the note):
 
@@ -2878,7 +2877,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 ## Library
 
-### Header `<meta>` synopsis
+### [meta] Header `<meta>` synopsis {-}
 
 Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
@@ -3109,7 +3108,7 @@ namespace std::meta {
 :::
 :::
 
-### [meta.reflection.names] Reflection names and locations
+### [meta.reflection.names] Reflection names and locations {-}
 
 ::: std
 ::: addu
@@ -3133,7 +3132,7 @@ consteval source_location source_location_of(info r);
 :::
 :::
 
-### [meta.reflection.queries] Reflection queries
+### [meta.reflection.queries] Reflection queries {-}
 
 ::: std
 ::: addu
@@ -3325,7 +3324,7 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 :::
 :::
 
-### [meta.reflection.member.queries], Reflection member queries
+### [meta.reflection.member.queries], Reflection member queries  {-}
 
 ::: std
 ::: addu
@@ -3423,7 +3422,7 @@ consteval vector<info> enumerators_of(info enum_type);
 :::
 :::
 
-### [meta.reflection.substitute] Reflection substitution
+### [meta.reflection.substitute] Reflection substitution  {-}
 
 ::: std
 ::: addu
@@ -3451,7 +3450,7 @@ consteval info substitute(info templ, span<const info> arguments);
 :::
 :::
 
-### [meta.reflection.unary] Unary type traits
+### [meta.reflection.unary] Unary type traits  {-}
 
 ::: std
 ::: addu
@@ -3461,7 +3460,7 @@ consteval info substitute(info templ, span<const info> arguments);
 :::
 :::
 
-#### [meta.reflection.unary.cat] Primary type categories
+#### [meta.reflection.unary.cat] Primary type categories  {-}
 
 ::: std
 ::: addu
@@ -3499,7 +3498,7 @@ namespace std::meta {
 :::
 :::
 
-#### [meta.reflection.unary.comp] Composite type categories
+#### [meta.reflection.unary.comp] Composite type categories  {-}
 
 ::: std
 ::: addu
@@ -3517,7 +3516,7 @@ consteval bool is_member_pointer(info type);
 :::
 :::
 
-#### [meta.reflection.unary.prop] Type properties
+#### [meta.reflection.unary.prop] Type properties  {-}
 
 ::: std
 ::: addu
@@ -3594,7 +3593,7 @@ consteval bool reference_converts_from_temporary(info dst_type, info src_type);
 :::
 :::
 
-#### [meta.reflection.unary.prop.query] Type property queries
+#### [meta.reflection.unary.prop.query] Type property queries  {-}
 
 ::: std
 ::: addu
@@ -3610,7 +3609,7 @@ consteval size_t extent(info type, unsigned i = 0);
 :::
 :::
 
-### [meta.reflection.rel], Type relations
+### [meta.reflection.rel], Type relations  {-}
 
 ::: std
 ::: addu
@@ -3642,7 +3641,7 @@ consteval bool is_nothrow_invocable_r(info result_type, info type, span<const in
 :::
 
 
-### [meta.reflection.trans], Transformations between types
+### [meta.reflection.trans], Transformations between types  {-}
 
 ::: std
 ::: addu
@@ -3650,7 +3649,7 @@ consteval bool is_nothrow_invocable_r(info result_type, info type, span<const in
 :::
 :::
 
-#### [meta.reflection.trans.cv], Const-volatile modifications
+#### [meta.reflection.trans.cv], Const-volatile modifications  {-}
 ::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
@@ -3666,7 +3665,7 @@ consteval info add_cv(info type);
 :::
 :::
 
-#### [meta.reflection.trans.ref], Reference modifications
+#### [meta.reflection.trans.ref], Reference modifications  {-}
 
 ::: std
 ::: addu
@@ -3680,7 +3679,7 @@ consteval info add_rvalue_reference(info type);
 :::
 :::
 
-#### [meta.reflection.trans.sign], Sign modifications
+#### [meta.reflection.trans.sign], Sign modifications  {-}
 
 ::: std
 ::: addu
@@ -3692,7 +3691,7 @@ consteval info make_unsigned(info type);
 :::
 :::
 
-#### [meta.reflection.trans.arr], Array modifications
+#### [meta.reflection.trans.arr], Array modifications  {-}
 
 ::: std
 ::: addu
@@ -3704,7 +3703,7 @@ consteval info remove_all_extents(info type);
 :::
 :::
 
-#### [meta.reflection.trans.ptr], Pointer modifications
+#### [meta.reflection.trans.ptr], Pointer modifications  {-}
 ::: std
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
@@ -3715,7 +3714,7 @@ consteval info add_pointer(info type);
 :::
 :::
 
-#### [meta.reflection.trans.other], Other transformations
+#### [meta.reflection.trans.other], Other transformations  {-}
 
 [There are four transformations that are deliberately omitted here. `type_identity` and `enable_if` are not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
 
