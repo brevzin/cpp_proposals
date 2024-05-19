@@ -36,6 +36,7 @@ Since [@P2996R2]:
 * added explanation of a naming issue with the [type traits](#other-type-traits)
 * added an alternative [named tuple](#named-tuple) implementation
 * made default/value/zero-initializing a `meta::info` yield a null reflection
+* added addressed splicing, which is implemented but was omitted from the paper
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -1333,16 +1334,59 @@ A reflection can be "spliced" into source code using one of several _splicer_ fo
  - `template[: r :]` produces a _template-name_ corresponding to the template represented by `r`.
  - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
 
+
 The operand of a splicer is implicitly converted to a `std::meta::info` prvalue (i.e., if the operand expression has a class type that with a conversion function to convert to `std::meta::info`, splicing can still work).
 
 Attempting to splice a reflection value that does not meet the requirement of the splice is ill-formed.
 For example:
 
-:::bq
+::: std
 ```c++
 typename[: ^:: :] x = 0;  // Error.
 ```
 :::
+
+### Addressed Splicing
+
+In the same way that `&C::mem` can produce a pointer, pointer to member data, pointer to function, or pointer to member function depending on what `mem` refers to, `&[: r :]` can likewise produce the same set of pointers if `r` is a reflection of a suitable entity:
+
+*  If `r` is a reflection of a static data member or a variable, `&[:r:]` is a pointer.
+*  Otherwise if `r` is a reflection of a non-static data member, `&[:r:]` is a pointer to data member.
+*  Otherwise, if `r` is a reflection of a static member function, a function, or a non-static member function with an explicit object parameter, `&[:r:]` is a pointer to function
+*  Otherwise, if `r` is a reflection of a non-static member function with an implicit object parameter, `&[:r:]` is a pointer to member function.
+
+Now, the interesting question is what does this mean when `r` is the reflection of a constructor or destructor? Consider the type:
+
+::: std
+```cpp
+struct X {
+    X(int, int);
+};
+```
+:::
+
+And let `rc` be a reflection of the constructor and `rd` be a reflection of the destructor. The sensible syntax and semantics for how you would use `rc` and `rd` should be as follows:
+
+::: std
+```cpp
+auto x = [: rc :](1, 2); // gives you an X
+x.[: rd :]();            // destroys it
+```
+:::
+
+Or, with pointers:
+
+::: std
+```cpp
+auto pc = &[: rc :];
+auto pd = &[: rd :];
+
+auto x = (*pc)(1, 2);   // gives you an X
+(x.*p2)();              // destroys it
+```
+:::
+
+That is, splicing a constructor behaves like a free function that produces an object of that type, so `&[: rc :]` has type `X(*)(int, int)`. On the other hand, splicing a destructor behaves like a regular member function, so `&[: rd :]` has type `void (X::*)()`.
 
 ### Range Splicers
 
@@ -2549,7 +2593,7 @@ Introduce the term "type alias" to [dcl.typedef]{.sref}:
 :::
 :::
 
-### [dcl.init.general] Initialiezers (General)
+### [dcl.init.general] Initializers (General)
 
 Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
 
