@@ -918,18 +918,18 @@ consteval auto postfix_increment(class_builder& b) -> void {
 
     append_method(b, operator_kind::post_inc, mp,
         [](method_builder& b){
-            // auto tmp = *this;
             auto tmp = append_var(b, "tmp", auto_ty,
                 make_deref_expr(make_this_expr(b)));
-            // ++*this;
+
             append_expr(b,
                 make_operator_expr(
                     operator_kind::pre_inc,
                     make_deref_expr(make_this_expr(b))));
-            // return tmp;
+
             append_return(b, make_decl_ref_expr(tmp));
         });
 }
+
 
 struct C {
     int i;
