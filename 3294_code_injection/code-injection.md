@@ -733,13 +733,13 @@ consteval auto property(std::meta::info type, std::string name) -> void {
     std::string member_name = "m_" + name;
 
     inject(@fragment {
-        $(type) $(member_name);
+        [:$(type):] $(member_name);
 
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
 
-        auto $("set_", name)(typename $(type) const& x) -> void {
+        auto $("set_", name)(typename [:$(type):] const& x) -> void {
             $(member_name) = x;
         }
     });
@@ -771,13 +771,13 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@fragment {
-        $(type) $(member_name);
+        [:$(type):[] $(member_name);
 
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
 
-        auto $("set_", name)(typename $(type) const& x)
+        auto $("set_", name)(typename [:$(type):] const& x)
             -> void {
             $(member_name) = x;
         }
@@ -793,15 +793,15 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@fragment {
-        $(type) $(member_name);
+        [:$(type):] $(member_name);
     });
 
     inject(@fragment {
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
 
-        auto $("set_", name)(typename $(type) const& x)
+        auto $("set_", name)(typename [:$(type):] const& x)
             -> void {
             $(member_name) = x;
         }
@@ -823,13 +823,13 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@fragment {
-        $(type) $(member_name);
+        [:$(type):] $(member_name);
 
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
 
-        auto $("set_", name)(typename $(type) const& x)
+        auto $("set_", name)(typename [:$(type):] const& x)
             -> void {
             $(member_name) = x;
         }
@@ -845,18 +845,18 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@fragment {
-        $(type) $(member_name);
+        [:$(type):] $(member_name);
     });
 
     inject(@fragment {
         // this requirement right here
-        requires $(type) $(member_name);
+        requires [:$(type):] $(member_name);
 
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
 
-        auto $("set_", name)(typename $(type) const& x)
+        auto $("set_", name)(typename [:$(type):] const& x)
             -> void {
             $(member_name) = x;
         }
@@ -1145,13 +1145,13 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@tokens {
-        $(type) $(member_name);
+        [:$(type):] $(member_name);
 
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
 
-        auto $("set_", name)(typename $(type) const& x)
+        auto $("set_", name)(typename [:$(type):] const& x)
             -> void {
             $(member_name) = x;
         }
@@ -1167,17 +1167,17 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@tokens {
-        $(type) $(member_name);
+        [:$(type):] $(member_name);
     });
 
     inject(@tokens {
-        auto $("get_", name)() -> $(type) const& {
+        auto $("get_", name)() -> [:$(type):] const& {
             return $(member_name);
         }
     });
 
     inject(@tokens {
-        auto $("set_", name)(typename $(type) const& x)
+        auto $("set_", name)(typename [:$(type):] const& x)
             -> void {
             $(member_name) = x;
         }
@@ -1210,7 +1210,7 @@ consteval auto postfix_increment() -> void {
     auto T = type_of(std::meta::current());
     inject(@tokens {
 
-        auto operator++(int) -> $(T) {
+        auto operator++(int) -> [:$(T):] {
             auto tmp = *this;
             ++*this;
             return tmp;
@@ -1287,7 +1287,7 @@ consteval {
             }
             first = false;
             argument_list += @tokens {
-                static_cast<$(type_of(param))&&>([: $(param) :])
+                static_cast<[:$(type_of(param)):]&&>([: $(param) :])
             };
         }
 
@@ -1319,7 +1319,7 @@ consteval auto forward_parameters(std::meta::info fun) -> std::meta::info {
         }
         first = false;
         argument_list += @tokens {
-            static_cast<$(type_of(param))&&>([: $(param) :])
+            static_cast<[:$(type_of(param)):]&&>([: $(param) :])
         };
     }
     return argument_list;
