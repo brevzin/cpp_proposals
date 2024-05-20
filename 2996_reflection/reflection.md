@@ -32,9 +32,9 @@ Since [@P2996R2]:
 * elaborated on equivalence among reflections and linkage of templated entities specialized by reflections
 * added `accessible_members_of` variants to restore a TS-era agreement
 * renamed function previously called `value_of` to `extract`, and expanded it to operate on functions
-* clarified support for reflections of evaluations rather than constant expressions
+* clarified support for reflections of values and objects rather than constant expressions
 * added Godbolt links to Clang/P2996 implementation
-* added `can_substitute`, `is_evaluation`, and (new) `value_of`
+* added `can_substitute`, `is_value`, `is_object`, and (new) `value_of`
 * added explanation of a naming issue with the [type traits](#other-type-traits)
 * added an alternative [named tuple](#named-tuple) implementation
 * made default/value/zero-initializing a `meta::info` yield a null reflection
@@ -165,7 +165,7 @@ template<typename R>
 consteval auto expand(R range) {
   std::vector<std::meta::info> args;
   for (auto r : range) {
-    args.push_back(reflect(r));
+    args.push_back(reflect_result(r));
   }
   return substitute(^__impl::replicator, args);
 }
@@ -362,7 +362,7 @@ template<typename T>
 consteval std::meta::info make_integer_seq_refl(T N) {
   std::vector args{^T};
   for (T k = 0; k < N; ++k) {
-    args.push_back(std::meta::reflect(k));
+    args.push_back(std::meta::reflect_result(k));
   }
   return substitute(^std::integer_sequence, args);
 }
@@ -1057,14 +1057,14 @@ consteval auto get_struct_to_tuple_helper() {
 
   std::vector args = {^To, ^From};
   for (auto mem : nonstatic_data_members_of(^From)) {
-    args.push_back(reflect(mem));
+    args.push_back(reflect_result(mem));
   }
 
   /*
   Alternatively, with Ranges:
   args.append_range(
     nonstatic_data_members_of(^From)
-    | std::views::transform(std::meta::reflect)
+    | std::views::transform(std::meta::reflect_result)
     );
   */
 
@@ -1098,8 +1098,8 @@ Because you cannot just pass `"x"` into a non-type template parameter of the for
 1. Can introduce a `pair` type so that we can write `make_named_tuple<pair<int, "x">, pair<double, "y">>()`, or
 2. Can just do reflections all the way down so that we can write
 ```cpp
-make_named_tuple<^int, std::meta::reflect("x"),
-                 ^double, std::meta::reflect("y")>()
+make_named_tuple<^int, std::meta::reflect_result("x"),
+                 ^double, std::meta::reflect_result("y")>()
 ```
 
 We do not currently support splicing string literals, and the `pair` approach follows the similar pattern already shown with `define_class` (given a suitable `fixed_string` type):
@@ -1183,7 +1183,7 @@ public:
     // Search for the next incomplete Helper<k>.
     std::meta::info r;
     for (int k = 0;; ++k) {
-      r = substitute(^Helper, { std::meta::reflect(k) });
+      r = substitute(^Helper, { std::meta::reflect_result(k) });
       if (is_incomplete_type(r)) break;
     }
     // Return the value of its member.  Calling static_data_members_of
@@ -1209,7 +1209,7 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (type_of(std::meta::reflect([:Pred:](^int))) == ^bool)
+  requires (type_of(std::meta::reflect_result([:Pred:](^int))) == ^bool)
 struct metatype {
   std::meta::info value;
 
@@ -1243,8 +1243,8 @@ consteval std::meta::info enrich(std::meta::info r) {
 
   std::meta::info choice;
   for (auto [check, ctor] : std::views::zip(checks, ctors))
-    if (extract<bool>(reflect_invoke(check, {reflect(r)})))
-      return reflect_invoke(ctor, {reflect(r)});
+    if (extract<bool>(reflect_invoke(check, {reflect_result(r)})))
+      return reflect_invoke(ctor, {reflect_result(r)});
 
   std::unreachable();
 }
@@ -1269,9 +1269,9 @@ int main() {
                                                         template_t>(r); };
 
   // Demonstration of using 'enrich' to select an overload.
-  PrintKind([:enrich(^metatype):]);             // "template"
-  PrintKind([:enrich(^type_t):]);               // "type"
-  PrintKind([:enrich(std::meta::reflect(3):]);  // "unknown kind"
+  PrintKind([:enrich(^metatype):]);                    // "template"
+  PrintKind([:enrich(^type_t):]);                      // "type"
+  PrintKind([:enrich(std::meta::reflect_result(3):]);  // "unknown kind"
 }
 ```
 :::
@@ -1317,7 +1317,7 @@ For all other operands, the expression is ill-formed. In a SFINAE context, a fai
 
 Earlier revisions of this paper allowed for taking the reflection of any _cast-expression_ that could be evaluated as a constant expression, as we believed that a constant expression could be internally "represented" by just capturing the value to which it evaluated. However, the possibility of side effects from constant evaluation (introduced by this very paper) renders this approach infeasible: even a constant expression would have to be evaluated every time it's spliced. It was ultimately decided to defer all support for expression reflection to a future paper.
 
-This paper does, however, continue to support what we refer to as "reflections of _evaluations_": that is, reflections of the results of expressions. The `std::meta::reflect` metafunction can be used to obtain a reflection of the evaluation of an lvalue or rvalue expression, whereas the `std::meta::value_of` metafunction can be used to obtain a reflection of the evaluation of an entity's value (if the entity is usable in constant expressions). While it's possible to support this operation directly through the reflection operator (e.g., `^fn()`), we weren't convinced that this syntax provided enough value to justify its introduction at this time.
+This paper does, however, support reflections of _values_ and of _objects_ (including subobjects). One way to obtain such reflections is using the `std::meta::reflect_result` metafunction, which returns a reflection of the result of once evaluating its argument. The `std::meta::value_of` metafunction can also be used to obtain a reflection of the value stored by an entity (if the entity is usable in constant expressions). While it's possible to support direct reflection of expression results (e.g., `^fn()`), we aren't convinced that this syntax provided enough value to justify its introduction at this time.
 
 
 
@@ -1340,7 +1340,7 @@ Since the syntax discussions in SG7 landed on the use of the caret, new basic so
 
 A reflection can be "spliced" into source code using one of several _splicer_ forms:
 
- - `[: r :]` produces an _expression_ evaluating to the entity or evaluation represented by `r` in grammatical contexts that permit expressions.  In type-only contexts ([temp.res.general]{.sref}/4), `[: r :]` produces a type (and `r` must be the reflection of a type). In contexts that only permit a namespace name, `[: r :]` produces a namespace (and `r` must be the reflection of a namespace or alias thereof).
+ - `[: r :]` produces an _expression_ evaluating to the entity represented by `r` in grammatical contexts that permit expressions.  In type-only contexts ([temp.res.general]{.sref}/4), `[: r :]` produces a type (and `r` must be the reflection of a type). In contexts that only permit a namespace name, `[: r :]` produces a namespace (and `r` must be the reflection of a namespace or alias thereof).
  - `typename[: r :]` produces a _simple-type-specifier_ corresponding to the type represented by `r`.
  - `template[: r :]` produces a _template-name_ corresponding to the template represented by `r`.
  - `[:r:]::` produces a _nested-name-specifier_ corresponding to the namespace, enumeration type, or class type represented by `r`.
@@ -1532,7 +1532,8 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any enumerator
   - any template
   - any namespace (including the global namespace) or namespace alias
-  - most evaluations of expressions with structural type (with the caveat that any references or pointers must designate objects that are permitted results of constant expressions)
+  - any object that is a _permitted result of a constant expression_
+  - any value with _structural type_ (with the caveat that any references or pointers must designate objects that are permitted results of constant expressions)
   - the null reflection (when default-constructed)
 
 Notably absent at this time are reflections of expressions. For example, one might wish to walk over the subexpressions of a function call:
@@ -1550,7 +1551,7 @@ void g() {
 ```
 :::
 
-Previous revisions of this proposal suggested limited support for reflections of constant expressions. The introduction of side effects from constant evaluations (by this very paper), however, renders this roughly as difficult for constant expressions as it is for non-constant expressions. We instead defer all expression reflection to a future paper, and only present evaluation reflection in the present proposal.
+Previous revisions of this proposal suggested limited support for reflections of constant expressions. The introduction of side effects from constant evaluations (by this very paper), however, renders this roughly as difficult for constant expressions as it is for non-constant expressions. We instead defer all expression reflection to a future paper, and only present value and object reflection in the present proposal.
 
 ### Comparing reflections
 
@@ -1584,7 +1585,7 @@ static_assert(^S::y == static_data_members_of(^S)[0]);
 ```
 :::
 
-For any other expression `expr`, the value `^expr` is a reflection of the _evaluation_ of the expression. The expression is ill-formed if `expr` is a parenthesized expression.
+For any other expression `expr`, the value `^expr` is a reflection of the _result_ of the expression. The expression is ill-formed if `expr` is a parenthesized expression.
 
 :::bq
 ```c++
@@ -1595,8 +1596,8 @@ static_assert(r == r && r == s);
 
 static_assert(^i != ^j);  // 'i' and 'j' are different entities.
 static_assert(value_of(^i) == value_of(^j));  // Two equivalent values.
-static_assert(^i != std::meta::reflect<const int &>(i))  // An entity is not the same as an evaluation
-                                                         // designating the entity.
+static_assert(^i == std::meta::reflect_result<const int &>(i))  // A variable is indistinguishable
+                                                                // from the object it designates.
 static_assert(^i != ^42);  // A reflection of an entity is not the same as one of its value.
 ```
 :::
@@ -1800,7 +1801,7 @@ namespace std::meta {
   consteval auto parent_of(info r) -> info;
   consteval auto dealias(info r) -> info;
 
-  // @[evaluation queries](#value_of)@
+  // @[value queries](#value_of)@
   consteval auto value_of(info r) -> info;
 
   // @[template queries](#template_of-template_arguments_of)@
@@ -1833,9 +1834,9 @@ namespace std::meta {
   consteval auto reflect_invoke(info target, span<info const> args) -> info;
   consteval auto reflect_invoke(info target, span<info const> tmpl_args, span<info const> args) -> info;
 
-  // @[reflect](#reflectt)@
+  // @[reflect](#reflect_resultt)@
   template<typename T>
-    consteval auto reflect(T value) -> info;
+    consteval auto reflect_result(T value) -> info;
 
   // @[extract<T>](#extractt)@
   template<typename T>
@@ -1878,7 +1879,9 @@ namespace std::meta {
   consteval auto is_class_template(info entity) -> bool;
   consteval auto is_alias_template(info entity) -> bool;
   consteval auto is_concept(info entity) -> bool;
-  consteval auto is_evaluation(info entity) -> bool;
+  consteval auto is_structured_binding(info entity) -> bool;
+  consteval auto is_value(info entity) -> bool;
+  consteval auto is_object(info entity) -> bool;
   consteval auto has_template_arguments(info r) -> bool;
   consteval auto is_constructor(info r) -> bool;
   consteval auto is_destructor(info r) -> bool;
@@ -1976,7 +1979,7 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection of an evaluation of an lvalue for which the application of lvalue-to-rvalue conversion is a constant expression, then `value_of(r)` is a reflection of the evaluation of that conversion. If `r` is a reflection of an enumerator or a variable that is _usable in constant expressions_, then `value_of(r)` is a reflection of the evaluation obtained from an lvalue-to-rvalue conversion applied to an _id-expression_ designating the reflected entity. For all other inputs, `value_of(r)` is not a constant expression.
+If `r` is a reflection of an enumerator, then `value_of(r)` is a reflection of the value of the enumerator. Otherwise, if `r` is a reflection of an object _usable in constant expressions_, then `value_of(r)` is a reflection of the value of the object. For all other inputs, `value_of(r)` is not a constant expression.
 
 ### `template_of`, `template_arguments_of`
 
@@ -2044,6 +2047,7 @@ namespace std::meta {
 The template `members_of` returns a vector of reflections representing the direct members of the class type represented by its first argument.
 Any nonstatic data members appear in declaration order within that vector.
 Anonymous unions appear as a nonstatic data member of corresponding union type.
+Reflections of structured bindings shall not appear in the returned vector.
 If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
 E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
 
@@ -2110,21 +2114,21 @@ For the first overload: Letting `F` be the entity reflected by `target`, and `A@
 
 The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
 
-### `reflect<T>`
+### `reflect_result<T>`
 
 :::bq
 ```c++
 namespace std::meta {
-  template<typename T> consteval auto reflect(T expr) -> info;
+  template<typename T> consteval auto reflect_result(T expr) -> info;
 }
 ```
 :::
 
-If `expr` does not have structural type, then `reflect(expr)` fails to be a constant expression.
+If `expr` does not have structural type, then `reflect_result(expr)` fails to be a constant expression.
 
-Otherwise, if `T` is of reference or pointer type, or for each subobject of `expr` having reference or pointer type if `T` is of class type, if the reference or pointer value designates an entity that is not a _permitted result of a constant expression_ ([expr.const]), then `reflect(expr)` fails to be a constant expression.
+Otherwise, if `T` is of reference or pointer type, or for each subobject of `expr` having reference or pointer type if `T` is of class type, if the reference or pointer value designates an entity that is not a _permitted result of a constant expression_ ([expr.const]), then `reflect_result(expr)` fails to be a constant expression.
 
-Otherwise, `reflect(expr)` produces a reflection of the evaluation of `expr`.
+Otherwise, `reflect_result(expr)` produces a reflection of the result of `static_cast<T>(expr)`.
 
 ### `extract<T>`
 
@@ -2136,12 +2140,12 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection of an evaluation of type `T`, `extract<T>(r)` evaluates to the reflected evaluation.
+If `r` is a reflection for a value of type `T`, `extract<T>(r)` is a prvalue whose evaluation computes the reflected value.
 
-If `r` is a reflection for a variable of non-reference type `T`, `extract<T&>(r)` and `extract<T const&>(r)` are lvalues referring to that variable.
-If the variable is usable in constant expressions [expr.const], `extract<T>(r)` evaluates to its value.
+If `r` is a reflection for an object of non-reference type `T`, `extract<T&>(r)` and `extract<T const&>(r)` are lvalues referring to that object.
+If the object is usable in constant expressions [expr.const], `extract<T>(r)` evaluates to its value.
 
-If `r` is a reflection for a variable of reference type `T` usable in constant-expressions, `extract<T>(r)` evaluates to that reference.
+If `r` is a reflection for an object of reference type `T` usable in constant-expressions, `extract<T>(r)` evaluates to that reference.
 
 If `r` is a reflection for a function of type `R(A_0, ... A_n)`, `extract<R(*)(A_0, ..., A_n)>(r)` evaluates to a pointer to that function.
 
@@ -2440,7 +2444,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 ::: std
 ::: addu
 
-[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, an evaluation of an expression, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
+[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a value, an object, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 [Reflections are only meaningful during translation.
 The notion of consteval-only types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
@@ -2516,9 +2520,9 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 [#]{.pnum} For a `$primary-expression$` of the form `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template.
 The meaning of such a construct is identical to that of a `$primary-expression$` of the form `$template-name$ < $template-argument-list$@~_opt_~@ >` where `$template-name$` denotes the reflected template or concept (ignoring access checking on the `$template-name$`).
 
-[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for a variable, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a `$primary-expression$` of the form `$id-expression$` that would denote the reflected entity (ignoring access checking).
+[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a `$primary-expression$` of the form `$id-expression$` that would denote the reflected entity (ignoring access checking).
 
-[#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of an evaluation, and the expression shall evaluate to the reflected evaluation.
+[#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of a value, and the expression shall be a prvalue whose evaluation computes the reflected value.
 :::
 :::
 
@@ -2628,13 +2632,10 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} If both operands are null reflection values, then they compare equal.
 * [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
-* [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if they are reflections of the same namespace alias, alias template, or type alias, respectively.
-* [*.#]{.pnum} Otherwise, if neither operand is a reflection of an evaluation, then they compare equal if they are reflections of the same entity.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of an evaluation and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise (if both operands are reflections of evaluations):
-  * [*.#.#]{.pnum} If both operands are reflections of evaluations of lvalues designating the same entity, then they compare equal.
-  * [*.#.#]{.pnum} Otherwise, if one operand is a reflection of an evaluation of an lvalue, then they compare unequal.
-  * [*.#.#]{.pnum} Otherwise, both operands reflect evaluations of rvalues; they compare equally if and only if both evaluations compute the same value of the same type.
+* [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if their reflected aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
+* [*.#]{.pnum} Otherwise, if neither operand is a reflection of a value, then they compare equal if they are reflections of the same entity.
+* [*.#]{.pnum} Otherwise, if one operand is a reflection of a value and the other is not, then they compare unequal.
+* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equally if and only if they reflect the same value of the same type.
 * Otherwise the result is unspecified.
 :::
 
@@ -3008,7 +3009,9 @@ namespace std::meta {
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
   consteval bool is_concept(info r);
-  consteval bool is_evaluation(info r);
+  consteval bool is_value(info r);
+  consteval bool is_object(info r);
+  consteval bool is_structured_binding(info r);
   consteval bool has_template_arguments(info r);
   consteval bool is_class_member(info entity);
   consteval bool is_namespace_member(info entity);
@@ -3328,9 +3331,15 @@ consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
 consteval bool is_concept(info r);
-consteval bool is_evaluation(info r);
+consteval bool is_structured_binding(info r);
+consteval bool is_value(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, alias template, concept, or evaluation of an expression respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function template, class template, variable template, alias template, concept, structured binding, or value respectively. Otherwise, `false`.
+
+```cpp
+consteval bool is_object(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` designates an object. Otherwise, `false`.
 
 ```cpp
 consteval bool has_template_arguments(info r);
@@ -3421,7 +3430,7 @@ template<class... Fs>
 
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity designated by `r` such that `(filters(m) && ...)` is `true`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, not including any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
