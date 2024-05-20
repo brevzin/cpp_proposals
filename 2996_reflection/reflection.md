@@ -38,7 +38,7 @@ Since [@P2996R2]:
 * made default/value/zero-initializing a `meta::info` yield a null reflection
 * added addressed splicing, which is implemented but was omitted from the paper
 * added another overload to `reflect_invoke` to support template arguments
-* renamed all the type traits to end in `_type` to avoid name clashes
+* renamed all the type traits to start with `type_` to avoid name clashes.
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -779,8 +779,8 @@ consteval auto make_struct_of_arrays(std::meta::info type,
   std::vector<std::meta::info> old_members = nonstatic_data_members_of(type);
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
-    auto array_type = substitute(^std::array, {type_of(member), N });
-    auto mem_descr = data_member_spec(array_type, {.name = name_of(member)});
+    auto type_array = substitute(^std::array, {type_of(member), N });
+    auto mem_descr = data_member_spec(type_array, {.name = name_of(member)});
     new_members.push_back(mem_descr);
   }
   return std::meta::define_class(
@@ -869,8 +869,8 @@ consteval auto spec_to_opts(std::meta::info opts,
                             std::meta::info spec) -> std::meta::info {
   std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
-    auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(data_member_spec(new_type, {.name=name_of(member)}));
+    auto type_new = template_arguments_of(type_of(member))[0];
+    new_members.push_back(data_member_spec(type_new, {.name=name_of(member)}));
   }
   return define_class(opts, new_members);
 }
@@ -1035,7 +1035,7 @@ An alternative approach is:
 
 ::: std
 ```cpp
-consteval auto struct_to_tuple_type(info type) -> info {
+consteval auto type_struct_to_tuple(info type) -> info {
   return substitute(^std::tuple,
                     nonstatic_data_members_of(type)
                     | std::views::transform(std::meta::type_of)
@@ -1050,7 +1050,7 @@ constexpr auto struct_to_tuple_helper(From const& from) -> To {
 
 template<typename From>
 consteval auto get_struct_to_tuple_helper() {
-  using To = [: struct_to_tuple_type(^From): ];
+  using To = [: type_struct_to_tuple(^From): ];
 
   std::vector args = {^To, ^From};
   for (auto mem : nonstatic_data_members_of(^From)) {
@@ -1076,7 +1076,7 @@ constexpr auto struct_to_tuple(From const& from) {
 ```
 :::
 
-Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
+Here, `type_struct_to_tuple` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
 That gives us the return type.
 Then, `struct_to_tuple_helper` is a function template that does the actual conversion --- which it can do by having all the reflections of the members as a non-type template parameter pack.
 This is a `constexpr` function and not a `consteval` function because in the general case the conversion is a run-time operation.
@@ -1249,7 +1249,7 @@ We can leverage this machinery to select different function overloads based on t
 
 ::: std
 ```cpp
-using type_t = metatype<^std::meta::is_type>;
+using type_t = metatype<^std::meta::type_is>;
 using template_t = metatype<^std::meta::is_template>;
 
 // Example of a function overloaded for different "types" of reflections.
@@ -1505,7 +1505,7 @@ This is somewhat natural to those of us that have used systems where `$`{.op} is
 
 ::: std
 ```c++
-@[$]{.op}@select_type(3) *ptr = nullptr;
+@[$]{.op}@type_select(3) *ptr = nullptr;
 ```
 :::
 
@@ -1710,7 +1710,7 @@ For parameters, there are basically three options:
 
 1. Accept `std::span<std::meta::info const>`, which now accepts braced-init-list arguments so it's pretty convenient in this regard.
 2. Accept `std::vector<std::meta::info>`
-3. Accept _any_ range whose `value_type` is `std::meta::info`.
+3. Accept _any_ range whose `type_value` is `std::meta::info`.
 
 Now, for compiler efficiency reasons, it's definitely better to have all the arguments contiguously. So the compiler wants `span`. There's really no reason to prefer `vector` over `span`. Accepting any range would look something like this:
 
@@ -1736,7 +1736,7 @@ For example, converting a struct to a tuple type:
 ::: cmptable
 ### `span` only
 ```cpp
-consteval auto struct_to_tuple_type(info type) -> meta::info {
+consteval auto type_struct_to_tuple(info type) -> meta::info {
     return substitute(
         ^tuple,
         nonstatic_data_members_of(type)
@@ -1748,7 +1748,7 @@ consteval auto struct_to_tuple_type(info type) -> meta::info {
 
 ### any range
 ```cpp
-consteval auto struct_to_tuple_type(info type) -> meta::info {
+consteval auto type_struct_to_tuple(info type) -> meta::info {
     return substitute(
         ^tuple,
         nonstatic_data_members_of(type)
@@ -1849,21 +1849,21 @@ namespace std::meta {
 
   // @[member queries](#member-queries)@
   template<typename ...Fs>
-    consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto members_of(info type_class, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
-  consteval auto static_data_members_of(info class_type) -> vector<info>;
-  consteval auto nonstatic_data_members_of(info class_type) -> vector<info>;
-  consteval auto subobjects_of(info class_type) -> vector<info>;
-  consteval auto enumerators_of(info enum_type) -> vector<info>;
+    consteval auto bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto static_data_members_of(info type_class) -> vector<info>;
+  consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
+  consteval auto subobjects_of(info type_class) -> vector<info>;
+  consteval auto enumerators_of(info type_enum) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto accessible_members_of(info type_class, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
+    consteval auto accessible_bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_subobjects_of(info type_class) -> vector<info>;
 
   // @[substitute](#substitute)@
   template <reflection_range R = span<info const>>
@@ -1930,10 +1930,10 @@ namespace std::meta {
 
   // @[define_class](#data_member_spec-define_class)@
   struct data_member_options_t;
-  consteval auto data_member_spec(info class_type,
+  consteval auto data_member_spec(info type_class,
                                   data_member_options_t options = {}) -> info;
   template <reflection_range R = span<info const>>
-  consteval auto define_class(info class_type, R&&) -> info;
+  consteval auto define_class(info type_class, R&&) -> info;
 
   // @[data layout](#data-layout-reflection)@
   consteval auto offset_of(info entity) -> size_t;
@@ -1987,11 +1987,11 @@ This can be used to implement the C `typeof` feature (which works on both types 
 
 ::: std
 ```cpp
-consteval auto do_typeof(std::meta::info r) -> std::meta::info {
-  return remove_cvref_type(is_type(r) ? r : type_of(r));
+consteval auto type_doof(std::meta::info r) -> std::meta::info {
+  return type_remove_cvref(is_type(r) ? r : type_of(r));
 }
 
-#define typeof(e) [: do_typeof(^e) :]
+#define typeof(e) [: type_doof(^e) :]
 ```
 :::
 
@@ -2042,34 +2042,34 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 ```c++
 namespace std::meta {
   template<typename ...Fs>
-    consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto members_of(info type_class, Fs ...filters) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto bases_of(info type_class, Fs ...filters) -> vector<info>;
 
-  consteval auto static_data_members_of(info class_type) -> vector<info> {
-    return members_of(class_type, is_variable);
+  consteval auto static_data_members_of(info type_class) -> vector<info> {
+    return members_of(type_class, is_variable);
   }
 
-  consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
-    return members_of(class_type, is_nonstatic_data_member);
+  consteval auto nonstatic_data_members_of(info type_class) -> vector<info> {
+    return members_of(type_class, is_nonstatic_data_member);
   }
 
-  consteval auto subobjects_of(info class_type) -> vector<info> {
-    auto subobjects = bases_of(class_type);
-    subobjects.append_range(nonstatic_data_members_of(class_type));
+  consteval auto subobjects_of(info type_class) -> vector<info> {
+    auto subobjects = bases_of(type_class);
+    subobjects.append_range(nonstatic_data_members_of(type_class));
     return subobjects;
   }
 
-  consteval auto enumerators_of(info enum_type) -> vector<info>;
+  consteval auto enumerators_of(info type_enum) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto accessible_members_of(info type_class, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
+    consteval auto accessible_bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_subobjects_of(info type_class) -> vector<info>;
 }
 ```
 :::
@@ -2078,7 +2078,7 @@ The template `members_of` returns a vector of reflections representing the direc
 Any nonstatic data members appear in declaration order within that vector.
 Anonymous unions appear as a nonstatic data member of corresponding union type.
 If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
-E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
+E.g., `members_of(^C, std::meta::type_is)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::type_is, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
@@ -2234,7 +2234,7 @@ namespace std::meta {
   consteval auto data_member_spec(info type,
                                   data_member_options_t options = {}) -> info;
   template <reflection_range R = span<info const>>
-  consteval auto define_class(info class_type, R&&) -> info;
+  consteval auto define_class(info type_class, R&&) -> info;
 }
 ```
 :::
@@ -2279,7 +2279,7 @@ constexpr auto U = define_class(^S<int>, {
 When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
 This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
 
-If `class_type` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
+If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
 ### Data Layout Reflection
 :::bq
@@ -2345,7 +2345,8 @@ Consider `std::meta::is_function(e)`, which is currently actually specified twic
 Both of these are useful, yet they mean different things entirely - the first is ill-formed when passed a reflection of a function (as opposed to a function type), and the second would simply answer `false` for the reflection of _any_ type (function type or otherwise).
 So what do we do?
 
-Probably the most straightforward choice would be to suffix all of the type traits with `_type`.
+Probably the most straightforward choice would be to either prefix or suffix all of the type traits with `_type`.
+We think prefix is a little bit better because it groups all the type traits together and perhaps make it clearer that the argument(s) must be types.
 That is: `std::is_pointer<T>` because `std::meta::type_is_pointer(^T)`, `std::is_arithmetic<T>` becomes `std::meta::type_is_arithmetic(^T)`, and so forth.
 The advantage of this approach is that it very likely just works, also opening the door to making a more general `std::meta::is_const(e)` that checks not just if `e` is a `const`-qualified type but also if it's a `const`-qualified object or a `const`-qualified member, etc.
 The disadvantage is that the suffixed names would not be familiar - we're much more familiar with the name `is_copy_constructible` than we would be with `type_is_copy_constructible`.
@@ -2419,7 +2420,7 @@ Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this mus
 
 ::: addu
 
-- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::type_is`.
 
 :::
 - [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
@@ -3086,7 +3087,7 @@ namespace std::meta {
   consteval vector<info> accessible_nonstatic_data_members_of(info type);
   consteval vector<info> subobjects_of(info type);
   consteval vector<info> accessible_subobjects_of(info type);
-  consteval vector<info> enumerators_of(info enum_type);
+  consteval vector<info> enumerators_of(info type_enum);
 
   // [meta.reflection.substitute], reflection substitution
   template <class R>
@@ -3559,12 +3560,12 @@ consteval vector<info> accessible_subobjects_of(info type);
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
 ```cpp
-consteval vector<info> enumerators_of(info enum_type);
+consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
+[#]{.pnum} *Mandates*: `type_enum` designates an enumeration.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `type_enum`, in the order in which they are declared.
 :::
 :::
 
@@ -3641,10 +3642,17 @@ consteval bool type_is_function(info type);
 
 ::: example
 ```
-// an example implementation
 namespace std::meta {
   consteval bool type_is_void(info type) {
+    // one example implementation
     return value_of<bool>(substitute(^is_void_v, {type}));
+
+    // another example implementation
+    type = dealias(type);
+    return type == ^void
+        || type == ^const void
+        || type == ^volatile void
+        || type == ^const volatile void;
   }
 }
 ```
