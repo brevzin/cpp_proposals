@@ -48,6 +48,7 @@ Since [@P2996R1], several changes to the overall library API:
 * added [all the type traits](#other-type-traits)
 
 Other paper changes:
+
 * some updates to examples, including a new examples which add a [named tuple](#named-tuple) and [emulate typeful reflection](#emulating-typeful-reflection).
 * more discussion of syntax, constant evaluation order, aliases, and freestanding.
 * adding lots of wording
@@ -1355,10 +1356,31 @@ In the same way that `&C::mem` can produce a pointer, pointer to member data, po
 *  Otherwise if `r` is a reflection of a non-static data member, `&[:r:]` is a pointer to data member.
 *  Otherwise, if `r` is a reflection of a static member function, a function, or a non-static member function with an explicit object parameter, `&[:r:]` is a pointer to function
 *  Otherwise, if `r` is a reflection of a non-static member function with an implicit object parameter, `&[:r:]` is a pointer to member function.
+*  Otherwise, if `r` is a reflection of a function template or member function template, `&[:r:]` is the address of that overload set - which would then require external context to resolve as usual.
 
 For most members, this doesn't even require any additional wording since that's just what you get when you take the address of the splice based on the current rules we have today.
 
-Now, the interesting question is what does this mean when `r` is the reflection of a constructor or destructor? Consider the type:
+Now, there are a couple interesting cases to point out when `&[:r:]` isn't just the same as `&X::f`.
+
+When `r` is a reflection of a function or function template that is part of an overload set, overload resolution will not consider the whole overload set, just the specific function or function template that `r` reflects:
+
+::: std
+```cpp
+struct C {
+    template <class T> void f(T); // #1
+    void f(int); // #2
+};
+
+void (C::*p1)(int) = &C::f;  // error: ambiguous
+
+constexpr auto f1 = members_of(^C, /* function templates named f */)[0];
+constexpr auto f2 = members_of(^C, /* functions named f */)[0];
+void (C::*p2)(int) = &[:f1:]; // ok, refers to C::f<int> (#1)
+void (C::*p3)(int) = &[:f2:]; // ok, refers to C::f      (#2)
+```
+:::
+
+Another interesting question is what does this mean when `r` is the reflection of a constructor or destructor? Consider the type:
 
 ::: std
 ```cpp
@@ -1385,7 +1407,7 @@ auto pc = &[: rc :];
 auto pd = &[: rd :];
 
 auto x = (*pc)(1, 2);   // gives you an X
-(x.*p2)();              // destroys it
+(x.*pd)();              // destroys it
 ```
 :::
 
