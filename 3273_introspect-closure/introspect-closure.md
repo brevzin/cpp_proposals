@@ -40,9 +40,9 @@ We propose to change wording in [expr.prim.lambda.capture]{.sref}/12:
 ::: std
 [12]{.pnum} An entity is *captured by reference* if it is implicitly or explicitly captured but not captured by copy. [It is unspecified whether additional unnamed non-static data members are declared in the closure type for entities captured by reference. If declared, such non-static data members shall be of literal type.]{.rm} [For each entity captured by reference, an unnamed non-static data member is declared in the closure type. The declaration order of these members is unspecified. The type of such a data member is an lvalue reference to:]{.addu}
 
-* [14.1]{.pnum} [the referenced type if the entity is a reference to an object,]{.addu}
-* [14.2]{.pnum} [the referenced function type if the entity is a reference to a function, or]{.addu}
-* [14.3]{.pnum} [the type of the corresponding captured entity otherwise.]{.addu}
+* [#.1]{.pnum} [the referenced type if the entity is a reference to an object,]{.addu}
+* [#.2]{.pnum} [the referenced function type if the entity is a reference to a function, or]{.addu}
+* [#.3]{.pnum} [the type of the corresponding captured entity otherwise.]{.addu}
 :::
 
 # Discussion
