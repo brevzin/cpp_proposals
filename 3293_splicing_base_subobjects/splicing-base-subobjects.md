@@ -6,8 +6,12 @@ audience: EWG
 author:
     - name: Peter Dimov
       email: <pdimov@gmail.com>
+    - name: Dan Katz
+      email: <dkatz85@bloomberg.net>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
+    - name: Daveed Vandevoorde
+      email: <daveed@edg.com>
 toc: true
 ---
 
