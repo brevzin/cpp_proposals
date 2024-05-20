@@ -39,6 +39,7 @@ Since [@P2996R2]:
 * added addressed splicing, which is implemented but was omitted from the paper
 * added another overload to `reflect_invoke` to support template arguments
 * renamed all the type traits to start with `type_` to avoid name clashes. added more generalized `is_const`, `is_final`, and `is_volatile`
+* added `is_noexcept` and fixed `is_explicit` to only apply to member functions, not member function templates
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -1897,7 +1898,11 @@ namespace std::meta {
   consteval auto is_deleted(info entity) -> bool;
   consteval auto is_defaulted(info entity) -> bool;
   consteval auto is_explicit(info entity) -> bool;
+  consteval auto is_noexcept(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
+  consteval auto is_const(info r) -> bool;
+  consteval auto is_volatile(info r) -> bool;
+  consteval auto is_final(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
   consteval auto has_external_linkage(info r) -> bool;
@@ -3038,6 +3043,7 @@ namespace std::meta {
   consteval bool is_deleted(info r);
   consteval bool is_defaulted(info r);
   consteval bool is_explicit(info r);
+  consteval bool is_noexcept(info r);
   consteval bool is_bit_field(info r);
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
@@ -3326,7 +3332,13 @@ consteval bool is_defaulted(info r);
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function or member function template that is declared explicit. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared `explicit`. Otherwise, `false`.
+
+```cpp
+consteval bool is_noexcept(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared `noexcept`, a closure type of a non-generic lambda whose call operator is declared `noexcept`, or a value of such a type. Otherwise, `false`.
 
 ```cpp
 consteval bool is_bit_field(info r);
