@@ -38,7 +38,7 @@ Since [@P2996R2]:
 * made default/value/zero-initializing a `meta::info` yield a null reflection
 * added addressed splicing, which is implemented but was omitted from the paper
 * added another overload to `reflect_invoke` to support template arguments
-* renamed all the type traits to start with `type_` to avoid name clashes.
+* renamed all the type traits to start with `type_` to avoid name clashes. added more generalized `is_const`, `is_final`, and `is_volatile`
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -3039,6 +3039,9 @@ namespace std::meta {
   consteval bool is_defaulted(info r);
   consteval bool is_explicit(info r);
   consteval bool is_bit_field(info r);
+  consteval bool is_const(info r);
+  consteval bool is_volatile(info r);
+  consteval bool is_final(info r);
   consteval bool has_static_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
   consteval bool has_external_linkage(info r);
@@ -3330,6 +3333,19 @@ consteval bool is_bit_field(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` designates a bit-field. Otherwise, `false`.
+
+```cpp
+consteval bool is_const(info r);
+consteval bool is_volatile(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified member function type (respectively), or an object or function with such a type. Otherwise, `false`.
+
+```cpp
+consteval bool is_final(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a final class or a final member function. Otherwise, `false`.
 
 ```cpp
 consteval bool has_static_storage_duration(info r);
