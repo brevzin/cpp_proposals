@@ -3955,3 +3955,28 @@ consteval info type_unwrap_reference(info type) {
 
 :::
 :::
+
+## Feature-Test Macro
+
+This is a feature with both a language and library component. Our usual practice is to provide something like `__cpp_impl_reflection` and `__cpp_lib_reflection` for this. But since the two pieces are so closely tied together, maybe it really only makes sense to provide one?
+
+For now, we'll add both.
+
+To [cpp.predefined]{.sref}:
+
+::: std
+```diff
+  __cpp_impl_coroutine 201902L
+  __cpp_impl_destroying_delete 201806L
+  __cpp_impl_three_way_comparison 201907L
++ __cpp_impl_reflection 2024XXL
+```
+:::
+
+and [version.syn]{.sref}:
+
+::: std
+```diff
++ #define __cpp_lib_reflection 2024XXL // also in <meta>
+```
+:::
