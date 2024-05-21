@@ -673,11 +673,11 @@ Can we do better?
 
 ## Fragments
 
-[@P1717R0] introduced the concept of fragments. It introduced many different kinds of fragments, under syntax that changed a bit in [@P2050R0] and [@P2237R0]. For the purposes of this section we'll just use `@fragment` as the introducer.
+[@P1717R0] introduced the concept of fragments. It introduced many different kinds of fragments, under syntax that changed a bit in [@P2050R0] and [@P2237R0]. We'll use what the linked implementation uses, but feel free to change it as you read.
 
 ### `std::tuple`
 
-The initial fragments paper itself led off with an implementation of `std::tuple` storage and the concept of a `consteval` block (now also [@P3289R0]).
+The initial fragments paper itself led off with an implementation of `std::tuple` storage and the concept of a `consteval` block (now also [@P3289R0]). That [looks like this](https://godbolt.org/z/E19rezx6T) (the linked implementation looks a little different, due to an implementation bug):
 
 ::: std
 ```cpp
@@ -686,18 +686,30 @@ struct Tuple {
     consteval {
         std::array types{^Ts...};
         for (size_t i = 0; i != types.size(); ++i) {
-            inject(@fragment {
-                [[no_unique_address]] [: $(types[i]) :] $("_", i);
-            });
+            -> fragment struct {
+                [[no_unique_address]] typename(%{types[i]}) unqualid("_", %{i});
+            };
         }
     }
 };
 ```
 :::
 
-Now, the big advantage of fragments is that it's just C++ code in the middle there. That doesn't show up clearly in this particular example, but it will more shortly. The problem that fragments need to solve is how to get context information into it. For instance, how do get the type `types[i]` and how do we produce the names `_0`, `_1`, ..., for all of these members? Some revisions of the paper introduced an operator spelled `unqualid` (to create an unqualified id). The latest used `|# #|`.
+Now, the big advantage of fragments is that it's just C++ code in the middle there (maybe it feels a bit messy in this example but it will more shortly). The leading `->` is the injection operator.
 
-Instead, we are going to introduce a new solution spelled, for now, `$(e...)`. We'll go into [more detail on it later](#quoting-into-a-token-sequence), but for now, suffice to say that the above works - the first "quote" of `$(types[i])` will capture that reflection so that it can be spliced when the fragment is injected, and the second concatenates the string `"_"` with successive numbers `i` to produce the member names.
+One big problem that fragments need to solve is how to get context information into them. For instance, how do get the type `types[i]` and how do we produce the names `_0`, `_1`, ..., for all of these members? We need a way to capture context, and it needs to be interpolated differently.
+
+In the above example, the design uses the operator `unqualid` (to create an unqualified id) concatenating the string literal `"_"` with the interpolated value `%{i}` (a later revision used `|# #|` instead). We need distinct operators to differentiate between the case where we want to use a string as an identifier and as an actual string.
+
+::: std
+```cpp
+std::string name = "hello";
+-> fragment struct {
+    // std::string name = "name";
+    std::string unqualid(%{name}) = %{name};
+};
+```
+:::
 
 ### `std::enable_if`
 
@@ -709,160 +721,101 @@ template <bool B, class T=void>
 struct enable_if {
     consteval {
         if (B) {
-            inject(@fragment { using type = T; });
+            -> fragment struct { using type = T; };
         }
     };
 };
 ```
 :::
 
-Sure, you might want to simplify this just having a class scope `if` directly and then putting the contents of the `@fragment` in there.
+Sure, you might want to simplify this just having a class scope `if` directly and then putting the contents of the `fragment` in there. But this is very nice.
 
 ### Properties
 
-The [implementation here](https://godbolt.org/z/ddbsYWsvr) (again adjusting the syntax for something we think will be better, and more in line with the other examples presented in other models) isn't too different from the [string implementation](#properties-2):
+The [implementation here](https://godbolt.org/z/ddbsYWsvr) isn't too different from the [string implementation](#properties-2) (this was back when the reflection operator was `reflexpr`, before it changed to `^`):
 
 ::: std
 ```cpp
-consteval auto property(std::meta::info type, std::string name) -> void {
-    std::string member_name = "m_" + name;
+consteval auto property(meta::info type, char const* name) -> void {
+    -> fragment struct {
+        typename(%{type}) unqualid("m_", %{name});
 
-    inject(@fragment {
-        [:$(type):] $(member_name);
-
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
+        auto unqualid("get_", %{name})() -> typename(%{type}) const& {
+            return unqualid("m_", %{name});
         }
 
-        auto $("set_", name)(typename [:$(type):] const& x) -> void {
-            $(member_name) = x;
+        auto unqualid("set_", %{name})(typename(%{type}) const& x) -> void {
+            unqualid("m_", %{name}) = x;
         }
-    });
+    };
 }
 
 struct Book {
     consteval {
-        property(^std::string, "author");
-        property(^std::string, "title");
+        property(reflexpr(std::string), "author");
+        property(reflexpr(std::string), "title");
     }
 };
 ```
 :::
 
-It's a bit busy because nearly everything in properties involves quoting outside context, so seemingly everything here is quoted. It's even busier in the linked implementation by way of the quoting syntax being heavier.
+It's a bit busy because nearly everything in properties involves quoting outside context, so seemingly everything here is quoted.
 
 Now, there's one very important property of fragments (as designed in these papers) hold: every fragment must be parsable in its context. A fragment does not leak its declarations out of its context; only out of the context where it is injected. Not only that, we get full name lookup and everything.
 
 On the one hand, this seems like a big advantage: the fragment is checked at the point of its declaration, not at the point of its use. With the string model above, that was not the case - you can write whatever garbage string you want and it's still a perfectly valid string, it only becomes invalid C++ code when it's injected.
 
-On the other, it has some consequences for how we can code using fragments. In the above implementation, we inject the whole property in one go. But let's say we wanted to split it up for whatever reason. We can't.
+On the other, it has some consequences for how we can code using fragments. In the above implementation, we inject the whole property in one go. But let's say we wanted to split it up for whatever reason. We can't. This is invalid:
 
-::: cmptable
-### Valid
+::: std
 ```cpp
-consteval auto property(meta::info type, std::string name)
-    -> void
+consteval auto property(meta::info type, char const* name) -> void
 {
-    std::string member_name = "m_" + name;
+    -> fragment struct {
+        typename(%{type}) unqualid("m_", %{name});
+    };
 
-    inject(@fragment {
-        [:$(type):[] $(member_name);
-
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
+    -> fragment struct {
+        auto unqualid("get_", %{name})() -> typename(%{type}) const& {
+            return unqualid("m_", %{name}); // error
         }
 
-        auto $("set_", name)(typename [:$(type):] const& x)
-            -> void {
-            $(member_name) = x;
+        auto unqualid("set_", %{name})(typename(%{type}) const& x) -> void {
+            unqualid("m_", %{name}) = x; // error
         }
-    });
-}
-```
-
-### Invalid
-```cpp
-consteval auto property(meta::info type, std::string name)
-    -> void
-{
-    std::string member_name = "m_" + name;
-
-    inject(@fragment {
-        [:$(type):] $(member_name);
-    });
-
-    inject(@fragment {
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
-        }
-
-        auto $("set_", name)(typename [:$(type):] const& x)
-            -> void {
-            $(member_name) = x;
-        }
-    });
+    };
 }
 ```
 :::
 
-On the right, we're injecting the member in one fragment and the getter/setter in another. The problem is, in the second fragment, name lookup for `m_author` fails. We can't do that.
+In this second fragment, name lookup for `m_author` fails in both function bodies. We can't do that. We We have to teach the fragment how to find the name, which requires writing this (note the added `requires` statement):
 
-We have to teach the fragment how to find the name, which requires writing this (note the added `requires` statement in the fragment on the right):
-
-::: cmptable
-### Single Fragment
+::: std
 ```cpp
-consteval auto property(meta::info type, std::string name)
-    -> void
+consteval auto property(meta::info type, char const* name) -> void
 {
-    std::string member_name = "m_" + name;
+    -> fragment struct {
+        typename(%{type}) unqualid("m_", %{name});
+    };
 
-    inject(@fragment {
-        [:$(type):] $(member_name);
+    -> fragment struct {
+        requires typename(%{type}) unqualid("m_", %{name});
 
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
+        auto unqualid("get_", %{name})() -> typename(%{type}) const& {
+            return unqualid("m_", %{name}); // error
         }
 
-        auto $("set_", name)(typename [:$(type):] const& x)
-            -> void {
-            $(member_name) = x;
+        auto unqualid("set_", %{name})(typename(%{type}) const& x) -> void {
+            unqualid("m_", %{name}) = x; // error
         }
-    });
-}
-```
-
-### Split Fragments
-```cpp
-consteval auto property(meta::info type, std::string name)
-    -> void
-{
-    std::string member_name = "m_" + name;
-
-    inject(@fragment {
-        [:$(type):] $(member_name);
-    });
-
-    inject(@fragment {
-        // this requirement right here
-        requires [:$(type):] $(member_name);
-
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
-        }
-
-        auto $("set_", name)(typename [:$(type):] const& x)
-            -> void {
-            $(member_name) = x;
-        }
-    });
+    };
 }
 ```
 :::
 
 ### Postfix increment
 
-One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Postfix increment ends up being much simpler to implement with fragments than properties - due to not having to deal with any quoted names. But it does surface the issue of name lookup in fragments:
+One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any quoted names. But it does surface the issue of name lookup in fragments.
 
 ::: std
 ```cpp
@@ -890,8 +843,6 @@ struct C {
 };
 ```
 :::
-
-Here we're using the actual fragments syntax as in the [linked implementation](https://godbolt.org/z/r1v3e43sd).
 
 Now, the rule in the fragments implementation is that the fragments themselves are checked. This includes name lookup. So any name used in the body of the fragment has to be found and pre-declared, which is what we're doing in the `requires` clause there. The implementation right now appears to have a bug with respect to operators (if you change the body to calling `inc(*this)`, it does get flagged), which is why it's commented out in the link.
 
