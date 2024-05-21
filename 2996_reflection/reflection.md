@@ -1315,7 +1315,7 @@ When the operand is an _id-expression_, the resulting value is a reflection of t
 
 For all other operands, the expression is ill-formed. In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to not evaluate to constant.
 
-Earlier revisions of this paper allowed for taking the reflection of any _cast-expression_ that could be evaluated as a constant expression, as we believed that a constant expression could be internally "represented" by just capturing the value to which it evaluated. However, the possibility of side effects from constant evaluation (introduced by this very paper) renders this approach infeasible: even a constant expression would have to be evaluated every time it's spliced. It was ultimately decided to defer all support for expression reflection to a future paper.
+Earlier revisions of this paper allowed for taking the reflection of any _cast-expression_ that could be evaluated as a constant expression, as we believed that a constant expression could be internally "represented" by just capturing the value to which it evaluated. However, the possibility of side effects from constant evaluation (introduced by this very paper) renders this approach infeasible: even a constant expression would have to be evaluated every time it's spliced. It was ultimately decided to defer all support for expression reflection, but we intend to introduce it through a future paper using the syntax `^(expr)`.
 
 This paper does, however, support reflections of _values_ and of _objects_ (including subobjects). One way to obtain such reflections is using the `std::meta::reflect_result` metafunction, which returns a reflection of the result of once evaluating its argument. The `std::meta::value_of` metafunction can also be used to obtain a reflection of the value stored by an entity (if the entity is usable in constant expressions). While it's possible to support direct reflection of expression results (e.g., `^fn()`), we aren't convinced that this syntax provided enough value to justify its introduction at this time.
 
@@ -1333,7 +1333,7 @@ That is also not conflicting with the use of the caret as a unary operator becau
 
 Apple also uses the caret in [syntax "blocks"](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/WorkingwithBlocks/WorkingwithBlocks.html) and unfortunately we believe that does conflict with our proposed use of the caret.
 
-Since the syntax discussions in SG7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``{.op}, and `$`{.op}. While we have since discussed some alternatives (e.g., `@` for lifting, `\` and `/` for "raising" and "lowering"), we have grown quite fond of the existing syntax and don't feel that these alternatives offer sufficient value to justify re-painting the bikeshed.
+Since the syntax discussions in SG7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``{.op}, and `$`{.op}. While we have since discussed some alternatives (e.g., `@` for lifting, `\` and `/` for "raising" and "lowering"), we have grown quite fond of the existing syntax.
 
 
 ## Splicers (`[:`...`:]`)
@@ -1431,7 +1431,7 @@ For that, the predecessor to this paper, [@P1240R0], proposed an additional form
 Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from above. It was demonstrated using a single splice, but it would be simpler if we had a range splice:
 
 ::: cmptable
-#### With Single Splice
+### With Single Splice
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
@@ -1448,7 +1448,7 @@ constexpr auto struct_to_tuple(T const& t) {
 }
 ```
 
-#### With Range Splice
+### With Range Splice
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
@@ -1504,6 +1504,16 @@ We propose `[:` and `:]` be single tokens rather than combinations of `[`, `]`, 
 Among others, it simplifies the handling of expressions like `arr[[:refl():]]`.
 On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged and another one to avoid breaking a (somewhat useless) attribute specifier of the form `[[using ns:]]`.
 
+A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators.
+However, there are other possibilities.
+For example, now that `$`{.op} is available in the basic source character set, we might consider `@[$]{.op}@<$expr$>`.
+This is somewhat natural to those of us that have used systems where `$`{.op} is used to expand placeholders in document templates.  For example:
+::: std
+```c++
+@[$]{.op}@select_type(3) *ptr = nullptr;
+```
+:::
+
 The prefixes `typename` and `template` are only strictly needed in some cases where the operand of the splice is a dependent expression.
 In our proposal, however, we only make `typename` optional in the same contexts where it would be optional for qualified names with dependent name qualifiers.
 That has the advantage to catch unfortunate errors while keeping a single rule and helping human readers parse the intended meaning of otherwise ambiguous constructs.
@@ -1533,7 +1543,7 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any template
   - any namespace (including the global namespace) or namespace alias
   - any object that is a _permitted result of a constant expression_
-  - any value with _structural type_ (with the caveat that any references or pointers must designate objects that are permitted results of constant expressions)
+  - any value with _structural type_ that is a permitted result of a constant expression
   - the null reflection (when default-constructed)
 
 Notably absent at this time are reflections of expressions. For example, one might wish to walk over the subexpressions of a function call:
@@ -2126,7 +2136,7 @@ namespace std::meta {
 
 If `expr` does not have structural type, then `reflect_result(expr)` fails to be a constant expression.
 
-Otherwise, if `T` is of reference or pointer type, or for each subobject of `expr` having reference or pointer type if `T` is of class type, if the reference or pointer value designates an entity that is not a _permitted result of a constant expression_ ([expr.const]), then `reflect_result(expr)` fails to be a constant expression.
+Otherwise, if `T` is of reference or pointer type, or for each subobject of `expr` having reference or pointer type if `T` is of class type, if the reference or pointer value designates an entity that is not a permitted result ([expr.const]), then `reflect_result(expr)` fails to be a constant expression.
 
 Otherwise, `reflect_result(expr)` produces a reflection of the result of `static_cast<T>(expr)`.
 
