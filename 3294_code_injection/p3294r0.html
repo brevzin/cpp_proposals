@@ -611,8 +611,13 @@ Type<span></span></a></li>
 <li><a href="#logging-vector-ii-cloning-with-modifications" id="toc-logging-vector-ii-cloning-with-modifications"><span class="toc-section-number">3.5</span> Logging Vector II: Cloning with
 Modifications<span></span></a></li>
 </ul></li>
-<li><a href="#hygienic-macros" id="toc-hygienic-macros"><span class="toc-section-number">4</span> Hygienic
-Macros<span></span></a></li>
+<li><a href="#hygienic-macros" id="toc-hygienic-macros"><span class="toc-section-number">4</span> Hygienic Macros<span></span></a>
+<ul>
+<li><a href="#forwarding" id="toc-forwarding"><span class="toc-section-number">4.1</span> Forwarding<span></span></a></li>
+<li><a href="#assertion" id="toc-assertion"><span class="toc-section-number">4.2</span> Assertion<span></span></a></li>
+<li><a href="#string-interpolation" id="toc-string-interpolation"><span class="toc-section-number">4.3</span> String
+Interpolation<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
@@ -2269,6 +2274,7 @@ to program in.</li>
 </ul>
 <p>We think that C++ does need a code manipulation mechanism, and that
 token sequences can provide a much better solution than C macros.</p>
+<h2 data-number="4.1" id="forwarding"><span class="header-section-number">4.1</span> Forwarding<a href="#forwarding" class="self-link"></a></h2>
 <p>Consider the problem of forwarding. Forwarding an argument in C++, in
 the vast majority of uses, looks like <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span></code>,
 where <code class="sourceCode cpp">T</code> is actually the type <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>t<span class="op">)</span></code>.
@@ -2318,6 +2324,7 @@ it does not suffer that problem from C macros. And then the body is a
 regular C++ function too, so writing complex token manipulation is just
 a matter of writing complex C++ code - which is a lot easier than
 writing complex C preprocessor code.</p>
+<h2 data-number="4.2" id="assertion"><span class="header-section-number">4.2</span> Assertion<a href="#assertion" class="self-link"></a></h2>
 <p>Consider a different example (borrowed from <a href="https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/">here</a>):</p>
 <div class="std">
 <blockquote>
@@ -2390,6 +2397,62 @@ writing complex C preprocessor code.</p>
 </table>
 <p>You can write this as a regular C macro today, but we bet it’s a
 little nicer to read using this language facility.</p>
+<h2 data-number="4.3" id="string-interpolation"><span class="header-section-number">4.3</span> String Interpolation<a href="#string-interpolation" class="self-link"></a></h2>
+<p>Many programming languages support string interpolation. The ability
+to write something like <code class="sourceCode cpp">format<span class="op">!(</span><span class="st">&quot;x={x}&quot;</span><span class="op">)</span></code>
+instead of <code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;x={}&quot;</span>, x<span class="op">)</span></code>.
+It’s a pretty significant feature when it comes to the ergonomics of
+formatting.</p>
+<p>We can write it as a library:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
+<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
+<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
+<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
+<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span><span class="er">$</span>eval<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
+<span id="cb59-18"><a href="#cb59-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb59-19"><a href="#cb59-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-20"><a href="#cb59-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb59-21"><a href="#cb59-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="er">$</span>eval<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
+<span id="cb59-22"><a href="#cb59-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb59-23"><a href="#cb59-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-24"><a href="#cb59-24" aria-hidden="true" tabindex="-1"></a>    tok <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">)</span> <span class="op">}</span>;</span>
+<span id="cb59-25"><a href="#cb59-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tok;</span>
+<span id="cb59-26"><a href="#cb59-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>In the previous example, we demonstrated the need for a way to
+convert a token sequence to a string. In this example, we need a way to
+convert a string to a token sequence. This doesn’t involve parsing or
+any semantic analysis. It’s <em>just</em> lexing.</p>
+<p>Of course, this approach has limitations. We cannot fully faithfully
+parse the format string because at this layer we don’t have types - we
+can’t stop and look up what type <code class="sourceCode cpp"><span class="kw">this</span><span class="op">-&gt;</span>x</code>
+was, instantiate the appropriate <code class="sourceCode cpp">std<span class="op">::</span>formatter<span class="op">&lt;</span>X<span class="op">&gt;</span></code>
+and use it tell us where the end of its formatter is. We can just count
+balanced <code class="sourceCode cpp"><span class="op">{}</span></code>s
+and hope for the best.</p>
+<p>Similarly, something like <code class="sourceCode cpp">format<span class="op">!(</span><span class="st">&quot;{SOME_MACRO(x)}&quot;</span><span class="op">)</span></code>
+can’t work since we’re not going to rerun the preprocessor during
+tokenization. But I doubt anybody would even expect that to work.</p>
+<p>But realistically, this would handily cover the 99% case. And,
+importantly, this isn’t a language feature tied to
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>.
+It could easily be made into a library to be used by any logging
+framework.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">

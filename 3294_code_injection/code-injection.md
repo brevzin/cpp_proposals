@@ -1372,6 +1372,8 @@ C macros have a (well-deserved) bad reputation in the C++ community. This is bec
 
 We think that C++ does need a code manipulation mechanism, and that token sequences can provide a much better solution than C macros.
 
+## Forwarding
+
 Consider the problem of forwarding. Forwarding an argument in C++, in the vast majority of uses, looks like `std::forward<T>(t)`, where `T` is actually the type `decltype(t)`. This is annoying to have to write, the operation is simply forwarding an argument but we need to provide two names anyway, and also has the downside of having to instantiate a function template (although compilers are moving towards making that a builtin).
 
 Barry at some point proposed a specific language feature for this use-case ([@P0644R1]). Later, there was a proposal for a hygienic macro system [@P1221R1] in which forwarding would be implemented like this:
@@ -1406,6 +1408,8 @@ The logic here is that `fwd2!(x)` is syntactic sugar for `inject(fwd2(@tokens { 
 We would have to figure out what we would want `fwd2!(std::pair<int, int>{1, 2})` to do. One of the issues of C macros is not understand C++ token syntax, so this argument would have to be parenthesized. But if we want to operate on the token level, this seems like a given.
 
 Of course, `fwd2` is a regular C++ function. You have to invoke it through the usual C++ scoping rules, so it does not suffer that problem from C macros. And then the body is a regular C++ function too, so writing complex token manipulation is just a matter of writing complex C++ code - which is a lot easier than writing complex C preprocessor code.
+
+## Assertion
 
 Consider a different example (borrowed from [here](https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/)):
 
@@ -1467,6 +1471,51 @@ do {
 :::
 
 You can write this as a regular C macro today, but we bet it's a little nicer to read using this language facility.
+
+## String Interpolation
+
+Many programming languages support string interpolation. The ability to write something like `format!("x={x}")` instead of `format("x={}", x)`. It's a pretty significant feature when it comes to the ergonomics of formatting.
+
+We can write it as a library:
+
+::: std
+```cpp
+
+// the actual parsing isn't interesting here.
+// the goal is to take a string like "x={this->x:02} y={this->y:02}"
+// and return {.format_str="x={:02} y={:02}", .args={"this->x", "this->y"}}
+struct FormatParts {
+    string_view format_str;
+    vector<string_view> args;
+};
+consteval auto parse_format_string(string_view) -> FormatParts;
+
+consteval auto format(string_view str) -> meta::info {
+    auto parts = parse_format_string(str);
+
+    auto tok = @tokens {
+        // NB: there's no close paren yet
+        // we're allowed to build up a partial fragment like this
+        ::std::format($eval(parts.format_str)
+    };
+
+    for (string_view arg : parts.args) {
+        tok += @tokens { , $eval(tokenize(arg)) };
+    }
+
+    tok += @tokens { ) };
+    return tok;
+}
+```
+:::
+
+In the previous example, we demonstrated the need for a way to convert a token sequence to a string. In this example, we need a way to convert a string to a token sequence. This doesn't involve parsing or any semantic analysis. It's *just* lexing.
+
+Of course, this approach has limitations. We cannot fully faithfully parse the format string because at this layer we don't have types - we can't stop and look up what type `this->x` was, instantiate the appropriate `std::formatter<X>` and use it tell us where the end of its formatter is. We can just count balanced `{}`s and hope for the best.
+
+Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're not going to rerun the preprocessor during tokenization. But I doubt anybody would even expect that to work.
+
+But realistically, this would handily cover the 99% case. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
 ---
 references:
