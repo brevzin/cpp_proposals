@@ -3639,7 +3639,7 @@ consteval info substitute(info templ, R&& arguments);
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, that argument shall be a reflection of a type or type alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type alias.
+[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or type alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that `span` is not a reflection of a type or a type alias.
 :::
 :::
 
