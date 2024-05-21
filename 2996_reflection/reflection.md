@@ -139,7 +139,7 @@ EDG has an ongoing implementation of this proposal that is currently available o
 
 Additionally, Bloomberg has open sourced a fork of Clang which provides a second implementation of this proposal, also available on Compiler Explorer (again thank you, Matt Godbolt), which can be found here: [https://github.com/bloomberg/clang-p2996](https://github.com/bloomberg/clang-p2996).
 
-Neither implementation is complete, but all significant features proposed by this paper have been implemented by at least one implementation (including namespace and template splicers). Both implementations have thier "quirks" and continue to evolve alongside this paper.
+Neither implementation is complete, but all significant features proposed by this paper have been implemented by at least one implementation (including namespace and template splicers). Both implementations have their "quirks" and continue to evolve alongside this paper.
 
 Nearly all of the examples below have links to Compiler Explorer demonstrating them in both EDG and Clang.
 
@@ -763,7 +763,7 @@ The question here is whether we should be should be able to directly initialize 
 ```
 :::
 
-Arguably, the answer should be yes - this would be consistent with how other accesses work - but we do not proposes it for this paper. The behavior has not yet been implemented, and could potentially be tricky in dependent contexts.
+Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R0].
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/9bjd6rGjT).
 
@@ -1309,7 +1309,7 @@ When the operand is an _id-expression_, the resulting value is a reflection of t
 
 - a variable, static data member, or structured binding
 - a function or member function
-- a nonstatic data member
+- a non-static data member
 - a template or member template
 - an enumerator
 
@@ -2147,7 +2147,7 @@ If the object is usable in constant expressions [expr.const], `extract<T>(r)` ev
 
 If `r` is a reflection for an object of reference type `T` usable in constant-expressions, `extract<T>(r)` evaluates to that reference.
 
-If `r` is a reflection for a function of type `R(A_0, ... A_n)`, `extract<R(*)(A_0, ..., A_n)>(r)` evaluates to a pointer to that function.
+If `r` is a reflection for a function of type `F`, `extract<F*>(r)` evaluates to a pointer to that function.
 
 If `r` is a reflection for a non-static member function and `T` is the type for a pointer to the reflected member function, `extract<T>(r)` evaluates to a pointer to the member function.
 
@@ -2590,7 +2590,7 @@ When applied to a `$namespace-name$`, the reflection operator produces a reflect
 
 [#]{.pnum} When applied to a `$type-id$`, the reflection operator produces a reflection for the indicated type or type alias.
 
-[#]{.pnum} When applied to an `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or nonstatic member designated by the operand.
+[#]{.pnum} When applied to an `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
 The `$id-expression$` is not evaluated.
 
 * [#.#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
@@ -3430,7 +3430,7 @@ template<class... Fs>
 
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, not including any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
