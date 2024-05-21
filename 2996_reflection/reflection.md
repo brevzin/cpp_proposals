@@ -40,7 +40,8 @@ Since [@P2996R2]:
 * made default/value/zero-initializing a `meta::info` yield a null reflection
 * added addressed splicing, which is implemented but was omitted from the paper
 * added another overload to `reflect_invoke` to support template arguments
-* renamed all the type traits to end in `_type` to avoid name clashes
+* renamed all the type traits to start with `type_` to avoid name clashes. added more generalized `is_const`, `is_final`, and `is_volatile`
+* added `is_noexcept` and fixed `is_explicit` to only apply to member functions, not member function templates
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -327,7 +328,7 @@ Here, `sizes` will be a `std::array<std::size_t, 3>` initialized with `{sizeof(i
 constexpr std::array types = {^int, ^float, ^double};
 constexpr std::array sizes = []{
   std::array<std::size_t, types.size()> r;
-  std::ranges::transform(types, r.begin(), std::meta::size_of);
+  std::views::transform(types, r.begin(), std::meta::size_of);
   return r;
 }();
 ```
@@ -782,8 +783,8 @@ consteval auto make_struct_of_arrays(std::meta::info type,
   std::vector<std::meta::info> old_members = nonstatic_data_members_of(type);
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
-    auto array_type = substitute(^std::array, {type_of(member), N });
-    auto mem_descr = data_member_spec(array_type, {.name = name_of(member)});
+    auto type_array = substitute(^std::array, {type_of(member), N });
+    auto mem_descr = data_member_spec(type_array, {.name = name_of(member)});
     new_members.push_back(mem_descr);
   }
   return std::meta::define_class(
@@ -872,8 +873,8 @@ consteval auto spec_to_opts(std::meta::info opts,
                             std::meta::info spec) -> std::meta::info {
   std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
-    auto new_type = template_arguments_of(type_of(member))[0];
-    new_members.push_back(data_member_spec(new_type, {.name=name_of(member)}));
+    auto type_new = template_arguments_of(type_of(member))[0];
+    new_members.push_back(data_member_spec(type_new, {.name=name_of(member)}));
   }
   return define_class(opts, new_members);
 }
@@ -1038,11 +1039,11 @@ An alternative approach is:
 
 ::: std
 ```cpp
-consteval auto struct_to_tuple_type(info type) -> info {
+consteval auto type_struct_to_tuple(info type) -> info {
   return substitute(^std::tuple,
                     nonstatic_data_members_of(type)
-                    | std::ranges::transform(std::meta::type_of)
-                    | std::ranges::transform(std::meta::remove_cvref_type)
+                    | std::views::transform(std::meta::type_of)
+                    | std::views::transform(std::meta::type_remove_cvref)
                     | std::ranges::to<std::vector>());
 }
 
@@ -1053,7 +1054,7 @@ constexpr auto struct_to_tuple_helper(From const& from) -> To {
 
 template<typename From>
 consteval auto get_struct_to_tuple_helper() {
-  using To = [: struct_to_tuple_type(^From): ];
+  using To = [: type_struct_to_tuple(^From): ];
 
   std::vector args = {^To, ^From};
   for (auto mem : nonstatic_data_members_of(^From)) {
@@ -1079,7 +1080,7 @@ constexpr auto struct_to_tuple(From const& from) {
 ```
 :::
 
-Here, `struct_to_tuple_type` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
+Here, `type_struct_to_tuple` takes a reflection of a type like `struct { T t; U const& u; V v; }` and returns a reflection of the type `std::tuple<T, U, V>`.
 That gives us the return type.
 Then, `struct_to_tuple_helper` is a function template that does the actual conversion --- which it can do by having all the reflections of the members as a non-type template parameter pack.
 This is a `constexpr` function and not a `consteval` function because in the general case the conversion is a run-time operation.
@@ -1255,7 +1256,7 @@ We can leverage this machinery to select different function overloads based on t
 
 ::: std
 ```cpp
-using type_t = metatype<^std::meta::is_type>;
+using type_t = metatype<^std::meta::type_is>;
 using template_t = metatype<^std::meta::is_template>;
 
 // Example of a function overloaded for different "types" of reflections.
@@ -1504,13 +1505,13 @@ We propose `[:` and `:]` be single tokens rather than combinations of `[`, `]`, 
 Among others, it simplifies the handling of expressions like `arr[[:refl():]]`.
 On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged and another one to avoid breaking a (somewhat useless) attribute specifier of the form `[[using ns:]]`.
 
-A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators. Additionally, it's important that the left- and right-hand delimiters are different so as to allow nested splices when that comes up. 
+A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators. Additionally, it's important that the left- and right-hand delimiters are different so as to allow nested splices when that comes up.
 However, there are other possibilities.
 For example, now that `$`{.op} is available in the basic source character set, we might consider `@[$]{.op}@<$expr$>`.
 This is somewhat natural to those of us that have used systems where `$`{.op} is used to expand placeholders in document templates.  For example:
 ::: std
 ```c++
-@[$]{.op}@select_type(3) *ptr = nullptr;
+@[$]{.op}@type_select(3) *ptr = nullptr;
 ```
 :::
 
@@ -1751,6 +1752,93 @@ With support for `constexpr` exceptions, implementations would have to come up w
 
 Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than `std::expected` (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).
 
+### Range-Based Metafunctions
+
+There are a number of functions, both in the "core" reflection API that we intend to provide as well as converting some of the standard library type traits that can accept or return a range of `std::meta::info`.
+
+For example:
+
+* `template_arguments_of(^std::tuple<int>)` is `{^int}`
+* `substitute(^std::tuple, {^int})` is `^std::tuple<int>`
+
+This requires us to answer the question: how do we accept a range parameter and how do we provide a range return.
+
+For return, we intend on returning `std::vector<std::meta::info>` from all such APIs. This is by far the easiest for users to deal with. We definitely don't want to return a `std::span<std::meta::info const>`, since this requires keeping all the information in the compiler memory forever (unlike `std::vector` which could free its allocation). The only other option would be a custom container type which is optimized for compile-time by being able to produce elements lazily on demand - i.e. so that `nonstatic_data_members_of(^T)[3]` wouldn't have to populate _all_ the data members, just do enough work to be able to return the 4th one. But that adds a lot of complexity that's probably not worth the effort.
+
+For parameters, there are basically three options:
+
+1. Accept `std::span<std::meta::info const>`, which now accepts braced-init-list arguments so it's pretty convenient in this regard.
+2. Accept `std::vector<std::meta::info>`
+3. Accept _any_ range whose `type_value` is `std::meta::info`.
+
+Now, for compiler efficiency reasons, it's definitely better to have all the arguments contiguously. So the compiler wants `span`. There's really no reason to prefer `vector` over `span`. Accepting any range would look something like this:
+
+::: std
+```cpp
+namespace std::meta {
+    template <typename R>
+    concept reflection_range = ranges::input_range<R>
+                            && same_as<ranges::range_value_t<R>, info>;
+
+    template <reflection_range R = span<info const>>
+    consteval auto substitute(info tmpl, R&& args) -> info;
+}
+```
+:::
+
+This API is more user friendly than accepting `span<info const>` by virtue of simply accepting more kinds of ranges. The default template argument allows for braced-init-lists to still work. [Example](https://godbolt.org/z/vnzWv6vG3).
+
+Specifically, if the user is doing anything with range adaptors, they will either end up with a non-contiguous or non-sized range, which will no longer be convertible to `span` - so they will have to manually convert their range to a `vector<info>` in order to pass it to the algorithm. Because the implementation wants contiguity anyway, that conversion to `vector` will happen either way - so it's just a matter of whether every call needs to do it manually or the implementation can just do it once.
+
+For example, converting a struct to a tuple type:
+
+::: cmptable
+### `span` only
+```cpp
+consteval auto type_struct_to_tuple(info type) -> meta::info {
+    return substitute(
+        ^tuple,
+        nonstatic_data_members_of(type)
+        | views::transform(meta::type_of)
+        | views::transform(meta::type_remove_cvref)
+        | ranges::to<vector>());
+}
+```
+
+### any range
+```cpp
+consteval auto type_struct_to_tuple(info type) -> meta::info {
+    return substitute(
+        ^tuple,
+        nonstatic_data_members_of(type)
+        | views::transform(meta::type_of)
+        | views::transform(meta::type_remove_cvref)
+        );
+}
+```
+:::
+
+This shouldn't cause much compilation overhead. Checking convertibility to `span` _already_ uses Ranges machinery. And implementations can just do the right thing interally:
+
+::: std
+```cpp
+consteval auto __builtin_substitute(info tmpl, info const* arg, size_t num_args) -> info;
+
+template <reflection_range R = span<info const>>
+consteval auto substitute(info tmpl, R&& args) -> info {
+    if constexpr (ranges::sized_range<R> && ranges::contiguous_range<R>) {
+        auto as_span = span<info const>(args);
+        return __builtin_substitute(tmpl, as_span.data(), as_span.size());
+    } else {
+        auto as_vector = ranges::to<vector<info>>((R&&)args);
+        return __builtin_substitute(tmpl, as_vector.data(), as_vector.size());
+    }
+}
+```
+:::
+
+As such, we propose that all the range-accepting algorithms accept any range.
+
 ### Handling Aliases
 
 Consider
@@ -1800,7 +1888,10 @@ Here is a synopsis for the proposed library API. The functions will be explained
 ::: std
 ```c++
 namespace std::meta {
-  // @[name and location](#name_of-display_name_of-source_location_of)@
+  template <typename R>
+  concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
+
+  // @[name and location](#name-loc)@
   consteval auto name_of(info r) -> string_view;
   consteval auto qualified_name_of(info r) -> string_view;
   consteval auto display_name_of(info r) -> string_view;
@@ -1818,31 +1909,35 @@ namespace std::meta {
   consteval auto template_of(info r) -> info;
   consteval auto template_arguments_of(info r) -> vector<info>;
 
-  // @[member queries](#members_of-static_data_members_of-nonstatic_data_members_of-bases_of-enumerators_of-subobjects_of)@
+  // @[member queries](#member-queries)@
   template<typename ...Fs>
-    consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto members_of(info type_class, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
-  consteval auto static_data_members_of(info class_type) -> vector<info>;
-  consteval auto nonstatic_data_members_of(info class_type) -> vector<info>;
-  consteval auto subobjects_of(info class_type) -> vector<info>;
-  consteval auto enumerators_of(info enum_type) -> vector<info>;
+    consteval auto bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto static_data_members_of(info type_class) -> vector<info>;
+  consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
+  consteval auto subobjects_of(info type_class) -> vector<info>;
+  consteval auto enumerators_of(info type_enum) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto accessible_members_of(info type_class, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
+    consteval auto accessible_bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_subobjects_of(info type_class) -> vector<info>;
 
   // @[substitute](#substitute)@
-  consteval auto can_substitute(info templ, span<info const> args) -> bool;
-  consteval auto substitute(info templ, span<info const> args) -> info;
+  template <reflection_range R = span<info const>>
+  consteval auto can_substitute(info templ, R&& args) -> bool;
+  template <reflection_range R = span<info const>>
+  consteval auto substitute(info templ, R&& args) -> info;
 
   // @[reflect_invoke](#reflect_invoke)@
-  consteval auto reflect_invoke(info target, span<info const> args) -> info;
-  consteval auto reflect_invoke(info target, span<info const> tmpl_args, span<info const> args) -> info;
+  template <reflection_range R = span<info const>>
+  consteval auto reflect_invoke(info target, R&& args) -> info;
+  template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
+  consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
 
   // @[reflect](#reflect_resultt)@
   template<typename T>
@@ -1854,7 +1949,8 @@ namespace std::meta {
 
   // @[test_type](#test_type-test_types)@
   consteval auto test_type(info templ, info type) -> bool;
-  consteval auto test_types(info templ, span<info const> types) -> bool;
+  template <reflection_range R = span<info const>>
+  consteval auto test_types(info templ, R&& types) -> bool;
 
   // other type predicates (see @[the wording](#meta.reflection.queries-reflection-queries)@)
   consteval auto is_public(info r) -> bool;
@@ -1867,7 +1963,11 @@ namespace std::meta {
   consteval auto is_deleted(info entity) -> bool;
   consteval auto is_defaulted(info entity) -> bool;
   consteval auto is_explicit(info entity) -> bool;
+  consteval auto is_noexcept(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
+  consteval auto is_const(info r) -> bool;
+  consteval auto is_volatile(info r) -> bool;
+  consteval auto is_final(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
   consteval auto has_external_linkage(info r) -> bool;
@@ -1899,9 +1999,10 @@ namespace std::meta {
 
   // @[define_class](#data_member_spec-define_class)@
   struct data_member_options_t;
-  consteval auto data_member_spec(info class_type,
+  consteval auto data_member_spec(info type_class,
                                   data_member_options_t options = {}) -> info;
-  consteval auto define_class(info class_type, span<info const>) -> info;
+  template <reflection_range R = span<info const>>
+  consteval auto define_class(info type_class, R&&) -> info;
 
   // @[data layout](#data-layout-reflection)@
   consteval auto offset_of(info entity) -> size_t;
@@ -1913,7 +2014,7 @@ namespace std::meta {
 ```
 :::
 
-### `name_of`, `display_name_of`, `source_location_of`
+### `name_of`, `display_name_of`, `source_location_of` {#name-loc}
 
 :::bq
 ```c++
@@ -1955,11 +2056,11 @@ This can be used to implement the C `typeof` feature (which works on both types 
 
 ::: std
 ```cpp
-consteval auto do_typeof(std::meta::info r) -> std::meta::info {
-  return remove_cvref_type(is_type(r) ? r : type_of(r));
+consteval auto type_doof(std::meta::info r) -> std::meta::info {
+  return type_remove_cvref(is_type(r) ? r : type_of(r));
 }
 
-#define typeof(e) [: do_typeof(^e) :]
+#define typeof(e) [: type_doof(^e) :]
 ```
 :::
 
@@ -2016,40 +2117,40 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 
 
 
-### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of`
+### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of` {#member-queries}
 
 :::bq
 ```c++
 namespace std::meta {
   template<typename ...Fs>
-    consteval auto members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto members_of(info type_class, Fs ...filters) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto bases_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto bases_of(info type_class, Fs ...filters) -> vector<info>;
 
-  consteval auto static_data_members_of(info class_type) -> vector<info> {
-    return members_of(class_type, is_variable);
+  consteval auto static_data_members_of(info type_class) -> vector<info> {
+    return members_of(type_class, is_variable);
   }
 
-  consteval auto nonstatic_data_members_of(info class_type) -> vector<info> {
-    return members_of(class_type, is_nonstatic_data_member);
+  consteval auto nonstatic_data_members_of(info type_class) -> vector<info> {
+    return members_of(type_class, is_nonstatic_data_member);
   }
 
-  consteval auto subobjects_of(info class_type) -> vector<info> {
-    auto subobjects = bases_of(class_type);
-    subobjects.append_range(nonstatic_data_members_of(class_type));
+  consteval auto subobjects_of(info type_class) -> vector<info> {
+    auto subobjects = bases_of(type_class);
+    subobjects.append_range(nonstatic_data_members_of(type_class));
     return subobjects;
   }
 
-  consteval auto enumerators_of(info enum_type) -> vector<info>;
+  consteval auto enumerators_of(info type_enum) -> vector<info>;
 
   template<typename ...Fs>
-    consteval auto accessible_members_of(info class_type, Fs ...filters) -> vector<info>;
+    consteval auto accessible_members_of(info type_class, Fs ...filters) -> vector<info>;
   template<typename ...Fs>
-    consteval auto accessible_bases_of(info class_type, Fs ...filters) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info class_type) -> vector<info>;
-  consteval auto accessible_subobjects_of(info class_type) -> vector<info>;
+    consteval auto accessible_bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info type_class) -> vector<info>;
+  consteval auto accessible_subobjects_of(info type_class) -> vector<info>;
 }
 ```
 :::
@@ -2059,7 +2160,7 @@ Any nonstatic data members appear in declaration order within that vector.
 Anonymous unions appear as a nonstatic data member of corresponding union type.
 Reflections of structured bindings shall not appear in the returned vector.
 If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
-E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
+E.g., `members_of(^C, std::meta::type_is)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::type_is, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
@@ -2073,8 +2174,10 @@ Each variant named `accessible_meow_of` simply returns the result of `meow_of` f
 :::bq
 ```c++
 namespace std::meta {
-  consteval auto can_substitute(info templ, span<info const> args) -> bool;
-  consteval auto substitute(info templ, span<info const> args) -> info;
+  template <reflection_range R = span<info const>>
+  consteval auto can_substitute(info templ, R&& args) -> bool;
+  template <reflection_range R = span<info const>>
+  consteval auto substitute(info templ, R&& args) -> info;
 }
 ```
 :::
@@ -2112,8 +2215,10 @@ If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will
 :::bq
 ```c++
 namespace std::meta {
-  consteval auto reflect_invoke(info target, span<info const> args) -> info;
-  consteval auto reflect_invoke(info target, span<info const> tmpl_args, span<info const> args) -> info;
+  template <reflection_range R = span<info const>>
+  consteval auto reflect_invoke(info target, R&& args) -> info;
+  template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
+  consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
 }
 ```
 :::
@@ -2179,8 +2284,9 @@ namespace std::meta {
     return test_types(templ, {type});
   }
 
-  consteval auto test_types(info templ, span<info const> types) -> bool {
-    return extract<bool>(substitute(templ, types));
+  template <reflection_range R = span<info const>>
+  consteval auto test_types(info templ, R&& types) -> bool {
+    return extract<bool>(substitute(templ, (R&&)types));
   }
 }
 ```
@@ -2212,7 +2318,8 @@ namespace std::meta {
   };
   consteval auto data_member_spec(info type,
                                   data_member_options_t options = {}) -> info;
-  consteval auto define_class(info class_type, span<info const>) -> info;
+  template <reflection_range R = span<info const>>
+  consteval auto define_class(info type_class, R&&) -> info;
 }
 ```
 :::
@@ -2257,7 +2364,7 @@ constexpr auto U = define_class(^S<int>, {
 When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
 This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
 
-If `class_type` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
+If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
 ### Data Layout Reflection
 :::bq
@@ -2277,13 +2384,13 @@ namespace std::meta {
 ### Other Type Traits
 
 There is a question of whether all the type traits should be provided in `std::meta`.
-For instance, a few examples in this paper use `std::meta::remove_cvref_type(t)` as if that exists.
+For instance, a few examples in this paper use `std::meta::type_remove_cvref(t)` as if that exists.
 Technically, the functionality isn't strictly necessary - since it can be provided indirectly:
 
 ::: cmptable
 ### Direct
 ```cpp
-std::meta::remove_cvref_type(type)
+std::meta::type_remove_cvref(type)
 ```
 
 ### Indirect
@@ -2294,7 +2401,7 @@ std::meta::substitute(^std::remove_cvref_t, {type})
 ---
 
 ```cpp
-std::meta::is_const_type(type)
+std::meta::type_is_const(type)
 ```
 
 ```cpp
@@ -2311,7 +2418,7 @@ Now, one thing that came up is that the straightforward thing we want to do is t
 However, we've run into a conflict.
 The standard library type traits are all *type* traits - they only accept types.
 As such, their names are simply things like `std::is_pointer`, `std::is_const`, `std::is_lvalue_reference`, and so forth.
-Renaming it to `std::is_pointer_type`, for instance, would be a waste of characters since there's nothing else the argument could be save for a type.
+Renaming it to `std::type_is_pointer`, for instance, would be a waste of characters since there's nothing else the argument could be save for a type.
 But this is no longer the case.
 Consider `std::meta::is_function(e)`, which is currently actually specified twice in our wording having two different meanings:
 
@@ -2323,12 +2430,13 @@ Consider `std::meta::is_function(e)`, which is currently actually specified twic
 Both of these are useful, yet they mean different things entirely - the first is ill-formed when passed a reflection of a function (as opposed to a function type), and the second would simply answer `false` for the reflection of _any_ type (function type or otherwise).
 So what do we do?
 
-Probably the most straightforward choice would be to suffix all of the type traits with `_type`.
-That is: `std::is_pointer<T>` because `std::meta::is_pointer_type(^T)`, `std::is_arithmetic<T>` becomes `std::meta::is_arithmetic_type(^T)`, and so forth.
+Probably the most straightforward choice would be to either prefix or suffix all of the type traits with `_type`.
+We think prefix is a little bit better because it groups all the type traits together and perhaps make it clearer that the argument(s) must be types.
+That is: `std::is_pointer<T>` because `std::meta::type_is_pointer(^T)`, `std::is_arithmetic<T>` becomes `std::meta::type_is_arithmetic(^T)`, and so forth.
 The advantage of this approach is that it very likely just works, also opening the door to making a more general `std::meta::is_const(e)` that checks not just if `e` is a `const`-qualified type but also if it's a `const`-qualified object or a `const`-qualified member, etc.
-The disadvantage is that the suffixed names would not be familiar - we're much more familiar with the name `is_copy_constructible` than we would be with `is_copy_constructible_type`.
+The disadvantage is that the suffixed names would not be familiar - we're much more familiar with the name `is_copy_constructible` than we would be with `type_is_copy_constructible`.
 
-That said, it's not too much added mental overhead to remember `is_copy_constructible_type` and this avoids have to remember which type traits have the suffix and which don't. Not to mention that _many_ of the type traits read as if they would accept objects just fine (e.g. `is_trivially_copyable`). So we propose that simply all the type traits be suffixed with `*_type`.
+That said, it's not too much added mental overhead to remember `type_is_copy_constructible` and this avoids have to remember which type traits have the suffix and which don't. Not to mention that _many_ of the type traits read as if they would accept objects just fine (e.g. `is_trivially_copyable`). So we propose that simply all the type traits be suffixed with `*_type`.
 
 # Proposed Wording
 
@@ -2397,7 +2505,7 @@ Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this mus
 
 ::: addu
 
-- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
+- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::type_is`.
 
 :::
 - [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
@@ -2603,7 +2711,7 @@ When applied to a `$namespace-name$`, the reflection operator produces a reflect
 [#]{.pnum} When applied to an `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
 The `$id-expression$` is not evaluated.
 
-* [#.#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
+* [#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
 
 ::: example
 ```cpp
@@ -3001,7 +3109,11 @@ namespace std::meta {
   consteval bool is_deleted(info r);
   consteval bool is_defaulted(info r);
   consteval bool is_explicit(info r);
+  consteval bool is_noexcept(info r);
   consteval bool is_bit_field(info r);
+  consteval bool is_const(info r);
+  consteval bool is_volatile(info r);
+  consteval bool is_final(info r);
   consteval bool has_static_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
   consteval bool has_external_linkage(info r);
@@ -3053,154 +3165,169 @@ namespace std::meta {
   consteval vector<info> accessible_nonstatic_data_members_of(info type);
   consteval vector<info> subobjects_of(info type);
   consteval vector<info> accessible_subobjects_of(info type);
-  consteval vector<info> enumerators_of(info enum_type);
+  consteval vector<info> enumerators_of(info type_enum);
 
   // [meta.reflection.substitute], reflection substitution
-  consteval bool can_substitute(info templ, span<const info> arguments);
-  consteval info substitute(info templ, span<const info> arguments);
+  template <class R>
+  concept reflection_range = $see below$;
+
+  template <reflection_range R = span<info const>>
+  consteval bool can_substitute(info templ, R&& arguments);
+  template <reflection_range R = span<info const>>
+  consteval info substitute(info templ, R&& arguments);
 
   // [meta.reflection.unary.cat], primary type categories
-  consteval bool is_void_type(info type);
-  consteval bool is_null_pointer_type(info type);
-  consteval bool is_integral_type(info type);
-  consteval bool is_floating_point_type(info type);
-  consteval bool is_array_type(info type);
-  consteval bool is_pointer_type(info type);
-  consteval bool is_lvalue_reference_type(info type);
-  consteval bool is_rvalue_reference_type(info type);
-  consteval bool is_member_object_pointer_type(info type);
-  consteval bool is_member_function_pointer_type(info type);
-  consteval bool is_enum_type(info type);
-  consteval bool is_union_type(info type);
-  consteval bool is_class_type(info type);
-  consteval bool is_function_type(info type);
+  consteval bool type_is_void(info type);
+  consteval bool type_is_null_pointer(info type);
+  consteval bool type_is_integral(info type);
+  consteval bool type_is_floating_point(info type);
+  consteval bool type_is_array(info type);
+  consteval bool type_is_pointer(info type);
+  consteval bool type_is_lvalue_reference(info type);
+  consteval bool type_is_rvalue_reference(info type);
+  consteval bool type_is_member_object_pointer(info type);
+  consteval bool type_is_member_function_pointer(info type);
+  consteval bool type_is_enum(info type);
+  consteval bool type_is_union(info type);
+  consteval bool type_is_class(info type);
+  consteval bool type_is_function(info type);
 
   // [meta.reflection.unary.comp], composite type categories
-  consteval bool is_reference_type(info type);
-  consteval bool is_arithmetic_type(info type);
-  consteval bool is_fundamental_type(info type);
-  consteval bool is_object_type(info type);
-  consteval bool is_scalar_type(info type);
-  consteval bool is_compound_type(info type);
-  consteval bool is_member_pointer_type(info type);
+  consteval bool type_is_reference(info type);
+  consteval bool type_is_arithmetic(info type);
+  consteval bool type_is_fundamental(info type);
+  consteval bool type_is_object(info type);
+  consteval bool type_is_scalar(info type);
+  consteval bool type_is_compound(info type);
+  consteval bool type_is_member_pointer(info type);
 
   // [meta.reflection unary.prop], type properties
-  consteval bool is_const_type(info type);
-  consteval bool is_volatile_type(info type);
-  consteval bool is_trivial_type(info type);
-  consteval bool is_trivially_copyable_type(info type);
-  consteval bool is_standard_layout_type(info type);
-  consteval bool is_empty_type(info type);
-  consteval bool is_polymorphic_type(info type);
-  consteval bool is_abstract_type(info type);
-  consteval bool is_final_type(info type);
-  consteval bool is_aggregate_type(info type);
-  consteval bool is_signed_type(info type);
-  consteval bool is_unsigned_type(info type);
-  consteval bool is_bounded_array_type(info type);
-  consteval bool is_unbounded_array_type(info type);
-  consteval bool is_scoped_enum_type(info type);
+  consteval bool type_is_const(info type);
+  consteval bool type_is_volatile(info type);
+  consteval bool type_is_trivial(info type);
+  consteval bool type_is_trivially_copyable(info type);
+  consteval bool type_is_standard_layout(info type);
+  consteval bool type_is_empty(info type);
+  consteval bool type_is_polymorphic(info type);
+  consteval bool type_is_abstract(info type);
+  consteval bool type_is_final(info type);
+  consteval bool type_is_aggregate(info type);
+  consteval bool type_is_signed(info type);
+  consteval bool type_is_unsigned(info type);
+  consteval bool type_is_bounded_array(info type);
+  consteval bool type_is_unbounded_array(info type);
+  consteval bool type_is_scoped_enum(info type);
 
-  consteval bool is_constructible_type(info type, span<info const> type_args);
-  consteval bool is_default_constructible_type(info type);
-  consteval bool is_copy_constructible_type(info type);
-  consteval bool is_move_constructible_type(info type);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_constructible(info type, R&& type_args);
+  consteval bool type_is_default_constructible(info type);
+  consteval bool type_is_copy_constructible(info type);
+  consteval bool type_is_move_constructible(info type);
 
-  consteval bool is_assignable_type(info dst_type, info src_type);
-  consteval bool is_copy_assignable_type(info type);
-  consteval bool is_move_assignable_type(info type);
+  consteval bool type_is_assignable(info type_dst, info type_src);
+  consteval bool type_is_copy_assignable(info type);
+  consteval bool type_is_move_assignable(info type);
 
-  consteval bool is_swappable_with_type(info dst_type, info src_type);
-  consteval bool is_swappable_type(info type);
+  consteval bool type_is_swappable_with(info type_dst, info type_src);
+  consteval bool type_is_swappable(info type);
 
-  consteval bool is_destructible_type(info type);
+  consteval bool type_is_destructible(info type);
 
-  consteval bool is_trivially_constructible_type(info type, span<info const> type_args);
-  consteval bool is_trivially_default_constructible_type(info type);
-  consteval bool is_trivially_copy_constructible_type(info type);
-  consteval bool is_trivially_move_constructible_type(info type);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_trivially_constructible(info type, R&& type_args);
+  consteval bool type_is_trivially_default_constructible(info type);
+  consteval bool type_is_trivially_copy_constructible(info type);
+  consteval bool type_is_trivially_move_constructible(info type);
 
-  consteval bool is_trivially_assignable_type(info dst_type, info src_type);
-  consteval bool is_trivially_copy_assignable_type(info type);
-  consteval bool is_trivially_move_assignable_type(info type);
-  consteval bool is_trivially_destructible_type(info type);
+  consteval bool type_is_trivially_assignable(info type_dst, info type_src);
+  consteval bool type_is_trivially_copy_assignable(info type);
+  consteval bool type_is_trivially_move_assignable(info type);
+  consteval bool type_is_trivially_destructible(info type);
 
-  consteval bool is_nothrow_constructible_type(info type, span<info const> type_args);
-  consteval bool is_nothrow_default_constructible_type(info type);
-  consteval bool is_nothrow_copy_constructible_type(info type);
-  consteval bool is_nothrow_move_constructible_type(info type);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_nothrow_constructible(info type, R&& type_args);
+  consteval bool type_is_nothrow_default_constructible(info type);
+  consteval bool type_is_nothrow_copy_constructible(info type);
+  consteval bool type_is_nothrow_move_constructible(info type);
 
-  consteval bool is_nothrow_assignable_type(info dst_type, info src_type);
-  consteval bool is_nothrow_copy_assignable_type(info type);
-  consteval bool is_nothrow_move_assignable_type(info type);
+  consteval bool type_is_nothrow_assignable(info type_dst, info type_src);
+  consteval bool type_is_nothrow_copy_assignable(info type);
+  consteval bool type_is_nothrow_move_assignable(info type);
 
-  consteval bool is_nothrow_swappable_with_type(info dst_type, info src_type);
-  consteval bool is_nothrow_swappable_type(info type);
+  consteval bool type_is_nothrow_swappable_with(info type_dst, info type_src);
+  consteval bool type_is_nothrow_swappable(info type);
 
-  consteval bool is_nothrow_destructible_type(info type);
+  consteval bool type_is_nothrow_destructible(info type);
 
-  consteval bool is_implicit_lifetime_type(info type);
+  consteval bool type_is_implicit_lifetime(info type);
 
-  consteval bool has_virtual_destructor_type(info type);
+  consteval bool type_has_virtual_destructor(info type);
 
-  consteval bool has_unique_object_representations_type(info type);
+  consteval bool type_has_unique_object_representations(info type);
 
-  consteval bool reference_constructs_from_temporary_type(info dst_type, info src_type);
-  consteval bool reference_converts_from_temporary_type(info dst_type, info src_type);
+  consteval bool type_reference_constructs_from_temporary(info type_dst, info type_src);
+  consteval bool type_reference_converts_from_temporary(info type_dst, info type_src);
 
   // [meta.reflection.unary.prop.query], type property queries
-  consteval size_t alignment_of_type(info type);
-  consteval size_t rank_type(info type);
-  consteval size_t extent_type(info type, unsigned i = 0);
+  consteval size_t type_alignment_of(info type);
+  consteval size_t type_rank(info type);
+  consteval size_t type_extent(info type, unsigned i = 0);
 
   // [meta.reflection.rel], type relations
-  consteval bool is_same_type(info type1, info type2);
-  consteval bool is_base_of_type(info base_type, info derived_type);
-  consteval bool is_convertible_type(info src_type, info dst_type);
-  consteval bool is_nothrow_convertible_type(info src_type, info dst_type);
-  consteval bool is_layout_compatible_type(info type1, info type2);
-  consteval bool is_pointer_interconvertible_base_of_type(info base_type, info derived_type);
+  consteval bool type_is_same(info type1, info type2);
+  consteval bool type_is_base_of(info type_base, info type_derived);
+  consteval bool type_is_convertible(info type_src, info type_dst);
+  consteval bool type_is_nothrow_convertible(info type_src, info type_dst);
+  consteval bool type_is_layout_compatible(info type1, info type2);
+  consteval bool type_is_pointer_interconvertible_base_of(info type_base, info type_derived);
 
-  consteval bool is_invocable_type(info type, span<const info> type_args);
-  consteval bool is_invocable_r_type(info result_type, info type, span<const info> type_args);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_invocable(info type, R&& type_args);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_invocable_r(info type_result, info type, R&& type_args);
 
-  consteval bool is_nothrow_invocable_type(info type, span<const info> type_args);
-  consteval bool is_nothrow_invocable_r_type(info result_type, info type, span<const info> type_args);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_nothrow_invocable(info type, R&& type_args);
+  template <reflection_range R = span<info const>>
+  consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&& type_args);
 
   // [meta.reflection.trans.cv], const-volatile modifications
-  consteval info remove_const_type(info type);
-  consteval info remove_volatile_type(info type);
-  consteval info remove_cv_type(info type);
-  consteval info add_const_type(info type);
-  consteval info add_volatile_type(info type);
-  consteval info add_cv_type(info type);
+  consteval info type_remove_const(info type);
+  consteval info type_remove_volatile(info type);
+  consteval info type_remove_cv(info type);
+  consteval info type_add_const(info type);
+  consteval info type_add_volatile(info type);
+  consteval info type_add_cv(info type);
 
   // [meta.reflection.trans.ref], reference modifications
-  consteval info remove_reference_type(info type);
-  consteval info add_lvalue_reference_type(info type);
-  consteval info add_rvalue_reference_type(info type);
+  consteval info type_remove_reference(info type);
+  consteval info type_add_lvalue_reference(info type);
+  consteval info type_add_rvalue_reference(info type);
 
   // [meta.reflection.trans.sign], sign modifications
-  consteval info make_signed_type(info type);
-  consteval info make_unsigned_type(info type);
+  consteval info type_make_signed(info type);
+  consteval info type_make_unsigned(info type);
 
   // [meta.reflection.trans.arr], array modifications
-  consteval info remove_extent_type(info type);
-  consteval info remove_all_extents_type(info type);
+  consteval info type_remove_extent(info type);
+  consteval info type_remove_all_extents(info type);
 
   // [meta.reflection.trans.ptr], pointer modifications
-  consteval info remove_pointer_type(info type);
-  consteval info add_pointer_type(info type);
+  consteval info type_remove_pointer(info type);
+  consteval info type_add_pointer(info type);
 
   // [meta.reflection.trans.other], other transformations
-  consteval info remove_cvref_type(info type);
-  consteval info decay_type(info type);
-  consteval info common_type_type(span<const info> type_args);
-  consteval info common_reference_type(span<const info> type_args);
-  consteval info underlying_type_type(info type);
-  consteval info invoke_result_type(info type, span<const info> type_args);
-  consteval info unwrap_reference_type(info type);
-  consteval info unwrap_ref_decay_type(info type);
+  consteval info type_remove_cvref(info type);
+  consteval info type_decay(info type);
+  template <reflection_range R = span<info const>>
+  consteval info type_common_type(R&& type_args);
+  template <reflection_range R = span<info const>>
+  consteval info type_common_reference(R&& type_args);
+  consteval info type_underlying_type(info type);
+  template <reflection_range R = span<info const>>
+  consteval info type_invoke_result(info type, R&& type_args);
+  consteval info type_unwrap_reference(info type);
+  consteval info type_unwrap_ref_decay(info type);
 }
 ```
 :::
@@ -3274,13 +3401,32 @@ consteval bool is_defaulted(info r);
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function or member function template that is declared explicit. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared `explicit`. Otherwise, `false`.
+
+```cpp
+consteval bool is_noexcept(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared `noexcept`, a closure type of a non-generic lambda whose call operator is declared `noexcept`, or a value of such a type. Otherwise, `false`.
 
 ```cpp
 consteval bool is_bit_field(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` designates a bit-field. Otherwise, `false`.
+
+```cpp
+consteval bool is_const(info r);
+consteval bool is_volatile(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified member function type (respectively), or an object or function with such a type. Otherwise, `false`.
+
+```cpp
+consteval bool is_final(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a final class or a final member function. Otherwise, `false`.
 
 ```cpp
 consteval bool has_static_storage_duration(info r);
@@ -3518,12 +3664,12 @@ consteval vector<info> accessible_subobjects_of(info type);
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
 ```cpp
-consteval vector<info> enumerators_of(info enum_type);
+consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Mandates*: `enum_type` designates an enumeration.
+[#]{.pnum} *Mandates*: `type_enum` designates an enumeration.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `enum_type`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `type_enum`, in the order in which they are declared.
 :::
 :::
 
@@ -3532,7 +3678,14 @@ consteval vector<info> enumerators_of(info enum_type);
 ::: std
 ::: addu
 ```cpp
-consteval bool can_substitute(info templ, span<const info> arguments);
+template <class R>
+concept reflection_range =
+  ranges::input_range<R> && same_as<ranges::range_value_t<R>, info>;
+```
+
+```cpp
+template <reflection_range R = span<info const>>
+consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Mandates*: `templ` designates a template.
 
@@ -3543,7 +3696,8 @@ consteval bool can_substitute(info templ, span<const info> arguments);
 [#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
 
 ```cpp
-consteval info substitute(info templ, span<const info> arguments);
+template <reflection_range R = span<info const>>
+consteval info substitute(info templ, R&& arguments);
 ```
 
 [#]{.pnum} *Mandates*: `can_substitute(templ, arguments)` is `true`.
@@ -3561,7 +3715,7 @@ consteval info substitute(info templ, span<const info> arguments);
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, that argument shall be a reflection of a type or type alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, each `meta::info` in that `span` shall be a reflection of a type or a type alias.
+[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or type alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that `span` is not a reflection of a type or a type alias.
 :::
 :::
 
@@ -3572,30 +3726,37 @@ consteval info substitute(info templ, span<const info> arguments);
 [1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
 
 ```cpp
-consteval bool is_void_type(info type);
-consteval bool is_null_pointer_type(info type);
-consteval bool is_integral_type(info type);
-consteval bool is_floating_point_type(info type);
-consteval bool is_array_type(info type);
-consteval bool is_pointer_type(info type);
-consteval bool is_lvalue_reference_type(info type);
-consteval bool is_rvalue_reference_type(info type);
-consteval bool is_member_object_pointer_type(info type);
-consteval bool is_member_function_pointer_type(info type);
-consteval bool is_enum_type(info type);
-consteval bool is_union_type(info type);
-consteval bool is_class_type(info type);
-consteval bool is_function_type(info type);
+consteval bool type_is_void(info type);
+consteval bool type_is_null_pointer(info type);
+consteval bool type_is_integral(info type);
+consteval bool type_is_floating_point(info type);
+consteval bool type_is_array(info type);
+consteval bool type_is_pointer(info type);
+consteval bool type_is_lvalue_reference(info type);
+consteval bool type_is_rvalue_reference(info type);
+consteval bool type_is_member_object_pointer(info type);
+consteval bool type_is_member_function_pointer(info type);
+consteval bool type_is_enum(info type);
+consteval bool type_is_union(info type);
+consteval bool type_is_class(info type);
+consteval bool type_is_function(info type);
 ```
 
 [2]{.pnum}
 
 ::: example
 ```
-// an example implementation
 namespace std::meta {
-  consteval bool is_void_type(info type) {
+  consteval bool type_is_void(info type) {
+    // one example implementation
     return extract<bool>(substitute(^is_void_v, {type}));
+
+    // another example implementation
+    type = dealias(type);
+    return type == ^void
+        || type == ^const void
+        || type == ^volatile void
+        || type == ^const volatile void;
   }
 }
 ```
@@ -3610,13 +3771,13 @@ namespace std::meta {
 [1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
 
 ```cpp
-consteval bool is_reference_type(info type);
-consteval bool is_arithmetic_type(info type);
-consteval bool is_fundamental_type(info type);
-consteval bool is_object_type(info type);
-consteval bool is_scalar_type(info type);
-consteval bool is_compound_type(info type);
-consteval bool is_member_pointer_type(info type);
+consteval bool type_is_reference(info type);
+consteval bool type_is_arithmetic(info type);
+consteval bool type_is_fundamental(info type);
+consteval bool type_is_object(info type);
+consteval bool type_is_scalar(info type);
+consteval bool type_is_compound(info type);
+consteval bool type_is_member_pointer(info type);
 ```
 :::
 :::
@@ -3629,71 +3790,74 @@ consteval bool is_member_pointer_type(info type);
 
 [#]{.pnum} For any types `T` and `U`, for each function `std::meta::$BINARY-TRAIT$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$BINARY-TRAIT$_type(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-TRAIT$_type` defined in this clause with signature `bool(std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-TRAIT$_type(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any type `T` and pack of types `U...`, for each function template `std::meta::$VARIADIC-TRAIT$_type` defined in this clause, `std::meta::$VARIADIC-TRAIT$_type(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
 
 ```cpp
-consteval bool is_const_type(info type);
-consteval bool is_volatile_type(info type);
-consteval bool is_trivial_type(info type);
-consteval bool is_trivially_copyable_type(info type);
-consteval bool is_standard_layout_type(info type);
-consteval bool is_empty_type(info type);
-consteval bool is_polymorphic_type(info type);
-consteval bool is_abstract_type(info type);
-consteval bool is_final_type(info type);
-consteval bool is_aggregate_type(info type);
-consteval bool is_signed_type(info type);
-consteval bool is_unsigned_type(info type);
-consteval bool is_bounded_array_type(info type);
-consteval bool is_unbounded_array_type(info type);
-consteval bool is_scoped_enum_type(info type);
+consteval bool type_is_const(info type);
+consteval bool type_is_volatile(info type);
+consteval bool type_is_trivial(info type);
+consteval bool type_is_trivially_copyable(info type);
+consteval bool type_is_standard_layout(info type);
+consteval bool type_is_empty(info type);
+consteval bool type_is_polymorphic(info type);
+consteval bool type_is_abstract(info type);
+consteval bool type_is_final(info type);
+consteval bool type_is_aggregate(info type);
+consteval bool type_is_signed(info type);
+consteval bool type_is_unsigned(info type);
+consteval bool type_is_bounded_array(info type);
+consteval bool type_is_unbounded_array(info type);
+consteval bool type_is_scoped_enum(info type);
 
-consteval bool is_constructible_type(info type, span<info const> type_args);
-consteval bool is_default_constructible_type(info type);
-consteval bool is_copy_constructible_type(info type);
-consteval bool is_move_constructible_type(info type);
+template <reflection_range R = span<info const>>
+consteval bool type_is_constructible(info type, R&& type_args);
+consteval bool type_is_default_constructible(info type);
+consteval bool type_is_copy_constructible(info type);
+consteval bool type_is_move_constructible(info type);
 
-consteval bool is_assignable_type(info dst_type, info src_type);
-consteval bool is_copy_assignable_type(info type);
-consteval bool is_move_assignable_type(info type);
+consteval bool type_is_assignable(info type_dst, info type_src);
+consteval bool type_is_copy_assignable(info type);
+consteval bool type_is_move_assignable(info type);
 
-consteval bool is_swappable_with_type(info dst_type, info src_type);
-consteval bool is_swappable_type(info type);
+consteval bool type_is_swappable_with(info type_dst, info type_src);
+consteval bool type_is_swappable(info type);
 
-consteval bool is_destructible_type(info type);
+consteval bool type_is_destructible(info type);
 
-consteval bool is_trivially_constructible_type(info type, span<info const> type_args);
-consteval bool is_trivially_default_constructible_type(info type);
-consteval bool is_trivially_copy_constructible_type(info type);
-consteval bool is_trivially_move_constructible_type(info type);
+template <reflection_range R = span<info const>>
+consteval bool type_is_trivially_constructible(info type, R&& type_args);
+consteval bool type_is_trivially_default_constructible(info type);
+consteval bool type_is_trivially_copy_constructible(info type);
+consteval bool type_is_trivially_move_constructible(info type);
 
-consteval bool is_trivially_assignable_type(info dst_type, info src_type);
-consteval bool is_trivially_copy_assignable_type(info type);
-consteval bool is_trivially_move_assignable_type(info type);
-consteval bool is_trivially_destructible_type(info type);
+consteval bool type_is_trivially_assignable(info type_dst, info type_src);
+consteval bool type_is_trivially_copy_assignable(info type);
+consteval bool type_is_trivially_move_assignable(info type);
+consteval bool type_is_trivially_destructible(info type);
 
-consteval bool is_nothrow_constructible_type(info type, span<info const> type_args);
-consteval bool is_nothrow_default_constructible_type(info type);
-consteval bool is_nothrow_copy_constructible_type(info type);
-consteval bool is_nothrow_move_constructible_type(info type);
+template <reflection_range R = span<info const>>
+consteval bool type_is_nothrow_constructible(info type, R&& type_args);
+consteval bool type_is_nothrow_default_constructible(info type);
+consteval bool type_is_nothrow_copy_constructible(info type);
+consteval bool type_is_nothrow_move_constructible(info type);
 
-consteval bool is_nothrow_assignable_type(info dst_type, info src_type);
-consteval bool is_nothrow_copy_assignable_type(info type);
-consteval bool is_nothrow_move_assignable_type(info type);
+consteval bool type_is_nothrow_assignable(info type_dst, info type_src);
+consteval bool type_is_nothrow_copy_assignable(info type);
+consteval bool type_is_nothrow_move_assignable(info type);
 
-consteval bool is_nothrow_swappable_with_type(info dst_type, info src_type);
-consteval bool is_nothrow_swappable_type(info type);
+consteval bool type_is_nothrow_swappable_with(info type_dst, info type_src);
+consteval bool type_is_nothrow_swappable(info type);
 
-consteval bool is_nothrow_destructible_type(info type);
+consteval bool type_is_nothrow_destructible(info type);
 
-consteval bool is_implicit_lifetime_type(info type);
+consteval bool type_is_implicit_lifetime(info type);
 
-consteval bool has_virtual_destructor_type(info type);
+consteval bool type_has_virtual_destructor(info type);
 
-consteval bool has_unique_object_representations_type(info type);
+consteval bool type_has_unique_object_representations(info type);
 
-consteval bool reference_constructs_from_temporary_type(info dst_type, info src_type);
-consteval bool reference_converts_from_temporary_type(info dst_type, info src_type);
+consteval bool type_reference_constructs_from_temporary(info type_dst, info type_src);
+consteval bool type_reference_converts_from_temporary(info type_dst, info type_src);
 ```
 :::
 :::
@@ -3704,12 +3868,12 @@ consteval bool reference_converts_from_temporary_type(info dst_type, info src_ty
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$PROP$_type` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::$PROP$_type(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
 
-[#]{.pnum} For any type `T` and unsigned integer value `I`, `std::meta::extent_type(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
+[#]{.pnum} For any type `T` and unsigned integer value `I`, `std::meta::type_extent(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
 
 ```cpp
-consteval size_t alignment_of_type(info type);
-consteval size_t rank_type(info type);
-consteval size_t extent_type(info type, unsigned i = 0);
+consteval size_t type_alignment_of(info type);
+consteval size_t type_rank(info type);
+consteval size_t type_extent(info type, unsigned i = 0);
 ```
 :::
 :::
@@ -3722,23 +3886,27 @@ consteval size_t extent_type(info type, unsigned i = 0);
 
 [#]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$_type(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL$_type` defined in this clause with signature `bool(std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-REL$_type(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any type `T` and pack of types `U...`, for each binary function template `std::meta::$VARIADIC-REL$_type`, `std::meta::$VARIADIC-REL$_type(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each function `std::meta::$VARIADIC-REL-R$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info, std::span<const std::meta::info>)`, `std::meta::$VARIADIC-REL-R$_type(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each ternary function template `std::meta::$VARIADIC-REL-R$_type` defined in this clause, `std::meta::$VARIADIC-REL-R$_type(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
 
 ```cpp
-consteval bool is_same_type(info type1, info type2);
-consteval bool is_base_of_type(info base_type, info derived_type);
-consteval bool is_convertible_type(info src_type, info dst_type);
-consteval bool is_nothrow_convertible_type(info src_type, info dst_type);
-consteval bool is_layout_compatible_type(info type1, info type2);
-consteval bool is_pointer_interconvertible_base_of_type(info base_type, info derived_type);
+consteval bool type_is_same(info type1, info type2);
+consteval bool type_is_base_of(info type_base, info type_derived);
+consteval bool type_is_convertible(info type_src, info type_dst);
+consteval bool type_is_nothrow_convertible(info type_src, info type_dst);
+consteval bool type_is_layout_compatible(info type1, info type2);
+consteval bool type_is_pointer_interconvertible_base_of(info type_base, info type_derived);
 
-consteval bool is_invocable_type(info type, span<const info> type_args);
-consteval bool is_invocable_r_type(info result_type, info type, span<const info> type_args);
+template <reflection_range R = span<info const>>
+consteval bool type_is_invocable(info type, R&& type_args);
+template <reflection_range R = span<info const>>
+consteval bool type_is_invocable_r(info type_result, info type, R&& type_args);
 
-consteval bool is_nothrow_invocable_type(info type, span<const info> type_args);
-consteval bool is_nothrow_invocable_r_type(info result_type, info type, span<const info> type_args);
+template <reflection_range R = span<info const>>
+consteval bool type_is_nothrow_invocable(info type, R&& type_args);
+template <reflection_range R = span<info const>>
+consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&& type_args);
 ```
 
 [#]{.pnum} [If `t` is a reflection of the type `int` and `u` is a reflection of an alias to the type `int`, then `t == u` is `false` but `is_same(t, u)` is `true`. `t == dealias(u)` is also `true`.]{.note}.
@@ -3760,12 +3928,12 @@ consteval bool is_nothrow_invocable_r_type(info result_type, info type, span<con
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
 
 ```cpp
-consteval info remove_const_type(info type);
-consteval info remove_volatile_type(info type);
-consteval info remove_cv_type(info type);
-consteval info add_const_type(info type);
-consteval info add_volatile_type(info type);
-consteval info add_cv_type(info type);
+consteval info type_remove_const(info type);
+consteval info type_remove_volatile(info type);
+consteval info type_remove_cv(info type);
+consteval info type_add_const(info type);
+consteval info type_add_volatile(info type);
+consteval info type_add_cv(info type);
 ```
 :::
 :::
@@ -3777,9 +3945,9 @@ consteval info add_cv_type(info type);
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
 
 ```cpp
-consteval info remove_reference_type(info type);
-consteval info add_lvalue_reference_type(info type);
-consteval info add_rvalue_reference_type(info type);
+consteval info type_remove_reference(info type);
+consteval info type_add_lvalue_reference(info type);
+consteval info type_add_rvalue_reference(info type);
 ```
 :::
 :::
@@ -3790,8 +3958,8 @@ consteval info add_rvalue_reference_type(info type);
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
 ```cpp
-consteval info make_signed_type(info type);
-consteval info make_unsigned_type(info type);
+consteval info type_make_signed(info type);
+consteval info type_make_unsigned(info type);
 ```
 :::
 :::
@@ -3802,8 +3970,8 @@ consteval info make_unsigned_type(info type);
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
 ```cpp
-consteval info remove_extent_type(info type);
-consteval info remove_all_extents_type(info type);
+consteval info type_remove_extent(info type);
+consteval info type_remove_all_extents(info type);
 ```
 :::
 :::
@@ -3813,8 +3981,8 @@ consteval info remove_all_extents_type(info type);
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
 ```cpp
-consteval info remove_pointer_type(info type);
-consteval info add_pointer_type(info type);
+consteval info type_remove_pointer(info type);
+consteval info type_add_pointer(info type);
 ```
 :::
 :::
@@ -3827,19 +3995,22 @@ consteval info add_pointer_type(info type);
 ::: addu
 [1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any pack of types `T...`, for each function `std::meta::$VARIADIC-MOD$_type` defined in this clause with signature `std::meta::info(std::span<const std::meta::info>)`, `std::meta::$VARIADIC-MOD$_type({^T...})` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
+[#]{.pnum} For any pack of types `T...`, for each unary function template `std::meta::$VARIADIC-MOD$_type` defined in this clause, `std::meta::$VARIADIC-MOD$_type({^T...})` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, `std::meta::invoke_result_type(^T, {^u...})` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
+[#]{.pnum} For any type `T` and pack of types `U...`, `std::meta::type_invoke_result(^T, {^U...})` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
 
 ```cpp
-consteval info remove_cvref_type(info type);
-consteval info decay_type(info type);
-consteval info common_type_type(span<const info> type_args);
-consteval info common_reference_type(span<const info> type_args);
-consteval info underlying_type_type(info type);
-consteval info invoke_result_type(info type, span<const info> type_args);
-consteval info unwrap_reference_type(info type);
-consteval info unwrap_ref_decay_type(info type);
+consteval info type_remove_cvref(info type);
+consteval info type_decay(info type);
+template <reflection_range R = span<info const>>
+consteval info type_common_type(R&& type_args);
+template <reflection_range R = span<info const>>
+consteval info type_common_reference(R&& type_args);
+consteval info type_underlying_type(info type);
+template <reflection_range R = span<info const>>
+consteval info type_invoke_result(info type, R&& type_args);
+consteval info type_unwrap_reference(info type);
+consteval info type_unwrap_ref_decay(info type);
 ```
 
 [#]{.pnum}
@@ -3847,10 +4018,10 @@ consteval info unwrap_ref_decay_type(info type);
 ::: example
 ```cpp
 // example implementation
-consteval info unwrap_reference_type(info type) {
+consteval info type_unwrap_reference(info type) {
   type = dealias(type);
   if (has_template_arguments(type) && template_of(type) == ^reference_wrapper) {
-    return add_lvalue_reference_type(template_arguments_of(type)[0]);
+    return type_add_lvalue_reference(template_arguments_of(type)[0]);
   } else {
     return type;
   }
@@ -3860,3 +4031,45 @@ consteval info unwrap_reference_type(info type) {
 
 :::
 :::
+
+## Feature-Test Macro
+
+This is a feature with both a language and library component. Our usual practice is to provide something like `__cpp_impl_reflection` and `__cpp_lib_reflection` for this. But since the two pieces are so closely tied together, maybe it really only makes sense to provide one?
+
+For now, we'll add both.
+
+To [cpp.predefined]{.sref}:
+
+::: std
+```diff
+  __cpp_impl_coroutine 201902L
+  __cpp_impl_destroying_delete 201806L
+  __cpp_impl_three_way_comparison 201907L
++ __cpp_impl_reflection 2024XXL
+```
+:::
+
+and [version.syn]{.sref}:
+
+::: std
+```diff
++ #define __cpp_lib_reflection 2024XXL // also in <meta>
+```
+:::
+
+---
+references:
+  - id: P3293R0
+    citation-label: P3293R0
+    title: "Splicing a base class subobject"
+    author:
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2024
+        month: 05
+        day: 19
+    URL: https://wg21.link/p3293r0
+---

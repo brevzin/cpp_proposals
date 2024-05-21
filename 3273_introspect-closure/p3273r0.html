@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-19" />
-  <title>Splicing a base class subobject</title>
+  <meta name="dcterms.date" content="2024-05-20" />
+  <title>Introspection of Closure Types</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -552,16 +552,16 @@ code del { border: 1px solid #ECB3C7; }
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center">Splicing a base class
-subobject</h1>
+<h1 class="title" style="text-align:center">Introspection of Closure
+Types</h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P3293R0</td>
+    <td>P3273R0</td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-19</td>
+    <td>2024-05-20</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -576,10 +576,12 @@ subobject</h1>
   <tr>
     <td style="vertical-align:top">Reply-to:</td>
     <td>
-      Peter Dimov<br>&lt;<a href="mailto:pdimov@gmail.com" class="email">pdimov@gmail.com</a>&gt;<br>
-      Dan Katz<br>&lt;<a href="mailto:dkatz85@bloomberg.net" class="email">dkatz85@bloomberg.net</a>&gt;<br>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Andrei Alexandrescu<br>&lt;<a href="mailto:andrei@nvidia.com" class="email">andrei@nvidia.com</a>&gt;<br>
+      David Olsen<br>&lt;<a href="mailto:dolsen@nvidia.com" class="email">dolsen@nvidia.com</a>&gt;<br>
       Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Michael Garland<br>&lt;<a href="mailto:mgarland@nvidia.com" class="email">mgarland@nvidia.com</a>&gt;<br>
     </td>
   </tr>
 </table>
@@ -589,140 +591,101 @@ subobject</h1>
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">2</span> Proposal<span></span></a></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
+<li><a href="#motivation" id="toc-motivation"><span class="toc-section-number">2</span> Motivation<span></span></a></li>
+<li><a href="#proposed-changes-specify-storage-of-reference-captures" id="toc-proposed-changes-specify-storage-of-reference-captures"><span class="toc-section-number">3</span> Proposed Changes: Specify Storage of
+Reference Captures<span></span></a></li>
+<li><a href="#discussion" id="toc-discussion"><span class="toc-section-number">4</span> Discussion<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>There are many contexts in which it is useful to perform the same
-operation on each subobject of an object in sequence. These include
-serialization or <a href="https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_print_function">formatting</a>
-or <a href="https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_hash_value">hashing</a>.</p>
-<p><span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> seems like it gives us an ideal
-solution to this problem, in the form of being able to iterate over all
-the subobjects of an object and splicing accesses to them. However, it
-is not quite complete:</p>
+<p>Recent proposals of reflection facilities for C++ (such as <span class="citation" data-cites="P2996R2">[<a href="https://wg21.link/p2996r2" role="doc-biblioref">P2996R2</a>]</span> and <span class="citation" data-cites="P3157R0">[<a href="https://wg21.link/p3157r0" role="doc-biblioref">P3157R0</a>]</span>) raise important questions
+regarding the applicability of reflection to the layout of closure
+types. The ability to introspect closure types has important
+applications to applications that need to carry computation and
+data—packaged together in closures—across address spaces: inter-process
+communication, networking, serialization, and GPU execution. We propose
+to strenghten the layout guarantees of closure types in ways that allow
+introspection to work appropriately. To the best of our knowledge, the
+guarantees we propose are already observed by current implementations,
+so we estimate no or low impact on existing compiler infrastructure.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="motivation"><span class="header-section-number">2</span>
+Motivation<a href="#motivation" class="self-link"></a></h1>
+<p>Closure objects are a simple, syntactically compact, and convenient
+means to package computation and data together. Captures allow closures
+to carry arbitrary amounts of data within. Because of these advantages,
+closures are used extensively in C++ code either as a means to customize
+algorithms, or in various applications of the <a href="https://en.wikipedia.org/wiki/Command_pattern">Command</a> design
+pattern.</p>
+<p>The CUDA C++ dialect aimed at running algorithms on GPU devices with
+dedicated computational and memory hardware pays special attention to
+closure types, making them transparently available for execution on GPU
+hardware. Libraries such as <a href="https://developer.nvidia.com/thrust">Thrust</a> and <a href="https://docs.nvidia.com/cuda/cub/index.html">Cub</a> make good use
+of device lambda functions as a central feature.</p>
+<p>Introspection of closure types promises new opportunities for such
+codes as well as any code that needs to marshal data and computation
+across memory address spaces. To realize such opportunities, closure
+types must make their state available for introspection so that custom
+code can carry marshaling operations, or disallow certain data
+statically or dynamically.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposed-changes-specify-storage-of-reference-captures"><span class="header-section-number">3</span> Proposed Changes: Specify Storage
+of Reference Captures<a href="#proposed-changes-specify-storage-of-reference-captures" class="self-link"></a></h1>
+<p>Given that the introspection primitives proposed in P2996 can query
+class types and that closure types are class types (per <span>7.5.5.2 <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>),
+it follows that introspection should apply by definition to closure
+types. However, there is one specific issue with reference captures: per
+<span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>,
+the language definition leaves it to the implementation whether member
+variables are declared in the closure type to accommodate those
+captures. This makes it impossible for code that uses introspection for
+closure objects to portably take account of all captured data.</p>
+<p>We propose to change wording in <span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/12:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> for_each_subobject<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj, F f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> sub <span class="op">:</span> subobjects_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span>obj<span class="op">.[:</span>sub<span class="op">:])</span>; <span class="co">// this is valid syntax for non-static data members</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                      <span class="co">// but is invalid for base classes subobjects</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">12</a></span>
+An entity is <em>captured by reference</em> if it is implicitly or
+explicitly captured but not captured by copy. <span class="rm" style="color: #bf0303"><del>It is unspecified whether additional unnamed
+non-static data members are declared in the closure type for entities
+captured by reference. If declared, such non-static data members shall
+be of literal type.</del></span> <span class="addu">For each entity
+captured by reference, an unnamed non-static data member is declared in
+the closure type. The declaration order of these members is unspecified.
+The type of such a data member is an lvalue reference to:</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(12.1)</a></span>
+<span class="addu">the referenced type if the entity is a reference to
+an object,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(12.2)</a></span>
+<span class="addu">the referenced function type if the entity is a
+reference to a function, or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(12.3)</a></span>
+<span class="addu">the type of the corresponding captured entity
+otherwise.</span></li>
+</ul>
 </blockquote>
 </div>
-<p>Instead we have to handle bases separately from the non-static data
-members:</p>
-<div class="std">
-<blockquote>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> for_each_subobject<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj, F f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> base <span class="op">:</span> bases_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>type_of<span class="op">(</span>base<span class="op">)</span> <span class="kw">const</span><span class="op">&amp;&gt;(</span>obj<span class="op">))</span>;</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> sub <span class="op">:</span> nonstatic_data_members_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span>obj<span class="op">.[:</span>sub<span class="op">:])</span>;</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
-</div>
-<p>Except this is now a normal
-<code class="sourceCode cpp"><span class="kw">static_cast</span></code>
-and so requires access checking, thus prohibiting accessing private base
-classes.</p>
-<p>We could avoid access checking by using a C-style cast:</p>
-<div class="std">
-<blockquote>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> for_each_subobject<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj, F f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> base <span class="op">:</span> bases_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      f<span class="op">((</span><span class="kw">typename</span> <span class="op">[:</span> type_of<span class="op">(</span>base<span class="op">)</span> <span class="op">:]&amp;)</span>obj<span class="op">)</span>;</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> sub <span class="op">:</span> nonstatic_data_members_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span>obj<span class="op">.[:</span>sub<span class="op">:])</span>;</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
-</div>
-<p>But this opens up other problems: I forgot to write
-<code class="sourceCode cpp"><span class="kw">const</span></code> and so
-now I accidentally cast away
-<code class="sourceCode cpp"><span class="kw">const</span></code>-ness
-unintentionally. Oops. Not to mention that this cast actually works
-regardless of whether <code class="sourceCode cpp">base</code> refers to
-a base class of <code class="sourceCode cpp">T</code>, so it’s not
-exactly the best programming practice.</p>
-<p>On top of that, both the
-<code class="sourceCode cpp"><span class="kw">static_cast</span></code>
-and C-style cast approaches suffer from having to correctly spell the
-destination type - which requires manually propagating the const-ness
-and value category of the object.</p>
-<p>The way to avoid all of these problems is to just defer to a function
-template:</p>
-<div class="std">
-<blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info M, <span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> subobject_cast<span class="op">(</span>T<span class="op">&amp;&amp;</span> arg<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> stripped <span class="op">=</span> remove_cvref<span class="op">(^</span>T<span class="op">)</span>;</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_base<span class="op">(</span>M<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_assert</span><span class="op">(</span>is_base_of<span class="op">(</span>type_of<span class="op">(</span>M<span class="op">)</span>, stripped<span class="op">))</span>;</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">(</span><span class="kw">typename</span> <span class="op">[:</span> copy_cvref<span class="op">(^</span>T, type_of<span class="op">(</span>M<span class="op">))</span> <span class="op">:])</span>arg;</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_assert</span><span class="op">(</span>parent_of<span class="op">(</span>M<span class="op">)</span> <span class="op">==</span> stripped<span class="op">)</span>;</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">((</span>T<span class="op">&amp;&amp;)</span>arg<span class="op">).[:</span>M<span class="op">:]</span>;</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> for_each_subobject<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj, F f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> sub <span class="op">:</span> subobjects_of<span class="op">(^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      f<span class="op">(</span>subobject_cast<span class="op">&lt;</span>sub<span class="op">&gt;(</span>obj<span class="op">))</span>;</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
-</div>
-<p>But this feels a bit silly? Why should we have to write this?</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>We propose to define <code class="sourceCode cpp">obj<span class="op">.[:</span>mem<span class="op">:]</span></code>
-(where <code class="sourceCode cpp">mem</code> is a reflection of a base
-class of the type of <code class="sourceCode cpp">obj</code>) as being
-an access to that base class subobject, in the same way that <code class="sourceCode cpp">obj<span class="op">.[:</span>nsdm<span class="op">:]</span></code>
-(where <code class="sourceCode cpp">nsdm</code> is a reflection of a
-non-static data member) is an access to that data member.</p>
-<p>Additionally <code class="sourceCode cpp"><span class="op">&amp;[:</span>mem<span class="op">:]</span></code>
-where <code class="sourceCode cpp">mem</code> is a reflection of a base
-class <code class="sourceCode cpp">B</code> of type
-<code class="sourceCode cpp">T</code> should yield a
-<code class="sourceCode cpp">B T<span class="op">::*</span></code> with
-appropriate offset.</p>
-<p>We argue that these are the obvious, useful, and only possible
-meanings of these syntaxes, so we should simply support them in the
-language.</p>
-<p>The only reason this isn’t initially part of <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> is that while there <em>is</em>
-a way to access a data member of an object directly (just
-<code class="sourceCode cpp">obj<span class="op">.</span>mem</code>),
-there is <em>no</em> way to access a base class subobject directly
-outside of one of the casts described above. Part of the reason for this
-is that while a data member is always just an
-<code class="sourceCode cpp"><em>identifier</em></code>, a base class
-subobject can have an arbitrary complex name.</p>
-<p>This means that adding this support in reflection would mean that
-splicing can achieve something the language cannot do natively. But we
-don’t really see that as a problem. Reflection is already allowing all
-sorts of things that the language cannot do natively. What’s one
-more?</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="discussion"><span class="header-section-number">4</span>
+Discussion<a href="#discussion" class="self-link"></a></h1>
+<p>As mentioned, to our knowledge, all implementations already implement
+by-reference lambda captures by means of reference or pointer members,
+so we anticipate no or small impact on compiler implementations.</p>
+<p>To the extent the intent of the existing wording was meant to allow
+optimizations (e.g., use direct access for reference captures when the
+lambda is executed directly upon introduction), we note that all
+optimizations are still possible if reflection facilities are not used
+for any given lambda.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
-<div id="ref-P2996R3" class="csl-entry" role="doc-biblioentry">
-[P2996R3] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024-05-16. Reflection
-for C++26. <a href="https://wg21.link/p2996r3"><div class="csl-block">https://wg21.link/p2996r3</div></a>
+<div id="ref-P2996R2" class="csl-entry" role="doc-biblioentry">
+[P2996R2] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-02-15. Reflection for
+C++26. <a href="https://wg21.link/p2996r2"><div class="csl-block">https://wg21.link/p2996r2</div></a>
+</div>
+<div id="ref-P3157R0" class="csl-entry" role="doc-biblioentry">
+[P3157R0] Andrei Alexandrescu, Bryce Lelbach, Michael Garland.
+2024-02-15. Generative Extensions for Reflection. <a href="https://wg21.link/p3157r0"><div class="csl-block">https://wg21.link/p3157r0</div></a>
 </div>
 </div>
 </div>
