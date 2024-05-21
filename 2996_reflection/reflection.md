@@ -1504,7 +1504,7 @@ We propose `[:` and `:]` be single tokens rather than combinations of `[`, `]`, 
 Among others, it simplifies the handling of expressions like `arr[[:refl():]]`.
 On the flip side, it requires a special rule like the one that was made to handle `<::` to leave the meaning of `arr[::N]` unchanged and another one to avoid breaking a (somewhat useless) attribute specifier of the form `[[using ns:]]`.
 
-A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators.
+A syntax that is delimited on the left and right is useful here because spliced expressions may involve lower-precedence operators. Additionally, it's important that the left- and right-hand delimiters are different so as to allow nested splices when that comes up. 
 However, there are other possibilities.
 For example, now that `$`{.op} is available in the basic source character set, we might consider `@[$]{.op}@<$expr$>`.
 This is somewhat natural to those of us that have used systems where `$`{.op} is used to expand placeholders in document templates.  For example:
