@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-19" />
+  <meta name="dcterms.date" content="2024-05-20" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -490,7 +490,7 @@ margin: 5em;
 :root {
 --diff-ins: #C9FBC9;
 --diff-strongins: #acf2bd;
---diff-del: #ffdddd;
+--diff-del: #FFC8EB;
 --diff-strongdel: #ff8888;
 }
 span.diffins {
@@ -539,7 +539,7 @@ border: 1px solid #B3EBB3;
 }
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
 div.std blockquote del { text-decoration: line-through;
-color: #000000; background-color: #FFC8EB;
+color: #000000; background-color: var(--diff-del);
 border: none; }
 code del { border: 1px solid #ECB3C7; }
 </style>
@@ -561,7 +561,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-19</td>
+    <td>2024-05-20</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -657,20 +657,6 @@ which takes a new value of type <code class="sourceCode cpp">std<span class="op"
 and assigns the member).</li>
 <li>Implement postfix increment in terms of prefix increment.</li>
 </ol>
-<p>In order to focus on the API model rather than the syntax, we will
-try to use uniform syntax throughout. Specifically, we’re going to use
-the following:</p>
-<ul>
-<li><code class="sourceCode cpp"><span class="kw">consteval</span></code>
-blocks (<span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span>)</li>
-<li>a metafunction <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>inject</code>,
-which takes a thing to inject (whatever that thing is) and, optionally,
-a context to inject it into. By default, we inject into the point of the
-<code class="sourceCode cpp"><span class="kw">consteval</span></code>
-block.</li>
-</ul>
-<p>We do this in an attempt to minimize the overall API surface, since
-there’s going to be a lot to add regardless. Let’s dive in.</p>
 <h2 data-number="2.1" id="the-spec-api"><span class="header-section-number">2.1</span> The Spec API<a href="#the-spec-api" class="self-link"></a></h2>
 <p>In P2996, the injection API is based on a function <code class="sourceCode cpp">define_class<span class="op">()</span></code>
 which takes a range of <code class="sourceCode cpp">spec</code> objects.
@@ -689,9 +675,9 @@ injecting a single member
 </div>
 <p>We are already separately proposing
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
-blocks and we would like to inject each spec more directly, without
-having to complete <code class="sourceCode cpp">C</code> in one ago. As
-in:</p>
+blocks <span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span> and we would like to inject
+each spec more directly, without having to complete
+<code class="sourceCode cpp">C</code> in one ago. As in:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
@@ -701,6 +687,11 @@ in:</p>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
+<p>Here, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>inject</code>
+is a metafunction that takes a spec, which gets injected into the
+context begin by the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+block that our evaluation started in as a side-effect.</p>
 <p>We already think of this as an improvement. But let’s go through
 several use-cases to expand the API and see how well it holds up.</p>
 <h3 data-number="2.1.1" id="stdtuple"><span class="header-section-number">2.1.1</span>

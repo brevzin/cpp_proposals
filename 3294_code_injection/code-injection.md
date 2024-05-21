@@ -33,13 +33,6 @@ Here, we will look at a few interesting examples for injection and how different
 3. Implementing properties (i.e. given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a getter `get_author()` which returns a `std::string const&` to that member, and a setter `set_author()` which takes a new value of type `std::string const&` and assigns the member).
 4. Implement postfix increment in terms of prefix increment.
 
-In order to focus on the API model rather than the syntax, we will try to use uniform syntax throughout. Specifically, we're going to use the following:
-
-* `consteval` blocks ([@P3289R0])
-* a metafunction `std::meta::inject`, which takes a thing to inject (whatever that thing is) and, optionally, a context to inject it into. By default, we inject into the point of the `consteval` block.
-
-We do this in an attempt to minimize the overall API surface, since there's going to be a lot to add regardless. Let's dive in.
-
 ## The Spec API
 
 In P2996, the injection API is based on a function `define_class()` which takes a range of `spec` objects. But `define_class()` is a really clunky API, because invoking it is an expression - but we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
@@ -52,7 +45,7 @@ static_assert(is_type(define_class(^C,
 ```
 :::
 
-We are already separately proposing `consteval` blocks and we would like to inject each spec more directly, without having to complete `C` in one ago. As in:
+We are already separately proposing `consteval` blocks [@P3289R0] and we would like to inject each spec more directly, without having to complete `C` in one ago. As in:
 
 ::: std
 ```cpp
@@ -63,6 +56,8 @@ struct C {
 };
 ```
 :::
+
+Here, `std::meta::inject` is a metafunction that takes a spec, which gets injected into the context begin by the `consteval` block that our evaluation started in as a side-effect.
 
 We already think of this as an improvement. But let's go through several use-cases to expand the API and see how well it holds up.
 
@@ -682,7 +677,7 @@ Can we do better?
 
 ### `std::tuple`
 
-The initial fragments paper itself led off with an implementation of `std::tuple` storage and the concept of a `consteval` block (now also [@P3289R0]). An updated version of that approach using updated syntax for expansion statements and reflection is:
+The initial fragments paper itself led off with an implementation of `std::tuple` storage and the concept of a `consteval` block (now also [@P3289R0]).
 
 ::: std
 ```cpp
