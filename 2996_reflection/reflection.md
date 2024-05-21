@@ -1176,30 +1176,33 @@ This is not an ideal implementation (we'd prefer direct support for compile-time
 ::: std
 ```cpp
 class TU_Ticket {
-  template<int N> struct Helper {
-    static constexpr int value = N;
-  };
+  template<int N> struct Helper;
 public:
   static consteval int next() {
-    // Search for the next incomplete Helper<k>.
+    int k = 0;
+
+    // Search for the next incomplete 'Helper<k>'.
     std::meta::info r;
-    for (int k = 0;; ++k) {
-      r = substitute(^Helper, { std::meta::reflect_result(k) });
-      if (is_incomplete_type(r)) break;
-    }
-    // Return the value of its member.  Calling static_data_members_of
-    // triggers the instantiation (i.e., completion) of Helper<k>.
-    return extract<int>(static_data_members_of(r)[0]);
+    while (!is_incomplete_type(r = substitute(^Helper,
+                                             { std::meta::reflect_value(k) })))
+      ++k;
+
+    // Define 'Helper<k>' and return its index.
+    define_class(r, {});
+    return k;
   }
 };
 
-int x = TU_Ticket::next();  // x initialized to 0.
-int y = TU_Ticket::next();  // y initialized to 1.
-int z = TU_Ticket::next();  // z initialized to 2.
+constexpr int x = TU_Ticket::next();
+static_assert(x == 0);
+
+constexpr int y = TU_Ticket::next();
+static_assert(y == 1);
+
+constexpr int z = TU_Ticket::next();
+static_assert(z == 2);
 ```
 :::
-
-Note that this implementation relies on the fact that a call to `substitute` returns a specialization of a template, but doesn't trigger the instantiation of that specialization (however, we could still implement the ticket counter without this property with help from `define_class`). Thus, the only instantiations of `TU_Ticket::Helper` occur because of the call to `static_data_members_of` (which is a singleton representing the lone `value` member).
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/1vEjW4sTr), [Clang](https://godbolt.org/z/3Y3T1Y7Ya).
 
@@ -1423,6 +1426,78 @@ auto x = (*pc)(1, 2);   // gives you an X
 
 That is, splicing a constructor behaves like a free function that produces an object of that type, so `&[: rc :]` has type `X(*)(int, int)`. On the other hand, splicing a destructor behaves like a regular member function, so `&[: rd :]` has type `void (X::*)()`.
 
+### Limitations
+
+Splicers can appear in many contexts, but our implementation experience has uncovered a small set of circumstances in which a splicer must be disallowed. Mostly these are because any entity designated by a splicer can be dependent on a template argument, so any context in which the language already disallows a dependent name must also disallow a dependent splicer. It also becomes possible for the first time to have the "name" of a namespace or concept become dependent on a template argument. Our implementation experience has helped to sort through which uses of these dependent names pose no difficulties, and which must be disallowed.
+
+This proposal places the following limitations on splicers.
+
+#### Splicing reflections of constructors
+
+Iterating over the members of a class (e.g., using `std::meta::members_of`) allows one, for the first time, to obtain "handles" representing constructors. An immediate question arises of whether it's possible to reify these constructors to construct objects, or even to take their address. While we are very interested in exploring these ideas, we defer their discussion to a future paper; this proposal disallows splicing a reflection of a constructor (or constructor template) in any context.
+
+#### Splicing namespaces in namespace definitions
+
+```cpp
+namespace A {}
+constexpr std::meta::info NS_A = ^A;
+
+namespace B {
+  namespace [:NS_A:] {
+    void fn();  // Is this '::A::fn' or '::B::A::fn' ?
+  }
+}
+```
+
+We found no satisfying answer as to how to interpret examples like the one given above. Neither did we find motivating use cases: many of the "interesting" uses for reflections of namespaces are either to introspect their members, or to pass them as template arguments - but the above example does nothing to help with introspection, and neither can namespaces be reopened within any dependent context. Rather than choose between unintuitive options for a syntax without a motivating use case, we are disallowing splicers from appearing in the opening of a namespace.
+
+#### Splicing namespaces in using-directives and using-enum-declarators
+
+```cpp
+template <std::meta::info R> void fn1() {
+  using enum [:R:]::EnumCls;  // #1
+  // ...
+}
+template <std::meta::info R> void fn2() {
+  using namespace [:R:];      // #2
+  // ...
+}
+```
+
+C++20 already disallowed dependent enumeration types from appearing in _using-enum-declarators_ (as in #1), as it would otherwise force the parser to consider every subsequent identifier as possibly a member of the substituted enumeration type. We extend this limitation to splices of dependent reflections of enumeration types, and further disallow the use of dependent reflections of namespaces in _using-directives_ (as in #2) following the same principle.
+
+#### Splicing concepts in declarations of template parameters
+
+```cpp
+template <typename T> concept C = requires { requires true; };
+
+template <std::meta::info R> struct Outer {
+  template <template [:R:] S> struct Inner { /* ... */ };
+};
+```
+
+What kind of parameter is `S`? If `R` reflects a class template, then it is a non-type template parameter of deduced type, but if `R` reflects a concept, it is a type template parameter. There is no other circumstance in the language for which it is not possible to decide at parse time whether a template parameter is a type or a non-type, and we don't wish to introduce one for this use case.
+
+The most obvious solution would be to introduce a `concept [:R:]` syntax that requires that `R` reflect a concept, and while this could be added going forward, we weren't convinced of its value at this time - especially since the above can easily be rewritten:
+
+```cpp
+template <std::meta::info R> struct Outer {
+  template <typename T> requires template [:R:]<T> { /* ... */ };
+};
+```
+
+We are resolving this ambiguity by simply disallowing a reflection of a concept, whether dependent or otherwise, from being spliced in the declaration of a template parameter (thus in the above example, the parser can assume that `S` is a non-type parameter).
+
+#### Splicing class members as designators in designated-initializer-lists
+
+```cpp
+struct S { int a; };
+
+constexpr S s = {.[:^S::a:] = 2};
+```
+
+Although we would like for splices of class members to be usable as designators in an initializer-list, we lack implementation experience with the syntax and would first like to verify that there are no issues with dependent reflections. We are very likely to propose this as an extension in a future paper.
+
 ### Range Splicers
 
 The splicers described above all take a single object of type `std::meta::info` (described in more detail below).
@@ -1547,6 +1622,13 @@ In our initial proposal a value of type `std::meta::info` can represent:
   - any object that is a _permitted result of a constant expression_
   - any value with _structural type_ that is a permitted result of a constant expression
   - the null reflection (when default-constructed)
+
+We for now restrict the space of reflectable values to those of structural type in order to meet two requirements:
+
+1. The compiler must know how to mangle any reflectable value (i.e., when a reflection thereof is used as a template argument).
+2. The compiler must know how to compare any two reflectable values, ideally without interpreting user-defined comparison operators (i.e., to implement comparison between reflections).
+
+Values of structural types can already be used as template arguments (so implementations must already know how to mangle them), and the notion of _template-argument-equivalent_ values defined on the class of structural types helps guarantee that `&fn<^value1> == &fn<^value2>` if and only if `&fn<value1> == &fn<value2>`.
 
 Notably absent at this time are reflections of expressions. For example, one might wish to walk over the subexpressions of a function call:
 
@@ -1704,34 +1786,23 @@ Still, we are not aware of incompatibilities between our proposal and [@P2758R1]
 
 ### Error-Handling in Reflection
 
-One important question we have to answer is: How do we handle errors in reflection metafunctions?
-For example, what does `std::meta::template_of(^int)` do?
-`^int` is a reflection of a type, but that type is not a specialization of a template, so there is no valid reflected template for us to return.
+Earlier revisions of this proposal suggested several possible approaches to handling errors in reflection metafunctions. This question arises naturally when considering, for instance, examples like `template_of(^int)`: the argument is a reflection of a type, but that type is not a specialization of a template, so there is no valid reflected template for us to return.
 
-There are a few options available to us today:
+Some of the possibilities that we have considered include:
 
-1. This fails to be a constant expression (unspecified mechanism).
-2. This returns an invalid reflection (similar to `NaN` for floating point) which carries source location info and some useful message.  (This was the approach suggested in P1240.)
-3. This returns `std::expected<std::meta::info, E>` for some reflection-specific error type `E` which carries source location info and some useful message (this could be just `info` but probably should not be).
-4. This throws an exception of type `E` (which requires allowing exceptions to work during `constexpr` evaluation, such that an uncaught exception would fail to be a constant exception).
+1. Returning an invalid reflection (similar to `NaN` for floating point) which carries source location info and some useful message (i.e., the approach suggested by P1240)
+2. Returning a `std::expected<std::meta::info, E>` for some reflection-specific error type `E`, which carries source location info and some useful message
+3. Failing to be a constant expression
+4. Throwing an exception of type `E`, which requires a language extension for such exceptions to be catchable during `constexpr` evaluation
 
-The immediate downside of (2), yielding a `NaN`-like reflection for `template_of(^int)` is what we do for those functions that need to return a range.
-That is, what does `template_arguments_of(^int)` return?
+We found that we disliked (1) since there is no satisfying value that can be returned for a call like `template_arguments_of(^int)`: We could return a `std::vector<std::meta::info>` having a single invalid reflection, but this makes for awkward error handling. The experience offered by (3) is at least consistent, but provides no immediate means for a user to "recover" from an error.
 
-1. This fails to be a constant expression (unspecified mechanism).
-2. This returns a `std::vector<std::meta::info>` containing one invalid reflection.
-3. This returns a `std::expected<std::vector<std::meta::info>, E>`.
-4. This throws an exception of type `E`.
+Either `std::expected` or constexpr exceptions would allow for a consistent and straightforward interface. Deciding between the two, we noticed that many of usual concerns about exceptions do not apply during translation:
 
-Having range-based functions return a single invalid reflection would make for awkward error handling code.
-Using `std::expected` or exceptions for error handling allow for a consistent, more straightforward interface.
+* concerns about runtime performance, object file size, etc. do not exist, and
+* concerns about code evolving to add new uncaught exception types do not apply
 
-This becomes another situation where we need to decide an error handling mechanism between exceptions and not exceptions, although importantly in this context a lot of usual concerns about exceptions do not apply:
-
-* there is no runtime (so concerns about runtime performance, object file size, etc. do not exist), and
-* there is no runtime (so concerns about code evolving to add a new uncaught exception type do not apply)
-
-There is one interesting example to consider to decide between `std::expected` and exceptions here:
+An interesting example illustrates one reason for our preference for exceptions over `std::expected`:
 
 ::: std
 ```cpp
@@ -1741,17 +1812,15 @@ void foo();
 ```
 :::
 
-If `template_of` returns an `excepted<info, E>`, then `foo<int>` is a substitution failure --- `expected<T, E>` is equality-comparable to `T`, that comparison would evaluate to `false` but still be a constant expression.
+* If `template_of` returns an `expected<info, E>`, then `foo<int>` is a substitution failure --- `expected<T, E>` is equality-comparable to `T`, that comparison would evaluate to `false` but still be a constant expression.
 
-If `template_of` returns `info` but throws an exception, then `foo<int>` would cause that exception to be uncaught, which would make the comparison not a constant expression.
+* If `template_of` returns `info` but throws an exception, then `foo<int>` would cause that exception to be uncaught, which would make the comparison not a constant expression.
 This actually makes the constraint ill-formed - not a substitution failure.
 In order to have `foo<int>` be a substitution failure, either the constraint would have to first check that `T` is a template or we would have to change the language rule that requires constraints to be constant expressions (we would of course still keep the requirement that the constraint is a `bool`).
 
-The other thing to consider are compiler modes that disable exception support (like `-fno-exceptions` in GCC and Clang).
-Today, implementations reject using `try`, `catch`, or `throw` at all when such modes are enabled.
-With support for `constexpr` exceptions, implementations would have to come up with a strategy for how to support compile-time exceptions --- probably by only allowing them in `consteval` functions (including `constexpr` function templates that were propagated to `consteval`).
+Since the R2 revision of this paper, [@P3068R1] has proposed the introduction of constexpr exceptions. The proposal addresses hurdles like compiler modes that disable exception support, and a Clang-based implementation is underway. We believe this to be the most desirable error-handling mechanism for reflection metafunctions.
 
-Despite these concerns (and the requirement of a whole new language feature), we believe that exceptions will be the more user-friendly choice for error handling here, simply because exceptions are more ergonomic to use than `std::expected` (even if we adopt language features that make this type easier to use - like pattern matching and a control flow operator).
+Because constexpr exceptions have not yet been adopted into the working draft, we do not specify any functions in this paper that throw exceptions. Rather, we propose that they fail to be constant expressions (i.e., case 3 above), and note that this approach will allow us to forward-compatibly add exceptions at a later time. In the interim period, implementations should have all of the information needed to issue helpful diagnostics (e.g., "_note: `R` does not reflect a template specialization_") to improve the experience of writing reflection code.
 
 ### Range-Based Metafunctions
 
@@ -1997,6 +2066,7 @@ namespace std::meta {
   consteval auto is_constructor(info r) -> bool;
   consteval auto is_destructor(info r) -> bool;
   consteval auto is_special_member(info r) -> bool;
+  consteval auto is_user_provided(info r) -> bool;
 
   // @[define_class](#data_member_spec-define_class)@
   struct data_member_options_t;
@@ -2065,7 +2135,7 @@ consteval auto type_doof(std::meta::info r) -> std::meta::info {
 ```
 :::
 
-If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or namespace.
+If `r` designates a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or (possibly inline or anonymous) namespace.
 
 If `r` designates an alias, `dealias(r)` designates the underlying entity.
 Otherwise, `dealias(r)` produces `r`.
@@ -2229,6 +2299,8 @@ These metafunctions produces a reflection of the value returned by a call expres
 For the first overload: Letting `F` be the entity reflected by `target`, and `A@~0~@, A@~1~@, ..., A@~N~@` be the sequence of entities reflected by the values held by `args`: if the expression `F(A@~0~@, A@~1~@, ..., A@~N~@)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a value or object usable in constant expressions, then `reflect_invoke(target, args)` evaluates to a reflection of the result of `F(A@~0~@, A@~1~@, ..., A@~N~@)`. For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
 
 The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
+
+A few possible extensions for `reflect_invoke` have been discussed among the authors. Given the advent of constant evaluations with side-effects, it may be worth allowing `void`-returning functions, but this would require some representation of "a returned value of type `void`". Construction of runtime call expressions is another exciting possibility. Both extensions require more thought and implementation experience, and we are not proposing either at this time.
 
 ### `reflect_result<T>`
 
@@ -2754,7 +2826,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if their reflected aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
 * [*.#]{.pnum} Otherwise, if neither operand is a reflection of a value, then they compare equal if they are reflections of the same entity.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of a value and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equally if and only if they reflect the same value of the same type.
+* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equally if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
 * Otherwise the result is unspecified.
 :::
 
@@ -3144,6 +3216,7 @@ namespace std::meta {
   consteval bool is_constructor(info r);
   consteval bool is_destructor(info r);
   consteval bool is_special_member(info r);
+  consteval bool is_user_provided(info r);
 
   consteval info type_of(info r);
   consteval info parent_of(info r);
@@ -3473,7 +3546,11 @@ consteval bool is_alias(info r);
 ```cpp
 consteval bool is_incomplete_type(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `delias(r)` designates an incomplete type. Otherwise, `false`.
+[#]{.pnum} *Mandates*: `r` is a reflection designating a type.
+
+[#]{.pnum} *Returns*: `false` if the type designated by `dealias(r)` is a complete class type. Otherwise, `true`.
+
+[#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
 
 ```cpp
 consteval bool is_template(info r);
@@ -3516,6 +3593,14 @@ consteval bool is_special_member(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, static member, base class member, constructor, destructor, or special member, respectively. Otherwise, `false`.
+
+```cpp
+consteval boo is_user_provided(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` designates a function.
+
+[#]{.pnum} *Returns*: `true` if `r` designates a user-provided ([dcl.fct.def.default]{.sref}) function. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
@@ -3585,17 +3670,19 @@ template<class... Fs>
   consteval vector<info> members_of(info r, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `r` is a reflection designating either a class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
+[#]{.pnum} *Mandates*: `r` is a reflection designating either a complete class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
 
 ```cpp
 template<class... Fs>
   consteval vector<info> accessible_members_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_accessible, filters...);`
 
@@ -3604,15 +3691,19 @@ template<class... Fs>
   consteval vector<info> bases_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a type and `(std::predicate<Fs, info> && ...)` is `true`.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type and `(std::predicate<Fs, info> && ...)` is `true`.
 
 [#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
 The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
 
 ```cpp
 template<class... Fs>
   consteval vector<info> accessible_bases_of(info type, Fs... filters);
 ```
+
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return bases_of(r, is_accessible, filters...);`
 
@@ -3620,7 +3711,7 @@ template<class... Fs>
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
@@ -3628,7 +3719,7 @@ consteval vector<info> static_data_members_of(info type);
 consteval vector<info> accessible_static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable, is_accessible);`
 
@@ -3636,7 +3727,7 @@ consteval vector<info> accessible_static_data_members_of(info type);
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
 
@@ -3644,7 +3735,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 consteval vector<info> accessible_nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member, is_accessible);`
 
@@ -3652,23 +3743,27 @@ consteval vector<info> accessible_nonstatic_data_members_of(info type);
 consteval vector<info> subobjects_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
 
 ```cpp
 consteval vector<info> accessible_subobjects_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` designates a type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Mandates*: `type_enum` designates an enumeration.
+[#]{.pnum} *Mandates*: `type_enum` is a reflection designating an enumeration.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `type_enum`, in the order in which they are declared.
 :::
