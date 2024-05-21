@@ -42,6 +42,7 @@ Since [@P2996R2]:
 * added another overload to `reflect_invoke` to support template arguments
 * renamed all the type traits to start with `type_` to avoid name clashes. added more generalized `is_const`, `is_final`, and `is_volatile`
 * added `is_noexcept` and fixed `is_explicit` to only apply to member functions, not member function templates
+* added a section discussing ODR concerns
 
 Since [@P2996R1], several changes to the overall library API:
 
@@ -216,7 +217,7 @@ Read ahead to the next sections for a more systematic description of each elemen
 
 A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
 
-* expansion statements [@P1306R1]
+* expansion statements [@P1306R2]
 * non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
 
 ## Back-And-Forth
@@ -1604,7 +1605,7 @@ The type `std::meta::info` can be defined as follows:
 ```c++
 namespace std {
   namespace meta {
-    using info = decltype(^int);
+    using info = decltype(^::);
   }
 }
 ```
@@ -1946,10 +1947,8 @@ This paper is proposing that:
 
 ### Freestanding implementations
 
-
-Several important metafunctions, such as `std::meta::_nonstatic_data_members_of`, return a `std::vector` value.
-Unfortunately, that means that they are currently not usable in a freestanding environment.
-That is an highly undesirable limitation that we believe should be addressed by imbuing freestanding implementations with a more restricted `std::vector` (e.g., one that can only allocate at compile time).
+Several important metafunctions, such as `std::meta::nonstatic_data_members_of`, return a `std::vector` value.
+Unfortunately, that means that they are currently not usable in a freestanding environment, but a recent paper ([@P3295R0]) currently being seen by SG7 proposes freestanding `std::vector`, `std::string`, and `std::allocator` in constant evaluated contexts, explicitly to make the facilities proposed by this paper work in freestanding.
 
 ### Synopsis
 
@@ -1958,6 +1957,8 @@ Here is a synopsis for the proposed library API. The functions will be explained
 ::: std
 ```c++
 namespace std::meta {
+  using info = decltype(^::);
+
   template <typename R>
   concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
 
@@ -2510,6 +2511,32 @@ The advantage of this approach is that it very likely just works, also opening t
 The disadvantage is that the suffixed names would not be familiar - we're much more familiar with the name `is_copy_constructible` than we would be with `type_is_copy_constructible`.
 
 That said, it's not too much added mental overhead to remember `type_is_copy_constructible` and this avoids have to remember which type traits have the suffix and which don't. Not to mention that _many_ of the type traits read as if they would accept objects just fine (e.g. `is_trivially_copyable`). So we propose that simply all the type traits be suffixed with `*_type`.
+
+## ODR Concerns
+
+Static reflection invariably brings new ways to violate ODR.
+
+```cpp
+// File 'cls.h'
+struct Cls {
+  void odr_violator() {
+    if constexpr (members_of(parent_of(^std::size_t)).size() % 2 == 0)
+      branch_1();
+    else
+      branch_2();
+  }
+};
+```
+
+Two translation units including `cls.h` can generate different definitions of `Cls::odr_violator()` based on whether an odd or even number of declarations have been imported from `std`. Branching on the members of a namespace is dangerous because namespaces may be redeclared and reopened: the set of contained declarations can differ between program points.
+
+The creative programmer will find no difficulty coming up with other predicates which would be similarly dangerous if substituted into the same `if constexpr` condition: for instance, given a branch on `is_incomplete_type(^T)`, if one translation unit `#include`s a forward declaration of `T`, another `#include`s a complete definition of `T`, and they both afterwards `#include "cls.h"`, the result will be an ODR violation.
+
+Additional papers are already in flight proposing additional metafunctions that pose similar dangers. For instance, [@P3096R1] proposes the `parameters_of` metafunction. This feature is important for generating language bindings (e.g., Python, JavaScript), but since parameter names can differ between declarations, it would be dangerous for a member function defined in a header file to branch on the name of a parameter.
+
+These cases are not difficult to identify: Given an entity `E` and two program points `P1` and `P2` from which a reflection of `E` may be optained, it is unsafe to branch runtime code generation on any property of `E` (e.g., namespace members, parameter names, completeness of a class) that can be modified between `P1` and `P2`. Worth noting as well, these sharp edges are not unique (or new) to reflection: It is already possible to build an ODR trap based on the completeness of a class using C++23.
+
+Education and training are important to help C++ users avoid such sharp edges, but we do not find them sufficiently concerning to give pause to our enthusiasm for the features proposed by this paper.
 
 # Proposed Wording
 
@@ -4155,6 +4182,30 @@ and [version.syn]{.sref}:
 
 ---
 references:
+  - id: P1306R2
+    citation-label: P1306R2
+    title: "Expansion statements"
+    author:
+      - family: Andrew Sutton
+      - family: Sam Goodrick
+      - family: Daveed Vandevoorde
+      - family: Dan Katz
+    issued:
+      - year: 2024
+        month: 05
+        day: 07
+    URL: https://wg21.link/p1306r2
+  - id: P3096R1
+    citation-label: P3096R1
+    title: "Function Parameter Reflection in Reflection for C++26"
+    author:
+      - family: Adam Lach
+      - family: Walter Genovese
+    issued:
+      - year: 2024
+        month: 04
+        day: 29
+    URL: https://wg21.link/p3096r1
   - id: P3293R0
     citation-label: P3293R0
     title: "Splicing a base class subobject"
@@ -4168,4 +4219,14 @@ references:
         month: 05
         day: 19
     URL: https://wg21.link/p3293r0
+  - id: P3295R0
+    citation-label: P3295R0
+    title: "Freestanding constexpr containers and constexpr exception types"
+    author:
+      - family: Ben Craig
+    issued:
+      - year: 2024
+        month: 05
+        day: 18
+    URL: https://wg21.link/p3295r0
 ---
