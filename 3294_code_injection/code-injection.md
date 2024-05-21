@@ -1037,18 +1037,20 @@ A token sequence has no meaning by itself, until injected. But because (hopefull
 
 ## Quoting into a token sequence
 
-There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated capture syntax: `$(e...)`.
+There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated capture syntax using the interpolators `$eval` and `$id`.
 
 The implementation model for this is that we collect the tokens within a `@token { ... }` literal, but every time we run into a capture, we parse and evaluate the expression within and replace it with the value as described below:
 
-* `$(e)` for `e` of type `meta::info` is replaced by a pseudo-literal token holding the `info` value. If `e` is itself a token sequence, the contents of that token sequence are concatenated in place.
-* Otherwise `$(e)` for `e` being string-like or integral is replaced with that value. `$(e...)` can concatenate multiple string-like or integral values into a single identifier.
+* `$eval(e)` for `e` of type `meta::info` is replaced by a pseudo-literal token holding the `info` value. If `e` is itself a token sequence, the contents of that token sequence are concatenated in place.
+* `$id(e)` for `e` being string-like or integral is replaced with that value. `$id(e...)` can concatenate multiple string-like or integral values into a single identifier.
+
+These need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is indented, so they have to be spelled differently.
 
 With that in mind, we can start going through our examples.
 
 ## Examples
 
-Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment:
+Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment. You can see the use of both kinds of interpolator on the left:
 
 ::: cmptable
 ### `std::tuple`
@@ -1060,7 +1062,7 @@ struct Tuple {
         for (size_t i = 0; i != types.size(); ++i) {
             inject(@tokens {
                 [[no_unique_address]]
-                [: $(types[i]) :] $("_", i);
+                [: $eval(types[i]) :] $id("_", i);
             });
         }
     }
@@ -1091,15 +1093,15 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@tokens {
-        [:$(type):] $(member_name);
+        [:$eval(type):] $id(member_name);
 
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
+        auto $id("get_", name)() -> [:$eval(type):] const& {
+            return $id(member_name);
         }
 
-        auto $("set_", name)(typename [:$(type):] const& x)
+        auto $id("set_", name)(typename [:$eval(type):] const& x)
             -> void {
-            $(member_name) = x;
+            $id(member_name) = x;
         }
     });
 }
@@ -1113,19 +1115,19 @@ consteval auto property(meta::info type, std::string name)
     std::string member_name = "m_" + name;
 
     inject(@tokens {
-        [:$(type):] $(member_name);
+        [:$eval(type):] $id(member_name);
     });
 
     inject(@tokens {
-        auto $("get_", name)() -> [:$(type):] const& {
-            return $(member_name);
+        auto $id("get_", name)() -> [:$eval(type):] const& {
+            return $id(member_name);
         }
     });
 
     inject(@tokens {
-        auto $("set_", name)(typename [:$(type):] const& x)
+        auto $id("set_", name)(typename [:$eval(type):] const& x)
             -> void {
-            $(member_name) = x;
+            $id(member_name) = x;
         }
     });
 }
@@ -1156,7 +1158,7 @@ consteval auto postfix_increment() -> void {
     auto T = type_of(std::meta::current());
     inject(@tokens {
 
-        auto operator++(int) -> [:$(T):] {
+        auto operator++(int) -> [:$eval(T):] {
             auto tmp = *this;
             ++*this;
             return tmp;
@@ -1186,7 +1188,7 @@ public:
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
             inject(@tokens {
-                declare [: $(decl_of(fun)) ] {
+                declare [: $eval(decl_of(fun)) :] {
                     // ...
                 }
             });
@@ -1209,9 +1211,9 @@ Second, we need to actually forward the parameters of the function into our memb
 consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
         inject(@tokens {
-            declare [: $(decl_of(fun)) ] {
-                std::println("Calling {}", $(name_of(fun)));
-                return impl.[: $(fun) :](/* ???? */);
+            declare [: $eval(decl_of(fun)) :] {
+                std::println("Calling {}", $eval(name_of(fun)));
+                return impl.[: $eval(fun) :](/* ???? */);
             }
         });
     }
@@ -1233,14 +1235,14 @@ consteval {
             }
             first = false;
             argument_list += @tokens {
-                static_cast<[:$(type_of(param)):]&&>([: $(param) :])
+                static_cast<[:$eval(type_of(param)):]&&>([: $eval(param) :])
             };
         }
 
         inject(@tokens {
-            declare [: $(decl_of(fun)) ] {
-                std::println("Calling {}", $(name_of(fun)));
-                return impl.[: $(fun) :]( $(argument_list) );
+            declare [: $eval(decl_of(fun)) :] {
+                std::println("Calling {}", $eval(name_of(fun)));
+                return impl.[: $eval(fun) :]( $eval(argument_list) );
             }
         });
     }
@@ -1250,7 +1252,7 @@ consteval {
 
 The `argument_list` is simply building up the token sequence `[: p0 :], [: p1 :], [: p2 :], ..., [: pN :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
 
-Once we have those tokens, we can concatenate this token sequence using the same `$()` quoting operator that we've used for other problems and we're done. Token sequences are just a sequence of tokens - so we simply need to be able to produce that sequence.
+Once we have those tokens, we can concatenate this token sequence using the same `$eval()` quoting operator that we've used for other problems and we're done. Token sequences are just a sequence of tokens - so we simply need to be able to produce that sequence.
 
 Note that we didn't actually have to implement it using a separate `argument_list` local variable - we could've concatenated the entire token sequence piecewise. But this structure allows factoring out parameter-forwarding into its own function:
 
@@ -1265,7 +1267,7 @@ consteval auto forward_parameters(std::meta::info fun) -> std::meta::info {
         }
         first = false;
         argument_list += @tokens {
-            static_cast<[:$(type_of(param)):]&&>([: $(param) :])
+            static_cast<[:$eval(type_of(param)):]&&>([: $eval(param) :])
         };
     }
     return argument_list;
@@ -1280,9 +1282,9 @@ And then:
 consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
         inject(@tokens {
-            declare [: $(decl_of(fun)) ] {
-                std::println("Calling {}", $(name_of(fun)));
-                return impl.[: $(fun) :]( $(forward_parameters(fun)) );
+            declare [: $eval(decl_of(fun)) :] {
+                std::println("Calling {}", $eval(name_of(fun)));
+                return impl.[: $eval(fun) :]( $eval(forward_parameters(fun)) );
             }
         });
     }
@@ -1391,7 +1393,7 @@ With token sequences, we can achieve similar syntax:
 ```cpp
 consteval auto fwd2(@tokens x) -> info {
     return @tokens {
-        static_cast<decltype($(x))&&>($(x));
+        static_cast<decltype($eval(x))&&>($eval(x));
     };
 }
 
@@ -1413,11 +1415,11 @@ consteval auto assert_eq(@tokens a,
                          @tokens b) -> info {
     return @tokens {
         do {
-            auto sa = $(stringify(a));
-            auto va = $(a);
+            auto sa = $eval(stringify(a));
+            auto va = $eval(a);
 
-            auto sb = $(stringify(b));
-            auto vb = $(b);
+            auto sb = $eval(stringify(b));
+            auto vb = $eval(b);
 
             if (not (va == vb)) {
                 std::println(
@@ -1425,7 +1427,7 @@ consteval auto assert_eq(@tokens a,
                     "{} ({}) == {} ({}) failed at {}",
                     sa, va,
                     sb, vb,
-                    $(source_location_of(a)));
+                    $eval(source_location_of(a)));
                 std::abort();
             }
         } while (false);
