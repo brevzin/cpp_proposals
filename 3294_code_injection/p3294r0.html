@@ -623,7 +623,7 @@ Interpolation<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>This paper is proposing amending <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> to add code injection in the
+<p>This paper is proposing augmenting <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> to add code injection in the
 form of token sequences.</p>
 <p>We consider the motivation for this feature to some degree pretty
 obvious, so we will not repeat it here, since there are plenty of other
@@ -1815,8 +1815,9 @@ example:</p>
 </blockquote>
 </div>
 <p>Because tokens are handled after the the initial phase of
-preprocessing, macros and string concatenation can apply - but only
-within a single token sequence:</p>
+preprocessing, macros and string concatenation can apply - but you have
+to be careful with macros because they won’t work the way you might
+want</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>tokens { “abc” “def” } ==tokens <span class="op">{</span> <span class="st">&quot;abcdef&quot;</span> <span class="op">})</span>;</span>
@@ -1828,9 +1829,22 @@ within a single token sequence:</p>
 <span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#define PLUS_ONE</span><span class="op">(</span>x<span class="op">)</span><span class="pp"> </span><span class="op">((</span>x<span class="op">)</span><span class="pp"> </span><span class="op">+</span><span class="pp"> </span><span class="dv">1</span><span class="op">)</span></span>
 <span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>tokens { PLUS_ONE(x) } ==tokens <span class="op">{</span> <span class="op">((</span>x<span class="op">)</span> <span class="op">+</span> <span class="dv">1</span><span class="op">)</span> <span class="op">})</span>;</span>
 <span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co">// the macro PLUS_ONE is not invoked because</span></span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="co">// token string concatenation happens after the preprocessor</span></span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>tokens { PLUS_ONE(x } +tokens<span class="op">{</span> <span class="op">)</span> <span class="op">}</span> <span class="op">==</span> <span class="op">@</span>tokens <span class="op">{</span> PLUS_ONE<span class="op">(</span>x<span class="op">)</span> <span class="op">})</span>;</span></code></pre></div>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co">// amusingly this version also still works but not for the reason you think</span></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="co">// on the left-hand-side the macro PLUS_ONE is still invoked...</span></span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a><span class="co">// but as PLUS_ONE(x} +@tokens{)</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="co">// which produces ((x} +@tokens{) + 1)</span></span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a><span class="co">// which leads to tokens { ((x } +tokens{) + 1) }</span></span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="co">// which is @tokens{ ((x) + 1)}</span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>tokens { PLUS_ONE(x } +tokens<span class="op">{</span> <span class="op">)</span> <span class="op">}</span> <span class="op">==</span> <span class="op">@</span>tokens <span class="op">{</span> PLUS_ONE<span class="op">(</span>x<span class="op">)</span> <span class="op">})</span>;</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="co">// But this one finally fails, because the macro isn&#39;t actually invoked</span></span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> tok2 <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> t <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span> PLUS_ONE<span class="op">(</span>x <span class="op">}</span>;</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>    constexpr_print_str<span class="op">(</span><span class="st">&quot;Logging...</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>    t <span class="op">+=</span> <span class="op">@</span>tokens<span class="op">{</span> <span class="op">)</span> <span class="op">}</span></span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> t;</span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;</span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>tok2 <span class="op">!=</span> <span class="op">@</span>tokens <span class="op">{</span> PLUS_ONE<span class="op">(</span>x<span class="op">)</span> <span class="op">})</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>A token sequence has no meaning by itself, until injected. But
@@ -2259,8 +2273,8 @@ and then in the call-forwarding we need to forward not
 <code class="sourceCode cpp">other</code> (which is now the wrong type)
 but rather
 <code class="sourceCode cpp">other<span class="op">.</span>impl</code>.
-How can we do that?</p>
-<p>TODO</p>
+How can we do that? We don’t quite have a good answer yet. But this is
+much farther than we’ve come with any other design.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="hygienic-macros"><span class="header-section-number">4</span>
 Hygienic Macros<a href="#hygienic-macros" class="self-link"></a></h1>
 <p>C macros have a (well-deserved) bad reputation in the C++ community.
