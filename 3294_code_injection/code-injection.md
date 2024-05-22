@@ -292,7 +292,7 @@ consteval auto property(string_view name, meta::info type)
 ```
 :::
 
-Which then maybe feels like the correct spelling is actually more like this, so that we can actually properly infer all the informatino:
+Which then maybe feels like the correct spelling is actually more like this, so that we can actually properly infer all the information:
 
 ::: std
 ```cpp
@@ -1234,36 +1234,65 @@ consteval {
 ```
 :::
 
-This is where the ability of token sequences to be concatenated from purely sequences of tokens really gives us a lot of value. How do we forward the parameters along? We don't even have the parameter names here - the declaration that we're cloning might not even _have_ parameter names. But with the ability to just ask for the parameters themselves (which [@P3096R0] should provide), we can get reflections to those parameters, and we can splice those reflections:
+This is where the ability of token sequences to be concatenated from purely sequences of tokens really gives us a lot of value. How do we forward the parameters along? We don't even have the parameter names here - the declaration that we're cloning might not even _have_ parameter names.
+
+So there are two approaches that we can use here:
+
+### Reflections of Parameters
+
+We need the ability to just ask for the parameters themselves (which [@P3096R0] should provide). And then the goal here is to inject the tokens for the call:
 
 ::: std
 ```cpp
-consteval {
-    for (std::meta::info fun : /* public, non-special member functions */) {
-        auto argument_list = @tokens { };
-        bool first = true;
-        for (auto param : parameters_of(fun)) {
-            if (not first) {
-                argument_list += @tokens { , };
-            }
-            first = false;
-            argument_list += @tokens {
-                static_cast<[:$eval(type_of(param)):]&&>([: $eval(param) :])
-            };
-        }
-
-        inject(@tokens {
-            declare [: $eval(decl_of(fun)) :] {
-                std::println("Calling {}", $eval(name_of(fun)));
-                return impl.[: $eval(fun) :]( $eval(argument_list) );
-            }
-        });
-    }
-}
+return impl.[:fun:]([:p@~0~@:], [:p@~1~@:], ..., [:p@~n~@:])
 ```
 :::
 
-The `argument_list` is simply building up the token sequence `[: p0 :], [: p1 :], [: p2 :], ..., [: pN :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
+But the tricky part is that we can't ask for the parameters of the function we're cloning (i.e. `fun` in the loop above - which is a reflection of a non-static member function of `std::vector<T>`), we have to ask for the parameters of the function that we're *currently* defining. Which we haven't defined yet so we can't reflect on it.
+
+But we could split this in pieces and ask `inject` to give us back a reflection of what it injected, since `inject` must operate on full token boundaries.
+
+So that might be:
+
+::: std
+```cpp
+template <typename T>
+class LoggingVector {
+    std::vector<T> impl;
+
+public:
+    LoggingVector(std::vector<T> v) : impl(std::move(v)) { }
+
+    consteval {
+        for (std::meta::info fun : /* public, non-special member functions */) {
+            // note that this one doesn't even require a token sequence
+            auto log_fun = inject(decl_of(fun));
+
+            auto argument_list = @tokens { };
+            bool first = true;
+            for (auto param : parameters_of(log_fun)) { // <== NB, not fun
+                if (not first) {
+                    argument_list += @tokens { , };
+                }
+                first = false;
+                argument_list += @tokens {
+                    static_cast<[:$eval(type_of(param)):]&&>([: $eval(param) :])
+                };
+            }
+
+            inject(@tokens {
+                declare [: $eval(decl_of(fun)) :] {
+                    std::println("Calling {}", $eval(name_of(fun)));
+                    return impl.[: $eval(fun) :]( $eval(argument_list) );
+                }
+            });
+        }
+    }
+};
+```
+:::
+
+The `argument_list` is simply building up the token sequence `[: p@~0~@ :], [: p@~1~@ :], ..., [: p@~N~@ :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
 
 Once we have those tokens, we can concatenate this token sequence using the same `$eval()` quoting operator that we've used for other problems and we're done. Token sequences are just a sequence of tokens - so we simply need to be able to produce that sequence.
 
@@ -1294,10 +1323,12 @@ And then:
 ```cpp
 consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
+        auto log_fun = inject(decl_of(fun));
+
         inject(@tokens {
             declare [: $eval(decl_of(fun)) :] {
                 std::println("Calling {}", $eval(name_of(fun)));
-                return impl.[: $eval(fun) :]( $eval(forward_parameters(fun)) );
+                return impl.[: $eval(fun) :]( $eval(forward_parameters(log_fun)) );
             }
         });
     }
@@ -1305,11 +1336,54 @@ consteval {
 ```
 :::
 
-However, we've still got some work to do.
+### Introducing Parameter Names
+
+We said we have the problem that the functions we're cloning might not have parameter names. So what? We're creating a new function, we can pick our names!
+
+Perhaps that looks like an extra argument to `decl_of` that gives us a prefix for each parameter name. So `decl_of(fun, "p")` would give us parameter names of `p0`, `p1`, and so forth. That gives us a similar looking solution, but now we never need the reflection of the new function - just the old one:
+
+::: std
+```cpp
+template <typename T>
+class LoggingVector {
+    std::vector<T> impl;
+
+public:
+    LoggingVector(std::vector<T> v) : impl(std::move(v)) { }
+
+    consteval {
+        for (std::meta::info fun : /* public, non-special member functions */) {
+            auto argument_list = @tokens { };
+            for (size_t i = 0; i != parameters_of(fun).size(); ++i) {
+                if (i > 0) {
+                    argument_list += @tokens { , };
+                }
+
+                argument_list += @tokens {
+                    // we could get the nth parameter's type (we can't splice
+                    // the other function's parameters but we CAN query them)
+                    // or we could just write decltype(p0)
+                    static_cast<decltype($id("p", i))&&>($id("p", i))
+                };
+            }
+
+            inject(@tokens {
+                declare [: $eval(decl_of(fun, "p")) :] {
+                    std::println("Calling {}", $eval(name_of(fun)));
+                    return impl.[: $eval(fun) :]( $eval(argument_list) );
+                }
+            });
+        }
+    }
+};
+```
+:::
+
+This approach is arguably simpler.
 
 ## Logging Vector II: Cloning with Modifications
 
-The above implementation already gets us a great deal of functionality, and should create code that looks something like this:
+However, we've still got some work to do. The above implementation already gets us a great deal of functionality, and should create code that looks something like this:
 
 ::: std
 ```cpp

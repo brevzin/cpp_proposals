@@ -955,7 +955,7 @@ directly:</p>
 </div>
 <p>Which then maybe feels like the correct spelling is actually more
 like this, so that we can actually properly infer all the
-informatino:</p>
+information:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> property<span class="op">(</span>string_view name, meta<span class="op">::</span>info type<span class="op">)</span></span>
@@ -2120,38 +2120,68 @@ seemingly, very hard:</p>
 purely sequences of tokens really gives us a lot of value. How do we
 forward the parameters along? We don’t even have the parameter names
 here - the declaration that we’re cloning might not even <em>have</em>
-parameter names. But with the ability to just ask for the parameters
-themselves (which <span class="citation" data-cites="P3096R0">[<a href="https://wg21.link/p3096r0" role="doc-biblioref">P3096R0</a>]</span> should provide), we can get
-reflections to those parameters, and we can splice those
-reflections:</p>
+parameter names.</p>
+<p>So there are two approaches that we can use here:</p>
+<h3 data-number="3.4.1" id="reflections-of-parameters"><span class="header-section-number">3.4.1</span> Reflections of Parameters<a href="#reflections-of-parameters" class="self-link"></a></h3>
+<p>We need the ability to just ask for the parameters themselves (which
+<span class="citation" data-cites="P3096R0">[<a href="https://wg21.link/p3096r0" role="doc-biblioref">P3096R0</a>]</span> should provide). And then the
+goal here is to inject the tokens for the call:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> argument_list <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">bool</span> first <span class="op">=</span> <span class="kw">true</span>;</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> param <span class="op">:</span> parameters_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>                argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="op">}</span>;</span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>            first <span class="op">=</span> <span class="kw">false</span>;</span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>            argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
-<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>                <span class="kw">static_cast</span><span class="op">&lt;[:</span><span class="er">$</span>eval<span class="op">(</span>type_of<span class="op">(</span>param<span class="op">)):]&amp;&amp;&gt;([:</span> <span class="er">$</span>eval<span class="op">(</span>param<span class="op">)</span> <span class="op">:])</span></span>
-<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span>;</span>
-<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>        inject<span class="op">(@</span>tokens <span class="op">{</span></span>
-<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>            declare <span class="op">[:</span> <span class="er">$</span>eval<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">:]</span> <span class="op">{</span></span>
-<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="er">$</span>eval<span class="op">(</span>name_of<span class="op">(</span>fun<span class="op">)))</span>;</span>
-<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> impl<span class="op">.[:</span> <span class="er">$</span>eval<span class="op">(</span>fun<span class="op">)</span> <span class="op">:](</span> <span class="er">$</span>eval<span class="op">(</span>argument_list<span class="op">)</span> <span class="op">)</span>;</span>
-<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
-<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> impl<span class="op">.[:</span>fun<span class="op">:]([:</span>p<sub>0</sub><span class="op">:]</span>, <span class="op">[:</span>p<sub>1</sub><span class="op">:]</span>, <span class="op">...</span>, <span class="op">[:</span>p<sub>n</sub><span class="op">:])</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>But the tricky part is that we can’t ask for the parameters of the
+function we’re cloning (i.e. <code class="sourceCode cpp">fun</code> in
+the loop above - which is a reflection of a non-static member function
+of <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>),
+we have to ask for the parameters of the function that we’re
+<em>currently</em> defining. Which we haven’t defined yet so we can’t
+reflect on it.</p>
+<p>But we could split this in pieces and ask
+<code class="sourceCode cpp">inject</code> to give us back a reflection
+of what it injected, since <code class="sourceCode cpp">inject</code>
+must operate on full token boundaries.</p>
+<p>So that might be:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoggingVector <span class="op">{</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> impl;</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>    LoggingVector<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> v<span class="op">)</span> <span class="op">:</span> impl<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>v<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>            <span class="co">// note that this one doesn&#39;t even require a token sequence</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> log_fun <span class="op">=</span> inject<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span>;</span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> argument_list <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>            <span class="dt">bool</span> first <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> param <span class="op">:</span> parameters_of<span class="op">(</span>log_fun<span class="op">))</span> <span class="op">{</span> <span class="co">// &lt;== NB, not fun</span></span>
+<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a>                    argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="op">}</span>;</span>
+<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a>                first <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a>                argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb49-21"><a href="#cb49-21" aria-hidden="true" tabindex="-1"></a>                    <span class="kw">static_cast</span><span class="op">&lt;[:</span><span class="er">$</span>eval<span class="op">(</span>type_of<span class="op">(</span>param<span class="op">)):]&amp;&amp;&gt;([:</span> <span class="er">$</span>eval<span class="op">(</span>param<span class="op">)</span> <span class="op">:])</span></span>
+<span id="cb49-22"><a href="#cb49-22" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span>;</span>
+<span id="cb49-23"><a href="#cb49-23" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb49-24"><a href="#cb49-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-25"><a href="#cb49-25" aria-hidden="true" tabindex="-1"></a>            inject<span class="op">(@</span>tokens <span class="op">{</span></span>
+<span id="cb49-26"><a href="#cb49-26" aria-hidden="true" tabindex="-1"></a>                declare <span class="op">[:</span> <span class="er">$</span>eval<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">:]</span> <span class="op">{</span></span>
+<span id="cb49-27"><a href="#cb49-27" aria-hidden="true" tabindex="-1"></a>                    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="er">$</span>eval<span class="op">(</span>name_of<span class="op">(</span>fun<span class="op">)))</span>;</span>
+<span id="cb49-28"><a href="#cb49-28" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> impl<span class="op">.[:</span> <span class="er">$</span>eval<span class="op">(</span>fun<span class="op">)</span> <span class="op">:](</span> <span class="er">$</span>eval<span class="op">(</span>argument_list<span class="op">)</span> <span class="op">)</span>;</span>
+<span id="cb49-29"><a href="#cb49-29" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb49-30"><a href="#cb49-30" aria-hidden="true" tabindex="-1"></a>            <span class="op">})</span>;</span>
+<span id="cb49-31"><a href="#cb49-31" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb49-32"><a href="#cb49-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb49-33"><a href="#cb49-33" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The <code class="sourceCode cpp">argument_list</code> is simply
-building up the token sequence <code class="sourceCode cpp"><span class="op">[:</span> p0 <span class="op">:]</span>, <span class="op">[:</span> p1 <span class="op">:]</span>, <span class="op">[:</span> p2 <span class="op">:]</span>, <span class="op">...</span>, <span class="op">[:</span> pN <span class="op">:]</span></code>
+building up the token sequence <code class="sourceCode cpp"><span class="op">[:</span> p<sub>0</sub> <span class="op">:]</span>, <span class="op">[:</span> p<sub>1</sub> <span class="op">:]</span>, <span class="op">...</span>, <span class="op">[:</span> p<sub>N</sub> <span class="op">:]</span></code>
 for each parameter (except forwarded). There is no name lookup going on,
 no checking of fragment correctness. Just building up the right
 tokens.</p>
@@ -2167,69 +2197,118 @@ structure allows factoring out parameter-forwarding into its own
 function:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> forward_parameters<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> argument_list <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> first <span class="op">=</span> <span class="kw">true</span>;</span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> param <span class="op">:</span> parameters_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>            argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="op">}</span>;</span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>        first <span class="op">=</span> <span class="kw">false</span>;</span>
-<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>        argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
-<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">static_cast</span><span class="op">&lt;[:</span><span class="er">$</span>eval<span class="op">(</span>type_of<span class="op">(</span>param<span class="op">)):]&amp;&amp;&gt;([:</span> <span class="er">$</span>eval<span class="op">(</span>param<span class="op">)</span> <span class="op">:])</span></span>
-<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> argument_list;</span>
-<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> forward_parameters<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> argument_list <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> first <span class="op">=</span> <span class="kw">true</span>;</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> param <span class="op">:</span> parameters_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>            argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="op">}</span>;</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>        first <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>        argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">static_cast</span><span class="op">&lt;[:</span><span class="er">$</span>eval<span class="op">(</span>type_of<span class="op">(</span>param<span class="op">)):]&amp;&amp;&gt;([:</span> <span class="er">$</span>eval<span class="op">(</span>param<span class="op">)</span> <span class="op">:])</span></span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> argument_list;</span>
+<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>And then:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>        inject<span class="op">(@</span>tokens <span class="op">{</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>            declare <span class="op">[:</span> <span class="er">$</span>eval<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">:]</span> <span class="op">{</span></span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="er">$</span>eval<span class="op">(</span>name_of<span class="op">(</span>fun<span class="op">)))</span>;</span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> impl<span class="op">.[:</span> <span class="er">$</span>eval<span class="op">(</span>fun<span class="op">)</span> <span class="op">:](</span> <span class="er">$</span>eval<span class="op">(</span>forward_parameters<span class="op">(</span>fun<span class="op">))</span> <span class="op">)</span>;</span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
-<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> log_fun <span class="op">=</span> inject<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span>;</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>        inject<span class="op">(@</span>tokens <span class="op">{</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>            declare <span class="op">[:</span> <span class="er">$</span>eval<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">:]</span> <span class="op">{</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="er">$</span>eval<span class="op">(</span>name_of<span class="op">(</span>fun<span class="op">)))</span>;</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> impl<span class="op">.[:</span> <span class="er">$</span>eval<span class="op">(</span>fun<span class="op">)</span> <span class="op">:](</span> <span class="er">$</span>eval<span class="op">(</span>forward_parameters<span class="op">(</span>log_fun<span class="op">))</span> <span class="op">)</span>;</span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>However, we’ve still got some work to do.</p>
-<h2 data-number="3.5" id="logging-vector-ii-cloning-with-modifications"><span class="header-section-number">3.5</span> Logging Vector II: Cloning with
-Modifications<a href="#logging-vector-ii-cloning-with-modifications" class="self-link"></a></h2>
-<p>The above implementation already gets us a great deal of
-functionality, and should create code that looks something like
-this:</p>
+<h3 data-number="3.4.2" id="introducing-parameter-names"><span class="header-section-number">3.4.2</span> Introducing Parameter Names<a href="#introducing-parameter-names" class="self-link"></a></h3>
+<p>We said we have the problem that the functions we’re cloning might
+not have parameter names. So what? We’re creating a new function, we can
+pick our names!</p>
+<p>Perhaps that looks like an extra argument to
+<code class="sourceCode cpp">decl_of</code> that gives us a prefix for
+each parameter name. So <code class="sourceCode cpp">decl_of<span class="op">(</span>fun, <span class="st">&quot;p&quot;</span><span class="op">)</span></code>
+would give us parameter names of <code class="sourceCode cpp">p0</code>,
+<code class="sourceCode cpp">p1</code>, and so forth. That gives us a
+similar looking solution, but now we never need the reflection of the
+new function - just the old one:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoggingVector <span class="op">{</span></span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> impl;</span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>    LoggingVector<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> v<span class="op">)</span> <span class="op">:</span> impl<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>v<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> clear<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;clear&quot;</span><span class="op">)</span>;</span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>clear<span class="op">()</span>;</span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> push_back<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;push_back&quot;</span><span class="op">)</span>;</span>
-<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>push_back<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>T <span class="kw">const</span><span class="op">&amp;&gt;(</span>value<span class="op">))</span>;</span>
-<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> push_back<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;push_back&quot;</span><span class="op">)</span>;</span>
-<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>push_back<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">&amp;&amp;&gt;(</span>value<span class="op">))</span>;</span>
-<span id="cb51-21"><a href="#cb51-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb51-22"><a href="#cb51-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-23"><a href="#cb51-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
-<span id="cb51-24"><a href="#cb51-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoggingVector <span class="op">{</span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> impl;</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    LoggingVector<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> v<span class="op">)</span> <span class="op">:</span> impl<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>v<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> argument_list <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">!=</span> parameters_of<span class="op">(</span>fun<span class="op">).</span>size<span class="op">()</span>; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>i <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>                    argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="op">}</span>;</span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb52-15"><a href="#cb52-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-16"><a href="#cb52-16" aria-hidden="true" tabindex="-1"></a>                argument_list <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb52-17"><a href="#cb52-17" aria-hidden="true" tabindex="-1"></a>                    <span class="co">// we could get the nth parameter&#39;s type (we can&#39;t splice</span></span>
+<span id="cb52-18"><a href="#cb52-18" aria-hidden="true" tabindex="-1"></a>                    <span class="co">// the other function&#39;s parameters but we CAN query them)</span></span>
+<span id="cb52-19"><a href="#cb52-19" aria-hidden="true" tabindex="-1"></a>                    <span class="co">// or we could just write decltype(p0)</span></span>
+<span id="cb52-20"><a href="#cb52-20" aria-hidden="true" tabindex="-1"></a>                    <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><span class="er">$</span>id<span class="op">(</span><span class="st">&quot;p&quot;</span>, i<span class="op">))&amp;&amp;&gt;(</span><span class="er">$</span>id<span class="op">(</span><span class="st">&quot;p&quot;</span>, i<span class="op">))</span></span>
+<span id="cb52-21"><a href="#cb52-21" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span>;</span>
+<span id="cb52-22"><a href="#cb52-22" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb52-23"><a href="#cb52-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-24"><a href="#cb52-24" aria-hidden="true" tabindex="-1"></a>            inject<span class="op">(@</span>tokens <span class="op">{</span></span>
+<span id="cb52-25"><a href="#cb52-25" aria-hidden="true" tabindex="-1"></a>                declare <span class="op">[:</span> <span class="er">$</span>eval<span class="op">(</span>decl_of<span class="op">(</span>fun, <span class="st">&quot;p&quot;</span><span class="op">))</span> <span class="op">:]</span> <span class="op">{</span></span>
+<span id="cb52-26"><a href="#cb52-26" aria-hidden="true" tabindex="-1"></a>                    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="er">$</span>eval<span class="op">(</span>name_of<span class="op">(</span>fun<span class="op">)))</span>;</span>
+<span id="cb52-27"><a href="#cb52-27" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> impl<span class="op">.[:</span> <span class="er">$</span>eval<span class="op">(</span>fun<span class="op">)</span> <span class="op">:](</span> <span class="er">$</span>eval<span class="op">(</span>argument_list<span class="op">)</span> <span class="op">)</span>;</span>
+<span id="cb52-28"><a href="#cb52-28" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb52-29"><a href="#cb52-29" aria-hidden="true" tabindex="-1"></a>            <span class="op">})</span>;</span>
+<span id="cb52-30"><a href="#cb52-30" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb52-31"><a href="#cb52-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb52-32"><a href="#cb52-32" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>This approach is arguably simpler.</p>
+<h2 data-number="3.5" id="logging-vector-ii-cloning-with-modifications"><span class="header-section-number">3.5</span> Logging Vector II: Cloning with
+Modifications<a href="#logging-vector-ii-cloning-with-modifications" class="self-link"></a></h2>
+<p>However, we’ve still got some work to do. The above implementation
+already gets us a great deal of functionality, and should create code
+that looks something like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoggingVector <span class="op">{</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> impl;</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>    LoggingVector<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> v<span class="op">)</span> <span class="op">:</span> impl<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>v<span class="op">))</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> clear<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;clear&quot;</span><span class="op">)</span>;</span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>clear<span class="op">()</span>;</span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> push_back<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;push_back&quot;</span><span class="op">)</span>;</span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>push_back<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>T <span class="kw">const</span><span class="op">&amp;&gt;(</span>value<span class="op">))</span>;</span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> push_back<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb53-19"><a href="#cb53-19" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;push_back&quot;</span><span class="op">)</span>;</span>
+<span id="cb53-20"><a href="#cb53-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>push_back<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">&amp;&amp;&gt;(</span>value<span class="op">))</span>;</span>
+<span id="cb53-21"><a href="#cb53-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb53-22"><a href="#cb53-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-23"><a href="#cb53-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb53-24"><a href="#cb53-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>For a lot of <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="ch">&#39;</span></code>s
@@ -2238,20 +2317,20 @@ functions we’re emitting is member
 <code class="sourceCode cpp">swap</code>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb52"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoggingVector <span class="op">{</span></span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> impl;</span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
-<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> swap<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span><span class="op">(</span><span class="co">/* ... */</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;swap&quot;</span><span class="op">)</span>;</span>
-<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>swap<span class="op">(</span>other<span class="op">)</span>; <span class="co">// &lt;== omitting the cast here for readability</span></span>
-<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
-<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoggingVector <span class="op">{</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span> impl;</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> swap<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span><span class="op">(</span><span class="co">/* ... */</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;swap&quot;</span><span class="op">)</span>;</span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>swap<span class="op">(</span>other<span class="op">)</span>; <span class="co">// &lt;== omitting the cast here for readability</span></span>
+<span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>But this… isn’t right. Or rather, it could potentially be right in
@@ -2261,10 +2340,10 @@ we want it to be swappable with itself. What we actually want to do is
 emit this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> swap<span class="op">(</span>LoggingVector<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span><span class="op">(</span><span class="co">/* ... */</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;swap&quot;</span><span class="op">)</span>;</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>swap<span class="op">(</span>other<span class="op">.</span>impl<span class="op">)</span>;</span>
-<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> swap<span class="op">(</span>LoggingVector<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span><span class="op">(</span><span class="co">/* ... */</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Calling {}&quot;</span>, <span class="st">&quot;swap&quot;</span><span class="op">)</span>;</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">.</span>swap<span class="op">(</span>other<span class="op">.</span>impl<span class="op">)</span>;</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Two changes here: the parameter needs to change from <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;&amp;</span></code>
@@ -2302,24 +2381,24 @@ for a hygienic macro system <span class="citation" data-cites="P1221R1">[<a href
 implemented like this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> fwd<span class="op">(</span><span class="kw">using</span> <span class="kw">auto</span> x<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&amp;&amp;&gt;(</span>x<span class="op">)</span>;</span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> old_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&gt;(</span>x<span class="op">)</span>; <span class="op">}</span>;</span>
-<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd<span class="op">(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> fwd<span class="op">(</span><span class="kw">using</span> <span class="kw">auto</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&amp;&amp;&gt;(</span>x<span class="op">)</span>;</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> old_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&gt;(</span>x<span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd<span class="op">(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>With token sequences, we can achieve similar syntax:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(@</span>tokens x<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><span class="er">$</span>eval<span class="op">(</span>x<span class="op">))&amp;&amp;&gt;(</span><span class="er">$</span>eval<span class="op">(</span>x<span class="op">))</span>;</span>
-<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f2 <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd2<span class="op">!(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(@</span>tokens x<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span><span class="er">$</span>eval<span class="op">(</span>x<span class="op">))&amp;&amp;&gt;(</span><span class="er">$</span>eval<span class="op">(</span>x<span class="op">))</span>;</span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f2 <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd2<span class="op">!(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The logic here is that <code class="sourceCode cpp">fwd2<span class="op">!(</span>x<span class="op">)</span></code>
@@ -2342,28 +2421,28 @@ writing complex C preprocessor code.</p>
 <p>Consider a different example (borrowed from <a href="https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/">here</a>):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(@</span>tokens a,</span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>                         <span class="op">@</span>tokens b<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
-<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
-<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sa <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
-<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> va <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>a<span class="op">)</span>;</span>
-<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sb <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
-<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> vb <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>b<span class="op">)</span>;</span>
-<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
-<span id="cb56-13"><a href="#cb56-13" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
-<span id="cb56-14"><a href="#cb56-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
-<span id="cb56-15"><a href="#cb56-15" aria-hidden="true" tabindex="-1"></a>                    sa, va,</span>
-<span id="cb56-16"><a href="#cb56-16" aria-hidden="true" tabindex="-1"></a>                    sb, vb,</span>
-<span id="cb56-17"><a href="#cb56-17" aria-hidden="true" tabindex="-1"></a>                    <span class="er">$</span>eval<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
-<span id="cb56-18"><a href="#cb56-18" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
-<span id="cb56-19"><a href="#cb56-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb56-20"><a href="#cb56-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
-<span id="cb56-21"><a href="#cb56-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb56-22"><a href="#cb56-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(@</span>tokens a,</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>                         <span class="op">@</span>tokens b<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sa <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> va <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sb <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> vb <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>b<span class="op">)</span>;</span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>                    sa, va,</span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>                    sb, vb,</span>
+<span id="cb58-17"><a href="#cb58-17" aria-hidden="true" tabindex="-1"></a>                    <span class="er">$</span>eval<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
+<span id="cb58-18"><a href="#cb58-18" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb58-19"><a href="#cb58-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb58-20"><a href="#cb58-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb58-21"><a href="#cb58-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb58-22"><a href="#cb58-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>With the expectation that:</p>
@@ -2382,28 +2461,28 @@ writing complex C preprocessor code.</p>
 <tr class="odd">
 <td><div>
 
-<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>assert_eq<span class="op">!(</span><span class="dv">42</span>, factorial<span class="op">(</span><span class="dv">3</span><span class="op">))</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>assert_eq<span class="op">!(</span><span class="dv">42</span>, factorial<span class="op">(</span><span class="dv">3</span><span class="op">))</span>;</span></code></pre></div>
 
 </div></td>
 <td><div>
 
-<div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> sa <span class="op">=</span> <span class="st">&quot;42&quot;</span>;</span>
-<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> va <span class="op">=</span> <span class="dv">42</span>;</span>
-<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> sb <span class="op">=</span> <span class="st">&quot;factorial(3)&quot;</span>;</span>
-<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> vb <span class="op">=</span> factorial<span class="op">(</span><span class="dv">3</span><span class="op">)</span>;</span>
-<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span></span>
-<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>            stderr,</span>
-<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
-<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>            sa, va,</span>
-<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>            sb, vb,</span>
-<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">/* some source location */</span><span class="op">)</span>;</span>
-<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>abort<span class="op">()</span>;</span>
-<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb58-17"><a href="#cb58-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">while</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> sa <span class="op">=</span> <span class="st">&quot;42&quot;</span>;</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> va <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> sb <span class="op">=</span> <span class="st">&quot;factorial(3)&quot;</span>;</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> vb <span class="op">=</span> factorial<span class="op">(</span><span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>            stderr,</span>
+<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb60-12"><a href="#cb60-12" aria-hidden="true" tabindex="-1"></a>            sa, va,</span>
+<span id="cb60-13"><a href="#cb60-13" aria-hidden="true" tabindex="-1"></a>            sb, vb,</span>
+<span id="cb60-14"><a href="#cb60-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">/* some source location */</span><span class="op">)</span>;</span>
+<span id="cb60-15"><a href="#cb60-15" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb60-16"><a href="#cb60-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb60-17"><a href="#cb60-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">while</span><span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span></code></pre></div>
 
 </div></td>
 </tr>
@@ -2420,32 +2499,32 @@ formatting.</p>
 <p>We can write it as a library:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
-<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
-<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
-<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
-<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
-<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
-<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
-<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
-<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
-<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span><span class="er">$</span>eval<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
-<span id="cb59-18"><a href="#cb59-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb59-19"><a href="#cb59-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-20"><a href="#cb59-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb59-21"><a href="#cb59-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="er">$</span>eval<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
-<span id="cb59-22"><a href="#cb59-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb59-23"><a href="#cb59-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-24"><a href="#cb59-24" aria-hidden="true" tabindex="-1"></a>    tok <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">)</span> <span class="op">}</span>;</span>
-<span id="cb59-25"><a href="#cb59-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tok;</span>
-<span id="cb59-26"><a href="#cb59-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
+<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-14"><a href="#cb61-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb61-15"><a href="#cb61-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
+<span id="cb61-16"><a href="#cb61-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
+<span id="cb61-17"><a href="#cb61-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span><span class="er">$</span>eval<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
+<span id="cb61-18"><a href="#cb61-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb61-19"><a href="#cb61-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-20"><a href="#cb61-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb61-21"><a href="#cb61-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> , <span class="er">$</span>eval<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
+<span id="cb61-22"><a href="#cb61-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb61-23"><a href="#cb61-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-24"><a href="#cb61-24" aria-hidden="true" tabindex="-1"></a>    tok <span class="op">+=</span> <span class="op">@</span>tokens <span class="op">{</span> <span class="op">)</span> <span class="op">}</span>;</span>
+<span id="cb61-25"><a href="#cb61-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tok;</span>
+<span id="cb61-26"><a href="#cb61-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>In the previous example, we demonstrated the need for a way to
