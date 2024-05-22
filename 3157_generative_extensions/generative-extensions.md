@@ -37,61 +37,61 @@ The definitions of the proposed metafunctions are shown below. A subsection will
 ```cpp
 namespace std::meta {
   // inject a function definition given its reflection and body
-  consteval auto inject_function(info, info) -> void,
+  consteval auto inject_function(info, info) -> void;
   // inject a function definition given its reflection, parameter prefix, and body
-  consteval auto inject_function(info, string_view, info) -> void,
+  consteval auto inject_function(info, string_view, info) -> void;
   // create a new function declaration from tokens and return its reflection
-  consteval auto declare_function(info) -> info,
+  consteval auto declare_function(info) -> info;
   // present in P2996, applies to functions as well
-  consteval auto name_of(info) -> string_view,
+  consteval auto name_of(info) -> string_view;
   // change the name of the function
-  consteval auto set_name(info, string_viw) -> void,
+  consteval auto set_name(info, string_view) -> void;
   // present in P2996, applies to functions as well
-  consteval auto qualified_name_of(info) -> string_view,
+  consteval auto qualified_name_of(info) -> string_view;
   // change the qualfied name of the function
-  consteval auto set_qualified_name(info, string_viw) -> void,
+  consteval auto set_qualified_name(info, string_view) -> void;
   // get and set `static`
-  consteval auto is_static(info) -> bool,
-  consteval auto set_static(info, bool) -> void,
+  consteval auto is_static(info) -> bool;
+  consteval auto set_static(info, bool) -> void;
   // get and set `static`
-  consteval auto is_virtual(info) -> bool,
-  consteval auto set_virtual(info, bool) -> void,
+  consteval auto is_virtual(info) -> bool;
+  consteval auto set_virtual(info, bool) -> void;
   // get and set `static`
-  consteval auto is_override(info) -> bool,
-  consteval auto set_override(info, bool) -> void,
+  consteval auto is_override(info) -> bool;
+  consteval auto set_override(info, bool) -> void;
   // get and set `static`
-  consteval auto is_final(info) -> bool,
-  consteval auto set_final(info, bool) -> void,
+  consteval auto is_final(info) -> bool;
+  consteval auto set_final(info, bool) -> void;
   // "", "public", "protected", "private", or "friend"
-  consteval auto access(info) -> string_view,
-  consteval auto set_access(info, string_view) -> void,
+  consteval auto access(info) -> string_view;
+  consteval auto set_access(info, string_view) -> void;
   // "", "&", or "&&"
-  consteval auto ref_qualifier(info) -> string_view,
-  consteval auto set_ref_qualifier(info, string_view) -> void,
+  consteval auto ref_qualifier(info) -> string_view;
+  consteval auto set_ref_qualifier(info, string_view) -> void;
   // all user-defined attributes
-  consteval auto attributes(info) -> vector<string>,
-  consteval auto add_attribute(info, string_view) -> void,
-  consteval auto remove_attribute(info, string_view) -> void,
+  consteval auto attributes(info) -> vector<string>;
+  consteval auto add_attribute(info, string_view) -> void;
+  consteval auto remove_attribute(info, string_view) -> void;
   // true if the function is consteval
-  consteval auto is_consteval(info) -> bool,
-  consteval auto set_consteval(info, bool) -> void,
+  consteval auto is_consteval(info) -> bool;
+  consteval auto set_consteval(info, bool) -> void;
   // true if the function is constexpr
-  consteval auto is_constexpr(info) -> bool,
-  consteval auto set_constexpr(info, void) -> void,
+  consteval auto is_constexpr(info) -> bool;
+  consteval auto set_constexpr(info, bool) -> void;
   // true if explicit ctor or conversion operator
-  consteval auto is_explicit(info) -> bool,
-  consteval auto set_explicit(info, bool) -> void,
+  consteval auto is_explicit(info) -> bool;
+  consteval auto set_explicit(info, bool) -> void;
   // true if the function is inline
-  consteval auto is_inline(info) -> bool,
-  consteval auto set_inline(info, bool) -> void,
+  consteval auto is_inline(info) -> bool;
+  consteval auto set_inline(info, bool) -> void;
   // indicates whether the function is pure virtual
-  consteval auto is_pure(info) -> bool,
-  consteval auto set_pure(info, bool) -> void,
+  consteval auto is_pure(info) -> bool;
+  consteval auto set_pure(info, bool) -> void;
   // indicates whether the function is deleted
-  consteval auto is_deleted(info) -> bool,
-  consteval auto set_deleted(info) -> void,
+  consteval auto is_deleted(info) -> bool;
+  consteval auto set_deleted(info) -> void;
   // indicates whether the function is a default constructor or operator
-  consteval auto is_default(info) -> bool,
+  consteval auto is_default(info) -> bool;
   consteval auto set_default(info, bool) -> void;
 }
 ```
