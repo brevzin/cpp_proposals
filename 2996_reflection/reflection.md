@@ -42,6 +42,7 @@ Since [@P2996R2]:
 * added another overload to `reflect_invoke` to support template arguments
 * renamed all the type traits to start with `type_` to avoid name clashes. added more generalized `is_const`, `is_final`, and `is_volatile`
 * added `is_noexcept` and fixed `is_explicit` to only apply to member functions, not member function templates
+* added section on [handling text](#reflecting-source-text)
 * added a section discussing ODR concerns
 
 Since [@P2996R1], several changes to the overall library API:
@@ -235,7 +236,7 @@ typename[:^char:] c = '*';  // Same as: char c = '*';
 The `typename` prefix can be omitted in the same contexts as with dependent qualified names (i.e., in what the standard calls _type-only contexts_).
 For example:
 
-:::bq
+::: std
 ```c++
 using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typename" prefix.
 ```
@@ -248,7 +249,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/13anqE1Pa), [Clang](https://go
 
 Our second example enables selecting a member "by number" for a specific type:
 
-:::bq
+::: std
 ```c++
 struct S { unsigned i:2, j:6; };
 
@@ -276,7 +277,7 @@ This proposal includes a number of consteval "metafunctions" that enable the int
 Among those metafunctions is `std::meta::nonstatic_data_members_of` which returns a vector of reflection values that describe the nonstatic members of a given type.
 We could thus rewrite the above example as:
 
-:::bq
+::: std
 ```c++
 struct S { unsigned i:2, j:6; };
 
@@ -299,7 +300,7 @@ This proposal specifies that namespace `std::meta` is associated with the reflec
 Another frequently-useful metafunction is `std::meta::name_of`, which returns a `std::string_view` describing the unqualified name of an entity denoted by a given reflection value.
 With such a facility, we could conceivably access nonstatic data members "by string":
 
-:::bq
+::: std
 ```c++
 struct S { unsigned i:2, j:6; };
 
@@ -355,7 +356,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/4xz9Wsa8f), [Clang](https://go
 
 We can provide a better implementation of `make_integer_sequence` than a hand-rolled approach using regular template metaprogramming (although standard libraries today rely on an intrinsic for this):
 
-:::bq
+::: std
 ```c++
 #include <utility>
 #include <vector>
@@ -571,7 +572,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://go
 
 ## A Simple Tuple Type
 
-:::bq
+::: std
 ```c++
 #include <meta>
 
@@ -1537,7 +1538,7 @@ constexpr auto struct_to_tuple(T const& t) {
 
 A range splice, `[: ... r :]`, would accept as its argument a constant range of `meta::info`, `r`, and  would behave as an unexpanded pack of splices. So the above expression
 
-:::bq
+::: std
 ```c++
 make_tuple(t.[: ... members :]...)
 ```
@@ -1652,7 +1653,7 @@ Previous revisions of this proposal suggested limited support for reflections of
 
 The type `std::meta::info` is a _scalar_ type for which equality and inequality are meaningful, but for which no ordering relation is defined.
 
-:::bq
+::: std
 ```c++
 static_assert(^int == ^int);
 static_assert(^int != ^const int);
@@ -1670,7 +1671,7 @@ static_assert(^:: == parent_of(^::std));
 
 When the `^` operator is followed by an _id-expression_, the resulting `std::meta::info` reflects the entity named by the expression. Such reflections are equivalent only if they reflect the same entity.
 
-:::bq
+::: std
 ```c++
 int x;
 struct S { static int y; };
@@ -1682,7 +1683,7 @@ static_assert(^S::y == static_data_members_of(^S)[0]);
 
 For any other expression `expr`, the value `^expr` is a reflection of the _result_ of the expression. The expression is ill-formed if `expr` is a parenthesized expression.
 
-:::bq
+::: std
 ```c++
 constexpr int i = 42, j = 42;
 
@@ -1701,7 +1702,7 @@ static_assert(^i != ^42);  // A reflection of an entity is not the same as one o
 
 Nontype template arguments of type `std::meta::info` are permitted (and frequently useful!), but a specialized template whose argument reflects an entity local to a translation unit must itself necessarily have internal linkage. For example:
 
-:::bq
+::: std
 ```c++
 template<auto R> struct S {};
 
@@ -1717,7 +1718,7 @@ S<^y> sy;  // S<^y> has internal name linkage.
 
 The namespace `std::meta` is an associated type of `std::meta::info`, which allows standard library meta functions to be invoked without explicit qualification. For example:
 
-:::bq
+::: std
 ```c++
 #include <meta>
 struct S {};
@@ -1730,7 +1731,7 @@ Default constructing or value-initializing an object of type `std::meta::info` g
 A null reflection value is equal to any other null reflection value and is different from any other reflection that refers to one of the mentioned entities.
 For example:
 
-:::bq
+::: std
 ```c++
 #include <meta>
 struct S {};
@@ -1756,7 +1757,7 @@ For example, we provide a `define_class` metafunction that provides a definition
 Clearly, we want the effect of calling that metafunction to be "prompt" in a lexical-order sense.
 For example:
 
-:::bq
+::: std
 ```c++
 #include <meta>
 struct S;
@@ -1945,10 +1946,128 @@ This paper is proposing that:
 * Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
   This is `C` has its own template arguments that can be reflected on.
 
+
+### Reflecting source text
+
+One of the most "obvious" abilities of reflection --- retrieving the name of an entity --- turns out to raise
+issues that aren't obvious at all: How do we represent source text in a C++ program.
+
+Thanks to recent work originating in SG16 (the "Unicode" study group) we can assume that all source code is
+ultimately representable as Unicode code points.  C++ now also has types to represent UTF-8-encoded text
+(incl. `char8_t`, `u8string`, and `u8string_view`) and corresponding literals like `u8"Hi"`.  Unfortunately,
+what can be done with those types is still limited at the time of this writing.  For example,
+
+::: std
+```cpp
+#include <iostream>
+int main() {
+  std::cout << u8"こんにちは世界\n";
+}
+```
+:::
+
+is not standard C++ because the standard output stream does not have support for UTF-8 literals.
+
+In practice ordinary strings encoded in the "ordinary string literal encoding" (which may or may not be UTF-8)
+are often used.  We therefore need mechanisms to produce the corresponding ordinary string types as well.
+
+Orthogonal to the character representation is the data structure used to traffic in source text.  An
+implementation can easily have at least three potential representations of reflected source text:
+
+  a) the internal representation used, e.g., in the compiler front end's AST-like structures (persistent)
+
+  b) the representation of string literals in the AST (persistent)
+
+  c) the representation of array of character values during constant-evaluation (transient)
+
+(some compilers might share some of those representations).  For transient text during constant evaluation we'd
+like to use `string`/`u8string` values, but because of the limitations on non-transient allocation during
+constant evaluation we cannot easily transfer such types to the non-constant (i.e., run-time) environment.
+E.g., if `name_of` were a (consteval) metafunction returning a `std::string` value, the following simple
+example would not work:
+
+::: std
+```cpp
+#include <iostream>
+#include <meta>
+int main() {
+  int hello_world = 42;
+  std::cout << name_of(^hello_world) << "\n";  // Doesn't work if name_of produces a std::string.
+}
+```
+:::
+
+We can instead return a `std::string_view` or `std::u8string_view`, but that has the downside
+that it effectively makes all results of querying source text persistent for the compilation.
+
+For now, however, we propose that queries like `name_of` do produce "string view" results.
+For example:
+
+::: std
+```cpp
+template<typename T = std::u8string_view>
+  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+consteval T name_of(info);
+```
+:::
+
+(At the time of this writing, the implementations implement `name_of` as an ordinary function returning
+an ordinary `std::string_view`.)
+
+We could potentially extend that API to also allow string value types:
+
+::: std
+```cpp
+template<typename T = std::u8string_view>
+  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view) ||
+            ^T == dealias(^std::string) || ^T == dealias(^std::u8string))
+consteval T name_of(info);
+```
+:::
+
+
+An alternative strategy that we considered is the introduction of a "proxy type" for source text:
+
+::: std
+```cpp
+namespace std::meta {
+  struct source_text_info {
+    ...
+    template<typename T>
+      requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view) ||
+                ^T == dealias(^std::string) || ^T == dealias(^std::u8string))
+      consteval T as();
+    ...
+  };
+}
+```
+:::
+
+where the `as<...>()` member function produces a string-like type as desired.  That idea was dropped,
+however, because it became unwieldy in actual use cases.
+
+With a source text query like `name_of<std::string_view>(refl)` it is possible that the some source
+characters of the result are not representable.  We can then consider multiple options, including:
+
+  1) the query fails to evaluate,
+
+  2) any unrepresentable source characters are translated to a different presentation,
+     such as universal-character-names of the form `\u{ $hex-number$ }`,
+
+  3) any source characters not in the basic source character set are translated to a different
+     presentation (as in (2)).
+
+We propose #3 to strike a balance between usability and portability, specifically with the
+universal-character-names of the form `\u{ $hex-number$ }` as the alternative character presentation.
+
+We also propose that APIs that consume source text (currently, that is only done via `std::meta::data_member_options_t`) also accept such alternative presentations.
+
+
 ### Freestanding implementations
 
 Several important metafunctions, such as `std::meta::nonstatic_data_members_of`, return a `std::vector` value.
 Unfortunately, that means that they are currently not usable in a freestanding environment, but [@P3295R0] currently proposes freestanding `std::vector`, `std::string`, and `std::allocator` in constant evaluated contexts, explicitly to make the facilities proposed by this paper work in freestanding.
+
 
 ### Synopsis
 
@@ -1963,9 +2082,15 @@ namespace std::meta {
   concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
 
   // @[name and location](#name-loc)@
-  consteval auto name_of(info r) -> string_view;
-  consteval auto qualified_name_of(info r) -> string_view;
-  consteval auto display_name_of(info r) -> string_view;
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval auto name_of(info r) -> T;
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval auto qualified_name_of(info r) -> T;
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval auto display_name_of(info r) -> T;
   consteval auto source_location_of(info r) -> source_location;
 
   // @[type queries](#type_of-parent_of-dealias)@
@@ -2088,23 +2213,30 @@ namespace std::meta {
 
 ### `name_of`, `display_name_of`, `source_location_of` {#name-loc}
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
-  consteval auto name_of(info r) -> string_view;
-  consteval auto qualified_name_of(info r) -> string_view;
-  consteval auto display_name_of(info r) -> string_view;
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval auto name_of(info) -> T;
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval auto qualified_name_of(info) -> T;
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval auto display_name_of(info) -> T;
   consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
 
-Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of(r)` return a `string_view` holding the unqualified and qualified name of `X`, respectively.
-For all other reflections, an empty `string_view` is produced.
-For template instances, the name does not include the template argument list.
-The contents of the `string_view` consist of characters of the basic source character set only (an implementation can map other characters using universal character names).
+If a `string_view` is returned, its content consist of characters of the basic source character set only; other source text is rendered as universal character names of the form `\u{ simple-hexadecimal-digit-sequence }`).
 
-Given a reflection `r`, `display_name_of(r)` returns an unspecified non-empty `string_view`.
+Given a reflection `r` that designates a declared entity `X`, `name_of<S>(r)` and `qualified_name_of<S>(r)` return a string view of type `S` holding the unqualified and qualified name of `X`, respectively.
+For all other reflections, an empty string view is produced.
+For template instances, the name does not include the template argument list.
+
+Given a reflection `r`, `display_name_of(r)` returns an unspecified non-empty string view.
 Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
 
 Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
@@ -2112,7 +2244,7 @@ Implementations are encouraged to produce the correct source location of the ite
 
 ### `type_of`, `parent_of`, `dealias`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   consteval auto type_of(info r) -> info;
@@ -2191,7 +2323,7 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 
 ### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of` {#member-queries}
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   template<typename ...Fs>
@@ -2243,7 +2375,7 @@ Each variant named `accessible_meow_of` simply returns the result of `meow_of` f
 
 ### `substitute`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   template <reflection_range R = span<info const>>
@@ -2270,7 +2402,7 @@ This process might kick off instantiations outside the immediate context, which 
 
 Note that the template is only substituted, not instantiated.  For example:
 
-:::bq
+::: std
 ```c++
 template<typename T> struct S { typename T::X x; };
 
@@ -2284,7 +2416,7 @@ If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will
 
 ### `reflect_invoke`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   template <reflection_range R = span<info const>>
@@ -2305,7 +2437,7 @@ A few possible extensions for `reflect_invoke` have been discussed among the aut
 
 ### `reflect_result<T>`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   template<typename T> consteval auto reflect_result(T expr) -> info;
@@ -2321,7 +2453,7 @@ Otherwise, `reflect_result(expr)` produces a reflection of the result of `static
 
 ### `extract<T>`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   template<typename T> consteval auto extract(info) -> T;
@@ -2351,7 +2483,7 @@ Also unlike splicers, it requires knowledge of the type associated with the enti
 
 ### `test_type`, `test_types`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   consteval auto test_type(info templ, info type) -> bool {
@@ -2369,7 +2501,7 @@ namespace std::meta {
 This utility translates existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
 For example:
 
-:::bq
+::: std
 ```c++
 struct S {};
 static_assert(test_type(^std::is_class_v, ^S));
@@ -2381,7 +2513,7 @@ In fact, that is recommended practice.
 
 ### `data_member_spec`, `define_class`
 
-:::bq
+::: std
 ```c++
 namespace std::meta {
   struct data_member_options_t {
@@ -2441,7 +2573,7 @@ This allows implementing [variant](#a-simple-variant-type) without having to fur
 If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
 ### Data Layout Reflection
-:::bq
+::: std
 ```c++
 namespace std::meta {
   consteval auto offset_of(info entity) -> size_t;
@@ -2546,7 +2678,7 @@ Education and training are important to help C++ users avoid such sharp edges, b
 
 Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
-:::bq
+::: std
 
 [7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
 [ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.
@@ -2693,7 +2825,7 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 
 Add a production to the grammar for `$nested-name-specifier$` as follows:
 
-:::bq
+::: std
 ```diff
   $nested-name-specifier$:
       ::
@@ -2865,7 +2997,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 Add a new paragraph after the definition of _manifestly constant-evaluated_ [expr.const]{.sref}/20:
 
-:::bq
+::: std
 :::addu
 
 [21]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
@@ -3113,7 +3245,7 @@ Extend *template-argument-equivalent* to handle `std::meta::info`:
 
 Add to the list of never-type-dependent expression forms in [temp.dep.expr]{.sref}/4:
 
-:::bq
+::: std
 ```diff
      $literal$
      sizeof $unary-expression$
@@ -3133,7 +3265,7 @@ Add to the list of never-type-dependent expression forms in [temp.dep.expr]{.sre
 
 Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 
-:::bq
+::: std
 :::addu
 
 [9]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
@@ -3147,7 +3279,7 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 
 Add at the end of [temp.dep.constexpr]{.sref}/2 (before the note):
 
-:::bq
+::: std
 [2]{.pnum} An *id-expression* is value-dependent if:
 
 * [2.1]{.pnum} [...]
@@ -3168,7 +3300,7 @@ noexcept ( expression )
 
 Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
-:::bq
+::: std
 :::addu
 
 [6]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
@@ -3193,9 +3325,15 @@ namespace std::meta {
   using info = decltype(^::);
 
   // [meta.reflection.names], reflection names and locations
-  consteval string_view name_of(info r);
-  consteval string_view qualified_name_of(info r);
-  consteval string_view display_name_of(info r);
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval T name_of(info r);
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval T qualified_name_of(info r);
+  template<typename T = std::u8string_view>
+    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+    consteval T display_name_of(info r);
   consteval source_location source_location_of(info r);
 
   // [meta.reflection.queries], reflection queries
@@ -3439,14 +3577,20 @@ namespace std::meta {
 ::: std
 ::: addu
 ```cpp
-consteval string_view name_of(info r);
-consteval string_view qualified_name_of(info r);
+template<typename T = std::u8string_view>
+  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+  consteval T name_of(info r);
+template<typename T = std::u8string_view>
+  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+  consteval T qualified_name_of(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified and qualified names of `X`, respectively. Otherwise, an empty `string_view`.
+[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified and qualified names of `X`, respectively. Otherwise, an empty `string_view` or `u8string_view`.
 
 ```cpp
-consteval string_view display_name_of(info r);
+template<typename T = std::u8string_view>
+  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
+  consteval T display_name_of(info r);
 ```
 [#]{.pnum} *Returns*: An implementation-defined string suitable for identifying the reflected construct.
 
@@ -4206,6 +4350,16 @@ references:
         month: 04
         day: 29
     URL: https://wg21.link/p3096r1
+  - id: P3068R1
+    citation-label: P3068R1
+    title: "Allowing exception throwing in constant-evaluation"
+    author:
+      - family: Hana Dusíková
+    issued:
+      - year: 2024
+        month: 03
+        day: 18
+    URL: https://wg21.link/p3293r0
   - id: P3293R0
     citation-label: P3293R0
     title: "Splicing a base class subobject"

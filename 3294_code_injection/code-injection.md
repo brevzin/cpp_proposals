@@ -16,7 +16,7 @@ toc-depth: 2
 
 # Introduction
 
-This paper is proposing amending [@P2996R3] to add code injection in the form of token sequences.
+This paper is proposing augmenting [@P2996R3] to add code injection in the form of token sequences.
 
 We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic ([@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
 
@@ -1014,7 +1014,7 @@ static_assert(t1 == t2);
 ```
 :::
 
-Because tokens are handled after the the initial phase of preprocessing, macros and string concatenation can apply - but only within a single token sequence:
+Because tokens are handled after the the initial phase of preprocessing, macros and string concatenation can apply - but you have to be careful with macros because they won't work the way you might want
 
 ::: std
 ```cpp
@@ -1027,9 +1027,22 @@ static_assert(@tokens { "abc" } + @tokens { "def" } != @tokens { "abcdef" });
 #define PLUS_ONE(x) ((x) + 1)
 static_assert(@tokens { PLUS_ONE(x) } == @tokens { ((x) + 1) });
 
-// the macro PLUS_ONE is not invoked because
-// token string concatenation happens after the preprocessor
+// amusingly this version also still works but not for the reason you think
+// on the left-hand-side the macro PLUS_ONE is still invoked...
+// but as PLUS_ONE(x} +@tokens{)
+// which produces ((x} +@tokens{) + 1)
+// which leads to @tokens { ((x } + @tokens{) + 1) }
+// which is @tokens{ ((x) + 1)}
 static_assert(@tokens { PLUS_ONE(x } + @tokens{ ) } == @tokens { PLUS_ONE(x) });
+
+// But this one finally fails, because the macro isn't actually invoked
+constexpr auto tok2 = []{
+    auto t = @tokens { PLUS_ONE(x };
+    constexpr_print_str("Logging...\n");
+    t += @tokens{ ) }
+    return t;
+}();
+static_assert(tok2 != @tokens { PLUS_ONE(x) });
 ```
 :::
 
@@ -1359,9 +1372,7 @@ But this... isn't right. Or rather, it could potentially be right in some design
 ```
 :::
 
-Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that?
-
-TODO
+Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that? We don't quite have a good answer yet. But this is much farther than we've come with any other design.
 
 # Hygienic Macros
 
