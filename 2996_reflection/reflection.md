@@ -2348,11 +2348,7 @@ namespace std::meta {
     return members_of(type_class, is_nonstatic_data_member);
   }
 
-  consteval auto subobjects_of(info type_class) -> vector<info> {
-    auto subobjects = bases_of(type_class);
-    subobjects.append_range(nonstatic_data_members_of(type_class));
-    return subobjects;
-  }
+  consteval auto subobjects_of(info type_class) -> vector<info>;
 
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 
@@ -2377,6 +2373,11 @@ E.g., `members_of(^C, std::meta::type_is)` will only return types nested in the 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
+
+`subobjects_of` returns the reflections of the [subobjects](https://eel.is/c++draft/intro.object#def:subobject) of the type
+
+* for a class type, the reflections of the direct base class subobjects followed by the non-static data members, in declaration order.
+* for an array type, the reflections of the elements of the array, in sequence [This part isn't implemented yet.]{.ednote}
 
 Each variant named `accessible_meow_of` simply returns the result of `meow_of` filtered on `is_accessible`. Note that this might change to be `is_accessible_from(e, context)` rather than simply `is_accessible(e)`.
 
@@ -3968,9 +3969,9 @@ consteval vector<info> accessible_nonstatic_data_members_of(info type);
 consteval vector<info> subobjects_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type or array type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
+[#]{.pnum} *Returns*: If `type` designates a class type, then a `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`. Otherwise (if `type` designates an array type), a `vector` containing a reflection of each array element in sequence.
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -3978,9 +3979,9 @@ consteval vector<info> subobjects_of(info type);
 consteval vector<info> accessible_subobjects_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type or array type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
+[#]{.pnum} *Returns*: If `type` designates a class type, then a `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`. Otherwise (if `type` designates an array type), a `vector` contaning a reflection of each array element in sequence.
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
