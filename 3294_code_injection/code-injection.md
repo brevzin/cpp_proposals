@@ -1645,6 +1645,26 @@ Using one of the arrows for the macro use-case is weird, so one option might be 
 
 Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
 
+# Proposal
+
+We propose a code injection mechanism using token sequences.
+
+The fragment model initially introduced in [@P1717R0] is great for allowing writing code-to-be-injected to actually look like regular C++ code, which has the benefit of being both familiar and being already recognizable to tools like syntax highlighters. But the early checking adds complexity to the model and the implementation which makes it harder to use and limits its usefulness. Hence, we propose raw token sequences that are unparsed until the point of injection.
+
+This proposal consists of several pieces:
+
+* a mechanism to introduce a token sequence (in this paper `@tokens { $balanced-brace-tokens$ }`)
+* two interpolators to add outside context to a token sequence, one for identifiers (`$id`) and one for values (`$eval`)
+* a new disambiguator for splicing a declaration (`declare [: fun :]`)
+* a new metafunction to inject a token sequence (`std::meta::inject`)
+* new metaprogramming facilities for dealing with token sequences:
+    * concatenation
+    * converting a string to a token sequence and a token sequence to a string
+    * splitting a token sequence into a range of tokens
+* hygienic macros would benefit syntactically from:
+    * a mechanism to accept a tokens sequence as a function parameter
+    * a mechanism to inject a token sequence directly as returned by a function (trailing `!`)
+
 ---
 references:
   - id: P2996R3
