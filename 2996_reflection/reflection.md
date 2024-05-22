@@ -2380,6 +2380,8 @@ The template `bases_of` returns the direct base classes of the class type repres
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
+`subobjects_of` returns the base class subobjects and the non-static data members of a type, in declaration order. Note that the term [subobject](https://eel.is/c++draft/intro.object#def:subobject) also includes _array elements_, which we are excluding here. Such reflections would currently be of minimal use since you could not splice them with access (e.g. `arr.[:elem:]` is not supported), so would need some more thought first.
+
 Each variant named `accessible_meow_of` simply returns the result of `meow_of` filtered on `is_accessible`. Note that this might change to be `is_accessible_from(e, context)` rather than simply `is_accessible(e)`.
 
 
