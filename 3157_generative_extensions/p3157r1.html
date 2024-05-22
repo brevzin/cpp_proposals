@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-04-14" />
+  <meta name="dcterms.date" content="2024-05-22" />
   <title>Generative Extensions for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -490,7 +490,7 @@ margin: 5em;
 :root {
 --diff-ins: #C9FBC9;
 --diff-strongins: #acf2bd;
---diff-del: #ffdddd;
+--diff-del: #FFC8EB;
 --diff-strongdel: #ff8888;
 }
 span.diffins {
@@ -539,7 +539,7 @@ border: 1px solid #B3EBB3;
 }
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
 div.std blockquote del { text-decoration: line-through;
-color: #000000; background-color: #FFC8EB;
+color: #000000; background-color: var(--diff-del);
 border: none; }
 code del { border: 1px solid #ECB3C7; }
 </style>
@@ -561,7 +561,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-04-14</td>
+    <td>2024-05-22</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -589,34 +589,70 @@ Reflection</h1>
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#adding-function-definitions-to-classes" id="toc-adding-function-definitions-to-classes"><span class="toc-section-number">2</span> Adding function definitions to
-classes<span></span></a></li>
-<li><a href="#proxy-classes-and-instrumented-classes" id="toc-proxy-classes-and-instrumented-classes"><span class="toc-section-number">3</span> Proxy classes and instrumented
-classes<span></span></a></li>
-<li><a href="#closure-reflection" id="toc-closure-reflection"><span class="toc-section-number">4</span> Closure
-reflection<span></span></a></li>
-<li><a href="#stdrepresentation_oft" id="toc-stdrepresentation_oft"><span class="toc-section-number">5</span>
-<code class="sourceCode cpp">std<span class="op">::</span>representation_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code><span></span></a></li>
-<li><a href="#embedded-domain-specific-languages" id="toc-embedded-domain-specific-languages"><span class="toc-section-number">6</span> Embedded Domain Specific
+<li><a href="#function-descriptor-metafunctions" id="toc-function-descriptor-metafunctions"><span class="toc-section-number">2</span> Function Descriptor
+Metafunctions<span></span></a>
+<ul>
+<li><a href="#inject_function" id="toc-inject_function"><span class="toc-section-number">2.1</span>
+<code class="sourceCode cpp">inject_function</code><span></span></a></li>
+<li><a href="#declare_function" id="toc-declare_function"><span class="toc-section-number">2.2</span>
+<code class="sourceCode cpp">declare_function</code><span></span></a></li>
+<li><a href="#set_name" id="toc-set_name"><span class="toc-section-number">2.3</span>
+<code class="sourceCode cpp">set_name</code><span></span></a></li>
+<li><a href="#set_qualified_name" id="toc-set_qualified_name"><span class="toc-section-number">2.4</span>
+<code class="sourceCode cpp">set_qualified_name</code><span></span></a></li>
+<li><a href="#access-set_access" id="toc-access-set_access"><span class="toc-section-number">2.5</span>
+<code class="sourceCode cpp">access</code>,
+<code class="sourceCode cpp">set_access</code><span></span></a></li>
+<li><a href="#ref_qualifier-set_ref_qualifier" id="toc-ref_qualifier-set_ref_qualifier"><span class="toc-section-number">2.6</span>
+<code class="sourceCode cpp">ref_qualifier</code>,
+<code class="sourceCode cpp">set_ref_qualifier</code><span></span></a></li>
+<li><a href="#is_static-set_static-is_virtual-set_virtual-is_override-set_override-is_final-set_final-is_consteval-set_consteval-is_constexpr-set_constexpr-is_explicit-set_explicit-is_inline-set_inline-is_pure-set_pure-is_deleted-set_deleted-is_default-set_default" id="toc-is_static-set_static-is_virtual-set_virtual-is_override-set_override-is_final-set_final-is_consteval-set_consteval-is_constexpr-set_constexpr-is_explicit-set_explicit-is_inline-set_inline-is_pure-set_pure-is_deleted-set_deleted-is_default-set_default"><span class="toc-section-number">2.7</span>
+<code class="sourceCode cpp">is_static</code>,
+<code class="sourceCode cpp">set_static</code>,
+<code class="sourceCode cpp">is_virtual</code>,
+<code class="sourceCode cpp">set_virtual</code>,
+<code class="sourceCode cpp">is_override</code>,
+<code class="sourceCode cpp">set_override</code>,
+<code class="sourceCode cpp">is_final</code>,
+<code class="sourceCode cpp">set_final</code>,
+<code class="sourceCode cpp">is_consteval</code>,
+<code class="sourceCode cpp">set_consteval</code>,
+<code class="sourceCode cpp">is_constexpr</code>,
+<code class="sourceCode cpp">set_constexpr</code>,
+<code class="sourceCode cpp">is_explicit</code>,
+<code class="sourceCode cpp">set_explicit</code>,
+<code class="sourceCode cpp">is_inline</code>,
+<code class="sourceCode cpp">set_inline</code>,
+<code class="sourceCode cpp">is_pure</code>
+<code class="sourceCode cpp">set_pure</code>,
+<code class="sourceCode cpp">is_deleted</code>,
+<code class="sourceCode cpp">set_deleted</code>,
+<code class="sourceCode cpp">is_default</code>,
+<code class="sourceCode cpp">set_default</code><span></span></a></li>
+</ul></li>
+<li><a href="#proxy-classes-and-instrumented-classes" id="toc-proxy-classes-and-instrumented-classes"><span class="toc-section-number">3</span> Proxy Classes and Instrumented
+Classes<span></span></a></li>
+<li><a href="#embedded-domain-specific-languages" id="toc-embedded-domain-specific-languages"><span class="toc-section-number">4</span> Embedded Domain Specific
 Languages<span></span></a></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Since the recent implementation of the reflection facilities proposed
-in <span class="citation" data-cites="P2996R2">[<a href="https://wg21.link/p2996r2" role="doc-biblioref">P2996R2</a>]</span>, we explored how the proposal
+in <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span>, we explored how the proposal
 would help fundamental challenges we are facing today. We believe
 reflection has great potential to solve important problems that we and
 the C++ community at large both face, and that a few specific
 enhancements on top of P2996 would help realize that potential. Based on
-our initial experience, this document sketches a few specific extensions
-built on the foundation of P2996 that we think will help C++ reflection
-have a stronger and more timely positive impact on the state of affairs
-in the C++ language. We anticipate that C++ reflection, if sufficiently
-powerful, could dramatically reduce costs of developing and maintaining
-C++ code while at the same time improving code size, readability,
-compilation time, and execution speed.</p>
+our initial experience, this document (and its companions <span class="citation" data-cites="P3294R0">[<a href="https://wg21.link/p3294r0" role="doc-biblioref">P3294R0</a>]</span> and <span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span>) builds function synthesis
+capability on the foundation of P2996 that we think will help C++
+reflection have a stronger and more timely positive impact on the state
+of affairs in the C++ language. We anticipate that C++ reflection, if
+sufficiently powerful, could dramatically reduce costs of developing and
+maintaining C++ code while at the same time improving code size,
+readability, compilation time, and execution speed. We expect to have a
+proof-of-concept implementation of our design available shortly.</p>
 <p>C++ code from a variety of domains naturally leads to boilerplate.
 Proxy classes are commonplace, whether to interface different codebases
 or as an organic part of design. The guideline <a href="https://en.wikipedia.org/wiki/Composition_over_inheritance">“prefer
@@ -632,16 +668,269 @@ patterns for a variety of size, stride, and type combinations. All of
 these instances feature enough irregularities and variations to make
 existing template metaprogramming techniques difficult to deploy, and if
 deployed, difficult to understand and maintain.</p>
-<p>The following sections define use cases of reflection metaprogramming
-that guide the upcoming design and implementation. We consider strong
-use cases essential to setting goals for reflective metaprogramming. To
-be compelling, use cases must demonstrate meaningful, desirable
-functionality (albeit in a simplistic, proof-of-concept style) that is
-impossible or prohibitively difficult within the current C++.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="adding-function-definitions-to-classes"><span class="header-section-number">2</span> Adding function definitions to
-classes<a href="#adding-function-definitions-to-classes" class="self-link"></a></h1>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proxy-classes-and-instrumented-classes"><span class="header-section-number">3</span> Proxy classes and instrumented
-classes<a href="#proxy-classes-and-instrumented-classes" class="self-link"></a></h1>
+<p>The rest of this paper is structured as follows. Section “Function
+Descriptor Metafunctions” proposes a design for manipulating the
+reflection of functions, with an emphasis on generation capabilities.
+These capabilities—in conjunction with P2996, P3294, P3289, and <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3096r0.pdf">P3096</a>—provide
+a mechanism for querying and synthesizing function definitions in a
+powerful and flexible manner that makes reflection-based code simple and
+intuitive. Section “Proxy Classes and Instrumented Classes” defines
+essential use cases of reflection metaprogramming that motivate and
+inform the design and implementation of function synthesis. We consider
+strong use cases essential to setting goals for reflective
+metaprogramming. To be compelling, use cases must demonstrate
+meaningful, desirable functionality (albeit in a simplistic,
+proof-of-concept style) that is impossible or prohibitively difficult
+within the current C++. Section “Embedded Domain Specific Languages” is
+even more forward-looking, setting up the long-range trajectory of our
+proposal.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="function-descriptor-metafunctions"><span class="header-section-number">2</span> Function Descriptor
+Metafunctions<a href="#function-descriptor-metafunctions" class="self-link"></a></h1>
+<p>This proposal is a companion to <a href="https://brevzin.github.io/cpp_proposals/3294_code_injection/p3294r0.html">P3294</a>
+and meant to complement and work in conjunction with it. P3294 uses
+<code class="sourceCode cpp">decl_of<span class="op">(</span>info<span class="op">)</span></code>
+(where <code class="sourceCode cpp">info</code> is the reflection of a
+function) as a key mechanism to expand reflections of existing functions
+into declarations, to which user code can subsequently attach
+definitions. This proposal focuses on creating and manipulating
+reflections of functions, to be later used with <code class="sourceCode cpp">decl_of<span class="op">(</span>info<span class="op">)</span></code>
+as per P3294.</p>
+<p>Given an existing function, we propose a number of <em>function
+descriptor metafunctions</em> that allow querying all aspects of it.
+Similar functions can be used to synthesize new functions.</p>
+<p>Given a function declaration <code class="sourceCode cpp">f</code>,
+its reflection
+<code class="sourceCode cpp"><span class="op">^</span>f</code> is a
+mutable object that can be subsequently modified. That does not affect
+the initial declaration in any way, but can be used to generate new
+declarations and definitions. Using
+<code class="sourceCode cpp"><span class="op">^</span>f</code> once
+again returns a new copy of its reflection, so there is no loss of
+information.</p>
+<p>The definitions of the proposed metafunctions are shown below. A
+subsection will be dedicated to describing each.</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// inject a function definition given its reflection and body</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> inject_function<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// inject a function definition given its reflection, parameter prefix, and body</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> inject_function<span class="op">(</span>info, string_view, info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">// create a new function declaration from tokens and return its reflection</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> declare_function<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// present in P2996, applies to functions as well</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> name_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> string_view,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// change the name of the function</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_name<span class="op">(</span>info, string_viw<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">// present in P2996, applies to functions as well</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> qualified_name_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> string_view,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">// change the qualfied name of the function</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_qualified_name<span class="op">(</span>info, string_viw<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">// get and set `static`</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_static<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_static<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">// get and set `static`</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_virtual<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_virtual<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="co">// get and set `static`</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_override<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_override<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="co">// get and set `static`</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_final<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_final<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="co">// &quot;&quot;, &quot;public&quot;, &quot;protected&quot;, &quot;private&quot;, or &quot;friend&quot;</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> access<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> string_view,</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_access<span class="op">(</span>info, string_view<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="co">// &quot;&quot;, &quot;&amp;&quot;, or &quot;&amp;&amp;&quot;</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> ref_qualifier<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> string_view,</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_ref_qualifier<span class="op">(</span>info, string_view<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>  <span class="co">// all user-defined attributes</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> attributes<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>string<span class="op">&gt;</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> add_attribute<span class="op">(</span>info, string_view<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> remove_attribute<span class="op">(</span>info, string_view<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>  <span class="co">// true if the function is consteval</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_consteval<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_consteval<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>  <span class="co">// true if the function is constexpr</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_constexpr<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_constexpr<span class="op">(</span>info, <span class="dt">void</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>  <span class="co">// true if explicit ctor or conversion operator</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_explicit<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_explicit<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>  <span class="co">// true if the function is inline</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_inline<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_inline<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>  <span class="co">// indicates whether the function is pure virtual</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_pure<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_pure<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>  <span class="co">// indicates whether the function is deleted</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_deleted<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_deleted<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>,</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>  <span class="co">// indicates whether the function is a default constructor or operator</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_default<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>,</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> set_default<span class="op">(</span>info, <span class="dt">bool</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="2.1" id="inject_function"><span class="header-section-number">2.1</span>
+<code class="sourceCode cpp">inject_function</code><a href="#inject_function" class="self-link"></a></h2>
+<p>These metafunctions inject a new function definition given the
+reflection of a function declaration and tokens for the function body.
+The optional <code class="sourceCode cpp">string_view</code> parameter
+provides a prefix for function parameters; by default, parameters are
+<code class="sourceCode cpp">_0</code>,
+<code class="sourceCode cpp">_1</code>,
+<code class="sourceCode cpp">_2</code> etc. For example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> fun<span class="op">(</span><span class="dt">double</span>, std<span class="op">::</span>string<span class="op">)</span>;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span>  <span class="co">// see P3289R0, &quot;Consteval Blocks&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// for @tokens see P3294, &quot;Code Injection with Token Sequences&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  inject_function<span class="op">(^</span>fun, <span class="op">@</span>tokens<span class="op">{</span> <span class="cf">return</span> _0 <span class="op">+</span> _1<span class="op">.</span>size<span class="op">()</span>; <span class="op">})</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent hand-written definition:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// double fun(double _1, std::string _2) { return _1 + _2.size(); }</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>If a prefix is specified, it will replace the leading underscore in
+parameter names. For example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> fun<span class="op">(</span><span class="dt">double</span>, std<span class="op">::</span>string<span class="op">)</span>;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  inject_function<span class="op">(^</span>fun, <span class="st">&quot;p&quot;</span>, <span class="op">@</span>tokens<span class="op">{</span> <span class="cf">return</span> p0 <span class="op">+</span> p1<span class="op">.</span>size<span class="op">()</span>; <span class="op">})</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="2.2" id="declare_function"><span class="header-section-number">2.2</span>
+<code class="sourceCode cpp">declare_function</code><a href="#declare_function" class="self-link"></a></h2>
+<p>This metafunction creates a new function declaration from tokens and
+returns the reflection of that declaration. For example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span>  <span class="co">// see P3289R0, &quot;Consteval Blocks&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> r <span class="op">=</span> declare_function<span class="op">(@</span>tokens<span class="op">{</span> <span class="dt">void</span> my_function<span class="op">(</span><span class="dt">double</span><span class="op">)</span>; <span class="op">})</span>;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// see P3294, &quot;Code Injection with Token Sequences&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  inject_function<span class="op">(</span>r, <span class="op">@</span>tokens<span class="op">{</span> std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Hello, world!</span><span class="sc">\n</span><span class="st">&quot;</span>; <span class="op">})</span>;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The code above simply defines (albeit in an alembicated manner) the
+following function:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> my_function<span class="op">(</span><span class="dt">double</span> _1<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Hello, world!</span><span class="sc">\n</span><span class="st">&quot;</span>;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The advantage of using reflection is, of course, when there’s a need
+to manipulate some elements of the function’s definition prior to
+injection.</p>
+<h2 data-number="2.3" id="set_name"><span class="header-section-number">2.3</span>
+<code class="sourceCode cpp">set_name</code><a href="#set_name" class="self-link"></a></h2>
+<p>This metafunction allows setting the name of a function’s reflection,
+allowing user code to generate functions identical or similar in
+signature with existing functions. Example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f<span class="op">()</span> <span class="kw">noexcept</span>;</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^</span>f;</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  set_name<span class="op">(</span>r, <span class="st">&quot;g&quot;</span><span class="op">)</span>;</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  inject_function<span class="op">(</span>r, <span class="op">@</span>tokens<span class="op">{</span> <span class="cf">return</span> f<span class="op">()</span>; <span class="op">})</span>;</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent to:</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">// int g() noexcept { return f(); }</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Note how the signature including the
+<code class="sourceCode cpp"><span class="kw">noexcept</span></code>
+attribute gets carried from <code class="sourceCode cpp">f</code> to
+<code class="sourceCode cpp">g</code>.</p>
+<h2 data-number="2.4" id="set_qualified_name"><span class="header-section-number">2.4</span>
+<code class="sourceCode cpp">set_qualified_name</code><a href="#set_qualified_name" class="self-link"></a></h2>
+<p>Works similarly to <code class="sourceCode cpp">set_name</code>, but
+accepts a fully qualified name, which allows creating declarations and
+definitions outside the current namespace. This works per the existing
+language rules, i.e. the current scope must enclose the scope in which
+the function is injcted.</p>
+<h2 data-number="2.5" id="access-set_access"><span class="header-section-number">2.5</span>
+<code class="sourceCode cpp">access</code>,
+<code class="sourceCode cpp">set_access</code><a href="#access-set_access" class="self-link"></a></h2>
+<p>The <code class="sourceCode cpp">access</code> metafunction returns
+the access level of the given reflection as one of the empty <code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
+<code class="sourceCode cpp"><span class="st">&quot;public&quot;</span></code>,
+<code class="sourceCode cpp"><span class="st">&quot;protected&quot;</span></code>,
+<code class="sourceCode cpp"><span class="st">&quot;private&quot;</span></code>,
+or <code class="sourceCode cpp"><span class="st">&quot;friend&quot;</span></code>.
+If not applicable (e.g. top-level declaration), the empty
+<code class="sourceCode cpp">string_view</code> is returned. The setter
+metafunction <code class="sourceCode cpp">set_access</code> must be
+called with a <code class="sourceCode cpp">string_view</code> in the
+same set and forces the access level for the given reflection
+object.</p>
+<h2 data-number="2.6" id="ref_qualifier-set_ref_qualifier"><span class="header-section-number">2.6</span>
+<code class="sourceCode cpp">ref_qualifier</code>,
+<code class="sourceCode cpp">set_ref_qualifier</code><a href="#ref_qualifier-set_ref_qualifier" class="self-link"></a></h2>
+<p>The <code class="sourceCode cpp">ref_qualifier</code> metafunction
+returns the access level of the given reflection as one of the empty
+<code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
+<code class="sourceCode cpp"><span class="st">&quot;&amp;&quot;</span></code>,
+or <code class="sourceCode cpp"><span class="st">&quot;&amp;&amp;&quot;</span></code>.
+If not applicable (e.g. top-level declaration), the empty
+<code class="sourceCode cpp">string_view</code> is returned. The setter
+metafunction <code class="sourceCode cpp">set_ref_qualifier</code> must
+be called with a <code class="sourceCode cpp">string_view</code> in the
+same set and forces the access level for the given reflection
+object.</p>
+<h2 data-number="2.7" id="is_static-set_static-is_virtual-set_virtual-is_override-set_override-is_final-set_final-is_consteval-set_consteval-is_constexpr-set_constexpr-is_explicit-set_explicit-is_inline-set_inline-is_pure-set_pure-is_deleted-set_deleted-is_default-set_default"><span class="header-section-number">2.7</span>
+<code class="sourceCode cpp">is_static</code>,
+<code class="sourceCode cpp">set_static</code>,
+<code class="sourceCode cpp">is_virtual</code>,
+<code class="sourceCode cpp">set_virtual</code>,
+<code class="sourceCode cpp">is_override</code>,
+<code class="sourceCode cpp">set_override</code>,
+<code class="sourceCode cpp">is_final</code>,
+<code class="sourceCode cpp">set_final</code>,
+<code class="sourceCode cpp">is_consteval</code>,
+<code class="sourceCode cpp">set_consteval</code>,
+<code class="sourceCode cpp">is_constexpr</code>,
+<code class="sourceCode cpp">set_constexpr</code>,
+<code class="sourceCode cpp">is_explicit</code>,
+<code class="sourceCode cpp">set_explicit</code>,
+<code class="sourceCode cpp">is_inline</code>,
+<code class="sourceCode cpp">set_inline</code>,
+<code class="sourceCode cpp">is_pure</code>
+<code class="sourceCode cpp">set_pure</code>,
+<code class="sourceCode cpp">is_deleted</code>,
+<code class="sourceCode cpp">set_deleted</code>,
+<code class="sourceCode cpp">is_default</code>,
+<code class="sourceCode cpp">set_default</code><a href="#is_static-set_static-is_virtual-set_virtual-is_override-set_override-is_final-set_final-is_consteval-set_consteval-is_constexpr-set_constexpr-is_explicit-set_explicit-is_inline-set_inline-is_pure-set_pure-is_deleted-set_deleted-is_default-set_default" class="self-link"></a></h2>
+<p>These get/set metafunctions retrieve and set the respective aspects
+of the given reflection. Example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="dt">int</span> f<span class="op">()</span>;</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^</span>f;</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  set_name<span class="op">(</span>r, <span class="st">&quot;g&quot;</span><span class="op">)</span>;</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_static<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  set_static<span class="op">(</span>r, <span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  inject_function<span class="op">(</span>r, <span class="op">@</span>tokens<span class="op">{</span> <span class="cf">return</span> f<span class="op">()</span>; <span class="op">})</span>;</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent to:</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">// int g() { return f(); }</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Calling <code class="sourceCode cpp">is_xxx</code> on reflection
+objects where they are not applicable (e.g. reflections of data or
+expressions) returns
+<code class="sourceCode cpp"><span class="kw">false</span></code>.
+Calling <code class="sourceCode cpp">set_xxx</code> where it isn’t
+applicable results in a compile-time error.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proxy-classes-and-instrumented-classes"><span class="header-section-number">3</span> Proxy Classes and Instrumented
+Classes<a href="#proxy-classes-and-instrumented-classes" class="self-link"></a></h1>
 <p>Consider the task of defining interface classes for API integration,
 including foreign language bindings. Such a task involves creating
 classes with member functions that perform the same basic duties—such as
@@ -694,15 +983,16 @@ and special member functions,
 <code class="sourceCode cpp"><span class="kw">enum</span></code>
 declarations, friend declarations…) and generating similar definitions
 within the context of a new class definition. The
-<code class="sourceCode cpp">define_class</code> primitive in <span class="citation" data-cites="P2996R2">[<a href="https://wg21.link/p2996r2" role="doc-biblioref">P2996R2</a>]</span> is the fundamental mechanism
-for implementing a proxy class, and although it currently does not
-support adding member functions, it alludes to such a possibility in
-section 4.4.12: “For now, only non-static data member reflections are
-supported (via <code class="sourceCode cpp">nsdm_description</code>) but
-the API takes in a range of <code class="sourceCode cpp">info</code>
-anticipating expanding this in the near future.” We believe the ability
-to define full-fledged classes is a quintessential, defining feature of
-a reflective metaprogramming feature for C++. Here are a few key
+<code class="sourceCode cpp">define_class</code> primitive in P2996R1 is
+the fundamental mechanism for implementing a proxy class, and although
+it currently does not support adding member functions, it alludes to
+such a possibility in section 4.4.12: “For now, only non-static data
+member reflections are supported (via
+<code class="sourceCode cpp">nsdm_description</code>) but the API takes
+in a range of <code class="sourceCode cpp">info</code> anticipating
+expanding this in the near future.” We believe the ability to define
+full-fledged classes is a quintessential, defining feature of a
+reflective metaprogramming feature for C++. Here are a few key
 components needed:</p>
 <ul>
 <li>Signatures of all functions must be accessible for introspection,
@@ -743,76 +1033,7 @@ and <code class="sourceCode cpp">std<span class="op">::</span>optional</code>—
 subsequently compile the resulting code for use on the device. The
 alternative—copying and pasting code with minute changes—is a
 proverbially bad practice.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="closure-reflection"><span class="header-section-number">4</span>
-Closure reflection<a href="#closure-reflection" class="self-link"></a></h1>
-<p>Libraries that perform any sort of serialization across address space
-boundaries (such as saving/loading data to/from files, transporting it
-over a network, copying to other processes, or marshaling to a GPU with
-a distinct address space) must be mindful about pointers; they should be
-able to perform transitive copying, address fixup, or reject the
-serialization attempt outright.</p>
-<p>Introspection as proposed in P2996R1 does offer the ability to
-reflect on the data members of a class, but not on the captures of a
-lambda expression. For completeness, full introspection should be
-available for closure objects. The C++ standard does not prescribe
-closures to be class types in order to grant leeway to the
-implementations. This means an introspection feature would need to
-explicitly guarantee that closure introspection is available (in
-addition to class introspection).</p>
-<p>We note that defining this feature is mainly a matter of wording;
-implementation is likely very simple because implementation-wise
-closures are essentially class types that define <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">()</span></code>
-and a few special functions. In fact, the current implementation
-available via Compiler Explorer treats lambdas and classes in the same
-manner.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="stdrepresentation_oft"><span class="header-section-number">5</span>
-<code class="sourceCode cpp">std<span class="op">::</span>representation_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code><a href="#stdrepresentation_oft" class="self-link"></a></h1>
-<p>The standard library type <code class="sourceCode cpp">std<span class="op">::</span>representation_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-takes a type <code class="sourceCode cpp">T</code> of built-in,
-<code class="sourceCode cpp"><span class="kw">struct</span></code>,
-<code class="sourceCode cpp"><span class="kw">class</span></code>,
-<code class="sourceCode cpp"><span class="kw">union</span></code>, or
-<code class="sourceCode cpp"><span class="kw">enum</span></code> type
-(<code class="sourceCode cpp"><span class="dt">void</span></code> and
-function types excluded) and yields a plain
-<code class="sourceCode cpp"><span class="kw">struct</span></code> that
-mimics the exact data layout of <code class="sourceCode cpp">T</code>
-(in such a way that a reference to <code class="sourceCode cpp">T</code>
-can be cast to a reference to <code class="sourceCode cpp">representation_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-and have addresses of all members in correspondence). For example:</p>
-<div class="std">
-<blockquote>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> X <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> a;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">alignas</span><span class="op">(</span><span class="dv">8</span><span class="op">)</span> <span class="dt">int</span> b;</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="op">~</span>X<span class="op">()</span>;</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string c;</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// representation_of&lt;X&gt;, generated via reflection, looks like this:</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> representation_of<span class="op">&lt;</span>X<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span><span class="op">*</span> __vptr0;</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> a;</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">alignas</span><span class="op">(</span><span class="dv">8</span><span class="op">)</span> <span class="dt">int</span> b;</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string c;</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
-</blockquote>
-</div>
-<p>Such representation types are crucial for low-level manipulation of
-typed data, and an enabler of a variety of other data manipulation
-techniques such as hashing, formatting, parsing, serialization,
-marshaling, and networking.</p>
-<p>Currently defining
-<code class="sourceCode cpp">representation_of</code> is not possible;
-the array returned by
-<code class="sourceCode cpp">nonstatic_data_members_of</code> does not
-include the compiler-introduced members. (Thankfully alignment can be
-both retrieved with <code class="sourceCode cpp">alignment_of</code> and
-set with <code class="sourceCode cpp">nsdm_options_t<span class="op">::</span>alignment</code>.)
-We estimate this feature would be easy to implement but must be present
-in the wording and in the compiler-provided implementation.</p>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="embedded-domain-specific-languages"><span class="header-section-number">6</span> Embedded Domain Specific
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="embedded-domain-specific-languages"><span class="header-section-number">4</span> Embedded Domain Specific
 Languages<a href="#embedded-domain-specific-languages" class="self-link"></a></h1>
 <p>Python’s many frameworks (e.g., PyTorch and TensorFlow, among many
 others) have demonstrated the importance of Embedded Domain Specific
@@ -849,7 +1070,7 @@ processor itself can be seen as an ordinary EDSL that takes in a grammar
 specification and produces a language translator, once the EDSL
 toolchain is available it can be used to process any other EDSL, either
 during compilation or at runtime. Therefore, an EDSL toolchain defined
-as an EDSL is a foundational ``seed EDSL’’ that we consider a crucial
+as an EDSL is a foundational “seed EDSL” that we consider a crucial
 milestone of a reflection metaprogramming engine.</p>
 <p>For such a task to be feasible, the <em>synthesis</em> aspect of the
 proposal is important—building on the
@@ -858,13 +1079,23 @@ discussed above, we envision adding primitives that synthesize types,
 functions, and templates in addition to the
 <code class="sourceCode cpp">define_class</code>/<code class="sourceCode cpp">nsdm_description</code>
 facility that allows definition of classes with direct data members.</p>
-<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
-<div id="ref-P2996R2" class="csl-entry" role="doc-biblioentry">
-[P2996R2] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-02-15. Reflection for
-C++26. <a href="https://wg21.link/p2996r2"><div class="csl-block">https://wg21.link/p2996r2</div></a>
+<div id="ref-P2996R3" class="csl-entry" role="doc-biblioentry">
+[P2996R3] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024-05-22. Reflection
+for C++26. <a href="https://wg21.link/p2996r3"><div class="csl-block">https://wg21.link/p2996r3</div></a>
+</div>
+<div id="ref-P3289R0" class="csl-entry" role="doc-biblioentry">
+[P3289R0] Wyatt Childers, Barry Revzin, and Daveed Vandevoorde.
+2024-05-18.
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+blocks. <a href="https://wg21.link/p3289r0"><div class="csl-block">https://wg21.link/p3289r0</div></a>
+</div>
+<div id="ref-P3294R0" class="csl-entry" role="doc-biblioentry">
+[P3294R0] Andrei Alexandrescu, Barry Revzin, and Daveed Vandevoorde.
+2024-05-22. Code Injection with Token Sequences. <a href="https://wg21.link/p3294r0"><div class="csl-block">https://wg21.link/p3294r0</div></a>
 </div>
 </div>
 </div>
