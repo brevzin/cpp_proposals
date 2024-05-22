@@ -1600,7 +1600,7 @@ Of course, this approach has limitations. We cannot fully faithfully parse the f
 
 Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're not going to rerun the preprocessor during tokenization. But I doubt anybody would even expect that to work.
 
-But realistically, this would handily cover the 99% case. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
+But realistically, this would handily cover the 90%, if not the 99% case. Not to mention could easily adopt other nice features of string interpolation that show up in other languages (like Python's `f"{x =}` which formats as `"x = 42"`) as library features. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
 ## Alternate Syntax
 
