@@ -2585,14 +2585,53 @@ If `type_class` is a reflection of a type that already has a definition, or whic
 namespace std::meta {
   consteval auto offset_of(info entity) -> size_t;
   consteval auto size_of(info entity) -> size_t;
+  consteval auto alignment_of(info entity) -> size_t;
 
   consteval auto bit_offset_of(info entity) -> size_t;
   consteval auto bit_size_of(info entity) -> size_t;
 
-  consteval auto alignment_of(info entity) -> size_t;
 }
 ```
 :::
+
+These are generalized versions of some facilities we already have in the language.
+
+* `offset_of` takes a reflection of a non-static data member or a base class subobject and returns the offset of it.
+* `size_of` takes the reflection of a type, object, variable, non-static data member, or base class subobject and returns its size.
+* `alignment_of` takes the reflection of a type, non-static data member, or base class subobject and returns its alignment.
+* `bit_size_of` and `bit_offset_of` give the size and offset of a base class subobject or non-static data member, except in bits. Note that the `bit_offset_of` is a value between `0` and `7`, inclusive:
+
+::: std
+```cpp
+struct Msg {
+    uint64_t a : 10;
+    uint64_t b :  8;
+    uint64_t c : 25;
+    uint64_t d : 21;
+};
+
+static_assert(bit_offset_of(^Msg::a) == 0);
+static_assert(bit_offset_of(^Msg::b) == 2);
+static_assert(bit_offset_of(^Msg::c) == 2);
+static_assert(bit_offset_of(^Msg::d) == 3);
+
+static_assert(bit_size_of(^Msg::a) == 10);
+static_assert(bit_size_of(^Msg::b) == 8);
+static_assert(bit_size_of(^Msg::c) == 25);
+static_assert(bit_size_of(^Msg::d) == 21);
+
+consteval auto total_bit_offset_of(std::meta::info m) -> size_t {
+    return offset_of(m) * 8 + bit_offset_of(m);
+}
+
+static_assert(total_bit_offset_of(^Msg::a) == 0);
+static_assert(total_bit_offset_of(^Msg::b) == 10);
+static_assert(total_bit_offset_of(^Msg::c) == 18);
+static_assert(total_bit_offset_of(^Msg::d) == 43);
+
+```
+:::
+
 
 ### Other Type Traits
 
