@@ -2211,9 +2211,10 @@ namespace std::meta {
   // @[data layout](#data-layout-reflection)@
   consteval auto offset_of(info entity) -> size_t;
   consteval auto size_of(info entity) -> size_t;
+  consteval auto alignment_of(info entity) -> size_t;
   consteval auto bit_offset_of(info entity) -> size_t;
   consteval auto bit_size_of(info entity) -> size_t;
-  consteval auto alignment_of(info entity) -> size_t;
+
 }
 ```
 :::
@@ -3452,6 +3453,13 @@ namespace std::meta {
   consteval vector<info> accessible_subobjects_of(info type);
   consteval vector<info> enumerators_of(info type_enum);
 
+  // [meta.reflection.layout], reflection layout queries
+  consteval size_t offset_of(info entity);
+  consteval size_t size_of(info entity);
+  consteval size_t alignment_of(info entity);
+  consteval size_t bit_offset_of(info entity);
+  consteval size_t bit_size_of(info entity);
+
   // [meta.reflection.substitute], reflection substitution
   template <class R>
   concept reflection_range = $see below$;
@@ -3985,6 +3993,21 @@ consteval vector<info> enumerators_of(info type_enum);
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `type_enum`, in the order in which they are declared.
 :::
 :::
+
+### [meta.reflection.layout] Reflection layout queries {-}
+
+::: std
+::: addu
+```cpp
+consteval size_t offset_of(info entity);
+consteval size_t size_of(info entity);
+consteval size_t alignment_of(info entity);
+consteval size_t bit_offset_of(info entity);
+consteval size_t bit_size_of(info entity);
+```
+:::
+:::
+
 
 ### [meta.reflection.substitute] Reflection substitution  {-}
 
