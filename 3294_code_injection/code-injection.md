@@ -1602,6 +1602,34 @@ Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're no
 
 But realistically, this would handily cover the 90%, if not the 99% case. Not to mention could easily adopt other nice features of string interpolation that show up in other languages (like Python's `f"{x =}` which formats as `"x = 42"`) as library features. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
+## Control Flow Operator
+
+A simpler example would be the control flow operator [@P2561R2]. Many people already use a macro for this. A hygienic macro would be that much better:
+
+::: std
+```cpp
+consteval auto try_(@tokens expr) -> info {
+    return @tokens {
+        do {
+            decltype(auto) _f = $eval(expr);
+
+            using _R = [:return_type(std::meta::current_function()):];
+            using _TraitsR = try_traits<_R>;
+            using _TraitsF = try_traits<[:type_remove_cvref(type_of(^_f)):]>;
+
+            if (not _TraitsF::should_continue(_f)) {
+                return _TraitsR::from_break(_TraitsF::extract_break(forward!(_f)));
+            }
+
+            do_return _TraitsF::extract_continue(forward!(_f));
+        };
+    };
+}
+```
+:::
+
+This relies on `do` expressions [@P2806R2] to give us something to inject.
+
 ## Alternate Syntax
 
 We have two forms of injection in this paper:

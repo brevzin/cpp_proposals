@@ -617,7 +617,9 @@ Modifications<span></span></a></li>
 <li><a href="#assertion" id="toc-assertion"><span class="toc-section-number">4.2</span> Assertion<span></span></a></li>
 <li><a href="#string-interpolation" id="toc-string-interpolation"><span class="toc-section-number">4.3</span> String
 Interpolation<span></span></a></li>
-<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">4.4</span> Alternate
+<li><a href="#control-flow-operator" id="toc-control-flow-operator"><span class="toc-section-number">4.4</span> Control Flow
+Operator<span></span></a></li>
+<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">4.5</span> Alternate
 Syntax<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -2553,7 +2555,35 @@ tied to
 <code class="sourceCode cpp">std<span class="op">::</span>format</code>.
 It could easily be made into a library to be used by any logging
 framework.</p>
-<h2 data-number="4.4" id="alternate-syntax"><span class="header-section-number">4.4</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
+<h2 data-number="4.4" id="control-flow-operator"><span class="header-section-number">4.4</span> Control Flow Operator<a href="#control-flow-operator" class="self-link"></a></h2>
+<p>A simpler example would be the control flow operator <span class="citation" data-cites="P2561R2">[<a href="https://wg21.link/p2561r2" role="doc-biblioref">P2561R2</a>]</span>. Many people already use a
+macro for this. A hygienic macro would be that much better:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> try_<span class="op">(@</span>tokens expr<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">@</span>tokens <span class="op">{</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> _f <span class="op">=</span> <span class="er">$</span>eval<span class="op">(</span>expr<span class="op">)</span>;</span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">using</span> _R <span class="op">=</span> <span class="op">[:</span>return_type<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>current_function<span class="op">()):]</span>;</span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">using</span> _TraitsR <span class="op">=</span> try_traits<span class="op">&lt;</span>_R<span class="op">&gt;</span>;</span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">using</span> _TraitsF <span class="op">=</span> try_traits<span class="op">&lt;[:</span>type_remove_cvref<span class="op">(</span>type_of<span class="op">(^</span>_f<span class="op">)):]&gt;</span>;</span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> _TraitsF<span class="op">::</span>should_continue<span class="op">(</span>_f<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb62-11"><a href="#cb62-11" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> _TraitsR<span class="op">::</span>from_break<span class="op">(</span>_TraitsF<span class="op">::</span>extract_break<span class="op">(</span>forward<span class="op">!(</span>_f<span class="op">)))</span>;</span>
+<span id="cb62-12"><a href="#cb62-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb62-13"><a href="#cb62-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-14"><a href="#cb62-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> _TraitsF<span class="op">::</span>extract_continue<span class="op">(</span>forward<span class="op">!(</span>_f<span class="op">))</span>;</span>
+<span id="cb62-15"><a href="#cb62-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb62-16"><a href="#cb62-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb62-17"><a href="#cb62-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This relies on
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expressions <span class="citation" data-cites="P2806R2">[<a href="https://wg21.link/p2806r2" role="doc-biblioref">P2806R2</a>]</span> to give us something to
+inject.</p>
+<h2 data-number="4.5" id="alternate-syntax"><span class="header-section-number">4.5</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
 <p>We have two forms of injection in this paper:</p>
 <ul>
 <li>a metafunction <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>inject</code>
@@ -2610,6 +2640,13 @@ design of source code fragments. <a href="https://wg21.link/p2050r0"><div class=
 </div>
 <div id="ref-P2237R0" class="csl-entry" role="doc-biblioentry">
 [P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <a href="https://wg21.link/p2237r0"><div class="csl-block">https://wg21.link/p2237r0</div></a>
+</div>
+<div id="ref-P2561R2" class="csl-entry" role="doc-biblioentry">
+[P2561R2] Barry Revzin. 2023-05-18. A control flow operator. <a href="https://wg21.link/p2561r2"><div class="csl-block">https://wg21.link/p2561r2</div></a>
+</div>
+<div id="ref-P2806R2" class="csl-entry" role="doc-biblioentry">
+[P2806R2] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park.
+2023-11-16. do expressions. <a href="https://wg21.link/p2806r2"><div class="csl-block">https://wg21.link/p2806r2</div></a>
 </div>
 <div id="ref-P2996R3" class="csl-entry" role="doc-biblioentry">
 [P2996R3] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
