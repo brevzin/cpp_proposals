@@ -2494,6 +2494,15 @@ writing complex C preprocessor code.</p>
 </table>
 <p>You can write this as a regular C macro today, but we bet it’s a
 little nicer to read using this language facility.</p>
+<p>Note that this still suffers from at least one C macro problem:
+naming. If instead of <code class="sourceCode cpp">assert_eq<span class="op">!(</span><span class="dv">42</span>, factorial<span class="op">(</span><span class="dv">3</span><span class="op">))</span></code>
+we wrote <code class="sourceCode cpp">assert_eq<span class="op">!(</span><span class="dv">42</span>, sa <span class="op">*</span> <span class="dv">2</span><span class="op">)</span></code>,
+then this would not compile - because name lookup in the
+<code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code>
+loop would end up finding the local variable
+<code class="sourceCode cpp">sa</code> declared by the macro. So care
+would have to be taken in all of these cases (otherwise we would have to
+come up with a way to introduce unique names).</p>
 <h2 data-number="4.3" id="string-interpolation"><span class="header-section-number">4.3</span> String Interpolation<a href="#string-interpolation" class="self-link"></a></h2>
 <p>Many programming languages support string interpolation. The ability
 to write something like <code class="sourceCode cpp">format<span class="op">!(</span><span class="st">&quot;x={x}&quot;</span><span class="op">)</span></code>

@@ -1557,6 +1557,8 @@ do {
 
 You can write this as a regular C macro today, but we bet it's a little nicer to read using this language facility.
 
+Note that this still suffers from at least one C macro problem: naming. If instead of `assert_eq!(42, factorial(3))` we wrote `assert_eq!(42, sa * 2)`, then this would not compile - because name lookup in the `do`-`while` loop would end up finding the local variable `sa` declared by the macro. So care would have to be taken in all of these cases (otherwise we would have to come up with a way to introduce unique names).
+
 ## String Interpolation
 
 Many programming languages support string interpolation. The ability to write something like `format!("x={x}")` instead of `format("x={}", x)`. It's a pretty significant feature when it comes to the ergonomics of formatting.
