@@ -617,6 +617,8 @@ Modifications<span></span></a></li>
 <li><a href="#assertion" id="toc-assertion"><span class="toc-section-number">4.2</span> Assertion<span></span></a></li>
 <li><a href="#string-interpolation" id="toc-string-interpolation"><span class="toc-section-number">4.3</span> String
 Interpolation<span></span></a></li>
+<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">4.4</span> Alternate
+Syntax<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
@@ -2546,6 +2548,37 @@ importantly, this isn’t a language feature tied to
 <code class="sourceCode cpp">std<span class="op">::</span>format</code>.
 It could easily be made into a library to be used by any logging
 framework.</p>
+<h2 data-number="4.4" id="alternate-syntax"><span class="header-section-number">4.4</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
+<p>We have two forms of injection in this paper:</p>
+<ul>
+<li>a metafunction <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>inject</code>
+that takes an <code class="sourceCode cpp">info</code> (and maybe also
+returns an <code class="sourceCode cpp">info</code>), used through <a href="#token-sequences">token sequences</a>.</li>
+<li>a trailing
+<code class="sourceCode cpp"><span class="op">!</span></code> used
+throughout <a href="#hygienic-macros">hygienic macros</a>.</li>
+</ul>
+<p>But these really are the exact same thing - both are requests to take
+an <code class="sourceCode cpp">info</code> and inject it in the current
+context. The bigger token sequence injection doesn’t really have any
+particular reason to require terse syntax. Prior papers did use some
+punctuation marks
+(e.g. <code class="sourceCode cpp"><span class="op">-&gt;</span></code>,
+<code class="sourceCode cpp"><span class="op">&lt;&lt;</span></code>),
+but a named function seems better. But the macros <em>really</em> do
+want to have terse invocation syntax. Having to write <code class="sourceCode cpp">inject<span class="op">(</span>forward<span class="op">(</span>x<span class="op">))</span></code>
+somewhat defeats the purpose and nobody would write it.</p>
+<p>Using one of the arrows for the macro use-case is weird, so one
+option might be prefix
+<code class="sourceCode cpp"><span class="op">@</span></code>. As in
+<code class="sourceCode cpp"><span class="op">@</span>forward<span class="op">(</span>x<span class="op">)</span></code>,
+<code class="sourceCode cpp"><span class="op">@</span>assert_eq<span class="op">(</span>a, b<span class="op">)</span></code>,
+and <code class="sourceCode cpp"><span class="op">@</span>format<span class="op">(</span><span class="st">&quot;x={this-&gt;x}&quot;</span><span class="op">)</span></code>.
+This would mean that <code class="sourceCode cpp"><span class="op">@</span>tokens <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></code>
+would need a different spelling, perhaps simply <code class="sourceCode cpp"><span class="op">^{</span> <span class="op">...</span> <span class="op">}</span></code>.</p>
+<p>Or we could stick with two syntaxes - the longer one for the bigger
+reflection cases where terseness is arguably bad, and the short one for
+the macro use case where terseness is essential.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">

@@ -1602,6 +1602,19 @@ Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're no
 
 But realistically, this would handily cover the 99% case. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
+## Alternate Syntax
+
+We have two forms of injection in this paper:
+
+* a metafunction `std::meta::inject` that takes an `info` (and maybe also returns an `info`), used through [token sequences](#token-sequences).
+* a trailing `!` used throughout [hygienic macros](#hygienic-macros).
+
+But these really are the exact same thing - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `inject(forward(x))` somewhat defeats the purpose and nobody would write it.
+
+Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This would mean that `@tokens { ... }` would need a different spelling, perhaps simply `^{ ... }`.
+
+Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
+
 ---
 references:
   - id: P2996R3
