@@ -1948,7 +1948,7 @@ This paper is proposing that:
 ### Freestanding implementations
 
 Several important metafunctions, such as `std::meta::nonstatic_data_members_of`, return a `std::vector` value.
-Unfortunately, that means that they are currently not usable in a freestanding environment, but a recent paper ([@P3295R0]) currently being seen by SG7 proposes freestanding `std::vector`, `std::string`, and `std::allocator` in constant evaluated contexts, explicitly to make the facilities proposed by this paper work in freestanding.
+Unfortunately, that means that they are currently not usable in a freestanding environment, but [@P3295R0] currently proposes freestanding `std::vector`, `std::string`, and `std::allocator` in constant evaluated contexts, explicitly to make the facilities proposed by this paper work in freestanding.
 
 ### Synopsis
 
@@ -3577,7 +3577,7 @@ consteval bool is_incomplete_type(info r);
 
 [#]{.pnum} *Returns*: `false` if the type designated by `dealias(r)` is a complete class type. Otherwise, `true`.
 
-[#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
+[#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 consteval bool is_template(info r);
@@ -3702,7 +3702,7 @@ template<class... Fs>
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 template<class... Fs>
@@ -3723,7 +3723,7 @@ template<class... Fs>
 [#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
 The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 template<class... Fs>
@@ -3774,7 +3774,7 @@ consteval vector<info> subobjects_of(info type);
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
 
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 consteval vector<info> accessible_subobjects_of(info type);
@@ -3784,7 +3784,7 @@ consteval vector<info> accessible_subobjects_of(info type);
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization has been instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
