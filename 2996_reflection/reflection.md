@@ -1592,6 +1592,13 @@ For example, now that `$`{.op} or `@`{.op} are available in the basic source cha
 |`[:refl:]`|`[: refl :]`|`@refl`|`$refl`|
 |`[:type_of(refl):]`|`[: type_of(refl) :]`|`@(type_of(refl))`|`$(type_of(refl))`|
 
+There are two other pieces of functionality that we will probably need syntax for in the future:
+
+* code injection (of whatever form), and
+* annotations (reflectable attributes, as values. [@P1887R1] suggested `+` as an annotation introducer, but `+` can begin an expression so another token is probably better. See also: [this thread](https://lists.isocpp.org/sg7/2023/10/0450.php)).
+
+So any syntax discussion needs to consider the entirety of the feature.
+
 
 The prefixes `typename` and `template` are only strictly needed in some cases where the operand of the splice is a dependent expression.
 In our proposal, however, we only make `typename` optional in the same contexts where it would be optional for qualified names with dependent name qualifiers.
