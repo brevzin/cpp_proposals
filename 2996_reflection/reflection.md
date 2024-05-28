@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R3
+document: P2996R4
 date: today
 audience: EWG, LEWG
 author:
@@ -1120,7 +1120,7 @@ consteval auto subst_by_value(std::meta::info tmpl, std::vector<T> args)
 {
     std::vector<std::meta::info> a2;
     for (T x : args) {
-        a2.push_back(std::meta::reflect_value(x));
+        a2.push_back(std::meta::reflect_result(x));
     }
 
     return substitute(tmpl, a2);
@@ -1242,7 +1242,7 @@ public:
     // Search for the next incomplete 'Helper<k>'.
     std::meta::info r;
     while (!is_incomplete_type(r = substitute(^Helper,
-                                             { std::meta::reflect_value(k) })))
+                                             { std::meta::reflect_result(k) })))
       ++k;
 
     // Define 'Helper<k>' and return its index.
@@ -2499,7 +2499,7 @@ These metafunctions produces a reflection of the value returned by a call expres
 
 For the first overload: Letting `F` be the entity reflected by `target`, and `A@~0~@, A@~1~@, ..., A@~N~@` be the sequence of entities reflected by the values held by `args`: if the expression `F(A@~0~@, A@~1~@, ..., A@~N~@)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a value or object usable in constant expressions, then `reflect_invoke(target, args)` evaluates to a reflection of the result of `F(A@~0~@, A@~1~@, ..., A@~N~@)`. For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
 
-The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
+The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {reflect_result(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
 
 A few possible extensions for `reflect_invoke` have been discussed among the authors. Given the advent of constant evaluations with side-effects, it may be worth allowing `void`-returning functions, but this would require some representation of "a returned value of type `void`". Construction of runtime call expressions is another exciting possibility. Both extensions require more thought and implementation experience, and we are not proposing either at this time.
 
