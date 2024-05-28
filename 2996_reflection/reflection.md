@@ -26,6 +26,10 @@ tag: constexpr
 
 # Revision History
 
+Since [@P2996R3]:
+
+* changing `name_of`, `display_name_of`, and `qualified_name_of` signatures to mandate instead of constrain.
+
 Since [@P2996R2]:
 
 * many wording changes, additions, and improvements
@@ -2283,18 +2287,17 @@ namespace std::meta {
 ```c++
 namespace std::meta {
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval auto name_of(info) -> T;
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval auto qualified_name_of(info) -> T;
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval auto display_name_of(info) -> T;
   consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
+
+In all of these metafunction templates, `T` must be either `std::string_view` or `std::u8string_view`.
 
 If a `string_view` is returned, its content consist of characters of the basic source character set only; other source text is rendered as universal character names of the form `\u{ simple-hexadecimal-digit-sequence }`).
 
@@ -3433,13 +3436,10 @@ namespace std::meta {
 
   // [meta.reflection.names], reflection names and locations
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval T name_of(info r);
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval T qualified_name_of(info r);
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval T display_name_of(info r);
   consteval source_location source_location_of(info r);
 
@@ -3692,20 +3692,21 @@ namespace std::meta {
 ::: addu
 ```cpp
 template<typename T = std::u8string_view>
-  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
   consteval T name_of(info r);
 template<typename T = std::u8string_view>
-  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
   consteval T qualified_name_of(info r);
 ```
+
+[#]{.pnum} *Mandates*: `T` is either the type `std::string_view` or `std::u8string_view`.
 
 [#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified and qualified names of `X`, respectively. Otherwise, an empty `string_view` or `u8string_view`.
 
 ```cpp
 template<typename T = std::u8string_view>
-  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
   consteval T display_name_of(info r);
 ```
+[#]{.pnum} *Mandates*: `T` is either the type `std::string_view` or `std::u8string_view`.
+
 [#]{.pnum} *Returns*: An implementation-defined string suitable for identifying the reflected construct.
 
 ```cpp
