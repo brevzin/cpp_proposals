@@ -2152,13 +2152,10 @@ namespace std::meta {
 
   // @[name and location](#name-loc)@
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval auto name_of(info r) -> T;
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval auto qualified_name_of(info r) -> T;
   template<typename T = std::u8string_view>
-    requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
     consteval auto display_name_of(info r) -> T;
   consteval auto source_location_of(info r) -> source_location;
 
