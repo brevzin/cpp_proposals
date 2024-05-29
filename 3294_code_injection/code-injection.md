@@ -1,6 +1,6 @@
 ---
 title: "Code Injection with Token Sequences"
-document: P3294R0
+document: P3294R1
 date: today
 audience: SG7, EWG
 author:
@@ -1665,34 +1665,3 @@ This proposal consists of several pieces:
     * a mechanism to accept a tokens sequence as a function parameter
     * a mechanism to inject a token sequence directly as returned by a function (trailing `!`)
 
----
-references:
-  - id: P2996R3
-    citation-label: P2996R3
-    title: "Reflection for C++26"
-    author:
-      - family: Barry Revzin
-      - family: Wyatt Childers
-      - family: Peter Dimov
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-      - family: Dan Katz
-    issued:
-      - year: 2024
-        month: 05
-        day: 16
-    URL: https://wg21.link/p2996r3
-  - id: P3289R0
-    citation-label: P3289R0
-    title: "`consteval` blocks"
-    author:
-      - family: Wyatt Childers
-      - family: Barry Revzin
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2024
-        month: 05
-        day: 18
-    URL: https://wg21.link/p3289r0
----
