@@ -759,7 +759,7 @@ struct Book {
 ```
 :::
 
-It's a bit busy because nearly everything in properties involves quoting outside context, so seemingly everything here is quoted.
+It's a bit busy because nearly everything in properties involves interpolating outside context, so seemingly everything here is interpolated.
 
 Now, there's one very important property of fragments (as designed in these papers) hold: every fragment must be parsable in its context. A fragment does not leak its declarations out of its context; only out of the context where it is injected. Not only that, we get full name lookup and everything.
 
@@ -815,7 +815,7 @@ consteval auto property(meta::info type, char const* name) -> void
 
 ### Postfix increment
 
-One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any quoted names. But it does surface the issue of name lookup in fragments.
+One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any interpolated names. But it does surface the issue of name lookup in fragments.
 
 ::: std
 ```cpp
@@ -956,28 +956,33 @@ After extensive study and experimentation (as seen above), we concluded that som
 
 Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility and also be difficult for implementers, thus hurting everyone involved.
 
-We therefore acknowledge the notion of token sequence as a core building block for generating code. Using token sequences allows flexibility to code that generates other code, while deferring name lookup and semantic analysis to well-defined points in the compilation process. Thus we reach the notion of a `@tokens` literal dedicated to representing unprocessed sequences of tokens.
+We therefore acknowledge the notion of token sequence as a core building block for generating code. Using token sequences allows flexibility to code that generates other code, while deferring name lookup and semantic analysis to well-defined points in the compilation process. Thus we reach the notion of a token sequence literal dedicated to representing unprocessed sequences of tokens.
 
-## `@tokens` literal
+## Token Sequence Literal
 
 We propose the introduction of a new literal with the following syntax (the specific introducer can be decided later):
 
 ::: std
 ```cpp
-@tokens { $balanced-brace-tokens$ }
+^{ $balanced-brace-tokens$ }
 ```
 :::
 
-where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the sole requirement that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. The opening and closing `{`/`}` are not part of the token sequence. The type of a `@tokens` literal is `std::meta::info`.
+where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the sole requirement that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. The opening and closing `{`/`}` are not part of the token sequence. The type of a token sequence literal is `std::meta::info`.
+
+The choice of syntax is motivated by two notions:
+
+1. If we could reflect on the body of a function template, the only thing that could be yielded back is a token sequence - since the template hasn't been instantiated yet. And the syntax for reflecting on that body would look like `^{ $body$ }`
+2. This makes it so that all expressions that produce an object of type `std::meta::info` are spelled with a prefix `^`.
 
 For example:
 
 ::: std
 ```cpp
-constexpr auto t1 = @tokens { a + b };      // three tokens
+constexpr auto t1 = ^{ a + b };      // three tokens
 static_assert(std::is_same_v<decltype(t1), const std::meta::info>);
-constexpr auto t2 = @tokens { a += ( };     // code does not have to be meaningful
-constexpr auto t3 = @tokens { abc { def };  // Error, unpaired brace
+constexpr auto t2 = ^{ a += ( };     // code does not have to be meaningful
+constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
 ```
 :::
 
@@ -985,10 +990,10 @@ Token sequences can be concatenated with the `+` operator. The result is a token
 
 ::: std
 ```cpp
-constexpr auto t1 = @tokens { c =  };
-constexpr auto t2 = @tokens { a + b; };
+constexpr auto t1 = ^{ c =  };
+constexpr auto t2 = ^{ a + b; };
 constexpr auto t3 = t1 + t2;
-static_assert(t3 == @tokens { c = a + b; });
+static_assert(t3 == ^{ c = a + b; });
 ```
 :::
 
@@ -996,11 +1001,11 @@ The concatenation is not textual - two tokens concatenated together preserve the
 
 ::: std
 ```cpp
-constexpr auto t1 = @tokens { abc };
-constexpr auto t2 = @tokens { def };
+constexpr auto t1 = ^{ abc };
+constexpr auto t2 = ^{ def };
 constexpr auto t3 = t1 + t2;
-static_assert(t3 != @tokens { abcdef });
-static_assert(t3 == @tokens { abc def });
+static_assert(t3 != ^{ abcdef });
+static_assert(t3 == ^{ abc def });
 ```
 :::
 
@@ -1008,8 +1013,8 @@ Whitespace and comments are treated just like in regular code - they are not sig
 
 ::: std
 ```cpp
-constexpr auto t1 = @tokens { hello  = /* world */   "world" };
-constexpr auto t2 = @tokens { /* again */ hello="world" };
+constexpr auto t1 = ^{ hello  = /* world */   "world" };
+constexpr auto t2 = ^{ /* again */ hello="world" };
 static_assert(t1 == t2);
 ```
 :::
@@ -1018,46 +1023,50 @@ Because tokens are handled after the the initial phase of preprocessing, macros 
 
 ::: std
 ```cpp
-static_assert(@tokens { "abc" "def" } == @tokens { "abcdef" });
+static_assert(^{ "abc" "def" } == ^{ "abcdef" });
 
 // this concatenation produces the token sequence "abc" "def", not "abcdef"
 // when this token sequence will be injected, that will be ill-formed
-static_assert(@tokens { "abc" } + @tokens { "def" } != @tokens { "abcdef" });
+static_assert(^{ "abc" } + ^{ "def" } != ^{ "abcdef" });
 
 #define PLUS_ONE(x) ((x) + 1)
-static_assert(@tokens { PLUS_ONE(x) } == @tokens { ((x) + 1) });
+static_assert(^{ PLUS_ONE(x) } == ^{ ((x) + 1) });
 
 // amusingly this version also still works but not for the reason you think
 // on the left-hand-side the macro PLUS_ONE is still invoked...
-// but as PLUS_ONE(x} +@tokens{)
-// which produces ((x} +@tokens{) + 1)
-// which leads to @tokens { ((x } + @tokens{) + 1) }
-// which is @tokens{ ((x) + 1)}
-static_assert(@tokens { PLUS_ONE(x } + @tokens{ ) } == @tokens { PLUS_ONE(x) });
+// but as PLUS_ONE(x} +^{)
+// which produces ((x} +^{) + 1)
+// which leads to ^{ ((x } + ^{) + 1) }
+// which is ^{ ((x) + 1)}
+static_assert(^{ PLUS_ONE(x } + ^{ ) } == ^{ PLUS_ONE(x) });
 
 // But this one finally fails, because the macro isn't actually invoked
 constexpr auto tok2 = []{
-    auto t = @tokens { PLUS_ONE(x };
+    auto t = ^{ PLUS_ONE(x };
     constexpr_print_str("Logging...\n");
-    t += @tokens{ ) }
+    t += ^{ ) }
     return t;
 }();
-static_assert(tok2 != @tokens { PLUS_ONE(x) });
+static_assert(tok2 != ^{ PLUS_ONE(x) });
 ```
 :::
 
 A token sequence has no meaning by itself, until injected. But because (hopefully) users will write valid C++ code, the resulting injection actually does look like C++ code.
 
-## Quoting into a token sequence
+## Interpolating into a token sequence
 
-There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated capture syntax using the interpolators `$eval` and `$id`.
+There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using the interpolators `\$primary-expression$` and `\id($string-or-int$...)`.
 
-The implementation model for this is that we collect the tokens within a `@token { ... }` literal, but every time we run into a capture, we parse and evaluate the expression within and replace it with the value as described below:
+The implementation model for this is that we collect the tokens within a `^{ ... }` literal, but every time we run into an interpolator, we parse and evaluate the expression within and replace it with the value as described below:
 
-* `$eval(e)` for `e` of type `meta::info` is replaced by a pseudo-literal token holding the `info` value. If `e` is itself a token sequence, the contents of that token sequence are concatenated in place.
-* `$id(e)` for `e` being string-like or integral is replaced with that value. `$id(e...)` can concatenate multiple string-like or integral values into a single identifier.
+* `\id(e)` for `e` being string-like is replaced with that string as a new `\identifier$`. `\id(e...)` can concatenate multiple string-like or integral values into a single `\identifier$` (the first argument must be string-like).
+* `\e` is replaced by a pseudo-literal token holding the value of `e`. If we're interpolating an identifier (the common case), parentheses are optional but not mandatory. But for a more complicated expression, you will have to parenthesize - as in `\(f(x))`.
 
-These need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is indented, so they have to be spelled differently.
+These need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is intended, so they have to be spelled differently.
+
+Note that if you want to interpolate a value _named_ `id`, that will have to be spelled `\(id)` to disambiguate from the `id` interpolator. This is mildly unfortunate, but the only way around this would be to either pick a much uglier term for the identifier interpolator (which is why prior papers used `unqualid` - something extremely unlikely to be a variable name in real C++ code) or use an existing keyword. You can browse the list [here](https://eel.is/c++draft/tab:lex.key), but none of them seem particularly amazing (`typename` has `name` in it but of course we're not necessarily introducing a type, `\this` what, `\using` works for both, etc.)
+
+Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in their [string interpolation syntax](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation).
 
 With that in mind, we can start going through our examples.
 
@@ -1070,15 +1079,14 @@ Now, the `std::tuple` and `std::enable_if` cases would look identical to their c
 ```cpp
 template<class... Ts>
 struct Tuple {
-    consteval {
-        std::array types{^Ts...};
-        for (size_t i = 0; i != types.size(); ++i) {
-            inject(@tokens {
-                [[no_unique_address]]
-                [: $eval(types[i]) :] $id("_", i);
-            });
-        }
+  consteval {
+    std::array types{^Ts...};
+    for (size_t i = 0; i != types.size(); ++i) {
+      inject(^{
+        [[no_unique_address]] [:\(types[i]):] \id("_", i);
+      });
     }
+  }
 };
 ```
 
@@ -1086,16 +1094,16 @@ struct Tuple {
 ```cpp
 template <bool B, class T=void>
 struct enable_if {
-    consteval {
-        if (B) {
-            inject(@tokens { using type = T; });
-        }
-    };
+  consteval {
+    if (B) {
+      inject(^{ using type = T; });
+    }
+  };
 };
 ```
 :::
 
-The property example likewise could be identical, but we do not run into any name lookup issues, so we can write it any way we want - either as injecting one token sequence or even injecting three. Both work fine without needing any additional declarations:
+The property example likewise could be identical, but we do not run into any name lookup issues, so we can write it any way we want - either as injecting one token sequence or even injecting three. Both work fine without needing any additional declarations. But we may want to restrict injection to one declaration at a time for error reporting purposes.
 
 ::: cmptable
 ### Single Token Sequence
@@ -1105,16 +1113,16 @@ consteval auto property(meta::info type, std::string name)
 {
     std::string member_name = "m_" + name;
 
-    inject(@tokens {
-        [:$eval(type):] $id(member_name);
+    inject(^{
+        [:\type:] \id(member_name);
 
-        auto $id("get_", name)() -> [:$eval(type):] const& {
-            return $id(member_name);
+        auto \id("get_", name)() -> [:\type:] const& {
+            return \id(member_name);
         }
 
-        auto $id("set_", name)(typename [:$eval(type):] const& x)
+        auto \id("set_", name)(typename [:\type:] const& x)
             -> void {
-            $id(member_name) = x;
+            \id(member_name) = x;
         }
     });
 }
@@ -1127,20 +1135,20 @@ consteval auto property(meta::info type, std::string name)
 {
     std::string member_name = "m_" + name;
 
-    inject(@tokens {
-        [:$eval(type):] $id(member_name);
+    inject(^{
+        [:\type:] \id(member_name);
     });
 
-    inject(@tokens {
-        auto $id("get_", name)() -> [:$eval(type):] const& {
-            return $id(member_name);
+    inject(^{
+        auto \id("get_", name)() -> [:\type:] const& {
+            return \id(member_name);
         }
     });
 
-    inject(@tokens {
-        auto $id("set_", name)(typename [:$eval(type):] const& x)
+    inject(^{
+        auto \id("set_", name)(typename [:\type:] const& x)
             -> void {
-            $id(member_name) = x;
+            \id(member_name) = x;
         }
     });
 }
@@ -1169,9 +1177,9 @@ consteval auto postfix_increment() -> void {
 ```cpp
 consteval auto postfix_increment() -> void {
     auto T = type_of(std::meta::current());
-    inject(@tokens {
+    inject(^{
 
-        auto operator++(int) -> [:$eval(T):] {
+        auto operator++(int) -> [:\T:] {
             auto tmp = *this;
             ++*this;
             return tmp;
@@ -1200,8 +1208,8 @@ public:
 
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
-            inject(@tokens {
-                declare [: $eval(decl_of(fun)) :] {
+            inject(^{
+                declare [: \(decl_of(fun)) :] {
                     // ...
                 }
             });
@@ -1223,10 +1231,10 @@ Second, we need to actually forward the parameters of the function into our memb
 ```cpp
 consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
-        inject(@tokens {
-            declare [: $eval(decl_of(fun)) :] {
-                std::println("Calling {}", $eval(name_of(fun)));
-                return impl.[: $eval(fun) :](/* ???? */);
+        inject(^{
+            declare [: \(decl_of(fun)) :] {
+                std::println("Calling {}", \(name_of(fun)));
+                return impl.[:\fun:](/* ???? */);
             }
         });
     }
@@ -1240,7 +1248,7 @@ So there are two approaches that we can use here:
 
 ### Reflections of Parameters
 
-We need the ability to just ask for the parameters themselves (which [@P3096R0] should provide). And then the goal here is to inject the tokens for the call:
+We need the ability to just ask for the parameters themselves (which [@P3096R1] should provide). And then the goal here is to inject the tokens for the call:
 
 ::: std
 ```cpp
@@ -1268,22 +1276,22 @@ public:
             // note that this one doesn't even require a token sequence
             auto log_fun = inject(decl_of(fun));
 
-            auto argument_list = @tokens { };
+            auto argument_list = ^{ };
             bool first = true;
             for (auto param : parameters_of(log_fun)) { // <== NB, not fun
                 if (not first) {
-                    argument_list += @tokens { , };
+                    argument_list += ^{ , };
                 }
                 first = false;
-                argument_list += @tokens {
-                    static_cast<[:$eval(type_of(param)):]&&>([: $eval(param) :])
+                argument_list += ^{
+                    static_cast<[:\(type_of(param)):]&&>([: \(param) :])
                 };
             }
 
-            inject(@tokens {
-                declare [: $eval(decl_of(fun)) :] {
-                    std::println("Calling {}", $eval(name_of(fun)));
-                    return impl.[: $eval(fun) :]( $eval(argument_list) );
+            inject(^{
+                declare [: \(decl_of(fun)) :] {
+                    std::println("Calling {}", \(name_of(fun)));
+                    return impl.[:\fun:]( [:\(argument_list):] );
                 }
             });
         }
@@ -1294,22 +1302,22 @@ public:
 
 The `argument_list` is simply building up the token sequence `[: p@~0~@ :], [: p@~1~@ :], ..., [: p@~N~@ :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
 
-Once we have those tokens, we can concatenate this token sequence using the same `$eval()` quoting operator that we've used for other problems and we're done. Token sequences are just a sequence of tokens - so we simply need to be able to produce that sequence.
+Once we have those tokens, we can concatenate this token sequence using the same interpolator that we've used for other problems and then splice them in. In the same way that splicing a reflection of a type produces a type, splicing a reflection of a token sequence produces those tokens.
 
 Note that we didn't actually have to implement it using a separate `argument_list` local variable - we could've concatenated the entire token sequence piecewise. But this structure allows factoring out parameter-forwarding into its own function:
 
 ::: std
 ```cpp
 consteval auto forward_parameters(std::meta::info fun) -> std::meta::info {
-    auto argument_list = @tokens { };
+    auto argument_list = ^{ };
     bool first = true;
     for (auto param : parameters_of(fun)) {
         if (not first) {
-            argument_list += @tokens { , };
+            argument_list += ^{ , };
         }
         first = false;
-        argument_list += @tokens {
-            static_cast<[:$eval(type_of(param)):]&&>([: $eval(param) :])
+        argument_list += ^{
+            static_cast<[:\(type_of(param)):]&&>([:\param:])
         };
     }
     return argument_list;
@@ -1325,16 +1333,18 @@ consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
         auto log_fun = inject(decl_of(fun));
 
-        inject(@tokens {
-            declare [: $eval(decl_of(fun)) :] {
-                std::println("Calling {}", $eval(name_of(fun)));
-                return impl.[: $eval(fun) :]( $eval(forward_parameters(log_fun)) );
+        inject(^{
+            declare [: \(decl_of(fun)) :] {
+                std::println("Calling {}", \(name_of(fun)));
+                return impl.[:\fun:]( [: \(forward_parameters(log_fun)) :] );
             }
         });
     }
 }
 ```
 :::
+
+The problem is - it's not clear if this direction can actually be viable. That is, injection queues up requests for later. It may not be feasible for us to get back a reflection of `log_fun` in the way that we are using this example.
 
 ### Introducing Parameter Names
 
@@ -1353,24 +1363,24 @@ public:
 
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
-            auto argument_list = @tokens { };
+            auto argument_list = ^{ };
             for (size_t i = 0; i != parameters_of(fun).size(); ++i) {
                 if (i > 0) {
-                    argument_list += @tokens { , };
+                    argument_list += ^{ , };
                 }
 
-                argument_list += @tokens {
+                argument_list += ^{
                     // we could get the nth parameter's type (we can't splice
                     // the other function's parameters but we CAN query them)
                     // or we could just write decltype(p0)
-                    static_cast<decltype($id("p", i))&&>($id("p", i))
+                    static_cast<decltype(\id("p", i))&&>(\id("p", i))
                 };
             }
 
-            inject(@tokens {
-                declare [: $eval(decl_of(fun, "p")) :] {
-                    std::println("Calling {}", $eval(name_of(fun)));
-                    return impl.[: $eval(fun) :]( $eval(argument_list) );
+            inject(^{
+                declare [: \(decl_of(fun, "p")) :] {
+                    std::println("Calling {}", \(name_of(fun)));
+                    return impl.[:\fun:]( [:\argument_list:] );
                 }
             });
         }
@@ -1479,8 +1489,8 @@ With token sequences, we can achieve similar syntax:
 ::: std
 ```cpp
 consteval auto fwd2(@tokens x) -> info {
-    return @tokens {
-        static_cast<decltype($eval(x))&&>($eval(x));
+    return ^{
+        static_cast<decltype([:\x:])&&>([:\x:]);
     };
 }
 
@@ -1488,7 +1498,7 @@ auto new_f2 = [](auto&& x) { return fwd2!(x); };
 ```
 :::
 
-The logic here is that `fwd2!(x)` is syntactic sugar for `inject(fwd2(@tokens { x }))`. We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
+The logic here is that `fwd2!(x)` is syntactic sugar for `inject(fwd2(^{ x }))`. We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
 
 We would have to figure out what we would want `fwd2!(std::pair<int, int>{1, 2})` to do. One of the issues of C macros is not understand C++ token syntax, so this argument would have to be parenthesized. But if we want to operate on the token level, this seems like a given.
 
@@ -1502,13 +1512,13 @@ Consider a different example (borrowed from [here](https://www.forrestthewoods.c
 ```cpp
 consteval auto assert_eq(@tokens a,
                          @tokens b) -> info {
-    return @tokens {
+    return ^{
         do {
-            auto sa = $eval(stringify(a));
-            auto va = $eval(a);
+            auto sa = \(stringify(a));
+            auto va = [:\a:];
 
-            auto sb = $eval(stringify(b));
-            auto vb = $eval(b);
+            auto sb = \(stringify(b));
+            auto vb = [:\b:];
 
             if (not (va == vb)) {
                 std::println(
@@ -1516,7 +1526,7 @@ consteval auto assert_eq(@tokens a,
                     "{} ({}) == {} ({}) failed at {}",
                     sa, va,
                     sb, vb,
-                    $eval(source_location_of(a)));
+                    \(source_location_of(a)));
                 std::abort();
             }
         } while (false);
@@ -1580,17 +1590,17 @@ consteval auto parse_format_string(string_view) -> FormatParts;
 consteval auto format(string_view str) -> meta::info {
     auto parts = parse_format_string(str);
 
-    auto tok = @tokens {
+    auto tok = ^{
         // NB: there's no close paren yet
         // we're allowed to build up a partial fragment like this
-        ::std::format($eval(parts.format_str)
+        ::std::format(\(parts.format_str)
     };
 
     for (string_view arg : parts.args) {
-        tok += @tokens { , $eval(tokenize(arg)) };
+        tok += ^{ , [:\(tokenize(arg)):] };
     }
 
-    tok += @tokens { ) };
+    tok += ^{ ) };
     return tok;
 }
 ```
@@ -1611,9 +1621,9 @@ A simpler example would be the control flow operator [@P2561R2]. Many people alr
 ::: std
 ```cpp
 consteval auto try_(@tokens expr) -> info {
-    return @tokens {
+    return ^{
         do {
-            decltype(auto) _f = $eval(expr);
+            decltype(auto) _f = [:\expr:];
 
             using _R = [:return_type(std::meta::current_function()):];
             using _TraitsR = try_traits<_R>;
@@ -1641,7 +1651,7 @@ We have two forms of injection in this paper:
 
 But these really are the exact same thing - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 
-Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This would mean that `@tokens { ... }` would need a different spelling, perhaps simply `^{ ... }`.
+Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`.
 
 Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
 
@@ -1653,8 +1663,8 @@ The fragment model initially introduced in [@P1717R0] is great for allowing writ
 
 This proposal consists of several pieces:
 
-* a mechanism to introduce a token sequence (in this paper `@tokens { $balanced-brace-tokens$ }`)
-* two interpolators to add outside context to a token sequence, one for identifiers (`$id`) and one for values (`$eval`)
+* a mechanism to introduce a token sequence (in this paper `^{ $balanced-brace-tokens$ }`)
+* two interpolators to add outside context to a token sequence, one for identifiers (`\id`) and one for values (`\`)
 * a new disambiguator for splicing a declaration (`declare [: fun :]`)
 * a new metafunction to inject a token sequence (`std::meta::inject`)
 * new metaprogramming facilities for dealing with token sequences:
