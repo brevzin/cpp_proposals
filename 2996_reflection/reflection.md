@@ -3750,19 +3750,19 @@ consteval bool is_override(info r);
 consteval bool is_deleted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a function or member function that is defined as deleted. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function that is defined as deleted. Otherwise, `false`.
 
 ```cpp
 consteval bool is_defaulted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is defined as defaulted. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function that is defined as defaulted. Otherwise, `false`.
 
 ```cpp
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared `explicit`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared explicit. Otherwise, `false`.
 
 ```cpp
 consteval bool is_noexcept(info r);
@@ -3835,9 +3835,9 @@ consteval bool is_incomplete_type(info r);
 ```
 [#]{.pnum} *Mandates*: `r` is a reflection designating a type.
 
-[#]{.pnum} *Returns*: `false` if the type designated by `dealias(r)` is a complete class type. Otherwise, `true`.
-
 [#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: `false` if the type designated by `dealias(r)` is a complete class type. Otherwise, `true`.
 
 ```cpp
 consteval bool is_template(info r);
@@ -3869,8 +3869,8 @@ consteval bool has_template_arguments(info r);
 
 
 ```cpp
-consteval bool is_class_member(info entity);
-consteval bool is_namespace_member(info entity);
+consteval bool is_class_member(info r);
+consteval bool is_namespace_member(info r);
 consteval bool is_nonstatic_data_member(info r);
 consteval bool is_static_member(info r);
 consteval bool is_base(info r);
@@ -3882,7 +3882,7 @@ consteval bool is_special_member(info r);
 [#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, static member, base class member, constructor, destructor, or special member, respectively. Otherwise, `false`.
 
 ```cpp
-consteval boo is_user_provided(info r);
+consteval bool is_user_provided(info r);
 ```
 
 [#]{.pnum} *Mandates*: `r` designates a function.
@@ -3901,9 +3901,9 @@ consteval info type_of(info r);
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` designates a member of a class or a namespace.
+[#]{.pnum} *Mandates*: `r` designates a member of either a class or a namespace.
 
-[#]{.pnum} *Returns*: A reflection of the that entity's immediately enclosing class or namespace.
+[#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class or namespace.
 
 ```cpp
 consteval info dealias(info r);
@@ -3959,17 +3959,15 @@ template<class... Fs>
 
 [#]{.pnum} *Mandates*: `r` is a reflection designating either a complete class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
 
+[#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
-
-[#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 template<class... Fs>
   consteval vector<info> accessible_members_of(info type, Fs... filters);
 ```
-
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_accessible, filters...);`
 
@@ -3980,25 +3978,21 @@ template<class... Fs>
 
 [#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type and `(std::predicate<Fs, info> && ...)` is `true`.
 
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
 [#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
 The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
-
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 template<class... Fs>
   consteval vector<info> accessible_bases_of(info type, Fs... filters);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
-
-[#]{.pnum} *Effects*: Equivalent to: `return bases_of(r, is_accessible, filters...);`
+[#]{.pnum} *Effects*: Equivalent to: `return bases_of(type, is_accessible, filters...);`
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
 ```
-
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
@@ -4006,23 +4000,17 @@ consteval vector<info> static_data_members_of(info type);
 consteval vector<info> accessible_static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
-
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable, is_accessible);`
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
-
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
 
 ```cpp
 consteval vector<info> accessible_nonstatic_data_members_of(info type);
 ```
-
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member, is_accessible);`
 
@@ -4032,9 +4020,9 @@ consteval vector<info> subobjects_of(info type);
 
 [#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
-
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> accessible_subobjects_of(info type);
@@ -4042,9 +4030,9 @@ consteval vector<info> accessible_subobjects_of(info type);
 
 [#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
-
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);

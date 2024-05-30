@@ -5729,24 +5729,22 @@ Otherwise,
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_93" id="pnum_93">5</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
-<code class="sourceCode cpp">r</code> designates a function or member
-function that is defined as deleted. Otherwise,
+<code class="sourceCode cpp">r</code> designates a function that is
+defined as deleted. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb124"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_defaulted<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_94" id="pnum_94">6</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
-<code class="sourceCode cpp">r</code> designates a member function that
-is defined as defaulted. Otherwise,
+<code class="sourceCode cpp">r</code> designates a function that is
+defined as defaulted. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb125"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_explicit<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_95" id="pnum_95">7</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp">r</code> designates a member function that
-is declared
-<code class="sourceCode cpp"><span class="kw">explicit</span></code>.
-Otherwise,
+is declared explicit. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb126"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_noexcept<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_96" id="pnum_96">8</a></span>
@@ -5889,8 +5887,8 @@ binding, or value respectively. Otherwise,
 function template, variable template, class template, or an alias
 template. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
-<div class="sourceCode" id="cb142"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_class_member<span class="op">(</span>info entity<span class="op">)</span>;</span>
-<span id="cb142-2"><a href="#cb142-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_namespace_member<span class="op">(</span>info entity<span class="op">)</span>;</span>
+<div class="sourceCode" id="cb142"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_class_member<span class="op">(</span>info r<span class="op">)</span>;</span>
+<span id="cb142-2"><a href="#cb142-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_namespace_member<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb142-3"><a href="#cb142-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nonstatic_data_member<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb142-4"><a href="#cb142-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_static_member<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb142-5"><a href="#cb142-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_base<span class="op">(</span>info r<span class="op">)</span>;</span>
@@ -5905,7 +5903,7 @@ namespace member, non-static data member, static member, base class
 member, constructor, destructor, or special member, respectively.
 Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
-<div class="sourceCode" id="cb143"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> boo is_user_provided<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb143"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_user_provided<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_116" id="pnum_116">28</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> designates a
 function.</p>
@@ -5933,10 +5931,10 @@ reflection.</p>
 <div class="sourceCode" id="cb145"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info parent_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_120" id="pnum_120">32</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> designates a
-member of a class or a namespace.</p>
+member of either a class or a namespace.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_121" id="pnum_121">33</a></span>
-<em>Returns</em>: A reflection of the that entity’s immediately
-enclosing class or namespace.</p>
+<em>Returns</em>: A reflection of that entity’s immediately enclosing
+class or namespace.</p>
 <div class="sourceCode" id="cb146"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb146-1"><a href="#cb146-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info dealias<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_122" id="pnum_122">34</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> designates a
