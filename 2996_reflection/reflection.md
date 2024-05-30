@@ -3428,6 +3428,10 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 **Header `<meta>` synopsis**
 
 ```
+#include <span>
+#include <string_view>
+#include <vector>
+
 namespace std::meta {
   using info = decltype(^::);
 
@@ -3958,7 +3962,7 @@ template<class... Fs>
 [#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
 ```cpp
 template<class... Fs>
@@ -4074,7 +4078,9 @@ consteval size_t bit_size_of(info entity);
 ```cpp
 template <class R>
 concept reflection_range =
-  ranges::input_range<R> && same_as<ranges::range_value_t<R>, info>;
+  ranges::input_range<R> &&
+  same_as<ranges::range_value_t<R>, info> &&
+  same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
 ```
 
 ```cpp
@@ -4083,7 +4089,7 @@ consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Mandates*: `templ` designates a template.
 
-[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or expressions designated by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities, expressions, or aliases designated by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
@@ -4109,7 +4115,7 @@ consteval info substitute(info templ, R&& arguments);
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or type alias. For each function taking an argument of type `span<const meta::info>` named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that `span` is not a reflection of a type or a type alias.
+[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or type alias. For each function taking an argument named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
 :::
 :::
 
