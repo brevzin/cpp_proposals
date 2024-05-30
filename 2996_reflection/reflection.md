@@ -3017,6 +3017,8 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called a _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
+[#]{.pnum} A _reflect-expression_ is parsed as the longest possible sequence of tokens that could syntactically form a _reflect-expression_.
+
 [#]{.pnum} Every value of type `std::meta::info` is either a reflection of some operand or a *null reflection value*.
 
 [#]{.pnum}
