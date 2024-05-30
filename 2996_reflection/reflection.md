@@ -3029,6 +3029,7 @@ template<bool> struct X {};
 bool operator<(std::meta::info, X<false>);
 consteval void g(std::meta::info r, X<false> xv) {
   if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
+  if (r == ^int & true);     // error: ^ applies to the type-id "int&"
   if (r == (^int) && true);  // OK
   if (^X < xv);       // error: < starts template argument list
   if ((^X) < xv);     // OK
