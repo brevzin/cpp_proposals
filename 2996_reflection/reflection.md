@@ -1321,7 +1321,7 @@ We can leverage this machinery to select different function overloads based on t
 
 ::: std
 ```cpp
-using type_t = metatype<^std::meta::type_is>;
+using type_t = metatype<^std::meta::is_type>;
 using template_t = metatype<^std::meta::is_template>;
 
 // Example of a function overloaded for different "types" of reflections.
@@ -2430,7 +2430,7 @@ Any nonstatic data members appear in declaration order within that vector.
 Anonymous unions appear as a nonstatic data member of corresponding union type.
 Reflections of structured bindings shall not appear in the returned vector.
 If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
-E.g., `members_of(^C, std::meta::type_is)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::type_is, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
+E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
@@ -2844,7 +2844,7 @@ Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this mus
 
 ::: addu
 
-- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::type_is`.
+- [3.0]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.
 
 :::
 - [3.1]{.pnum} If `T` is a fundamental type, its associated set of entities is empty.
@@ -4117,7 +4117,7 @@ consteval info substitute(info templ, R&& arguments);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$TRAIT$` defined in this clause, `std::meta::type_$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
 
 ```cpp
 consteval bool type_is_void(info type);
@@ -4162,7 +4162,7 @@ namespace std::meta {
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$TRAIT$` defined in this clause, `std::meta::type_$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
 
 ```cpp
 consteval bool type_is_reference(info type);
@@ -4180,11 +4180,11 @@ consteval bool type_is_member_pointer(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$UNARY-TRAIT$_type` defined in this clause with signature `bool(std::meta::info)`, `std::meta::$UNARY-TRAIT$_type(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::type_$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any types `T` and `U`, for each function `std::meta::$BINARY-TRAIT$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$BINARY-TRAIT$_type(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any types `T` and `U`, for each function `std::meta::type_$BINARY-TRAIT$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::type_$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, for each function template `std::meta::$VARIADIC-TRAIT$_type` defined in this clause, `std::meta::$VARIADIC-TRAIT$_type(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any type `T` and pack of types `U...`, for each function template `std::meta::type_$VARIADIC-TRAIT$` defined in this clause, `std::meta::type_$VARIADIC-TRAIT$(^T, {^U...})` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
 
 ```cpp
 consteval bool type_is_const(info type);
@@ -4260,7 +4260,7 @@ consteval bool type_reference_converts_from_temporary(info type_dst, info type_s
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$PROP$_type` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::$PROP$_type(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$PROP$` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::type_$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
 
 [#]{.pnum} For any type `T` and unsigned integer value `I`, `std::meta::type_extent(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
 
@@ -4278,11 +4278,11 @@ consteval size_t type_extent(info type, unsigned i = 0);
 ::: addu
 [1]{.pnum} The consteval functions specified in this clause may be used to query relationships between types at compile time.
 
-[#]{.pnum} For any types `T` and `U`, for each function `std::meta::$REL$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$_type(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types `T` and `U`, for each function `std::meta::type_$REL$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::type_$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any type `T` and pack of types `U...`, for each binary function template `std::meta::$VARIADIC-REL$_type`, `std::meta::$VARIADIC-REL$_type(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any type `T` and pack of types `U...`, for each binary function template `std::meta::type_$VARIADIC-REL$`, `std::meta::type_$VARIADIC-REL$(^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each ternary function template `std::meta::$VARIADIC-REL-R$_type` defined in this clause, `std::meta::$VARIADIC-REL-R$_type(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types `T` and `R` and pack of types `U...`, for each ternary function template `std::meta::type_$VARIADIC-REL-R$` defined in this clause, `std::meta::type_$VARIADIC-REL-R$(^R, ^T, {^U...})` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
 
 ```cpp
 consteval bool type_is_same(info type1, info type2);
@@ -4319,7 +4319,7 @@ consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&& type
 #### [meta.reflection.trans.cv], Const-volatile modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
 
 ```cpp
 consteval info type_remove_const(info type);
@@ -4336,7 +4336,7 @@ consteval info type_add_cv(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
 
 ```cpp
 consteval info type_remove_reference(info type);
@@ -4350,7 +4350,7 @@ consteval info type_add_rvalue_reference(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
 ```cpp
 consteval info type_make_signed(info type);
 consteval info type_make_unsigned(info type);
@@ -4362,7 +4362,7 @@ consteval info type_make_unsigned(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
 ```cpp
 consteval info type_remove_extent(info type);
 consteval info type_remove_all_extents(info type);
@@ -4373,7 +4373,7 @@ consteval info type_remove_all_extents(info type);
 #### [meta.reflection.trans.ptr], Pointer modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
 ```cpp
 consteval info type_remove_pointer(info type);
 consteval info type_add_pointer(info type);
@@ -4387,9 +4387,9 @@ consteval info type_add_pointer(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type `T`, for each function `std::meta::$MOD$_type` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::$MOD$_type(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
+[1]{.pnum} For any type `T`, for each function `std::meta::type_$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any pack of types `T...`, for each unary function template `std::meta::$VARIADIC-MOD$_type` defined in this clause, `std::meta::$VARIADIC-MOD$_type({^T...})` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
+[#]{.pnum} For any pack of types `T...`, for each unary function template `std::meta::type_$VARIADIC-MOD$` defined in this clause, `std::meta::type_$VARIADIC-MOD$({^T...})` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
 
 [#]{.pnum} For any type `T` and pack of types `U...`, `std::meta::type_invoke_result(^T, {^U...})` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
 

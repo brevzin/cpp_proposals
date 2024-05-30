@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-28" />
+  <meta name="dcterms.date" content="2024-05-29" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -560,7 +560,7 @@ code del { border: 1px solid #ECB3C7; }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-28</td>
+    <td>2024-05-29</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -2279,7 +2279,7 @@ here.</p>
 based on the “type” of reflection provided as an argument.</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> type_t <span class="op">=</span> metatype<span class="op">&lt;^</span>std<span class="op">::</span>meta<span class="op">::</span>type_is<span class="op">&gt;</span>;</span>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> type_t <span class="op">=</span> metatype<span class="op">&lt;^</span>std<span class="op">::</span>meta<span class="op">::</span>is_type<span class="op">&gt;</span>;</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> template_t <span class="op">=</span> metatype<span class="op">&lt;^</span>std<span class="op">::</span>meta<span class="op">::</span>is_template<span class="op">&gt;</span>;</span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Example of a function overloaded for different &quot;types&quot; of reflections.</span></span>
@@ -3769,9 +3769,9 @@ structured bindings shall not appear in the returned vector. If any
 argument is specified, a member is dropped from the result if any filter
 applied to that members reflection returns
 <code class="sourceCode cpp"><span class="kw">false</span></code>. E.g.,
-<code class="sourceCode cpp">members_of<span class="op">(^</span>C, std<span class="op">::</span>meta<span class="op">::</span>type_is<span class="op">)</span></code>
+<code class="sourceCode cpp">members_of<span class="op">(^</span>C, std<span class="op">::</span>meta<span class="op">::</span>is_type<span class="op">)</span></code>
 will only return types nested in the definition of
-<code class="sourceCode cpp">C</code> and <code class="sourceCode cpp">members_of<span class="op">(^</span>C, std<span class="op">::</span>meta<span class="op">::</span>type_is, std<span class="op">::</span>meta<span class="op">::</span>is_variable<span class="op">)</span></code>
+<code class="sourceCode cpp">C</code> and <code class="sourceCode cpp">members_of<span class="op">(^</span>C, std<span class="op">::</span>meta<span class="op">::</span>is_type, std<span class="op">::</span>meta<span class="op">::</span>is_variable<span class="op">)</span></code>
 will return an empty vector since a member cannot be both a type and a
 variable.</p>
 <p>The template <code class="sourceCode cpp">bases_of</code> returns the
@@ -4390,7 +4390,7 @@ determined in the following way:</p>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(3.0)</a></span>
 If <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,
 its associated set of entities is the singleton containing the function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_is</code>.</li>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_type</code>.</li>
 </ul>
 </div>
 <ul>
@@ -6180,8 +6180,8 @@ Primary type categories<a href="#meta.reflection.unary.cat-primary-type-categori
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_162" id="pnum_162">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding unary type trait <code class="sourceCode cpp">std<span class="op">::</span><em>TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.2 <a href="https://wg21.link/meta.unary.cat">[meta.unary.cat]</a></span>.</p>
 <div class="sourceCode" id="cb165"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb165-1"><a href="#cb165-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_void<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6226,8 +6226,8 @@ Composite type categories<a href="#meta.reflection.unary.comp-composite-type-cat
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_164" id="pnum_164">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding unary type trait <code class="sourceCode cpp">std<span class="op">::</span><em>TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.3 <a href="https://wg21.link/meta.unary.comp">[meta.unary.comp]</a></span>.</p>
 <div class="sourceCode" id="cb167"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb167-1"><a href="#cb167-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6247,23 +6247,23 @@ Type properties<a href="#meta.reflection.unary.prop-type-properties" class="self
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_165" id="pnum_165">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em>_type</code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em></code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>UNARY-TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_166" id="pnum_166">2</a></span>
 For any types <code class="sourceCode cpp">T</code> and
-<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em>_type</code>
+<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em></code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info, std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em>_type<span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em><span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>BINARY-TRAIT</em>_v<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_167" id="pnum_167">3</a></span>
 For any type <code class="sourceCode cpp">T</code> and pack of types
 <code class="sourceCode cpp">U<span class="op">...</span></code>, for
-each function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-TRAIT</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-TRAIT</em>_type<span class="op">(^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code>
+each function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-TRAIT</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-TRAIT</em><span class="op">(^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-TRAIT</em>_v<span class="op">&lt;</span>T, U<span class="op">...&gt;</span></code>
 as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
 <div class="sourceCode" id="cb168"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb168-1"><a href="#cb168-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_const<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6341,9 +6341,9 @@ Type property queries<a href="#meta.reflection.unary.prop.query-type-property-qu
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_168" id="pnum_168">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>PROP</em>_type</code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>PROP</em></code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">size_t</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>PROP</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>PROP</em><span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>PROP</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.6 <a href="https://wg21.link/meta.unary.prop.query">[meta.unary.prop.query]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_169" id="pnum_169">2</a></span>
@@ -6367,24 +6367,24 @@ The consteval functions specified in this clause may be used to query
 relationships between types at compile time.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_171" id="pnum_171">2</a></span>
 For any types <code class="sourceCode cpp">T</code> and
-<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>REL</em>_type</code>
+<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>REL</em></code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info, std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>REL</em>_type<span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>REL</em><span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
 equals the value of the corresponding type relation <code class="sourceCode cpp">std<span class="op">::</span><em>REL</em>_v<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
 as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_172" id="pnum_172">3</a></span>
 For any type <code class="sourceCode cpp">T</code> and pack of types
 <code class="sourceCode cpp">U<span class="op">...</span></code>, for
-each binary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL</em>_type</code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL</em>_type<span class="op">(^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code>
+each binary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL</em></code>,
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL</em><span class="op">(^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code>
 equals the value of the corresponding type relation <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-REL</em>_v<span class="op">&lt;</span>T, U<span class="op">...&gt;</span></code>
 as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_173" id="pnum_173">4</a></span>
 For any types <code class="sourceCode cpp">T</code> and
 <code class="sourceCode cpp">R</code> and pack of types
 <code class="sourceCode cpp">U<span class="op">...</span></code>, for
-each ternary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL-R</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL-R</em>_type<span class="op">(^</span>R, <span class="op">^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code>
+each ternary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL-R</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL-R</em><span class="op">(^</span>R, <span class="op">^</span>T, <span class="op">{^</span>U<span class="op">...})</span></code>
 equals the value of the corresponding type relation <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-REL-R</em>_v<span class="op">&lt;</span>R, T, U<span class="op">...&gt;</span></code>
 as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a></span>.</p>
 <div class="sourceCode" id="cb170"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_same<span class="op">(</span>info type1, info type2<span class="op">)</span>;</span>
@@ -6439,8 +6439,8 @@ Const-volatile modifications<a href="#meta.reflection.trans.cv-const-volatile-mo
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_176" id="pnum_176">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.2 <a href="https://wg21.link/meta.trans.cv">[meta.trans.cv]</a></span>.</p>
 <div class="sourceCode" id="cb171"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb171-1"><a href="#cb171-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_const<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6459,8 +6459,8 @@ Reference modifications<a href="#meta.reflection.trans.ref-reference-modificatio
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_177" id="pnum_177">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.3 <a href="https://wg21.link/meta.trans.ref">[meta.trans.ref]</a></span>.</p>
 <div class="sourceCode" id="cb172"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6476,8 +6476,8 @@ Sign modifications<a href="#meta.reflection.trans.sign-sign-modifications" class
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_178" id="pnum_178">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.4 <a href="https://wg21.link/meta.trans.sign">[meta.trans.sign]</a></span>.</p>
 <div class="sourceCode" id="cb173"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb173-1"><a href="#cb173-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_make_signed<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6492,8 +6492,8 @@ Array modifications<a href="#meta.reflection.trans.arr-array-modifications" clas
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_179" id="pnum_179">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.5 <a href="https://wg21.link/meta.trans.arr">[meta.trans.arr]</a></span>.</p>
 <div class="sourceCode" id="cb174"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb174-1"><a href="#cb174-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_extent<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6508,8 +6508,8 @@ Pointer modifications<a href="#meta.reflection.trans.ptr-pointer-modifications" 
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_180" id="pnum_180">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.6 <a href="https://wg21.link/meta.trans.ptr">[meta.trans.ptr]</a></span>.</p>
 <div class="sourceCode" id="cb175"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb175-1"><a href="#cb175-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
@@ -6534,16 +6534,16 @@ class template intended to be specialized and not directly invoked.
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_181" id="pnum_181">1</a></span>
 For any type <code class="sourceCode cpp">T</code>, for each function
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type</code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
 defined in this clause with signature <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.7 <a href="https://wg21.link/meta.trans.other">[meta.trans.other]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_182" id="pnum_182">2</a></span>
 For any pack of types
 <code class="sourceCode cpp">T<span class="op">...</span></code>, for
-each unary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-MOD</em>_type</code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-MOD</em>_type<span class="op">({^</span>T<span class="op">...})</span></code>
+each unary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-MOD</em><span class="op">({^</span>T<span class="op">...})</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-MOD</em>_t<span class="op">&lt;</span>T<span class="op">...&gt;</span></code>
 as specified in <span>21.3.8.7 <a href="https://wg21.link/meta.trans.other">[meta.trans.other]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_183" id="pnum_183">3</a></span>
