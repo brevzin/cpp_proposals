@@ -3092,8 +3092,8 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if their reflected aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
 * [*.#]{.pnum} Otherwise, if neither operand is a reflection of a value, then they compare equal if they are reflections of the same entity.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of a value and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equally if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
-* Otherwise the result is unspecified.
+* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
+* [*.#]{.pnum} Otherwise the result is unspecified.
 :::
 
 [6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
