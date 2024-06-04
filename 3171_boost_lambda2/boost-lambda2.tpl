@@ -1,6 +1,6 @@
 ---
 title: "Adding functionality to placeholder types"
-document: P3171R0
+document: P3171R1
 date: today
 audience: LEWG
 author:
@@ -543,7 +543,7 @@ template<class A, class B> constexpr auto operator<<(A& a, B&& b);
 
 [#]{.pnum} *Returns*: `bind(left_shift(), ref(a), std::forward<B>(b))`.
 
-[#]{.pnum} *Remarks*: This overload allows expressions like `std::cout << _1 << '\n'` to work.
+[#]{.pnum} [This overload allows expressions like `std::cout << _1 << '\n'` to work.]{.note}
 
 ```
 template<class A, class B> constexpr auto operator>>(A&& a, B&& b);
