@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-29" />
+  <meta name="dcterms.date" content="2024-06-12" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -560,7 +560,7 @@ code del { border: 1px solid #ECB3C7; }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-29</td>
+    <td>2024-06-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -873,7 +873,7 @@ Macro<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P2996R3">[<a href="#ref-P2996R3" role="doc-biblioref"><strong>P2996R3?</strong></a>]</span>:</p>
 <ul>
 <li>changing <code class="sourceCode cpp">name_of</code>,
 <code class="sourceCode cpp">display_name_of</code>, and
@@ -3982,30 +3982,45 @@ recommended practice.</p>
 <blockquote>
 <div class="sourceCode" id="cb92"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
 <span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> data_member_options_t <span class="op">{</span></span>
-<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>    optional<span class="op">&lt;</span>string_view<span class="op">&gt;</span> name;</span>
-<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> is_static <span class="op">=</span> <span class="kw">false</span>;</span>
-<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> alignment;</span>
-<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> width;</span>
-<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
-<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_spec<span class="op">(</span>info type,</span>
-<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;&gt;</span></span>
-<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> name_type <span class="op">{</span></span>
+<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>u8string, T<span class="op">&gt;</span></span>
+<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> name_type<span class="op">(</span>T <span class="op">&amp;&amp;)</span>;</span>
+<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>string, T<span class="op">&gt;</span></span>
+<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> name_type<span class="op">(</span>T <span class="op">&amp;&amp;)</span>;</span>
+<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>    optional<span class="op">&lt;</span>string_view<span class="op">&gt;</span> name;</span>
+<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> is_static <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb92-13"><a href="#cb92-13" aria-hidden="true" tabindex="-1"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> alignment;</span>
+<span id="cb92-14"><a href="#cb92-14" aria-hidden="true" tabindex="-1"></a>    optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> width;</span>
+<span id="cb92-15"><a href="#cb92-15" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
+<span id="cb92-16"><a href="#cb92-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_spec<span class="op">(</span>info type,</span>
+<span id="cb92-17"><a href="#cb92-17" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb92-18"><a href="#cb92-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> span<span class="op">&lt;</span>info <span class="kw">const</span><span class="op">&gt;&gt;</span></span>
+<span id="cb92-19"><a href="#cb92-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb92-20"><a href="#cb92-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p><code class="sourceCode cpp">data_member_spec</code> returns a
 reflection of a description of a data member of given type. Optional
 alignment, bit-field-width, static-ness, and name can be provided as
-well. If no <code class="sourceCode cpp">name</code> is provided, the
-name of the data member is unspecified. If
-<code class="sourceCode cpp">is_static</code> is
-<code class="sourceCode cpp"><span class="kw">true</span></code>, the
+well. An inner class <code class="sourceCode cpp">name_type</code>,
+which may be implicitly converted to from any of several “string-like”
+types (e.g., <code class="sourceCode cpp">string_view</code>,
+<code class="sourceCode cpp">u8string_view</code>, <code class="sourceCode cpp"><span class="dt">char8_t</span><span class="op">[]</span></code>,
+<code class="sourceCode cpp">char_t<span class="op">[]</span></code>),
+is used to represent the name. If a
+<code class="sourceCode cpp">name</code> is provided, it must be a valid
+identifier when interpreted as a sequence of UTF-8 code-units (after
+converting any contained UCNs to UTF-8). Otherwise, the name of the data
+member is unspecified. If <code class="sourceCode cpp">is_static</code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>, the
 data member is declared
 <code class="sourceCode cpp"><span class="kw">static</span></code>.</p>
 <p><code class="sourceCode cpp">define_class</code> takes the reflection
 of an incomplete class/struct/union type and a range of reflections of
-data member descriptions and it completes the given class type with data
+data member descriptions and completes the given class type with data
 members as described (in the given order). The given reflection is
 returned. For now, only data member reflections are supported (via
 <code class="sourceCode cpp">data_member_spec</code>) but the API takes
@@ -4030,15 +4045,17 @@ expanding this in the near future.</p>
 <span id="cb93-14"><a href="#cb93-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb93-15"><a href="#cb93-15" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> S;</span>
 <span id="cb93-16"><a href="#cb93-16" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> U <span class="op">=</span> define_class<span class="op">(^</span>S<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, <span class="op">{</span></span>
-<span id="cb93-17"><a href="#cb93-17" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
-<span id="cb93-18"><a href="#cb93-18" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;j&quot;</span>, <span class="op">.</span>align<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
-<span id="cb93-19"><a href="#cb93-19" aria-hidden="true" tabindex="-1"></a><span class="op">})</span>;</span>
-<span id="cb93-20"><a href="#cb93-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb93-21"><a href="#cb93-21" aria-hidden="true" tabindex="-1"></a><span class="co">// S&lt;int&gt; is now defined to the equivalent of</span></span>
-<span id="cb93-22"><a href="#cb93-22" aria-hidden="true" tabindex="-1"></a><span class="co">// template&lt;&gt; struct S&lt;int&gt; {</span></span>
-<span id="cb93-23"><a href="#cb93-23" aria-hidden="true" tabindex="-1"></a><span class="co">//   alignas(64) int i;</span></span>
-<span id="cb93-24"><a href="#cb93-24" aria-hidden="true" tabindex="-1"></a><span class="co">//   alignas(64) int j;</span></span>
-<span id="cb93-25"><a href="#cb93-25" aria-hidden="true" tabindex="-1"></a><span class="co">// };</span></span></code></pre></div>
+<span id="cb93-17"><a href="#cb93-17" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>alignment<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
+<span id="cb93-18"><a href="#cb93-18" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">u8&quot;こんにち&quot;</span>, <span class="op">.</span>alignment<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
+<span id="cb93-19"><a href="#cb93-19" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;v</span><span class="sc">\\</span><span class="st">N{LATIN SMALL LETTER AE}rs</span><span class="sc">\\</span><span class="st">u{e5}god&quot;</span><span class="op">})</span></span>
+<span id="cb93-20"><a href="#cb93-20" aria-hidden="true" tabindex="-1"></a><span class="op">})</span>;</span>
+<span id="cb93-21"><a href="#cb93-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb93-22"><a href="#cb93-22" aria-hidden="true" tabindex="-1"></a><span class="co">// S&lt;int&gt; is now defined to the equivalent of</span></span>
+<span id="cb93-23"><a href="#cb93-23" aria-hidden="true" tabindex="-1"></a><span class="co">// template&lt;&gt; struct S&lt;int&gt; {</span></span>
+<span id="cb93-24"><a href="#cb93-24" aria-hidden="true" tabindex="-1"></a><span class="co">//   alignas(64) int i;</span></span>
+<span id="cb93-25"><a href="#cb93-25" aria-hidden="true" tabindex="-1"></a><span class="co">//   alignas(64) int こんにち;</span></span>
+<span id="cb93-26"><a href="#cb93-26" aria-hidden="true" tabindex="-1"></a><span class="co">//               int værsågod;</span></span>
+<span id="cb93-27"><a href="#cb93-27" aria-hidden="true" tabindex="-1"></a><span class="co">// };</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>When defining a
@@ -6669,11 +6686,6 @@ Faisal Vali, Daveed Vandevoorde. 2023-12-18. Reflection for C++26. <a href="http
 [P2996R2] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-02-15. Reflection for
 C++26. <a href="https://wg21.link/p2996r2"><div class="csl-block">https://wg21.link/p2996r2</div></a>
-</div>
-<div id="ref-P2996R3" class="csl-entry" role="doc-biblioentry">
-[P2996R3] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-05-22. Reflection for
-C++26. <a href="https://wg21.link/p2996r3"><div class="csl-block">https://wg21.link/p2996r3</div></a>
 </div>
 <div id="ref-P3068R1" class="csl-entry" role="doc-biblioentry">
 [P3068R1] Hana Dusíková. 2024-03-18. Allowing exception throwing in
