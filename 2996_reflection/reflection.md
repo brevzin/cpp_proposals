@@ -2593,7 +2593,7 @@ namespace std::meta {
         consteval name_type(T &&);
     };
 
-    optional<string_view> name;
+    optional<name_type> name;
     bool is_static = false;
     optional<int> alignment;
     optional<int> width;
