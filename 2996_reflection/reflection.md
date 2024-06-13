@@ -3027,7 +3027,7 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called a _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
-[#]{.pnum} Every value of type `std::meta::info` is either a reflection of some operand or a *null reflection value*.
+[#]{.pnum} Every value of type `std::meta::info` is either a reflection of some entity (or description thereof) or a *null reflection value*.
 
 [#]{.pnum} A _reflect-expression_ is parsed as the longest possible sequence of tokens that could syntactically form a _reflect-expression_.
 
@@ -3060,10 +3060,12 @@ When applied to a `$namespace-name$`, the reflection operator produces a reflect
 
 [#]{.pnum} When applied to a `$type-id$`, the reflection operator produces a reflection for the indicated type or type alias.
 
-[#]{.pnum} When applied to an `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
+[#]{.pnum} When applied to an lvalue `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
 The `$id-expression$` is not evaluated.
 
 * [#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
+
+[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue]{.note}
 
 ::: example
 ```cpp
