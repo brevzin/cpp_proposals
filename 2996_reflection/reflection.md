@@ -2585,7 +2585,15 @@ In fact, that is recommended practice.
 ```c++
 namespace std::meta {
   struct data_member_options_t {
-    optional<string_view> name;
+    struct name_type {
+      template <typename T> requires constructible_from<u8string, T>
+        consteval name_type(T &&);
+
+      template <typename T> requires constructible_from<string, T>
+        consteval name_type(T &&);
+    };
+
+    optional<name_type> name;
     bool is_static = false;
     optional<int> alignment;
     optional<int> width;
@@ -2598,9 +2606,9 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
+`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of UTF-8 code-units (after converting any contained UCNs to UTF-8). Otherwise, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
 
-`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order).
+`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
 
 For example:
@@ -2623,14 +2631,16 @@ static_assert(is_type(define_class(^U, {
 
 template<typename T> struct S;
 constexpr auto U = define_class(^S<int>, {
-  data_member_spec(^int, {.name="i", .align=64}),
-  data_member_spec(^int, {.name="j", .align=64}),
+  data_member_spec(^int, {.name="i", .alignment=64}),
+  data_member_spec(^int, {.name=u8"こんにち", .alignment=64}),
+  data_member_spec(^int, {.name="v\\N{LATIN SMALL LETTER AE}rs\\u{e5}god"})
 });
 
 // S<int> is now defined to the equivalent of
 // template<> struct S<int> {
 //   alignas(64) int i;
-//   alignas(64) int j;
+//   alignas(64) int こんにち;
+//               int værsågod;
 // };
 ```
 :::
@@ -3017,7 +3027,7 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 [#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called a _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
 That reflection represents its operand.
 
-[#]{.pnum} Every value of type `std::meta::info` is either a reflection of some operand or a *null reflection value*.
+[#]{.pnum} Every value of type `std::meta::info` is either a reflection of some entity (or description thereof) or a *null reflection value*.
 
 [#]{.pnum} A _reflect-expression_ is parsed as the longest possible sequence of tokens that could syntactically form a _reflect-expression_.
 
@@ -3050,10 +3060,12 @@ When applied to a `$namespace-name$`, the reflection operator produces a reflect
 
 [#]{.pnum} When applied to a `$type-id$`, the reflection operator produces a reflection for the indicated type or type alias.
 
-[#]{.pnum} When applied to an `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
+[#]{.pnum} When applied to an lvalue `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
 The `$id-expression$` is not evaluated.
 
 * [#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
+
+[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue]{.note}
 
 ::: example
 ```cpp
