@@ -34,6 +34,7 @@ Since [@P2996R3]:
 * more strongly specified comparison and linkage rules for reflections of aliases
 * changed `is_noexcept` to apply to a wider class of entities
 * reworked the API for reflecting on accessible class members
+* renamed `test_type` and `test_types` to `test_trait`
 
 Since [@P2996R2]:
 
@@ -106,7 +107,7 @@ later.
 
 While we tried to select a useful subset of the P1240 features, we also made a few additions and changes.
 Most of those changes are minor.
-For example, we added a `std::meta::test_type` interface that makes it convenient to use existing standard type predicates (such as `is_class_v`) in reflection computations.
+For example, we added a `std::meta::test_trait` interface that makes it convenient to use existing standard type predicates (such as `is_class_v`) in reflection computations.
 
 One addition does stand out, however: We have added metafunctions that permit the synthesis of simple struct and union types.
 While it is not nearly as powerful as generalized code injection (see [@P2237R0]), it can be remarkably effective in practice.
@@ -1280,7 +1281,7 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (test_types(^std::predicate, {type_of(Pred), ^std::meta::info}))
+  requires (test_trait(^std::predicate, {type_of(Pred), ^std::meta::info}))
 struct metatype {
   std::meta::info value;
 
@@ -2278,10 +2279,10 @@ namespace std::meta {
   template <typename T>
     consteval auto extract(info) -> T;
 
-  // @[test_type](#test_type-test_types)@
-  consteval auto test_type(info templ, info type) -> bool;
+  // @[test_trait](#test_trait)@
+  consteval auto test_trait(info templ, info type) -> bool;
   template <reflection_range R = span<info const>>
-  consteval auto test_types(info templ, R&& types) -> bool;
+  consteval auto test_trait(info templ, R&& arguments) -> bool;
 
   // other type predicates (see @[the wording](#meta.reflection.queries-reflection-queries)@)
   consteval auto is_public(info r) -> bool;
@@ -2671,17 +2672,17 @@ For other reflection values `r`, `extrace<T>(r)` is ill-formed.
 The function template `extract` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity reflected by its operand.
 
-### `test_type`, `test_types`
+### `test_trait`
 
 ::: std
 ```c++
 namespace std::meta {
-  consteval auto test_type(info templ, info type) -> bool {
-    return test_types(templ, {type});
+  consteval auto test_trait(info templ, info type) -> bool {
+    return test_trait(templ, {type});
   }
 
   template <reflection_range R = span<info const>>
-  consteval auto test_types(info templ, R&& types) -> bool {
+  consteval auto test_trait(info templ, R&& types) -> bool {
     return extract<bool>(substitute(templ, (R&&)types));
   }
 }
@@ -2694,12 +2695,12 @@ For example:
 ::: std
 ```c++
 struct S {};
-static_assert(test_type(^std::is_class_v, ^S));
-static_assert(test_types(^std::is_same_v, {^S, ^S})
+static_assert(test_trait(^std::is_class_v, ^S));
+static_assert(test_trait(^std::is_same_v, {^S, ^S})
 ```
 :::
 
-An implementation is permitted to recognize standard predicate templates and implement `test_type` without actually instantiating the predicate template.
+An implementation is permitted to recognize standard predicate templates and implement `test_trait` without actually instantiating the predicate template.
 In fact, that is recommended practice.
 
 ### `data_member_spec`, `define_class`
@@ -2852,7 +2853,7 @@ std::meta::type_is_const(type)
 
 ```cpp
 std::meta::extract<bool>(std::meta::substitute(^std::is_const_v, {type}))
-std::meta::test_type(^std::is_const_v, type)
+std::meta::test_trait(^std::is_const_v, type)
 ```
 :::
 
@@ -3743,6 +3744,10 @@ namespace std::meta {
   template <reflection_range R = span<info const>>
   consteval info substitute(info templ, R&& arguments);
 
+  consteval bool test_trait(info templ, info type);
+  template <reflection_rane R = span<info const>>
+  consteval bool test_trait(info templ, R&& arguments);
+
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
   consteval bool type_is_null_pointer(info type);
@@ -4398,6 +4403,19 @@ consteval info substitute(info templ, R&& arguments);
 [#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or expressions designated by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `^Z<Args...>`.
+
+```cpp
+consteval bool test_trait(info templ, info type);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, {type}));`
+
+```cpp
+template <reflection_rane R = span<info const>>
+consteval bool test_trait(info templ, R&& arguments);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, arguments));`
 
 :::
 :::
