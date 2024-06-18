@@ -2494,9 +2494,11 @@ E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the 
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
-`enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
+`static_data_members_of` and `nonstatic_data_members_of` return the equivalent of `members_of(^C, std::meta::is_nonstatic_data_member)` and `members_of(^C, std::meta::is_variable)`, respectively.
 
 `subobjects_of` returns the base class subobjects and the non-static data members of a type, in declaration order. Note that the term [subobject](https://eel.is/c++draft/intro.object#def:subobject) also includes _array elements_, which we are excluding here. Such reflections would currently be of minimal use since you could not splice them with access (e.g. `arr.[:elem:]` is not supported), so would need some more thought first.
+
+`enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
 ### Member Access Reflection {#member-access}
 
@@ -2686,13 +2688,14 @@ namespace std::meta {
 ```
 :::
 
-This utility translates existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
+These utilities translate existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
 For example:
 
 ::: std
 ```c++
 struct S {};
 static_assert(test_type(^std::is_class_v, ^S));
+static_assert(test_types(^std::is_same_v, {^S, ^S})
 ```
 :::
 
@@ -3618,11 +3621,11 @@ namespace std::meta {
   using info = decltype(^::);
 
   // [meta.reflection.names], reflection names and locations
-  template<typename T = std::u8string_view>
+  template<typename T = u8string_view>
     consteval T name_of(info r);
-  template<typename T = std::u8string_view>
+  template<typename T = u8string_view>
     consteval T qualified_name_of(info r);
-  template<typename T = std::u8string_view>
+  template<typename T = u8string_view>
     consteval T display_name_of(info r);
   consteval source_location source_location_of(info r);
 
@@ -3673,6 +3676,7 @@ namespace std::meta {
   consteval bool is_user_provided(info r);
 
   consteval info type_of(info r);
+  consteval info value_of(info r);
   consteval info parent_of(info r);
   consteval info dealias(info r);
   consteval info template_of(info r);
@@ -4101,6 +4105,16 @@ consteval info type_of(info r);
 [#]{.pnum} *Mandates*: `r` designates a typed entity. `r` does not designate a constructor or destructor.
 
 [#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
+
+```cpp
+consteval info value_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating either an object usable in constant expressions ([expr.const]{.sref}), an enumerator, or a value.
+
+[#]{.pnum} *Returns*: If `r` is a reflection designating an object, then a reflection of the value held by that object. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+
+[#]{.pnum} *Remarks*: The reflected value shall have the type of the entity reflected by `r` if it is of class type, and otherwise the cv-unqualified version of that type. The type of the reflected value shall not be an alias.
 
 ```cpp
 consteval info parent_of(info r);
