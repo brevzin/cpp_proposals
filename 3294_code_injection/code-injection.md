@@ -16,26 +16,25 @@ toc-depth: 2
 
 # Introduction
 
-This paper is proposing augmenting [@P2996R3] to add code injection in the form of token sequences.
+This paper is presenting a thorough analysis and comparison of injection approaches, and then proposing augmenting [@P2996R3] with code injection in the form of token sequences.
 
-We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic ([@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
+We consider the motivation for this feature largely obvious, so we will not repeat it here. Instead, we encourage readers to consult other papers on this topic, e.g., [@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0].
 
 # A Comparison of Injection Models
 
-There are a lot of things that make code injection in C++ difficult, and the most important problem to solve first is: what will the actual injection mechanism look like? Not its syntax specifically, but what is the shape of the API that we want to expose to users? We hope in this section to do a thorough job of comparing the various semantic models we're aware of to help explain why we came to the conclusion that we came to.
+There are a lot of things that make code injection in C++ difficult. The primary problem to solve is: what will the actual injection mechanism look like? Not its syntax specifically, but what is the shape of the API that we want to expose to users? We hope that this section does a thorough job of comparing the various semantic models we're aware of to help explain why we arrived at the conclusion that we came to.
+If you're not interested in this journey, you can simply skip to the [next section](#token-sequences), which presents our preferred approach.
 
-If you're not interested in this journey, you can simply skip to the [next section](#token-sequences).
-
-Here, we will look at a few interesting examples for injection and how different models can implement them. The examples aren't necessarily intended to be the most compelling examples that exist in the wild. Instead, they're hopefully representative enough to cover a wide class of problems. They are:
+For our comparison, we will look at a few interesting examples for injection and how different models can implement them. The examples may not be the most compelling, but they're hopefully representative enough to cover a wide class of problems. They are:
 
 1. Implementing the storage for `std::tuple<Ts...>`
 2. Implementing `std::enable_if` without resorting to class template specialization
-3. Implementing properties (i.e. given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a getter `get_author()` which returns a `std::string const&` to that member, and a setter `set_author()` which takes a new value of type `std::string const&` and assigns the member).
-4. Implement postfix increment in terms of prefix increment.
+3. Implementing properties. That is, given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a corresponding getter `get_author() -> std::string const&`, and a setter `set_author(std::string const&)`.
+4. Implementing postfix increment in terms of an existing prefix increment.
 
 ## The Spec API
 
-In P2996, the injection API is based on a function `define_class()` which takes a range of `spec` objects. But `define_class()` is a really clunky API, because invoking it is an expression - but we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
+In P2996, the injection API is based on a function `define_class()` which takes a range of `spec` objects. But `define_class()` is a really clunky API, because invoking it is an expression and we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
 
 ::: std
 ```cpp
@@ -45,7 +44,8 @@ static_assert(is_type(define_class(^C,
 ```
 :::
 
-We are already separately proposing `consteval` blocks [@P3289R0] and we would like to inject each spec more directly, without having to complete `C` in one ago. As in:
+Here, injecting declarations into the class `C` also completes the class definition, which is undesirable.
+Using the separately proposed `consteval` blocks [@P3289R0], we would like to inject each spec more directly, without having to complete `C` in one go. As in:
 
 ::: std
 ```cpp
@@ -57,32 +57,33 @@ struct C {
 ```
 :::
 
-Here, `std::meta::inject` is a metafunction that takes a spec, which gets injected into the context begin by the `consteval` block that our evaluation started in as a side-effect.
+Here, `std::meta::inject` is a new metafunction that takes a spec, which gets injected into the context begun by the `consteval` block starting our evaluation as a side-effect.
 
 We already think of this as an improvement. But let's go through several use-cases to expand the API and see how well it holds up.
 
 ### `std::tuple`
 
-The tuple use-case was already supported by P2996 directly with `define_class()` (even as we think itd be better as a member pack), but it's worth just showing what it looks like with a direct injection API instead:
+The tuple use-case was already supported by P2996 directly with `define_class()` (even though we think it would be better as a member pack), but it's worth just showing what it looks like with a direct injection API instead:
 
 ::: std
 ```cpp
 template <class... Ts>
 struct Tuple {
     consteval {
-        std::array types{^Ts...};
-        for (size_t i = 0; i != types.size() ;++i) {
+        for (size_t i = 0; i != sizeof...(Ts) ;++i) {
             inject(data_member_spec{.name=std::format("_{}", i),
-                                    .type=types[i]});
+                                    .type=Ts...[i]});
         }
     }
 };
 ```
 :::
 
+The example makes use of pack indexing, as proposed in [@P2662R3].
+
 ### `std::enable_if`
 
-Now, `std::enable_if` has already been obsolete technology since C++20. So implementing it, specifically, is not entirely a motivating example. However, the general idea of `std::enable_if` as *conditionally* having a member type is a problem that has no good solution in C++ today.
+Even though `std::enable_if` has already been obsolete technology since C++20, the general idea of *conditionally* having a member type is a problem that has no good solution in C++ today.
 
 The spec API along with injection does allow for a clean solution here. We would just need to add an `alias_spec` construct to get the job done:
 
@@ -103,7 +104,7 @@ So far so good.
 
 ### Properties
 
-Now is when the spec API really goes off the rails. We've shown data members and extended it to member aliases. But how do we support member functions?
+Here, the spec API really goes off the rails. We've shown data members and extended it to member aliases. But how do we support member functions?
 
 We want to be able to add a `property` with a given `name` and `type` that adds a member of that type and a getter and setter for it. For instance, we want this code:
 
@@ -118,7 +119,7 @@ struct Book {
 ```
 :::
 
-to emit a class with two members (`m_author` and `m_title`), two getters that each return a `std::string const&` (`get_author()` and `get_title()`) and two setters that each take a `std::string const&` (`set_author()` and `set_title()`). Fairly basic property.
+to emit a class with two members (`m_author` and `m_title`), two getters, `get_author()` and `get_title()`, that each return a `std::string const&`, and two setters, `set_author()` and `set_title()`, that each take a `std::string const&`. Fairly basic properties.
 
 We start by injecting the member:
 
@@ -135,7 +136,7 @@ consteval auto property(string_view name, meta::info type)
 ```
 :::
 
-Now, we need to inject two functions. We'll need a new kind of `spec` for that case, and then we can use a lambda for the function body. Let's start with the getter:
+Now, we need to inject two functions. We'll need a new kind of `spec` for that case. For the function body, we could use a lambda. Let's start with the getter:
 
 
 ::: std
@@ -185,7 +186,7 @@ consteval auto property(string_view name, meta::info type)
 
 But that doesn't work - in order to splice `member`, it needs to be a constant expression - and it's not in this context.
 
-Now, the body of the lambda isn't going to be evaluted in this constant evaluation, so it's possible to maybe some up with some mechanism to pass a context through - such that from the body we _can_ simply splice `member`. We basically need to come up with a way to defer this instantiation.
+Now, the body of the lambda isn't going to be evaluted in this constant evaluation, so it's possible to maybe come up with some mechanism to pass a context through - such that from the body we _can_ simply splice `member`. We basically need to come up with a way to defer this instantiation.
 
 For now, let's try a spelling like this:
 
@@ -342,7 +343,7 @@ This solution... might be workable. But it's already pretty complicated and the 
 
 ### Disposition
 
-It's hard to view favorably a design for the long-term future of code injection with which we cannot even figure out how to inject functions. Even if we could, this design scales poorly with the language: we need a library for API for many language constructs, and C++ is a language with a lot of kinds. That makes for a large barrier to entry for metaprogramming that we would like to avoid.
+It's hard to view favorably a design for the long-term future of code injection with which we cannot even figure out how to inject functions. Even if we could, this design scales poorly with the language: we need a library API for many language constructs, and C++ is a language with a lot of kinds. That makes for a large barrier to entry for metaprogramming that we would like to avoid.
 
 Nevertheless, the spec API does have one thing going for it: it is quite simple. At the very least, we think we should extend the spec model in P2996 in the following ways:
 

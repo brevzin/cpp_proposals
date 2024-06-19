@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-29" />
+  <meta name="dcterms.date" content="2024-06-02" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -561,7 +561,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-29</td>
+    <td>2024-06-02</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -627,51 +627,45 @@ Syntax<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>This paper is proposing augmenting <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> to add code injection in the
-form of token sequences.</p>
-<p>We consider the motivation for this feature to some degree pretty
-obvious, so we will not repeat it here, since there are plenty of other
-things to cover here. Instead we encourage readers to read some other
-papers on the topic (<span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span>, <span class="citation" data-cites="P0712R0">[<a href="https://wg21.link/p0712r0" role="doc-biblioref">P0712R0</a>]</span>, <span class="citation" data-cites="P1717R0">[<a href="https://wg21.link/p1717r0" role="doc-biblioref">P1717R0</a>]</span>, <span class="citation" data-cites="P2237R0">[<a href="https://wg21.link/p2237r0" role="doc-biblioref">P2237R0</a>]</span>).</p>
+<p>This paper is presenting a thorough analysis and comparison of
+injection approaches, and then proposing augmenting <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> with code injection in the form
+of token sequences.</p>
+<p>We consider the motivation for this feature largely obvious, so we
+will not repeat it here. Instead, we encourage readers to consult other
+papers on this topic, e.g., <span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span>, <span class="citation" data-cites="P0712R0">[<a href="https://wg21.link/p0712r0" role="doc-biblioref">P0712R0</a>]</span>, <span class="citation" data-cites="P1717R0">[<a href="https://wg21.link/p1717r0" role="doc-biblioref">P1717R0</a>]</span>, <span class="citation" data-cites="P2237R0">[<a href="https://wg21.link/p2237r0" role="doc-biblioref">P2237R0</a>]</span>.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="a-comparison-of-injection-models"><span class="header-section-number">2</span> A Comparison of Injection
 Models<a href="#a-comparison-of-injection-models" class="self-link"></a></h1>
-<p>There are a lot of things that make code injection in C++ difficult,
-and the most important problem to solve first is: what will the actual
-injection mechanism look like? Not its syntax specifically, but what is
-the shape of the API that we want to expose to users? We hope in this
-section to do a thorough job of comparing the various semantic models
-we’re aware of to help explain why we came to the conclusion that we
-came to.</p>
-<p>If you’re not interested in this journey, you can simply skip to the
-<a href="#token-sequences">next section</a>.</p>
-<p>Here, we will look at a few interesting examples for injection and
-how different models can implement them. The examples aren’t necessarily
-intended to be the most compelling examples that exist in the wild.
-Instead, they’re hopefully representative enough to cover a wide class
-of problems. They are:</p>
+<p>There are a lot of things that make code injection in C++ difficult.
+The primary problem to solve is: what will the actual injection
+mechanism look like? Not its syntax specifically, but what is the shape
+of the API that we want to expose to users? We hope that this section
+does a thorough job of comparing the various semantic models we’re aware
+of to help explain why we arrived at the conclusion that we came to. If
+you’re not interested in this journey, you can simply skip to the <a href="#token-sequences">next section</a>, which presents our preferred
+approach.</p>
+<p>For our comparison, we will look at a few interesting examples for
+injection and how different models can implement them. The examples may
+not be the most compelling, but they’re hopefully representative enough
+to cover a wide class of problems. They are:</p>
 <ol type="1">
 <li>Implementing the storage for <code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></li>
 <li>Implementing <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code>
 without resorting to class template specialization</li>
-<li>Implementing properties (i.e. given a name like <code class="sourceCode cpp"><span class="st">&quot;author&quot;</span></code>
+<li>Implementing properties. That is, given a name like <code class="sourceCode cpp"><span class="st">&quot;author&quot;</span></code>
 and a type like
 <code class="sourceCode cpp">std<span class="op">::</span>string</code>,
 emit a member <code class="sourceCode cpp">std<span class="op">::</span>string m_author</code>,
-a getter
-<code class="sourceCode cpp">get_author<span class="op">()</span></code>
-which returns a <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>
-to that member, and a setter
-<code class="sourceCode cpp">set_author<span class="op">()</span></code>
-which takes a new value of type <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>
-and assigns the member).</li>
-<li>Implement postfix increment in terms of prefix increment.</li>
+a corresponding getter <code class="sourceCode cpp">get_author<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>,
+and a setter <code class="sourceCode cpp">set_author<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;)</span></code>.</li>
+<li>Implementing postfix increment in terms of an existing prefix
+increment.</li>
 </ol>
 <h2 data-number="2.1" id="the-spec-api"><span class="header-section-number">2.1</span> The Spec API<a href="#the-spec-api" class="self-link"></a></h2>
 <p>In P2996, the injection API is based on a function <code class="sourceCode cpp">define_class<span class="op">()</span></code>
 which takes a range of <code class="sourceCode cpp">spec</code> objects.
 But <code class="sourceCode cpp">define_class<span class="op">()</span></code> is
-a really clunky API, because invoking it is an expression - but we want
-to do it in contexts that want a declaration. So a simple example of
+a really clunky API, because invoking it is an expression and we want to
+do it in contexts that want a declaration. So a simple example of
 injecting a single member
 <code class="sourceCode cpp"><span class="dt">int</span></code> named
 <code class="sourceCode cpp">x</code> is:</p>
@@ -682,11 +676,13 @@ injecting a single member
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span>data_member_spec<span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;x&quot;</span>, <span class="op">.</span>type<span class="op">=^</span><span class="dt">int</span><span class="op">}})))</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>We are already separately proposing
+<p>Here, injecting declarations into the class
+<code class="sourceCode cpp">C</code> also completes the class
+definition, which is undesirable. Using the separately proposed
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
-blocks <span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span> and we would like to inject
-each spec more directly, without having to complete
-<code class="sourceCode cpp">C</code> in one ago. As in:</p>
+blocks <span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span>, we would like to inject each
+spec more directly, without having to complete
+<code class="sourceCode cpp">C</code> in one go. As in:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
@@ -697,36 +693,35 @@ each spec more directly, without having to complete
 </blockquote>
 </div>
 <p>Here, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>inject</code>
-is a metafunction that takes a spec, which gets injected into the
-context begin by the
+is a new metafunction that takes a spec, which gets injected into the
+context begun by the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
-block that our evaluation started in as a side-effect.</p>
+block starting our evaluation as a side-effect.</p>
 <p>We already think of this as an improvement. But let’s go through
 several use-cases to expand the API and see how well it holds up.</p>
 <h3 data-number="2.1.1" id="stdtuple"><span class="header-section-number">2.1.1</span>
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code><a href="#stdtuple" class="self-link"></a></h3>
 <p>The tuple use-case was already supported by P2996 directly with <code class="sourceCode cpp">define_class<span class="op">()</span></code>
-(even as we think itd be better as a member pack), but it’s worth just
-showing what it looks like with a direct injection API instead:</p>
+(even though we think it would be better as a member pack), but it’s
+worth just showing what it looks like with a direct injection API
+instead:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Tuple <span class="op">{</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>array types<span class="op">{^</span>Ts<span class="op">...}</span>;</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">!=</span> types<span class="op">.</span>size<span class="op">()</span> ;<span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>            inject<span class="op">(</span>data_member_spec<span class="op">{.</span>name<span class="op">=</span>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;_{}&quot;</span>, i<span class="op">)</span>,</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                                    <span class="op">.</span>type<span class="op">=</span>types<span class="op">[</span>i<span class="op">]})</span>;</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">!=</span> <span class="kw">sizeof</span><span class="op">...(</span>Ts<span class="op">)</span> ;<span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>            inject<span class="op">(</span>data_member_spec<span class="op">{.</span>name<span class="op">=</span>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;_{}&quot;</span>, i<span class="op">)</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                                    <span class="op">.</span>type<span class="op">=</span>Ts<span class="op">...[</span>i<span class="op">]})</span>;</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
+<p>The example makes use of pack indexing, as proposed in <span class="citation" data-cites="P2662R3">[<a href="https://wg21.link/p2662r3" role="doc-biblioref">P2662R3</a>]</span>.</p>
 <h3 data-number="2.1.2" id="stdenable_if"><span class="header-section-number">2.1.2</span> <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code><a href="#stdenable_if" class="self-link"></a></h3>
-<p>Now, <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code> has
-already been obsolete technology since C++20. So implementing it,
-specifically, is not entirely a motivating example. However, the general
-idea of <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code> as
+<p>Even though <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code> has
+already been obsolete technology since C++20, the general idea of
 <em>conditionally</em> having a member type is a problem that has no
 good solution in C++ today.</p>
 <p>The spec API along with injection does allow for a clean solution
@@ -747,7 +742,7 @@ done:</p>
 </div>
 <p>So far so good.</p>
 <h3 data-number="2.1.3" id="properties"><span class="header-section-number">2.1.3</span> Properties<a href="#properties" class="self-link"></a></h3>
-<p>Now is when the spec API really goes off the rails. We’ve shown data
+<p>Here, the spec API really goes off the rails. We’ve shown data
 members and extended it to member aliases. But how do we support member
 functions?</p>
 <p>We want to be able to add a
@@ -767,16 +762,17 @@ and a getter and setter for it. For instance, we want this code:</p>
 </div>
 <p>to emit a class with two members
 (<code class="sourceCode cpp">m_author</code> and
-<code class="sourceCode cpp">m_title</code>), two getters that each
-return a <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>
-(<code class="sourceCode cpp">get_author<span class="op">()</span></code>
+<code class="sourceCode cpp">m_title</code>), two getters,
+<code class="sourceCode cpp">get_author<span class="op">()</span></code>
 and
-<code class="sourceCode cpp">get_title<span class="op">()</span></code>)
-and two setters that each take a <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>
-(<code class="sourceCode cpp">set_author<span class="op">()</span></code>
+<code class="sourceCode cpp">get_title<span class="op">()</span></code>,
+that each return a <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>,
+and two setters,
+<code class="sourceCode cpp">set_author<span class="op">()</span></code>
 and
-<code class="sourceCode cpp">set_title<span class="op">()</span></code>).
-Fairly basic property.</p>
+<code class="sourceCode cpp">set_title<span class="op">()</span></code>,
+that each take a <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>.
+Fairly basic properties.</p>
 <p>We start by injecting the member:</p>
 <div class="std">
 <blockquote>
@@ -791,8 +787,8 @@ Fairly basic property.</p>
 </blockquote>
 </div>
 <p>Now, we need to inject two functions. We’ll need a new kind of
-<code class="sourceCode cpp">spec</code> for that case, and then we can
-use a lambda for the function body. Let’s start with the getter:</p>
+<code class="sourceCode cpp">spec</code> for that case. For the function
+body, we could use a lambda. Let’s start with the getter:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> property<span class="op">(</span>string_view name, meta<span class="op">::</span>info type<span class="op">)</span></span>
@@ -843,7 +839,7 @@ injecting), so you might think we could try to capture it:</p>
 <code class="sourceCode cpp">member</code>, it needs to be a constant
 expression - and it’s not in this context.</p>
 <p>Now, the body of the lambda isn’t going to be evaluted in this
-constant evaluation, so it’s possible to maybe some up with some
+constant evaluation, so it’s possible to maybe come up with some
 mechanism to pass a context through - such that from the body we
 <em>can</em> simply splice <code class="sourceCode cpp">member</code>.
 We basically need to come up with a way to defer this instantiation.</p>
@@ -1013,8 +1009,8 @@ extending injection support.</p>
 <p>It’s hard to view favorably a design for the long-term future of code
 injection with which we cannot even figure out how to inject functions.
 Even if we could, this design scales poorly with the language: we need a
-library for API for many language constructs, and C++ is a language with
-a lot of kinds. That makes for a large barrier to entry for
+library API for many language constructs, and C++ is a language with a
+lot of kinds. That makes for a large barrier to entry for
 metaprogramming that we would like to avoid.</p>
 <p>Nevertheless, the spec API does have one thing going for it: it is
 quite simple. At the very least, we think we should extend the spec
@@ -2720,6 +2716,9 @@ design of source code fragments. <a href="https://wg21.link/p2050r0"><div class=
 </div>
 <div id="ref-P2561R2" class="csl-entry" role="doc-biblioentry">
 [P2561R2] Barry Revzin. 2023-05-18. A control flow operator. <a href="https://wg21.link/p2561r2"><div class="csl-block">https://wg21.link/p2561r2</div></a>
+</div>
+<div id="ref-P2662R3" class="csl-entry" role="doc-biblioentry">
+[P2662R3] Corentin Jabot, Pablo Halpern. 2023-12-18. Pack Indexing. <a href="https://wg21.link/p2662r3"><div class="csl-block">https://wg21.link/p2662r3</div></a>
 </div>
 <div id="ref-P2806R2" class="csl-entry" role="doc-biblioentry">
 [P2806R2] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park.
