@@ -3,7 +3,7 @@ import panflute as pf
 import os
 import sys
 import subprocess
-import pygraphviz
+# import pygraphviz
 import hashlib
 
 def h1hr(elem, doc):
@@ -87,4 +87,5 @@ def op(elem, doc):
         return pf.RawInline(f'<code><span class="op">{elem.text}</span></code>')
 
 if __name__ == '__main__':
-    pf.run_filters([h1hr, bq, graphviz, mermaid, op])
+    # pf.run_filters([h1hr, bq, graphviz, mermaid, op])
+    pf.run_filters([h1hr, bq, mermaid, op])
