@@ -35,6 +35,8 @@ Since [@P2996R3]:
 * changed `is_noexcept` to apply to a wider class of entities
 * reworked the API for reflecting on accessible class members
 * renamed `test_type` and `test_types` to `test_trait`
+* added missing `has_module_linkage` metafunction
+* more wording
 
 Since [@P2996R2]:
 
@@ -2316,6 +2318,7 @@ namespace std::meta {
   consteval auto is_final(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
+  consteval auto has_module_linkage(info r) -> bool;
   consteval auto has_external_linkage(info r) -> bool;
   consteval auto has_linkage(info r) -> bool;
   consteval auto is_class_member(info entity) -> bool;
@@ -2724,7 +2727,7 @@ namespace std::meta {
 ```
 :::
 
-These utilities translate existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
+This utility translates existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
 For example:
 
 ::: std
@@ -3692,6 +3695,7 @@ namespace std::meta {
   consteval bool is_final(info r);
   consteval bool has_static_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
+  consteval bool has_module_linkage(info r);
   consteval bool has_external_linkage(info r);
   consteval bool has_linkage(info r);
 
@@ -4056,11 +4060,12 @@ consteval bool has_static_storage_duration(info r);
 
 ```cpp
 consteval bool has_internal_linkage(info r);
+consteval bool has_module_linkage(info r);
 consteval bool has_external_linkage(info r);
 consteval bool has_linkage(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates an entity that has internal linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates an entity that has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
 
 
 ```cpp
