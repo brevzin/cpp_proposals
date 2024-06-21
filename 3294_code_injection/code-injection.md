@@ -986,16 +986,58 @@ constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
 ```
 :::
 
-Token sequences can be concatenated with the `+` operator. The result is a token sequence consisting of the concatenation of the operands.
+## Interpolating into a Token Sequence
+
+There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using three kinds of interpolators:
+
+* `\($expression$)`
+* `\id($string$, $string-or-int$@~opt~@...)`
+* `\tokens($expression$)`
+
+The implementation model for this is that we collect the tokens within a `^{ ... }` literal, but every time we run into an interpolator, we parse and evaluate the expression within and replace it with the value as described below:
+
+* `\id(e)` for `e` being string-like is replaced with that string as a new `$identifier$`. `\id(e...)` can concatenate multiple string-like or integral values into a single `$identifier$` (the first argument must be string-like).
+* `\(e)` is replaced by a pseudo-literal token holding the value of `e`. The parentheses are mandatory.
+* `\tokens(e)` is effectively token concatenation. 
+
+The value and `id` interpolators need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is intended, so they have to be spelled differently.
+
+We initially considered `+` for token concatentation, but we need token sequence interpolation anyway. Consider wanting to build up the token sequence `T{a, b, c}` where `a, b, c` is the contents of another token sequence. With interpolation, that is straightforward:
+
+::: std
+```cpp
+^{ T{\tokens(args)} }
+```
+:::
+
+but with concatenation, we run into a problem:
+
+::: std
+```cpp
+^{ @[T{]{.orange}@ } + args + ^{ @[}]{.orange}@ }
+```
+:::
+
+Neither that first nor third token sequence is really parseable - the braces really need to be balanced. 
+
+Given that we need `\tokens` anyway, additionally adding concatenation with `+` and `+=` doesn't seem as necessary, especially since keeping the proposal minimal has a lot of value.
+ 
+Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in their [string interpolation syntax](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation).
+
+## Interpolating with `\tokens`
+
+The result of interpolating with `\tokens` is a token sequence consistent of all the tokens of both sequences:
 
 ::: std
 ```cpp
 constexpr auto t1 = ^{ c =  };
 constexpr auto t2 = ^{ a + b; };
-constexpr auto t3 = t1 + t2;
+constexpr auto t3 = ^{ \tokens(t1) \tokens(t2) };
 static_assert(t3 == ^{ c = a + b; });
 ```
 :::
+
+It is unclear if we want to support `==` for token sequences, but it is easier to express the intent if we use it. So this paper will use `==` at least for exposition purposes.
 
 The concatenation is not textual - two tokens concatenated together preserve their identity, they are not pasted together into a single token. For example:
 
@@ -1003,7 +1045,7 @@ The concatenation is not textual - two tokens concatenated together preserve the
 ```cpp
 constexpr auto t1 = ^{ abc };
 constexpr auto t2 = ^{ def };
-constexpr auto t3 = t1 + t2;
+constexpr auto t3 = ^{ \tokens(t1) \tokens(t2) };
 static_assert(t3 != ^{ abcdef });
 static_assert(t3 == ^{ abc def });
 ```
@@ -1023,6 +1065,10 @@ Because tokens are handled after the the initial phase of preprocessing, macros 
 
 ::: std
 ```cpp
+consteval auto operator+(info t1, info t2) -> info {
+    return ^{ \tokens(t1) \tokens(t2) };
+}
+
 static_assert(^{ "abc" "def" } == ^{ "abcdef" });
 
 // this concatenation produces the token sequence "abc" "def", not "abcdef"
@@ -1053,105 +1099,119 @@ static_assert(tok2 != ^{ PLUS_ONE(x) });
 
 A token sequence has no meaning by itself, until injected. But because (hopefully) users will write valid C++ code, the resulting injection actually does look like C++ code.
 
-## Interpolating into a token sequence
+## Injection
 
-There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using the interpolators `\$primary-expression$` and `\id($string-or-int$...)`.
+Once we have a token sequence, we need to do something with it. We need to inject it somewhere to get parsed and become part of the program. 
 
-The implementation model for this is that we collect the tokens within a `^{ ... }` literal, but every time we run into an interpolator, we parse and evaluate the expression within and replace it with the value as described below:
+We propose two injection functions.
 
-* `\id(e)` for `e` being string-like is replaced with that string as a new `\identifier$`. `\id(e...)` can concatenate multiple string-like or integral values into a single `\identifier$` (the first argument must be string-like).
-* `\e` is replaced by a pseudo-literal token holding the value of `e`. If we're interpolating an identifier (the common case), parentheses are optional but not mandatory. But for a more complicated expression, you will have to parenthesize - as in `\(f(x))`.
+`std::meta::queue_injection(e)`, where `e` is a token sequence, will queue up a token sequence to be injected at the end of the current constant evaluation - typically the end of the `consteval` block that the call is made from.
 
-These need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is intended, so they have to be spelled differently.
+`std::meta::namespace_inject(ns, e)`, where `ns` is a reflection of a namespace and `e` is a token sequence, will immediately inject the contents of `e` into the namespace designated by `ns`.
 
-Note that if you want to interpolate a value _named_ `id`, that will have to be spelled `\(id)` to disambiguate from the `id` interpolator. This is mildly unfortunate, but the only way around this would be to either pick a much uglier term for the identifier interpolator (which is why prior papers used `unqualid` - something extremely unlikely to be a variable name in real C++ code) or use an existing keyword. You can browse the list [here](https://eel.is/c++draft/tab:lex.key), but none of them seem particularly amazing (`typename` has `name` in it but of course we're not necessarily introducing a type, `\this` what, `\using` works for both, etc.)
+We can inject into a namespace since namespaces are open - we cannot inject into any other context other than the one we're currently in. 
 
-Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in their [string interpolation syntax](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation).
+As a [simple example](https://godbolt.org/z/Ehnhxde3K):
 
-With that in mind, we can start going through our examples.
+::: std
+```cpp
+#include <experimental/meta>
+
+consteval auto f(std::meta::info r, int val, std::string_view name) {
+  return ^{ constexpr [:\(r):] \id(name) = \(val); };
+}
+
+constexpr auto r = f(^int, 42, "x");
+
+namespace N {}
+
+consteval {
+  // this static assertion will be injected at the end of the block
+  queue_injection(^{ static_assert(N::x == 42); });
+
+  // this declaration will be injected right into ::N right now
+  namespace_inject(^N, r);
+}
+
+int main() {
+  return N::x != 42;
+}
+```
+:::
+
+With that out of the way, we can now go through our examples:
 
 ## Examples
 
-Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment. You can see the use of both kinds of interpolator on the left:
+Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment. 
 
-::: cmptable
-### `std::tuple`
+[Implementing `Tuple<Ts...>`](https://godbolt.org/z/861MsqzPx) requires using both the value interpolator and the identifier interpolator (in this cause we're naming the members `_0`, `_1`, etc.):
+
+::: std
 ```cpp
-template<class... Ts>
+template <class... Ts>
 struct Tuple {
-  consteval {
-    std::array types{^Ts...};
-    for (size_t i = 0; i != types.size(); ++i) {
-      inject(^{
-        [[no_unique_address]] [:\(types[i]):] \id("_", i);
-      });
+    consteval {
+        std::meta::info types[] = {^Ts...};
+        for (size_t i = 0; i != sizeof...(Ts); ++i) {
+            queue_injection(^{ [[no_unique_address]] [:\(types[i]):] \id("_", i); });
+        }
     }
-  }
-};
-```
-
-### `std::enable_if`
-```cpp
-template <bool B, class T=void>
-struct enable_if {
-  consteval {
-    if (B) {
-      inject(^{ using type = T; });
-    }
-  };
 };
 ```
 :::
 
-The property example likewise could be identical, but we do not run into any name lookup issues, so we can write it any way we want - either as injecting one token sequence or even injecting three. Both work fine without needing any additional declarations. But we may want to restrict injection to one declaration at a time for error reporting purposes.
+whereas [implementing `enable_if<B, T>`](https://godbolt.org/z/jfMoe34Ea) doesn't require any interpolation:
 
-::: cmptable
-### Single Token Sequence
+::: std
 ```cpp
-consteval auto property(meta::info type, std::string name)
-    -> void
-{
-    std::string member_name = "m_" + name;
-
-    inject(^{
-        [:\type:] \id(member_name);
-
-        auto \id("get_", name)() -> [:\type:] const& {
-            return \id(member_name);
+template <bool B, class T=void>
+struct enable_if {
+    consteval {
+        if (B) {
+            queue_injection(^{ using type = T; });
         }
-
-        auto \id("set_", name)(typename [:\type:] const& x)
-            -> void {
-            \id(member_name) = x;
-        }
-    });
-}
+    }
+};
 ```
+:::
 
-### Three Token Sequences
+
+The property example likewise could be identical to the fragment implementation, but we do not run into any name lookup issues, so we can write it any way we want - either as injecting one token sequence or even injecting three. Both work fine without needing any additional declarations.
+
+But we may want to restrict injection to one declaration at a time for error reporting purposes.
+
+That implementation [looks like this](https://godbolt.org/z/sqKs6eKzG):
+
+::: std
 ```cpp
-consteval auto property(meta::info type, std::string name)
+consteval auto property(std::meta::info type, std::string_view name)
     -> void
 {
-    std::string member_name = "m_" + name;
+    auto member = ^{ \id("m_"sv, name) };
 
-    inject(^{
-        [:\type:] \id(member_name);
-    });
+    queue_injection(^{ [:\(type):] \tokens(member); });
 
-    inject(^{
-        auto \id("get_", name)() -> [:\type:] const& {
-            return \id(member_name);
+    queue_injection(^{
+        auto \id("get_"sv, name)() -> [:\(type):] const& {
+            return \tokens(member);
         }
     });
 
-    inject(^{
-        auto \id("set_", name)(typename [:\type:] const& x)
+    queue_injection(^{
+        auto \id("set_"sv, name)(typename [:\(type):] const& x)
             -> void {
-            \id(member_name) = x;
+            \tokens(member) = x;
         }
     });
 }
+
+struct Book {
+    consteval {
+        property(^std::string, "title");
+        property(^std::string, "author");
+    }
+};
 ```
 :::
 
@@ -1173,13 +1233,13 @@ consteval auto postfix_increment() -> void {
 }
 ```
 
-### Token Sequence
+### [Token Sequence](https://godbolt.org/z/bTxPvb8cn)
 ```cpp
 consteval auto postfix_increment() -> void {
-    auto T = type_of(std::meta::current());
-    inject(^{
+    auto T = std::meta::nearest_class_or_namespace();
+    queue_injection(^{
 
-        auto operator++(int) -> [:\T:] {
+        auto operator++(int) -> [:\(T):] {
             auto tmp = *this;
             ++*this;
             return tmp;
@@ -1190,6 +1250,76 @@ consteval auto postfix_increment() -> void {
 :::
 
 The syntax here is, unsurprisingly, largely the same. We're mostly writing C++ code. The difference is that we no longer need to pre-declare the functions we're using and the feature set is smaller. While declaring `T` as part of the fragment is certainly convenient, we're shooting for a smaller feature.
+
+## Type Erasure
+
+Given a type, whose declaration only contains member functions that aren't templates, it is possible to mechanically produce a type-erased version of that interface. 
+
+For instance:
+
+::: cmptable
+### Interface
+```cpp
+struct Interface {
+    void draw(std::ostream&) const;
+};
+```
+
+### Type-Erased
+```cpp
+template <>
+class Dyn<Interface> {
+    struct VTable {
+        // 1. convert each function in Interface to a
+        //    function pointer with an extra void*
+        void (*draw)(void*, std::ostream&);
+    };
+
+    template <class T>
+    static constexpr VTable vtable_for = VTable {
+        // 2. convert each function in Interface to a
+        //    forwarding, static-casting lambda
+        .draw = +[](void* data, std::ostream& p0) -> void {
+            // NB: the const here because Interface::draw() is const
+            return static_cast<T const*>(data)->draw(p0);
+        }
+    };
+
+    VTable const* vtable;
+    void* data;
+
+public:
+    template <class T>
+        // 3. convert each function in Interface to its
+        //    appropriate requires clause
+        //    NB: the remove_cvref_t<T> const here because
+        //        Interface::draw() is const
+        requires requires (std::remove_cvref_t<T> const t,
+                           std::ostream& p0) {
+            { t.draw(p0) } -> std::convertible_to<void>;
+        }
+    Dyn(T&& t)
+        : vtable(&vtable_for<std::remove_cvref_t<T>>)
+        , data(&t)
+    { }
+    Dyn(Dyn&) = default;
+    Dyn(Dyn const&) = default;
+    ~Dyn() = default;
+
+    // 4. convert each function in Interface to a function
+    //    that forwards through the vtable
+    auto draw(std::ostream& p0) const -> void {
+        return vtable->draw(data, p0);
+    }
+};
+```
+:::
+
+That implementation is currently non-owning, but it isn't that much of a difference to make it owning, move-only, SBO, etc. 
+
+There is a lot of code on the right (especially compared to the left), but the transformation is purely mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper. 
+
+You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested types in a class template.
 
 ## Logging Vector: Cloning a Type
 
