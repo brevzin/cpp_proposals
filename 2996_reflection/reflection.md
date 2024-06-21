@@ -2636,7 +2636,7 @@ For the first overload: Letting `F` be the entity reflected by `target`, and `A@
 
 The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {std::meta::reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
 
-If the returned reflection is of a value, the type of the reflected value shall not be an alias and shall be cv-unqualified unless it is of class type.
+If the returned reflection is of a value (rather than an object), the type of the reflected value is the cv-qualified (de-aliased) type of what's returned by the function.
 
 A few possible extensions for `reflect_invoke` have been discussed among the authors. Given the advent of constant evaluations with side-effects, it may be worth allowing `void`-returning functions, but this would require some representation of "a returned value of type `void`". Construction of runtime call expressions is another exciting possibility. Both extensions require more thought and implementation experience, and we are not proposing either at this time.
 
@@ -4183,7 +4183,7 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Mandates*: `r` is a reflection designating either an object usable in constant expressions ([expr.const]), an enumerator, or a value.
 
-[#]{.pnum} *Returns*: If `r` is a reflection designating an object, then a reflection of the value held by that object. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`. The reflected value shall have the type of the entity reflected by `r` if it is of class type, and otherwise the cv-unqualified version of that type. The type of the reflected value shall not be an alias.
+[#]{.pnum} *Returns*: If `r` is a reflection designating an object `o`, then a reflection of the value held by that object. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
 
 ```cpp
 consteval info parent_of(info r);
@@ -4443,7 +4443,7 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is a structural type. `T` is not a reference type. Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression.
 
-[#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the reflected value shall be `T` if `T` is of class type, and otherwise the cv-unqualified version of `T`. The type of the reflected value shall not be an alias.
+[#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the reflected value is the cv-unqualified version of `T`.
 
 ```cpp
 template <typename T>
@@ -4452,7 +4452,7 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is not a function type. `expr` designates an entity that is a permitted result of a constant expression.
 
-[#]{.pnum} *Returns*: A reflection of the object whose identity is determined by the lvalue `expr`. If the reflected object is a variable `Obj`, the returned reflection shall compare equal to `^Obj`.
+[#]{.pnum} *Returns*: A reflection of the object referenced by `expr`. If the reflected object is a variable `Obj`, the returned reflection compares equal to `^Obj`.
 
 ```cpp
 template <typename T>
@@ -4461,7 +4461,7 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is a function type.
 
-[#]{.pnum} *Returns*: A reflection of the function `Fn` whose identity is determined by the lvalue `expr`. The returned reflection shall compare equal to `^Fn`.
+[#]{.pnum} *Returns*: `^fn`, where `fn` is the function referenced by `expr`.
 
 :::
 :::
@@ -4511,7 +4511,7 @@ consteval bool test_trait(info templ, info type);
 ```cpp
 template <reflection_range R = span<info const>>
 consteval bool test_trait(info templ, R&& arguments);
-```gi
+```
 
 [#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, arguments));`
 
