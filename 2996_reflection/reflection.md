@@ -3337,6 +3337,23 @@ Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for
 [9]{.pnum} To value-initialize an object of type T means: [...]
 :::
 
+### [dcl.fct]{.sref} Functions {-}
+
+Add a bullet to paragraph 9 of [dcl.fct]{.sref} to allow for reflections of abominable function types:
+
+::: std
+[9]{.pnum} A function type with a _cv-qualifier-seq_ or a _ref-qualifier_ (including a type named by _typedef-name_ ([dcl.typedef], [temp.param])) shall appear only as:
+
+  ...
+
+  --- the _type-id_ of a _template-argument_ for a _type-parameter_ ([temp.arg.type])[.]{.rm}[,]{.addu}
+
+:::addu
+  --- the operand of a _reflect-expression_ ([expr.reflect]).
+:::
+
+:::
+
 ### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
 
 Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of deleted functions:
