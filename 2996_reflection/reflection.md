@@ -3344,12 +3344,11 @@ Add a bullet to paragraph 9 of [dcl.fct]{.sref} to allow for reflections of abom
 ::: std
 [9]{.pnum} A function type with a _cv-qualifier-seq_ or a _ref-qualifier_ (including a type named by _typedef-name_ ([dcl.typedef], [temp.param])) shall appear only as:
 
-  ...
-
-  --- the _type-id_ of a _template-argument_ for a _type-parameter_ ([temp.arg.type])[.]{.rm}[,]{.addu}
-
+* [9.1]{.pnum} the function type for a non-static member function,
+* [9.2]{.pnum} ...
+* [9.5]{.pnum} the _type-id_ of a _template-argument_ for a _type-parameter_ ([temp.arg.type])[.]{.rm}[,]{.addu}
 :::addu
-  --- the operand of a _reflect-expression_ ([expr.reflect]).
+* [9.6]{.pnum} the operand of a _reflect-expression_ ([expr.reflect]).
 :::
 
 :::
