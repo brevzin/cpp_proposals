@@ -3149,7 +3149,7 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 [#]{.pnum} For a `$primary-expression$` of the form `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template.
 The meaning of such a construct is identical to that of a `$primary-expression$` of the form `$template-name$ < $template-argument-list$@~_opt_~@ >` where `$template-name$` denotes the reflected template or concept (ignoring access checking on the `$template-name$`).
 
-[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a `$primary-expression$` of the form `$id-expression$` that would denote the reflected entity (ignoring access checking).
+[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, an enumerator, or a structured binding, the expression is an lvalue denoting the reflected entity. [Acess checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
 
 [#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of a value, and the expression shall be a prvalue whose evaluation computes the reflected value.
 :::
@@ -3227,7 +3227,7 @@ The `$id-expression$` is not evaluated.
 
 * [#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
 
-[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue]{.note}
+[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue.]{.note}
 
 ::: example
 ```cpp

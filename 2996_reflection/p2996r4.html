@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-06-20" />
+  <meta name="dcterms.date" content="2024-06-21" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -560,7 +560,7 @@ code del { border: 1px solid #ECB3C7; }
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-06-20</td>
+    <td>2024-06-21</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -4854,10 +4854,10 @@ the form <code class="sourceCode cpp"><span class="op">[:</span> <em>constant-ex
 where the converted
 <code class="sourceCode cpp"><em>constant-expression</em></code>
 evaluates to a reflection for an object, a function, an enumerator, or a
-structured binding, the meaning of the expression is identical to that
-of a <code class="sourceCode cpp"><em>primary-expression</em></code> of
-the form <code class="sourceCode cpp"><em>id-expression</em></code> that
-would denote the reflected entity (ignoring access checking).</p>
+structured binding, the expression is an lvalue denoting the reflected
+entity. <span class="note"><span>[ <em>Note 1:</em> </span>Acess
+checking of class members occurs during name lookup, and therefore does
+not pertain to splicing.<span> — <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">4</a></span>
 Otherwise, for a
 <code class="sourceCode cpp"><em>primary-expression</em></code> of the
@@ -4982,7 +4982,7 @@ reflection operator produces a reflection of the value computed by the
 operand <span class="note"><span>[ <em>Note 1:</em> </span>An
 <code class="sourceCode cpp"><em>id-expression</em></code> naming a
 non-type template parameter of non-class and non-reference type is a
-prvalue<span> — <em>end note</em> ]</span></span></p>
+prvalue.<span> — <em>end note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
 <div class="sourceCode" id="cb113"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> fn<span class="op">()</span> <span class="kw">requires</span> <span class="op">(^</span>T <span class="op">!=</span> <span class="op">^</span><span class="dt">int</span><span class="op">)</span>;</span>
