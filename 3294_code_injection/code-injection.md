@@ -1,6 +1,6 @@
 ---
 title: "Code Injection with Token Sequences"
-document: P3294R1
+document: D3294R1
 date: today
 audience: SG7, EWG
 author:
@@ -13,6 +13,15 @@ author:
 toc: true
 toc-depth: 2
 ---
+
+# Revision History
+
+Since [@P3294R0]:
+
+* Changed syntax for introducing token sequences to `^{ ... }`
+* Refined the interpolator syntax to `\(e)`, `\id(e)`, and `\tokens(e)` (parens mandatory in all cases)
+* Dropped the `declare [: e :]` splicer
+* Implemented much of the proposal with links to examples (including a new [type erasure example](#type-erasure))
 
 # Introduction
 
@@ -954,7 +963,7 @@ Due to the lack of consensus for a code synthesis mechanism, some C++ reflection
 
 After extensive study and experimentation (as seen above), we concluded that some crucially important forms of token synthesis are necessary for practical code generation, and that insisting upon early syntactic and semantic validation of generated code is a net liability. The very nature of code synthesis involves assembling meaningful constructs out of pieces that have little or no meaning in separation. Using concatenation and deferring syntax/semantics analysis to offer said concatenation is by far the simplest, most direct approach to code synthesis.
 
-Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility and also be difficult for implementers, thus hurting everyone involved.
+Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility — particularly when it comes to composing larger constructs from smaller ones — and also be difficult for implementers, thus hurting everyone involved.
 
 We therefore acknowledge the notion of token sequence as a core building block for generating code. Using token sequences allows flexibility to code that generates other code, while deferring name lookup and semantic analysis to well-defined points in the compilation process. Thus we reach the notion of a token sequence literal dedicated to representing unprocessed sequences of tokens.
 
@@ -973,7 +982,8 @@ where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the 
 The choice of syntax is motivated by two notions:
 
 1. If we could reflect on the body of a function template, the only thing that could be yielded back is a token sequence - since the template hasn't been instantiated yet. And the syntax for reflecting on that body would look like `^{ $body$ }`
-2. This makes it so that all expressions that produce an object of type `std::meta::info` are spelled with a prefix `^`.
+2. This maintains the property that the only built-in operator that produces a `std::meta::info` value is the prefix `^`.
+
 
 For example:
 
@@ -994,15 +1004,15 @@ There's still the issue that you need to access outside context from within a to
 * `\id($string$, $string-or-int$@~opt~@...)`
 * `\tokens($expression$)`
 
-The implementation model for this is that we collect the tokens within a `^{ ... }` literal, but every time we run into an interpolator, we parse and evaluate the expression within and replace it with the value as described below:
+The implementation model for this is that we collect the tokens within a `^{ ... }` literal, but every time we run into an interpolator, we parse the expressions within.  When the token sequence is evaluated (always a compile-time operation since it produces a `std::meta::info` value), the expressions are evaluated and the corresponding interpolators are replaced as follows:
 
 * `\id(e)` for `e` being string-like is replaced with that string as a new `$identifier$`. `\id(e...)` can concatenate multiple string-like or integral values into a single `$identifier$` (the first argument must be string-like).
 * `\(e)` is replaced by a pseudo-literal token holding the value of `e`. The parentheses are mandatory.
-* `\tokens(e)` is effectively token concatenation. 
+* `\tokens(e)` is replaced by the — possibly empty — tokens `e` (`e` must be a reflection of an evaluation token sequence).
 
 The value and `id` interpolators need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is intended, so they have to be spelled differently.
 
-We initially considered `+` for token concatentation, but we need token sequence interpolation anyway. Consider wanting to build up the token sequence `T{a, b, c}` where `a, b, c` is the contents of another token sequence. With interpolation, that is straightforward:
+We initially considered `+` for token concatenation, but we need token sequence interpolation anyway. Consider wanting to build up the token sequence `T{a, b, c}` where `a, b, c` is the contents of another token sequence. With interpolation, that is straightforward:
 
 ::: std
 ```cpp
@@ -1018,13 +1028,15 @@ but with concatenation, we run into a problem:
 ```
 :::
 
-Neither that first nor third token sequence is really parseable - the braces really need to be balanced. 
+This doesn't produce the intended effect because it is a token sequence containing the tokens `T { } + args + ^ { }` instead of an expression containing two additions involving two token sequences as desired.
 
 Given that we need `\tokens` anyway, additionally adding concatenation with `+` and `+=` doesn't seem as necessary, especially since keeping the proposal minimal has a lot of value.
  
 Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in their [string interpolation syntax](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation).
 
-## Interpolating with `\tokens`
+## Phase of Translation
+
+Token sequences are a construct that is process in translation phase 7 (ref).  This has some natural consequences detailed below. 
 
 The result of interpolating with `\tokens` is a token sequence consistent of all the tokens of both sequences:
 
@@ -1139,7 +1151,20 @@ int main() {
 ```
 :::
 
-With that out of the way, we can now go through our examples:
+With that out of the way, we can now go through our examples from earlier.
+
+## Implementation Status
+
+A significant amount of this proposal is already implemented in EDG and is available for experimentation on Compiler Explorer. The examples we will demonstrate provide links. 
+
+The implementation provides a `__report_tokens(e)` function that can be used to dump the contents of a token sequence during constant evaluation to aid in debugging. 
+
+Two things to note with the implementation:
+
+* While we intend `\id("hello", 1)` to work, currently the string-like pieces must actually have type `std::string_view` - `\id("hello"sv, 1)` does work and will produce the identifier `hello1`.
+* Injecting into a class template is currently very limited. Attempts to inject member functions will lead to linker errors and attempts to inject classes will fail. Currently, this will require using `namespace_inject` to inject the entire class template specialization in one go. You can see this approach in action with the [type erasure example](#type-erasure).
+
+
 
 ## Examples
 
@@ -1315,11 +1340,11 @@ public:
 ```
 :::
 
-That implementation is currently non-owning, but it isn't that much of a difference to make it owning, move-only, SBO, etc. 
+That implementation is currently non-owning, but it isn't that much of a difference to make it owning, move-only, have a small buffer optimized storage, etc. 
 
-There is a lot of code on the right (especially compared to the left), but the transformation is purely mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper. 
+There is a lot of code on the right (especially compared to the left), but the transformation is *purely* mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper. 
 
-You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested types in a class template.
+You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested types in a class template. It's a healthy amount of code, but it's actually fairly straightforward. 
 
 ## Logging Vector: Cloning a Type
 
@@ -1338,8 +1363,8 @@ public:
 
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
-            inject(^{
-                declare [: \(decl_of(fun)) :] {
+            queue_injection(^{
+                \tokens(make_decl_of(fun)) {
                     // ...
                 }
             });
@@ -1349,7 +1374,7 @@ public:
 ```
 :::
 
-We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the token sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. So instead we introduce a new kind of splice: a declaration splice. We already have `typename [: e :]` and `template [: e :]` in other contexts, so `declare [: e :]` at least fits within the family of splicers.
+We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the token sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. But the nice thing about token sequence injection is that we really only have to do that *one* time and stuff it into a function. `make_decl_of()` can just be a function that takes a reflection of a function and returns a token sequence for its declaration. We'll probably want to put this in the standard library. 
 
 Now, we have two problems to solve in the body (as well as a few more problems we'll get to later).
 
@@ -1361,10 +1386,10 @@ Second, we need to actually forward the parameters of the function into our memb
 ```cpp
 consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
-        inject(^{
-            declare [: \(decl_of(fun)) :] {
+        queue_injection(^{
+            \tokens(make_decl_of(fun)) {
                 std::println("Calling {}", \(name_of(fun)));
-                return impl.[:\fun:](/* ???? */);
+                return impl.[:\(fun):](/* ???? */);
             }
         });
     }
@@ -1406,22 +1431,19 @@ public:
             // note that this one doesn't even require a token sequence
             auto log_fun = inject(decl_of(fun));
 
-            auto argument_list = ^{ };
-            bool first = true;
+            // convenience type for building a comma-delimited sequence
+            auto argument_list = list_builder();
+
             for (auto param : parameters_of(log_fun)) { // <== NB, not fun
-                if (not first) {
-                    argument_list += ^{ , };
-                }
-                first = false;
                 argument_list += ^{
                     static_cast<[:\(type_of(param)):]&&>([: \(param) :])
                 };
             }
 
-            inject(^{
-                declare [: \(decl_of(fun)) :] {
+            queue_injection(^{
+                \tokens(make_decl_of(fun)) {
                     std::println("Calling {}", \(name_of(fun)));
-                    return impl.[:\fun:]( [:\(argument_list):] );
+                    return impl.[:\(fun):]( [:\tokens(argument_list):] );
                 }
             });
         }
@@ -1439,13 +1461,8 @@ Note that we didn't actually have to implement it using a separate `argument_lis
 ::: std
 ```cpp
 consteval auto forward_parameters(std::meta::info fun) -> std::meta::info {
-    auto argument_list = ^{ };
-    bool first = true;
+    auto argument_list = list_builder();
     for (auto param : parameters_of(fun)) {
-        if (not first) {
-            argument_list += ^{ , };
-        }
-        first = false;
         argument_list += ^{
             static_cast<[:\(type_of(param)):]&&>([:\param:])
         };
@@ -1463,10 +1480,10 @@ consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
         auto log_fun = inject(decl_of(fun));
 
-        inject(^{
-            declare [: \(decl_of(fun)) :] {
+        queue_injection(^{
+            \tokens(make_decl_of(fun)) :] {
                 std::println("Calling {}", \(name_of(fun)));
-                return impl.[:\fun:]( [: \(forward_parameters(log_fun)) :] );
+                return impl.[:\(fun):]( [: \tokens(forward_parameters(log_fun)) :] );
             }
         });
     }
@@ -1474,13 +1491,21 @@ consteval {
 ```
 :::
 
-The problem is - it's not clear if this direction can actually be viable. That is, injection queues up requests for later. It may not be feasible for us to get back a reflection of `log_fun` in the way that we are using this example.
+The problem is - this direction isn't really viable. Injection queues up requests for later. It may not be feasible for us to get back a reflection of `log_fun` in the way that we are using this example, so we probably cannot actually get back and access the reflections of the parameters as described in this example. 
 
 ### Introducing Parameter Names
 
 We said we have the problem that the functions we're cloning might not have parameter names. So what? We're creating a new function, we can pick our names!
 
-Perhaps that looks like an extra argument to `decl_of` that gives us a prefix for each parameter name. So `decl_of(fun, "p")` would give us parameter names of `p0`, `p1`, and so forth. That gives us a similar looking solution, but now we never need the reflection of the new function - just the old one:
+Since our approach to cloning function declarations is just writing our function that creates the tokens:
+
+::: std
+```cpp
+\tokens(make_decl_of(fun)) { /* ... */ }
+```
+:::
+
+We can simply pass another argument to `make_decl_of` that gives us a prefix for each parameter name. So maybe `make_decl_of(fun, "p")` would give us parameter names of `p0`, `p1`, and so forth. That gives us a similar looking solution, but now we never need the reflection of the new function - just the old one:
 
 ::: std
 ```cpp
@@ -1493,12 +1518,8 @@ public:
 
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
-            auto argument_list = ^{ };
+            auto argument_list = list_builder();
             for (size_t i = 0; i != parameters_of(fun).size(); ++i) {
-                if (i > 0) {
-                    argument_list += ^{ , };
-                }
-
                 argument_list += ^{
                     // we could get the nth parameter's type (we can't splice
                     // the other function's parameters but we CAN query them)
@@ -1507,10 +1528,10 @@ public:
                 };
             }
 
-            inject(^{
-                declare [: \(decl_of(fun, "p")) :] {
+            queue_injection(^{
+                \tokens(make_decl_of(fun, "p")) {
                     std::println("Calling {}", \(name_of(fun)));
-                    return impl.[:\fun:]( [:\argument_list:] );
+                    return impl.[:\(fun):]( [:\(argument_list):] );
                 }
             });
         }
@@ -1519,7 +1540,7 @@ public:
 ```
 :::
 
-This approach is arguably simpler.
+This approach is arguably simpler than reflecting on parameter names and requires no extra implementation effort to get there. 
 
 ## Logging Vector II: Cloning with Modifications
 
@@ -1620,7 +1641,7 @@ With token sequences, we can achieve similar syntax:
 ```cpp
 consteval auto fwd2(@tokens x) -> info {
     return ^{
-        static_cast<decltype([:\x:])&&>([:\x:]);
+        static_cast<decltype([:\(x):])&&>([:\(x):]);
     };
 }
 
@@ -1645,10 +1666,10 @@ consteval auto assert_eq(@tokens a,
     return ^{
         do {
             auto sa = \(stringify(a));
-            auto va = [:\a:];
+            auto va = \tokens(a);
 
             auto sb = \(stringify(b));
-            auto vb = [:\b:];
+            auto vb = \tokens(b);
 
             if (not (va == vb)) {
                 std::println(
@@ -1727,11 +1748,11 @@ consteval auto format(string_view str) -> meta::info {
     };
 
     for (string_view arg : parts.args) {
-        tok += ^{ , [:\(tokenize(arg)):] };
+        tok = ^{ \tokens(tok), \tokens(tokenize(arg)) };
     }
 
-    tok += ^{ ) };
-    return tok;
+    // now finally here's our close paren
+    return ^{ \tokens(tok) ) };
 }
 ```
 :::
@@ -1744,42 +1765,14 @@ Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're no
 
 But realistically, this would handily cover the 90%, if not the 99% case. Not to mention could easily adopt other nice features of string interpolation that show up in other languages (like Python's `f"{x =}` which formats as `"x = 42"`) as library features. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
-## Control Flow Operator
-
-A simpler example would be the control flow operator [@P2561R2]. Many people already use a macro for this. A hygienic macro would be that much better:
-
-::: std
-```cpp
-consteval auto try_(@tokens expr) -> info {
-    return ^{
-        do {
-            decltype(auto) _f = [:\expr:];
-
-            using _R = [:return_type(std::meta::current_function()):];
-            using _TraitsR = try_traits<_R>;
-            using _TraitsF = try_traits<[:type_remove_cvref(type_of(^_f)):]>;
-
-            if (not _TraitsF::should_continue(_f)) {
-                return _TraitsR::from_break(_TraitsF::extract_break(forward!(_f)));
-            }
-
-            do_return _TraitsF::extract_continue(forward!(_f));
-        };
-    };
-}
-```
-:::
-
-This relies on `do` expressions [@P2806R2] to give us something to inject.
-
 ## Alternate Syntax
 
 We have two forms of injection in this paper:
 
-* a metafunction `std::meta::inject` that takes an `info` (and maybe also returns an `info`), used through [token sequences](#token-sequences).
+* metafunctions `std::meta::queue_injection` and `std::meta::namespace_inject` that take an `info`, used through [token sequences](#token-sequences).
 * a trailing `!` used throughout [hygienic macros](#hygienic-macros).
 
-But these really are the exact same thing - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `inject(forward(x))` somewhat defeats the purpose and nobody would write it.
+But these really are tsimilar - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 
 Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`.
 
@@ -1794,11 +1787,9 @@ The fragment model initially introduced in [@P1717R0] is great for allowing writ
 This proposal consists of several pieces:
 
 * a mechanism to introduce a token sequence (in this paper `^{ $balanced-brace-tokens$ }`)
-* two interpolators to add outside context to a token sequence, one for identifiers (`\id`) and one for values (`\`)
-* a new disambiguator for splicing a declaration (`declare [: fun :]`)
-* a new metafunction to inject a token sequence (`std::meta::inject`)
+* three interpolators to add outside context to a token sequence, one for identifiers (`\id(e...)`), one for values (`\(e)` - parens mandatory), and one for token sequences (`\tokens(e)`)
+* new metafunctions to inject a token sequence (`std::meta::queue_injection()` and `std::meta::namespace_inject()`)
 * new metaprogramming facilities for dealing with token sequences:
-    * concatenation
     * converting a string to a token sequence and a token sequence to a string
     * splitting a token sequence into a range of tokens
 * hygienic macros would benefit syntactically from:
