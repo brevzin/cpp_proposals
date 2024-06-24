@@ -29,6 +29,14 @@ tag: constexpr
 Since [@P2996R3]:
 
 * changing `name_of`, `display_name_of`, and `qualified_name_of` signatures to mandate instead of constrain.
+* changes to name functions to improve Unicode-friendliness
+* the return of `reflect_value`: separated `reflect_result` into three functions: `reflect_value`, `reflect_object`, `reflect_function`
+* more strongly specified comparison and linkage rules for reflections of aliases
+* changed `is_noexcept` to apply to a wider class of entities
+* reworked the API for reflecting on accessible class members
+* renamed `test_type` and `test_types` to `test_trait`
+* added missing `has_module_linkage` metafunction
+* more wording
 
 Since [@P2996R2]:
 
@@ -101,7 +109,7 @@ later.
 
 While we tried to select a useful subset of the P1240 features, we also made a few additions and changes.
 Most of those changes are minor.
-For example, we added a `std::meta::test_type` interface that makes it convenient to use existing standard type predicates (such as `is_class_v`) in reflection computations.
+For example, we added a `std::meta::test_trait` interface that makes it convenient to use existing standard type predicates (such as `is_class_v`) in reflection computations.
 
 One addition does stand out, however: We have added metafunctions that permit the synthesis of simple struct and union types.
 While it is not nearly as powerful as generalized code injection (see [@P2237R0]), it can be remarkably effective in practice.
@@ -172,7 +180,7 @@ template<typename R>
 consteval auto expand(R range) {
   std::vector<std::meta::info> args;
   for (auto r : range) {
-    args.push_back(reflect_result(r));
+    args.push_back(reflect_value(r));
   }
   return substitute(^__impl::replicator, args);
 }
@@ -272,7 +280,7 @@ int main() {
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/WEYae451z), [Clang](https://godbolt.org/z/dhrdd14P1).
+On Compiler Explorer: [EDG](https://godbolt.org/z/WEYae451z), [Clang](https://godbolt.org/z/dYGaMKEx5).
 
 Note that a "member access splice" like `s.[:member_number(1):]` is a more direct member access mechanism than the traditional syntax.
 It doesn't involve member name lookup, access checking, or --- if the spliced reflection value denotes a member function --- overload resolution.
@@ -322,7 +330,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://godbolt.org/z/nYvc9ddr1).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://godbolt.org/z/vM46x4abW).
 
 
 ## List of Types to List of Sizes
@@ -354,7 +362,7 @@ constexpr auto sizes = []<template<class...> class L, class... T>(L<T...>) {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4xz9Wsa8f), [Clang](https://godbolt.org/z/nnrrYTTW9).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4xz9Wsa8f), [Clang](https://godbolt.org/z/EPY93bTxv).
 
 ## Implementing `make_integer_sequence`
 
@@ -369,7 +377,7 @@ template<typename T>
 consteval std::meta::info make_integer_seq_refl(T N) {
   std::vector args{^T};
   for (T k = 0; k < N; ++k) {
-    args.push_back(std::meta::reflect_result(k));
+    args.push_back(std::meta::reflect_value(k));
   }
   return substitute(^std::integer_sequence, args);
 }
@@ -512,13 +520,13 @@ constexpr std::string enum_to_string(E value) {
 
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Y5va8MqzG), [Clang](https://godbolt.org/z/Kfqc77rMq).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Y5va8MqzG), [Clang](https://godbolt.org/z/3doherKx8).
 
 
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
 For example:
 
-  - the "<unnamed>" case could instead output a valid cast expression like "E(5)"
+  - the "\<unnamed>" case could instead output a valid cast expression like "E(5)"
   - a more sophisticated lookup algorithm could be selected at compile time depending on the length of `enumerators_of(^E)`
   - a compact two-way persistent data structure could be generated to support both `enum_to_string` and `string_to_enum` with a minimal footprint
   - etc.
@@ -571,7 +579,7 @@ int main(int argc, char *argv[]) {
 
 This example is based on a presentation by Matúš Chochlík.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://godbolt.org/z/xae9n6z5G).
+On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://godbolt.org/z/v1PvGnafx).
 
 
 ## A Simple Tuple Type
@@ -614,7 +622,7 @@ template<std::size_t I, typename... Ts>
 This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_class` takes a reflection for an incomplete class or union plus a vector of nonstatic data member descriptions, and completes the give class or union type to have the described members.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4P15rnbxh), [Clang](https://godbolt.org/z/cT116Wb31).
+On Compiler Explorer: [EDG](https://godbolt.org/z/YK35d8MMx), [Clang](https://godbolt.org/z/cT116Wb31).
 
 ## A Simple Variant Type
 
@@ -772,7 +780,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R0].
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/9bjd6rGjT).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/eTvzWTxfv).
 
 ## Struct to Struct of Arrays
 
@@ -825,7 +833,7 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_class` is put to good use.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/8rT77KxjP), [Clang](https://godbolt.org/z/senWPW3eY).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Whdvs3j1n), [Clang](https://godbolt.org/z/senWPW3eY).
 
 
 ## Parsing Command-Line Options II
@@ -940,7 +948,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/1esbcq4jq), [Clang](https://godbolt.org/z/s943aezKs).
+On Compiler Explorer: [EDG](https://godbolt.org/z/MWfqvMeTx), [Clang](https://godbolt.org/z/79MrYvPP3).
 
 ## A Universal Formatter
 
@@ -995,7 +1003,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/rbs6K78WG).
+On Compiler Explorer: [Clang](https://godbolt.org/z/r7f8h38fq).
 
 Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is to use a cast:
 
@@ -1064,14 +1072,14 @@ consteval auto get_struct_to_tuple_helper() {
 
   std::vector args = {^To, ^From};
   for (auto mem : nonstatic_data_members_of(^From)) {
-    args.push_back(reflect_result(mem));
+    args.push_back(reflect_value(mem));
   }
 
   /*
   Alternatively, with Ranges:
   args.append_range(
     nonstatic_data_members_of(^From)
-    | std::views::transform(std::meta::reflect_result)
+    | std::views::transform(std::meta::reflect_value)
     );
   */
 
@@ -1099,7 +1107,7 @@ On Compiler Explorer (with a different implementation than either of the above):
 
 ## Implementing `tuple_cat`
 
-Courtesy of Tomasz Kaminski, [on compiler explorer](https://godbolt.org/z/sr3vxGcqY):
+Courtesy of Tomasz Kaminski, [on compiler explorer](https://godbolt.org/z/EajGPdf9q):
 
 ::: std
 ```cpp
@@ -1124,7 +1132,7 @@ consteval auto subst_by_value(std::meta::info tmpl, std::vector<T> args)
 {
     std::vector<std::meta::info> a2;
     for (T x : args) {
-        a2.push_back(std::meta::reflect_result(x));
+        a2.push_back(std::meta::reflect_value(x));
     }
 
     return substitute(tmpl, a2);
@@ -1161,8 +1169,8 @@ Because you cannot just pass `"x"` into a non-type template parameter of the for
 1. Can introduce a `pair` type so that we can write `make_named_tuple<pair<int, "x">, pair<double, "y">>()`, or
 2. Can just do reflections all the way down so that we can write
 ```cpp
-make_named_tuple<^int, std::meta::reflect_result("x"),
-                 ^double, std::meta::reflect_result("y")>()
+make_named_tuple<^int, std::meta::reflect_value("x"),
+                 ^double, std::meta::reflect_value("y")>()
 ```
 
 We do not currently support splicing string literals, and the `pair` approach follows the similar pattern already shown with `define_class` (given a suitable `fixed_string` type):
@@ -1246,7 +1254,7 @@ public:
     // Search for the next incomplete 'Helper<k>'.
     std::meta::info r;
     while (!is_incomplete_type(r = substitute(^Helper,
-                                             { std::meta::reflect_result(k) })))
+                                             { std::meta::reflect_value(k) })))
       ++k;
 
     // Define 'Helper<k>' and return its index.
@@ -1266,7 +1274,7 @@ static_assert(z == 2);
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/1vEjW4sTr), [Clang](https://godbolt.org/z/3Y3T1Y7Ya).
+On Compiler Explorer: [EDG](https://godbolt.org/z/MEYd3771Y), [Clang](https://godbolt.org/z/K4KWEqevv).
 
 ## Emulating typeful reflection
 Although we believe a single opaque `std::meta::info` type to be the best and most scalable foundation for reflection, we acknowledge the desire expressed by SG7 for future support for "typeful reflection". The following demonstrates one possible means of assembling a typeful reflection library, in which different classes of reflections are represented by distinct types, on top of the facilities proposed here.
@@ -1275,7 +1283,7 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (type_of(std::meta::reflect_result([:Pred:](^int))) == ^bool)
+  requires (test_trait(^std::predicate, {type_of(Pred), ^std::meta::info}))
 struct metatype {
   std::meta::info value;
 
@@ -1307,10 +1315,9 @@ consteval std::meta::info enrich(std::meta::info r) {
                       members_of(^unmatched, std::meta::is_constructor)[0]};
   std::array checks = {^Choices::check..., ^unmatched::check};
 
-  std::meta::info choice;
   for (auto [check, ctor] : std::views::zip(checks, ctors))
-    if (extract<bool>(reflect_invoke(check, {reflect_result(r)})))
-      return reflect_invoke(ctor, {reflect_result(r)});
+    if (extract<bool>(reflect_invoke(check, {reflect_value(r)})))
+      return reflect_invoke(ctor, {reflect_value(r)});
 
   std::unreachable();
 }
@@ -1335,9 +1342,9 @@ int main() {
                                                         template_t>(r); };
 
   // Demonstration of using 'enrich' to select an overload.
-  PrintKind([:enrich(^metatype):]);                    // "template"
-  PrintKind([:enrich(^type_t):]);                      // "type"
-  PrintKind([:enrich(std::meta::reflect_result(3):]);  // "unknown kind"
+  PrintKind([:enrich(^metatype):]);                   // "template"
+  PrintKind([:enrich(^type_t):]);                     // "type"
+  PrintKind([:enrich(std::meta::reflect_value(3):]);  // "unknown kind"
 }
 ```
 :::
@@ -1354,7 +1361,7 @@ fn<classify(Arg1, Arg2, Arg3)>(Arg1, Arg2, Arg3).
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/Ejeh8vWYs).
+On Compiler Explorer: [Clang](https://godbolt.org/z/q88dWYq8v).
 
 # Proposed Features
 
@@ -1383,9 +1390,23 @@ For all other operands, the expression is ill-formed. In a SFINAE context, a fai
 
 Earlier revisions of this paper allowed for taking the reflection of any _cast-expression_ that could be evaluated as a constant expression, as we believed that a constant expression could be internally "represented" by just capturing the value to which it evaluated. However, the possibility of side effects from constant evaluation (introduced by this very paper) renders this approach infeasible: even a constant expression would have to be evaluated every time it's spliced. It was ultimately decided to defer all support for expression reflection, but we intend to introduce it through a future paper using the syntax `^(expr)`.
 
-This paper does, however, support reflections of _values_ and of _objects_ (including subobjects). One way to obtain such reflections is using the `std::meta::reflect_result` metafunction, which returns a reflection of the result of once evaluating its argument. The `std::meta::value_of` metafunction can also be used to obtain a reflection of the value stored by an entity (if the entity is usable in constant expressions). While it's possible to support direct reflection of expression results (e.g., `^fn()`), we aren't convinced that this syntax provided enough value to justify its introduction at this time.
+This paper does, however, support reflections of _values_ and of _objects_ (including subobjects). Such reflections arise naturally when iterating over template arguments.
 
+```cpp
+template <int P1, const int &P2> void fn() {}
 
+static constexpr int p[2] = {1, 2};
+constexpr auto spec = ^fn<p[0], p[1]>;
+
+static_assert(is_value(template_arguments_of(spec)[0]));
+static_assert(is_object(template_arguments_of(spec)[1]));
+static_assert(!is_variable(template_arguments_of(spec)[1]));
+
+static_assert([:template_arguments_of(spec)[0]:] == 1);
+static_assert(&[:template_arguments_of(spec)[1]:] == &p[1]);
+```
+
+Such reflections cannot generally be obtained using the `^`-operator, but the `std::meta::reflect_value` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::value_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
 
 ### Syntax discussion
 
@@ -1750,7 +1771,25 @@ static_assert(^S::y == static_data_members_of(^S)[0]);
 ```
 :::
 
-For any other expression `expr`, the value `^expr` is a reflection of the _result_ of the expression. The expression is ill-formed if `expr` is a parenthesized expression.
+Special rules apply when comparing certain kinds of reflections. A reflection of an alias compares equal to another reflection if and only if they are both aliases, alias the same type, and share the same name and scope. In particular, these rules allow e.g., `fn<^std::string>` to refer to the same instantiation across translation units.
+
+::: std
+```c++
+using Alias1 = int;
+using Alias2 = int;
+consteval std::meta::info fn() {
+  using Alias1 = int;
+  return ^Alias;
+}
+static_assert(^Alias1 == ^Alias1);
+static_assert(^Alias1 != ^int);
+static_assert(^Alias1 != ^Alias2);
+static_assert(^Alias1 != fn());
+}
+```
+:::
+
+A reflection of an object (including variables) does not compare equally to a reflection of its value. Two values of different types never compare equally.
 
 ::: std
 ```c++
@@ -1761,15 +1800,16 @@ static_assert(r == r && r == s);
 
 static_assert(^i != ^j);  // 'i' and 'j' are different entities.
 static_assert(value_of(^i) == value_of(^j));  // Two equivalent values.
-static_assert(^i == std::meta::reflect_result<const int &>(i))  // A variable is indistinguishable
-                                                                // from the object it designates.
-static_assert(^i != ^42);  // A reflection of an entity is not the same as one of its value.
+static_assert(^i == std::meta::reflect_object(i))  // A variable is indistinguishable
+                                                   // from the object it designates.
+static_assert(^i != std::meta::reflect_value(42));  // A reflection of an object
+                                                    // is not the same as its value.
 ```
 :::
 
 ### Templates specialized by reflections
 
-Nontype template arguments of type `std::meta::info` are permitted (and frequently useful!), but a specialized template whose argument reflects an entity local to a translation unit must itself necessarily have internal linkage. For example:
+Nontype template arguments of type `std::meta::info` are permitted (and frequently useful!), but a specialized template whose argument reflects an entity local to a translation unit must itself necessarily have at most internal linkage. For example:
 
 ::: std
 ```c++
@@ -1782,6 +1822,10 @@ S<^x> sx;  // S<^x> has external name linkage.
 S<^y> sy;  // S<^y> has internal name linkage.
 ```
 :::
+
+More generally, a specialized template whose argument is a reflection cannot have a stronger linkage than the entity which it reflects. There are no linkage restrictions when the reflection is of a value, unless the value is of class type, in which case the linkage cannot be stronger than the linkage of the type.
+
+A specialized template whose argument reflects an alias has the same linkage as the aliased type. Without such a rule, the fact that aliases have no linkage would imply that any `fn<^std::string>` has no linkage.
 
 ### The associated `std::meta` namespace
 
@@ -2181,13 +2225,52 @@ namespace std::meta {
   consteval auto subobjects_of(info type_class) -> vector<info>;
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 
-  template<typename ...Fs>
-    consteval auto accessible_members_of(info type_class, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto accessible_bases_of(info type_class, Fs ...filters) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info type_class) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info type_class) -> vector<info>;
-  consteval auto accessible_subobjects_of(info type_class) -> vector<info>;
+  // @[member access](#member-access)@
+  consteval auto access_context() -> info;
+
+  struct access_pair {
+    consteval access_pair(info target, info from = access_context());
+  };
+
+  consteval auto is_accessible(access_pair p) -> bool;
+  consteval auto is_accessible(info r, info from);
+
+  template <typename Pred>
+    consteval auto accessible_members_of(access_pair p, Pred pred);
+  template <typename Pred>
+    consteval auto accessible_members_of(info target, info from, Pred pred);
+  template <typename... Preds>
+    consteval auto accessible_members_of(access_pair p,
+                                         Preds... preds) -> vector<info>;
+  template <typename... Preds>
+    consteval auto accessible_members_of(info target, info from,
+                                         Preds... preds) -> vector<info>;
+  consteval auto accessible_members_of(access_pair p) -> vector<info>;
+  consteval auto accessible_members_of(info target, info from) -> vector<info>;
+
+  template <typename Pred>
+    consteval auto accessible_bases_of(access_pair p, Pred pred);
+  template <typename Pred>
+    consteval auto accessible_bases_of(info target, info from, Pred pred);
+  template <typename... Preds>
+    consteval auto accessible_bases_of(access_pair p,
+                                       Preds... preds) -> vector<info>;
+  template <typename... Preds>
+    consteval auto accessible_bases_of(info target, info from,
+                                       Preds... preds) -> vector<info>;
+  consteval auto accessible_bases_of(access_pair p) -> vector<info>;
+  consteval auto accessible_bases_of(info target, info from) -> vector<info>;
+
+  consteval auto accessible_nonstatic_data_members_of(access_pair p)
+      -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info target,
+                                                      info from) -> vector<info>;
+  consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info target,
+                                                   info from) -> vector<info>;
+  consteval auto accessible_subobjects_of(acess_pair p) -> vector<info>;
+  consteval auto accessible_subobjects_of(info target,
+                                         info from) -> vector<info>;
 
   // @[substitute](#substitute)@
   template <reflection_range R = span<info const>>
@@ -2201,24 +2284,27 @@ namespace std::meta {
   template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
   consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
 
-  // @[reflect](#reflect_resultt)@
-  template<typename T>
-    consteval auto reflect_result(T value) -> info;
+  // @[reflect expression results](#reflect-expression-results)@
+  template <typename T>
+    consteval auto reflect_value(T value) -> info;
+  template <typename T>
+    consteval auto reflect_object(T& value) -> info;
+  template <typename T>
+    consteval auto reflect_function(T& value) -> info;
 
   // @[extract<T>](#extractt)@
-  template<typename T>
+  template <typename T>
     consteval auto extract(info) -> T;
 
-  // @[test_type](#test_type-test_types)@
-  consteval auto test_type(info templ, info type) -> bool;
+  // @[test_trait](#test_trait)@
+  consteval auto test_trait(info templ, info type) -> bool;
   template <reflection_range R = span<info const>>
-  consteval auto test_types(info templ, R&& types) -> bool;
+  consteval auto test_trait(info templ, R&& arguments) -> bool;
 
   // other type predicates (see @[the wording](#meta.reflection.queries-reflection-queries)@)
   consteval auto is_public(info r) -> bool;
   consteval auto is_protected(info r) -> bool;
   consteval auto is_private(info r) -> bool;
-  consteval auto is_accessible(info r) -> bool;
   consteval auto is_virtual(info r) -> bool;
   consteval auto is_pure_virtual(info entity) -> bool;
   consteval auto is_override(info entity) -> bool;
@@ -2232,6 +2318,7 @@ namespace std::meta {
   consteval auto is_final(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
+  consteval auto has_module_linkage(info r) -> bool;
   consteval auto has_external_linkage(info r) -> bool;
   consteval auto has_linkage(info r) -> bool;
   consteval auto is_class_member(info entity) -> bool;
@@ -2413,14 +2500,6 @@ namespace std::meta {
   }
 
   consteval auto enumerators_of(info type_enum) -> vector<info>;
-
-  template<typename ...Fs>
-    consteval auto accessible_members_of(info type_class, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto accessible_bases_of(info type_class, Fs ...filters) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info type_class) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info type_class) -> vector<info>;
-  consteval auto accessible_subobjects_of(info type_class) -> vector<info>;
 }
 ```
 :::
@@ -2434,12 +2513,68 @@ E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the 
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
-`enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
+`static_data_members_of` and `nonstatic_data_members_of` return the equivalent of `members_of(^C, std::meta::is_nonstatic_data_member)` and `members_of(^C, std::meta::is_variable)`, respectively.
 
 `subobjects_of` returns the base class subobjects and the non-static data members of a type, in declaration order. Note that the term [subobject](https://eel.is/c++draft/intro.object#def:subobject) also includes _array elements_, which we are excluding here. Such reflections would currently be of minimal use since you could not splice them with access (e.g. `arr.[:elem:]` is not supported), so would need some more thought first.
 
-Each variant named `accessible_meow_of` simply returns the result of `meow_of` filtered on `is_accessible`. Note that this might change to be `is_accessible_from(e, context)` rather than simply `is_accessible(e)`.
+`enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
+### Member Access Reflection {#member-access}
+
+::: std
+```c++
+namespace std::meta {
+  consteval auto access_context() -> info;
+
+  struct access_pair {
+    consteval access_pair(info target, info from = access_context());
+  };
+
+  consteval auto is_accessible(access_pair p) -> bool;
+
+  template<typename ...Fs>
+    consteval auto accessible_members_of(access_pair p, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto accessible_members_of(info target, info from, Fs ...filters) -> vector<info>;
+
+  template<typename ...Fs>
+    consteval auto accessible_bases_of(access_pair p, Fs ...filters) -> vector<info>;
+  template<typename ...Fs>
+    consteval auto accessible_bases_of(info target, info from, Fs ...filters) -> vector<info>;
+
+  consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info target, info from) -> vector<info>;
+
+  consteval auto accessible_nonstatic_data_members_of(access_pair p) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info target, info from) -> vector<info>;
+
+  consteval auto accessible_subobjects_of(access_pair p) -> vector<info>;
+  consteval auto accessible_subobjects_of(info target, info from) -> vector<info>;
+}
+```
+:::
+
+The `access_context()` function returns a reflection of the function, class, or namespace whose scope encloses the function call.
+
+The type `access_pair` represents the operands of a check for access to `target` from the scope introduced by the function, class, or namespace reflected by `from`. If `from` is not specified, the `access_pair` constructor captures the current access context of the caller via the default argument. Each function also provides an overload whereby `target` and `from` may be specified as distinct arguments.
+
+Each function named `accessible_meow_of` returns the result of `meow_of` filtered on `is_accessible`.
+
+For example:
+
+::: std
+```cpp
+class C {
+  int k;
+  static_assert(is_accessible(^C::k));  // ok: context is 'C'.
+
+  friend void fn();
+}
+
+static_assert(accessible_subobjects_of(^C).size() == 0);
+static_assert(accessible_subobjects_of(^C, ^fn).size() == 1);
+```
+:::
 
 ### `substitute`
 
@@ -2495,29 +2630,55 @@ namespace std::meta {
 ```
 :::
 
-These metafunctions produces a reflection of the value returned by a call expression.
+These metafunctions produce a reflection of the result of a call expression.
 
-For the first overload: Letting `F` be the entity reflected by `target`, and `A@~0~@, A@~1~@, ..., A@~N~@` be the sequence of entities reflected by the values held by `args`: if the expression `F(A@~0~@, A@~1~@, ..., A@~N~@)` is a well-formed constant expression evaluating to a type that is not `void`, and if every value in `args` is a reflection of a value or object usable in constant expressions, then `reflect_invoke(target, args)` evaluates to a reflection of the result of `F(A@~0~@, A@~1~@, ..., A@~N~@)`. For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
+For the first overload: Letting `F` be the entity reflected by `target`, and `A@~0~@, A@~1~@, ..., A@~N~@` be the sequence of entities reflected by the values held by `args`: if the expression `F(A@~0~@, A@~1~@, ..., A@~N~@)` is a well-formed constant expression evaluating to a structural type that is not `void`, and if every value in `args` is a reflection of a value or object usable in constant expressions, then `reflect_invoke(target, args)` evaluates to a reflection of the result of `F(A@~0~@, A@~1~@, ..., A@~N~@)`. For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
 
-The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {reflect_result(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
+The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {std::meta::reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
+
+If the returned reflection is of a value (rather than an object), the type of the reflected value is the cv-qualified (de-aliased) type of what's returned by the function.
 
 A few possible extensions for `reflect_invoke` have been discussed among the authors. Given the advent of constant evaluations with side-effects, it may be worth allowing `void`-returning functions, but this would require some representation of "a returned value of type `void`". Construction of runtime call expressions is another exciting possibility. Both extensions require more thought and implementation experience, and we are not proposing either at this time.
 
-### `reflect_result<T>`
+### `reflect_value`, `reflect_object`, `reflect_function` {#reflect-expression-results}
 
 ::: std
 ```c++
 namespace std::meta {
-  template<typename T> consteval auto reflect_result(T expr) -> info;
+  template<typename T> consteval auto reflect_value(T expr) -> info;
+  template<typename T> consteval auto reflect_object(T& expr) -> info;
+  template<typename T> consteval auto reflect_function(T& expr) -> info;
 }
 ```
 :::
 
-If `expr` does not have structural type, then `reflect_result(expr)` fails to be a constant expression.
+These metafunctions produce a reflection of the _result_ from evaluating the provided expression. One of the most common use-cases for such reflections is to specify the template arguments with which to build a specialization using `std::meta::substitute`.
 
-Otherwise, if `T` is of reference or pointer type, or for each subobject of `expr` having reference or pointer type if `T` is of class type, if the reference or pointer value designates an entity that is not a permitted result ([expr.const]), then `reflect_result(expr)` fails to be a constant expression.
+`reflect_value(expr)` produces a reflection of the value computed by an lvalue-to-rvalue conversion on `expr`. The type of the reflected value is the cv-unqualified (de-aliased) type of `expr`. The result needs to be a permitted result of a constant expression, and `T` cannot be of reference type.
 
-Otherwise, `reflect_result(expr)` produces a reflection of the result of `static_cast<T>(expr)`.
+```cpp
+static_assert(substitute(^std::array, {^int, std::meta::reflect_value(5)}) ==
+              ^std::array<int, 5>);
+```
+
+`reflect_object(expr)` produces a reflection of the object designated by `expr`. This is frequently used to obtain a reflection of a subobject, which might then be used as a template argument for a non-type template parameter of reference type.
+
+```cpp
+template <int &> void fn();
+
+int p[2];
+constexpr auto r = substitute(^fn, {std::meta::reflect_object(p[1])});
+```
+
+`reflect_function(expr)` produces a reflection of the function designated by `expr`. It can be useful for reflecting on the properties of a function for which only a reference is available.
+
+```cpp
+consteval bool is_global_with_external_linkage(void(*fn)()) {
+  std::meta::info rfn = std::meta::reflect_function(*fn);
+
+  return (has_external_linkage(rfn) && parent_of(rfn) == ^::);
+}
+```
 
 ### `extract<T>`
 
@@ -2549,17 +2710,17 @@ For other reflection values `r`, `extrace<T>(r)` is ill-formed.
 The function template `extract` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity reflected by its operand.
 
-### `test_type`, `test_types`
+### `test_trait`
 
 ::: std
 ```c++
 namespace std::meta {
-  consteval auto test_type(info templ, info type) -> bool {
-    return test_types(templ, {type});
+  consteval auto test_trait(info templ, info type) -> bool {
+    return test_trait(templ, {type});
   }
 
   template <reflection_range R = span<info const>>
-  consteval auto test_types(info templ, R&& types) -> bool {
+  consteval auto test_trait(info templ, R&& types) -> bool {
     return extract<bool>(substitute(templ, (R&&)types));
   }
 }
@@ -2572,11 +2733,12 @@ For example:
 ::: std
 ```c++
 struct S {};
-static_assert(test_type(^std::is_class_v, ^S));
+static_assert(test_trait(^std::is_class_v, ^S));
+static_assert(test_trait(^std::is_same_v, {^S, ^S})
 ```
 :::
 
-An implementation is permitted to recognize standard predicate templates and implement `test_type` without actually instantiating the predicate template.
+An implementation is permitted to recognize standard predicate templates and implement `test_trait` without actually instantiating the predicate template.
 In fact, that is recommended practice.
 
 ### `data_member_spec`, `define_class`
@@ -2729,7 +2891,7 @@ std::meta::type_is_const(type)
 
 ```cpp
 std::meta::extract<bool>(std::meta::substitute(^std::is_const_v, {type}))
-std::meta::test_type(^std::is_const_v, type)
+std::meta::test_trait(^std::is_const_v, type)
 ```
 :::
 
@@ -2987,7 +3149,7 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 [#]{.pnum} For a `$primary-expression$` of the form `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template.
 The meaning of such a construct is identical to that of a `$primary-expression$` of the form `$template-name$ < $template-argument-list$@~_opt_~@ >` where `$template-name$` denotes the reflected template or concept (ignoring access checking on the `$template-name$`).
 
-[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, an enumerator, or a structured binding, the meaning of the expression is identical to that of a `$primary-expression$` of the form `$id-expression$` that would denote the reflected entity (ignoring access checking).
+[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, an enumerator, or a structured binding, the expression is an lvalue denoting the reflected entity. [Acess checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
 
 [#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of a value, and the expression shall be a prvalue whose evaluation computes the reflected value.
 :::
@@ -3065,7 +3227,7 @@ The `$id-expression$` is not evaluated.
 
 * [#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
 
-[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue]{.note}
+[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue.]{.note}
 
 ::: example
 ```cpp
@@ -3173,6 +3335,22 @@ Change paragraphs 6-9 of [dcl.init.general]{.sref} [No changes are necessary for
 * [8.1]{.pnum} [...]
 
 [9]{.pnum} To value-initialize an object of type T means: [...]
+:::
+
+### [dcl.fct]{.sref} Functions {-}
+
+Add a bullet to paragraph 9 of [dcl.fct]{.sref} to allow for reflections of abominable function types:
+
+::: std
+[9]{.pnum} A function type with a _cv-qualifier-seq_ or a _ref-qualifier_ (including a type named by _typedef-name_ ([dcl.typedef], [temp.param])) shall appear only as:
+
+* [9.1]{.pnum} the function type for a non-static member function,
+* [9.2]{.pnum} ...
+* [9.5]{.pnum} the _type-id_ of a _template-argument_ for a _type-parameter_ ([temp.arg.type])[.]{.rm}[,]{.addu}
+:::addu
+* [9.6]{.pnum} the operand of a _reflect-expression_ ([expr.reflect]).
+:::
+
 :::
 
 ### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
@@ -3434,7 +3612,64 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 ## Library
 
-### [meta] Header `<meta>` synopsis {-}
+### [meta.type.synop]{.sref} Header `<type_traits>` synopsis
+
+Add a new primary type category type trait:
+
+::: std
+**Header `<type_traits>` synopsis**
+
+...
+```diff
+    // [meta.unary.cat], primary type categories
+    template<class T> struct is_void;
+...
+    template<class T> struct is_function;
++   template<class T> struct is_reflection;
+
+    // [meta.unary.cat], primary type categories
+    template<class T>
+      constexpr bool is_void_v = is_void<T>::value;
+...
+    template<class T>
+      constexpr bool is_reflection_v = is_function<T>::value;
++   template<class T>
++     constexpr bool is_reflection_v = is_function<T>::value;
+```
+:::
+
+### [meta.unary.cat]{.sref} Primary type categories
+
+Add the `is_reflection` primary type category to the table in paragraph 3:
+
+<table>
+<tr style="text-align:center"><th>Template</th><th>Condition</th><th>Comments</th></tr>
+<tr><td>
+```cpp
+template <class T>
+struct is_void;
+```
+</td><td style="text-align:center; vertical-align: middle">`T` is `void`</td><td></td></tr>
+<tr style="text-align:center"><td>...</td><td>...</td><td>...</td></tr>
+<tr><td>
+::: addu
+```cpp
+template <class T>
+struct is_reflection;
+```
+:::
+</td><td style="text-align:center; vertical-align: middle">
+::: addu
+`T` is `std::meta::info`
+:::
+</td><td>
+::: addu
+<br>
+:::
+</td></tr>
+</table>
+
+### [meta.synop] Header `<meta>` synopsis {-}
 
 Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
@@ -3451,11 +3686,11 @@ namespace std::meta {
   using info = decltype(^::);
 
   // [meta.reflection.names], reflection names and locations
-  template<typename T = std::u8string_view>
+  template<typename T = u8string_view>
     consteval T name_of(info r);
-  template<typename T = std::u8string_view>
+  template<typename T = u8string_view>
     consteval T qualified_name_of(info r);
-  template<typename T = std::u8string_view>
+  template<typename T = u8string_view>
     consteval T display_name_of(info r);
   consteval source_location source_location_of(info r);
 
@@ -3463,7 +3698,6 @@ namespace std::meta {
   consteval bool is_public(info r);
   consteval bool is_protected(info r);
   consteval bool is_private(info r);
-  consteval bool is_accessible(info r);
   consteval bool is_virtual(info r);
   consteval bool is_pure_virtual(info r);
   consteval bool is_override(info r);
@@ -3477,6 +3711,7 @@ namespace std::meta {
   consteval bool is_final(info r);
   consteval bool has_static_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
+  consteval bool has_module_linkage(info r);
   consteval bool has_external_linkage(info r);
   consteval bool has_linkage(info r);
 
@@ -3507,6 +3742,7 @@ namespace std::meta {
   consteval bool is_user_provided(info r);
 
   consteval info type_of(info r);
+  consteval info value_of(info r);
   consteval info parent_of(info r);
   consteval info dealias(info r);
   consteval info template_of(info r);
@@ -3516,18 +3752,38 @@ namespace std::meta {
   template<class... Fs>
     consteval vector<info> members_of(info type, Fs... filters);
   template<class... Fs>
-    consteval vector<info> accessible_members_of(info type, Fs... filters);
-  template<class... Fs>
     consteval vector<info> bases_of(info type, Fs... filters);
-  template<class... Fs>
-    consteval vector<info> accessible_bases_of(info type, Fs... filters);
   consteval vector<info> static_data_members_of(info type);
-  consteval vector<info> accessible_static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
-  consteval vector<info> accessible_nonstatic_data_members_of(info type);
   consteval vector<info> subobjects_of(info type);
-  consteval vector<info> accessible_subobjects_of(info type);
   consteval vector<info> enumerators_of(info type_enum);
+
+  // [meta.reflection.member.access], reflection member access queries
+  consteval info access_context();
+
+  struct access_pair {
+    consteval access_pair(info target, info from = access_context());
+  };
+
+  consteval bool is_accessible(access_pair p);
+  consteval bool is_accessible(info r, info from);
+
+  template <typename... Preds>
+    consteval vector<info> accessible_members_of(access_pair p, Preds... preds);
+  template <typename... Preds>
+    consteval vector<info> accessible_members_of(info target, info from, Preds... preds);
+
+  template <typename... Preds>
+    consteval vector<info> accessible_bases_of(access_pair p, Preds... preds);
+  template <typename... Preds>
+    consteval vector<info> accessible_bases_of(info target, info from, Preds... preds);
+
+  consteval vector<info> accessible_nonstatic_data_members_of(access_pair p);
+  consteval vector<info> accessible_nonstatic_data_members_of(info target, info from);
+  consteval vector<info> accessible_static_data_members_of(access_pair p);
+  consteval vector<info> accessible_static_data_members_of(info target, info from);
+  consteval vector<info> accessible_subobjects_of(acess_pair p);
+  consteval vector<info> accessible_subobjects_of(info target, info from);
 
   // [meta.reflection.layout], reflection layout queries
   consteval size_t offset_of(info entity);
@@ -3536,14 +3792,26 @@ namespace std::meta {
   consteval size_t bit_offset_of(info entity);
   consteval size_t bit_size_of(info entity);
 
+  // [meta.reflection.result], expression result reflection
+  template <typename T>
+    consteval info reflect_value(T value);
+  template <typename T>
+    consteval info reflect_object(T& object);
+  template <typename T>
+    consteval info reflect_function(T& fn);
+
   // [meta.reflection.substitute], reflection substitution
   template <class R>
-  concept reflection_range = $see below$;
+    concept reflection_range = $see below$;
 
   template <reflection_range R = span<info const>>
-  consteval bool can_substitute(info templ, R&& arguments);
+    consteval bool can_substitute(info templ, R&& arguments);
   template <reflection_range R = span<info const>>
-  consteval info substitute(info templ, R&& arguments);
+    consteval info substitute(info templ, R&& arguments);
+
+  consteval bool test_trait(info templ, info type);
+  template <reflection_range R = span<info const>>
+    consteval bool test_trait(info templ, R&& arguments);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -3560,6 +3828,7 @@ namespace std::meta {
   consteval bool type_is_union(info type);
   consteval bool type_is_class(info type);
   consteval bool type_is_function(info type);
+  consteval bool type_is_reflection(info type);
 
   // [meta.reflection.unary.comp], composite type categories
   consteval bool type_is_reference(info type);
@@ -3588,7 +3857,7 @@ namespace std::meta {
   consteval bool type_is_scoped_enum(info type);
 
   template <reflection_range R = span<info const>>
-  consteval bool type_is_constructible(info type, R&& type_args);
+    consteval bool type_is_constructible(info type, R&& type_args);
   consteval bool type_is_default_constructible(info type);
   consteval bool type_is_copy_constructible(info type);
   consteval bool type_is_move_constructible(info type);
@@ -3603,7 +3872,7 @@ namespace std::meta {
   consteval bool type_is_destructible(info type);
 
   template <reflection_range R = span<info const>>
-  consteval bool type_is_trivially_constructible(info type, R&& type_args);
+    consteval bool type_is_trivially_constructible(info type, R&& type_args);
   consteval bool type_is_trivially_default_constructible(info type);
   consteval bool type_is_trivially_copy_constructible(info type);
   consteval bool type_is_trivially_move_constructible(info type);
@@ -3614,7 +3883,7 @@ namespace std::meta {
   consteval bool type_is_trivially_destructible(info type);
 
   template <reflection_range R = span<info const>>
-  consteval bool type_is_nothrow_constructible(info type, R&& type_args);
+    consteval bool type_is_nothrow_constructible(info type, R&& type_args);
   consteval bool type_is_nothrow_default_constructible(info type);
   consteval bool type_is_nothrow_copy_constructible(info type);
   consteval bool type_is_nothrow_move_constructible(info type);
@@ -3651,14 +3920,14 @@ namespace std::meta {
   consteval bool type_is_pointer_interconvertible_base_of(info type_base, info type_derived);
 
   template <reflection_range R = span<info const>>
-  consteval bool type_is_invocable(info type, R&& type_args);
+    consteval bool type_is_invocable(info type, R&& type_args);
   template <reflection_range R = span<info const>>
-  consteval bool type_is_invocable_r(info type_result, info type, R&& type_args);
+    consteval bool type_is_invocable_r(info type_result, info type, R&& type_args);
 
   template <reflection_range R = span<info const>>
-  consteval bool type_is_nothrow_invocable(info type, R&& type_args);
+    consteval bool type_is_nothrow_invocable(info type, R&& type_args);
   template <reflection_range R = span<info const>>
-  consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&& type_args);
+    consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&& type_args);
 
   // [meta.reflection.trans.cv], const-volatile modifications
   consteval info type_remove_const(info type);
@@ -3689,12 +3958,12 @@ namespace std::meta {
   consteval info type_remove_cvref(info type);
   consteval info type_decay(info type);
   template <reflection_range R = span<info const>>
-  consteval info type_common_type(R&& type_args);
+    consteval info type_common_type(R&& type_args);
   template <reflection_range R = span<info const>>
-  consteval info type_common_reference(R&& type_args);
+    consteval info type_common_reference(R&& type_args);
   consteval info type_underlying_type(info type);
   template <reflection_range R = span<info const>>
-  consteval info type_invoke_result(info type, R&& type_args);
+    `consteval info type_invoke_result(info type, R&& type_args);
   consteval info type_unwrap_reference(info type);
   consteval info type_unwrap_ref_decay(info type);
 }
@@ -3746,11 +4015,6 @@ consteval bool is_private(info r);
 [#]{.pnum} *Returns*: `true` if `r` designates a class member or base class that is public, protected, or private, respectively. Otherwise, `false`.
 
 ```cpp
-consteval bool is_accessible(info r);
-```
-[#]{.pnum} *Returns*: `true` if `r` designates a class member or base class that is accessible at the point of the immediate invocation ([expr.const]) that resulted in the evaluation of `is_accessible(r)`.  Otherwise, `false`.
-
-```cpp
 consteval bool is_virtual(info r);
 ```
 [#]{.pnum} *Returns*: `true` if `r` designates a either a virtual member function or a virtual base class. Otherwise, `false`.
@@ -3783,7 +4047,7 @@ consteval bool is_explicit(info r);
 consteval bool is_noexcept(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared `noexcept`, a closure type of a non-generic lambda whose call operator is declared `noexcept`, or a value of such a type. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a `noexcept` function type, a pointer to `noexcept` function or member function type, a closure type of a non-generic lambda whose call operator is declared `noexcept`, a value of any of the previously mentioned types, or a function that is declared `noexcept`. Otherwise, `false`.
 
 ```cpp
 consteval bool is_bit_field(info r);
@@ -3812,11 +4076,12 @@ consteval bool has_static_storage_duration(info r);
 
 ```cpp
 consteval bool has_internal_linkage(info r);
+consteval bool has_module_linkage(info r);
 consteval bool has_external_linkage(info r);
 consteval bool has_linkage(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates an entity that has internal linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates an entity that has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
 
 
 ```cpp
@@ -3852,7 +4117,7 @@ consteval bool is_incomplete_type(info r);
 
 [#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: `false` if the type designated by `dealias(r)` is a complete class type. Otherwise, `true`.
+[#]{.pnum} *Returns*: `true` if the type designated by `dealias(r)` is an incomplete type ([basic.types]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
@@ -3911,6 +4176,14 @@ consteval info type_of(info r);
 [#]{.pnum} *Mandates*: `r` designates a typed entity. `r` does not designate a constructor or destructor.
 
 [#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
+
+```cpp
+consteval info value_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating either an object usable in constant expressions ([expr.const]), an enumerator, or a value.
+
+[#]{.pnum} *Returns*: If `r` is a reflection designating an object `o`, then a reflection of the value held by that object. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
 
 ```cpp
 consteval info parent_of(info r);
@@ -3981,13 +4254,6 @@ Non-static data members are indexed in the order in which they are declared, but
 
 ```cpp
 template<class... Fs>
-  consteval vector<info> accessible_members_of(info type, Fs... filters);
-```
-
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_accessible, filters...);`
-
-```cpp
-template<class... Fs>
   consteval vector<info> bases_of(info type, Fs... filters);
 ```
 
@@ -3999,35 +4265,16 @@ template<class... Fs>
 The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
-template<class... Fs>
-  consteval vector<info> accessible_bases_of(info type, Fs... filters);
-```
-
-[#]{.pnum} *Effects*: Equivalent to: `return bases_of(type, is_accessible, filters...);`
-
-```cpp
 consteval vector<info> static_data_members_of(info type);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
 
 ```cpp
-consteval vector<info> accessible_static_data_members_of(info type);
-```
-
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable, is_accessible);`
-
-```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
 [#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
-
-```cpp
-consteval vector<info> accessible_nonstatic_data_members_of(info type);
-```
-
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member, is_accessible);`
 
 ```cpp
 consteval vector<info> subobjects_of(info type);
@@ -4040,22 +4287,134 @@ consteval vector<info> subobjects_of(info type);
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
 
 ```cpp
-consteval vector<info> accessible_subobjects_of(info type);
-```
-
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
-
-[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(type)` followed by all the reflections in `accessible_nonstatic_data_members_of(type)`.
-
-```cpp
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
 [#]{.pnum} *Mandates*: `type_enum` is a reflection designating an enumeration.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration designated by `type_enum`, in the order in which they are declared.
+:::
+:::
+
+### [meta.reflection.member.access], Reflection member access queries
+
+::: std
+::: addu
+```cpp
+consteval info access_context();
+```
+
+[#]{.pnum} *Returns*: A reflection of the function, class, or namespace scope most nearly enclosing the function call.
+
+```cpp
+consteval bool is_accessible(access_pair p);
+```
+
+[#]{.pnum} *Mandates*: `p.target` is a reflection designating a member of a class. `p.from` designates a function, class, or namespace.
+
+[#]{.pnum} *Returns*: `true` if the class member designated by `p.target` can be named within the scope of `p.from`. Otherwise, `false`.
+
+```cpp
+consteval bool is_accessible(info target, info from);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return is_accessible({target, from});`
+
+```cpp
+template <typename... Preds>
+  consteval vector<info> accessible_members_of(access_pair p,
+                                               Preds... preds);
+```
+
+[#]{.pnum} *Mandates*: `p.target` is a reflection designating a complete class type. `p.from` designates a function, class, or namespace.
+
+[#]{.pnum} *Effects*: Equivalent to:
+```cpp
+    return members_of(p.target,
+                      [&](info r) { return is_accessible({r, p.from}); },
+                      preds...);
+```
+
+```cpp
+template <typename... Preds>
+  consteval vector<info> accessible_members_of(info target,
+                                               info from,
+                                               Preds... preds);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_members_of({target, from}, preds...);`
+
+```cpp
+template <typename... Preds>
+  consteval vector<info> accessible_bases_of(access_pair p,
+                                             Preds... preds);
+```
+
+[#]{.pnum} *Mandates*: `p.target` is a reflection designating a complete class type. `p.from` designates a function, class, or namespace.
+
+[#]{.pnum} *Effects*: Equivalent to:
+```cpp
+    return bases_of(p.target,
+                      [&](info r) { return is_accessible({r, p.from}); },
+                      preds...);
+```
+
+```cpp
+template <typename... Preds>
+  consteval vector<info> accessible_bases_of(info target,
+                                             info from,
+                                             Preds... preds);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_bases_of({target, from}, preds...);`
+
+```cpp
+consteval vector<info> accessible_nonstatic_data_members_of(access_pair p);
+```
+
+[#]{.pnum} *Effects*: Equivalent to:
+```cpp
+    return accessible_members_of(p.target,
+                                 std::meta::is_nonstatic_data_member,
+                                 preds...);
+```
+
+```cpp
+consteval vector<info> accessible_nonstatic_data_members_of(info target,
+                                                            info from);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_nonstatic_data_members_of({target, from});`
+
+```cpp
+consteval vector<info> accessible_static_data_members_of(access_pair p);
+```
+
+[#]{.pnum} *Effects*: Equivalent to:
+```cpp
+    return accessible_members_of(p.target,
+                                 std::meta::is_static_data_member);
+```
+
+```cpp
+consteval vector<info> accessible_static_data_members_of(info target,
+                                                         info from);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_static_data_members_of({target, from});`
+
+```cpp
+consteval vector<info> accessible_subobjects_of(acess_pair p);
+```
+
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(p)` followed by all the reflections in `accessible_nonstatic_data_members_of(p)`.
+
+```cpp
+consteval vector<info> accessible_subobjects_of(info target, info from);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_subobjects_data_members_of({target, from});`
+
 :::
 :::
 
@@ -4070,6 +4429,40 @@ consteval size_t alignment_of(info entity);
 consteval size_t bit_offset_of(info entity);
 consteval size_t bit_size_of(info entity);
 ```
+:::
+:::
+
+### [meta.reflection.result] Expression result reflection {-}
+
+::: std
+::: addu
+```cpp
+template <typename T>
+  consteval info reflect_value(T expr);
+```
+
+[#]{.pnum} *Mandates*: `T` is a structural type. `T` is not a reference type. Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression.
+
+[#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the reflected value is the cv-unqualified version of `T`.
+
+```cpp
+template <typename T>
+  consteval info reflect_object(T& expr);
+```
+
+[#]{.pnum} *Mandates*: `T` is not a function type. `expr` designates an entity that is a permitted result of a constant expression.
+
+[#]{.pnum} *Returns*: A reflection of the object referenced by `expr`. If the reflected object is a variable `Obj`, the returned reflection compares equal to `^Obj`.
+
+```cpp
+template <typename T>
+  consteval info reflect_function(T& expr);
+```
+
+[#]{.pnum} *Mandates*: `T` is a function type.
+
+[#]{.pnum} *Returns*: `^fn`, where `fn` is the function referenced by `expr`.
+
 :::
 :::
 
@@ -4109,6 +4502,19 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Returns*: `^Z<Args...>`.
 
+```cpp
+consteval bool test_trait(info templ, info type);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, {type}));`
+
+```cpp
+template <reflection_range R = span<info const>>
+consteval bool test_trait(info templ, R&& arguments);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, arguments));`
+
 :::
 :::
 
@@ -4143,6 +4549,7 @@ consteval bool type_is_enum(info type);
 consteval bool type_is_union(info type);
 consteval bool type_is_class(info type);
 consteval bool type_is_function(info type);
+consteval bool type_is_reflection(info type);
 ```
 
 [2]{.pnum}
