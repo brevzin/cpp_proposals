@@ -965,11 +965,11 @@ After extensive study and experimentation (as seen above), we concluded that som
 
 Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility — particularly when it comes to composing larger constructs from smaller ones — and also be difficult for implementers, thus hurting everyone involved.
 
-We therefore acknowledge the notion of token sequence as a core building block for generating code. Using token sequences allows flexibility to code that generates other code, while deferring name lookup and semantic analysis to well-defined points in the compilation process. Thus we reach the notion of a token sequence literal dedicated to representing unprocessed sequences of tokens.
+We therefore acknowledge the notion of token sequence as a core building block for generating code. Using token sequences allows flexibility to code that generates other code, while deferring name lookup and semantic analysis to well-defined points in the compilation process. Thus we reach the notion of a token sequence expression dedicated to representing unprocessed sequences of tokens.
 
-## Token Sequence Literal
+## Token Sequence Expression
 
-We propose the introduction of a new literal with the following syntax (the specific introducer can be decided later):
+We propose the introduction of a new expression with the following syntax (the specific introducer can be decided later):
 
 ::: std
 ```cpp
@@ -977,7 +977,7 @@ We propose the introduction of a new literal with the following syntax (the spec
 ```
 :::
 
-where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the sole requirement that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. The opening and closing `{`/`}` are not part of the token sequence. The type of a token sequence literal is `std::meta::info`.
+where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the sole requirement that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. The opening and closing `{`/`}` are not part of the token sequence. The type of a token sequence expression is `std::meta::info`.
 
 The choice of syntax is motivated by two notions:
 
