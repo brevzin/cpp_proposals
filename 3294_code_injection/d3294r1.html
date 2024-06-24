@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-06-23" />
+  <meta name="dcterms.date" content="2024-06-24" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-06-23</td>
+    <td>2024-06-24</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1781,8 +1781,8 @@ lookup and semantic analysis to well-defined points in the compilation
 process. Thus we reach the notion of a token sequence expression
 dedicated to representing unprocessed sequences of tokens.</p>
 <h2 data-number="4.1" id="token-sequence-expression"><span class="header-section-number">4.1</span> Token Sequence Expression<a href="#token-sequence-expression" class="self-link"></a></h2>
-<p>We propose the introduction of a new expression with the following
-syntax (the specific introducer can be decided later):</p>
+<p>We propose the introduction of a new kind of expression with the
+following syntax (the specific introducer can be decided later):</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="op">^{</span> <em>balanced-brace-tokens</em> <span class="op">}</span></span></code></pre></div>
@@ -1820,7 +1820,7 @@ value is the prefix
 </div>
 <h2 data-number="4.2" id="interpolating-into-a-token-sequence"><span class="header-section-number">4.2</span> Interpolating into a Token
 Sequence<a href="#interpolating-into-a-token-sequence" class="self-link"></a></h2>
-<p>There’s still the issue that you need to access outside context from
+<p>There’s still the issue that we need to access outside context from
 within a token sequence. For that we introduce dedicated interpolation
 syntax using three kinds of interpolators:</p>
 <ul>
@@ -1851,7 +1851,7 @@ mandatory.</li>
 is replaced by the — possibly empty — tokens
 <code class="sourceCode cpp">e</code>
 (<code class="sourceCode cpp">e</code> must be a reflection of an
-evaluation token sequence).</li>
+evaluated token sequence).</li>
 </ul>
 <p>The value and <code class="sourceCode cpp">id</code> interpolators
 need to be distinct because a given string could be intended to be
@@ -1891,11 +1891,12 @@ least some prior art. Swift uses <code class="sourceCode cpp">\<span class="op">
 in their <a href="https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation">string
 interpolation syntax</a>.</p>
 <h2 data-number="4.3" id="phase-of-translation"><span class="header-section-number">4.3</span> Phase of Translation<a href="#phase-of-translation" class="self-link"></a></h2>
-<p>Token sequences are a construct that is process in translation phase
-7 (ref). This has some natural consequences detailed below.</p>
+<p>Token sequences are a construct that is processed in translation
+phase 7 (<span>5.2 <a href="https://wg21.link/lex.phases">[lex.phases]</a></span>). This has
+some natural consequences detailed below.</p>
 <p>The result of interpolating with
 <code class="sourceCode cpp">\tokens</code> is a token sequence
-consistent of all the tokens of both sequences:</p>
+consisting of all the tokens of both sequences:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> t1 <span class="op">=</span> <span class="op">^{</span> c <span class="op">=</span>  <span class="op">}</span>;</span>
@@ -1932,10 +1933,10 @@ example:</p>
 <span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>t1 <span class="op">==</span> t2<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>Because tokens are handled after the the initial phase of
-preprocessing, macros and string concatenation can apply - but you have
-to be careful with macros because they won’t work the way you might
-want</p>
+<p>Tokens are handled after the initial phases of preprocessing: macros
+and string concatenation can apply, but occur before the implementation
+assembles a token sequence. You therefore have to be careful with macros
+because they won’t work the way you might want to:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">+(</span>info t1, info t2<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
@@ -2035,12 +2036,12 @@ to work, currently the string-like pieces must actually have type <code class="s
 does work and will produce the identifier
 <code class="sourceCode cpp">hello1</code>.</li>
 <li>Injecting into a class template is currently very limited. Attempts
-to inject member functions will lead to linker errors and attempts to
-inject classes will fail. Currently, this will require using
-<code class="sourceCode cpp">namespace_inject</code> to inject the
-entire class template specialization in one go. You can see this
-approach in action with the <a href="#type-erasure">type erasure
-example</a>.</li>
+to inject member function definitions will lead to linker errors and
+attempts to inject nested class definitions will fail. Currently, this
+will require using <code class="sourceCode cpp">namespace_inject</code>
+to inject the entire class template specialization in one go. You can
+see this approach in action with the <a href="#type-erasure">type
+erasure example</a>.</li>
 </ul>
 <h2 data-number="4.6" id="examples"><span class="header-section-number">4.6</span> Examples<a href="#examples" class="self-link"></a></h2>
 <p>Now, the
@@ -2053,7 +2054,7 @@ not really any difference between a token sequence and a proper
 fragment.</p>
 <p><a href="https://godbolt.org/z/861MsqzPx">Implementing <code class="sourceCode cpp">Tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></a>
 requires using both the value interpolator and the identifier
-interpolator (in this cause we’re naming the members
+interpolator (in this case we’re naming the members
 <code class="sourceCode cpp">_0</code>,
 <code class="sourceCode cpp">_1</code>, etc.):</p>
 <div class="std">
@@ -2070,7 +2071,7 @@ interpolator (in this cause we’re naming the members
 </blockquote>
 </div>
 <p>whereas <a href="https://godbolt.org/z/jfMoe34Ea">implementing <code class="sourceCode cpp">enable_if<span class="op">&lt;</span>B, T<span class="op">&gt;</span></code></a>
-doesn’t require any interpolation:</p>
+doesn’t require any interpolation at all:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">bool</span> B, <span class="kw">class</span> T<span class="op">=</span><span class="dt">void</span><span class="op">&gt;</span></span>
@@ -2089,7 +2090,8 @@ write it any way we want - either as injecting one token sequence or
 even injecting three. Both work fine without needing any additional
 declarations.</p>
 <p>But we may want to restrict injection to one declaration at a time
-for error reporting purposes.</p>
+for error reporting purposes (this is currently enforced by the EDG
+implementation).</p>
 <p>That implementation <a href="https://godbolt.org/z/sqKs6eKzG">looks
 like this</a>:</p>
 <div class="std">
@@ -2269,9 +2271,9 @@ kind of code injection being proposed in this paper.</p>
 implementation uses <code class="sourceCode cpp">namespace_inject</code>
 to produce the entire template specialization of
 <code class="sourceCode cpp">Dyn</code>. We hope to not have to require
-that approach, but at the moment EDG cannot inject nested types in a
-class template. It’s a healthy amount of code, but it’s actually fairly
-straightforward.</p>
+that approach, but at the moment EDG cannot inject nested type
+defintions in a class template. It’s a healthy amount of code, but it’s
+actually fairly straightforward.</p>
 <h2 data-number="4.8" id="logging-vector-cloning-a-type"><span class="header-section-number">4.8</span> Logging Vector: Cloning a
 Type<a href="#logging-vector-cloning-a-type" class="self-link"></a></h2>
 <p>The goal here is we want to implement a type <code class="sourceCode cpp">LoggingVector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>

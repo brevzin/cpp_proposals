@@ -969,7 +969,7 @@ We therefore acknowledge the notion of token sequence as a core building block f
 
 ## Token Sequence Expression
 
-We propose the introduction of a new expression with the following syntax (the specific introducer can be decided later):
+We propose the introduction of a new kind of expression with the following syntax (the specific introducer can be decided later):
 
 ::: std
 ```cpp
@@ -998,7 +998,7 @@ constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
 
 ## Interpolating into a Token Sequence
 
-There's still the issue that you need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using three kinds of interpolators:
+There's still the issue that we need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using three kinds of interpolators:
 
 * `\($expression$)`
 * `\id($string$, $string-or-int$@~opt~@...)`
@@ -1008,7 +1008,7 @@ The implementation model for this is that we collect the tokens within a `^{ ...
 
 * `\id(e)` for `e` being string-like is replaced with that string as a new `$identifier$`. `\id(e...)` can concatenate multiple string-like or integral values into a single `$identifier$` (the first argument must be string-like).
 * `\(e)` is replaced by a pseudo-literal token holding the value of `e`. The parentheses are mandatory.
-* `\tokens(e)` is replaced by the — possibly empty — tokens `e` (`e` must be a reflection of an evaluation token sequence).
+* `\tokens(e)` is replaced by the — possibly empty — tokens `e` (`e` must be a reflection of an evaluated token sequence).
 
 The value and `id` interpolators need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is intended, so they have to be spelled differently.
 
@@ -1036,9 +1036,9 @@ Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in t
 
 ## Phase of Translation
 
-Token sequences are a construct that is process in translation phase 7 (ref).  This has some natural consequences detailed below. 
+Token sequences are a construct that is processed in translation phase 7 ([lex.phases]{.sref}).  This has some natural consequences detailed below. 
 
-The result of interpolating with `\tokens` is a token sequence consistent of all the tokens of both sequences:
+The result of interpolating with `\tokens` is a token sequence consisting of all the tokens of both sequences:
 
 ::: std
 ```cpp
@@ -1073,7 +1073,7 @@ static_assert(t1 == t2);
 ```
 :::
 
-Because tokens are handled after the the initial phase of preprocessing, macros and string concatenation can apply - but you have to be careful with macros because they won't work the way you might want
+Tokens are handled after the initial phases of preprocessing: macros and string concatenation can apply, but occur before the implementation assembles a token sequence. You therefore have to be careful with macros because they won't work the way you might want to:
 
 ::: std
 ```cpp
@@ -1162,7 +1162,7 @@ The implementation provides a `__report_tokens(e)` function that can be used to 
 Two things to note with the implementation:
 
 * While we intend `\id("hello", 1)` to work, currently the string-like pieces must actually have type `std::string_view` - `\id("hello"sv, 1)` does work and will produce the identifier `hello1`.
-* Injecting into a class template is currently very limited. Attempts to inject member functions will lead to linker errors and attempts to inject classes will fail. Currently, this will require using `namespace_inject` to inject the entire class template specialization in one go. You can see this approach in action with the [type erasure example](#type-erasure).
+* Injecting into a class template is currently very limited. Attempts to inject member function definitions will lead to linker errors and attempts to inject nested class definitions will fail. Currently, this will require using `namespace_inject` to inject the entire class template specialization in one go. You can see this approach in action with the [type erasure example](#type-erasure).
 
 
 
@@ -1170,7 +1170,7 @@ Two things to note with the implementation:
 
 Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment. 
 
-[Implementing `Tuple<Ts...>`](https://godbolt.org/z/861MsqzPx) requires using both the value interpolator and the identifier interpolator (in this cause we're naming the members `_0`, `_1`, etc.):
+[Implementing `Tuple<Ts...>`](https://godbolt.org/z/861MsqzPx) requires using both the value interpolator and the identifier interpolator (in this case we're naming the members `_0`, `_1`, etc.):
 
 ::: std
 ```cpp
@@ -1186,7 +1186,7 @@ struct Tuple {
 ```
 :::
 
-whereas [implementing `enable_if<B, T>`](https://godbolt.org/z/jfMoe34Ea) doesn't require any interpolation:
+whereas [implementing `enable_if<B, T>`](https://godbolt.org/z/jfMoe34Ea) doesn't require any interpolation at all:
 
 ::: std
 ```cpp
@@ -1204,7 +1204,7 @@ struct enable_if {
 
 The property example likewise could be identical to the fragment implementation, but we do not run into any name lookup issues, so we can write it any way we want - either as injecting one token sequence or even injecting three. Both work fine without needing any additional declarations.
 
-But we may want to restrict injection to one declaration at a time for error reporting purposes.
+But we may want to restrict injection to one declaration at a time for error reporting purposes (this is currently enforced by the EDG implementation).
 
 That implementation [looks like this](https://godbolt.org/z/sqKs6eKzG):
 
@@ -1344,7 +1344,7 @@ That implementation is currently non-owning, but it isn't that much of a differe
 
 There is a lot of code on the right (especially compared to the left), but the transformation is *purely* mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper. 
 
-You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested types in a class template. It's a healthy amount of code, but it's actually fairly straightforward. 
+You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested type defintions in a class template. It's a healthy amount of code, but it's actually fairly straightforward. 
 
 ## Logging Vector: Cloning a Type
 
