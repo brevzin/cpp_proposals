@@ -4085,7 +4085,7 @@ consteval bool is_const(info r);
 consteval bool is_volatile(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified member function type (respectively), or an object, variable, or function with such a type. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified function type (respectively), or an object, variable, non-static data member, or function with such a type. Otherwise, `false`.
 
 ```cpp
 consteval bool is_final(info r);
@@ -4206,7 +4206,7 @@ consteval info type_of(info r);
 consteval info object_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` is a reflection designating either an object or a variable usable in constante xpressions ([expr.const]).
+[#]{.pnum} *Mandates*: `r` is a reflection designating either an object or a variable designating an object with static storage duration ([expr.const]).
 
 [#]{.pnum} *Returns*: If `r` is a reflection of a variable, then a reflection of the object designated by the variable. Otherwise, `r`.
 
@@ -4459,9 +4459,9 @@ consteval vector<info> accessible_subobjects_of(info target, info from);
 consteval size_t offset_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` is a reflection designating a non-static data member or base class.
+[#]{.pnum} *Mandates*: `r` is a reflection designating a non-static data member or non-virtual base class.
 
-[#]{.pnum} *Returns*: The offset in bytes, from the beginning of any object of type `parent_of(r)`, to the subobject associated with the entity reflected by `r`.
+[#]{.pnum} *Returns*: The offset in bytes from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity reflected by `r`.
 
 ```cpp
 consteval size_t size_of(info r);
@@ -4485,7 +4485,9 @@ consteval size_t bit_offset_of(info r);
 
 [#]{.pnum} *Mandates*: `r` is a reflection designating a non-static data member.
 
-[#]{.pnum} *Returns*: The offset in bits, from the beginning of any object of type `parent_of(r)`, to the subobject associated with the entity reflected by `r`, minus the value of `offset_of(r);`
+[#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity reflected by `r`.
+
+[#]{.pnum} *Returns*: `V - offset_of(r)`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -4493,7 +4495,7 @@ consteval size_t bit_size_of(info r);
 
 [#]{.pnum} *Mandates*: `r` is a reflection of a type, non-static data member, base class, object, or variable.
 
-[#]{.pnum} *Returns* If `r` designates a type, then the size in bits of any object having the reflected type. Otherwise, if `r` designates a variable, base class, or object, then `bit_size_of(type_of(r))`. Otherwise, the size in bits of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
+[#]{.pnum} *Returns* If `r` designates a type, then the size in bits of any object having the reflected type. Otherwise, if `r` designates a variable, base class, object, or non-static data member that is not a bit-field, then `bit_size_of(type_of(r))`. Otherwise, the width of the reflected bit-field.
 
 :::
 :::
@@ -4605,9 +4607,9 @@ template <reflection_range R1 = span<info const>, reflection_range R2 = span<inf
 
 [#]{.pnum} Let `F` be the entity reflected by `target`, let `Arg0` be the entity reflected by the first element of `args` (if any), let `Args...` be the sequence of entities reflected by the elements of `args` excluding the first, and let `TArgs...` be the sequence of entities or aliases designated by the elements of `tmpl_args`.
 
-[#]{.pnum} If `F` is a non-member function, a value of pointer to function type, or a value of closure type, then let `INVOKE-EXPR` be the expression `F(Arg0, Args...)`. Otherwise, if `F` is a member function or a value of pointer to member function type, then let `INVOKE-EXPR` be the expression `Arg0.F(Args...)` or `Arg0->F(Args...)` respectively. Otherwise, if `F` is a constructor for a class `C`, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution. Otherwise, if `F` is a non-member function template or a member function template, then let `INVOKE-EXPR` be the expression `F<TArgs...>(Arg0, Args...)` or `Arg0.template F<TArgs...>(Args...)` respectively. Otherwise, if `F` is a constructor template, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution, and `TArgs...` are inferred as explicit template arguments for `F`.
+[#]{.pnum} If `F` is a non-member function, a value of pointer to function type, a value of pointer to member function type, a value of pointer to data member type, or a value of closure type, then let `INVOKE-EXPR` be the expression `INVOKE(F, Arg0, Args...)`. Otherwise, if `F` is a member function, then let `INVOKE-EXPR` be the expression `Arg0.F(Args...)`. Otherwise, if `F` is a constructor for a class `C`, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution. Otherwise, if `F` is a non-member function template or a member function template, then let `INVOKE-EXPR` be the expression `F<TArgs...>(Arg0, Args...)` or `Arg0.template F<TArgs...>(Args...)` respectively. Otherwise, if `F` is a constructor template, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution, and `TArgs...` are inferred as explicit template arguments for `F`.
 
-[#]{.pnum} *Mandates*: `target` designates a reflection of a function, a constructor, a constructor template, a value, or a function template. If `target` reflects a value of type `T`, then `T` is a pointer to function type, pointer to member function type, or closure type. The expression `INVOKE-EXPR` is a well-formed constant expression of structural type.
+[#]{.pnum} *Mandates*: `target` designates a reflection of a function, a constructor, a constructor template, a value, or a function template. If `target` reflects a value of type `T`, then `T` is a pointer to function type, pointer to member function type, pointer to data member type, or closure type. The expression `INVOKE-EXPR` is a well-formed constant expression of structural type.
 
 [#]{.pnum} *Returns*: A reflection of the result of the expression `INVOKE-EXPR`.
 
