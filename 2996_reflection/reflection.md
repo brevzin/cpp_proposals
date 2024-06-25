@@ -3822,6 +3822,7 @@ namespace std::meta {
   template <reflection_range R = span<info const>>
     consteval bool test_trait(info templ, R&& arguments);
 
+<<<<<<< HEAD
     // [meta.reflection.result], expression result reflection
   template <class R>
     concept reflection_range = $see below$;
@@ -3837,6 +3838,20 @@ namespace std::meta {
     consteval info reflect_invoke(info target, R&& args);
   template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
     consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
+=======
+  // [meta.reflection.define_class], class definition generation
+  struct data_member_options_t {
+    optional<string_view> name;
+    bool is_static = false;
+    bool no_unique_address = false;
+    optional<int> alignment;
+    optional<int> width;
+  };
+  consteval info data_member_spec(info type,
+                                  data_member_options_t options = {});
+  template <reflection_range R = span<info const>>
+  consteval info define_class(info type_class, R&&);
+>>>>>>> 651ea3f (Start define_class spec)
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -4614,6 +4629,88 @@ template <reflection_range R1 = span<info const>, reflection_range R2 = span<inf
 
 :::
 :::
+
+
+### [meta.reflection.define_class] Reflection class definition generation  {-}
+
+
+```cpp
+consteval info data_member_spec(info type,
+                                data_member_options_t options = {});
+```
+[1]{.pnum} *Mandates*: `type` designates a type.
+
+[#]{.pnum} *Returns*: A reflection of a description of the declaration of nonstatic data member with a type designated by `type` and optional characteristics designated by `options`.
+
+[#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
+
+
+```c++
+namespace std::meta {
+  struct data_member_options_t {
+    optional<string_view> name;
+    bool no_unique_address = false;
+    optional<int> alignment;
+    optional<int> width;
+  };
+  template <reflection_range R = span<info const>>
+  consteval info define_class(info class_type, R&&  mdescrs);
+}
+```
+
+[#]{.pnum} Let `$d1$`, `$d2$`, ..., `$dN$` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `$t1$`, `$t2$`, ... `$tN$` and `option` values `$o1$`, `$o2$`, ... `$oN$` respectively.  
+
+[#]{.pnum} *Mandates*: `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.  `$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.  If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.  If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, 
+
+[#]{.pnum} [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
+
+[#]{.pnum} *Effects*: Defines `class_type` with properties as follows. If `class_type` designates a specialization of a class template, the specialization is explicitly specialized.    Nonstatic data members are declared in the definition of `class_type` according to `$d1$`, `$d2$`, ..., `$dN$`, in that order. The type of the respective members are `$t1$`, `$t2$`, ... `$tN$`.  If `$oK$.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.  If the corresponding type `$tK$` is invalid for a bit field of that width, the call fails to evaluate to constant expression.
+
+[#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
+
+
+`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
+
+`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order).
+The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
+
+For example:
+
+::: std
+```c++
+union U;
+static_assert(is_type(define_class(^U, {
+  data_member_spec(^int),
+  data_member_spec(^char),
+  data_member_spec(^double),
+})));
+
+// U is now defined to the equivalent of
+// union U {
+//   int $_0$;
+//   char $_1$;
+//   double $_2$;
+// };
+
+template<typename T> struct S;
+constexpr auto U = define_class(^S<int>, {
+  data_member_spec(^int, {.name="i", .align=64}),
+  data_member_spec(^int, {.name="j", .align=64}),
+});
+
+// S<int> is now defined to the equivalent of
+// template<> struct S<int> {
+//   alignas(64) int i;
+//   alignas(64) int j;
+// };
+```
+:::
+
+When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
+This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
+
+If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
+
 
 ### [meta.reflection.unary] Unary type traits  {-}
 
