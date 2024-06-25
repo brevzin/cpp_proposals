@@ -128,7 +128,7 @@ Add a bullet to [expr.ref]{.sref}/7:
 * [7.4]{.pnum} If E2 is a nested type, the expression E1.E2 is ill-formed.
 
 ::: addu
-* [7.4b]{.pnum} If E2 is a direct, non-virtual base class of the type of E1 and the type of E1 is "`$cv$ X`", the expression designates the corresponding base class subobject of the object designated by the first expression. If E1 is an lvalue, then E1.E2 is an lvalue; otherwise E1.E2 is an xvalue. The type of E1.E2 is "`$cv$ E2`".
+* [7.4b]{.pnum} If E2 is a direct, non-virtual base class subobject of the type of E1 and the type of E1 is "`$cv$ X`", the expression designates the corresponding base class subobject of the object designated by the first expression. If E1 is an lvalue, then E1.E2 is an lvalue; otherwise E1.E2 is an xvalue. The type of E1.E2 is "`$cv$ E2`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
 :::
 
 * [7.5]{.pnum} If E2 is a member enumerator and the type of E2 is T, the expression E1.E2 is a prvalue of type T whose value is the value of the enumerator.
