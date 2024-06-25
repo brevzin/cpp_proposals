@@ -1,6 +1,6 @@
 ---
 title: "Splicing a base class subobject"
-document: P3293R0
+document: P3293R1
 date: today
 audience: EWG
 author:
@@ -14,6 +14,10 @@ author:
       email: <daveed@edg.com>
 toc: true
 ---
+
+# Revision History
+
+Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. 
 
 # Introduction
 
@@ -82,7 +86,7 @@ constexpr auto subobject_cast(T&& arg) -> auto&& {
     constexpr auto stripped = remove_cvref(^T);
     if constexpr (is_base(M)) {
         static_assert(is_base_of(type_of(M), stripped));
-        return (typename [: copy_cvref(^T, type_of(M)) :])arg;
+        return (typename [: copy_cvref(^T, type_of(M)) :]&)arg;
     } else {
         static_assert(parent_of(M) == stripped);
         return ((T&&)arg).[:M:];
@@ -104,7 +108,7 @@ But this feels a bit silly? Why should we have to write this?
 
 We propose to define `obj.[:mem:]` (where `mem` is a reflection of a base class of the type of `obj`) as being an access to that base class subobject, in the same way that `obj.[:nsdm:]` (where `nsdm` is a reflection of a non-static data member) is an access to that data member.
 
-Additionally `&[:mem:]` where `mem` is a reflection of a base class `B` of type `T` should yield a `B T::*` with appropriate offset.
+Additionally `&[:mem:]` where `mem` is a reflection of a base class `B` of type `T` should yield a `B T::*` with appropriate offset. Unless `mem` is a reflection of a virtual base class, which wouldn't really be representable as a pointer to member. 
 
 We argue that these are the obvious, useful, and only possible meanings of these syntaxes, so we should simply support them in the language.
 
