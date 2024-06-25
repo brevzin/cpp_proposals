@@ -17,7 +17,7 @@ toc: true
 
 # Revision History
 
-Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. 
+Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. Added wording.
 
 # Introduction
 
@@ -115,6 +115,24 @@ We argue that these are the obvious, useful, and only possible meanings of these
 The only reason this isn't initially part of [@P2996R3] is that while there _is_ a way to access a data member of an object directly (just `obj.mem`), there is _no_ way to access a base class subobject directly outside of one of the casts described above. Part of the reason for this is that while a data member is always just an `$identifier$`, a base class subobject can have an arbitrary complex name.
 
 This means that adding this support in reflection would mean that splicing can achieve something the language cannot do natively. But we don't really see that as a problem. Reflection is already allowing all sorts of things that the language cannot do natively. What's one more?
+
+## Wording
+
+Add a bullet to [expr.ref]{.sref}/7:
+
+::: std
+[7]{.pnum} Otherwise, one of the following rules applies.
+
+* [7.1]{.pnum} ...
+
+* [7.4]{.pnum} If E2 is a nested type, the expression E1.E2 is ill-formed.
+
+::: addu
+* [7.4b]{.pnum} If E2 is a direct, non-virtual base class of the type of E1 and the type of E1 is "`$cv$ X`", the expression designates the corresponding base class subobject of the object designated by the first expression. If E1 is an lvalue, then E1.E2 is an lvalue; otherwise E1.E2 is an xvalue. The type of E1.E2 is "`$cv$ E2`".
+:::
+
+* [7.5]{.pnum} If E2 is a member enumerator and the type of E2 is T, the expression E1.E2 is a prvalue of type T whose value is the value of the enumerator.
+:::
 
 ---
 references:

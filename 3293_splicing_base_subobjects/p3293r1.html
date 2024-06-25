@@ -596,14 +596,17 @@ subobject</h1>
 <li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
 History<span></span></a></li>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">3.1</span> Wording<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>Since <span class="citation" data-cites="P3293R0">[<a href="https://wg21.link/p3293r0" role="doc-biblioref">P3293R0</a>]</span>, noted that <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
-cannot work for virtual base classes.</p>
+cannot work for virtual base classes. Added wording.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>There are many contexts in which it is useful to perform the same
@@ -729,6 +732,37 @@ splicing can achieve something the language cannot do natively. But we
 don’t really see that as a problem. Reflection is already allowing all
 sorts of things that the language cannot do natively. What’s one
 more?</p>
+<h2 data-number="3.1" id="wording"><span class="header-section-number">3.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Add a bullet to <span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">7</a></span>
+Otherwise, one of the following rules applies.</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(7.1)</a></span>
+…</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(7.4)</a></span>
+If E2 is a nested type, the expression E1.E2 is ill-formed.</p></li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(7.4b)</a></span>
+If E2 is a direct, non-virtual base class of the type of E1 and the type
+of E1 is “<code class="sourceCode cpp"><em>cv</em> X</code>”, the
+expression designates the corresponding base class subobject of the
+object designated by the first expression. If E1 is an lvalue, then
+E1.E2 is an lvalue; otherwise E1.E2 is an xvalue. The type of E1.E2 is
+“<code class="sourceCode cpp"><em>cv</em> E2</code>”.</li>
+</ul>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(7.5)</a></span>
+If E2 is a member enumerator and the type of E2 is T, the expression
+E1.E2 is a prvalue of type T whose value is the value of the
+enumerator.</li>
+</ul>
+</blockquote>
+</div>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
