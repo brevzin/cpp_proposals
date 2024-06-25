@@ -4574,7 +4574,7 @@ template <typename T>
   consteval info reflect_value(T expr);
 ```
 
-[#]{.pnum} *Mandates*: `T` is a structural type. `T` is not a reference type. Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression.
+[#]{.pnum} *Mandates*: `T` is a structural type that is not a reference type. Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression ([expr.const]).
 
 [#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the reflected value is the cv-unqualified version of `T`.
 
