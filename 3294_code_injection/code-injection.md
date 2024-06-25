@@ -22,6 +22,7 @@ Since [@P3294R0]:
 * Refined the interpolator syntax to `\(e)`, `\id(e)`, and `\tokens(e)` (parens mandatory in all cases)
 * Dropped the `declare [: e :]` splicer
 * Implemented much of the proposal with links to examples (including a new [type erasure example](#type-erasure))
+* Changed syntax for hygienic macros, since the parameters can just be `std::meta::info`
 
 # Introduction
 
@@ -1639,9 +1640,9 @@ With token sequences, we can achieve similar syntax:
 
 ::: std
 ```cpp
-consteval auto fwd2(@tokens x) -> info {
+consteval auto fwd2(info x) -> info {
     return ^{
-        static_cast<decltype([:\(x):])&&>([:\(x):]);
+        static_cast<decltype([:\tokens(x):])&&>([:\tokens(x):]);
     };
 }
 
@@ -1650,6 +1651,8 @@ auto new_f2 = [](auto&& x) { return fwd2!(x); };
 :::
 
 The logic here is that `fwd2!(x)` is syntactic sugar for `inject(fwd2(^{ x }))`. We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
+
+The first revision of this paper used the placeholder syntax `@tokens x` to declare the parameter of `fwd2`, but it turns out that this is just a token sequence - so it can just have type `std::meta::info`. The call-site syntax of `fwd2!` should be all you need to request tokenization. 
 
 We would have to figure out what we would want `fwd2!(std::pair<int, int>{1, 2})` to do. One of the issues of C macros is not understand C++ token syntax, so this argument would have to be parenthesized. But if we want to operate on the token level, this seems like a given.
 
@@ -1661,8 +1664,8 @@ Consider a different example (borrowed from [here](https://www.forrestthewoods.c
 
 ::: std
 ```cpp
-consteval auto assert_eq(@tokens a,
-                         @tokens b) -> info {
+consteval auto assert_eq(info a,
+                         info b) -> info {
     return ^{
         do {
             auto sa = \(stringify(a));

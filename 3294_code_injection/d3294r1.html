@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-06-24" />
+  <meta name="dcterms.date" content="2024-06-25" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-06-24</td>
+    <td>2024-06-25</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -649,6 +649,8 @@ and <code class="sourceCode cpp">\tokens<span class="op">(</span>e<span class="o
 splicer</li>
 <li>Implemented much of the proposal with links to examples (including a
 new <a href="#type-erasure">type erasure example</a>)</li>
+<li>Changed syntax for hygienic macros, since the parameters can just be
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code></li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -2609,9 +2611,9 @@ implemented like this:</p>
 <p>With token sequences, we can achieve similar syntax:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(@</span>tokens x<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(</span>info x<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
 <span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">([:</span>\<span class="op">(</span>x<span class="op">):])&amp;&amp;&gt;([:</span>\<span class="op">(</span>x<span class="op">):])</span>;</span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">([:</span>\tokens<span class="op">(</span>x<span class="op">):])&amp;&amp;&gt;([:</span>\tokens<span class="op">(</span>x<span class="op">):])</span>;</span>
 <span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a></span>
@@ -2624,6 +2626,14 @@ We’re taking a page out of Rust’s book and suggesting that invoking a
 “macro” with an exclamation point does the injection. Seems nice to both
 have convenient syntax for token manipulation and a syntactic marker for
 it on the call-site.</p>
+<p>The first revision of this paper used the placeholder syntax
+<code class="sourceCode cpp"><span class="op">@</span>tokens x</code> to
+declare the parameter of <code class="sourceCode cpp">fwd2</code>, but
+it turns out that this is just a token sequence - so it can just have
+type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.
+The call-site syntax of
+<code class="sourceCode cpp">fwd2<span class="op">!</span></code> should
+be all you need to request tokenization.</p>
 <p>We would have to figure out what we would want <code class="sourceCode cpp">fwd2<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span></code>
 to do. One of the issues of C macros is not understand C++ token syntax,
 so this argument would have to be parenthesized. But if we want to
@@ -2638,8 +2648,8 @@ writing complex C preprocessor code.</p>
 <p>Consider a different example (borrowed from <a href="https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/">here</a>):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb63"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(@</span>tokens a,</span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>                         <span class="op">@</span>tokens b<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<div class="sourceCode" id="cb63"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>info a,</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>                         info b<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
 <span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
 <span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sa <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
