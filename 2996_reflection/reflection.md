@@ -4198,7 +4198,7 @@ consteval bool is_user_provided(info r);
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` designates a typed entity. `r` does not designate a constructor or destructor.
+[#]{.pnum} *Mandates*: `r` designates a typed entity. `r` does not designate a constructor, destructor, or structured binding.
 
 [#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
 
