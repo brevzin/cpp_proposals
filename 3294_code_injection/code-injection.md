@@ -1430,7 +1430,7 @@ public:
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
             // note that this one doesn't even require a token sequence
-            auto log_fun = inject(decl_of(fun));
+            auto log_fun = queue_injection(decl_of(fun));
 
             // convenience type for building a comma-delimited sequence
             auto argument_list = list_builder();
@@ -1479,7 +1479,7 @@ And then:
 ```cpp
 consteval {
     for (std::meta::info fun : /* public, non-special member functions */) {
-        auto log_fun = inject(decl_of(fun));
+        auto log_fun = queue_injection(decl_of(fun));
 
         queue_injection(^{
             \tokens(make_decl_of(fun)) :] {
@@ -1650,7 +1650,7 @@ auto new_f2 = [](auto&& x) { return fwd2!(x); };
 ```
 :::
 
-The logic here is that `fwd2!(x)` is syntactic sugar for `inject(fwd2(^{ x }))`. We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
+The logic here is that `fwd2!(x)` is syntactic sugar for `immediately_inject(fwd2(^{ x }))` (which requires a new mechanism for injecting into an expression). We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
 
 The first revision of this paper used the placeholder syntax `@tokens x` to declare the parameter of `fwd2`, but it turns out that this is just a token sequence - so it can just have type `std::meta::info`. The call-site syntax of `fwd2!` should be all you need to request tokenization. 
 
@@ -1775,7 +1775,7 @@ We have two forms of injection in this paper:
 * metafunctions `std::meta::queue_injection` and `std::meta::namespace_inject` that take an `info`, used through [token sequences](#token-sequences).
 * a trailing `!` used throughout [hygienic macros](#hygienic-macros).
 
-But these really are tsimilar - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `inject(forward(x))` somewhat defeats the purpose and nobody would write it.
+But these really are tsimilar - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 
 Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`.
 

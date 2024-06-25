@@ -2372,7 +2372,7 @@ must operate on full token boundaries.</p>
 <span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
 <span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>            <span class="co">// note that this one doesn&#39;t even require a token sequence</span></span>
-<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> log_fun <span class="op">=</span> inject<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span>;</span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> log_fun <span class="op">=</span> queue_injection<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span>;</span>
 <span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>            <span class="co">// convenience type for building a comma-delimited sequence</span></span>
 <span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> argument_list <span class="op">=</span> list_builder<span class="op">()</span>;</span>
@@ -2427,7 +2427,7 @@ function:</p>
 <blockquote>
 <div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
 <span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info fun <span class="op">:</span> <span class="co">/* public, non-special member functions */</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> log_fun <span class="op">=</span> inject<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span>;</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> log_fun <span class="op">=</span> queue_injection<span class="op">(</span>decl_of<span class="op">(</span>fun<span class="op">))</span>;</span>
 <span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^{</span></span>
 <span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>            \tokens<span class="op">(</span>make_decl_of<span class="op">(</span>fun<span class="op">))</span> <span class="op">:]</span> <span class="op">{</span></span>
@@ -2621,11 +2621,12 @@ implemented like this:</p>
 </blockquote>
 </div>
 <p>The logic here is that <code class="sourceCode cpp">fwd2<span class="op">!(</span>x<span class="op">)</span></code>
-is syntactic sugar for <code class="sourceCode cpp">inject<span class="op">(</span>fwd2<span class="op">(^{</span> x <span class="op">}))</span></code>.
-We’re taking a page out of Rust’s book and suggesting that invoking a
-“macro” with an exclamation point does the injection. Seems nice to both
-have convenient syntax for token manipulation and a syntactic marker for
-it on the call-site.</p>
+is syntactic sugar for <code class="sourceCode cpp">immediately_inject<span class="op">(</span>fwd2<span class="op">(^{</span> x <span class="op">}))</span></code>
+(which requires a new mechanism for injecting into an expression). We’re
+taking a page out of Rust’s book and suggesting that invoking a “macro”
+with an exclamation point does the injection. Seems nice to both have
+convenient syntax for token manipulation and a syntactic marker for it
+on the call-site.</p>
 <p>The first revision of this paper used the placeholder syntax
 <code class="sourceCode cpp"><span class="op">@</span>tokens x</code> to
 declare the parameter of <code class="sourceCode cpp">fwd2</code>, but
@@ -2805,7 +2806,7 @@ punctuation marks
 (e.g. <code class="sourceCode cpp"><span class="op">-&gt;</span></code>,
 <code class="sourceCode cpp"><span class="op">&lt;&lt;</span></code>),
 but a named function seems better. But the macros <em>really</em> do
-want to have terse invocation syntax. Having to write <code class="sourceCode cpp">inject<span class="op">(</span>forward<span class="op">(</span>x<span class="op">))</span></code>
+want to have terse invocation syntax. Having to write <code class="sourceCode cpp">immediately_inject<span class="op">(</span>forward<span class="op">(</span>x<span class="op">))</span></code>
 somewhat defeats the purpose and nobody would write it.</p>
 <p>Using one of the arrows for the macro use-case is weird, so one
 option might be prefix
