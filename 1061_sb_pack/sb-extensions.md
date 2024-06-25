@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R8
+document: P1061R9
 date: today
 audience: CWG
 author:
@@ -12,6 +12,8 @@ toc: true
 ---
 
 # Revision History
+
+R9 has minor wording changes. 
 
 R8 re-adds the [namespace-scope exclusion](#namespace-scope-packs), and more wording updates. Also rebases the wording to account for [@P0609R3].
 
@@ -619,8 +621,8 @@ Extend [dcl.fct]{.sref}/5:
 Change [dcl.struct.bind]{.sref} paragraph 1:
 
 ::: std
-[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>attribute-identifier-list-list</i>]{.rm} [<i>sb-identifier-list</i>]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. The optional `$attribute-specifier-seq$` of an [`$attributed-identifier$`]{.rm} [`$sb-identifier$`]{.addu} appertains to the structured binding so introduced. [An *sb-identifier* that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an *sb-identifier* that does not contain an ellipsis or an element of a structured binding pack.]{.addu} Let <i>cv</i> denote the <i>cv-qualifiers</i
-> in the <i>decl-specifier-seq</i>.
+[1]{.pnum} A structured binding declaration introduces the <i>identifier</i>s v<sub>0</sub>, v<sub>1</sub>, v<sub>2</sub>, ...[, v<sub>N-1</sub>]{.addu} of the [<i>attribute-identifier-list-list</i>]{.rm} [`$sb-identifier-list$`]{.addu} as names ([basic.scope.declarative]) [of *structured bindings*]{.rm}. [An `$sb-identifier$` that contains an ellipsis introduces a structured binding pack ([temp.variadic]). A *structured binding* is either an `$sb-identifier$` that does not contain an ellipsis or an element of a structured binding pack.]{.addu} The optional `$attribute-specifier-seq$` of an [`$attributed-identifier$`]{.rm} [`$sb-identifier$`]{.addu} appertains to the [associated]{.addu} structured binding[s]{.addu} [so introduced]{.rm}. Let <i>cv</i> denote the <i>cv-qualifiers</i
+> in the `$decl-specifier-seq$`.
 :::
 
 Introduce new paragraphs after [dcl.struct.bind]{.sref} paragraph 1, introducing
@@ -631,9 +633,10 @@ the terms "structured binding size" and SB~_i_~:
 number of structured bindings that need to be introduced by the structured binding
 declaration. If there is no structured binding pack, then
 the number of elements in the _sb-identifier-list_ shall be equal to the
-structured binding size of `E`. Otherwise, the number of elements of the structured
+structured binding size of `E`. 
+Otherwise, the number of non-pack elements shall be no more than the structured binding size of `E`; the number of elements of the structured
 binding pack is the structured binding size of `E` less the number of non-pack elements in the
- _sb-identifier-list_; the number of non-pack elements shall be no more than the structured binding size of `E`.
+ `$sb-identifier-list$`.
 
 [1+2]{.pnum} Let SB~_i_~ denote the _i_^th^ structured binding in the structured binding declaration after
 expanding the structured binding pack, if any. [ _Note_: If there is no
@@ -729,27 +732,6 @@ int g() {
 int v = g(); // OK, v == 3
 ```
 :::
-
-::: example
-```cpp
-struct C { };
-
-void g(...); // #1
-
-template <typename T>
-void f() {
-    C arr[1];
-    auto [...e] = arr;
-    g(e...); // calls #2
-}
-
-void g(C); // #2
-
-int main() {
-    f<int>();
-}
-```
-:::
 :::
 :::
 
@@ -799,6 +781,30 @@ Add a bullet to [temp.dep.expr]{.sref}/3:
 * [3.4]{.pnum} associated by name lookup with one or more declarations of member functions of a class that is the current instantiation declared with a return type that contains a placeholder type,
 * [3.5]{.pnum} associated by name lookup with a structured binding declaration ([dcl.struct.bind]) whose brace-or-equal-initializer is type-dependent,
 * [3.5b]{.pnum} [associated by name lookup with a pack, unless that pack is a non-type template parameter pack whose types are non-dependent,]{.addu}
+
+  ::: addu
+  ::: example
+  ```cpp
+  struct C { };
+
+  void g(...); // #1
+
+  template <typename T>
+  void f() {
+      C arr[1];
+      auto [...e] = arr;
+      g(e...); // calls #2
+  }
+
+  void g(C); // #2
+
+  int main() {
+      f<int>();
+  }
+  ```
+  :::
+  :::
+
 * [3.6]{.pnum} associated by name lookup with an entity captured by copy ([expr.prim.lambda.capture]) in a lambda-expression that has an explicit object parameter whose type is dependent ([dcl.fct]),
 * [3.7]{.pnum} the identifier `__func__` ([dcl.fct.def.general]), where any enclosing function is a template, a member of a class template, or a generic lambda,
 * [3.8]{.pnum} a conversion-function-id that specifies a dependent type, or
