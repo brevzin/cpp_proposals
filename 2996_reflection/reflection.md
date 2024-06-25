@@ -36,6 +36,7 @@ Since [@P2996R3]:
 * reworked the API for reflecting on accessible class members
 * renamed `test_type` and `test_types` to `test_trait`
 * added missing `has_module_linkage` metafunction
+* clarified difference between a reflection of a variable and its object; added `object_of` metafunction
 * more wording
 
 Since [@P2996R2]:
@@ -2208,7 +2209,8 @@ namespace std::meta {
   consteval auto parent_of(info r) -> info;
   consteval auto dealias(info r) -> info;
 
-  // @[value queries](#value_of)@
+  // @[object and value queries](#object_of-value_of)@
+  consteval auto object_of(info r) -> info;
   consteval auto value_of(info r) -> info;
 
   // @[template queries](#template_of-template_arguments_of)@
@@ -2437,13 +2439,26 @@ static_assert(dealias(^Y) == ^int);
 ```
 :::
 
-### `value_of`
+### `object_of`, `value_of`
 
 ::: std
 ```c++
 namespace std::meta {
+  consteval auto object_of(info r) -> info;
   consteval auto value_of(info r) -> info;
 }
+```
+:::
+
+If `r` is a reflection of a variable _usable in constant expressions_, then `object_of(r)` is a reflection of the object designated by the variable. For all other inputs, `object_of(r)` is not a constant expression.
+
+::: std
+```c++
+int x;
+int &y = x;
+
+static_assert(^x != ^y);
+static_assert(object_of(^x) == object_of(^y));
 ```
 :::
 
@@ -3149,7 +3164,7 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 [#]{.pnum} For a `$primary-expression$` of the form `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template.
 The meaning of such a construct is identical to that of a `$primary-expression$` of the form `$template-name$ < $template-argument-list$@~_opt_~@ >` where `$template-name$` denotes the reflected template or concept (ignoring access checking on the `$template-name$`).
 
-[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, an enumerator, or a structured binding, the expression is an lvalue denoting the reflected entity. [Acess checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
+[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function, a non-static data member, or an enumerator, the expression is an lvalue denoting the reflected entity. If the converted `$constant-expression$` evaluates to a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity. [Acess checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
 
 [#]{.pnum} Otherwise, for a `$primary-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of a value, and the expression shall be a prvalue whose evaluation computes the reflected value.
 :::
@@ -3742,6 +3757,7 @@ namespace std::meta {
   consteval bool is_user_provided(info r);
 
   consteval info type_of(info r);
+  consteval info object_of(info r);
   consteval info value_of(info r);
   consteval info parent_of(info r);
   consteval info dealias(info r);
@@ -3792,18 +3808,11 @@ namespace std::meta {
   consteval size_t bit_offset_of(info entity);
   consteval size_t bit_size_of(info entity);
 
-  // [meta.reflection.result], expression result reflection
+  // [meta.reflection.extract], value extraction
   template <typename T>
-    consteval info reflect_value(T value);
-  template <typename T>
-    consteval info reflect_object(T& object);
-  template <typename T>
-    consteval info reflect_function(T& fn);
+    consteval T extract(info);
 
   // [meta.reflection.substitute], reflection substitution
-  template <class R>
-    concept reflection_range = $see below$;
-
   template <reflection_range R = span<info const>>
     consteval bool can_substitute(info templ, R&& arguments);
   template <reflection_range R = span<info const>>
@@ -3812,6 +3821,22 @@ namespace std::meta {
   consteval bool test_trait(info templ, info type);
   template <reflection_range R = span<info const>>
     consteval bool test_trait(info templ, R&& arguments);
+
+    // [meta.reflection.result], expression result reflection
+  template <class R>
+    concept reflection_range = $see below$;
+
+  template <typename T>
+    consteval info reflect_value(T value);
+  template <typename T>
+    consteval info reflect_object(T& object);
+  template <typename T>
+    consteval info reflect_function(T& fn);
+
+  template <reflection_range R = span<info const>>
+    consteval info reflect_invoke(info target, R&& args);
+  template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
+    consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -4060,7 +4085,7 @@ consteval bool is_const(info r);
 consteval bool is_volatile(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified member function type (respectively), or an object or function with such a type. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified member function type (respectively), or an object, variable, or function with such a type. Otherwise, `false`.
 
 ```cpp
 consteval bool is_final(info r);
@@ -4072,7 +4097,7 @@ consteval bool is_final(info r);
 consteval bool has_static_storage_duration(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates an object that has static storage duration. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates an object or variable that has static storage duration. Otherwise, `false`.
 
 ```cpp
 consteval bool has_internal_linkage(info r);
@@ -4178,12 +4203,20 @@ consteval info type_of(info r);
 [#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
 
 ```cpp
+consteval info object_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating either an object or a variable usable in constante xpressions ([expr.const]).
+
+[#]{.pnum} *Returns*: If `r` is a reflection of a variable, then a reflection of the object designated by the variable. Otherwise, `r`.
+
+```cpp
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` is a reflection designating either an object usable in constant expressions ([expr.const]), an enumerator, or a value.
+[#]{.pnum} *Mandates*: `r` is a reflection designating either an object or variable usable in constant expressions ([expr.const]), an enumerator, or a value.
 
-[#]{.pnum} *Returns*: If `r` is a reflection designating an object `o`, then a reflection of the value held by that object. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
 
 ```cpp
 consteval info parent_of(info r);
@@ -4423,12 +4456,112 @@ consteval vector<info> accessible_subobjects_of(info target, info from);
 ::: std
 ::: addu
 ```cpp
-consteval size_t offset_of(info entity);
-consteval size_t size_of(info entity);
-consteval size_t alignment_of(info entity);
-consteval size_t bit_offset_of(info entity);
-consteval size_t bit_size_of(info entity);
+consteval size_t offset_of(info r);
 ```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating a non-static data member or base class.
+
+[#]{.pnum} *Returns*: The offset in bytes, from the beginning of any object of type `parent_of(r)`, to the subobject associated with the entity reflected by `r`.
+
+```cpp
+consteval size_t size_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection of a type, non-static data member, base class, object, or variable.
+
+[#]{.pnum} *Returns* If `r` designates a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+
+```cpp
+consteval size_t alignment_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating an object, variable, type, non-static data member, or base class.
+
+[#]{.pnum} *Returns*: If `r` designates a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` designates a base class, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
+
+```cpp
+consteval size_t bit_offset_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating a non-static data member.
+
+[#]{.pnum} *Returns*: The offset in bits, from the beginning of any object of type `parent_of(r)`, to the subobject associated with the entity reflected by `r`, minus the value of `offset_of(r);`
+
+```cpp
+consteval size_t bit_size_of(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection of a type, non-static data member, base class, object, or variable.
+
+[#]{.pnum} *Returns* If `r` designates a type, then the size in bits of any object having the reflected type. Otherwise, if `r` designates a variable, base class, or object, then `bit_size_of(type_of(r))`. Otherwise, the size in bits of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
+
+:::
+:::
+
+
+### [meta.reflection.extract] Value extraction {-}
+
+::: std
+::: addu
+```cpp
+template <class T>
+  consteval T extract(info r);
+```
+
+[#]{.pnum} *Mandates*: `r` is a reflection designating a value, object, variable, function, enumerator, or non-static data member that is not a bit-field. If `r` reflects a value or enumerator, then `T` is not a reference type. If `r` reflects a value or enumerator of type `U`, or if `r` reflects a variable or object of non-reference type `U`, then the cv-unqualified types of `T` and `U` are the same. If `r` reflects a variable, object, or function with type `U`, and `T` is a reference type, then the cv-unqualified types of `T` and `U` are the same, and `T` is either `U` or more cv-qualified than `U`. If `r` reflects a non-static data member, or if `r` reflects a function and `T` is a reference type, then the statement `T v = &expr`, where `expr` is an lvalue naming the entity designated by `r`, is well-formed.
+
+[#]{.pnum} *Returns*: If `r` designates a value or enumerator, then the entity reflected by `r`. Otherwise, if `r` reflects an object, variable, or enumerator and `T` is not a reference type, then the result of an lvalue-to-rvalue conversion applied to an expression naming the entity reflected by `r`. Otherwise, if `r` reflects an object, variable, or function and `T` is a reference type, then the result of an lvalue naming the entity reflected by `r`. Otherwise, if `r` reflects a function or non-static data member, then a pointer value designating the entity reflected by `r`.
+:::
+:::
+
+### [meta.reflection.substitute] Reflection substitution  {-}
+
+::: std
+::: addu
+```cpp
+template <class R>
+concept reflection_range =
+  ranges::input_range<R> &&
+  same_as<ranges::range_value_t<R>, info> &&
+  same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
+```
+
+```cpp
+template <reflection_range R = span<info const>>
+consteval bool can_substitute(info templ, R&& arguments);
+```
+[1]{.pnum} *Mandates*: `templ` designates a template.
+
+[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or aliases designated by the elements of `arguments`.
+
+[#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
+
+[#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
+
+```cpp
+template <reflection_range R = span<info const>>
+consteval info substitute(info templ, R&& arguments);
+```
+
+[#]{.pnum} *Mandates*: `can_substitute(templ, arguments)` is `true`.
+
+[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or aliases designated by the elements of `arguments`.
+
+[#]{.pnum} *Returns*: `^Z<Args...>`.
+
+```cpp
+consteval bool test_trait(info templ, info type);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, {type}));`
+
+```cpp
+template <reflection_range R = span<info const>>
+consteval bool test_trait(info templ, R&& arguments);
+```
+
+[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, arguments));`
+
 :::
 :::
 
@@ -4452,7 +4585,7 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is not a function type. `expr` designates an entity that is a permitted result of a constant expression.
 
-[#]{.pnum} *Returns*: A reflection of the object referenced by `expr`. If the reflected object is a variable `Obj`, the returned reflection compares equal to `^Obj`.
+[#]{.pnum} *Returns*: A reflection of the object referenced by `expr`.
 
 ```cpp
 template <typename T>
@@ -4463,57 +4596,20 @@ template <typename T>
 
 [#]{.pnum} *Returns*: `^fn`, where `fn` is the function referenced by `expr`.
 
-:::
-:::
-
-
-### [meta.reflection.substitute] Reflection substitution  {-}
-
-::: std
-::: addu
-```cpp
-template <class R>
-concept reflection_range =
-  ranges::input_range<R> &&
-  same_as<ranges::range_value_t<R>, info> &&
-  same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
-```
-
 ```cpp
 template <reflection_range R = span<info const>>
-consteval bool can_substitute(info templ, R&& arguments);
-```
-[1]{.pnum} *Mandates*: `templ` designates a template.
-
-[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities, expressions, or aliases designated by the elements of `arguments`.
-
-[#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
-
-[#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
-
-```cpp
-template <reflection_range R = span<info const>>
-consteval info substitute(info templ, R&& arguments);
+  consteval info reflect_invoke(info target, R&& args);
+template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
+  consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
 ```
 
-[#]{.pnum} *Mandates*: `can_substitute(templ, arguments)` is `true`.
+[#]{.pnum} Let `F` be the entity reflected by `target`, let `Arg0` be the entity reflected by the first element of `args` (if any), let `Args...` be the sequence of entities reflected by the elements of `args` excluding the first, and let `TArgs...` be the sequence of entities or aliases designated by the elements of `tmpl_args`.
 
-[#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or expressions designated by the elements of `arguments`.
+[#]{.pnum} If `F` is a non-member function, a value of pointer to function type, or a value of closure type, then let `INVOKE-EXPR` be the expression `F(Arg0, Args...)`. Otherwise, if `F` is a member function or a value of pointer to member function type, then let `INVOKE-EXPR` be the expression `Arg0.F(Args...)` or `Arg0->F(Args...)` respectively. Otherwise, if `F` is a constructor for a class `C`, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution. Otherwise, if `F` is a non-member function template or a member function template, then let `INVOKE-EXPR` be the expression `F<TArgs...>(Arg0, Args...)` or `Arg0.template F<TArgs...>(Args...)` respectively. Otherwise, if `F` is a constructor template, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution, and `TArgs...` are inferred as explicit template arguments for `F`.
 
-[#]{.pnum} *Returns*: `^Z<Args...>`.
+[#]{.pnum} *Mandates*: `target` designates a reflection of a function, a constructor, a constructor template, a value, or a function template. If `target` reflects a value of type `T`, then `T` is a pointer to function type, pointer to member function type, or closure type. The expression `INVOKE-EXPR` is a well-formed constant expression of structural type.
 
-```cpp
-consteval bool test_trait(info templ, info type);
-```
-
-[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, {type}));`
-
-```cpp
-template <reflection_range R = span<info const>>
-consteval bool test_trait(info templ, R&& arguments);
-```
-
-[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, arguments));`
+[#]{.pnum} *Returns*: A reflection of the result of the expression `INVOKE-EXPR`.
 
 :::
 :::
