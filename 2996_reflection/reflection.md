@@ -4650,16 +4650,8 @@ consteval info data_member_spec(info type,
 
 
 ```c++
-namespace std::meta {
-  struct data_member_options_t {
-    optional<string_view> name;
-    bool no_unique_address = false;
-    optional<int> alignment;
-    optional<int> width;
-  };
   template <reflection_range R = span<info const>>
   consteval info define_class(info class_type, R&&  mdescrs);
-}
 ```
 
 [#]{.pnum} Let `$d1$`, `$d2$`, ..., `$dN$` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `$t1$`, `$t2$`, ... `$tN$` and `option` values `$o1$`, `$o2$`, ... `$oN$` respectively.  
