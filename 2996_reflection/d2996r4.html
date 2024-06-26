@@ -6607,7 +6607,8 @@ to the subobject associated with the entity reflected by
 <div class="sourceCode" id="cb186"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb186-1"><a href="#cb186-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_169" id="pnum_169">3</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> is a reflection
-of a type, non-static data member, base class, object, or variable.</p>
+of a type, non-static data member, base class, object, value, or
+variable.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_170" id="pnum_170">4</a></span>
 <em>Returns</em> If <code class="sourceCode cpp">r</code> designates a
 type <code class="sourceCode cpp">T</code>, then <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span></code>.
@@ -6627,7 +6628,7 @@ the reflected non-static data member within any object of type <code class="sour
 <div class="sourceCode" id="cb188"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> bit_offset_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_173" id="pnum_173">7</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> is a reflection
-designating a non-static data member.</p>
+designating a non-static data member or a non-virtual base class.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_174" id="pnum_174">8</a></span>
 Let <code class="sourceCode cpp">V</code> be the offset in bits from the
 beginning of an object of type <code class="sourceCode cpp">parent_of<span class="op">(</span>r<span class="op">)</span></code>
@@ -6638,14 +6639,14 @@ to the subobject associated with the entity reflected by
 <div class="sourceCode" id="cb189"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> bit_size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_176" id="pnum_176">10</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> is a reflection
-of a type, non-static data member, base class, object, or variable.</p>
+of a type, non-static data member, base class, object, value, or
+variable.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_177" id="pnum_177">11</a></span>
 <em>Returns</em> If <code class="sourceCode cpp">r</code> designates a
 type, then the size in bits of any object having the reflected type.
-Otherwise, if <code class="sourceCode cpp">r</code> designates a
-variable, base class, object, or non-static data member that is not a
-bit-field, then <code class="sourceCode cpp">bit_size_of<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>.
-Otherwise, the width of the reflected bit-field.</p>
+Otherwise, if <code class="sourceCode cpp">r</code> reflects a
+non-static data member that is a bit-field, then the width of the
+reflected bit-field. Otherwise, <code class="sourceCode cpp">bit_size_of<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>.</p>
 </div>
 </blockquote>
 </div>
@@ -6810,9 +6811,8 @@ the sequence of entities or aliases designated by the elements of
 <code class="sourceCode cpp">tmpl_args</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_196" id="pnum_196">8</a></span>
 If <code class="sourceCode cpp">F</code> is a non-member function, a
-value of pointer to function type, a value of pointer to member function
-type, a value of pointer to data member type, or a value of closure
-type, then let
+value of pointer to function type, a value of pointer to member type, or
+a value of closure type, then let
 <code class="sourceCode cpp">INVOKE<span class="op">-</span>EXPR</code>
 be the expression <code class="sourceCode cpp">INVOKE<span class="op">(</span>F, Arg0, Args<span class="op">...)</span></code>.
 Otherwise, if <code class="sourceCode cpp">F</code> is a member
@@ -6846,8 +6846,7 @@ value, or a function template. If
 <code class="sourceCode cpp">target</code> reflects a value of type
 <code class="sourceCode cpp">T</code>, then
 <code class="sourceCode cpp">T</code> is a pointer to function type,
-pointer to member function type, pointer to data member type, or closure
-type. The expression
+pointer to member type, or closure type. The expression
 <code class="sourceCode cpp">INVOKE<span class="op">-</span>EXPR</code>
 is a well-formed constant expression of structural type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_198" id="pnum_198">10</a></span>
