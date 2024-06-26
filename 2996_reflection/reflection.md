@@ -2054,7 +2054,7 @@ This paper is proposing that:
   Even though `B` is an alias to a type that itself has template arguments (`unique_ptr<int>`), `B` itself is simply a type alias and does not.
   This reflects the actual usage.
 * Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
-  This is `C` has its own template arguments that can be reflected on.
+  This is because `C` has its own template arguments that can be reflected on.
 
 
 ### Reflecting source text
