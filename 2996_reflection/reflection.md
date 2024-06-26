@@ -28,8 +28,7 @@ tag: constexpr
 
 Since [@P2996R3]:
 
-* changing `name_of`, `display_name_of`, and `qualified_name_of` signatures to mandate instead of constrain.
-* changes to name functions to improve Unicode-friendliness
+* changes to name functions to improve Unicode-friendliness; added `u8name_of`, `u8qualified_name_of`, `u8display_name_of`.
 * the return of `reflect_value`: separated `reflect_result` into three functions: `reflect_value`, `reflect_object`, `reflect_function`
 * more strongly specified comparison and linkage rules for reflections of aliases
 * changed `is_noexcept` to apply to a wider class of entities
@@ -1799,8 +1798,8 @@ static_assert(r == r && r == s);
 
 static_assert(^i != ^j);  // 'i' and 'j' are different entities.
 static_assert(value_of(^i) == value_of(^j));  // Two equivalent values.
-static_assert(^i == std::meta::reflect_object(i))  // A variable is indistinguishable
-                                                   // from the object it designates.
+static_assert(^i != std::meta::reflect_object(i))  // A variable is distinct from the
+                                                   // object it designates.
 static_assert(^i != std::meta::reflect_value(42));  // A reflection of an object
                                                     // is not the same as its value.
 ```
@@ -2115,23 +2114,8 @@ For example:
 
 ::: std
 ```cpp
-template<typename T = std::u8string_view>
-  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view))
-consteval T name_of(info);
-```
-:::
-
-(At the time of this writing, the implementations implement `name_of` as an ordinary function returning
-an ordinary `std::string_view`.)
-
-We could potentially extend that API to also allow string value types:
-
-::: std
-```cpp
-template<typename T = std::u8string_view>
-  requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view) ||
-            ^T == dealias(^std::string) || ^T == dealias(^std::u8string))
-consteval T name_of(info);
+consteval std::string_view name_of(info);
+consteval std::u8string_view name_of(info);
 ```
 :::
 
@@ -2156,7 +2140,7 @@ namespace std::meta {
 where the `as<...>()` member function produces a string-like type as desired.  That idea was dropped,
 however, because it became unwieldy in actual use cases.
 
-With a source text query like `name_of<std::string_view>(refl)` it is possible that the some source
+With a source text query like `name_of(refl)` it is possible that the some source
 characters of the result are not representable.  We can then consider multiple options, including:
 
   1) the query fails to evaluate,
@@ -2167,10 +2151,7 @@ characters of the result are not representable.  We can then consider multiple o
   3) any source characters not in the basic source character set are translated to a different
      presentation (as in (2)).
 
-We propose #3 to strike a balance between usability and portability, specifically with the
-universal-character-names of the form `\u{ $hex-number$ }` as the alternative character presentation.
-
-We also propose that APIs that consume source text (currently, that is only done via `std::meta::data_member_options_t`) also accept such alternative presentations.
+Following much discussion with SG16, we propose #1: The query fails to evaluate if the identifier cannot be represented in the ordinary string literal encoding.
 
 
 ### Freestanding implementations
@@ -2192,12 +2173,14 @@ namespace std::meta {
   concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
 
   // @[name and location](#name-loc)@
-  template<typename T = std::u8string_view>
-    consteval auto name_of(info r) -> T;
-  template<typename T = std::u8string_view>
-    consteval auto qualified_name_of(info r) -> T;
-  template<typename T = std::u8string_view>
-    consteval auto display_name_of(info r) -> T;
+  consteval auto name_of(info r) -> string_view;
+  consteval auto qualified_name_of(info r) -> string_view;
+  consteval auto display_name_of(info r) -> string_view;
+
+  consteval auto u8name_of(info r) -> u8string_view;
+  consteval auto u8display_name_of(info r) -> u8string_view;
+  consteval auto u8qualified_name_of(info r) -> u8string_view;
+
   consteval auto source_location_of(info r) -> source_location;
 
   // @[type queries](#type_of-parent_of-dealias)@
@@ -2368,26 +2351,26 @@ namespace std::meta {
 ::: std
 ```c++
 namespace std::meta {
-  template<typename T = std::u8string_view>
-    consteval auto name_of(info) -> T;
-  template<typename T = std::u8string_view>
-    consteval auto qualified_name_of(info) -> T;
-  template<typename T = std::u8string_view>
-    consteval auto display_name_of(info) -> T;
+  consteval auto name_of(info) -> string_view;
+  consteval auto qualified_name_of(info) -> string_view;
+  consteval auto display_name_of(info) -> string_view;
+
+  consteval auto u8name_of(info) -> u8string_view;
+  consteval auto u8qualified_name_of(info) -> u8string_view;
+  consteval auto u8display_name_of(info) -> u8string_view;
+
   consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
 
-In all of these metafunction templates, `T` must be either `std::string_view` or `std::u8string_view`.
+If a `string_view` is returned, its contents consist of characters representable by the ordinary string literal encoding only; if any character cannot be represented, it is not a constant expression.
 
-If a `string_view` is returned, its content consist of characters of the basic source character set only; other source text is rendered as universal character names of the form `\u{ simple-hexadecimal-digit-sequence }`).
-
-Given a reflection `r` that designates a declared entity `X`, `name_of<S>(r)` and `qualified_name_of<S>(r)` return a string view of type `S` holding the unqualified and qualified name of `X`, respectively.
+Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of(r)` return a `string_view` holding the unqualified and qualified name of `X`, respectively. `u8name_of(r)` and `qualified_name_of(r)` return the same, respectively, as a `u8string_view`.
 For all other reflections, an empty string view is produced.
 For template instances, the name does not include the template argument list.
 
-Given a reflection `r`, `display_name_of(r)` returns an unspecified non-empty string view.
+Given a reflection `r`, `display_name_of(r)` and `u8display_name_of(r)` return an unspecified non-empty `string_view` and `u8string_view`, respectively.
 Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
 
 Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
@@ -2769,7 +2752,6 @@ namespace std::meta {
     optional<name_type> name;
     optional<int> alignment;
     optional<int> width;
-    bool is_static = false;
     bool no_unique_address = false;    
   };
   consteval auto data_member_spec(info type,
@@ -2780,7 +2762,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of UTF-8 code-units (after converting any contained UCNs to UTF-8). Otherwise, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
+`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of UTF-8 code-units (after converting any contained UCNs to UTF-8). Otherwise, the name of the data member is unspecified.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
@@ -3163,9 +3145,9 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
      $lambda-expression$
      $fold-expression$
      $requires-expression$
-     $splice-expression$
-
-  $splice-expression$
++    $splice-expression$
++
++ $splice-expression$
 +    [: $constant-expression$ :]
 +    template[: $constant-expression$ :] < $template-argument-list$@~_opt_~@ >
 ```
@@ -3232,10 +3214,10 @@ Add a production to `$postfix-expression$` for splices in member access expressi
 [1]{.pnum} Postfix expressions group left-to-right.
   $postfix-expression$:
     ...
-    $postfix-expression$ . $template@~_opt_~@ $id-expression$
-+   $postfix-expression$ . $template@~_opt_~@ $splice-expression$
-    $postfix-expression$ -> $template@~_opt_~@ $id-expression$
-+   $postfix-expression$ -> $template@~_opt_~@ $splice-expression$
+    $postfix-expression$ . $template$@~_opt_~@ $id-expression$
++   $postfix-expression$ . $template$@~_opt_~@ $splice-expression$
+    $postfix-expression$ -> $template$@~_opt_~@ $id-expression$
++   $postfix-expression$ -> $template$@~_opt_~@ $splice-expression$
 ```
 :::
 
@@ -3257,7 +3239,7 @@ Modify paragraph 2 to account for splices in member access expressions:
 Modify paragraph 3 to account for splices in member access expressions:
 
 ::: std
-[3]{.pnum} The postfix expression before the dot is evaluated;51 the result of that evaluation, together with the `$id-expression$` [or `$splice-expression$`]{.addu}, determines the result of the entire postfix expression.
+[3]{.pnum} The postfix expression before the dot is evaluated the result of that evaluation, together with the `$id-expression$` [or `$splice-expression$`]{.addu}, determines the result of the entire postfix expression.
 :::
 
 Modify paragraph 4 to account for splices in member access expressions:
@@ -3500,6 +3482,7 @@ Add a bullet to paragraph 9 of [dcl.fct]{.sref} to allow for reflections of abom
 * [9.1]{.pnum} the function type for a non-static member function,
 * [9.2]{.pnum} ...
 * [9.5]{.pnum} the _type-id_ of a _template-argument_ for a _type-parameter_ ([temp.arg.type])[.]{.rm}[,]{.addu}
+
 ::: addu
 * [9.6]{.pnum} the operand of a _reflect-expression_ ([expr.reflect]).
 :::
@@ -3900,12 +3883,14 @@ namespace std::meta {
   using info = decltype(^::);
 
   // [meta.reflection.names], reflection names and locations
-  template<typename T = u8string_view>
-    consteval T name_of(info r);
-  template<typename T = u8string_view>
-    consteval T qualified_name_of(info r);
-  template<typename T = u8string_view>
-    consteval T display_name_of(info r);
+  consteval string_view name_of(info r);
+  consteval string_view qualified_name_of(info r);
+  consteval string_view display_name_of(info r);
+
+  consteval u8string_view u8name_of(info r);
+  consteval u8string_view u8qualified_name_of(info r);
+  consteval u8string_view u8display_name_of(info r);
+
   consteval source_location source_location_of(info r);
 
   // [meta.reflection.queries], reflection queries
@@ -4050,8 +4035,7 @@ namespace std::meta {
     optional<name_type> name;
     optional<int> alignment;
     optional<int> width;
-    bool is_static = false;
-    bool no_unique_address = false;    
+    bool no_unique_address = false;
   };
   consteval info data_member_spec(info type,
                                   data_member_options_t options = {});
@@ -4221,23 +4205,31 @@ namespace std::meta {
 ::: std
 ::: addu
 ```cpp
-template<typename T = std::u8string_view>
-  consteval T name_of(info r);
-template<typename T = std::u8string_view>
-  consteval T qualified_name_of(info r);
+consteval string_view name_of(info r);
+consteval u8string_view u8name_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `T` is either the type `std::string_view` or `std::u8string_view`.
+[#]{.pnum} *Mandates*: If returning `string_view`, the unqualified name is representable using the ordinary string literal encoding.
 
-[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified and qualified names of `X`, respectively. Otherwise, an empty `string_view` or `u8string_view`.
+[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified name of `X`. Otherwise, an empty `string_view` or `u8string_view`, respectively.
 
 ```cpp
-template<typename T = std::u8string_view>
-  consteval T display_name_of(info r);
+consteval string_view qualified_name_of(info r);
+consteval u8string_view u8qualified_name_of(info r);
 ```
-[#]{.pnum} *Mandates*: `T` is either the type `std::string_view` or `std::u8string_view`.
 
-[#]{.pnum} *Returns*: An implementation-defined string suitable for identifying the reflected construct.
+[#]{.pnum} *Mandates*: If returning `string_view`, the qualified name is representable using the ordinary string literal encoding.
+
+[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the qualified name of `X`. Otherwise, an empty `string_view` or `u8string_view`, respectively.
+
+```cpp
+consteval string_view display_name_of(info r);
+consteval u8string_view u8display_name_of(info r);
+```
+
+[#]{.pnum} *Mandates*: If returning `string_view`, the implementation-defined name is representable using the ordinary string literal encoding.
+
+[#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the reflected construct.
 
 ```cpp
 consteval source_location source_location_of(info r);
