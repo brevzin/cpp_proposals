@@ -3813,9 +3813,11 @@ aliases:</p>
 </blockquote>
 </div>
 <p>If <code class="sourceCode cpp">r</code> is a reflection of a
-variable <em>usable in constant expressions</em>, then <code class="sourceCode cpp">object_of<span class="op">(</span>r<span class="op">)</span></code>
-is a reflection of the object designated by the variable. For all other
-inputs, <code class="sourceCode cpp">object_of<span class="op">(</span>r<span class="op">)</span></code>
+variable denoting an object with static storage duration, then <code class="sourceCode cpp">object_of<span class="op">(</span>r<span class="op">)</span></code>
+is a reflection of the object designated by the variable. If
+<code class="sourceCode cpp">r</code> is already a reflection of an
+object, <code class="sourceCode cpp">object_of<span class="op">(</span>r<span class="op">)</span></code>
+is <code class="sourceCode cpp">r</code>. For all other inputs, <code class="sourceCode cpp">object_of<span class="op">(</span>r<span class="op">)</span></code>
 is not a constant expression.</p>
 <div class="std">
 <blockquote>
@@ -6345,12 +6347,12 @@ reflection.</p>
 <div class="sourceCode" id="cb155"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info object_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_127" id="pnum_127">31</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> is a reflection
-designating either an object or a variable designating an object with
+designating either an object or a variable denoting an object with
 static storage duration ([expr.const]).</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_128" id="pnum_128">32</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> is a
-reflection of a variable, then a reflection of the object designated by
-the variable. Otherwise, <code class="sourceCode cpp">r</code>.</p>
+reflection of a variable, then a reflection of the object denoted by the
+variable. Otherwise, <code class="sourceCode cpp">r</code>.</p>
 <div class="sourceCode" id="cb156"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb156-1"><a href="#cb156-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info value_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_129" id="pnum_129">33</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">r</code> is a reflection

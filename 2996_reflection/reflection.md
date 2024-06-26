@@ -2450,7 +2450,7 @@ namespace std::meta {
 ```
 :::
 
-If `r` is a reflection of a variable _usable in constant expressions_, then `object_of(r)` is a reflection of the object designated by the variable. For all other inputs, `object_of(r)` is not a constant expression.
+If `r` is a reflection of a variable denoting an object with static storage duration, then `object_of(r)` is a reflection of the object designated by the variable. If `r` is already a reflection of an object, `object_of(r)` is `r`. For all other inputs, `object_of(r)` is not a constant expression.
 
 ::: std
 ```c++
@@ -4206,9 +4206,9 @@ consteval info type_of(info r);
 consteval info object_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` is a reflection designating either an object or a variable designating an object with static storage duration ([expr.const]).
+[#]{.pnum} *Mandates*: `r` is a reflection designating either an object or a variable denoting an object with static storage duration ([expr.const]).
 
-[#]{.pnum} *Returns*: If `r` is a reflection of a variable, then a reflection of the object designated by the variable. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` is a reflection of a variable, then a reflection of the object denoted by the variable. Otherwise, `r`.
 
 ```cpp
 consteval info value_of(info r);
