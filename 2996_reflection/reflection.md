@@ -3822,8 +3822,7 @@ namespace std::meta {
   template <reflection_range R = span<info const>>
     consteval bool test_trait(info templ, R&& arguments);
 
-<<<<<<< HEAD
-    // [meta.reflection.result], expression result reflection
+  // [meta.reflection.result], expression result reflection
   template <class R>
     concept reflection_range = $see below$;
 
@@ -3838,7 +3837,7 @@ namespace std::meta {
     consteval info reflect_invoke(info target, R&& args);
   template <reflection_range R1 = span<info const>, reflection_range R2 = span<info const>>
     consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
-=======
+
   // [meta.reflection.define_class], class definition generation
   struct data_member_options_t {
     struct name_type {
@@ -3857,7 +3856,6 @@ namespace std::meta {
                                   data_member_options_t options = {});
   template <reflection_range R = span<info const>>
   consteval info define_class(info type_class, R&&);
->>>>>>> 651ea3f (Start define_class spec)
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
