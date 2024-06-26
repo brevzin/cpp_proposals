@@ -311,7 +311,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/Wb1vx7jqb), [Clang](https://go
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
 Another frequently-useful metafunction is `std::meta::name_of`, which returns a `std::string_view` describing the unqualified name of an entity denoted by a given reflection value.
-With such a facility, we could conceivably access nonstatic data members "by string":
+With such a facility, we could conceivably access non-static data members "by string":
 
 ::: std
 ```c++
@@ -621,7 +621,7 @@ template<std::size_t I, typename... Ts>
 :::
 
 This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
-`define_class` takes a reflection for an incomplete class or union plus a vector of nonstatic data member descriptions, and completes the give class or union type to have the described members.
+`define_class` takes a reflection for an incomplete class or union plus a vector of non-static data member descriptions, and completes the give class or union type to have the described members.
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/YK35d8MMx), [Clang](https://godbolt.org/z/cT116Wb31).
 
@@ -2520,8 +2520,8 @@ namespace std::meta {
 :::
 
 The template `members_of` returns a vector of reflections representing the direct members of the class type represented by its first argument.
-Any nonstatic data members appear in declaration order within that vector.
-Anonymous unions appear as a nonstatic data member of corresponding union type.
+Any non-static data members appear in declaration order within that vector.
+Anonymous unions appear as a non-static data member of corresponding union type.
 Reflections of structured bindings shall not appear in the returned vector.
 If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
 E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
@@ -2718,7 +2718,7 @@ If `r` is a reflection for a non-static member function and `T` is the type for 
 
 If `r` is a reflection for an enumerator constant of type `E`, `extract<E>(r)` evaluates to the value of that enumerator.
 
-If `r` is a reflection for a non-bit-field non-reference non-static member of type `M` in a class `C`, `extract<M C::*>(r)` is the pointer-to-member value for that nonstatic member.
+If `r` is a reflection for a non-bit-field non-reference non-static member of type `M` in a class `C`, `extract<M C::*>(r)` is the pointer-to-member value for that non-static member.
 
 For other reflection values `r`, `extrace<T>(r)` is ill-formed.
 
@@ -2771,9 +2771,10 @@ namespace std::meta {
     };
 
     optional<name_type> name;
-    bool is_static = false;
     optional<int> alignment;
     optional<int> width;
+    bool is_static = false;
+    bool no_unique_address = false;    
   };
   consteval auto data_member_spec(info type,
                                   data_member_options_t options = {}) -> info;
@@ -3023,23 +3024,18 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 
 ### [basic.def.odr]{.sref} One-definition rule {-}
 
-Preprend before paragraph 14 of [basic.def.odr]{.sref}:
+Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: std
 
 ::: addu
 
-[14pre]{.pnum} If a class `C` is defined in a translation unit with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its respective members are equal in number and have respectively the same types, alignments, [[no_unique_address]] attributes (if any), bit-field widths (if any), and specified names (if any).
+[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its respective members are equal in number and have respectively the same types, alignments, `[[no_unique_address]]` attributes (if any), bit-field widths (if any), and specified names (if any).
 
 :::
 
-:::
 
-Adjust paragraph 14 as follows:
-
-::: std
-
-[14]{.pnum} [Otherwise, for]{.add}[For]{.rm} any definable item D with definitions ...
+[15]{.pnum} [Otherwise, for]{.addu} [For]{.rm} any definable item D with definitions ...
 
 :::
 
@@ -3655,6 +3651,9 @@ Insert before paragraph 7:
 
 ::: std
 
+[6]{.pnum} Let F denote a standard library function ([global.functions]), a standard library static member function, or an instantiation of a standard library function template.
+Unless F is designated an *addressable function*, the behavior of a C++ program is unspecified (possibly ill-formed) if it explicitly or implicitly attempts to form a pointer to F. [...]
+
 ::: addu
 
 [7pre]{.pnum}
@@ -3663,6 +3662,8 @@ If F does not designate an addressable function, it is unspecified if or how a r
 [ E.g., `std::meta::members_of` might not produce reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
 
 :::
+
+[7]{.pnum} A translation unit shall not declare namespace std to be an inline namespace ([namespace.def]).
 
 :::
 
@@ -3887,10 +3888,12 @@ namespace std::meta {
       template <typename T> requires constructible_from<string, T>
         consteval name_type(T &&);
     };
-    bool no_unique_address = false;
+
     optional<name_type> name;
     optional<int> alignment;
     optional<int> width;
+    bool is_static = false;
+    bool no_unique_address = false;    
   };
   consteval info data_member_spec(info type,
                                   data_member_options_t options = {});
@@ -4674,11 +4677,10 @@ template <reflection_range R1 = span<info const>, reflection_range R2 = span<inf
 :::
 :::
 
-::: std
-::: addu
-
 ### [meta.reflection.define_class] Reflection class definition generation  {-}
 
+::: std
+::: addu
 
 ```cpp
 consteval info data_member_spec(info type,
@@ -4699,33 +4701,32 @@ If `options.name` contains a value, the `string` or `u8string` value that was us
   consteval info define_class(info class_type, R&&  mdescrs);
 ```
 
-[#]{.pnum} Let `$d1$`, `$d2$`, ..., `$dN$` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `$t1$`, `$t2$`, ... `$tN$` and `option` values `$o1$`, `$o2$`, ... `$oN$` respectively.  
+[#]{.pnum} Let `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@` and `option` values `@*o*~1~@`, `@*o*~2~@`, ... `@*o*~N~@` respectively.  
 
 [#]{.pnum} *Mandates*:
 `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
 [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
-`$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.
-If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.
-If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, `alginas($a$)` is a valid `$alignment-specifier$` for a non-static data member of type `$tK$`.
+Each `@*t*~i~@` designates a type that is valid types for data members.
+If `@*o*~K~@.width` (for some `$K$`) contains a value `$w$`, the corresponding type `@*t*~K~@` is a valid type for bit field of width `$w$`.
+If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, `alignas($a$)` is a valid `$alignment-specifier$` for a non-static data member of type `@*t*~K~@`.
 
 
 [#]{.pnum} *Effects*:
-Defines `class_type` with properties as follows.
-If `class_type` designates a specialization of a class template, the specialization is explicitly specialized.
-Nonstatic data members are declared in the definition of `class_type` according to `$d1$`, `$d2$`, ..., `$dN$`, in that order.
-The type of the respective members are the types denoted by the reflection values `$t1$`, `$t2$`, ... `$tN$`.
-If `$oK$.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
-If `$oK$.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
-If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is aligned as if declared with `alignas($a$)`.
-If `$oK$.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
-Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `$oK$.name`.
-If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
-If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
+Defines `class_type` with properties as follows:
+
+* [#.1]{.pnum} If `class_type` designates a specialization of a class template, the specialization is explicitly specialized.
+* [#.#]{.pnum} Non-static data members are declared in the definition of `class_type` according to `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@`, in that order.
+* [#.#]{.pnum} The type of the respective members are the types denoted by the reflection values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@`.
+* [#.#]{.pnum} If `@*o*~K~@.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
+* [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
+* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is aligned as if declared with `alignas($a$)`.
+* [#.#]{.pnum} If `@*o*~K~@.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
+  Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `@*o*~K~@.name`.
+* [#.#]{.pnum} If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
+  If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
 
 
 [#]{.pnum} *Returns*: `class_type`.
-
-[#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
 :::
 :::
