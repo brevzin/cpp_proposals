@@ -3021,6 +3021,28 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 ```
 :::
 
+### [basic.def.odr]{.sref} One-definition rule {-}
+
+Preprend before paragraph 14 of [basic.def.odr]{.sref}:
+
+::: std
+
+::: addu
+
+[14pre]{.pnum} If a class `C` is defined in a translation with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its respective members are equal in number and have respectively the same types, alignments, [[no_unique_address]] attributes (if any), bit-field widths (if any), and specified names (if any).
+
+:::
+
+:::
+
+Adjust paragraph 14 as follows:
+
+::: std
+
+[14]{.pnum} [Otherwise, for]{.add}[For]{.rm} any definable item D with definitions ...
+
+:::
+
 ### [basic.lookup.argdep]{.sref} Argument-dependent name lookup {-}
 
 Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this must precede the fundamental type bullet, because `meta::info` is a fundamental type]{.ednote}:
@@ -4642,7 +4664,10 @@ template <reflection_range R1 = span<info const>, reflection_range R2 = span<inf
 consteval info data_member_spec(info type,
                                 data_member_options_t options = {});
 ```
-[1]{.pnum} *Mandates*: `type` designates a type.
+[1]{.pnum} *Mandates*:
+`type` designates a type.
+If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name` contains a valid identifier ([lex.name]{.sref}).
+
 
 [#]{.pnum} *Returns*: A reflection of a description of the declaration of nonstatic data member with a type designated by `type` and optional characteristics designated by `options`.
 
@@ -4656,7 +4681,11 @@ consteval info data_member_spec(info type,
 
 [#]{.pnum} Let `$d1$`, `$d2$`, ..., `$dN$` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `$t1$`, `$t2$`, ... `$tN$` and `option` values `$o1$`, `$o2$`, ... `$oN$` respectively.  
 
-[#]{.pnum} *Mandates*: `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.  `$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.  If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.  If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, `alginas($a$)` is a valid `$alignment-specifier$` for a nonstatic data member of type `$tK$`.
+[#]{.pnum} *Mandates*:
+`class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
+`$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.
+If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.
+If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, `alginas($a$)` is a valid `$alignment-specifier$` for a nonstatic data member of type `$tK$`.
 
 [#]{.pnum} [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
 
