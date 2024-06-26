@@ -287,7 +287,7 @@ Note that a "member access splice" like `s.[:member_number(1):]` is a more direc
 It doesn't involve member name lookup, access checking, or --- if the spliced reflection value denotes a member function --- overload resolution.
 
 This proposal includes a number of consteval "metafunctions" that enable the introspection of various language constructs.
-Among those metafunctions is `std::meta::nonstatic_data_members_of` which returns a vector of reflection values that describe the nonstatic members of a given type.
+Among those metafunctions is `std::meta::nonstatic_data_members_of` which returns a vector of reflection values that describe the non-static members of a given type.
 We could thus rewrite the above example as:
 
 ::: std
@@ -3029,7 +3029,7 @@ Preprend before paragraph 14 of [basic.def.odr]{.sref}:
 
 ::: addu
 
-[14pre]{.pnum} If a class `C` is defined in a translation with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its respective members are equal in number and have respectively the same types, alignments, [[no_unique_address]] attributes (if any), bit-field widths (if any), and specified names (if any).
+[14pre]{.pnum} If a class `C` is defined in a translation unit with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its respective members are equal in number and have respectively the same types, alignments, [[no_unique_address]] attributes (if any), bit-field widths (if any), and specified names (if any).
 
 :::
 
@@ -3887,7 +3887,7 @@ namespace std::meta {
       template <typename T> requires constructible_from<string, T>
         consteval name_type(T &&);
     };
-
+    bool no_unique_address = false;
     optional<name_type> name;
     optional<int> alignment;
     optional<int> width;
@@ -4674,6 +4674,8 @@ template <reflection_range R1 = span<info const>, reflection_range R2 = span<inf
 :::
 :::
 
+::: std
+::: addu
 
 ### [meta.reflection.define_class] Reflection class definition generation  {-}
 
@@ -4687,7 +4689,7 @@ consteval info data_member_spec(info type,
 If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name` contains a valid identifier ([lex.name]{.sref}).
 
 
-[#]{.pnum} *Returns*: A reflection of a description of the declaration of nonstatic data member with a type designated by `type` and optional characteristics designated by `options`.
+[#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type designated by `type` and optional characteristics designated by `options`.
 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
@@ -4701,17 +4703,18 @@ If `options.name` contains a value, the `string` or `u8string` value that was us
 
 [#]{.pnum} *Mandates*:
 `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
+[For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
 `$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.
 If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.
-If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, `alginas($a$)` is a valid `$alignment-specifier$` for a nonstatic data member of type `$tK$`.
+If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, `alginas($a$)` is a valid `$alignment-specifier$` for a non-static data member of type `$tK$`.
 
-[#]{.pnum} [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
 
 [#]{.pnum} *Effects*:
 Defines `class_type` with properties as follows.
 If `class_type` designates a specialization of a class template, the specialization is explicitly specialized.
 Nonstatic data members are declared in the definition of `class_type` according to `$d1$`, `$d2$`, ..., `$dN$`, in that order.
 The type of the respective members are the types denoted by the reflection values `$t1$`, `$t2$`, ... `$tN$`.
+If `$oK$.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
 If `$oK$.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
 If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is aligned as if declared with `alignas($a$)`.
 If `$oK$.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
@@ -4720,9 +4723,12 @@ If `class_type` is a union type and any of its members is not trivially default 
 If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
 
 
+[#]{.pnum} *Returns*: `class_type`.
+
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
-
+:::
+:::
 
 ### [meta.reflection.unary] Unary type traits  {-}
 
