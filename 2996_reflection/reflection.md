@@ -2804,7 +2804,7 @@ static_assert(is_type(define_class(^U, {
 // };
 
 template<typename T> struct S;
-constexpr auto U = define_class(^S<int>, {
+constexpr auto s_int_refl = define_class(^S<int>, {
   data_member_spec(^int, {.name="i", .alignment=64}),
   data_member_spec(^int, {.name=u8"こんにち", .alignment=64}),
   data_member_spec(^int, {.name="v\\N{LATIN SMALL LETTER AE}rs\\u{e5}god"})
