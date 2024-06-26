@@ -2364,9 +2364,9 @@ namespace std::meta {
 ```
 :::
 
-If a `string_view` is returned, its content consist of characters representable by the ordinary string literal encoding only; if any character cannot be represented, it is not a constant expression.
+If a `string_view` is returned, its contents consist of characters representable by the ordinary string literal encoding only; if any character cannot be represented, it is not a constant expression.
 
-Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of(r)` return a string view of type `S` holding the unqualified and qualified name of `X`, respectively. `u8name_of(r)` and `qualified_name_of(r)` return the same, respectively, as a `u8string_view`.
+Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of(r)` return a `string_view` holding the unqualified and qualified name of `X`, respectively. `u8name_of(r)` and `qualified_name_of(r)` return the same, respectively, as a `u8string_view`.
 For all other reflections, an empty string view is produced.
 For template instances, the name does not include the template argument list.
 
