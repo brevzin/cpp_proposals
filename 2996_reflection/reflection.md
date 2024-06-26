@@ -3649,6 +3649,24 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 ## Library
 
+### [namespace.std]{.sref} Namespace std
+
+Insert before paragraph 7:
+
+::: std
+
+::: addu
+
+[7pre]{.pnum}
+Let F denote a standard library function, member function, or function template.
+If F does not designate an addressable function, it is unspecified if or how a reflection value designating the associated entity can be formed.
+[ E.g., `std::meta::members_of` might not produce reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
+
+:::
+
+:::
+
+
 ### [meta.type.synop]{.sref} Header `<type_traits>` synopsis
 
 Add a new primary type category type trait:
