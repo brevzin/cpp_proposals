@@ -3841,9 +3841,15 @@ namespace std::meta {
 =======
   // [meta.reflection.define_class], class definition generation
   struct data_member_options_t {
-    optional<string_view> name;
-    bool is_static = false;
-    bool no_unique_address = false;
+    struct name_type {
+      template <typename T> requires constructible_from<u8string, T>
+        consteval name_type(T &&);
+
+      template <typename T> requires constructible_from<string, T>
+        consteval name_type(T &&);
+    };
+
+    optional<name_type> name;
     optional<int> alignment;
     optional<int> width;
   };
@@ -4660,11 +4666,22 @@ namespace std::meta {
 
 [#]{.pnum} Let `$d1$`, `$d2$`, ..., `$dN$` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `$t1$`, `$t2$`, ... `$tN$` and `option` values `$o1$`, `$o2$`, ... `$oN$` respectively.  
 
-[#]{.pnum} *Mandates*: `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.  `$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.  If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.  If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, 
+[#]{.pnum} *Mandates*: `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.  `$t1$`, `$t2$`, ... `$tN$` designate types that are valid types for data members.  If `$oK$.width` (for some `$K$`) contains a value `$w$`, the corresponding type `$tK$` is a valid type for bit field of width `$w$`.  If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, `alginas($a$)` is a valid `$alignment-specifier$` for a nonstatic data member of type `$tK$`.
 
 [#]{.pnum} [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
 
-[#]{.pnum} *Effects*: Defines `class_type` with properties as follows. If `class_type` designates a specialization of a class template, the specialization is explicitly specialized.    Nonstatic data members are declared in the definition of `class_type` according to `$d1$`, `$d2$`, ..., `$dN$`, in that order. The type of the respective members are `$t1$`, `$t2$`, ... `$tN$`.  If `$oK$.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.  If the corresponding type `$tK$` is invalid for a bit field of that width, the call fails to evaluate to constant expression.
+[#]{.pnum} *Effects*:
+Defines `class_type` with properties as follows.
+If `class_type` designates a specialization of a class template, the specialization is explicitly specialized.
+Nonstatic data members are declared in the definition of `class_type` according to `$d1$`, `$d2$`, ..., `$dN$`, in that order.
+The type of the respective members are the types denoted by the reflection values `$t1$`, `$t2$`, ... `$tN$`.
+If `$oK$.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
+If `$oK$.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is aligned as if declared with `alignas($a$)`.
+If `$oK$.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
+Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `$oK$.name`.
+If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
+If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
+
 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
