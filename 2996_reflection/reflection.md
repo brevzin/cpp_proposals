@@ -2266,7 +2266,7 @@ namespace std::meta {
   consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
   consteval auto accessible_static_data_members_of(info target,
                                                    info from) -> vector<info>;
-  consteval auto accessible_subobjects_of(acess_pair p) -> vector<info>;
+  consteval auto accessible_subobjects_of(access_pair p) -> vector<info>;
   consteval auto accessible_subobjects_of(info target,
                                          info from) -> vector<info>;
 
@@ -3217,7 +3217,7 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 
 [#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
 
-[#]{.pnum} For a `$splice-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function which is not a constructor or destructor, a non-static data member, or an enumerator, or a structured binding, the expression is an lvalue denoting the reflected entity. If the converted `$constant-expression$` evaluates to a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity. [Acess checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
+[#]{.pnum} For a `$splice-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function which is not a constructor or destructor, a non-static data member, or an enumerator, or a structured binding, the expression is an lvalue denoting the reflected entity. If the converted `$constant-expression$` evaluates to a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity. [Access checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
 
 [#]{.pnum} Otherwise, for a `$splice-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of a value, and the expression shall be a prvalue whose evaluation computes the reflected value.
 :::
@@ -3997,7 +3997,7 @@ namespace std::meta {
   consteval vector<info> accessible_nonstatic_data_members_of(info target, info from);
   consteval vector<info> accessible_static_data_members_of(access_pair p);
   consteval vector<info> accessible_static_data_members_of(info target, info from);
-  consteval vector<info> accessible_subobjects_of(acess_pair p);
+  consteval vector<info> accessible_subobjects_of(access_pair p);
   consteval vector<info> accessible_subobjects_of(info target, info from);
 
   // [meta.reflection.layout], reflection layout queries
@@ -4657,7 +4657,7 @@ consteval vector<info> accessible_static_data_members_of(info target,
 [#]{.pnum} *Effects*: Equivalent to: `return accessible_static_data_members_of({target, from});`
 
 ```cpp
-consteval vector<info> accessible_subobjects_of(acess_pair p);
+consteval vector<info> accessible_subobjects_of(access_pair p);
 ```
 
 [#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(p)` followed by all the reflections in `accessible_nonstatic_data_members_of(p)`.
