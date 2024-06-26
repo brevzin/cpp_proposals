@@ -29,6 +29,7 @@ tag: constexpr
 Since [@P2996R4]:
 
 * removed filters from query functions
+* removed `test_trait`
 
 Since [@P2996R3]:
 
@@ -1285,7 +1286,7 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (test_trait(^std::predicate, {type_of(Pred), ^std::meta::info}))
+  requires (extract<bool>(substitute(^std::predicate, {type_of(Pred), ^std::meta::info})))
 struct metatype {
   std::meta::info value;
 
@@ -2258,11 +2259,6 @@ namespace std::meta {
   template <typename T>
     consteval auto extract(info) -> T;
 
-  // @[test_trait](#test_trait)@
-  consteval auto test_trait(info templ, info type) -> bool;
-  template <reflection_range R = span<info const>>
-  consteval auto test_trait(info templ, R&& arguments) -> bool;
-
   // other type predicates (see @[the wording](#meta.reflection.queries-reflection-queries)@)
   consteval auto is_public(info r) -> bool;
   consteval auto is_protected(info r) -> bool;
@@ -2671,37 +2667,6 @@ For other reflection values `r`, `extrace<T>(r)` is ill-formed.
 The function template `extract` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity reflected by its operand.
 
-### `test_trait`
-
-::: std
-```c++
-namespace std::meta {
-  consteval auto test_trait(info templ, info type) -> bool {
-    return test_trait(templ, {type});
-  }
-
-  template <reflection_range R = span<info const>>
-  consteval auto test_trait(info templ, R&& types) -> bool {
-    return extract<bool>(substitute(templ, (R&&)types));
-  }
-}
-```
-:::
-
-This utility translates existing metaprogramming predicates (expressed as constexpr variable templates or concept templates) to the reflection domain.
-For example:
-
-::: std
-```c++
-struct S {};
-static_assert(test_trait(^std::is_class_v, ^S));
-static_assert(test_trait(^std::is_same_v, {^S, ^S})
-```
-:::
-
-An implementation is permitted to recognize standard predicate templates and implement `test_trait` without actually instantiating the predicate template.
-In fact, that is recommended practice.
-
 ### `data_member_spec`, `define_class`
 
 ::: std
@@ -2852,7 +2817,6 @@ std::meta::type_is_const(type)
 
 ```cpp
 std::meta::extract<bool>(std::meta::substitute(^std::is_const_v, {type}))
-std::meta::test_trait(^std::is_const_v, type)
 ```
 :::
 
@@ -3963,10 +3927,6 @@ namespace std::meta {
   template <reflection_range R = span<info const>>
     consteval info substitute(info templ, R&& arguments);
 
-  consteval bool test_trait(info templ, info type);
-  template <reflection_range R = span<info const>>
-    consteval bool test_trait(info templ, R&& arguments);
-
   // [meta.reflection.result], expression result reflection
   template <class R>
     concept reflection_range = $see below$;
@@ -4713,19 +4673,6 @@ consteval info substitute(info templ, R&& arguments);
 [#]{.pnum} Let `Z` be the template designated by `templ` and let `Args...` be the sequence of entities or aliases designated by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `^Z<Args...>`.
-
-```cpp
-consteval bool test_trait(info templ, info type);
-```
-
-[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, {type}));`
-
-```cpp
-template <reflection_range R = span<info const>>
-consteval bool test_trait(info templ, R&& arguments);
-```
-
-[#]{.pnum} *Effects*: Equivalent to `return extract<bool>(substitute(templ, arguments));`
 
 :::
 :::
