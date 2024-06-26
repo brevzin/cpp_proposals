@@ -4684,48 +4684,6 @@ If `class_type` is a union type and any of its members is not trivially default 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
 
-`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. If no `name` is provided, the name of the data member is unspecified. If `is_static` is `true`, the data member is declared `static`.
-
-`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and it completes the given class type with data members as described (in the given order).
-The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
-
-For example:
-
-::: std
-```c++
-union U;
-static_assert(is_type(define_class(^U, {
-  data_member_spec(^int),
-  data_member_spec(^char),
-  data_member_spec(^double),
-})));
-
-// U is now defined to the equivalent of
-// union U {
-//   int $_0$;
-//   char $_1$;
-//   double $_2$;
-// };
-
-template<typename T> struct S;
-constexpr auto U = define_class(^S<int>, {
-  data_member_spec(^int, {.name="i", .align=64}),
-  data_member_spec(^int, {.name="j", .align=64}),
-});
-
-// S<int> is now defined to the equivalent of
-// template<> struct S<int> {
-//   alignas(64) int i;
-//   alignas(64) int j;
-// };
-```
-:::
-
-When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
-This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
-
-If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
-
 
 ### [meta.reflection.unary] Unary type traits  {-}
 
