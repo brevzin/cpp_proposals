@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R4
+document: P2996R5
 date: today
 audience: EWG, LEWG
 author:
@@ -25,6 +25,10 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P2996R4]:
+
+* removed filters from query functions
 
 Since [@P2996R3]:
 
@@ -2197,10 +2201,8 @@ namespace std::meta {
   consteval auto template_arguments_of(info r) -> vector<info>;
 
   // @[member queries](#member-queries)@
-  template<typename ...Fs>
-    consteval auto members_of(info type_class, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto bases_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto members_of(info type_class) -> vector<info>;
+  consteval auto bases_of(info type_class) -> vector<info>;
   consteval auto static_data_members_of(info type_class) -> vector<info>;
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
   consteval auto subobjects_of(info type_class) -> vector<info>;
@@ -2216,34 +2218,13 @@ namespace std::meta {
   consteval auto is_accessible(access_pair p) -> bool;
   consteval auto is_accessible(info r, info from);
 
-  template <typename Pred>
-    consteval auto accessible_members_of(access_pair p, Pred pred);
-  template <typename Pred>
-    consteval auto accessible_members_of(info target, info from, Pred pred);
-  template <typename... Preds>
-    consteval auto accessible_members_of(access_pair p,
-                                         Preds... preds) -> vector<info>;
-  template <typename... Preds>
-    consteval auto accessible_members_of(info target, info from,
-                                         Preds... preds) -> vector<info>;
   consteval auto accessible_members_of(access_pair p) -> vector<info>;
   consteval auto accessible_members_of(info target, info from) -> vector<info>;
 
-  template <typename Pred>
-    consteval auto accessible_bases_of(access_pair p, Pred pred);
-  template <typename Pred>
-    consteval auto accessible_bases_of(info target, info from, Pred pred);
-  template <typename... Preds>
-    consteval auto accessible_bases_of(access_pair p,
-                                       Preds... preds) -> vector<info>;
-  template <typename... Preds>
-    consteval auto accessible_bases_of(info target, info from,
-                                       Preds... preds) -> vector<info>;
   consteval auto accessible_bases_of(access_pair p) -> vector<info>;
   consteval auto accessible_bases_of(info target, info from) -> vector<info>;
 
-  consteval auto accessible_nonstatic_data_members_of(access_pair p)
-      -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(access_pair p) -> vector<info>;
   consteval auto accessible_nonstatic_data_members_of(info target,
                                                       info from) -> vector<info>;
   consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
@@ -2473,19 +2454,11 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 ::: std
 ```c++
 namespace std::meta {
-  template<typename ...Fs>
-    consteval auto members_of(info type_class, Fs ...filters) -> vector<info>;
+  consteval auto members_of(info type_class) -> vector<info>;
+  consteval auto bases_of(info type_class) -> vector<info>;
 
-  template<typename ...Fs>
-    consteval auto bases_of(info type_class, Fs ...filters) -> vector<info>;
-
-  consteval auto static_data_members_of(info type_class) -> vector<info> {
-    return members_of(type_class, is_variable);
-  }
-
-  consteval auto nonstatic_data_members_of(info type_class) -> vector<info> {
-    return members_of(type_class, is_nonstatic_data_member);
-  }
+  consteval auto static_data_members_of(info type_class) -> vector<info>;
+  consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
 
   consteval auto subobjects_of(info type_class) -> vector<info> {
     auto subobjects = bases_of(type_class);
@@ -2502,12 +2475,10 @@ The template `members_of` returns a vector of reflections representing the direc
 Any non-static data members appear in declaration order within that vector.
 Anonymous unions appear as a non-static data member of corresponding union type.
 Reflections of structured bindings shall not appear in the returned vector.
-If any `Filters...` argument is specified, a member is dropped from the result if any filter applied to that members reflection returns `false`.
-E.g., `members_of(^C, std::meta::is_type)` will only return types nested in the definition of `C` and `members_of(^C, std::meta::is_type, std::meta::is_variable)` will return an empty vector since a member cannot be both a type and a variable.
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
-`static_data_members_of` and `nonstatic_data_members_of` return the equivalent of `members_of(^C, std::meta::is_nonstatic_data_member)` and `members_of(^C, std::meta::is_variable)`, respectively.
+`static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, in order, respectively. 
 
 `subobjects_of` returns the base class subobjects and the non-static data members of a type, in declaration order. Note that the term [subobject](https://eel.is/c++draft/intro.object#def:subobject) also includes _array elements_, which we are excluding here. Such reflections would currently be of minimal use since you could not splice them with access (e.g. `arr.[:elem:]` is not supported), so would need some more thought first.
 
@@ -2526,15 +2497,11 @@ namespace std::meta {
 
   consteval auto is_accessible(access_pair p) -> bool;
 
-  template<typename ...Fs>
-    consteval auto accessible_members_of(access_pair p, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto accessible_members_of(info target, info from, Fs ...filters) -> vector<info>;
+  consteval auto accessible_members_of(access_pair p) -> vector<info>;
+  consteval auto accessible_members_of(info target, info from) -> vector<info>;
 
-  template<typename ...Fs>
-    consteval auto accessible_bases_of(access_pair p, Fs ...filters) -> vector<info>;
-  template<typename ...Fs>
-    consteval auto accessible_bases_of(info target, info from, Fs ...filters) -> vector<info>;
+  consteval auto accessible_bases_of(access_pair p) -> vector<info>;
+  consteval auto accessible_bases_of(info target, info from) -> vector<info>;
 
   consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
   consteval auto accessible_static_data_members_of(info target, info from) -> vector<info>;
@@ -3949,10 +3916,8 @@ namespace std::meta {
   consteval vector<info> template_arguments_of(info r);
 
   // [meta.reflection.member.queries], reflection member queries
-  template<class... Fs>
-    consteval vector<info> members_of(info type, Fs... filters);
-  template<class... Fs>
-    consteval vector<info> bases_of(info type, Fs... filters);
+  consteval vector<info> members_of(info type);
+  consteval vector<info> bases_of(info type);
   consteval vector<info> static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
   consteval vector<info> subobjects_of(info type);
@@ -3968,15 +3933,11 @@ namespace std::meta {
   consteval bool is_accessible(access_pair p);
   consteval bool is_accessible(info r, info from);
 
-  template <typename... Preds>
-    consteval vector<info> accessible_members_of(access_pair p, Preds... preds);
-  template <typename... Preds>
-    consteval vector<info> accessible_members_of(info target, info from, Preds... preds);
+  consteval vector<info> accessible_members_of(access_pair p);
+  consteval vector<info> accessible_members_of(info target, info from);
 
-  template <typename... Preds>
-    consteval vector<info> accessible_bases_of(access_pair p, Preds... preds);
-  template <typename... Preds>
-    consteval vector<info> accessible_bases_of(info target, info from, Preds... preds);
+  consteval vector<info> accessible_bases_of(access_pair p);
+  consteval vector<info> accessible_bases_of(info target, info from);
 
   consteval vector<info> accessible_nonstatic_data_members_of(access_pair p);
   consteval vector<info> accessible_nonstatic_data_members_of(info target, info from);
@@ -4486,40 +4447,38 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 ::: std
 ::: addu
 ```cpp
-template<class... Fs>
-  consteval vector<info> members_of(info r, Fs... filters);
+consteval vector<info> members_of(info r);
 ```
 
-[#]{.pnum} *Mandates*: `r` is a reflection designating either a complete class type or a namespace and `(std::predicate<Fs, info> && ...)` is `true`.
+[#]{.pnum} *Mandates*: `r` is a reflection designating either a complete class type or a namespace.
 
 [#]{.pnum} *Effects*: If `dealias(r)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r` such that `(filters(m) && ...)` is `true`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, designated by `r`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
-template<class... Fs>
-  consteval vector<info> bases_of(info type, Fs... filters);
+consteval vector<info> bases_of(info type);
 ```
 
-[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type and `(std::predicate<Fs, info> && ...)` is `true`.
+[#]{.pnum} *Mandates*: `type` is a reflection designating a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C` such that `(filters(b) && ...)` is `true`.
+[#]{.pnum} *Returns*: Let `C` be the type designated by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C`.
 The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_variable);`
+[#]{.pnum} *Returns*: `members_of(type) | views::filter(is_variable) | ranges::to<vector>()`
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return members_of(type, is_nonstatic_data_member);`
+[#]{.pnum} *Returns*: `members_of(type) | views::filter(is_nonstatic_data_member) | ranges::to<vector>()`
 
 ```cpp
 consteval vector<info> subobjects_of(info type);
@@ -4566,62 +4525,54 @@ consteval bool is_accessible(info target, info from);
 [#]{.pnum} *Effects*: Equivalent to: `return is_accessible({target, from});`
 
 ```cpp
-template <typename... Preds>
-  consteval vector<info> accessible_members_of(access_pair p,
-                                               Preds... preds);
+consteval vector<info> accessible_members_of(access_pair p);
 ```
 
 [#]{.pnum} *Mandates*: `p.target` is a reflection designating a complete class type. `p.from` designates a function, class, or namespace.
 
-[#]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Returns*: `
 ```cpp
-    return members_of(p.target,
-                      [&](info r) { return is_accessible({r, p.from}); },
-                      preds...);
+members_of(p.target)
+| views::filter([&](info r) { return is_accessible({r, p.from}); })
+| ranges::to<vector>()
 ```
 
 ```cpp
-template <typename... Preds>
-  consteval vector<info> accessible_members_of(info target,
-                                               info from,
-                                               Preds... preds);
+consteval vector<info> accessible_members_of(info target,
+                                             info from);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_members_of({target, from}, preds...);`
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_members_of({target, from});`
 
 ```cpp
-template <typename... Preds>
-  consteval vector<info> accessible_bases_of(access_pair p,
-                                             Preds... preds);
+consteval vector<info> accessible_bases_of(access_pair p);
 ```
 
 [#]{.pnum} *Mandates*: `p.target` is a reflection designating a complete class type. `p.from` designates a function, class, or namespace.
 
-[#]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Returns*:
 ```cpp
-    return bases_of(p.target,
-                      [&](info r) { return is_accessible({r, p.from}); },
-                      preds...);
+bases_of(p.target)
+| views::filter([&](info r) { return is_accessible({r, p.from}); })
+| ranges::to<vector>()
 ```
 
 ```cpp
-template <typename... Preds>
-  consteval vector<info> accessible_bases_of(info target,
-                                             info from,
-                                             Preds... preds);
+consteval vector<info> accessible_bases_of(info target,
+                                           info from);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_bases_of({target, from}, preds...);`
+[#]{.pnum} *Effects*: Equivalent to: `return accessible_bases_of({target, from});`
 
 ```cpp
 consteval vector<info> accessible_nonstatic_data_members_of(access_pair p);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Returns*: Equivalent to:
 ```cpp
-    return accessible_members_of(p.target,
-                                 std::meta::is_nonstatic_data_member,
-                                 preds...);
+return accessible_members_of(p)
+| views::filter(is_nonstatic_data_member)
+| ranges::to<vector>()
 ```
 
 ```cpp
@@ -4635,10 +4586,11 @@ consteval vector<info> accessible_nonstatic_data_members_of(info target,
 consteval vector<info> accessible_static_data_members_of(access_pair p);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Returns*:
 ```cpp
-    return accessible_members_of(p.target,
-                                 std::meta::is_static_data_member);
+accessible_members_of(p)
+| views::filter(is_static_data_member)
+| ranges::to<vector>()
 ```
 
 ```cpp
