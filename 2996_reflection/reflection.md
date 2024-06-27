@@ -5131,6 +5131,21 @@ and [version.syn]{.sref}:
 
 ---
 references:
+  - id: P2996R4
+    citation-label: P2996R4
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2024
+        month: 06
+        day: 26
+    URL: https://wg21.link/p2996r4
   - id: P1306R2
     citation-label: P1306R2
     title: "Expansion statements"
