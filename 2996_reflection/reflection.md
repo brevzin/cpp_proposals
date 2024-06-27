@@ -1,8 +1,8 @@
 ---
 title: "Reflection for C++26"
-document: P2996R5
+document: D2996R5
 date: today
-audience: EWG, LEWG
+audience: CWG, LEWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
@@ -2986,20 +2986,22 @@ Add a bullet to paragraph 3 of [basic.lookup.argdep]{.sref} as follows [this mus
 
 ### [basic.lookup.qual.general]{.sref} General {-}
 
-Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-name-qualifer$`:
+FIXME. Have to handle splices in here, because they're not actually "component names". Now `$splice-namespace-qualifier$` is only a namespace too.
+
+Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-namespace-qualifier$`:
 
 ::: std
-[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-name-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
+[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-namespace-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
 
 [2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
 
 * [2.1]{.pnum} an *unqualified-id* or
-* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-name-qualifier$ ::`]{.addu}
+* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-namespace-qualifier$ ::`]{.addu}
 
 in the *id-expression* of a class member access expression ([expr.ref]). [...]
 :::
 
-### [basic.link] Program and Linkage {-}
+### [basic.link]{.sref} Program and Linkage {-}
 
 Add a bullet to paragraph 4, and renumber accordingly:
 
@@ -3055,10 +3057,29 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 ::: std
 ::: addu
 
-[*]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a value, an object, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
+[17 - 2]{.pnum} A value of type `std::meta::info` is called a _reflection_ and represents a language element such as a type, a value, an object, a non-static data member, etc. An expression convertible to `std::meta::info` is said to _reflect_ the language element represented by the resulting value; the language element is said to be _reflected by_ the expression.
 `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 [Reflections are only meaningful during translation.
 The notion of consteval-only types (see [basic.types.general]{.sref}) exists to diagnose attempts at using such values outside the translation process.]{.note}
+
+[17 - 1]{.pnum} Every value of type `std::meta::info` is either a reflection of:
+
+* a value,
+* an object,
+* a reference,
+* a structured bindings,
+* a function,
+* an enumerator,
+* a type,
+* a class member,
+* a bit-field,
+* a template,
+* a template specialization,
+* a namespace,
+* a pack,
+* an alias or description of any of the above,
+* a base specifier, or
+* a *null reflection value*.
 
 :::
 :::
@@ -3078,11 +3099,43 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
      $fold-expression$
      $requires-expression$
 +    $splice-expression$
-+
-+ $splice-expression$
-+    [: $constant-expression$ :]
-+    template[: $constant-expression$ :] < $template-argument-list$@~_opt_~@ >
 ```
+:::
+
+### 7.5.4.0* [expr.prim.id.splice] Splice specifiers {-}
+
+FIXME: The wording here, and usage throughout.
+
+Add a new grammar term for convenience:
+
+::: std
+::: addu
+```
+$splice-specifier$:
+  [: $constant-expression$ :]
+```
+
+[1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression ([expr.const]) contextually convertible to `std::meta::info`.
+
+[2]{.pnum} Let `E` be the value of the converted `$constant-expression$`. A `$splice-specifier$` designates what `E` represents. 
+:::
+:::
+
+### [expr.prim.id.general]{.sref} General {-}
+
+Add a carve-out for reflection in [expr.prim.id.general]{.sref}/4:
+
+::: std
+[4]{.pnum} An `$id-expression$` that denotes a non-static data member or implicit object member function of a class can only be used: 
+
+* [4.#]{.pnum} as part of a class member access (after any implicit transformation (see above)) in which the object expression refers to the member's class or a class derived from that class, or
+
+::: addu
+* [4.#]{.pnum} as an operand to the reflection operator ([expr.reflect]), or
+:::
+
+* [4.#]{.pnum} to form a pointer to member ([expr.unary.op]), or
+* [4.#]{.pnum} if that id-expression denotes a non-static data member and it appears in an unevaluated operand. 
 :::
 
 ### [expr.prim.id.qual]{.sref} Qualified names {-}
@@ -3096,26 +3149,27 @@ Add a production to the grammar for `$nested-name-specifier$` as follows:
       $type-name$ ::
       $namespace-name$ ::
       $computed-type-specifier$ ::
-+     $splice-name-qualifier$ ::
++     $splice-namespace-qualifier$ ::
       $nested-name-specifier$ $identifier$ ::
       $nested-name-specifier$ template@~_opt_~@ $simple-template-id$ ::
 +
-+ $splice-name-qualifier$:
++ $splice-namespace-qualifier$:
 +     [: $constant-expression$ :]
 ```
 :::
 
-Extend [expr.prim.id.qual]{.sref}/1 to also cover splices:
+Add a restriction to [expr.prim.id.qual]{.sref} for the constraint on `$constant-expression$`.
 
 ::: std
-[1]{.pnum} The component names of a `$qualified-id$` are those of its `$nested-name-specifier$` and `$unqualified-id$`. The component names of a `$nested-name-specifier$` are its `$identifier$` (if any) and those of its `$type-name$`, `$namespace-name$`, `$simple-template-id$`, [and/or]{.rm} `$nested-name-specifier$`[, and/or the `$type-name$` or `$namespace-name$` of the entity reflected by the `$constant-expression$` of its `$splice-name-qualifier$`. For a `$nested-name-specifier$` having a `$splice-name-qualifier$` with a `$constant-expression$` that reflects the global namespace, the component names are the same as for `::`. The `$constant-expression$` of a `$splice-name-qualifier$` shall be a reflection of either a `$type-name$`, `$namespace-name$`, or the global namespace]{.addu}.
-
+::: addu
+[0]{.pnum} For a `$splice-namespace-qualifier$`, the `$constant-expression$` shall be a converted constant expression of type `std::meta::info` that is a reflection of either a namespace or a namespace alias.
+:::
 :::
 
 Extend [expr.prim.id.qual]{.sref}/3 to also cover splices:
 
 ::: std
-[3]{.pnum} The `$nested-name-specifier$` `​::`​ nominates the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` nominates the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-name-qualifier$` nominates the entity reflected by the `$constant-expression$` of the `$splice-name-qualifier$`.]{.addu} If a nested-name-specifier N is declarative and has a simple-template-id with a template argument list A that involves a template parameter, let T be the template nominated by N without A. T shall be a class template.
+[3]{.pnum} The `$nested-name-specifier$` `​::`​ nominates the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` nominates the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-namespace-qualifier$` nominates the entity reflected by the `$constant-expression$` of the `$splice-namespace-qualifier$`.]{.addu} If a nested-name-specifier N is declarative and has a simple-template-id with a template argument list A that involves a template parameter, let T be the template nominated by N without A. T shall be a class template.
 
 ...
 
@@ -3129,11 +3183,23 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 ::: addu
 **Expression Splicing   [expr.prim.splice]**
 
-[#]{.pnum} For a `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` the `$constant-expression$` shall be a converted constant expression ([expr.const]{.sref}) of type `std::meta::info`.
+FIXME: text for the template version.
 
-[#]{.pnum} For a `$splice-expression$` of the form `[: $constant-expression$ :]` where the converted `$constant-expression$` evaluates to a reflection for an object, a function which is not a constructor or destructor, a non-static data member, or an enumerator, or a structured binding, the expression is an lvalue denoting the reflected entity. If the converted `$constant-expression$` evaluates to a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity. [Access checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
+```
+$splice-expression$:
+   $splice-specifier$
+   template $splice-specifier$ < $template-argument-list$@~_opt_~@ >
+```
 
-[#]{.pnum} Otherwise, for a `$splice-expression$` of the form `[: $constant-expression$ :]` the converted `$constant-expression$` shall evaluate to a reflection of a value, and the expression shall be a prvalue whose evaluation computes the reflected value.
+[#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `E` be the value of the converted `$constant-expression$` of the `$splice-specifier$`.
+
+* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, a non-static data member, or a structured binding, the expression is an lvalue denoting the reflected entity.
+
+* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity. 
+
+* [#.#]{.pnum} Otherwise, `E` shall be a reflection of a value or an enumerator, and the expression is a prvalue whose evaluation computes the reflected value.
+
+[Access checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
 :::
 :::
 
@@ -3153,7 +3219,7 @@ Add a production to `$postfix-expression$` for splices in member access expressi
 ```
 :::
 
-### [expr.ref] Class member access {-}
+### [expr.ref]{.sref} Class member access {-}
 
 Modify paragraph 1 to account for splices in member access expressions:
 
@@ -3177,7 +3243,7 @@ Modify paragraph 3 to account for splices in member access expressions:
 Modify paragraph 4 to account for splices in member access expressions:
 
 ::: std
-[4]{.pnum} Abbreviating [`$postfix-expression$`.`$id-expression$`]{.rm} [`$postfix-expression$.EXPR`, where `EXPR` is the `$id-expression$` or `$splice-expression$` following the dot,]{.addu} as `E1.E2`, `E1` is called the `$object expression$`. If the object expression is of scalar type, `E2` shall name the pseudo-destructor of that same type (ignoring cv-qualifications) and `E1.E2` is a prvalue of type “function of () returning `void`”.
+[4]{.pnum} Abbreviating [`$postfix-expression$`.`$id-expression$`]{.rm} [`$postfix-expression$.EXPR`, where `EXPR` is the `$id-expression$` or `$splice-expression$` following the dot,]{.addu} as `E1.E2`, `E1` is called the `$object expression$`. If the object expression is of scalar type, `E2` shall [name]{.rm} [designate]{.addu} the pseudo-destructor of that same type (ignoring cv-qualifications) and `E1.E2` is a prvalue of type “function of () returning `void`”.
 
 :::
 
@@ -3192,14 +3258,6 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
      ...
      $delete-expression$
 +    $reflect-expression$
-
-+ $reflect-expression$:
-+    ^ ::
-+    ^ $namespace-name$
-+    ^ $nested-name-specifier$@~_opt_~@ $template-name$
-+    ^ $nested-name-specifier$@~_opt_~@ $concept-name$
-+    ^ $type-id$
-+    ^ $id-expression$
 ```
 :::
 
@@ -3211,10 +3269,19 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 ::: addu
 **The Reflection Operator   [expr.reflect]**
 
-[#]{.pnum} The unary `^` operator (called _the reflection operator_) produces a prvalue --- called a _reflection_ --- whose type is the reflection type (i.e., `std::meta::info`).
-That reflection represents its operand.
+FIXME: `$template-name$` and `$id-expression$` can both refer to template names, have to handle this better. See wording in the template argument parsing section.
 
-[#]{.pnum} Every value of type `std::meta::info` is either a reflection of some entity (or description thereof) or a *null reflection value*.
+```
+$reflect-expression$:
+   ^ ::
+   ^ $nested-name-specifier$@~_opt_~@ $namespace-name$
+   ^ $nested-name-specifier$@~_opt_~@ $template-name$
+   ^ $nested-name-specifier$@~_opt_~@ $concept-name$
+   ^ $type-id$
+   ^ $id-expression$
+```
+
+[#]{.pnum} The unary `^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info`. The result is called a _reflection_ and it represents its operand.
 
 [#]{.pnum} A _reflect-expression_ is parsed as the longest possible sequence of tokens that could syntactically form a _reflect-expression_.
 
@@ -3227,12 +3294,12 @@ static_assert(is_type(^int()));    // ^ applies to the type-id "int()"
 template<bool> struct X {};
 bool operator<(std::meta::info, X<false>);
 consteval void g(std::meta::info r, X<false> xv) {
-  if (r == ^int && true);    // error: ^ applies to the type-id "int&&"
-  if (r == ^int & true);     // error: ^ applies to the type-id "int&"
-  if (r == (^int) && true);  // OK
-  if (r == ^int &&&& true);  // OK
-  if (^X < xv);       // error: < starts template argument list
-  if ((^X) < xv);     // OK
+  r == ^int && true;    // error: ^ applies to the type-id "int&&"
+  r == ^int & true;     // error: ^ applies to the type-id "int&"
+  r == (^int) && true;  // OK
+  r == ^int &&&& true;  // OK
+  ^X < xv;              // error: < starts template argument list
+  (^X) < xv;            // OK
 }
 
 
@@ -3246,14 +3313,23 @@ When applied to a `$namespace-name$`, the reflection operator produces a reflect
 
 [#]{.pnum} When applied to a `$concept-name$`, the reflection operator produces a reflection for the indicated concept.
 
-[#]{.pnum} When applied to a `$type-id$`, the reflection operator produces a reflection for the indicated type or type alias.
+[#]{.pnum} When applied to a `$type-id$`, the reflection operator produces a reflection for the indicated type alias if the `$type-id$` is a `$typedef-name$`, otherwise a reflection of the indicated type.
 
-[#]{.pnum} When applied to an lvalue `$id-expression$` ([expr.prim.id]{.sref}), the reflection operator produces a reflection of the variable, function, enumerator constant, or non-static member designated by the operand.
+[#]{.pnum} When applied to an `$id-expression$`, the reflection operator produces a reflection as follows:
+
+* [#.#]{.pnum} When applied to an enumerator, the reflection operator produces a reflection of the enumerator designated by the operand.
+
+* [#.#]{.pnum} Otherwise, when applied to an overload set `S`, if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
+
+* [#.#]{.pnum} Otherwise, when applied to one of
+
+  * [#.#.#]{.pnum} a non-type template parameter of non-class and non-reference type or
+  * [#.#.#]{.pnum} a `$pack-index-expression$` of non-class and non-reference type
+
+  the reflection operator produces a reflection of the value computed by the operand.
+
+* [#.#]{.pnum} Otherwise, the reflection operator produces a reflection of the variable, function, or non-static member designated by the operand.
 The `$id-expression$` is not evaluated.
-
-* [#.#]{.pnum} If this `$id-expression$` names an overload set `S`, and if the assignment of `S` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `F` from `S`, the result is a reflection of `F`. Otherwise, the expression `^S` is ill-formed.
-
-[#]{.pnum} When applied to a prvalue `$id-expression$`, the reflection operator produces a reflection of the value computed by the operand [An `$id-expression$` naming a non-type template parameter of non-class and non-reference type is a prvalue.]{.note}
 
 ::: example
 ```cpp
@@ -3274,10 +3350,10 @@ constexpr auto r = ^std::vector;  // OK
 
 ### [expr.eq]{.sref} Equality Operators {-}
 
-Extend [expr.eq]{.sref}/2 to also handle `std::meta::info:
+Extend [expr.eq]{.sref}/2 to also handle `std::meta::info`:
 
 ::: std
-[2]{.pnum} The converted operands shall have arithmetic, enumeration, pointer, or pointer-to-member type, or [type]{.rm} [types `std::meta::info` or ]{.addu} `std​::​nullptr_t`. The operators `==` and `!=` both yield `true` or `false`, i.e., a result of type `bool`. In each case below, the operands shall have the same type after the specified conversions have been applied.
+[2]{.pnum} The converted operands shall have arithmetic, enumeration, pointer, or pointer-to-member type, or [type]{.rm} [one of the types `std::meta::info` or ]{.addu} `std​::​nullptr_t`. The operators `==` and `!=` both yield `true` or `false`, i.e., a result of type `bool`. In each case below, the operands shall have the same type after the specified conversions have been applied.
 
 :::
 
@@ -3293,10 +3369,12 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
 * [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if their reflected aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
+* [*.#]{.pnum} Otherwise, if both operands are reflections of a base class specifier, then they compare equal if they are reflections of the same base class specifier.
+* [*.#]{.pnum} Otherwise, if one operand is a reflection of a base class specifier and the other is not, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if neither operand is a reflection of a value, then they compare equal if they are reflections of the same entity.
 * [*.#]{.pnum} Otherwise, if one operand is a reflection of a value and the other is not, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
-* [*.#]{.pnum} Otherwise the result is unspecified.
+* [*.#]{.pnum} Otherwise the result is unspecified. [For example, if the operands are results of calls to `data_member_spec`]{.note}
 :::
 
 [6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
@@ -3317,7 +3395,7 @@ Add a new paragraph after the definition of _manifestly constant-evaluated_ [exp
 * [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
 * [#.#]{.pnum} an immediate invocation, unless it
 
-  * [#.#.#]{.pnum} results from the substitution of template parameters in a concept-id ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
+  * [#.#.#]{.pnum} results from the substitution of template parameters in a `$concept-id$` ([temp.names]{.sref}), a `$requires-expression$` ([expr.prim.req]{.sref}), or during template argument deduction ([temp.deduct]{.sref}), or
   * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
 
 
@@ -3471,7 +3549,7 @@ Modify the grammar for `$using-directive$` as follows:
 +    $splice-namespace-name$
 +
   $using-directive$:
--    $attribute-specifier-seq$@~_opt_~@ using namespace $nested-name-specifier@~_opt_~@ $namespace-name$
+-    $attribute-specifier-seq$@~_opt_~@ using namespace $nested-name-specifier$@~_opt_~@ $namespace-name$
 +    $attribute-specifier-seq$@~_opt_~@ using namespace $namespace-declarator$
 ```
 :::
