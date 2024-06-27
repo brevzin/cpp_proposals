@@ -4611,7 +4611,7 @@ consteval size_t bit_offset_of(info r);
 
 [#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity reflected by `r`.
 
-[#]{.pnum} *Returns*: `V - offset_of(r) * 8`.
+[#]{.pnum} *Returns*: `V - offset_of(r) * CHAR_BIT`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
