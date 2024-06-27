@@ -6453,7 +6453,15 @@ defined as defaulted ([dcl.fct.def.default]). Otherwise,
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp">r</code> designates a member function that
 is declared explicit. Otherwise,
-<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<code class="sourceCode cpp"><span class="kw">false</span></code>. <span class="note"><span>[ <em>Note 1:</em> </span>If
+<code class="sourceCode cpp">r</code> designates a member function
+template that is declared
+<code class="sourceCode cpp"><span class="kw">explicit</span></code>,
+<code class="sourceCode cpp">is_explicit<span class="op">(</span>r<span class="op">)</span></code>
+is still
+<code class="sourceCode cpp"><span class="kw">false</span></code>
+because in general such queries for templates cannot be answered.<span>
+— <em>end note</em> ]</span></span></p>
 <div class="sourceCode" id="cb139"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_noexcept<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_128" id="pnum_128">8</a></span>
 <em>Returns</em>:
@@ -6469,7 +6477,15 @@ value of any of the previously mentioned types, or a function that is
 declared
 <code class="sourceCode cpp"><span class="kw">noexcept</span></code>.
 Otherwise,
-<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<code class="sourceCode cpp"><span class="kw">false</span></code>. <span class="note"><span>[ <em>Note 2:</em> </span>If
+<code class="sourceCode cpp">r</code> designates a function template
+that is declared
+<code class="sourceCode cpp"><span class="kw">noexcept</span></code>,
+<code class="sourceCode cpp">is_noexcept<span class="op">(</span>r<span class="op">)</span></code>
+is still
+<code class="sourceCode cpp"><span class="kw">false</span></code>
+because in general such queries for templates cannot be answered.<span>
+— <em>end note</em> ]</span></span></p>
 <div class="sourceCode" id="cb140"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_bit_field<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_129" id="pnum_129">9</a></span>
 <em>Returns</em>:
@@ -6560,7 +6576,7 @@ is an incomplete type ([basic.types]). Otherwise,
 class template, variable template, or alias template. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_142" id="pnum_142">22</a></span>
-<span class="note"><span>[ <em>Note 1:</em> </span>A template
+<span class="note"><span>[ <em>Note 3:</em> </span>A template
 specialization is not a template. <code class="sourceCode cpp">is_template<span class="op">(^</span>std<span class="op">::</span>vector<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> but
 <code class="sourceCode cpp">is_template<span class="op">(^</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;)</span></code>

@@ -4205,13 +4205,13 @@ consteval bool is_defaulted(info r);
 consteval bool is_explicit(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared explicit. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a member function that is declared explicit. Otherwise, `false`. [If `r` designates a member function template that is declared `explicit`, `is_explicit(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
 
 ```cpp
 consteval bool is_noexcept(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a `noexcept` function type, a pointer to `noexcept` function or member function type, a closure type of a non-generic lambda whose call operator is declared `noexcept`, a value of any of the previously mentioned types, or a function that is declared `noexcept`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a `noexcept` function type, a pointer to `noexcept` function or member function type, a closure type of a non-generic lambda whose call operator is declared `noexcept`, a value of any of the previously mentioned types, or a function that is declared `noexcept`. Otherwise, `false`. [If `r` designates a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
 
 ```cpp
 consteval bool is_bit_field(info r);
