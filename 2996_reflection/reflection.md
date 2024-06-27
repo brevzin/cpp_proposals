@@ -2266,6 +2266,7 @@ namespace std::meta {
   consteval auto is_virtual(info r) -> bool;
   consteval auto is_pure_virtual(info entity) -> bool;
   consteval auto is_override(info entity) -> bool;
+  consteval auto is_final(info r) -> bool;  
   consteval auto is_deleted(info entity) -> bool;
   consteval auto is_defaulted(info entity) -> bool;
   consteval auto is_explicit(info entity) -> bool;
@@ -2273,7 +2274,6 @@ namespace std::meta {
   consteval auto is_bit_field(info entity) -> bool;
   consteval auto is_const(info r) -> bool;
   consteval auto is_volatile(info r) -> bool;
-  consteval auto is_final(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
   consteval auto has_module_linkage(info r) -> bool;
@@ -3831,6 +3831,7 @@ namespace std::meta {
   consteval bool is_virtual(info r);
   consteval bool is_pure_virtual(info r);
   consteval bool is_override(info r);
+  consteval bool is_final(info r);
   consteval bool is_deleted(info r);
   consteval bool is_defaulted(info r);
   consteval bool is_explicit(info r);
@@ -3838,7 +3839,6 @@ namespace std::meta {
   consteval bool is_bit_field(info r);
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
-  consteval bool is_final(info r);
   consteval bool has_static_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
   consteval bool has_module_linkage(info r);
@@ -4175,7 +4175,7 @@ consteval bool is_private(info r);
 ```cpp
 consteval bool is_virtual(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` designates a either a virtual member function or a virtual base class. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates either a virtual member function or a virtual base class. Otherwise, `false`.
 
 ```cpp
 consteval bool is_pure_virtual(info r);
@@ -4184,16 +4184,22 @@ consteval bool is_override(info r);
 [#]{.pnum} *Returns*: `true` if `r` designates a member function that is pure virtual or overrides another member function, respectively. Otherwise, `false`.
 
 ```cpp
+consteval bool is_final(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a final class or a final member function. Otherwise, `false`.
+
+```cpp
 consteval bool is_deleted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a function that is defined as deleted. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function that is defined as deleted ([dcl.fct.def.delete]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_defaulted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a function that is defined as defaulted. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a function that is defined as defaulted ([dcl.fct.def.default]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_explicit(info r);
@@ -4219,12 +4225,6 @@ consteval bool is_volatile(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified function type (respectively), or an object, variable, non-static data member, or function with such a type. Otherwise, `false`.
-
-```cpp
-consteval bool is_final(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` designates a final class or a final member function. Otherwise, `false`.
 
 ```cpp
 consteval bool has_static_storage_duration(info r);
