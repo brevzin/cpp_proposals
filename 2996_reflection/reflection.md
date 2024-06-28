@@ -29,9 +29,11 @@ tag: constexpr
 Since [@P2996R4]:
 
 * removed filters from query functions
-* removed `test_trait`
+* cleaned up accessibility interface and removed `access_pair` type
 * reduced specification of `is_noexcept`
 * changed `span<info const>` to `initializer_list<info>`
+* removed `test_trait`, `qualified_name_of`
+* renamed `display_name_of` to `display_string_of`
 
 Since [@P2996R3]:
 
@@ -565,7 +567,7 @@ auto parse_options(std::span<std::string_view const> args) -> Opts {
     using T = typename[:type_of(dm):];
     auto iss = std::ispanstream(it[1]);
     if (iss >> opts.[:dm:]; !iss) {
-      std::print(stderr, "Failed to parse option {} into a {}\n", *it, display_name_of(^T));
+      std::print(stderr, "Failed to parse option {} into a {}\n", *it, display_string_of(^T));
       std::exit(EXIT_FAILURE);
     }
   }
@@ -943,7 +945,7 @@ struct Clap {
       auto iss = ispanstream(it[1]);
       if (iss >> opts.[:om:]; !iss) {
         std::print(stderr, "Failed to parse {:?} into option {} of type {}\n",
-          it[1], name_of(sm), display_name_of(type));
+          it[1], name_of(sm), display_string_of(type));
         std::exit(EXIT_FAILURE);
       }
     }
@@ -2181,11 +2183,11 @@ namespace std::meta {
   // @[name and location](#name-loc)@
   consteval auto name_of(info r) -> string_view;
   consteval auto qualified_name_of(info r) -> string_view;
-  consteval auto display_name_of(info r) -> string_view;
+  consteval auto display_string_of(info r) -> string_view;
 
   consteval auto u8name_of(info r) -> u8string_view;
-  consteval auto u8display_name_of(info r) -> u8string_view;
   consteval auto u8qualified_name_of(info r) -> u8string_view;
+  consteval auto u8display_string_of(info r) -> u8string_view;
 
   consteval auto source_location_of(info r) -> source_location;
 
@@ -2213,28 +2215,18 @@ namespace std::meta {
   // @[member access](#member-access)@
   consteval auto access_context() -> info;
 
-  struct access_pair {
-    consteval access_pair(info target, info from = access_context());
-  };
+  consteval auto is_accessible(info r, info from = access_context());
 
-  consteval auto is_accessible(access_pair p) -> bool;
-  consteval auto is_accessible(info r, info from);
-
-  consteval auto accessible_members_of(access_pair p) -> vector<info>;
-  consteval auto accessible_members_of(info target, info from) -> vector<info>;
-
-  consteval auto accessible_bases_of(access_pair p) -> vector<info>;
-  consteval auto accessible_bases_of(info target, info from) -> vector<info>;
-
-  consteval auto accessible_nonstatic_data_members_of(access_pair p) -> vector<info>;
+  consteval auto accessible_members_of(info target,
+                                       info from = access_context()) -> vector<info>;
+  consteval auto accessible_bases_of(info target,
+                                     info from = access_context()) -> vector<info>;
   consteval auto accessible_nonstatic_data_members_of(info target,
-                                                      info from) -> vector<info>;
-  consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
+                                                      info from = access_context()) -> vector<info>;
   consteval auto accessible_static_data_members_of(info target,
-                                                   info from) -> vector<info>;
-  consteval auto accessible_subobjects_of(access_pair p) -> vector<info>;
+                                                   info from = access_context()) -> vector<info>;
   consteval auto accessible_subobjects_of(info target,
-                                         info from) -> vector<info>;
+                                         info from = access_context()) -> vector<info>;
 
   // @[substitute](#substitute)@
   template <reflection_range R = initializer_list<info>>
@@ -2324,31 +2316,29 @@ namespace std::meta {
 ```
 :::
 
-### `name_of`, `display_name_of`, `source_location_of` {#name-loc}
+### `name_of`, `display_string_of`, `source_location_of` {#name-loc}
 
 ::: std
 ```c++
 namespace std::meta {
   consteval auto name_of(info) -> string_view;
-  consteval auto qualified_name_of(info) -> string_view;
-  consteval auto display_name_of(info) -> string_view;
+  consteval auto display_string_of(info) -> string_view;
 
   consteval auto u8name_of(info) -> u8string_view;
-  consteval auto u8qualified_name_of(info) -> u8string_view;
-  consteval auto u8display_name_of(info) -> u8string_view;
+  consteval auto u8display_string_of(info) -> u8string_view;
 
   consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
 
-If a `string_view` is returned, its contents consist of characters representable by the ordinary string literal encoding only; if any character cannot be represented, it is not a constant expression.
+If a `string_view` is returned, its contents consist of characters representable by the ordinary string literal encoding only; if any character cannot be represented, it is not a constant expression. If the class of reflected entity cannot possibly have a name, the expression fails to be a constant expression.
 
-Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of(r)` return a `string_view` holding the unqualified and qualified name of `X`, respectively. `u8name_of(r)` and `qualified_name_of(r)` return the same, respectively, as a `u8string_view`.
+Given a reflection `r` that designates a declared entity `X`, `name_of(r)` and `qualified_name_of` return a `string_view` holding the unqualified and qualified name of `X`, respectively. `u8name_of(r)` and `u8qualified_name_of` return the same, respectively, as a `u8string_view`.
 For all other reflections, an empty string view is produced.
 For template instances, the name does not include the template argument list.
 
-Given a reflection `r`, `display_name_of(r)` and `u8display_name_of(r)` return an unspecified non-empty `string_view` and `u8string_view`, respectively.
+Given a reflection `r`, `display_string_of(r)` and `u8display_string_of(r)` return an unspecified non-empty `string_view` and `u8string_view`, respectively.
 Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
 
 Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
@@ -2488,35 +2478,20 @@ The template `bases_of` returns the direct base classes of the class type repres
 namespace std::meta {
   consteval auto access_context() -> info;
 
-  struct access_pair {
-    consteval access_pair(info target, info from = access_context());
-  };
+  consteval auto is_accessible(info target, info from = access_context()) -> bool;
 
-  consteval auto is_accessible(access_pair p) -> bool;
-
-  consteval auto accessible_members_of(access_pair p) -> vector<info>;
-  consteval auto accessible_members_of(info target, info from) -> vector<info>;
-
-  consteval auto accessible_bases_of(access_pair p) -> vector<info>;
-  consteval auto accessible_bases_of(info target, info from) -> vector<info>;
-
-  consteval auto accessible_static_data_members_of(access_pair p) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info target, info from) -> vector<info>;
-
-  consteval auto accessible_nonstatic_data_members_of(access_pair p) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info target, info from) -> vector<info>;
-
-  consteval auto accessible_subobjects_of(access_pair p) -> vector<info>;
-  consteval auto accessible_subobjects_of(info target, info from) -> vector<info>;
+  consteval auto accessible_members_of(info target, info from = access_context()) -> vector<info>;
+  consteval auto accessible_bases_of(info target, info from = access_context()) -> vector<info>;
+  consteval auto accessible_static_data_members_of(info target, info from = access_context()) -> vector<info>;
+  consteval auto accessible_nonstatic_data_members_of(info target, info from = access_context()) -> vector<info>;
+  consteval auto accessible_subobjects_of(info target, info from = access_context()) -> vector<info>;
 }
 ```
 :::
 
 The `access_context()` function returns a reflection of the function, class, or namespace whose scope encloses the function call.
 
-The type `access_pair` represents the operands of a check for access to `target` from the scope introduced by the function, class, or namespace reflected by `from`. If `from` is not specified, the `access_pair` constructor captures the current access context of the caller via the default argument. Each function also provides an overload whereby `target` and `from` may be specified as distinct arguments.
-
-Each function named `accessible_meow_of` returns the result of `meow_of` filtered on `is_accessible`.
+Each function named `accessible_meow_of` returns the result of `meow_of` filtered on `is_accessible`. If `from` is not specified, the default argument captures the current access context of the caller via the default argument. Each function also provides an overload whereby `target` and `from` may be specified as distinct arguments.
 
 For example:
 
@@ -3913,11 +3888,11 @@ namespace std::meta {
   // [meta.reflection.names], reflection names and locations
   consteval string_view name_of(info r);
   consteval string_view qualified_name_of(info r);
-  consteval string_view display_name_of(info r);
+  consteval string_view display_string_of(info r);
 
   consteval u8string_view u8name_of(info r);
   consteval u8string_view u8qualified_name_of(info r);
-  consteval u8string_view u8display_name_of(info r);
+  consteval u8string_view u8display_string_of(info r);
 
   consteval source_location source_location_of(info r);
 
@@ -3987,25 +3962,15 @@ namespace std::meta {
   // [meta.reflection.member.access], reflection member access queries
   consteval info access_context();
 
-  struct access_pair {
-    consteval access_pair(info target, info from = access_context());
-  };
+  consteval bool is_accessible(info r, info from = access_context());
 
-  consteval bool is_accessible(access_pair p);
-  consteval bool is_accessible(info r, info from);
-
-  consteval vector<info> accessible_members_of(access_pair p);
-  consteval vector<info> accessible_members_of(info target, info from);
-
-  consteval vector<info> accessible_bases_of(access_pair p);
-  consteval vector<info> accessible_bases_of(info target, info from);
-
-  consteval vector<info> accessible_nonstatic_data_members_of(access_pair p);
-  consteval vector<info> accessible_nonstatic_data_members_of(info target, info from);
-  consteval vector<info> accessible_static_data_members_of(access_pair p);
-  consteval vector<info> accessible_static_data_members_of(info target, info from);
-  consteval vector<info> accessible_subobjects_of(access_pair p);
-  consteval vector<info> accessible_subobjects_of(info target, info from);
+  consteval vector<info> accessible_members_of(info target, info from = access_context());
+  consteval vector<info> accessible_bases_of(info target, info from = access_context());
+  consteval vector<info> accessible_nonstatic_data_members_of(info target,
+                                                              info from = access_context());
+  consteval vector<info> accessible_static_data_members_of(info target,
+                                                           info from = access_context());
+  consteval vector<info> accessible_subobjects_of(info target, info from = access_context());
 
   // [meta.reflection.layout], reflection layout queries
   consteval size_t offset_of(info entity);
@@ -4240,9 +4205,8 @@ consteval u8string_view u8qualified_name_of(info r);
 
 [#]{.pnum} *Returns*: The qualified name of the entity designated by `r`. If this entity has no name, then an empty `string_view` or `u8string_view`, respectively.
 
-```cpp
-consteval string_view display_name_of(info r);
-consteval u8string_view u8display_name_of(info r);
+consteval string_view display_string_of(info r);
+consteval u8string_view u8display_string_of(info r);
 ```
 
 [#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary string literal encoding.
@@ -4568,106 +4532,68 @@ consteval info access_context();
 [#]{.pnum} *Returns*: A reflection of the function, class, or namespace scope most nearly enclosing the function call.
 
 ```cpp
-consteval bool is_accessible(access_pair p);
+consteval bool is_accessible(info target, info from = access_context());
 ```
 
-[#]{.pnum} *Constant When*: `p.target` is a reflection designating a member of a class. `p.from` designates a function, class, or namespace.
+[#]{.pnum} *Constant When*: `target` is a reflection designating a member of a class. `from` designates a function, class, or namespace.
 
-[#]{.pnum} *Returns*: `true` if the class member designated by `p.target` can be named within the scope of `p.from`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if the class member designated by `target` can be named within the scope of `from`. Otherwise, `false`.
 
 ```cpp
-consteval bool is_accessible(info target, info from);
+consteval vector<info> accessible_members_of(info target, info from = access_context());
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return is_accessible({target, from});`
-
-```cpp
-consteval vector<info> accessible_members_of(access_pair p);
-```
-
-[#]{.pnum} *Constant When*: `p.target` is a reflection designating a complete class type. `p.from` designates a function, class, or namespace.
+[#]{.pnum} *Constant When*: `target` is a reflection designating a complete class type. `from` designates a function, class, or namespace.
 
 [#]{.pnum} *Returns*: `
 ```cpp
-members_of(p.target)
-| views::filter([&](info r) { return is_accessible({r, p.from}); })
+members_of(target)
+| views::filter([&](info r) { return is_accessible({r, from}); })
 | ranges::to<vector>()
 ```
 
 ```cpp
-consteval vector<info> accessible_members_of(info target,
-                                             info from);
+consteval vector<info> accessible_bases_of(info target, info from = access_context());
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_members_of({target, from});`
-
-```cpp
-consteval vector<info> accessible_bases_of(access_pair p);
-```
-
-[#]{.pnum} *Constant When*: `p.target` is a reflection designating a complete class type. `p.from` designates a function, class, or namespace.
+[#]{.pnum} *Constant When*: `target` is a reflection designating a complete class type. `from` designates a function, class, or namespace.
 
 [#]{.pnum} *Returns*:
 ```cpp
-bases_of(p.target)
-| views::filter([&](info r) { return is_accessible({r, p.from}); })
-| ranges::to<vector>()
-```
-
-```cpp
-consteval vector<info> accessible_bases_of(info target,
-                                           info from);
-```
-
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_bases_of({target, from});`
-
-```cpp
-consteval vector<info> accessible_nonstatic_data_members_of(access_pair p);
-```
-
-[#]{.pnum} *Returns*: Equivalent to:
-```cpp
-return accessible_members_of(p)
-| views::filter(is_nonstatic_data_member)
+bases_of(target)
+| views::filter([&](info r) { return is_accessible({r, from}); })
 | ranges::to<vector>()
 ```
 
 ```cpp
 consteval vector<info> accessible_nonstatic_data_members_of(info target,
-                                                            info from);
+                                                            info from = access_context());
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_nonstatic_data_members_of({target, from});`
-
+[#]{.pnum} *Returns*: Equivalent to:
 ```cpp
-consteval vector<info> accessible_static_data_members_of(access_pair p);
-```
-
-[#]{.pnum} *Returns*:
-```cpp
-accessible_members_of(p)
-| views::filter(is_static_data_member)
+return accessible_members_of(target, from)
+| views::filter(is_nonstatic_data_member)
 | ranges::to<vector>()
 ```
 
 ```cpp
 consteval vector<info> accessible_static_data_members_of(info target,
-                                                         info from);
+                                                         info from = access_context());
 ```
 
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_static_data_members_of({target, from});`
+[#]{.pnum} *Returns*:
+```cpp
+accessible_members_of(target, from)
+| views::filter(is_static_data_member)
+| ranges::to<vector>()
+```
 
 ```cpp
-consteval vector<info> accessible_subobjects_of(access_pair p);
+consteval vector<info> accessible_subobjects_of(info target, info from = access_context());
 ```
 
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(p)` followed by all the reflections in `accessible_nonstatic_data_members_of(p)`.
-
-```cpp
-consteval vector<info> accessible_subobjects_of(info target, info from);
-```
-
-[#]{.pnum} *Effects*: Equivalent to: `return accessible_subobjects_data_members_of({target, from});`
+[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(target, from)` followed by all the reflections in `accessible_nonstatic_data_members_of(target, from)`.
 
 :::
 :::
