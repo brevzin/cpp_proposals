@@ -4227,18 +4227,18 @@ consteval string_view name_of(info r);
 consteval u8string_view u8name_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: If returning `string_view`, the unqualified name is representable using the ordinary string literal encoding.
+[#]{.pnum} *Constant When*: If returning `string_view`, the unqualified name is representable using the ordinary string literal encoding. `r` designates a declared entity.
 
-[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the unqualified name of `X`. Otherwise, an empty `string_view` or `u8string_view`, respectively.
+[#]{.pnum} *Returns*: The unqualified name of the entity designated by `r`. If this entity has no name, then an empty `string_view` or `u8string_view`, respectively.
 
 ```cpp
 consteval string_view qualified_name_of(info r);
 consteval u8string_view u8qualified_name_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: If returning `string_view`, the qualified name is representable using the ordinary string literal encoding.
+[#]{.pnum} *Constant When*: If returning `string_view`, the qualified name is representable using the ordinary string literal encoding. `r` designates a declared entity.
 
-[#]{.pnum} *Returns*: If `r` designates a declared entity `X`, then the qualified name of `X`. Otherwise, an empty `string_view` or `u8string_view`, respectively.
+[#]{.pnum} *Returns*: The qualified name of the entity designated by `r`. If this entity has no name, then an empty `string_view` or `u8string_view`, respectively.
 
 ```cpp
 consteval string_view display_name_of(info r);
