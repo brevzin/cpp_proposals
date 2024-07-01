@@ -4538,13 +4538,21 @@ The base classes are indexed in the order in which they appear in the *base-spec
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Returns*: `members_of(type) | views::filter(is_variable) | ranges::to<vector>()`
+[#]{.pnum} *Constant When*: `type` designates a complete class type.
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the static data members of the type designated by `type`.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Returns*: `members_of(type) | views::filter(is_nonstatic_data_member) | ranges::to<vector>()`
+[#]{.pnum} *Constant When*: `type` designates a complete class type. 
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the non-static data members of the type designated by `type`, in the order in which they are declared. 
 
 ```cpp
 consteval vector<info> subobjects_of(info type);
@@ -4590,12 +4598,9 @@ consteval vector<info> accessible_members_of(info target, info from = access_con
 
 [#]{.pnum} *Constant When*: `target` is a reflection designating a complete class type. `from` designates a function, class, or namespace.
 
-[#]{.pnum} *Returns*: `
-```cpp
-members_of(target)
-| views::filter([&](info r) { return is_accessible({r, from}); })
-| ranges::to<vector>()
-```
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
 
 ```cpp
 consteval vector<info> accessible_bases_of(info target, info from = access_context());
@@ -4603,36 +4608,31 @@ consteval vector<info> accessible_bases_of(info target, info from = access_conte
 
 [#]{.pnum} *Constant When*: `target` is a reflection designating a complete class type. `from` designates a function, class, or namespace.
 
-[#]{.pnum} *Returns*:
-```cpp
-bases_of(target)
-| views::filter([&](info r) { return is_accessible({r, from}); })
-| ranges::to<vector>()
-```
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
 
 ```cpp
 consteval vector<info> accessible_nonstatic_data_members_of(info target,
                                                             info from = access_context());
 ```
 
-[#]{.pnum} *Returns*: Equivalent to:
-```cpp
-return accessible_members_of(target, from)
-| views::filter(is_nonstatic_data_member)
-| ranges::to<vector>()
-```
+[#]{.pnum} *Constant When*: `target` is a reflection designating a complete class type. `from` designates a function, class, or namespace.
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
 
 ```cpp
 consteval vector<info> accessible_static_data_members_of(info target,
                                                          info from = access_context());
 ```
 
-[#]{.pnum} *Returns*:
-```cpp
-accessible_members_of(target, from)
-| views::filter(is_static_data_member)
-| ranges::to<vector>()
-```
+[#]{.pnum} *Constant When*: `target` is a reflection designating a complete class type. `from` designates a function, class, or namespace.
+
+[#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
 
 ```cpp
 consteval vector<info> accessible_subobjects_of(info target, info from = access_context());
