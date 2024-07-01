@@ -2260,7 +2260,7 @@ namespace std::meta {
   consteval auto is_virtual(info r) -> bool;
   consteval auto is_pure_virtual(info entity) -> bool;
   consteval auto is_override(info entity) -> bool;
-  consteval auto is_final(info r) -> bool;  
+  consteval auto is_final(info r) -> bool;
   consteval auto is_deleted(info entity) -> bool;
   consteval auto is_defaulted(info entity) -> bool;
   consteval auto is_explicit(info entity) -> bool;
@@ -2476,7 +2476,7 @@ Reflections of structured bindings shall not appear in the returned vector.
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
-`static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, in order, respectively. 
+`static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, in order, respectively.
 
 `subobjects_of` returns the base class subobjects and the non-static data members of a type, in declaration order. Note that the term [subobject](https://eel.is/c++draft/intro.object#def:subobject) also includes _array elements_, which we are excluding here. Such reflections would currently be of minimal use since you could not splice them with access (e.g. `arr.[:elem:]` is not supported), so would need some more thought first.
 
@@ -2671,7 +2671,7 @@ namespace std::meta {
     optional<name_type> name;
     optional<int> alignment;
     optional<int> width;
-    bool no_unique_address = false;    
+    bool no_unique_address = false;
   };
   consteval auto data_member_spec(info type,
                                   data_member_options_t options = {}) -> info;
@@ -3103,7 +3103,7 @@ $splice-specifier$:
 
 [1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression ([expr.const]) contextually convertible to `std::meta::info`.
 
-[2]{.pnum} Let `E` be the value of the converted `$constant-expression$`. A `$splice-specifier$` designates what `E` represents. 
+[2]{.pnum} Let `E` be the value of the converted `$constant-expression$`. A `$splice-specifier$` designates what `E` represents.
 :::
 :::
 
@@ -3112,7 +3112,7 @@ $splice-specifier$:
 Add a carve-out for reflection in [expr.prim.id.general]{.sref}/4:
 
 ::: std
-[4]{.pnum} An `$id-expression$` that denotes a non-static data member or implicit object member function of a class can only be used: 
+[4]{.pnum} An `$id-expression$` that denotes a non-static data member or implicit object member function of a class can only be used:
 
 * [4.#]{.pnum} as part of a class member access (after any implicit transformation (see above)) in which the object expression refers to the member's class or a class derived from that class, or
 
@@ -3121,7 +3121,7 @@ Add a carve-out for reflection in [expr.prim.id.general]{.sref}/4:
 :::
 
 * [4.#]{.pnum} to form a pointer to member ([expr.unary.op]), or
-* [4.#]{.pnum} if that id-expression denotes a non-static data member and it appears in an unevaluated operand. 
+* [4.#]{.pnum} if that id-expression denotes a non-static data member and it appears in an unevaluated operand.
 :::
 
 ### [expr.prim.id.qual]{.sref} Qualified names {-}
@@ -3181,7 +3181,7 @@ $splice-expression$:
 
 * [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, a non-static data member, or a structured binding, the expression is an lvalue denoting the reflected entity.
 
-* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity. 
+* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity.
 
 * [#.#]{.pnum} Otherwise, `E` shall be a reflection of a value or an enumerator, and the expression is a prvalue whose evaluation computes the reflected value.
 
@@ -3783,7 +3783,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 ## Library
 
-### [structure.specifications]{.sref} Detailed specifications 
+### [structure.specifications]{.sref} Detailed specifications
 
 For convenience, we're going to add a new library element to [structure.specifications]{.sref}/3:
 
@@ -4548,11 +4548,11 @@ consteval vector<info> static_data_members_of(info type);
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` designates a complete class type. 
+[#]{.pnum} *Constant When*: `type` designates a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the non-static data members of the type designated by `type`, in the order in which they are declared. 
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the non-static data members of the type designated by `type`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> subobjects_of(info type);
@@ -4600,7 +4600,7 @@ consteval vector<info> accessible_members_of(info target, info from = access_con
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_accessible({e, from})` is `true`, in order.
 
 ```cpp
 consteval vector<info> accessible_bases_of(info target, info from = access_context());
@@ -4610,7 +4610,7 @@ consteval vector<info> accessible_bases_of(info target, info from = access_conte
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_accessible({e, from})` is `true`, in order.
 
 ```cpp
 consteval vector<info> accessible_nonstatic_data_members_of(info target,
@@ -4621,7 +4621,7 @@ consteval vector<info> accessible_nonstatic_data_members_of(info target,
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_accessible({e, from})` is `true`, in order.
 
 ```cpp
 consteval vector<info> accessible_static_data_members_of(info target,
@@ -4632,7 +4632,7 @@ consteval vector<info> accessible_static_data_members_of(info target,
 
 [#]{.pnum} *Effects*: If `dealias(type)` designates a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_accessible({e, from})` is `true`, in order. 
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_accessible({e, from})` is `true`, in order.
 
 ```cpp
 consteval vector<info> accessible_subobjects_of(info target, info from = access_context());
@@ -4818,7 +4818,7 @@ If `options.name` contains a value, the `string` or `u8string` value that was us
   consteval info define_class(info class_type, R&&  mdescrs);
 ```
 
-[#]{.pnum} Let `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@` and `option` values `@*o*~1~@`, `@*o*~2~@`, ... `@*o*~N~@` respectively.  
+[#]{.pnum} Let `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@` and `option` values `@*o*~1~@`, `@*o*~2~@`, ... `@*o*~N~@` respectively.
 
 [#]{.pnum} *Constant When*:
 `class_type` designates an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
