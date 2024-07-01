@@ -34,6 +34,7 @@ Since [@P2996R4]:
 * changed `span<info const>` to `initializer_list<info>`
 * removed `test_trait`, `qualified_name_of`
 * renamed `display_name_of` to `display_string_of`
+* adding a number of missing predicates for special member functions (`is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`) and other members (`has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`)
 
 Since [@P2996R3]:
 
@@ -2267,6 +2268,8 @@ namespace std::meta {
   consteval auto is_bit_field(info entity) -> bool;
   consteval auto is_const(info r) -> bool;
   consteval auto is_volatile(info r) -> bool;
+  consteval auto is_lvalue_reference_qualified(info r) -> bool;
+  consteval auto is_rvalue_reference_qualified(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
   consteval auto has_module_linkage(info r) -> bool;
@@ -2293,9 +2296,17 @@ namespace std::meta {
   consteval auto is_value(info entity) -> bool;
   consteval auto is_object(info entity) -> bool;
   consteval auto has_template_arguments(info r) -> bool;
-  consteval auto is_constructor(info r) -> bool;
-  consteval auto is_destructor(info r) -> bool;
+  consteval auto has_default_member_initializer(info r) -> bool;
+
   consteval auto is_special_member(info r) -> bool;
+  consteval auto is_constructor(info r) -> bool;
+  consteval auto is_default_constructor(info r) -> bool;
+  consteval auto is_copy_constructor(info r) -> bool;
+  consteval auto is_move_constructor(info r) -> bool;
+  consteval auto is_assignment(info r) -> bool;
+  consteval auto is_copy_assignment(info r) -> bool;
+  consteval auto is_move_assignment(info r) -> bool;
+  consteval auto is_destructor(info r) -> bool;
   consteval auto is_user_provided(info r) -> bool;
 
   // @[define_class](#data_member_spec-define_class)@
@@ -3911,6 +3922,8 @@ namespace std::meta {
   consteval bool is_bit_field(info r);
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
+  consteval bool is_lvalue_reference_qualified(info r);
+  consteval bool is_rvalue_reference_qualified(info r);
   consteval bool has_static_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
   consteval bool has_module_linkage(info r);
@@ -3938,9 +3951,17 @@ namespace std::meta {
   consteval bool is_nonstatic_data_member(info r);
   consteval bool is_static_member(info r);
   consteval bool is_base(info r);
-  consteval bool is_constructor(info r);
-  consteval bool is_destructor(info r);
+  consteval bool has_default_member_initializer(info r);
+
   consteval bool is_special_member(info r);
+  consteval bool is_constructor(info r);
+  consteval bool is_default_constructor(info r);
+  consteval bool is_copy_constructor(info r);
+  consteval bool is_move_constructor(info r);
+  consteval bool is_assignment(info r);
+  consteval bool is_copy_assignment(info r);
+  consteval bool is_move_assignment(info r);
+  consteval bool is_destructor(info r);
   consteval bool is_user_provided(info r);
 
   consteval info type_of(info r);
@@ -4288,6 +4309,13 @@ consteval bool is_volatile(info r);
 [#]{.pnum} *Returns*: `true` if `r` designates a const or volatile type (respectively), a const- or volatile-qualified function type (respectively), or an object, variable, non-static data member, or function with such a type. Otherwise, `false`.
 
 ```cpp
+consteval bool is_lvalue_reference_qualified(info r);
+consteval bool is_rvalue_reference_qualified(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a lvalue- or rvalue-reference qualified function type (respectively), or a member function with such a type. Otherwise, `false`.
+
+```cpp
 consteval bool has_static_storage_duration(info r);
 ```
 
@@ -4373,12 +4401,29 @@ consteval bool is_namespace_member(info r);
 consteval bool is_nonstatic_data_member(info r);
 consteval bool is_static_member(info r);
 consteval bool is_base(info r);
-consteval bool is_constructor(info r);
-consteval bool is_destructor(info r);
-consteval bool is_special_member(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, static member, base class member, constructor, destructor, or special member, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` designates a class member, namespace member, non-static data member, static member, or base class member, respectively. Otherwise, `false`.
+
+```cpp
+consteval bool has_default_member_initializer(info r);
+```
+
+[#]{.pnum} *Returns* `true` if `r` designates a non-static data member that has a default member initializer. Otherwise, `false`.
+
+```cpp
+consteval bool is_special_member(info r);
+consteval bool is_constructor(info r);
+consteval bool is_default_constructor(info r);
+consteval bool is_copy_constructor(info r);
+consteval bool is_move_constructor(info r);
+consteval bool is_assignment(info r);
+consteval bool is_copy_assignment(info r);
+consteval bool is_move_assignment(info r);
+consteval bool is_destructor(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` designates a special member function, constructor, default constructor, copy constructor, move constructor, assignment operator, copy assignment operator, move assignment operator, or destructor, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_user_provided(info r);
