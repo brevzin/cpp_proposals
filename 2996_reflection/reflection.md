@@ -3051,7 +3051,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 
 [17 - 1]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
 
-* a value with structural type,
+* a value with structural type ([temp.param]),
 * an object with static storage duration,
 * a variable,
 * a structured binding,
@@ -3153,6 +3153,8 @@ Add a new paragraph restricting `$splice-namespace-qualifier$`, and renumber acc
 ::: addu
 [1]{.pnum} The `$splice-specifier$` of a `$splice-namespace-qualifier$` shall designate a namespace or namespace alias.
 :::
+
+[2]{.pnum} The component names of a `$qualified-id$` are [...]
 :::
 
 Clarify that a splice cannot appear in a declarative `$nested-name-specifier$`:
@@ -3168,10 +3170,10 @@ Clarify that a splice cannot appear in a declarative `$nested-name-specifier$`:
 A declarative `$nested-name-specifier$` shall not have a `$decltype-specifier$` [or a `$splice-specifier$`]{.addu}. A declaration that uses a declarative `$nested-name-specifier$` shall be a friend declaration or inhabit a scope that contains the entity being redeclared or specialized.
 :::
 
-Extend paragraph 3 to also cover splices, and prefer the verb "designate" over "nominate":
+Extend the next paragraph to also cover splices, and prefer the verb "designate" over "nominate":
 
 ::: std
-[3]{.pnum} The `$nested-name-specifier$` `​::`​ [nominates]{.rm} [designates]{.addu} the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-namespace-qualifier$` [nominates]{.rm} [designates]{.addu} the same namespace or namespace alias as the `$splice-namespace-qualifier$`.]{.addu} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
+[4]{.pnum} The `$nested-name-specifier$` `​::`​ [nominates]{.rm} [designates]{.addu} the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-namespace-qualifier$` [nominates]{.rm} [designates]{.addu} the same namespace or namespace alias as the `$splice-namespace-qualifier$`.]{.addu} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
 
 ...
 
@@ -3445,9 +3447,7 @@ Add a new subsection of [dcl.type]{.sref} following [dcl.type.class.deduct]{.sre
 
 [#]{.pnum} The `typename` may be omitted only within a type-only context ([temp.res.general]{.sref}).
 
-[#]{.pnum} The `$splice-specifier$` shall designate a type.
-
-[#]{.pnum} The type designated by the `$splice-type-specifier$` is the same type designated by the `$splice-specifier$`.
+[#]{.pnum} The `$splice-specifier$` shall designate a type. The type designated by the `$splice-type-specifier$` is the same type designated by the `$splice-specifier$`.
 :::
 :::
 
@@ -3459,7 +3459,7 @@ Change paragraphs 6-7 of [dcl.init.general]{.sref} [No changes are necessary for
 [6]{.pnum} To *zero-initialize* an object or reference of type `T` means:
 
 * [6.0]{.pnum} [if `T` is `std::meta::info`, the object is initialized to a null reflection value;]{.addu}
-* [6.1]{.pnum} if `T` is any scalar type ([basic.types.general]) [other than `std::meta::info`]{.addu}, the object is initialized to the value obtained by converting the integer literal `0` (zero) to `T`;
+* [6.1]{.pnum} if `T` is [a]{.rm} [any other]{.addu} scalar type ([basic.types.general]), the object is initialized to the value obtained by converting the integer literal `0` (zero) to `T`;
 * [6.2]{.pnum} [...]
 
 [7]{.pnum} To *default-initialize* an object of type `T` means:
@@ -3578,11 +3578,11 @@ Add the following prior to the first paragraph of [namespace.udir]{.sref}, and r
 Prefer the verb "designate" rather than "nominate" in the notes that follow:
 
 ::: std
-[*Note 2*: A `$using-directive$` makes the names in the [nominated]{.rm} [designated]{.addu} namespace usable in the scope [...]. During unqualified name lookup, the names appear as if they were declared in the nearest enclosing namespace which contains both the `$using-directive$` and the [nomindated]{.rm} [designated]{.addu} namespace. — *end note*]
+[A `$using-directive$` makes the names in the [nominated]{.rm} [designated]{.addu} namespace usable in the scope [...]. During unqualified name lookup, the names appear as if they were declared in the nearest enclosing namespace which contains both the `$using-directive$` and the [nomindated]{.rm} [designated]{.addu} namespace.]{.note2}
 
 [...]
 
-[*Note 4*: A `$using-directive$` is transitive: if a scope contains a `$using-directive$` that [nominates]{.rm} [designates]{.addu} a namespace that itself contains `$using-directives$`, the namespaces [nominated]{.rm} [designated]{.addu} by those `$using-directives$` are also eligible to be considered. — *end note*]
+[A `$using-directive$` is transitive: if a scope contains a `$using-directive$` that [nominates]{.rm} [designates]{.addu} a namespace that itself contains `$using-directives$`, the namespaces [nominated]{.rm} [designated]{.addu} by those `$using-directives$` are also eligible to be considered.]{.note4}
 :::
 
 
