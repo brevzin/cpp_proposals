@@ -2971,7 +2971,7 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 
 [3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
-- [3.1]{.pnum} [If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.]{.addu} If `T` is any [other]{.addu} fundamental type, its associated set of entities is empty.
+- [3.1]{.pnum} [If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.]{.addu} If `T` is [a]{.rm} [any other]{.addu} fundamental type, its associated set of entities is empty.
 - [3.2]{.pnum} If `T` is a class type ...
 
 :::
