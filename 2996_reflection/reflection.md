@@ -3447,7 +3447,7 @@ Add a new subsection of [dcl.type]{.sref} following [dcl.type.class.deduct]{.sre
 
 [#]{.pnum} The `$splice-specifier$` shall designate a type.
 
-[#]{.pnum} The type designated by the `$splice-type-specifier$` is the type designated by the `$splice-specifier$`.
+[#]{.pnum} The type designated by the `$splice-type-specifier$` is the same type designated by the `$splice-specifier$`.
 :::
 :::
 
