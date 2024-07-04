@@ -2293,6 +2293,7 @@ namespace std::meta {
   consteval auto is_variable_template(info entity) -> bool;
   consteval auto is_class_template(info entity) -> bool;
   consteval auto is_alias_template(info entity) -> bool;
+  consteval auto is_constructor_template(info entity) -> bool;
   consteval auto is_concept(info entity) -> bool;
   consteval auto is_structured_binding(info entity) -> bool;
   consteval auto is_value(info entity) -> bool;
@@ -3151,16 +3152,16 @@ Add a new paragraph restricting `$splice-namespace-qualifier$`, and renumber acc
 
 ::: std
 ::: addu
-[1]{.pnum} The `$splice-specifier$` of a `$splice-namespace-qualifier$` shall designate a namespace or namespace alias.
+[0]{.pnum} The `$splice-specifier$` of a `$splice-namespace-qualifier$` shall designate a namespace or namespace alias.
 :::
 
-[2]{.pnum} The component names of a `$qualified-id$` are [...]
+[1]{.pnum} The component names of a `$qualified-id$` are [...]
 :::
 
 Clarify that a splice cannot appear in a declarative `$nested-name-specifier$`:
 
 ::: std
-[3]{.pnum} A `$nested-name-specifier$` is _declarative_ if it is part of
+[2]{.pnum} A `$nested-name-specifier$` is _declarative_ if it is part of
 
 * a `$class-head-name$`,
 * an `$enum-head-name$`,
@@ -3453,7 +3454,7 @@ Add a new subsection of [dcl.type]{.sref} following [dcl.type.class.deduct]{.sre
 
 ### [dcl.init.general]{.sref} Initializers (General) {-}
 
-Change paragraphs 6-7 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
+Change paragraphs 6-8 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
 
 ::: std
 [6]{.pnum} To *zero-initialize* an object or reference of type `T` means:
@@ -3468,6 +3469,14 @@ Change paragraphs 6-7 of [dcl.init.general]{.sref} [No changes are necessary for
 * [7.2]{.pnum} If T is an array type, [...]
 * [7.*]{.pnum} [If `T` is `std::meta::info`, the object is zero-initialized.]{.addu}
 * [7.3]{.pnum} Otherwise, no initialization is performed.
+
+[8]{.pnum} A class type `T` is *const-default-constructible* if default-initialization of `T` would invoke a user-provided constructor of `T` (not inherited from a base class) or if
+
+* [8.1]{.pnum} [...]
+
+If a program calls for the default-initialization of an object of a const-qualified type `T`, `T` shall be [`std::meta::info` or]{.addu} a const-default-constructible [class]{.rm} type, or array thereof.
+
+[9]{.pnum} To value-initialize an object of type T means: [...]
 :::
 
 ### [dcl.fct]{.sref} Functions {-}
@@ -3541,7 +3550,7 @@ Add the following prior to paragraph 1, and renumber accordingly:
 
 ::: std
 :::addu
-[1]{.pnum} If a `$qualified-namespace-specifier$` consists of a `$splice-specifier$`, the `$splice-specifier$` shall designate a namespace or namespace alias; the `$qualified-namespace-specifier$` designates the same namespace or namespace alias designated by the `$splice-specifier$`. Otherwise, the `$qualified-namespace-specifier$` designates the namespace found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}).
+[0]{.pnum} If a `$qualified-namespace-specifier$` consists of a `$splice-specifier$`, the `$splice-specifier$` shall designate a namespace or namespace alias; the `$qualified-namespace-specifier$` designates the same namespace or namespace alias designated by the `$splice-specifier$`. Otherwise, the `$qualified-namespace-specifier$` designates the namespace found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}).
 :::
 :::
 
@@ -3567,10 +3576,10 @@ Add the following prior to the first paragraph of [namespace.udir]{.sref}, and r
 
 ::: std
 ::: addu
-[1]{.pnum} The `$qualified-namespace-specifier$` shall neither contain a dependent `$nested-name-specifier$` nor a dependent `$splice-specifier$`.
+[0]{.pnum} The `$qualified-namespace-specifier$` shall neither contain a dependent `$nested-name-specifier$` nor a dependent `$splice-specifier$`.
 :::
 
-[2]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope.
+[1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope.
 
 [...]
 :::
@@ -3980,6 +3989,7 @@ namespace std::meta {
   consteval bool is_variable_template(info r);
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
+  consteval bool is_constructor_template(info r);
   consteval bool is_concept(info r);
   consteval bool is_value(info r);
   consteval bool is_object(info r);
@@ -4422,11 +4432,12 @@ consteval bool is_function_template(info r);
 consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
+consteval bool is_constructor_template(info r);
 consteval bool is_concept(info r);
 consteval bool is_structured_binding(info r);
 consteval bool is_value(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, concept, structured binding, or value respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_object(info r);
@@ -4467,7 +4478,7 @@ consteval bool is_move_assignment(info r);
 consteval bool is_destructor(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a special member function, constructor, default constructor, copy constructor, move constructor, assignment operator, copy assignment operator, move assignment operator, or destructor, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a special member function, non-template constructor, default constructor, copy constructor, move constructor, assignment operator, copy assignment operator, move assignment operator, or destructor, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_user_provided(info r);
