@@ -35,6 +35,7 @@ Since [@P2996R4]:
 * removed `test_trait`, `qualified_name_of`
 * renamed `display_name_of` to `display_string_of`
 * adding a number of missing predicates for special member functions (`is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`) and other members (`has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`)
+* changed offset API to be one function that returns a type with named members
 
 Since [@P2996R3]:
 
@@ -419,7 +420,7 @@ consteval auto get_layout() {
   constexpr auto members = nonstatic_data_members_of(^S);
   std::array<member_descriptor, members.size()> layout;
   for (int i = 0; i < members.size(); ++i) {
-      layout[i] = {.offset=offset_of(members[i]), .size=size_of(members[i])};
+      layout[i] = {.offset=offset_of(members[i]).bytes, .size=size_of(members[i])};
   }
   return layout;
 }
@@ -2320,10 +2321,16 @@ namespace std::meta {
   consteval auto define_class(info type_class, R&&) -> info;
 
   // @[data layout](#data-layout-reflection)@
-  consteval auto offset_of(info entity) -> size_t;
+  struct member_offsets {
+    size_t bytes;
+    size_t bits;
+    constexpr auto total_bits() const -> size_t;
+    auto operator<=>(member_offsets const&) const = default;
+  };
+
+  consteval auto offset_of(info entity) -> member_offsets;
   consteval auto size_of(info entity) -> size_t;
   consteval auto alignment_of(info entity) -> size_t;
-  consteval auto bit_offset_of(info entity) -> size_t;
   consteval auto bit_size_of(info entity) -> size_t;
 
 }
@@ -2741,11 +2748,20 @@ If `type_class` is a reflection of a type that already has a definition, or whic
 ::: std
 ```c++
 namespace std::meta {
-  consteval auto offset_of(info entity) -> size_t;
+  struct member_offsets {
+    size_t bytes;
+    size_t bits;
+
+    constexpr auto total_bits() const -> size_t {
+      return CHAR_BIT * bytes + bits;
+    }
+
+    auto operator<=>(member_offsets const&) const = default;
+  };
+
+  consteval auto offset_of(info entity) -> member_offsets;
   consteval auto size_of(info entity) -> size_t;
   consteval auto alignment_of(info entity) -> size_t;
-
-  consteval auto bit_offset_of(info entity) -> size_t;
   consteval auto bit_size_of(info entity) -> size_t;
 
 }
@@ -2754,10 +2770,10 @@ namespace std::meta {
 
 These are generalized versions of some facilities we already have in the language.
 
-* `offset_of` takes a reflection of a non-static data member or a base class subobject and returns the offset of it.
+* `offset_of` takes a reflection of a non-static data member or a base class subobject and returns the offset of it - in bytes and then leftover bits (always between `0` and `7` inclusive).
 * `size_of` takes the reflection of a type, object, variable, non-static data member, or base class subobject and returns its size.
 * `alignment_of` takes the reflection of a type, non-static data member, or base class subobject and returns its alignment.
-* `bit_size_of` and `bit_offset_of` give the size and offset of a base class subobject or non-static data member, except in bits. Note that the `bit_offset_of` is a value between `0` and `7`, inclusive:
+* `bit_size_of` gives the size of a base class subobject or non-static data member, except in bits.
 
 ::: std
 ```cpp
@@ -2768,24 +2784,20 @@ struct Msg {
     uint64_t d : 21;
 };
 
-static_assert(bit_offset_of(^Msg::a) == 0);
-static_assert(bit_offset_of(^Msg::b) == 2);
-static_assert(bit_offset_of(^Msg::c) == 2);
-static_assert(bit_offset_of(^Msg::d) == 3);
+static_assert(offset_of(^Msg::a) == member_offsets{0, 0});
+static_assert(offset_of(^Msg::b) == member_offsets{1, 2});
+static_assert(offset_of(^Msg::c) == member_offsets{2, 2});
+static_assert(offset_of(^Msg::d) == member_offsets{5, 3});
 
 static_assert(bit_size_of(^Msg::a) == 10);
 static_assert(bit_size_of(^Msg::b) == 8);
 static_assert(bit_size_of(^Msg::c) == 25);
 static_assert(bit_size_of(^Msg::d) == 21);
 
-consteval auto total_bit_offset_of(std::meta::info m) -> size_t {
-    return offset_of(m) * 8 + bit_offset_of(m);
-}
-
-static_assert(total_bit_offset_of(^Msg::a) == 0);
-static_assert(total_bit_offset_of(^Msg::b) == 10);
-static_assert(total_bit_offset_of(^Msg::c) == 18);
-static_assert(total_bit_offset_of(^Msg::d) == 43);
+static_assert(offset_of(^Msg::a).total_bits() == 0);
+static_assert(offset_of(^Msg::b).total_bits() == 10);
+static_assert(offset_of(^Msg::c).total_bits() == 18);
+static_assert(offset_of(^Msg::d).total_bits() == 43);
 
 ```
 :::
@@ -4049,10 +4061,15 @@ namespace std::meta {
   consteval vector<info> accessible_subobjects_of(info target, access_context from = {});
 
   // [meta.reflection.layout], reflection layout queries
-  consteval size_t offset_of(info entity);
+  struct member_offsets {
+    size_t bytes;
+    size_t bits;
+    constexpr size_t total_bits() const;
+    auto operator<=>(member_offsets const&) const = default;
+  };
+  consteval member_offsets offset_of(info entity);
   consteval size_t size_of(info entity);
   consteval size_t alignment_of(info entity);
-  consteval size_t bit_offset_of(info entity);
   consteval size_t bit_size_of(info entity);
 
   // [meta.reflection.extract], value extraction
@@ -4715,12 +4732,19 @@ consteval vector<info> accessible_subobjects_of(info target, access_context from
 ::: std
 ::: addu
 ```cpp
-consteval size_t offset_of(info r);
+constexpr size_t member_offsets::total_bits() const;
+```
+[#]{.pnum} *Returns*: `bytes * CHAR_BIT + bits`.
+
+```cpp
+consteval member_offsets offset_of(info r);
 ```
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class.
 
-[#]{.pnum} *Returns*: The offset in bytes from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+[#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+
+[#]{.pnum} *Returns*: `{V / CHAR_BIT * CHAR_BIT, V % CHAR_BIT}`.
 
 ```cpp
 consteval size_t size_of(info r);
@@ -4737,16 +4761,6 @@ consteval size_t alignment_of(info r);
 [#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member, or base class.
 
 [#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
-
-```cpp
-consteval size_t bit_offset_of(info r);
-```
-
-[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or a non-virtual base class.
-
-[#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
-
-[#]{.pnum} *Returns*: `V - offset_of(r) * CHAR_BIT`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
