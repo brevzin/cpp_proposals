@@ -2875,6 +2875,8 @@ Education and training are important to help C++ users avoid such sharp edges, b
 
 # Proposed Wording
 
+[Throughout the wording, we say that a reflection (an object of type `std::meta::info`) *represents* some source construct, while splicing that reflection *designates* that source construct. For instance, `^int` represents the type `int` and `[: ^int :]` designates the type `int`.]{.ednote}
+
 ## Language
 
 ### [lex.phases]{.sref} Phases of translation {-}
