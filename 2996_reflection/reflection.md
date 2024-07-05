@@ -4529,7 +4529,7 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable usable in constant expressions ([expr.const]), an enumerator, or a value.
 
-[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which represents an object `o`, then a reflection of the value held by `o`. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
 
 ```cpp
 consteval info parent_of(info r);
@@ -4864,7 +4864,7 @@ template <reflection_range R1 = initializer_list<info>, reflection_range R2 = in
   consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
 ```
 
-[#]{.pnum} Let `F` be the entity represented by `target`, let `Arg0` be the entity represented by the first element of `args` (if any), let `Args...` be the sequence of entities represend by the elements of `args` excluding the first, and let `TArgs...` be the sequence of entities or aliases represented by the elements of `tmpl_args`.
+[#]{.pnum} Let `F` be the entity represented by `target`, let `Arg0` be the entity represented by the first element of `args` (if any), let `Args...` be the sequence of entities represented by the elements of `args` excluding the first, and let `TArgs...` be the sequence of entities or aliases represented by the elements of `tmpl_args`.
 
 [#]{.pnum} If `F` is a non-member function, a value of pointer to function type, a value of pointer to member type, or a value of closure type, then let `INVOKE-EXPR` be the expression `INVOKE(F, Arg0, Args...)`. Otherwise, if `F` is a member function, then let `INVOKE-EXPR` be the expression `Arg0.F(Args...)`. Otherwise, if `F` is a constructor for a class `C`, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution. Otherwise, if `F` is a non-member function template or a member function template, then let `INVOKE-EXPR` be the expression `F<TArgs...>(Arg0, Args...)` or `Arg0.template F<TArgs...>(Args...)` respectively. Otherwise, if `F` is a constructor template, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution, and `TArgs...` are inferred as explicit template arguments for `F`.
 
@@ -4889,7 +4889,7 @@ consteval info data_member_spec(info type,
 If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name` contains a valid identifier ([lex.name]{.sref}).
 
 
-[#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type represented by `type` and optional characteristics represented by `options`.
+[#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type represented by `type` and optional characteristics designated by `options`.
 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
