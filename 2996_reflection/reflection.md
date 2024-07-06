@@ -2970,7 +2970,7 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: addu
 
-[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its corresponding members are equal in number and have respectively the same types, alignments, `[[no_unique_address]]` attributes (if any), bit-field widths (if any), and specified names (if any).
+[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to a specialization of `std::meta::define_class`, every definition of that class shall be the result of a call to the same specialization; and for every reflection in the range of reflections describing its class members, every other such call shall have a corresponding value, occupying the same position in its respective range, to which the reflection compares equal.
 
 :::
 
@@ -3386,14 +3386,17 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 * [*.#]{.pnum} If both operands are null reflection values, then they compare equal.
 * [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
-* [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if their reflected aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
-* [*.#]{.pnum} Otherwise, if both operands are reflections of a base class specifier, then they compare equal if they are reflections of the same base class specifier.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of a base class specifier and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if neither operand is a reflection of a value, then they compare equal if they are reflections of the same entity.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of a value and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
-* [*.#]{.pnum} Otherwise the result is unspecified. [For example, if the operands are results of calls to `data_member_spec`]{.note}
+* [*.#]{.pnum} Otherwise, if both operands represent entities, then the compare equal if and only if they are reflections of the same entity.
+* [*.#]{.pnum} Otherwise, if one operand represents an entity, then they compare unequal.
+* [*.#]{.pnum} Otherwise, if both operands represent variables, then the compare equal if and only if they are reflections of the same entity.
+* [*.#]{.pnum} Otherwise, if one operand represents a variable, then they compare unequal.
+* [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or type alias and the other operand does not represent the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
+* [*.#]{.pnum} Otherwise, if both operands represent namespace aliases or type aliases, then they compare equal if and only if their represented aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
+* [*.#]{.pnum} Otherwise, if both operands represent base class specifiers, then they compare equal if and only if they represent the same base class specifier.
+* [*.#]{.pnum} Otherwise, if one operand represents a base class specifier, then they compare unequal.
+* [*.#]{.pnum} Otherwise, if both operands represent values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}) and share the same type.
+* [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare unequal.
+* [*.#]{.pnum} Otherwise, both operands represent descriptions of declarations of non-static data members: Let `C@~_1_~@` and `C@~_2_~@` each be an invented class type having exactly one class member as respectively described by one of the two operands, and whose definitions are provided by well-formed calls to `std::meta::define_class`. The operands compare equal if and only if `C@~_1_~@` and `C@~_2_~@` would have a data member sharing the same type, name (if any), alignment requirement, width, and attributes.
 :::
 
 [6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
@@ -4073,7 +4076,7 @@ namespace std::meta {
   consteval size_t bit_size_of(info entity);
 
   // [meta.reflection.extract], value extraction
-  template <typename T>
+  template<class T>
     consteval T extract(info);
 
   // [meta.reflection.substitute], reflection substitution
@@ -4086,11 +4089,11 @@ namespace std::meta {
   template <class R>
     concept reflection_range = $see below$;
 
-  template <typename T>
+  template<class T>
     consteval info reflect_value(T value);
-  template <typename T>
+  template<class T>
     consteval info reflect_object(T& object);
-  template <typename T>
+  template<class T>
     consteval info reflect_function(T& fn);
 
   template <reflection_range R = initializer_list<info>>
@@ -4101,10 +4104,10 @@ namespace std::meta {
   // [meta.reflection.define_class], class definition generation
   struct data_member_options_t {
     struct name_type {
-      template <typename T> requires constructible_from<u8string, T>
+      template<class T> requires constructible_from<u8string, T>
         consteval name_type(T &&);
 
-      template <typename T> requires constructible_from<string, T>
+      template<class T> requires constructible_from<string, T>
         consteval name_type(T &&);
     };
 
@@ -4271,6 +4274,12 @@ namespace std::meta {
     `consteval info type_invoke_result(info type, R&& type_args);
   consteval info type_unwrap_reference(info type);
   consteval info type_unwrap_ref_decay(info type);
+}
+
+namespace std {
+  // [meta.reflection.hash], hash support
+  template<class T> struct hash;
+  template<> hash<meta::info>;
 }
 ```
 :::
@@ -5250,6 +5259,24 @@ consteval info type_unwrap_reference(info type) {
 ```
 :::
 
+:::
+:::
+
+### [meta.reflection.hash] Hash support {-}
+
+::: std
+::: addu
+```cpp
+namespace std {
+  template<> struct hash<meta::info>;
+}
+```
+
+[#]{.pnum} The class type `hash<meta::info>` is a consteval-only type ([basic.types.general]).
+
+[#]{.pnum} The specializations are enabled ([unord.hash]).
+
+[#]{.pnum} [It is unspecified whether distinct instances produce equal hashes from equal reflections. In particular, it is not expected for hashes to be stable across translation units.]{.note}
 :::
 :::
 
