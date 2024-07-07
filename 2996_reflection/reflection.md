@@ -36,6 +36,9 @@ Since [@P2996R4]:
 * renamed `display_name_of` to `display_string_of`
 * adding a number of missing predicates for special member functions (`is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`) and other members (`has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`)
 * changed offset API to be one function that returns a type with named members
+* Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
+* Define hash specialization for `std::meta::info`.
+* Many wording updates in response to feedback from CWG.
 
 Since [@P2996R3]:
 
@@ -2700,7 +2703,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of UTF-8 code-units (after converting any contained UCNs to UTF-8). Otherwise, the name of the data member is unspecified.
+`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
@@ -2726,15 +2729,13 @@ static_assert(is_type(define_class(^U, {
 template<typename T> struct S;
 constexpr auto s_int_refl = define_class(^S<int>, {
   data_member_spec(^int, {.name="i", .alignment=64}),
-  data_member_spec(^int, {.name=u8"こんにち", .alignment=64}),
-  data_member_spec(^int, {.name="v\\N{LATIN SMALL LETTER AE}rs\\u{e5}god"})
+  data_member_spec(^int, {.name=u8"こんにち"}),
 });
 
 // S<int> is now defined to the equivalent of
 // template<> struct S<int> {
 //   alignas(64) int i;
-//   alignas(64) int こんにち;
-//               int værsågod;
+//               int こんにち;
 // };
 ```
 :::
@@ -3396,7 +3397,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if one operand represents a base class specifier, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if both operands represent values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}) and share the same type.
 * [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare unequal.
-* [*.#]{.pnum} Otherwise, both operands represent descriptions of declarations of non-static data members: Let `C@~_1_~@` and `C@~_2_~@` each be an invented class type having exactly one class member as respectively described by one of the two operands, and whose definitions are provided by well-formed calls to `std::meta::define_class`. The operands compare equal if and only if `C@~_1_~@` and `C@~_2_~@` would have a data member sharing the same type, name (if any), alignment requirement, width, and attributes.
+* [*.#]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent descriptions of declarations of non-static data members: Let `C@~_1_~@` and `C@~_2_~@` be invented class types such that each `C@~_k_~@` has a single non-static data member having the properties described by `O@~_k_~@`. The operands compare equal if and only if the data members of `C@~_1_~@` and `C@~_2_~@` would  share the same type, name (if any), `$alignment-specifiers$` (if any), width, and attributes.
 :::
 
 [6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
@@ -4895,8 +4896,7 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 `type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name` contains a valid identifier ([lex.name]{.sref}).
-
+If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). `options.width` and `options.alignment` do not both contain a value. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
 
 [#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type represented by `type` and optional characteristics designated by `options`.
 
@@ -4926,7 +4926,7 @@ Defines `class_type` with properties as follows:
 * [#.#]{.pnum} The type of the respective members are the types represented by the reflection values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@`.
 * [#.#]{.pnum} If `@*o*~K~@.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
 * [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
-* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is aligned as if declared with `alignas($a$)`.
+* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is declared with the `$alignment-specifier$` `alignas($a$)`.
 * [#.#]{.pnum} If `@*o*~K~@.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
   Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `@*o*~K~@.name`.
 * [#.#]{.pnum} If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
