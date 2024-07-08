@@ -4896,7 +4896,7 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 `type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). `options.width` and `options.alignment` do not both contain a value. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
+If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `options.alignment` contains no value and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
 
 [#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type represented by `type` and optional characteristics designated by `options`.
 
