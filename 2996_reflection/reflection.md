@@ -37,7 +37,6 @@ Since [@P2996R4]:
 * adding a number of missing predicates for special member functions (`is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`) and other members (`has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`)
 * changed offset API to be one function that returns a type with named members
 * Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
-* Define hash specialization for `std::meta::info`.
 * Many wording updates in response to feedback from CWG.
 
 Since [@P2996R3]:
@@ -4276,12 +4275,6 @@ namespace std::meta {
   consteval info type_unwrap_reference(info type);
   consteval info type_unwrap_ref_decay(info type);
 }
-
-namespace std {
-  // [meta.reflection.hash], hash support
-  template<class T> struct hash;
-  template<> hash<meta::info>;
-}
 ```
 :::
 :::
@@ -5259,24 +5252,6 @@ consteval info type_unwrap_reference(info type) {
 ```
 :::
 
-:::
-:::
-
-### [meta.reflection.hash] Hash support {-}
-
-::: std
-::: addu
-```cpp
-namespace std {
-  template<> struct hash<meta::info>;
-}
-```
-
-[#]{.pnum} The class type `hash<meta::info>` is a consteval-only type ([basic.types.general]).
-
-[#]{.pnum} The specializations are enabled ([unord.hash]).
-
-[#]{.pnum} [It is unspecified whether distinct instances produce equal hashes from equal reflections. In particular, it is not expected for hashes to be stable across translation units.]{.note}
 :::
 :::
 
