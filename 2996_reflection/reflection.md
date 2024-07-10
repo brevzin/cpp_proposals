@@ -2271,6 +2271,7 @@ namespace std::meta {
   consteval auto is_explicit(info entity) -> bool;
   consteval auto is_noexcept(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
+  consteval auto is_enumerator(info entity) -> bool;
   consteval auto is_const(info r) -> bool;
   consteval auto is_volatile(info r) -> bool;
   consteval auto is_lvalue_reference_qualified(info r) -> bool;
@@ -3985,6 +3986,7 @@ namespace std::meta {
   consteval bool is_explicit(info r);
   consteval bool is_noexcept(info r);
   consteval bool is_bit_field(info r);
+  consteval bool is_enumerator(info r);
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
   consteval bool is_lvalue_reference_qualified(info r);
@@ -4376,6 +4378,12 @@ consteval bool is_bit_field(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` represents a bit-field. Otherwise, `false`.
+
+```cpp
+consteval bool is_enumerator(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents an enumerator. Otherwise, `false`.
 
 ```cpp
 consteval bool is_const(info r);
