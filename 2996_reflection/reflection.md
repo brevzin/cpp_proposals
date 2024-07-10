@@ -2393,7 +2393,7 @@ consteval auto type_doof(std::meta::info r) -> std::meta::info {
 ```
 :::
 
-If `r` represents a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or (possibly inline or anonymous) namespace.
+`parent_of(r)` is a reflection designating its immediately enclosing class, function, or (possibly inline or anonymous) namespace.
 
 If `r` represents an alias, `dealias(r)` represents the underlying entity.
 Otherwise, `dealias(r)` produces `r`.
@@ -4538,9 +4538,9 @@ consteval info value_of(info r);
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a member of either a class or a namespace.
+[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace, alias of a type or namespace, or base specifier.
 
-[#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class or namespace.
+[#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class, function, or namespace.
 
 ```cpp
 consteval info dealias(info r);
@@ -4761,7 +4761,7 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member, or base class.
+[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, or base class.
 
 [#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
 
@@ -4889,9 +4889,9 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 `type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `options.alignment` contains no value and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
+If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
 
-[#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type represented by `type` and optional characteristics designated by `options`.
+[#]{.pnum} *Returns*: A reflection of a description of the declaration of a non-static data member with a type represented by `type` and optional characteristics designated by `options`.
 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
@@ -4907,8 +4907,6 @@ If `options.name` contains a value, the `string` or `u8string` value that was us
 `class_type` represents an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
 [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
 Each `@*t*~i~@` represents a type that is valid types for data members.
-If `@*o*~K~@.width` (for some `$K$`) contains a value `$w$`, the corresponding type `@*t*~K~@` is a valid type for bit field of width `$w$`.
-If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, `alignas($a$)` is a valid `$alignment-specifier$` for a non-static data member of type `@*t*~K~@`.
 
 
 [#]{.pnum} *Effects*:
