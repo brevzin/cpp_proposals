@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-06-29" />
+  <meta name="dcterms.date" content="2024-07-11" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-06-29</td>
+    <td>2024-07-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -614,22 +614,30 @@ Sequence<span></span></a></li>
 <li><a href="#phase-of-translation" id="toc-phase-of-translation"><span class="toc-section-number">4.3</span> Phase of
 Translation<span></span></a></li>
 <li><a href="#injection" id="toc-injection"><span class="toc-section-number">4.4</span> Injection<span></span></a></li>
-<li><a href="#implementation-status" id="toc-implementation-status"><span class="toc-section-number">4.5</span> Implementation
-Status<span></span></a></li>
-<li><a href="#examples" id="toc-examples"><span class="toc-section-number">4.6</span> Examples<span></span></a></li>
-<li><a href="#type-erasure" id="toc-type-erasure"><span class="toc-section-number">4.7</span> Type Erasure<span></span></a></li>
-<li><a href="#logging-vector-cloning-a-type" id="toc-logging-vector-cloning-a-type"><span class="toc-section-number">4.8</span> Logging Vector: Cloning a
+<li><a href="#token-sequence-type" id="toc-token-sequence-type"><span class="toc-section-number">4.5</span> Token Sequence
 Type<span></span></a></li>
-<li><a href="#logging-vector-ii-cloning-with-modifications" id="toc-logging-vector-ii-cloning-with-modifications"><span class="toc-section-number">4.9</span> Logging Vector II: Cloning with
+<li><a href="#implementation-status" id="toc-implementation-status"><span class="toc-section-number">4.6</span> Implementation
+Status<span></span></a></li>
+<li><a href="#examples" id="toc-examples"><span class="toc-section-number">4.7</span> Examples<span></span></a></li>
+<li><a href="#type-erasure" id="toc-type-erasure"><span class="toc-section-number">4.8</span> Type Erasure<span></span></a></li>
+<li><a href="#logging-vector-cloning-a-type" id="toc-logging-vector-cloning-a-type"><span class="toc-section-number">4.9</span> Logging Vector: Cloning a
+Type<span></span></a></li>
+<li><a href="#logging-vector-ii-cloning-with-modifications" id="toc-logging-vector-ii-cloning-with-modifications"><span class="toc-section-number">4.10</span> Logging Vector II: Cloning with
 Modifications<span></span></a></li>
 </ul></li>
-<li><a href="#hygienic-macros" id="toc-hygienic-macros"><span class="toc-section-number">5</span> Hygienic Macros<span></span></a>
+<li><a href="#better-macros" id="toc-better-macros"><span class="toc-section-number">5</span> Better Macros<span></span></a>
 <ul>
-<li><a href="#forwarding" id="toc-forwarding"><span class="toc-section-number">5.1</span> Forwarding<span></span></a></li>
-<li><a href="#assertion" id="toc-assertion"><span class="toc-section-number">5.2</span> Assertion<span></span></a></li>
-<li><a href="#string-interpolation" id="toc-string-interpolation"><span class="toc-section-number">5.3</span> String
+<li><a href="#design-approach" id="toc-design-approach"><span class="toc-section-number">5.1</span> Design
+Approach<span></span></a></li>
+<li><a href="#forwarding" id="toc-forwarding"><span class="toc-section-number">5.2</span> Forwarding<span></span></a></li>
+<li><a href="#assertion" id="toc-assertion"><span class="toc-section-number">5.3</span> Assertion<span></span></a></li>
+<li><a href="#macro-parsing" id="toc-macro-parsing"><span class="toc-section-number">5.4</span> Macro
+Parsing<span></span></a></li>
+<li><a href="#hygienic-macros" id="toc-hygienic-macros"><span class="toc-section-number">5.5</span> Hygienic
+Macros<span></span></a></li>
+<li><a href="#string-interpolation" id="toc-string-interpolation"><span class="toc-section-number">5.6</span> String
 Interpolation<span></span></a></li>
-<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">5.4</span> Alternate
+<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">5.7</span> Alternate
 Syntax<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">6</span> Proposal<span></span></a></li>
@@ -649,12 +657,12 @@ and <code class="sourceCode cpp">\tokens<span class="op">(</span>e<span class="o
 splicer</li>
 <li>Implemented much of the proposal with links to examples (including a
 new <a href="#type-erasure">type erasure example</a>)</li>
-<li>Changed syntax for hygienic macros, since the parameters can just be
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code></li>
+<li>Changed syntax for macros, since the parameters can just be <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,
+and extended discussion of them.</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>This paper is proposing augmenting <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> to add code injection in the
+<p>This paper is proposing augmenting <span class="citation" data-cites="P2996R4">[<a href="https://wg21.link/p2996r4" role="doc-biblioref">P2996R4</a>]</span> to add code injection in the
 form of token sequences.</p>
 <p>We consider the motivation for this feature to some degree pretty
 obvious, so we will not repeat it here, since there are plenty of other
@@ -2023,7 +2031,37 @@ example</a>:</p>
 </div>
 <p>With that out of the way, we can now go through our examples from
 earlier.</p>
-<h2 data-number="4.5" id="implementation-status"><span class="header-section-number">4.5</span> Implementation Status<a href="#implementation-status" class="self-link"></a></h2>
+<h2 data-number="4.5" id="token-sequence-type"><span class="header-section-number">4.5</span> Token Sequence Type<a href="#token-sequence-type" class="self-link"></a></h2>
+<p>In this paper (and the current implement), the type of a token
+sequence is also <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.
+This follows the general <span class="citation" data-cites="P2996R4">[<a href="https://wg21.link/p2996r4" role="doc-biblioref">P2996R4</a>]</span> design that all types that are
+opaque handles into the compiler have type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.
+And that is appealing for its simplicity.</p>
+<p>However, unlike reflections of source constructs, token sequence
+manipulation is a completely disjoint set of operations. The only kinds
+of reflection that can produce token sequences can only ever produce
+token sequences (e.g. getting the
+<code class="sourceCode cpp"><span class="kw">noexcept</span></code>
+specifier of a function template).</p>
+<p>Some APIs only make sense to do on a token sequence - for instance
+while we described
+<code class="sourceCode cpp"><span class="op">+</span></code> as not
+being inessential, we could certainly still provide it - but from an API
+perspective it’d be nicer if it took two objects of type
+<code class="sourceCode cpp">token_sequence</code> rather than two of
+type <code class="sourceCode cpp">info</code> (and asserted that they
+were <code class="sourceCode cpp">token_sequence</code>s). Either way,
+misuse would be a compile error, but it might be better to only provide
+the operator when we know it’s viable.</p>
+<p>A dedicated <code class="sourceCode cpp">token_sequence</code> type
+would also make <a href="#better-macros">macros</a> stand out more from
+other reflection functions, since there will be a lot of functions that
+take a
+<code class="sourceCode cpp">meta<span class="op">::</span>info</code>
+and return a
+<code class="sourceCode cpp">meta<span class="op">::</span>info</code>
+and such functions are quite different from macros.</p>
+<h2 data-number="4.6" id="implementation-status"><span class="header-section-number">4.6</span> Implementation Status<a href="#implementation-status" class="self-link"></a></h2>
 <p>A significant amount of this proposal is already implemented in EDG
 and is available for experimentation on Compiler Explorer. The examples
 we will demonstrate provide links.</p>
@@ -2045,7 +2083,7 @@ to inject the entire class template specialization in one go. You can
 see this approach in action with the <a href="#type-erasure">type
 erasure example</a>.</li>
 </ul>
-<h2 data-number="4.6" id="examples"><span class="header-section-number">4.6</span> Examples<a href="#examples" class="self-link"></a></h2>
+<h2 data-number="4.7" id="examples"><span class="header-section-number">4.7</span> Examples<a href="#examples" class="self-link"></a></h2>
 <p>Now, the
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code>
@@ -2185,7 +2223,7 @@ pre-declare the functions we’re using and the feature set is smaller.
 While declaring <code class="sourceCode cpp">T</code> as part of the
 fragment is certainly convenient, we’re shooting for a smaller
 feature.</p>
-<h2 data-number="4.7" id="type-erasure"><span class="header-section-number">4.7</span> Type Erasure<a href="#type-erasure" class="self-link"></a></h2>
+<h2 data-number="4.8" id="type-erasure"><span class="header-section-number">4.8</span> Type Erasure<a href="#type-erasure" class="self-link"></a></h2>
 <p>Given a type, whose declaration only contains member functions that
 aren’t templates, it is possible to mechanically produce a type-erased
 version of that interface.</p>
@@ -2276,7 +2314,7 @@ to produce the entire template specialization of
 that approach, but at the moment EDG cannot inject nested type
 defintions in a class template. It’s a healthy amount of code, but it’s
 actually fairly straightforward.</p>
-<h2 data-number="4.8" id="logging-vector-cloning-a-type"><span class="header-section-number">4.8</span> Logging Vector: Cloning a
+<h2 data-number="4.9" id="logging-vector-cloning-a-type"><span class="header-section-number">4.9</span> Logging Vector: Cloning a
 Type<a href="#logging-vector-cloning-a-type" class="self-link"></a></h2>
 <p>The goal here is we want to implement a type <code class="sourceCode cpp">LoggingVector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 which behaves like <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
@@ -2339,7 +2377,7 @@ forward the parameters along? We don’t even have the parameter names
 here - the declaration that we’re cloning might not even <em>have</em>
 parameter names.</p>
 <p>So there are two approaches that we can use here:</p>
-<h3 data-number="4.8.1" id="reflections-of-parameters"><span class="header-section-number">4.8.1</span> Reflections of Parameters<a href="#reflections-of-parameters" class="self-link"></a></h3>
+<h3 data-number="4.9.1" id="reflections-of-parameters"><span class="header-section-number">4.9.1</span> Reflections of Parameters<a href="#reflections-of-parameters" class="self-link"></a></h3>
 <p>We need the ability to just ask for the parameters themselves (which
 <span class="citation" data-cites="P3096R1">[<a href="https://wg21.link/p3096r1" role="doc-biblioref">P3096R1</a>]</span> should provide). And then the
 goal here is to inject the tokens for the call:</p>
@@ -2445,7 +2483,7 @@ reflection of <code class="sourceCode cpp">log_fun</code> in the way
 that we are using this example, so we probably cannot actually get back
 and access the reflections of the parameters as described in this
 example.</p>
-<h3 data-number="4.8.2" id="introducing-parameter-names"><span class="header-section-number">4.8.2</span> Introducing Parameter Names<a href="#introducing-parameter-names" class="self-link"></a></h3>
+<h3 data-number="4.9.2" id="introducing-parameter-names"><span class="header-section-number">4.9.2</span> Introducing Parameter Names<a href="#introducing-parameter-names" class="self-link"></a></h3>
 <p>We said we have the problem that the functions we’re cloning might
 not have parameter names. So what? We’re creating a new function, we can
 pick our names!</p>
@@ -2497,8 +2535,8 @@ new function - just the old one:</p>
 </div>
 <p>This approach is arguably simpler than reflecting on parameter names
 and requires no extra implementation effort to get there.</p>
-<h2 data-number="4.9" id="logging-vector-ii-cloning-with-modifications"><span class="header-section-number">4.9</span> Logging Vector II: Cloning with
-Modifications<a href="#logging-vector-ii-cloning-with-modifications" class="self-link"></a></h2>
+<h2 data-number="4.10" id="logging-vector-ii-cloning-with-modifications"><span class="header-section-number">4.10</span> Logging Vector II: Cloning
+with Modifications<a href="#logging-vector-ii-cloning-with-modifications" class="self-link"></a></h2>
 <p>However, we’ve still got some work to do. The above implementation
 already gets us a great deal of functionality, and should create code
 that looks something like this:</p>
@@ -2573,8 +2611,8 @@ but rather
 <code class="sourceCode cpp">other<span class="op">.</span>impl</code>.
 How can we do that? We don’t quite have a good answer yet. But this is
 much farther than we’ve come with any other design.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="hygienic-macros"><span class="header-section-number">5</span>
-Hygienic Macros<a href="#hygienic-macros" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="better-macros"><span class="header-section-number">5</span> Better
+Macros<a href="#better-macros" class="self-link"></a></h1>
 <p>C macros have a (well-deserved) bad reputation in the C++ community.
 This is because they have some intractable problems:</p>
 <ul>
@@ -2582,11 +2620,55 @@ This is because they have some intractable problems:</p>
 anywhere. This is why they do not leak into or out of C++ modules.</li>
 <li>The C preprocessor is a language unto itself, that doesn’t
 understand C++ syntax, with limited functionality that is very tedious
-to program in.</li>
+to program in. Even what we would consider to be very basic language
+constructs like
+<code class="sourceCode cpp"><span class="cf">if</span></code> or
+<code class="sourceCode cpp"><span class="cf">for</span></code> are
+expert-level features in the preprocessor, and even then are highly
+limited.</li>
 </ul>
 <p>We think that C++ does need a code manipulation mechanism, and that
 token sequences can provide a much better solution than C macros.</p>
-<h2 data-number="5.1" id="forwarding"><span class="header-section-number">5.1</span> Forwarding<a href="#forwarding" class="self-link"></a></h2>
+<h2 data-number="5.1" id="design-approach"><span class="header-section-number">5.1</span> Design Approach<a href="#design-approach" class="self-link"></a></h2>
+<p>One way to think about a macro is that it is a function that takes
+<em>code</em> and produces <em>code</em>, without necessarily evaluating
+or even parsing the code (indeed the code that is input to the macro
+need not even be valid C++ at all).</p>
+<p>With token sequences, we suddenly gain a way to represent macros in
+C++ proper: a macro is a function that takes a token sequence and
+returns a token sequence, whereby it can be automatically injected (with
+some syntax marker at the call site).</p>
+<p>This is already implicitly the way that macros operate in LISPs like
+Scheme and Racket, and is explicitly how they work in Rust and Swift. In
+Rust, <a href="https://doc.rust-lang.org/reference/procedural-macros.html">procedural
+macros</a> have the form:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">#[</span>proc_macro<span class="at">]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">pub</span> <span class="kw">fn</span> macro(input<span class="op">:</span> TokenStream) <span class="op">-&gt;</span> TokenStream <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Whereas in Swift, <a href="https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/">macros</a>
+have the form (<a href="https://github.com/swiftlang/swift-evolution/blob/main/proposals/0382-expression-macros.md">proposal</a>):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode swift"><code class="sourceCode swift"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">struct</span> FourCharacterCode<span class="op">:</span> <span class="dt">ExpressionMacro</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">func</span> <span class="fu">expansion</span><span class="op">(</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">of</span> <span class="va">node</span><span class="op">:</span> <span class="dt">some</span> <span class="va">FreestandingMacroExpansionSyntax</span><span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">in</span> <span class="va">context</span><span class="op">:</span> <span class="dt">some</span> <span class="va">MacroExpansionContext</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">)</span> <span class="kw">throws</span> -&gt; <span class="fu">ExprSyntax</span> <span class="op">{</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">...</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Either way, unevaluated raw code in, unevaluated raw code out.</p>
+<p>Now that we have the ability to represent code in code (using token
+sequences) and can inject said code that is produced by regular C++
+functions, we can do in the same in C++ as well.</p>
+<h2 data-number="5.2" id="forwarding"><span class="header-section-number">5.2</span> Forwarding<a href="#forwarding" class="self-link"></a></h2>
 <p>Consider the problem of forwarding. Forwarding an argument in C++, in
 the vast majority of uses, looks like <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span></code>,
 where <code class="sourceCode cpp">T</code> is actually the type <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>t<span class="op">)</span></code>.
@@ -2608,10 +2690,11 @@ implemented like this:</p>
 <span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> new_f <span class="op">=</span> <span class="op">[](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> fwd<span class="op">(</span>x<span class="op">)</span>; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>With token sequences, we can achieve similar syntax:</p>
+<p>With token sequences, using the design described earlier that we
+accept code in and return code out, we can achieve similar syntax:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(</span>info x<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
+<div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> fwd2<span class="op">(</span>meta<span class="op">::</span>info x<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
 <span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
 <span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">([:</span>\tokens<span class="op">(</span>x<span class="op">):])&amp;&amp;&gt;([:</span>\tokens<span class="op">(</span>x<span class="op">):])</span>;</span>
 <span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
@@ -2635,42 +2718,41 @@ type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="
 The call-site syntax of
 <code class="sourceCode cpp">fwd2<span class="op">!</span></code> should
 be all you need to request tokenization.</p>
-<p>We would have to figure out what we would want <code class="sourceCode cpp">fwd2<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span></code>
-to do. One of the issues of C macros is not understand C++ token syntax,
-so this argument would have to be parenthesized. But if we want to
-operate on the token level, this seems like a given.</p>
 <p>Of course, <code class="sourceCode cpp">fwd2</code> is a regular C++
 function. You have to invoke it through the usual C++ scoping rules, so
 it does not suffer that problem from C macros. And then the body is a
 regular C++ function too, so writing complex token manipulation is just
 a matter of writing complex C++ code - which is a lot easier than
 writing complex C preprocessor code.</p>
-<h2 data-number="5.2" id="assertion"><span class="header-section-number">5.2</span> Assertion<a href="#assertion" class="self-link"></a></h2>
+<p>Note that the invocation of a macro like <code class="sourceCode cpp">macro<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span></code>
+would just work fine - the argument passed to
+<code class="sourceCode cpp">macro</code> would be <code class="sourceCode cpp"><span class="op">^{</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span> <span class="op">}</span></code>.
+But that leads us to the question of parsing…</p>
+<h2 data-number="5.3" id="assertion"><span class="header-section-number">5.3</span> Assertion<a href="#assertion" class="self-link"></a></h2>
 <p>Consider a different example (borrowed from <a href="https://www.forrestthewoods.com/blog/learning-jai-via-advent-of-code/">here</a>):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb63"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>info a,</span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>                         info b<span class="op">)</span> <span class="op">-&gt;</span> info <span class="op">{</span></span>
-<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
-<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sa <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
-<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> va <span class="op">=</span> \tokens<span class="op">(</span>a<span class="op">)</span>;</span>
-<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sb <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
-<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> vb <span class="op">=</span> \tokens<span class="op">(</span>b<span class="op">)</span>;</span>
-<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
-<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
-<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
-<span id="cb63-15"><a href="#cb63-15" aria-hidden="true" tabindex="-1"></a>                    sa, va,</span>
-<span id="cb63-16"><a href="#cb63-16" aria-hidden="true" tabindex="-1"></a>                    sb, vb,</span>
-<span id="cb63-17"><a href="#cb63-17" aria-hidden="true" tabindex="-1"></a>                    \<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
-<span id="cb63-18"><a href="#cb63-18" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
-<span id="cb63-19"><a href="#cb63-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb63-20"><a href="#cb63-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
-<span id="cb63-21"><a href="#cb63-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb63-22"><a href="#cb63-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>meta<span class="op">::</span>info a, meta<span class="op">::</span>info b<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sa <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> va <span class="op">=</span> \tokens<span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> sb <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> vb <span class="op">=</span> \tokens<span class="op">(</span>b<span class="op">)</span>;</span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>va <span class="op">==</span> vb<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
+<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a>                    sa, va,</span>
+<span id="cb63-15"><a href="#cb63-15" aria-hidden="true" tabindex="-1"></a>                    sb, vb,</span>
+<span id="cb63-16"><a href="#cb63-16" aria-hidden="true" tabindex="-1"></a>                    \<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
+<span id="cb63-17"><a href="#cb63-17" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb63-18"><a href="#cb63-18" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb63-19"><a href="#cb63-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb63-20"><a href="#cb63-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb63-21"><a href="#cb63-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>With the expectation that:</p>
@@ -2718,16 +2800,180 @@ writing complex C preprocessor code.</p>
 </table>
 <p>You can write this as a regular C macro today, but we bet it’s a
 little nicer to read using this language facility.</p>
-<p>Note that this still suffers from at least one C macro problem:
-naming. If instead of <code class="sourceCode cpp">assert_eq<span class="op">!(</span><span class="dv">42</span>, factorial<span class="op">(</span><span class="dv">3</span><span class="op">))</span></code>
+<p>However, this macro brings up two problems that we have to talk
+about: parsing and hygiene.</p>
+<h2 data-number="5.4" id="macro-parsing"><span class="header-section-number">5.4</span> Macro Parsing<a href="#macro-parsing" class="self-link"></a></h2>
+<p>The signature of the <a href="#assertion"><code class="sourceCode cpp">assert_eq<span class="op">!</span></code></a>
+macro we have above was:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb66"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>meta<span class="op">::</span>info a, meta<span class="op">::</span>info b<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Earlier we described the design as taking <em>a single</em> token
+sequence and producing a token sequence output. But for assertions, we
+of course want to compare <em>two</em> expressions. We’d of course want
+to express that as a function taking two token sequences, but how does
+the compiler know when to start one token seequence and start the next?
+That requires parsing. If the user writes <code class="sourceCode cpp">assert_eq<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, x<span class="op">)</span></code>,
+the compiler needs to figure out which comma in there is actually an
+argument delimiter (or how to fail if there is only one argument).</p>
+<p>There are a couple ways that we could approach this.</p>
+<p>We could always require that a macro takes a single token-sequence
+argument and provide a parser library to help pull out the pieces. For
+instance, <a href="https://docs.rs/syn/latest/syn/parse/index.html">in
+Rust</a>, you would write something like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Parse a possibly empty sequence of expressions terminated by commas with</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">// an optional trailing punctuation.</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> parser <span class="op">=</span> <span class="pp">Punctuated::</span><span class="op">&lt;</span>Expr<span class="op">,</span> <span class="pp">Token!</span>[<span class="op">,</span>]<span class="op">&gt;</span><span class="pp">::</span>parse_terminated<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> _args <span class="op">=</span> parser<span class="op">.</span>parse(tokens)<span class="op">?;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>And then for
+<code class="sourceCode cpp">assert_eq<span class="op">!</span></code>,
+verify that there are two such expressions and then do the rest of the
+work.</p>
+<p>Alternatively, we could push this more into the signature of the
+macro - choosing how to tokenize the input based on the parameter type
+list:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb67"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co">// this parses f!(1+2, f(3, 4))</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a><span class="co">// into f(^{1+2}, ^{f(3, 4)})</span></span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> f<span class="op">(</span>meta<span class="op">::</span>token<span class="op">::</span>expr lhs, meta<span class="op">::</span>token<span class="op">::</span>expr rhs<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info;</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a><span class="co">// this parses g!(1+2, f(3, 4))</span></span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a><span class="co">// into g(^{ 1+2, f(3, 4) })</span></span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> g<span class="op">(</span>meta<span class="op">::</span>info xs<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info;</span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a><span class="co">// this parses h!(1+2, f(3, 4))</span></span>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a><span class="co">// into h!({ ^{1+2}, ^{f(3, 4)}})</span></span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a><span class="co">// so that xs.size() == 2</span></span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> h<span class="op">(</span>meta<span class="op">::</span>token<span class="op">::</span>expr_list xs<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info</span></code></pre></div>
+</blockquote>
+</div>
+<p>The last example here with <code class="sourceCode cpp">h</code> is
+roughly the same idea as the parser example - except changing who does
+what work, where.</p>
+<h2 data-number="5.5" id="hygienic-macros"><span class="header-section-number">5.5</span> Hygienic Macros<a href="#hygienic-macros" class="self-link"></a></h2>
+<p>Regardless of how we parse the two expressions that are input into
+our macro, this still suffers from at least one C macro problem: naming.
+If instead of <code class="sourceCode cpp">assert_eq<span class="op">!(</span><span class="dv">42</span>, factorial<span class="op">(</span><span class="dv">3</span><span class="op">))</span></code>
 we wrote <code class="sourceCode cpp">assert_eq<span class="op">!(</span><span class="dv">42</span>, sa <span class="op">*</span> <span class="dv">2</span><span class="op">)</span></code>,
 then this would not compile - because name lookup in the
 <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code>
 loop would end up finding the local variable
-<code class="sourceCode cpp">sa</code> declared by the macro. So care
-would have to be taken in all of these cases (otherwise we would have to
-come up with a way to introduce unique names).</p>
-<h2 data-number="5.3" id="string-interpolation"><span class="header-section-number">5.3</span> String Interpolation<a href="#string-interpolation" class="self-link"></a></h2>
+<code class="sourceCode cpp">sa</code> declared by the macro.</p>
+<p>There are broadly two approaches to solve this problem:</p>
+<p>Macros are hygienic by default: names introduced in macros are (at
+least by default) distinct from names that are injected into those
+macros. This is the case in Racket and Scheme, as well as declarative
+Macros in Rust. For instance, in Rust, this code:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">macro_rules!</span> using_a <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    (<span class="op">$</span>e<span class="op">:</span>expr) <span class="op">=&gt;</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">let</span> a <span class="op">=</span> <span class="dv">42</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            <span class="op">$</span>e</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> four <span class="op">=</span> <span class="pp">using_a!</span>(a <span class="op">/</span> <span class="dv">10</span>)<span class="op">;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>emits</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb68"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>let four <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>    let <span class="orange">a</span> <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    a <span class="op">/</span> <span class="dv">10</span></span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Note that the two <code class="sourceCode cpp">a</code>s are spelled
+the same, but one is orange. That coloring is how hygienic macros work -
+names get an extra kind of scope depending on where they are used. So
+here the <code class="sourceCode cpp">a</code> in the
+<code class="sourceCode cpp">using_a</code> macro is in a different
+<em>span</em> than the <code class="sourceCode cpp">a</code> in the
+<code class="sourceCode cpp">a <span class="op">/</span> <span class="dv">10</span></code>
+tokens that were passed into the macro, so they are considered different
+names.</p>
+<p>Sometimes an unhygienic macro is useful though, to deliberately
+create an <em>anaphoric macro</em>. The canonical example is wanting to
+write an anaphoric if which takes an expression and, if it’s truthy,
+passes that expression as the name
+<code class="sourceCode cpp">it</code> to the
+<code class="sourceCode cpp">then</code> callable:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>(aif <span class="dv">#t</span> (displayln it) (void))</span></code></pre></div>
+</blockquote>
+</div>
+<p>Scheme/Racket have
+<code class="sourceCode cpp">syntax<span class="op">-</span>rules</code>
+to be able to provide an unhygienic parameter.</p>
+<p>Alternatively, macros are <em>not</em> hygienic by default. This is
+the case for Rust procedural macros, Swift’s macros, and to a very
+extreme degree, C. In order to make unhygienic macros usable, you need
+<em>some</em> mechanism of coming up with unique names if the language
+won’t do it for you. The LISP approach to this is a function named
+<code class="sourceCode cpp">gensym</code> which generates a unique
+symbol name. This takes more effort on the macro writer (who has to
+remember to use <code class="sourceCode cpp">gensym</code>) when they
+want hygienic variables - which is likely the overwhelmingly common
+case, unlike the anaphoric case in a hygienic system where the macro
+writer needs to opt out of hygiene.</p>
+<p>With hygienic macros, the assertion example is already correct. With
+unhygienic macros, we’d need to do something like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>meta<span class="op">::</span>info a, meta<span class="op">::</span>info b<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span>sa, va, sb, vb<span class="op">]</span> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>make_unique_names<span class="op">&lt;</span><span class="dv">4</span><span class="op">&gt;()</span>;</span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>sa<span class="op">)</span> <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>va<span class="op">)</span> <span class="op">=</span> \tokens<span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>sb<span class="op">)</span> <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
+<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>vb<span class="op">)</span> <span class="op">=</span> \tokens<span class="op">(</span>b<span class="op">)</span>;</span>
+<span id="cb69-11"><a href="#cb69-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-12"><a href="#cb69-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>\id<span class="op">(</span>va<span class="op">)</span> <span class="op">==</span> \id<span class="op">(</span>vb<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb69-13"><a href="#cb69-13" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb69-14"><a href="#cb69-14" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
+<span id="cb69-15"><a href="#cb69-15" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb69-16"><a href="#cb69-16" aria-hidden="true" tabindex="-1"></a>                    \id<span class="op">(</span>sa<span class="op">)</span>, \id<span class="op">(</span>va<span class="op">)</span>,</span>
+<span id="cb69-17"><a href="#cb69-17" aria-hidden="true" tabindex="-1"></a>                    \id<span class="op">(</span>sb<span class="op">)</span>, \id<span class="op">(</span>vb<span class="op">)</span>,</span>
+<span id="cb69-18"><a href="#cb69-18" aria-hidden="true" tabindex="-1"></a>                    \<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
+<span id="cb69-19"><a href="#cb69-19" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb69-20"><a href="#cb69-20" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb69-21"><a href="#cb69-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb69-22"><a href="#cb69-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb69-23"><a href="#cb69-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>That is, all the uses of local variables like
+<code class="sourceCode cpp">va</code> instead turn into <code class="sourceCode cpp">\id<span class="op">(</span>va<span class="op">)</span></code>.
+It’s not a huge amount of work, but it does get you into the same level
+of ugliness that we’re used to seeing in standard library
+implementations with all uses of
+<code class="sourceCode cpp">__name</code> instead of
+<code class="sourceCode cpp">name</code> to avoid collisions. Although
+this particular example might oversell the issue, since
+<code class="sourceCode cpp">sa</code> and
+<code class="sourceCode cpp">sb</code> don’t really need to be local
+variables - we could have just directly formatted <code class="sourceCode cpp">\<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span></code>
+and <code class="sourceCode cpp">\<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span></code>,
+respectively.</p>
+<p>Obviously, an unhygienic system is much easier to implement and
+specify - since hygiene would add complexity to how name lookup
+works.</p>
+<h2 data-number="5.6" id="string-interpolation"><span class="header-section-number">5.6</span> String Interpolation<a href="#string-interpolation" class="self-link"></a></h2>
 <p>Many programming languages support string interpolation. The ability
 to write something like <code class="sourceCode cpp">format<span class="op">!(</span><span class="st">&quot;x={x}&quot;</span><span class="op">)</span></code>
 instead of <code class="sourceCode cpp">format<span class="op">(</span><span class="st">&quot;x={}&quot;</span>, x<span class="op">)</span></code>.
@@ -2736,32 +2982,32 @@ formatting.</p>
 <p>We can write it as a library:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb66"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
-<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
-<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
-<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
-<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
-<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
-<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
-<span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-11"><a href="#cb66-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb66-12"><a href="#cb66-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
-<span id="cb66-13"><a href="#cb66-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-14"><a href="#cb66-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">^{</span></span>
-<span id="cb66-15"><a href="#cb66-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
-<span id="cb66-16"><a href="#cb66-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
-<span id="cb66-17"><a href="#cb66-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span>\<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
-<span id="cb66-18"><a href="#cb66-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb66-19"><a href="#cb66-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-20"><a href="#cb66-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb66-21"><a href="#cb66-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">=</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span>, \tokens<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
-<span id="cb66-22"><a href="#cb66-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb66-23"><a href="#cb66-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-24"><a href="#cb66-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now finally here&#39;s our close paren</span></span>
-<span id="cb66-25"><a href="#cb66-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span> <span class="op">)</span> <span class="op">}</span>;</span>
-<span id="cb66-26"><a href="#cb66-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
+<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
+<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
+<span id="cb70-10"><a href="#cb70-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-11"><a href="#cb70-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb70-12"><a href="#cb70-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
+<span id="cb70-13"><a href="#cb70-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-14"><a href="#cb70-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">^{</span></span>
+<span id="cb70-15"><a href="#cb70-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
+<span id="cb70-16"><a href="#cb70-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
+<span id="cb70-17"><a href="#cb70-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span>\<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
+<span id="cb70-18"><a href="#cb70-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb70-19"><a href="#cb70-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-20"><a href="#cb70-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb70-21"><a href="#cb70-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">=</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span>, \tokens<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
+<span id="cb70-22"><a href="#cb70-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb70-23"><a href="#cb70-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-24"><a href="#cb70-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now finally here&#39;s our close paren</span></span>
+<span id="cb70-25"><a href="#cb70-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span> <span class="op">)</span> <span class="op">}</span>;</span>
+<span id="cb70-26"><a href="#cb70-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>In the previous example, we demonstrated the need for a way to
@@ -2788,21 +3034,31 @@ tied to
 <code class="sourceCode cpp">std<span class="op">::</span>format</code>.
 It could easily be made into a library to be used by any logging
 framework.</p>
-<h2 data-number="5.4" id="alternate-syntax"><span class="header-section-number">5.4</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
+<p>Note here that unlike previous examples, the
+<code class="sourceCode cpp">format</code> macro just took a
+<code class="sourceCode cpp">string_view</code>. This is in contrast to
+the earlier examples where the macro had to take a token sequence
+(possibly with some <a href="#macro-parsing">parsing</a> involved).
+Depending on how we approach parsing, the design could simply be that
+any implicit tokenization only occurs if the macro’s parameters actually
+expect token sequences. Or it could be that the
+<code class="sourceCode cpp">format<span class="op">!</span></code>
+macro needs to take a token sequence too and parse a string literal out
+of it.</p>
+<h2 data-number="5.7" id="alternate-syntax"><span class="header-section-number">5.7</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
 <p>We have two forms of injection in this paper:</p>
 <ul>
 <li>metafunctions <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>queue_injection</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>namespace_inject</code>
 that take an <code class="sourceCode cpp">info</code>, used through <a href="#token-sequences">token sequences</a>.</li>
 <li>a trailing
-<code class="sourceCode cpp"><span class="op">!</span></code> used
-throughout <a href="#hygienic-macros">hygienic macros</a>.</li>
+<code class="sourceCode cpp"><span class="op">!</span></code> used for
+<a href="#better-macros">better macros</a>.</li>
 </ul>
-<p>But these really are tsimilar - both are requests to take an
-<code class="sourceCode cpp">info</code> and inject it in the current
-context. The bigger token sequence injection doesn’t really have any
-particular reason to require terse syntax. Prior papers did use some
-punctuation marks
+<p>But these really are similar - both are requests to take a token
+sequence and inject it in the current context. The bigger token sequence
+injection doesn’t really have any particular reason to require terse
+syntax. Prior papers did use some punctuation marks
 (e.g. <code class="sourceCode cpp"><span class="op">-&gt;</span></code>,
 <code class="sourceCode cpp"><span class="op">&lt;&lt;</span></code>),
 but a named function seems better. But the macros <em>really</em> do
@@ -2813,7 +3069,11 @@ option might be prefix
 <code class="sourceCode cpp"><span class="op">@</span></code>. As in
 <code class="sourceCode cpp"><span class="op">@</span>forward<span class="op">(</span>x<span class="op">)</span></code>,
 <code class="sourceCode cpp"><span class="op">@</span>assert_eq<span class="op">(</span>a, b<span class="op">)</span></code>,
-and <code class="sourceCode cpp"><span class="op">@</span>format<span class="op">(</span><span class="st">&quot;x={this-&gt;x}&quot;</span><span class="op">)</span></code>.</p>
+and <code class="sourceCode cpp"><span class="op">@</span>format<span class="op">(</span><span class="st">&quot;x={this-&gt;x}&quot;</span><span class="op">)</span></code>.
+This is what Swift does, using prefix
+<code class="sourceCode cpp"><span class="er">#</span></code> (which
+isn’t really a viable option for us as <code class="sourceCode cpp"><span class="pp">#</span><span class="er">x</span></code>
+already has meaning in the existing C preprocessor).</p>
 <p>Or we could stick with two syntaxes - the longer one for the bigger
 reflection cases where terseness is arguably bad, and the short one for
 the macro use case where terseness is essential.</p>
@@ -2841,7 +3101,7 @@ and <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="o
 string</li>
 <li>splitting a token sequence into a range of tokens</li>
 </ul></li>
-<li>hygienic macros would benefit syntactically from:
+<li>macros would benefit syntactically from:
 <ul>
 <li>a mechanism to accept a tokens sequence as a function parameter</li>
 <li>a mechanism to inject a token sequence directly as returned by a
@@ -2876,10 +3136,9 @@ design of source code fragments. <a href="https://wg21.link/p2050r0"><div class=
 <div id="ref-P2237R0" class="csl-entry" role="doc-biblioentry">
 [P2237R0] Andrew Sutton. 2020-10-15. Metaprogramming. <a href="https://wg21.link/p2237r0"><div class="csl-block">https://wg21.link/p2237r0</div></a>
 </div>
-<div id="ref-P2996R3" class="csl-entry" role="doc-biblioentry">
-[P2996R3] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-05-22. Reflection for
-C++26. <a href="https://wg21.link/p2996r3"><div class="csl-block">https://wg21.link/p2996r3</div></a>
+<div id="ref-P2996R4" class="csl-entry" role="doc-biblioentry">
+[P2996R4] Wyatt Childers, Dan Katz, Barry Revzin, Andrew Sutton, Faisal
+Vali, and Daveed Vandevoorde. 2024-06-26. Reflection for C++26. <a href="https://wg21.link/p2996r4"><div class="csl-block">https://wg21.link/p2996r4</div></a>
 </div>
 <div id="ref-P3096R1" class="csl-entry" role="doc-biblioentry">
 [P3096R1] Adam Lach, Walter Genovese. 2024-05-15. Function Parameter

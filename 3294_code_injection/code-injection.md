@@ -22,11 +22,11 @@ Since [@P3294R0]:
 * Refined the interpolator syntax to `\(e)`, `\id(e)`, and `\tokens(e)` (parens mandatory in all cases)
 * Dropped the `declare [: e :]` splicer
 * Implemented much of the proposal with links to examples (including a new [type erasure example](#type-erasure))
-* Changed syntax for hygienic macros, since the parameters can just be `std::meta::info`
+* Changed syntax for macros, since the parameters can just be `std::meta::info`, and extended discussion of them.
 
 # Introduction
 
-This paper is proposing augmenting [@P2996R3] to add code injection in the form of token sequences.
+This paper is proposing augmenting [@P2996R4] to add code injection in the form of token sequences.
 
 We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic ([@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
 
@@ -1032,12 +1032,12 @@ but with concatenation, we run into a problem:
 This doesn't produce the intended effect because it is a token sequence containing the tokens `T { } + args + ^ { }` instead of an expression containing two additions involving two token sequences as desired.
 
 Given that we need `\tokens` anyway, additionally adding concatenation with `+` and `+=` doesn't seem as necessary, especially since keeping the proposal minimal has a lot of value.
- 
+
 Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in their [string interpolation syntax](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation).
 
 ## Phase of Translation
 
-Token sequences are a construct that is processed in translation phase 7 ([lex.phases]{.sref}).  This has some natural consequences detailed below. 
+Token sequences are a construct that is processed in translation phase 7 ([lex.phases]{.sref}).  This has some natural consequences detailed below.
 
 The result of interpolating with `\tokens` is a token sequence consisting of all the tokens of both sequences:
 
@@ -1114,7 +1114,7 @@ A token sequence has no meaning by itself, until injected. But because (hopefull
 
 ## Injection
 
-Once we have a token sequence, we need to do something with it. We need to inject it somewhere to get parsed and become part of the program. 
+Once we have a token sequence, we need to do something with it. We need to inject it somewhere to get parsed and become part of the program.
 
 We propose two injection functions.
 
@@ -1122,7 +1122,7 @@ We propose two injection functions.
 
 `std::meta::namespace_inject(ns, e)`, where `ns` is a reflection of a namespace and `e` is a token sequence, will immediately inject the contents of `e` into the namespace designated by `ns`.
 
-We can inject into a namespace since namespaces are open - we cannot inject into any other context other than the one we're currently in. 
+We can inject into a namespace since namespaces are open - we cannot inject into any other context other than the one we're currently in.
 
 As a [simple example](https://godbolt.org/z/Ehnhxde3K):
 
@@ -1154,11 +1154,21 @@ int main() {
 
 With that out of the way, we can now go through our examples from earlier.
 
+## Token Sequence Type
+
+In this paper (and the current implement), the type of a token sequence is also `std::meta::info`. This follows the general [@P2996R4] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
+
+However, unlike reflections of source constructs, token sequence manipulation is a completely disjoint set of operations. The only kinds of reflection that can produce token sequences can only ever produce token sequences (e.g. getting the `noexcept` specifier of a function template).
+
+Some APIs only make sense to do on a token sequence - for instance while we described `+` as not being inessential, we could certainly still provide it - but from an API perspective it'd be nicer if it took two objects of type `token_sequence` rather than two of type `info` (and asserted that they were `token_sequence`s). Either way, misuse would be a compile error, but it might be better to only provide the operator when we know it's viable.
+
+A dedicated `token_sequence` type would also make [macros](#better-macros) stand out more from other reflection functions, since there will be a lot of functions that take a `meta::info` and return a `meta::info` and such functions are quite different from macros.
+
 ## Implementation Status
 
-A significant amount of this proposal is already implemented in EDG and is available for experimentation on Compiler Explorer. The examples we will demonstrate provide links. 
+A significant amount of this proposal is already implemented in EDG and is available for experimentation on Compiler Explorer. The examples we will demonstrate provide links.
 
-The implementation provides a `__report_tokens(e)` function that can be used to dump the contents of a token sequence during constant evaluation to aid in debugging. 
+The implementation provides a `__report_tokens(e)` function that can be used to dump the contents of a token sequence during constant evaluation to aid in debugging.
 
 Two things to note with the implementation:
 
@@ -1169,7 +1179,7 @@ Two things to note with the implementation:
 
 ## Examples
 
-Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment. 
+Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment.
 
 [Implementing `Tuple<Ts...>`](https://godbolt.org/z/861MsqzPx) requires using both the value interpolator and the identifier interpolator (in this case we're naming the members `_0`, `_1`, etc.):
 
@@ -1279,7 +1289,7 @@ The syntax here is, unsurprisingly, largely the same. We're mostly writing C++ c
 
 ## Type Erasure
 
-Given a type, whose declaration only contains member functions that aren't templates, it is possible to mechanically produce a type-erased version of that interface. 
+Given a type, whose declaration only contains member functions that aren't templates, it is possible to mechanically produce a type-erased version of that interface.
 
 For instance:
 
@@ -1341,11 +1351,11 @@ public:
 ```
 :::
 
-That implementation is currently non-owning, but it isn't that much of a difference to make it owning, move-only, have a small buffer optimized storage, etc. 
+That implementation is currently non-owning, but it isn't that much of a difference to make it owning, move-only, have a small buffer optimized storage, etc.
 
-There is a lot of code on the right (especially compared to the left), but the transformation is *purely* mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper. 
+There is a lot of code on the right (especially compared to the left), but the transformation is *purely* mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper.
 
-You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested type defintions in a class template. It's a healthy amount of code, but it's actually fairly straightforward. 
+You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested type defintions in a class template. It's a healthy amount of code, but it's actually fairly straightforward.
 
 ## Logging Vector: Cloning a Type
 
@@ -1375,7 +1385,7 @@ public:
 ```
 :::
 
-We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the token sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. But the nice thing about token sequence injection is that we really only have to do that *one* time and stuff it into a function. `make_decl_of()` can just be a function that takes a reflection of a function and returns a token sequence for its declaration. We'll probably want to put this in the standard library. 
+We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the token sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. But the nice thing about token sequence injection is that we really only have to do that *one* time and stuff it into a function. `make_decl_of()` can just be a function that takes a reflection of a function and returns a token sequence for its declaration. We'll probably want to put this in the standard library.
 
 Now, we have two problems to solve in the body (as well as a few more problems we'll get to later).
 
@@ -1492,7 +1502,7 @@ consteval {
 ```
 :::
 
-The problem is - this direction isn't really viable. Injection queues up requests for later. It may not be feasible for us to get back a reflection of `log_fun` in the way that we are using this example, so we probably cannot actually get back and access the reflections of the parameters as described in this example. 
+The problem is - this direction isn't really viable. Injection queues up requests for later. It may not be feasible for us to get back a reflection of `log_fun` in the way that we are using this example, so we probably cannot actually get back and access the reflections of the parameters as described in this example.
 
 ### Introducing Parameter Names
 
@@ -1541,7 +1551,7 @@ public:
 ```
 :::
 
-This approach is arguably simpler than reflecting on parameter names and requires no extra implementation effort to get there. 
+This approach is arguably simpler than reflecting on parameter names and requires no extra implementation effort to get there.
 
 ## Logging Vector II: Cloning with Modifications
 
@@ -1610,14 +1620,50 @@ But this... isn't right. Or rather, it could potentially be right in some design
 
 Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that? We don't quite have a good answer yet. But this is much farther than we've come with any other design.
 
-# Hygienic Macros
+# Better Macros
 
 C macros have a (well-deserved) bad reputation in the C++ community. This is because they have some intractable problems:
 
 * C macros don't follow any scoping rules, and can change any code, anywhere. This is why they do not leak into or out of C++ modules.
-* The C preprocessor is a language unto itself, that doesn't understand C++ syntax, with limited functionality that is very tedious to program in.
+* The C preprocessor is a language unto itself, that doesn't understand C++ syntax, with limited functionality that is very tedious to program in. Even what we would consider to be very basic language constructs like `if` or `for` are expert-level features in the preprocessor, and even then are highly limited.
 
 We think that C++ does need a code manipulation mechanism, and that token sequences can provide a much better solution than C macros.
+
+## Design Approach
+
+One way to think about a macro is that it is a function that takes _code_ and produces _code_, without necessarily evaluating or even parsing the code (indeed the code that is input to the macro need not even be valid C++ at all).
+
+With token sequences, we suddenly gain a way to represent macros in C++ proper: a macro is a function that takes a token sequence and returns a token sequence, whereby it can be automatically injected (with some syntax marker at the call site).
+
+This is already implicitly the way that macros operate in LISPs like Scheme and Racket, and is explicitly how they work in Rust and Swift. In Rust, [procedural macros](https://doc.rust-lang.org/reference/procedural-macros.html) have the form:
+
+::: std
+```rust
+#[proc_macro]
+pub fn macro(input: TokenStream) -> TokenStream {
+    ...
+}
+```
+:::
+
+Whereas in Swift, [macros](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/) have the form ([proposal](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0382-expression-macros.md)):
+
+::: std
+```swift
+public struct FourCharacterCode: ExpressionMacro {
+    public static func expansion(
+        of node: some FreestandingMacroExpansionSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> ExprSyntax {
+        ...
+    }
+}
+```
+:::
+
+Either way, unevaluated raw code in, unevaluated raw code out.
+
+Now that we have the ability to represent code in code (using token sequences) and can inject said code that is produced by regular C++ functions, we can do in the same in C++ as well.
 
 ## Forwarding
 
@@ -1636,11 +1682,11 @@ auto new_f = [](auto&& x) { return fwd(x); };
 ```
 :::
 
-With token sequences, we can achieve similar syntax:
+With token sequences, using the design described earlier that we accept code in and return code out, we can achieve similar syntax:
 
 ::: std
 ```cpp
-consteval auto fwd2(info x) -> info {
+consteval auto fwd2(meta::info x) -> meta::info {
     return ^{
         static_cast<decltype([:\tokens(x):])&&>([:\tokens(x):]);
     };
@@ -1652,11 +1698,11 @@ auto new_f2 = [](auto&& x) { return fwd2!(x); };
 
 The logic here is that `fwd2!(x)` is syntactic sugar for `immediately_inject(fwd2(^{ x }))` (which requires a new mechanism for injecting into an expression). We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
 
-The first revision of this paper used the placeholder syntax `@tokens x` to declare the parameter of `fwd2`, but it turns out that this is just a token sequence - so it can just have type `std::meta::info`. The call-site syntax of `fwd2!` should be all you need to request tokenization. 
-
-We would have to figure out what we would want `fwd2!(std::pair<int, int>{1, 2})` to do. One of the issues of C macros is not understand C++ token syntax, so this argument would have to be parenthesized. But if we want to operate on the token level, this seems like a given.
+The first revision of this paper used the placeholder syntax `@tokens x` to declare the parameter of `fwd2`, but it turns out that this is just a token sequence - so it can just have type `std::meta::info`. The call-site syntax of `fwd2!` should be all you need to request tokenization.
 
 Of course, `fwd2` is a regular C++ function. You have to invoke it through the usual C++ scoping rules, so it does not suffer that problem from C macros. And then the body is a regular C++ function too, so writing complex token manipulation is just a matter of writing complex C++ code - which is a lot easier than writing complex C preprocessor code.
+
+Note that the invocation of a macro like `macro!(std::pair<int, int>{1, 2})` would just work fine - the argument passed to `macro` would be `^{ std::pair<int, int>{1, 2} }`. But that leads us to the question of parsing...
 
 ## Assertion
 
@@ -1664,8 +1710,7 @@ Consider a different example (borrowed from [here](https://www.forrestthewoods.c
 
 ::: std
 ```cpp
-consteval auto assert_eq(info a,
-                         info b) -> info {
+consteval auto assert_eq(meta::info a, meta::info b) -> meta::info {
     return ^{
         do {
             auto sa = \(stringify(a));
@@ -1721,7 +1766,137 @@ do {
 
 You can write this as a regular C macro today, but we bet it's a little nicer to read using this language facility.
 
-Note that this still suffers from at least one C macro problem: naming. If instead of `assert_eq!(42, factorial(3))` we wrote `assert_eq!(42, sa * 2)`, then this would not compile - because name lookup in the `do`-`while` loop would end up finding the local variable `sa` declared by the macro. So care would have to be taken in all of these cases (otherwise we would have to come up with a way to introduce unique names).
+However, this macro brings up two problems that we have to talk about: parsing and hygiene.
+
+## Macro Parsing
+
+The signature of the [`assert_eq!`](#assertion) macro we have above was:
+
+::: std
+```cpp
+consteval auto assert_eq(meta::info a, meta::info b) -> meta::info;
+```
+:::
+
+Earlier we described the design as taking _a single_ token sequence and producing a token sequence output. But for assertions, we of course want to compare _two_ expressions. We'd of course want to express that as a function taking two token sequences, but how does the compiler know when to start one token seequence and start the next? That requires parsing. If the user writes `assert_eq!(std::pair<int, int>{1, 2}, x)`, the compiler needs to figure out which comma in there is actually an argument delimiter (or how to fail if there is only one argument).
+
+There are a couple ways that we could approach this.
+
+We could always require that a macro takes a single token-sequence argument and provide a parser library to help pull out the pieces. For instance, [in Rust](https://docs.rs/syn/latest/syn/parse/index.html), you would write something like this:
+
+::: std
+```rust
+// Parse a possibly empty sequence of expressions terminated by commas with
+// an optional trailing punctuation.
+let parser = Punctuated::<Expr, Token![,]>::parse_terminated;
+let _args = parser.parse(tokens)?;
+```
+:::
+
+And then for `assert_eq!`, verify that there are two such expressions and then do the rest of the work.
+
+Alternatively, we could push this more into the signature of the macro - choosing how to tokenize the input based on the parameter type list:
+
+::: std
+```cpp
+// this parses f!(1+2, f(3, 4))
+// into f(^{1+2}, ^{f(3, 4)})
+consteval auto f(meta::token::expr lhs, meta::token::expr rhs) -> meta::info;
+
+// this parses g!(1+2, f(3, 4))
+// into g(^{ 1+2, f(3, 4) })
+consteval auto g(meta::info xs) -> meta::info;
+
+// this parses h!(1+2, f(3, 4))
+// into h!({ ^{1+2}, ^{f(3, 4)}})
+// so that xs.size() == 2
+consteval auto h(meta::token::expr_list xs) -> meta::info
+```
+:::
+
+The last example here with `h` is roughly the same idea as the parser example - except changing who does what work, where.
+
+## Hygienic Macros
+
+Regardless of how we parse the two expressions that are input into our macro, this still suffers from at least one C macro problem: naming. If instead of `assert_eq!(42, factorial(3))` we wrote `assert_eq!(42, sa * 2)`, then this would not compile - because name lookup in the `do`-`while` loop would end up finding the local variable `sa` declared by the macro.
+
+There are broadly two approaches to solve this problem:
+
+Macros are hygienic by default: names introduced in macros are (at least by default) distinct from names that are injected into those macros. This is the case in Racket and Scheme, as well as declarative Macros in Rust. For instance, in Rust, this code:
+
+::: std
+```rust
+macro_rules! using_a {
+    ($e:expr) => {
+        {
+            let a = 42;
+            $e
+        }
+    }
+}
+
+let four = using_a!(a / 10);
+```
+:::
+
+emits
+
+::: std
+```cpp
+let four = {
+    let @[a]{.orange}@ = 42;
+    a / 10
+}
+```
+:::
+
+Note that the two `a`s are spelled the same, but one is orange. That coloring is how hygienic macros work - names get an extra kind of scope depending on where they are used. So here the `a` in the `using_a` macro is in a different *span* than the `a` in the `a / 10` tokens that were passed into the macro, so they are considered different names.
+
+Sometimes an unhygienic macro is useful though, to deliberately create an _anaphoric macro_. The canonical example is wanting to write an anaphoric if which takes an expression and, if it's truthy, passes that expression as the name `it` to the `then` callable:
+
+::: std
+```scheme
+(aif #t (displayln it) (void))
+```
+:::
+
+Scheme/Racket have `syntax-rules` to be able to provide an unhygienic parameter.
+
+Alternatively, macros are *not* hygienic by default. This is the case for Rust procedural macros, Swift's macros, and to a very extreme degree, C. In order to make unhygienic macros usable, you need _some_ mechanism of coming up with unique names if the language won't do it for you. The LISP approach to this is a function named `gensym` which generates a unique symbol name. This takes more effort on the macro writer (who has to remember to use `gensym`) when they want hygienic variables - which is likely the overwhelmingly common case, unlike the anaphoric case in a hygienic system where the macro writer needs to opt out of hygiene.
+
+With hygienic macros, the assertion example is already correct. With unhygienic macros, we'd need to do something like this:
+
+::: std
+```cpp
+consteval auto assert_eq(meta::info a, meta::info b) -> meta::info {
+    auto [sa, va, sb, vb] = std::meta::make_unique_names<4>();
+
+    return ^{
+        do {
+            auto \id(sa) = \(stringify(a));
+            auto \id(va) = \tokens(a);
+
+            auto \id(sb) = \(stringify(b));
+            auto \id(vb) = \tokens(b);
+
+            if (not (\id(va) == \id(vb))) {
+                std::println(
+                    stderr,
+                    "{} ({}) == {} ({}) failed at {}",
+                    \id(sa), \id(va),
+                    \id(sb), \id(vb),
+                    \(source_location_of(a)));
+                std::abort();
+            }
+        } while (false);
+    };
+}
+```
+:::
+
+That is, all the uses of local variables like `va` instead turn into `\id(va)`. It's not a huge amount of work, but it does get you into the same level of ugliness that we're used to seeing in standard library implementations with all uses of `__name` instead of `name` to avoid collisions. Although this particular example might oversell the issue, since `sa` and `sb` don't really need to be local variables - we could have just directly formatted `\(stringify(a))` and `\(stringify(b))`, respectively.
+
+Obviously, an unhygienic system is much easier to implement and specify - since hygiene would add complexity to how name lookup works.
 
 ## String Interpolation
 
@@ -1768,16 +1943,18 @@ Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're no
 
 But realistically, this would handily cover the 90%, if not the 99% case. Not to mention could easily adopt other nice features of string interpolation that show up in other languages (like Python's `f"{x =}` which formats as `"x = 42"`) as library features. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
+Note here that unlike previous examples, the `format` macro just took a `string_view`. This is in contrast to the earlier examples where the macro had to take a token sequence (possibly with some [parsing](#macro-parsing) involved). Depending on how we approach parsing, the design could simply be that any implicit tokenization only occurs if the macro's parameters actually expect token sequences. Or it could be that the `format!` macro needs to take a token sequence too and parse a string literal out of it.
+
 ## Alternate Syntax
 
 We have two forms of injection in this paper:
 
 * metafunctions `std::meta::queue_injection` and `std::meta::namespace_inject` that take an `info`, used through [token sequences](#token-sequences).
-* a trailing `!` used throughout [hygienic macros](#hygienic-macros).
+* a trailing `!` used for [better macros](#better-macros).
 
-But these really are tsimilar - both are requests to take an `info` and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
+But these really are similar - both are requests to take a token sequence and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 
-Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`.
+Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This is what Swift does, using prefix `#` (which isn't really a viable option for us as `#x` already has meaning in the existing C preprocessor).
 
 Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
 
@@ -1795,7 +1972,25 @@ This proposal consists of several pieces:
 * new metaprogramming facilities for dealing with token sequences:
     * converting a string to a token sequence and a token sequence to a string
     * splitting a token sequence into a range of tokens
-* hygienic macros would benefit syntactically from:
+* macros would benefit syntactically from:
     * a mechanism to accept a tokens sequence as a function parameter
     * a mechanism to inject a token sequence directly as returned by a function (trailing `!`)
 
+---
+references:
+  - id: P2996R4
+    citation-label: P2996R4
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2024
+        month: 06
+        day: 26
+    URL: https://wg21.link/p2996r4
+---
