@@ -2299,6 +2299,7 @@ namespace std::meta {
   consteval auto is_alias_template(info entity) -> bool;
   consteval auto is_conversion_function_template(info entity) -> bool;
   consteval auto is_operator_function_template(info entity) -> bool;
+  consteval auto is_literal_operator_template(info entity) -> bool;
   consteval auto is_constructor_template(info entity) -> bool;
   consteval auto is_concept(info entity) -> bool;
   consteval auto is_structured_binding(info entity) -> bool;
@@ -2310,6 +2311,7 @@ namespace std::meta {
   consteval auto is_special_member(info r) -> bool;
   consteval auto is_conversion_function(info r) -> bool;
   consteval auto is_operator_function(info r) -> bool;
+  consteval auto is_literal_operator(info r) -> bool;
   consteval auto is_constructor(info r) -> bool;
   consteval auto is_default_constructor(info r) -> bool;
   consteval auto is_copy_constructor(info r) -> bool;
@@ -4014,6 +4016,7 @@ namespace std::meta {
   consteval bool is_alias_template(info r);
   consteval bool is_conversion_function_template(info r);
   consteval bool is_operator_function_template(info r);
+  consteval bool is_literal_operator_template(info r);
   consteval bool is_constructor_template(info r);
   consteval bool is_concept(info r);
   consteval bool is_value(info r);
@@ -4029,6 +4032,7 @@ namespace std::meta {
 
   consteval bool is_conversion_function(info r);
   consteval bool is_operator_function(info r);
+  consteval bool is_literal_operator(info r);
 
   consteval bool is_special_member(info r);
   consteval bool is_constructor(info r);
@@ -4473,12 +4477,13 @@ consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
 consteval bool is_conversion_function_template(info r);
 consteval bool is_operator_function_template(info r);
+consteval bool is_literal_operator_template(info r);
 consteval bool is_constructor_template(info r);
 consteval bool is_concept(info r);
 consteval bool is_structured_binding(info r);
 consteval bool is_value(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, conversion function template, operator function template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, conversion function template, operator function template, literal operator template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_object(info r);
@@ -4510,9 +4515,10 @@ consteval bool has_default_member_initializer(info r);
 ```cpp
 consteval bool is_conversion_function(info r);
 consteval bool is_operator_function(info r);
+consteval bool is_literal_operator(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a conversion function or an operator function, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a conversion function, operator function, or literal operator, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_special_member(info r);
