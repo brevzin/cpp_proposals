@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-07-11" />
+  <meta name="dcterms.date" content="2024-07-13" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-07-11</td>
+    <td>2024-07-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -2916,7 +2916,36 @@ passes that expression as the name
 </div>
 <p>Scheme/Racket have
 <code class="sourceCode cpp">syntax<span class="op">-</span>rules</code>
-to be able to provide an unhygienic parameter.</p>
+to be able to provide such an unhygienic parameter.</p>
+<p>A more familiar example of an anaphoric macro in C++ would be the
+ability to declare a unary lambda whose parameter is named
+<code class="sourceCode cpp">it</code> in a very abbreviated form, as
+in:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> positive <span class="op">=</span> std<span class="op">::</span>ranges<span class="op">::</span>count_if<span class="op">(</span>r, λ<span class="op">!(</span>it <span class="op">&gt;</span> <span class="dv">0</span><span class="op">))</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>which we can declare as:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> λ<span class="op">(</span>meta<span class="op">::</span>info body<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">[&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> it<span class="op">)</span></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">noexcept</span><span class="op">(</span><span class="kw">noexcept</span><span class="op">(</span>\tokens<span class="op">(</span>body<span class="op">)))</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>            <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>\tokens<span class="op">(</span>body<span class="op">))</span></span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> \tokens<span class="op">(</span>body<span class="op">)</span>;</span>
+<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb70-10"><a href="#cb70-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Such a macro would not work in a hygienic system, because the
+<code class="sourceCode cpp">it</code> in the expression <code class="sourceCode cpp">it <span class="op">&gt;</span> <span class="dv">0</span></code>
+would not find the parameter declared
+<code class="sourceCode cpp">it</code> as they live in different
+spans.</p>
 <p>Alternatively, macros are <em>not</em> hygienic by default. This is
 the case for Rust procedural macros, Swift’s macros, and to a very
 extreme degree, C. In order to make unhygienic macros usable, you need
@@ -2932,29 +2961,29 @@ writer needs to opt out of hygiene.</p>
 unhygienic macros, we’d need to do something like this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>meta<span class="op">::</span>info a, meta<span class="op">::</span>info b<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span>sa, va, sb, vb<span class="op">]</span> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>make_unique_names<span class="op">&lt;</span><span class="dv">4</span><span class="op">&gt;()</span>;</span>
-<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
-<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>sa<span class="op">)</span> <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
-<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>va<span class="op">)</span> <span class="op">=</span> \tokens<span class="op">(</span>a<span class="op">)</span>;</span>
-<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>sb<span class="op">)</span> <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
-<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>vb<span class="op">)</span> <span class="op">=</span> \tokens<span class="op">(</span>b<span class="op">)</span>;</span>
-<span id="cb69-11"><a href="#cb69-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb69-12"><a href="#cb69-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>\id<span class="op">(</span>va<span class="op">)</span> <span class="op">==</span> \id<span class="op">(</span>vb<span class="op">)))</span> <span class="op">{</span></span>
-<span id="cb69-13"><a href="#cb69-13" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
-<span id="cb69-14"><a href="#cb69-14" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
-<span id="cb69-15"><a href="#cb69-15" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
-<span id="cb69-16"><a href="#cb69-16" aria-hidden="true" tabindex="-1"></a>                    \id<span class="op">(</span>sa<span class="op">)</span>, \id<span class="op">(</span>va<span class="op">)</span>,</span>
-<span id="cb69-17"><a href="#cb69-17" aria-hidden="true" tabindex="-1"></a>                    \id<span class="op">(</span>sb<span class="op">)</span>, \id<span class="op">(</span>vb<span class="op">)</span>,</span>
-<span id="cb69-18"><a href="#cb69-18" aria-hidden="true" tabindex="-1"></a>                    \<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
-<span id="cb69-19"><a href="#cb69-19" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
-<span id="cb69-20"><a href="#cb69-20" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb69-21"><a href="#cb69-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
-<span id="cb69-22"><a href="#cb69-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb69-23"><a href="#cb69-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> assert_eq<span class="op">(</span>meta<span class="op">::</span>info a, meta<span class="op">::</span>info b<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span>sa, va, sb, vb<span class="op">]</span> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>make_unique_names<span class="op">&lt;</span><span class="dv">4</span><span class="op">&gt;()</span>;</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>sa<span class="op">)</span> <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>a<span class="op">))</span>;</span>
+<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>va<span class="op">)</span> <span class="op">=</span> \tokens<span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>sb<span class="op">)</span> <span class="op">=</span> \<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span>;</span>
+<span id="cb71-10"><a href="#cb71-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> \id<span class="op">(</span>vb<span class="op">)</span> <span class="op">=</span> \tokens<span class="op">(</span>b<span class="op">)</span>;</span>
+<span id="cb71-11"><a href="#cb71-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb71-12"><a href="#cb71-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> <span class="op">(</span>\id<span class="op">(</span>va<span class="op">)</span> <span class="op">==</span> \id<span class="op">(</span>vb<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb71-13"><a href="#cb71-13" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>println<span class="op">(</span></span>
+<span id="cb71-14"><a href="#cb71-14" aria-hidden="true" tabindex="-1"></a>                    stderr,</span>
+<span id="cb71-15"><a href="#cb71-15" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;{} ({}) == {} ({}) failed at {}&quot;</span>,</span>
+<span id="cb71-16"><a href="#cb71-16" aria-hidden="true" tabindex="-1"></a>                    \id<span class="op">(</span>sa<span class="op">)</span>, \id<span class="op">(</span>va<span class="op">)</span>,</span>
+<span id="cb71-17"><a href="#cb71-17" aria-hidden="true" tabindex="-1"></a>                    \id<span class="op">(</span>sb<span class="op">)</span>, \id<span class="op">(</span>vb<span class="op">)</span>,</span>
+<span id="cb71-18"><a href="#cb71-18" aria-hidden="true" tabindex="-1"></a>                    \<span class="op">(</span>source_location_of<span class="op">(</span>a<span class="op">)))</span>;</span>
+<span id="cb71-19"><a href="#cb71-19" aria-hidden="true" tabindex="-1"></a>                std<span class="op">::</span>abort<span class="op">()</span>;</span>
+<span id="cb71-20"><a href="#cb71-20" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb71-21"><a href="#cb71-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">while</span> <span class="op">(</span><span class="kw">false</span><span class="op">)</span>;</span>
+<span id="cb71-22"><a href="#cb71-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb71-23"><a href="#cb71-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>That is, all the uses of local variables like
@@ -2971,8 +3000,8 @@ variables - we could have just directly formatted <code class="sourceCode cpp">\
 and <code class="sourceCode cpp">\<span class="op">(</span>stringify<span class="op">(</span>b<span class="op">))</span></code>,
 respectively.</p>
 <p>Obviously, an unhygienic system is much easier to implement and
-specify - since hygiene would add complexity to how name lookup
-works.</p>
+specify - since hygiene would add complexity (and likely some overhead)
+to how name lookup works.</p>
 <h2 data-number="5.6" id="string-interpolation"><span class="header-section-number">5.6</span> String Interpolation<a href="#string-interpolation" class="self-link"></a></h2>
 <p>Many programming languages support string interpolation. The ability
 to write something like <code class="sourceCode cpp">format<span class="op">!(</span><span class="st">&quot;x={x}&quot;</span><span class="op">)</span></code>
@@ -2982,32 +3011,32 @@ formatting.</p>
 <p>We can write it as a library:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
-<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
-<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
-<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
-<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
-<span id="cb70-10"><a href="#cb70-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-11"><a href="#cb70-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb70-12"><a href="#cb70-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
-<span id="cb70-13"><a href="#cb70-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-14"><a href="#cb70-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">^{</span></span>
-<span id="cb70-15"><a href="#cb70-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
-<span id="cb70-16"><a href="#cb70-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
-<span id="cb70-17"><a href="#cb70-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span>\<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
-<span id="cb70-18"><a href="#cb70-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb70-19"><a href="#cb70-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-20"><a href="#cb70-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb70-21"><a href="#cb70-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">=</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span>, \tokens<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
-<span id="cb70-22"><a href="#cb70-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb70-23"><a href="#cb70-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-24"><a href="#cb70-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now finally here&#39;s our close paren</span></span>
-<span id="cb70-25"><a href="#cb70-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span> <span class="op">)</span> <span class="op">}</span>;</span>
-<span id="cb70-26"><a href="#cb70-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the actual parsing isn&#39;t interesting here.</span></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the goal is to take a string like &quot;x={this-&gt;x:02} y={this-&gt;y:02}&quot;</span></span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a><span class="co">// and return {.format_str=&quot;x={:02} y={:02}&quot;, .args={&quot;this-&gt;x&quot;, &quot;this-&gt;y&quot;}}</span></span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FormatParts <span class="op">{</span></span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>    string_view format_str;</span>
+<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span>string_view<span class="op">&gt;</span> args;</span>
+<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parse_format_string<span class="op">(</span>string_view<span class="op">)</span> <span class="op">-&gt;</span> FormatParts;</span>
+<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-11"><a href="#cb72-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> format<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb72-12"><a href="#cb72-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> parts <span class="op">=</span> parse_format_string<span class="op">(</span>str<span class="op">)</span>;</span>
+<span id="cb72-13"><a href="#cb72-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-14"><a href="#cb72-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> tok <span class="op">=</span> <span class="op">^{</span></span>
+<span id="cb72-15"><a href="#cb72-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// NB: there&#39;s no close paren yet</span></span>
+<span id="cb72-16"><a href="#cb72-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we&#39;re allowed to build up a partial fragment like this</span></span>
+<span id="cb72-17"><a href="#cb72-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">::</span>std<span class="op">::</span>format<span class="op">(</span>\<span class="op">(</span>parts<span class="op">.</span>format_str<span class="op">)</span></span>
+<span id="cb72-18"><a href="#cb72-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb72-19"><a href="#cb72-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-20"><a href="#cb72-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>string_view arg <span class="op">:</span> parts<span class="op">.</span>args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb72-21"><a href="#cb72-21" aria-hidden="true" tabindex="-1"></a>        tok <span class="op">=</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span>, \tokens<span class="op">(</span>tokenize<span class="op">(</span>arg<span class="op">))</span> <span class="op">}</span>;</span>
+<span id="cb72-22"><a href="#cb72-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb72-23"><a href="#cb72-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-24"><a href="#cb72-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now finally here&#39;s our close paren</span></span>
+<span id="cb72-25"><a href="#cb72-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span> \tokens<span class="op">(</span>tok<span class="op">)</span> <span class="op">)</span> <span class="op">}</span>;</span>
+<span id="cb72-26"><a href="#cb72-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>In the previous example, we demonstrated the need for a way to

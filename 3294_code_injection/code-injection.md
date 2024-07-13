@@ -1860,7 +1860,34 @@ Sometimes an unhygienic macro is useful though, to deliberately create an _anaph
 ```
 :::
 
-Scheme/Racket have `syntax-rules` to be able to provide an unhygienic parameter.
+Scheme/Racket have `syntax-rules` to be able to provide such an unhygienic parameter.
+
+A more familiar example of an anaphoric macro in C++ would be the ability to declare a unary lambda whose parameter is named `it` in a very abbreviated form, as in:
+
+::: std
+```cpp
+auto positive = std::ranges::count_if(r, λ!(it > 0));
+```
+:::
+
+which we can declare as:
+
+::: std
+```cpp
+consteval auto λ(meta::info body) -> meta::info {
+    return ^{
+        [&](auto&& it)
+            noexcept(noexcept(\tokens(body)))
+            -> decltype(\tokens(body))
+        {
+            return \tokens(body);
+        }
+    }
+}
+```
+:::
+
+Such a macro would not work in a hygienic system, because the `it` in the expression `it > 0` would not find the parameter declared `it` as they live in different spans.
 
 Alternatively, macros are *not* hygienic by default. This is the case for Rust procedural macros, Swift's macros, and to a very extreme degree, C. In order to make unhygienic macros usable, you need _some_ mechanism of coming up with unique names if the language won't do it for you. The LISP approach to this is a function named `gensym` which generates a unique symbol name. This takes more effort on the macro writer (who has to remember to use `gensym`) when they want hygienic variables - which is likely the overwhelmingly common case, unlike the anaphoric case in a hygienic system where the macro writer needs to opt out of hygiene.
 
@@ -1896,7 +1923,7 @@ consteval auto assert_eq(meta::info a, meta::info b) -> meta::info {
 
 That is, all the uses of local variables like `va` instead turn into `\id(va)`. It's not a huge amount of work, but it does get you into the same level of ugliness that we're used to seeing in standard library implementations with all uses of `__name` instead of `name` to avoid collisions. Although this particular example might oversell the issue, since `sa` and `sb` don't really need to be local variables - we could have just directly formatted `\(stringify(a))` and `\(stringify(b))`, respectively.
 
-Obviously, an unhygienic system is much easier to implement and specify - since hygiene would add complexity to how name lookup works.
+Obviously, an unhygienic system is much easier to implement and specify - since hygiene would add complexity (and likely some overhead) to how name lookup works.
 
 ## String Interpolation
 
