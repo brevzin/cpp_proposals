@@ -1972,6 +1972,36 @@ But realistically, this would handily cover the 90%, if not the 99% case. Not to
 
 Note here that unlike previous examples, the `format` macro just took a `string_view`. This is in contrast to the earlier examples where the macro had to take a token sequence (possibly with some [parsing](#macro-parsing) involved). Depending on how we approach parsing, the design could simply be that any implicit tokenization only occurs if the macro's parameters actually expect token sequences. Or it could be that the `format!` macro needs to take a token sequence too and parse a string literal out of it.
 
+## Abbreviated Lambdas
+
+In the hygiene section, we had an example of an abbreviated, unary lambda using a parameter named `it`. That is something that could already be done in a C macro today. However, one thing that cannot easily be done in a C macro is to generalize this to writing a lambda macro that can take a specified number of parameters. As in:
+
+::: std
+```cpp
+consteval auto λ(int n, meta::info body) -> meta::info {
+    // our parameters are _1, _2, ..., _n
+    auto params = list_builder();
+    for (int i = 0; i < n; ++i) {
+        params += ^{ auto&& \id("_", i+1) };
+    }
+
+    // and then the rest is just repeating the body
+    return ^{
+        [&](\tokens(params))
+            noexcept(noexcept(\tokens(body)))
+            -> decltype(\tokens(body))
+        {
+            return \tokens(body);
+        }
+    };
+}
+```
+:::
+
+As with the string interpolation example, here we're now taking one parameter of type `int` (that doesn't need to be tokenized) and another parameter that are the actual tokens. The usage here might be something like `λ!(2, _1 > _2)` - which is a lambda version of `std::greater{}`.
+
+Of course it'd be nice to do even better. That is: we can infer the arity of the lambda based on the parameters that are used. This paper does not yet have an API for iterating over a token sequence - but this particular problem would not involve parsing. Simply iterate over the tokens and find the largest `n` for which there exists an identifier of the form `_$n$` and use that as the arity. That would allow `λ!(_1 > _2)` by itself to be a binary lambda (or a lambda that takes at least two parameters). Can't do that with a C macro!
+
 ## Alternate Syntax
 
 We have two forms of injection in this paper:
@@ -1981,7 +2011,7 @@ We have two forms of injection in this paper:
 
 But these really are similar - both are requests to take a token sequence and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 
-Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This is what Swift does, using prefix `#` (which isn't really a viable option for us as `#x` already has meaning in the existing C preprocessor).
+Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This is what Swift does, except using prefix `#` (which isn't really a viable option for us as `#x` already has meaning in the existing C preprocessor and we wouldn't want to completely prevent using new macros inside of old macros).
 
 Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
 

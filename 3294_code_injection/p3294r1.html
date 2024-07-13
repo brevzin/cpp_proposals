@@ -637,7 +637,9 @@ Parsing<span></span></a></li>
 Macros<span></span></a></li>
 <li><a href="#string-interpolation" id="toc-string-interpolation"><span class="toc-section-number">5.6</span> String
 Interpolation<span></span></a></li>
-<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">5.7</span> Alternate
+<li><a href="#abbreviated-lambdas" id="toc-abbreviated-lambdas"><span class="toc-section-number">5.7</span> Abbreviated
+Lambdas<span></span></a></li>
+<li><a href="#alternate-syntax" id="toc-alternate-syntax"><span class="toc-section-number">5.8</span> Alternate
 Syntax<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">6</span> Proposal<span></span></a></li>
@@ -3074,7 +3076,51 @@ expect token sequences. Or it could be that the
 <code class="sourceCode cpp">format<span class="op">!</span></code>
 macro needs to take a token sequence too and parse a string literal out
 of it.</p>
-<h2 data-number="5.7" id="alternate-syntax"><span class="header-section-number">5.7</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
+<h2 data-number="5.7" id="abbreviated-lambdas"><span class="header-section-number">5.7</span> Abbreviated Lambdas<a href="#abbreviated-lambdas" class="self-link"></a></h2>
+<p>In the hygiene section, we had an example of an abbreviated, unary
+lambda using a parameter named <code class="sourceCode cpp">it</code>.
+That is something that could already be done in a C macro today.
+However, one thing that cannot easily be done in a C macro is to
+generalize this to writing a lambda macro that can take a specified
+number of parameters. As in:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb73"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> λ<span class="op">(</span><span class="dt">int</span> n, meta<span class="op">::</span>info body<span class="op">)</span> <span class="op">-&gt;</span> meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// our parameters are _1, _2, ..., _n</span></span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> params <span class="op">=</span> list_builder<span class="op">()</span>;</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> n; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>        params <span class="op">+=</span> <span class="op">^{</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> \id<span class="op">(</span><span class="st">&quot;_&quot;</span>, i<span class="op">+</span><span class="dv">1</span><span class="op">)</span> <span class="op">}</span>;</span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// and then the rest is just repeating the body</span></span>
+<span id="cb73-9"><a href="#cb73-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^{</span></span>
+<span id="cb73-10"><a href="#cb73-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">[&amp;](</span>\tokens<span class="op">(</span>params<span class="op">))</span></span>
+<span id="cb73-11"><a href="#cb73-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">noexcept</span><span class="op">(</span><span class="kw">noexcept</span><span class="op">(</span>\tokens<span class="op">(</span>body<span class="op">)))</span></span>
+<span id="cb73-12"><a href="#cb73-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span>\tokens<span class="op">(</span>body<span class="op">))</span></span>
+<span id="cb73-13"><a href="#cb73-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb73-14"><a href="#cb73-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> \tokens<span class="op">(</span>body<span class="op">)</span>;</span>
+<span id="cb73-15"><a href="#cb73-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb73-16"><a href="#cb73-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb73-17"><a href="#cb73-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>As with the string interpolation example, here we’re now taking one
+parameter of type
+<code class="sourceCode cpp"><span class="dt">int</span></code> (that
+doesn’t need to be tokenized) and another parameter that are the actual
+tokens. The usage here might be something like <code class="sourceCode cpp">λ<span class="op">!(</span><span class="dv">2</span>, _1 <span class="op">&gt;</span> _2<span class="op">)</span></code>
+- which is a lambda version of <code class="sourceCode cpp">std<span class="op">::</span>greater<span class="op">{}</span></code>.</p>
+<p>Of course it’d be nice to do even better. That is: we can infer the
+arity of the lambda based on the parameters that are used. This paper
+does not yet have an API for iterating over a token sequence - but this
+particular problem would not involve parsing. Simply iterate over the
+tokens and find the largest <code class="sourceCode cpp">n</code> for
+which there exists an identifier of the form
+<code class="sourceCode cpp">_<em>n</em></code> and use that as the
+arity. That would allow <code class="sourceCode cpp">λ<span class="op">!(</span>_1 <span class="op">&gt;</span> _2<span class="op">)</span></code>
+by itself to be a binary lambda (or a lambda that takes at least two
+parameters). Can’t do that with a C macro!</p>
+<h2 data-number="5.8" id="alternate-syntax"><span class="header-section-number">5.8</span> Alternate Syntax<a href="#alternate-syntax" class="self-link"></a></h2>
 <p>We have two forms of injection in this paper:</p>
 <ul>
 <li>metafunctions <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>queue_injection</code>
@@ -3099,10 +3145,11 @@ option might be prefix
 <code class="sourceCode cpp"><span class="op">@</span>forward<span class="op">(</span>x<span class="op">)</span></code>,
 <code class="sourceCode cpp"><span class="op">@</span>assert_eq<span class="op">(</span>a, b<span class="op">)</span></code>,
 and <code class="sourceCode cpp"><span class="op">@</span>format<span class="op">(</span><span class="st">&quot;x={this-&gt;x}&quot;</span><span class="op">)</span></code>.
-This is what Swift does, using prefix
+This is what Swift does, except using prefix
 <code class="sourceCode cpp"><span class="er">#</span></code> (which
 isn’t really a viable option for us as <code class="sourceCode cpp"><span class="pp">#</span><span class="er">x</span></code>
-already has meaning in the existing C preprocessor).</p>
+already has meaning in the existing C preprocessor and we wouldn’t want
+to completely prevent using new macros inside of old macros).</p>
 <p>Or we could stick with two syntaxes - the longer one for the bigger
 reflection cases where terseness is arguably bad, and the short one for
 the macro use case where terseness is essential.</p>
