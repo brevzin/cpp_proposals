@@ -111,7 +111,7 @@ do -> long { do_return 42; }
 
 If no `do_return` statement appears in the body of the `do` expression, or every `do_return` statement is of the form `do_return;`, then the expression is a prvalue of type `void`.
 
-Falling off the end of a `do` expression behaves like an implicit `do_return;` - if this is incompatible the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
+Falling off the end of a `do` expression behaves like an implicit `do_return;` - if this is incompatible with the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
 
 This makes the pattern matching cases [@P2688R0] work pretty naturally:
 
@@ -643,6 +643,12 @@ But even if we made `r4` work, `r5` now almost certainly cannot - now we're defi
 
 Which makes us wonder if there's really any value in being adventurous here - and instead probably consider that there is no lifetime extension in any of these cases, not in `r3`, not in `r4`, and definitely not in `r5`.
 
+
+## SFINAE-Friendliness
+
+The only part of a `do` expression that is in the immediate context of a template substitution is the trailing-return-type (if any). Any alternative choice would require SFINAE on statements, which the language does not currently support and we are not trying to tackle in this paper.
+
+This is consistent with lambdas, where the lambda body is not in the immediate context.
 
 ## Grammar Disambiguation
 
