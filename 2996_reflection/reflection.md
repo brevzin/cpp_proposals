@@ -4642,7 +4642,7 @@ consteval vector<info> subobjects_of(info type);
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Constant When*: `type_enum` is a reflection representing an enumeration.
+[#]{.pnum} *Constant When*: `type_enum` is a reflection representing a complete enumeration type.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `type_enum`, in the order in which they are declared.
 :::
