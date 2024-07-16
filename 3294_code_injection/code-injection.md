@@ -28,7 +28,7 @@ Since [@P3294R0]:
 
 This paper is proposing augmenting [@P2996R4] to add code injection in the form of token sequences.
 
-We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic ([@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
+We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic (e.g. [@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
 
 # A Comparison of Injection Models
 
@@ -41,11 +41,13 @@ Here, we will look at a few interesting examples for injection and how different
 1. Implementing the storage for `std::tuple<Ts...>`
 2. Implementing `std::enable_if` without resorting to class template specialization
 3. Implementing properties (i.e. given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a getter `get_author()` which returns a `std::string const&` to that member, and a setter `set_author()` which takes a new value of type `std::string const&` and assigns the member).
-4. Implement postfix increment in terms of prefix increment.
+4. Implementing the postfix increment operator in terms of an existing prefix increment operator.
 
 ## The Spec API
 
-In P2996, the injection API is based on a function `define_class()` which takes a range of `spec` objects. But `define_class()` is a really clunky API, because invoking it is an expression - but we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
+In P2996, the injection API is based on a function `define_class()` which takes a range of `spec` objects. In P2996, we only currently have `data_member_spec` - but this can conceivably be extended to have a `meow_spec` function for more aspects of the C++ API. Hence the name.
+
+But `define_class()` is a really clunky API, because invoking it is an expression - but we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
 
 ::: std
 ```cpp
@@ -67,13 +69,13 @@ struct C {
 ```
 :::
 
-Here, `std::meta::inject` is a metafunction that takes a spec, which gets injected into the context begin by the `consteval` block that our evaluation started in as a side-effect.
+Here, `std::meta::inject` is a new metafunction that takes a spec, which gets injected into the context of the `consteval` block which began our evaluation as a side-effect.
 
 We already think of this as an improvement. But let's go through several use-cases to expand the API and see how well it holds up.
 
 ### `std::tuple`
 
-The tuple use-case was already supported by P2996 directly with `define_class()` (even as we think itd be better as a member pack), but it's worth just showing what it looks like with a direct injection API instead:
+The tuple use-case was already supported by P2996 directly with `define_class()` (even though we think it would be better as a member pack), but it's worth just showing what it looks like with a direct injection API instead:
 
 ::: std
 ```cpp
@@ -128,7 +130,7 @@ struct Book {
 ```
 :::
 
-to emit a class with two members (`m_author` and `m_title`), two getters that each return a `std::string const&` (`get_author()` and `get_title()`) and two setters that each take a `std::string const&` (`set_author()` and `set_title()`). Fairly basic property.
+to emit a class with two members (`m_author` and `m_title`), two getters that each return a `std::string const&` (`get_author()` and `get_title()`) and two setters that each take a `std::string const&` (`set_author()` and `set_title()`). Fairly basic properties.
 
 We start by injecting the member:
 
@@ -145,7 +147,7 @@ consteval auto property(string_view name, meta::info type)
 ```
 :::
 
-Now, we need to inject two functions. We'll need a new kind of `spec` for that case, and then we can use a lambda for the function body. Let's start with the getter:
+Now, we need to inject two functions. We'll need a new kind of `spec` for that case. For the function body, we can use a lambda. Let's start with the getter:
 
 
 ::: std
@@ -195,7 +197,7 @@ consteval auto property(string_view name, meta::info type)
 
 But that doesn't work - in order to splice `member`, it needs to be a constant expression - and it's not in this context.
 
-Now, the body of the lambda isn't going to be evaluted in this constant evaluation, so it's possible to maybe some up with some mechanism to pass a context through - such that from the body we _can_ simply splice `member`. We basically need to come up with a way to defer this instantiation.
+Now, the body of the lambda isn't going to be evaluted in this constant evaluation, so it's possible to maybe come up with some mechanism to pass a context through - such that from the body we _can_ simply splice `member`. We basically need to come up with a way to defer this instantiation.
 
 For now, let's try a spelling like this:
 
@@ -352,7 +354,7 @@ This solution... might be workable. But it's already pretty complicated and the 
 
 ### Disposition
 
-It's hard to view favorably a design for the long-term future of code injection with which we cannot even figure out how to inject functions. Even if we could, this design scales poorly with the language: we need a library for API for many language constructs, and C++ is a language with a lot of kinds. That makes for a large barrier to entry for metaprogramming that we would like to avoid.
+It's hard to view favorably a design for the long-term future of code injection with which we cannot even figure out how to inject functions. Even if we could, this design scales poorly with the language: we need a library API for many language constructs, and C++ is a language with a lot of kinds. That makes for a large barrier to entry for metaprogramming that we would like to avoid.
 
 Nevertheless, the spec API does have one thing going for it: it is quite simple. At the very least, we think we should extend the spec model in P2996 in the following ways:
 
@@ -997,6 +999,8 @@ constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
 ```
 :::
 
+[We are aware of the conflict with Objective-C/C++ blocks that makes this syntax untenable. For now, the paper is written still using `^` and a subsequent version will have to find something else, probably still choosing the same prefix operator as reflectoin.]{.ednote}
+
 ## Interpolating into a Token Sequence
 
 There's still the issue that we need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using three kinds of interpolators:
@@ -1034,6 +1038,35 @@ This doesn't produce the intended effect because it is a token sequence containi
 Given that we need `\tokens` anyway, additionally adding concatenation with `+` and `+=` doesn't seem as necessary, especially since keeping the proposal minimal has a lot of value.
 
 Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in their [string interpolation syntax](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters/#String-Interpolation).
+
+### Alternate Interpolation Syntax
+
+Currently, we are proposing three interpolators: `\`, `\id`, and `\tokens`. That might seem like a lot, especially `\tokens` is a lot of characters, but we feel that this is the complete necessary set. A simple alternative is to spell `\tokens(e)` instead as `\{e}` (i.e. braces instead of parentheses). This is a lot shorter, but it's still three interpolators (and potentially the visual distinction isn't very large).
+
+A bigger alterantive would be to overload interpolation on types. In Rust, for instance, interpolation into a procedural macro always is spelled `#var` - and opting in to interpolation is implementing the trait [`ToTokens`](https://docs.rs/proc-quote/latest/proc_quote/trait.ToTokens.html). The way to interpolate an identifier is to interpolate an object of type `syn::Ident`. Going that route (and making tokens sequences [their own type](#token-sequence-type)) might mean that the approach becomes:
+
+::: std
+```diff
+  auto seq = ^{
+-     auto \id("_", x) = \tokens(e);
++     auto \(std::meta::token::id("_", 1)) = \(e);
+  };
+```
+:::
+
+Or, with a handy using-directive or using-declaration:
+
+::: std
+```diff
+  auto seq = ^{
+-     auto \id("_", x) = \tokens(e);
++     auto \(id("_", 1)) = \(e);
+  };
+```
+:::
+
+This loses some orthogonality, namely what if we want to inject a *value* of type `token_sequence`. But for that we can always resort to `\(reflect_value(tokens))`, which is probably a rare use-case.
+
 
 ## Phase of Translation
 
@@ -2002,6 +2035,92 @@ As with the string interpolation example, here we're now taking one parameter of
 
 Of course it'd be nice to do even better. That is: we can infer the arity of the lambda based on the parameters that are used. This paper does not yet have an API for iterating over a token sequence - but this particular problem would not involve parsing. Simply iterate over the tokens and find the largest `n` for which there exists an identifier of the form `_$n$` and use that as the arity. That would allow `λ!(_1 > _2)` by itself to be a binary lambda (or a lambda that takes at least two parameters). Can't do that with a C macro!
 
+## A control flow operator
+
+Two papers currently in flight propose extensions to C++'s set of expressions: [@P2806R2] proposes `do` expressions as a way to have multiple statements in a single expression, and [@P2561R2] proposes a control flow operator for better ergonomics with types like `std::expected<T, E>`.
+
+Now, the proposed control flow operator nearly lowers into a `do` expression - with one exception that is covered [in the paper](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2806r2.html#lifetime): lifetime. It would be nice if `f().try?`, for a function returning `expected<T, E>`, evaluated to `T&&` rather than `T` - to save an unnecessary move. But doing so requires actually storing that result... somewhere. What if macro injection allowed us to create such a somewhere?
+
+::: std
+```cpp
+// an extremely lightweight Optional, only for use in deferring storage
+template <class T>
+struct Storage {
+    union { T value; }; // assume P3074 trivial union
+    bool initialized = false;
+
+    constexpr ~Storage() {
+        if (initialized) {
+            value.~T();
+        }
+    }
+
+    template <class F>
+    constexpr auto construct(F f) -> T& {
+        assert(not initialized);
+        auto p = new (&value) T(f());
+        initialized = true;
+        return *p;
+    }
+};
+
+consteval auto try_(meta::info body) -> meta::info {
+    // 1. we need the type of the body
+    meta::info T = type_of(body);
+
+    // 2. we create a local variable in the nearest enclosing scope
+    //    that is of type Storage<T>
+    meta::info storage = create_local_variable(substitute(^Storage, {T}));
+
+    return ^{
+        do -> decltype(auto) {
+            // 3. we construct the "body" of the macro into that storage
+            auto& r = [: \(storage) :].construct(
+                [&]() -> decltype(auto) { return (\tokens(body)); }
+            );
+
+            // 4. and then do the usual dance with returning the error
+            if (not r) { return std::move(r).error(); }
+            do_return *std::move(r);
+        }
+    }
+}
+```
+:::
+
+There is plenty of novelty here. First, we need to get the type of the `body`. `body` are just some tokens - this might be called like `try_!(f(1, 2))` or `try_!(var)`, and we want `decltype(f(1, 2))` and `decltype(var)`, respectively, as evaluated from the context where the macro was invoked. Actually what we really want is `decltype((f(1, 2)))` and `decltype((var))`, respectively. For now, we'll use the existing `type_of` as a placeholder to achieve that type.
+
+Second, `create_local_variable` returns a reflection to an unnamed (and thus not otherwise accessible) local variable that is created as close as possible to the injection site, of the provided type (which must be default constructible). This of course opens the door for lots of havoc, but in this case gives us a convenient place to just grab some storage that we need for later.
+
+Ocne we have those two pieces, the rest is actually straightforward. The body of the `do` expression constructs our `expected<T, E>` into the local storage we just carved out, and then uses it directly. We do all of this dance instead of just `auto&& r = \tokens(body);` simply to be able to return a reference from the `do` expression.
+
+Importantly though, macros coupled with this kind of storage injection allows [@P2561R2] to be shipped as a library.
+
+
+## Operator Support
+
+One advantage of the trailing `!` syntax used here is that it provides a clear signal to the compiler and the reader that something new is going on. Using such a syntax means we cannot support operators though - `x &&! y` already has valid meaning today, and it is not macro-invoking `operator&&`.
+
+If we want to support operators (and we are not sure if we do), then one approach would be to introduce a new syntax for a macro declaration (which we may want to do anyway). Such a macro could work like this:
+
+::: std
+```cpp
+struct C {
+   bool b;
+
+   macro operator&&(this std::meta::info self, std::meta::info rhs) {
+       return ^{ [:\(self):].b && \tokens(rhs); }
+   }
+};
+
+auto x = C{false} && some_call();
+```
+:::
+
+Here, the macro would evaluate `C{false}` and pass a reflection to that expression as the first parameter, then the second parameter is just tokenized. Thus the call effectively evaluates as `C{false}.b && some_call()`, which does short-circuit as desired.
+
+It's unclear if macro operators are worth pursuing. Dedicated `macro` syntax declarations might be beneficial though.
+
 ## Alternate Syntax
 
 We have two forms of injection in this paper:
@@ -2014,6 +2133,18 @@ But these really are similar - both are requests to take a token sequence and in
 Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This is what Swift does, except using prefix `#` (which isn't really a viable option for us as `#x` already has meaning in the existing C preprocessor and we wouldn't want to completely prevent using new macros inside of old macros).
 
 Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
+
+Likewise, macros could be declared as regular functions that take a token sequence and return a token sequence (or [other parameters](#macro-parsing)). Or perhaps we introduce a new context-sensitive keyword instead:
+
+::: std
+```cpp
+// regular function
+consteval auto fwd(meta::info x) -> meta::info { return ^{ /* ... */ }; }
+
+// dedicated declaration
+macro fwd(meta::info x) { return ^{ /* ... */ }; }
+```
+:::
 
 # Proposal
 
@@ -2028,10 +2159,12 @@ This proposal consists of several pieces:
 * new metafunctions to inject a token sequence (`std::meta::queue_injection()` and `std::meta::namespace_inject()`)
 * new metaprogramming facilities for dealing with token sequences:
     * converting a string to a token sequence and a token sequence to a string
-    * splitting a token sequence into a range of tokens
+    * splitting a token sequence into a range of tokens and querying/mutating those tokens
 * macros would benefit syntactically from:
     * a mechanism to accept a tokens sequence as a function parameter
     * a mechanism to inject a token sequence directly as returned by a function (trailing `!`)
+
+Note that the macro proposal, and even the facilities for splitting/iterating/querying/mutating tokens, can be split off as well. We feel that even the core proposal of injecting token sequences in declaration contexts only can provide a tremendous amount of value.
 
 ---
 references:
