@@ -34,7 +34,7 @@ Since [@P2996R4]:
 * changed `span<info const>` to `initializer_list<info>`
 * removed `test_trait`, `qualified_name_of`
 * renamed `display_name_of` to `display_string_of`
-* adding a number of missing predicates for special member functions (`is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`) and other members (`has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`)
+* adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`)
 * changed offset API to be one function that returns a type with named members
 * Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
 * Many wording updates in response to feedback from CWG.
@@ -3401,7 +3401,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if both operands represent namespace aliases or type aliases, then they compare equal if and only if their represented aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
 * [*.#]{.pnum} Otherwise, if both operands represent base class specifiers, then they compare equal if and only if they represent the same base class specifier.
 * [*.#]{.pnum} Otherwise, if one operand represents a base class specifier, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands represent values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}) and share the same type.
+* [*.#]{.pnum} Otherwise, if both operands represent values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
 * [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare unequal.
 * [*.#]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent descriptions of declarations of non-static data members: Let `C@~_1_~@` and `C@~_2_~@` be invented class types such that each `C@~_k_~@` has a single non-static data member having the properties described by `O@~_k_~@`. The operands compare equal if and only if the data members of `C@~_1_~@` and `C@~_2_~@` would  share the same type, name (if any), `$alignment-specifiers$` (if any), width, and attributes.
 :::
