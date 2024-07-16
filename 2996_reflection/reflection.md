@@ -3395,7 +3395,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 * [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if both operands represent entities, then the compare equal if and only if they are reflections of the same entity.
 * [*.#]{.pnum} Otherwise, if one operand represents an entity, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands represent variables, then the compare equal if and only if they are reflections of the same entity.
+* [*.#]{.pnum} Otherwise, if both operands represent variables, then the compare equal if and only if they are reflections of the same variable.
 * [*.#]{.pnum} Otherwise, if one operand represents a variable, then they compare unequal.
 * [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or type alias and the other operand does not represent the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
 * [*.#]{.pnum} Otherwise, if both operands represent namespace aliases or type aliases, then they compare equal if and only if their represented aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
