@@ -943,7 +943,7 @@ struct C {
 
 We lined up the fragment implementation to roughly correspond to the CodeReckons API on the left. With the code written out like this, it's easy to understand the CodeReckons API. But it takes no time at all to understand (or write) the fragments code on the right - it's just C++ already.
 
-We also think it's a better idea than the string injection model, since we want something with structure that isn't just missing some parts of the language (the processor)  and plays nicely with tools (like syntax highlighters).
+We also think it's a better idea than the string injection model, since we want something with structure that isn't just missing some parts of the language (the preprocessor)  and plays nicely with tools (like syntax highlighters).
 
 But we think the fragment model still isn't quite right. By nobly trying to diagnose errors at the point of fragment declaration, it adds a complexity to the fragment model in a way that we don't think carries its weight. The fragment papers ([@P1717R0] and [@P2237R0]) each go into some detail of different approaches of how to do name checking at the point of fragment declaration. They are all complicated.
 
@@ -951,7 +951,7 @@ We basically want something between strings and fragments.
 
 # Token Sequences
 
-Generation of code from low-level syntactic elements such as strings or token sequences may be considered quite unsophisticated. Indeed, previous proposals for code synthesis in C++ have studiously minimized using strings or tokens as input but resorting to AST-based APIs, expansion statements, or code fragments, as shown above. As noted by Andrew Sutton in [@P2237R0]:
+Generation of code from low-level syntactic elements such as strings or token sequences may be considered quite unsophisticated. Indeed, previous proposals for code synthesis in C++ have studiously avoided using strings or tokens as input, instead resorting to AST-based APIs, expansion statements, or code fragments, as shown above. As noted by Andrew Sutton in [@P2237R0]:
 
 ::: quote
 synthesizing new code from strings is straightforward, especially when the language/library has robust tools for compile-time string manipulation […] the strings or tokens are syntactically and semantically unanalyzed until they are injected
@@ -965,11 +965,11 @@ should be fully syntactically and semantically validated prior to its injection
 
 Due to the lack of consensus for a code synthesis mechanism, some C++ reflection proposals shifted focus to the query side of reflection and left room for scant code synthesis capabilities.
 
-After extensive study and experimentation (as seen above), we concluded that some crucially important forms of token synthesis are necessary for practical code generation, and that insisting upon early syntactic and semantic validation of generated code is a net liability. The very nature of code synthesis involves assembling meaningful constructs out of pieces that have little or no meaning in separation. Using concatenation and deferring syntax/semantics analysis to offer said concatenation is by far the simplest, most direct approach to code synthesis.
+After extensive study and experimentation (as seen above), we concluded that a form of token-based synthesis is crucially important for practical code generation, and that insisting upon early syntactic and semantic validation of generated code is a net liability. The very nature of code synthesis involves assembling meaningful constructs out of pieces that have little or no meaning in isolation. Using concatenation and deferring syntax/semantics analysis to offer said concatenation is by far the simplest, most direct approach to code synthesis.
 
 Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility — particularly when it comes to composing larger constructs from smaller ones — and also be difficult for implementers, thus hurting everyone involved.
 
-We therefore acknowledge the notion of token sequence as a core building block for generating code. Using token sequences allows flexibility to code that generates other code, while deferring name lookup and semantic analysis to well-defined points in the compilation process. Thus we reach the notion of a token sequence expression dedicated to representing unprocessed sequences of tokens.
+We therefore choose the notion of *token sequence* as the core building block for generating code. Unparsed token sequences allow for flexible composition, while deferring semantic analysis (lookup, etc.) to the point of injection avoids complexities in trying to re-create the context of the point of injection at the point of composition.
 
 ## Token Sequence Expression
 
@@ -1000,7 +1000,7 @@ constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
 ```
 :::
 
-[We are aware of the conflict with Objective-C/C++ blocks that makes this syntax untenable. For now, the paper is written still using `^` and a subsequent version will have to find something else, probably still choosing the same prefix operator as reflectoin.]{.ednote}
+[We are aware of the conflict with Objective-C/C++ blocks that makes this syntax untenable. For now, the paper is written still using `^` and a subsequent version will have to find something else, probably still choosing the same prefix operator as reflection.]{.ednote}
 
 ## Interpolating into a Token Sequence
 
@@ -1042,9 +1042,9 @@ Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in t
 
 ### Alternate Interpolation Syntax
 
-Currently, we are proposing three interpolators: `\`, `\id`, and `\tokens`. That might seem like a lot, especially `\tokens` is a lot of characters, but we feel that this is the complete necessary set. A simple alternative is to spell `\tokens(e)` instead as `\{e}` (i.e. braces instead of parentheses). This is a lot shorter, but it's still three interpolators (and potentially the visual distinction isn't very large).
+Currently, we are proposing three interpolators: `\`, `\id`, and `\tokens`. That might seem like a lot, especially `\tokens` is a lot of characters, but we feel that this is the complete necessary set. A simple alternative is to spell `\tokens(e)` instead as `\{e}` (i.e. braces instead of parentheses). This is a lot shorter, but it's still three interpolators (and the visual distinction might be too subtle).
 
-A bigger alterantive would be to overload interpolation on types. In Rust, for instance, interpolation into a procedural macro always is spelled `#var` - and opting in to interpolation is implementing the trait [`ToTokens`](https://docs.rs/proc-quote/latest/proc_quote/trait.ToTokens.html). The way to interpolate an identifier is to interpolate an object of type `syn::Ident`. Going that route (and making tokens sequences [their own type](#token-sequence-type)) might mean that the approach becomes:
+A bigger alternative would be to overload interpolation on types. In Rust, for instance, interpolation into a procedural macro always is spelled `#var` - and opting in to interpolation is implementing the trait [`ToTokens`](https://docs.rs/proc-quote/latest/proc_quote/trait.ToTokens.html). The way to interpolate an identifier is to interpolate an object of type `syn::Ident`. Going that route (and making tokens sequences [their own type](#token-sequence-type)) might mean that the approach becomes:
 
 ::: std
 ```diff
@@ -1190,13 +1190,13 @@ With that out of the way, we can now go through our examples from earlier.
 
 ## Token Sequence Type
 
-In this paper (and the current implement), the type of a token sequence is also `std::meta::info`. This follows the general [@P2996R4] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
+In this paper (and the current implementation), the type of a token sequence is also `std::meta::info`. This follows the general [@P2996R4] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
 
 However, unlike reflections of source constructs, token sequence manipulation is a completely disjoint set of operations. The only kinds of reflection that can produce token sequences can only ever produce token sequences (e.g. getting the `noexcept` specifier of a function template).
 
-Some APIs only make sense to do on a token sequence - for instance while we described `+` as not being inessential, we could certainly still provide it - but from an API perspective it'd be nicer if it took two objects of type `token_sequence` rather than two of type `info` (and asserted that they were `token_sequence`s). Either way, misuse would be a compile error, but it might be better to only provide the operator when we know it's viable.
+Some APIs only make sense to do on a token sequence - for instance while we described `+` as not being essential, we could certainly still provide it - but from an API perspective it'd be nicer if it took two objects of type `token_sequence` rather than two of type `info` (and asserted that they were `token_sequence`s). Either way, misuse would be a compile error, but it might be better to only provide the operator when we know it's viable.
 
-A dedicated `token_sequence` type would also make [macros](#better-macros) stand out more from other reflection functions, since there will be a lot of functions that take a `meta::info` and return a `meta::info` and such functions are quite different from macros.
+A dedicated `token_sequence` type would also make macros (as introduced [below](#scoped-macros)) stand out more from other reflection functions, since there will be a lot of functions that take a `meta::info` and return a `meta::info` and such functions are quite different from macros.
 
 ## Implementation Status
 
@@ -1213,7 +1213,7 @@ Two things to note with the implementation:
 
 ## Examples
 
-Now, the `std::tuple` and `std::enable_if` cases would look identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment.
+Now, the `std::tuple` and `std::enable_if` cases look nearly-identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment.
 
 [Implementing `Tuple<Ts...>`](https://godbolt.org/z/861MsqzPx) requires using both the value interpolator and the identifier interpolator (in this case we're naming the members `_0`, `_1`, etc.):
 
@@ -1654,7 +1654,7 @@ But this... isn't right. Or rather, it could potentially be right in some design
 
 Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that? We don't quite have a good answer yet. But this is much farther than we've come with any other design.
 
-# Better Macros
+# Scoped Macros
 
 C macros have a (well-deserved) bad reputation in the C++ community. This is because they have some intractable problems:
 
@@ -1701,7 +1701,7 @@ Now that we have the ability to represent code in code (using token sequences) a
 
 ## Forwarding
 
-Consider the problem of forwarding. Forwarding an argument in C++, in the vast majority of uses, looks like `std::forward<T>(t)`, where `T` is actually the type `decltype(t)`. This is annoying to have to write, the operation is simply forwarding an argument but we need to provide two names anyway, and also has the downside of having to instantiate a function template (although compilers are moving towards making that a builtin).
+Consider the problem of forwarding. Forwarding an argument in C++, in the vast majority of uses, looks like `std::forward<T>(t)`, where `T` is actually the type `decltype(t)`. This is annoying to write, the operation is simply forwarding an argument but we have to duplicate that argument nonetheless. And it requires the instantiation of a template (although compilers are moving towards making that a builtin).
 
 Barry at some point proposed a specific language feature for this use-case ([@P0644R1]). Later, there was a proposal for a hygienic macro system [@P1221R1] in which forwarding would be implemented like this:
 
@@ -1812,7 +1812,7 @@ consteval auto assert_eq(meta::info a, meta::info b) -> meta::info;
 ```
 :::
 
-Earlier we described the design as taking _a single_ token sequence and producing a token sequence output. But for assertions, we of course want to compare _two_ expressions. We'd of course want to express that as a function taking two token sequences, but how does the compiler know when to start one token seequence and start the next? That requires parsing. If the user writes `assert_eq!(std::pair<int, int>{1, 2}, x)`, the compiler needs to figure out which comma in there is actually an argument delimiter (or how to fail if there is only one argument).
+Earlier we described the design as taking _a single_ token sequence and producing a token sequence output. We'd of course want to express `assert_eq` as a function taking two token sequences, but how does the compiler know when to end one token seequence and start the next? That requires parsing. If the user writes `assert_eq!(std::pair<int, int>{1, 2}, x)`, the compiler needs to figure out which comma in there is actually an argument delimiter (or how to fail if there is only one argument).
 
 There are a couple ways that we could approach this.
 
@@ -2127,7 +2127,7 @@ It's unclear if macro operators are worth pursuing. Dedicated `macro` syntax dec
 We have two forms of injection in this paper:
 
 * metafunctions `std::meta::queue_injection` and `std::meta::namespace_inject` that take an `info`, used through [token sequences](#token-sequences).
-* a trailing `!` used for [better macros](#better-macros).
+* a trailing `!` used for [scoped macros](#scoped-macros).
 
 But these really are similar - both are requests to take a token sequence and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 

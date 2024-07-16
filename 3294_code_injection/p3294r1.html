@@ -625,7 +625,7 @@ Type<span></span></a></li>
 <li><a href="#logging-vector-ii-cloning-with-modifications" id="toc-logging-vector-ii-cloning-with-modifications"><span class="toc-section-number">4.10</span> Logging Vector II: Cloning with
 Modifications<span></span></a></li>
 </ul></li>
-<li><a href="#better-macros" id="toc-better-macros"><span class="toc-section-number">5</span> Better Macros<span></span></a>
+<li><a href="#scoped-macros" id="toc-scoped-macros"><span class="toc-section-number">5</span> Scoped Macros<span></span></a>
 <ul>
 <li><a href="#design-approach" id="toc-design-approach"><span class="toc-section-number">5.1</span> Design
 Approach<span></span></a></li>
@@ -1752,8 +1752,8 @@ understand (or write) the fragments code on the right - it’s just C++
 already.</p>
 <p>We also think it’s a better idea than the string injection model,
 since we want something with structure that isn’t just missing some
-parts of the language (the processor) and plays nicely with tools (like
-syntax highlighters).</p>
+parts of the language (the preprocessor) and plays nicely with tools
+(like syntax highlighters).</p>
 <p>But we think the fragment model still isn’t quite right. By nobly
 trying to diagnose errors at the point of fragment declaration, it adds
 a complexity to the fragment model in a way that we don’t think carries
@@ -1765,8 +1765,8 @@ declaration. They are all complicated.</p>
 Sequences<a href="#token-sequences" class="self-link"></a></h1>
 <p>Generation of code from low-level syntactic elements such as strings
 or token sequences may be considered quite unsophisticated. Indeed,
-previous proposals for code synthesis in C++ have studiously minimized
-using strings or tokens as input but resorting to AST-based APIs,
+previous proposals for code synthesis in C++ have studiously avoided
+using strings or tokens as input, instead resorting to AST-based APIs,
 expansion statements, or code fragments, as shown above. As noted by
 Andrew Sutton in <span class="citation" data-cites="P2237R0">[<a href="https://wg21.link/p2237r0" role="doc-biblioref">P2237R0</a>]</span>:</p>
 <div class="quote">
@@ -1785,25 +1785,24 @@ injection</p>
 reflection proposals shifted focus to the query side of reflection and
 left room for scant code synthesis capabilities.</p>
 <p>After extensive study and experimentation (as seen above), we
-concluded that some crucially important forms of token synthesis are
-necessary for practical code generation, and that insisting upon early
-syntactic and semantic validation of generated code is a net liability.
-The very nature of code synthesis involves assembling meaningful
-constructs out of pieces that have little or no meaning in separation.
-Using concatenation and deferring syntax/semantics analysis to offer
-said concatenation is by far the simplest, most direct approach to code
+concluded that a form of token-based synthesis is crucially important
+for practical code generation, and that insisting upon early syntactic
+and semantic validation of generated code is a net liability. The very
+nature of code synthesis involves assembling meaningful constructs out
+of pieces that have little or no meaning in isolation. Using
+concatenation and deferring syntax/semantics analysis to offer said
+concatenation is by far the simplest, most direct approach to code
 synthesis.</p>
 <p>Generally, we think that imposing early checking on generated code is
 likely to complicate and restrict the ways in which users can use the
 facility — particularly when it comes to composing larger constructs
 from smaller ones — and also be difficult for implementers, thus hurting
 everyone involved.</p>
-<p>We therefore acknowledge the notion of token sequence as a core
-building block for generating code. Using token sequences allows
-flexibility to code that generates other code, while deferring name
-lookup and semantic analysis to well-defined points in the compilation
-process. Thus we reach the notion of a token sequence expression
-dedicated to representing unprocessed sequences of tokens.</p>
+<p>We therefore choose the notion of <em>token sequence</em> as the core
+building block for generating code. Unparsed token sequences allow for
+flexible composition, while deferring semantic analysis (lookup, etc.)
+to the point of injection avoids complexities in trying to re-create the
+context of the point of injection at the point of composition.</p>
 <h2 data-number="4.1" id="token-sequence-expression"><span class="header-section-number">4.1</span> Token Sequence Expression<a href="#token-sequence-expression" class="self-link"></a></h2>
 <p>We propose the introduction of a new kind of expression with the
 following syntax (the specific introducer can be decided later):</p>
@@ -1847,7 +1846,7 @@ aware of the conflict with Objective-C/C++ blocks that makes this syntax
 untenable. For now, the paper is written still using
 <code class="sourceCode default">^</code> and a subsequent version will
 have to find something else, probably still choosing the same prefix
-operator as reflectoin. ]</span></p>
+operator as reflection. ]</span></p>
 <h2 data-number="4.2" id="interpolating-into-a-token-sequence"><span class="header-section-number">4.2</span> Interpolating into a Token
 Sequence<a href="#interpolating-into-a-token-sequence" class="self-link"></a></h2>
 <p>There’s still the issue that we need to access outside context from
@@ -1931,9 +1930,9 @@ characters, but we feel that this is the complete necessary set. A
 simple alternative is to spell <code class="sourceCode cpp">\tokens<span class="op">(</span>e<span class="op">)</span></code>
 instead as <code class="sourceCode cpp">\<span class="op">{</span>e<span class="op">}</span></code>
 (i.e. braces instead of parentheses). This is a lot shorter, but it’s
-still three interpolators (and potentially the visual distinction isn’t
-very large).</p>
-<p>A bigger alterantive would be to overload interpolation on types. In
+still three interpolators (and the visual distinction might be too
+subtle).</p>
+<p>A bigger alternative would be to overload interpolation on types. In
 Rust, for instance, interpolation into a procedural macro always is
 spelled <code class="sourceCode cpp"><span class="pp">#</span><span class="er">var</span></code>
 - and opting in to interpolation is implementing the trait <a href="https://docs.rs/proc-quote/latest/proc_quote/trait.ToTokens.html"><code class="sourceCode cpp">ToTokens</code></a>.
@@ -2099,7 +2098,7 @@ example</a>:</p>
 <p>With that out of the way, we can now go through our examples from
 earlier.</p>
 <h2 data-number="4.5" id="token-sequence-type"><span class="header-section-number">4.5</span> Token Sequence Type<a href="#token-sequence-type" class="self-link"></a></h2>
-<p>In this paper (and the current implement), the type of a token
+<p>In this paper (and the current implementation), the type of a token
 sequence is also <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.
 This follows the general <span class="citation" data-cites="P2996R4">[<a href="https://wg21.link/p2996r4" role="doc-biblioref">P2996R4</a>]</span> design that all types that are
 opaque handles into the compiler have type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.
@@ -2113,7 +2112,7 @@ specifier of a function template).</p>
 <p>Some APIs only make sense to do on a token sequence - for instance
 while we described
 <code class="sourceCode cpp"><span class="op">+</span></code> as not
-being inessential, we could certainly still provide it - but from an API
+being essential, we could certainly still provide it - but from an API
 perspective it’d be nicer if it took two objects of type
 <code class="sourceCode cpp">token_sequence</code> rather than two of
 type <code class="sourceCode cpp">info</code> (and asserted that they
@@ -2121,9 +2120,8 @@ were <code class="sourceCode cpp">token_sequence</code>s). Either way,
 misuse would be a compile error, but it might be better to only provide
 the operator when we know it’s viable.</p>
 <p>A dedicated <code class="sourceCode cpp">token_sequence</code> type
-would also make <a href="#better-macros">macros</a> stand out more from
-other reflection functions, since there will be a lot of functions that
-take a
+would also make macros (as introduced <a href="#scoped-macros">below</a>) stand out more from other reflection
+functions, since there will be a lot of functions that take a
 <code class="sourceCode cpp">meta<span class="op">::</span>info</code>
 and return a
 <code class="sourceCode cpp">meta<span class="op">::</span>info</code>
@@ -2154,7 +2152,7 @@ erasure example</a>.</li>
 <p>Now, the
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>enable_if</code>
-cases would look identical to their corresponding implementations with
+cases look nearly-identical to their corresponding implementations with
 <a href="#fragments">fragments</a>. In both cases, we are injecting
 complete code fragments that require no other name lookup, so there is
 not really any difference between a token sequence and a proper
@@ -2678,8 +2676,8 @@ but rather
 <code class="sourceCode cpp">other<span class="op">.</span>impl</code>.
 How can we do that? We don’t quite have a good answer yet. But this is
 much farther than we’ve come with any other design.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="better-macros"><span class="header-section-number">5</span> Better
-Macros<a href="#better-macros" class="self-link"></a></h1>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="scoped-macros"><span class="header-section-number">5</span> Scoped
+Macros<a href="#scoped-macros" class="self-link"></a></h1>
 <p>C macros have a (well-deserved) bad reputation in the C++ community.
 This is because they have some intractable problems:</p>
 <ul>
@@ -2739,10 +2737,10 @@ functions, we can do in the same in C++ as well.</p>
 <p>Consider the problem of forwarding. Forwarding an argument in C++, in
 the vast majority of uses, looks like <code class="sourceCode cpp">std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">)</span></code>,
 where <code class="sourceCode cpp">T</code> is actually the type <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>t<span class="op">)</span></code>.
-This is annoying to have to write, the operation is simply forwarding an
-argument but we need to provide two names anyway, and also has the
-downside of having to instantiate a function template (although
-compilers are moving towards making that a builtin).</p>
+This is annoying to write, the operation is simply forwarding an
+argument but we have to duplicate that argument nonetheless. And it
+requires the instantiation of a template (although compilers are moving
+towards making that a builtin).</p>
 <p>Barry at some point proposed a specific language feature for this
 use-case (<span class="citation" data-cites="P0644R1">[<a href="https://wg21.link/p0644r1" role="doc-biblioref">P0644R1</a>]</span>). Later, there was a proposal
 for a hygienic macro system <span class="citation" data-cites="P1221R1">[<a href="https://wg21.link/p1221r1" role="doc-biblioref">P1221R1</a>]</span> in which forwarding would be
@@ -2878,11 +2876,11 @@ macro we have above was:</p>
 </blockquote>
 </div>
 <p>Earlier we described the design as taking <em>a single</em> token
-sequence and producing a token sequence output. But for assertions, we
-of course want to compare <em>two</em> expressions. We’d of course want
-to express that as a function taking two token sequences, but how does
-the compiler know when to start one token seequence and start the next?
-That requires parsing. If the user writes <code class="sourceCode cpp">assert_eq<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, x<span class="op">)</span></code>,
+sequence and producing a token sequence output. We’d of course want to
+express <code class="sourceCode cpp">assert_eq</code> as a function
+taking two token sequences, but how does the compiler know when to end
+one token seequence and start the next? That requires parsing. If the
+user writes <code class="sourceCode cpp">assert_eq<span class="op">!(</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>, x<span class="op">)</span></code>,
 the compiler needs to figure out which comma in there is actually an
 argument delimiter (or how to fail if there is only one argument).</p>
 <p>There are a couple ways that we could approach this.</p>
@@ -3318,7 +3316,7 @@ and <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="o
 that take an <code class="sourceCode cpp">info</code>, used through <a href="#token-sequences">token sequences</a>.</li>
 <li>a trailing
 <code class="sourceCode cpp"><span class="op">!</span></code> used for
-<a href="#better-macros">better macros</a>.</li>
+<a href="#scoped-macros">scoped macros</a>.</li>
 </ul>
 <p>But these really are similar - both are requests to take a token
 sequence and inject it in the current context. The bigger token sequence
