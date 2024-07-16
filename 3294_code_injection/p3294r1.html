@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-07-15" />
+  <meta name="dcterms.date" content="2024-07-16" />
   <title>Code Injection with Token Sequences</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Sequences</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-07-15</td>
+    <td>2024-07-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -706,7 +706,7 @@ to that member, and a setter
 which takes a new value of type <code class="sourceCode cpp">std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span></code>
 and assigns the member).</li>
 <li>Implementing the postfix increment operator in terms of an existing
-prefix increment operator.</li>
+prefix increment operator (a pure boilerplate annoyance).</li>
 </ol>
 <h2 data-number="3.1" id="the-spec-api"><span class="header-section-number">3.1</span> The Spec API<a href="#the-spec-api" class="self-link"></a></h2>
 <p>In P2996, the injection API is based on a function <code class="sourceCode cpp">define_class<span class="op">()</span></code>
@@ -1428,6 +1428,10 @@ pre-emptively admitting defeat.</li>
 <li>Errors happen at the point of <em>injection</em>, not at the point
 where you’re writing the code. And the injection could happen very far
 away from the code.</li>
+<li>There is no natural way to interpolate reflection values, and that
+is quite desirable (e.g. we attempted to use <code class="sourceCode cpp">qualified_name_of<span class="op">()</span></code>
+to inject a type name, but that’s not robust - and <code class="sourceCode cpp">qualified_name_of<span class="op">()</span></code>
+is hard to get right anyway).</li>
 </ol>
 <p>But string injection offers an extremely significant advantage that’s
 not to be underestimated: everyone can deal with strings and strings
@@ -1464,12 +1468,12 @@ bug):</p>
 </blockquote>
 </div>
 <p>Now, the big advantage of fragments is that it’s just C++ code in the
-middle there (maybe it feels a bit messy in this example but it will
-more shortly). The leading
+middle there (maybe it feels a bit messy in this particular example, but
+it will be more clear in other examples). The leading
 <code class="sourceCode cpp"><span class="op">-&gt;</span></code> is the
 injection operator.</p>
 <p>One big problem that fragments need to solve is how to get context
-information into them. For instance, how do get the type <code class="sourceCode cpp">types<span class="op">[</span>i<span class="op">]</span></code>
+information into them. For instance, how do we get the type <code class="sourceCode cpp">types<span class="op">[</span>i<span class="op">]</span></code>
 and how do we produce the names <code class="sourceCode cpp">_0</code>,
 <code class="sourceCode cpp">_1</code>, …, for all of these members? We
 need a way to capture context, and it needs to be interpolated
@@ -1543,11 +1547,11 @@ implementation</a> (this was back when the reflection operator was
 <p>It’s a bit busy because nearly everything in properties involves
 interpolating outside context, so seemingly everything here is
 interpolated.</p>
-<p>Now, there’s one very important property of fragments (as designed in
-these papers) hold: every fragment must be parsable in its context. A
-fragment does not leak its declarations out of its context; only out of
-the context where it is injected. Not only that, we get full name lookup
-and everything.</p>
+<p>Now, there’s one very important property that fragments (as designed
+in these papers) adhere to: every fragment must be parsable in its
+context. A fragment does not leak its declarations out of its context;
+only out of the context where it is injected. Not only that, we get full
+name lookup and everything.</p>
 <p>On the one hand, this seems like a big advantage: the fragment is
 checked at the point of its declaration, not at the point of its use.
 With the string model above, that was not the case - you can write
@@ -1579,8 +1583,8 @@ can’t. This is invalid:</p>
 </div>
 <p>In this second fragment, name lookup for
 <code class="sourceCode cpp">m_author</code> fails in both function
-bodies. We can’t do that. We We have to teach the fragment how to find
-the name, which requires writing this (note the added
+bodies. We can’t do that. We have to teach the fragment how to find the
+name, which requires writing this (note the added
 <code class="sourceCode cpp"><span class="kw">requires</span></code>
 statement):</p>
 <div class="std">
@@ -1606,10 +1610,7 @@ statement):</p>
 </blockquote>
 </div>
 <h3 data-number="3.4.4" id="postfix-increment-2"><span class="header-section-number">3.4.4</span> Postfix increment<a href="#postfix-increment-2" class="self-link"></a></h3>
-<p>One boilerplate annoyance is implementing
-<code class="sourceCode cpp">x<span class="op">++</span></code> in terms
-of <code class="sourceCode cpp"><span class="op">++</span>x</code>. Can
-code injection help us out? Postfix increment ends up being <a href="https://godbolt.org/z/r1v3e43sd">much simpler to implement</a>
+<p>Postfix increment ends up being <a href="https://godbolt.org/z/r1v3e43sd">much simpler to implement</a>
 with fragments than properties - due to not having to deal with any
 interpolated names. But it does surface the issue of name lookup in
 fragments.</p>

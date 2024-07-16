@@ -41,7 +41,7 @@ Here, we will look at a few interesting examples for injection and how different
 1. Implementing the storage for `std::tuple<Ts...>`
 2. Implementing `std::enable_if` without resorting to class template specialization
 3. Implementing properties (i.e. given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a getter `get_author()` which returns a `std::string const&` to that member, and a setter `set_author()` which takes a new value of type `std::string const&` and assigns the member).
-4. Implementing the postfix increment operator in terms of an existing prefix increment operator.
+4. Implementing the postfix increment operator in terms of an existing prefix increment operator (a pure boilerplate annoyance).
 
 ## The Spec API
 
@@ -678,6 +678,7 @@ But string injection is hardly perfect, and several of the issues with it might 
 2. Our main string formatting mechanism, `format`, uses `{}` for replacement fields, which means actual braces - which show up in C++ a lot - have to be escaped. It also likely isn't the most compile-time efficient API, so driving reflection off of it might be suboptimal.
 3. You don't get syntax highlighting for injected code strings. They're just strings. Perhaps we could introduce a new kind of string literal that syntax highlighters could recognize, but that seems like pre-emptively admitting defeat.
 4. Errors happen at the point of *injection*, not at the point where you're writing the code. And the injection could happen very far away from the code.
+5. There is no natural way to interpolate reflection values, and that is quite desirable (e.g. we attempted to use `qualified_name_of()` to inject a type name, but that's not robust - and `qualified_name_of()` is hard to get right anyway).
 
 But string injection offers an extremely significant advantage that's not to be underestimated: everyone can deal with strings and strings already just support everything, for all future evolution, without the need for a large API.
 
@@ -707,9 +708,9 @@ struct Tuple {
 ```
 :::
 
-Now, the big advantage of fragments is that it's just C++ code in the middle there (maybe it feels a bit messy in this example but it will more shortly). The leading `->` is the injection operator.
+Now, the big advantage of fragments is that it's just C++ code in the middle there (maybe it feels a bit messy in this particular example, but it will be more clear in other examples). The leading `->` is the injection operator.
 
-One big problem that fragments need to solve is how to get context information into them. For instance, how do get the type `types[i]` and how do we produce the names `_0`, `_1`, ..., for all of these members? We need a way to capture context, and it needs to be interpolated differently.
+One big problem that fragments need to solve is how to get context information into them. For instance, how do we get the type `types[i]` and how do we produce the names `_0`, `_1`, ..., for all of these members? We need a way to capture context, and it needs to be interpolated differently.
 
 In the above example, the design uses the operator `unqualid` (to create an unqualified id) concatenating the string literal `"_"` with the interpolated value `%{i}` (a later revision used `|# #|` instead). We need distinct operators to differentiate between the case where we want to use a string as an identifier and as an actual string.
 
@@ -773,7 +774,7 @@ struct Book {
 
 It's a bit busy because nearly everything in properties involves interpolating outside context, so seemingly everything here is interpolated.
 
-Now, there's one very important property of fragments (as designed in these papers) hold: every fragment must be parsable in its context. A fragment does not leak its declarations out of its context; only out of the context where it is injected. Not only that, we get full name lookup and everything.
+Now, there's one very important property that fragments (as designed in these papers) adhere to: every fragment must be parsable in its context. A fragment does not leak its declarations out of its context; only out of the context where it is injected. Not only that, we get full name lookup and everything.
 
 On the one hand, this seems like a big advantage: the fragment is checked at the point of its declaration, not at the point of its use. With the string model above, that was not the case - you can write whatever garbage string you want and it's still a perfectly valid string, it only becomes invalid C++ code when it's injected.
 
@@ -800,7 +801,7 @@ consteval auto property(meta::info type, char const* name) -> void
 ```
 :::
 
-In this second fragment, name lookup for `m_author` fails in both function bodies. We can't do that. We We have to teach the fragment how to find the name, which requires writing this (note the added `requires` statement):
+In this second fragment, name lookup for `m_author` fails in both function bodies. We can't do that. We have to teach the fragment how to find the name, which requires writing this (note the added `requires` statement):
 
 ::: std
 ```cpp
@@ -827,7 +828,7 @@ consteval auto property(meta::info type, char const* name) -> void
 
 ### Postfix increment
 
-One boilerplate annoyance is implementing `x++` in terms of `++x`. Can code injection help us out? Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any interpolated names. But it does surface the issue of name lookup in fragments.
+Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any interpolated names. But it does surface the issue of name lookup in fragments.
 
 ::: std
 ```cpp
