@@ -3085,10 +3085,10 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a class template, function template, variable template, alias template, or concept,
 * a namespace,
 * an alias of a type or namespace,
-* a base specifier, or
+* a base class specifier, or
 * a description of a non-static data member.
 
-An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base specifier, or description of a non-static data member.
+An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base class specifier, or description of a non-static data member.
 
 :::
 :::
@@ -4343,12 +4343,12 @@ consteval bool is_protected(info r);
 consteval bool is_private(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a class member or base class that is public, protected, or private, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a class member or base class specifier that is public, protected, or private, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_virtual(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents either a virtual member function or a virtual base class. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents either a virtual member function or a virtual base class specifier. Otherwise, `false`.
 
 ```cpp
 consteval bool is_pure_virtual(info r);
@@ -4504,7 +4504,7 @@ consteval bool is_static_member(info r);
 consteval bool is_base(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, or base class member, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, or base class specifier, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool has_default_member_initializer(info r);
@@ -4570,7 +4570,7 @@ consteval info value_of(info r);
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace, alias of a type or namespace, or base specifier.
+[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace, alias of a type or namespace, or base class specifier.
 
 [#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class, function, or namespace.
 
@@ -4640,8 +4640,8 @@ consteval vector<info> bases_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: Let `C` be the type represented by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C`.
-The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
+[#]{.pnum} *Returns*: Let `C` be the type represented by `type`. A `vector` containing the reflections of all the direct base class specifiers `b`, if any, of `C`.
+The base class specifiers are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
@@ -4707,9 +4707,9 @@ consteval access_context::access_context()
 consteval bool is_accessible(info target, access_context from = {});
 ```
 
-[#]{.pnum} *Constant When*: `target` is a reflection representing a member of a class. `from` represents a function, class, or namespace.
+[#]{.pnum} *Constant When*: `target` is a reflection representing a member or base class specifier of a class.
 
-[#]{.pnum} *Returns*: `true` if the class member represented by `target` can be named within the scope of `from.$context_$`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if the class member or base class specifier represented by `target` can be named within the scope of `from.$context_$`. Otherwise, `false`.
 
 ```cpp
 consteval vector<info> accessible_members_of(info target, access_context from = {});
@@ -4775,7 +4775,7 @@ constexpr size_t member_offsets::total_bits() const;
 consteval member_offsets offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class.
+[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class specifier.
 
 [#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
@@ -4785,7 +4785,7 @@ consteval member_offsets offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class, object, value, or variable.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, or variable.
 
 [#]{.pnum} *Returns* If `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
@@ -4793,15 +4793,15 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, or base class.
+[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, or base class specifier.
 
-[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
+[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class, object, value, or variable.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, or variable.
 
 [#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the reflected type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the reflected bit-field. Otherwise, `bit_size_of(type_of(r))`.
 :::
