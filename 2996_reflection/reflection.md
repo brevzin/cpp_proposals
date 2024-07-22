@@ -3391,18 +3391,13 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 ::: addu
 [*]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
 
-* [*.#]{.pnum} If both operands are null reflection values, then they compare equal.
-* [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands represent entities, then the compare equal if and only if they are reflections of the same entity.
-* [*.#]{.pnum} Otherwise, if one operand represents an entity, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands represent variables, then the compare equal if and only if they are reflections of the same variable.
-* [*.#]{.pnum} Otherwise, if one operand represents a variable, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or type alias and the other operand does not represent the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
-* [*.#]{.pnum} Otherwise, if both operands represent namespace aliases or type aliases, then they compare equal if and only if their represented aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
-* [*.#]{.pnum} Otherwise, if both operands represent base class specifiers, then they compare equal if and only if they represent the same base class specifier.
-* [*.#]{.pnum} Otherwise, if one operand represents a base class specifier, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands represent values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
-* [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare unequal.
+* [*.#]{.pnum} If one operand is a null reflection value, then they compare equal if and only if the other operand is also a null reflection value.
+* [*.#]{.pnum} Otherwise, if one operand represents a variable, then they compare equal if and only if the other operand represents the same variable.
+* [*.#]{.pnum} Otherwise, if one operand represents a `$template-id$` referring to a specialization of an alias template, then they compare equal if and only if the other operand represents the same `$template-id$` ([temp.type]).
+* [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or a type alias, then they compare equal if and only if the other operand represents a namespace or type alias sharing the same name, declared within the same enclosing scope, and aliasing the same underlying entity.
+* [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a template-argument-equivalent value ([temp.type]{.sref}).
+* [*.#]{.pnum} Otherwise, if one operand represents an entity, then they compare equal if and only if the other operand represents the same entity.
+* [*.#]{.pnum} Otherwise, if one operand represents a base class specifier, then they compare equal if and only if the other operand represents the same base class specifier.
 * [*.#]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent descriptions of declarations of non-static data members: Let `C@~_1_~@` and `C@~_2_~@` be invented class types such that each `C@~_k_~@` has a single non-static data member having the properties described by `O@~_k_~@`. The operands compare equal if and only if the data members of `C@~_1_~@` and `C@~_2_~@` would  share the same type, name (if any), `$alignment-specifiers$` (if any), width, and attributes.
 :::
 
