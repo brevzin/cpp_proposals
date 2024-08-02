@@ -2506,7 +2506,7 @@ The template `bases_of` returns the direct base classes of the class type repres
 ::: std
 ```c++
 namespace std::meta {
-  struct access_context {
+  class access_context {
     consteval access_context();
   };
 
@@ -3662,10 +3662,10 @@ Modify the grammars for `$template-id$` and `$template-argument$` as follows:
 ::: std
 ```diff
 + $splice-template-name$:
-+     template [: constant-expression :]
++     template $splice-specifier$
 +
 + $splice-template-argument$:
-+     [: constant-expression :]
++     $splice-specifier$
 +
   $template-name$:
       identifier
@@ -3683,17 +3683,51 @@ Modify the grammars for `$template-id$` and `$template-argument$` as follows:
 Extend paragraph 1 to cover template splicers:
 
 ::: std
-The component name of a `$simple-template-id$`, `$template-id$`, or `$template-name$` is the first name in it. [If the `$template-name$` is a `$splice-template-name$`, the converted `$constant-expression$` shall evaluate to a reflection for a concept, variable template, class template, alias template, or function template which is not a constructor template or destructor template; the `$splice-template-name$` names the entity represented by the `$constant-expression$`.]{.addu}
+The component name of a `$simple-template-id$`, `$template-id$`, or `$template-name$` [that is an `$identifier$`]{.addu} is the first name in it. [If the `$template-name$` is a `$splice-template-name$`, the `$splice-specifier$` shall designate a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template; the `$splice-template-name$` names the entity designated by the `$splice-specifier$`.]{.addu}
 :::
 
-Add a paragraph after paragraph 3 of [temp.names]{.sref}:
+Extend paragraph 3 of [temp.names]{.sref}:
 
 ::: std
-::: addu
 
-[*]{.pnum} A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a `$template-name$` consisting of a `$splice-template-name$`.
+[3]{.pnum} A `<` is interpreted as the delimiter of a *template-argument-list* if it follows a name that is not a *conversion-function-id* and
+
+* [3.1]{.pnum} that follows the keyword template or a ~ after a nested-name-specifier or in a class member access expression, or
+* [3.2]{.pnum}  for which name lookup finds the injected-class-name of a class template or finds any declaration of a template, or
+* [3.3]{.pnum} that is an unqualified name for which name lookup either finds one or more functions or finds nothing, or
+* [3.4]{.pnum} that is a terminal name in a using-declarator ([namespace.udecl]), in a declarator-id ([dcl.meaning]), or in a type-only context other than a nested-name-specifier ([temp.res]).
+
+[If the name is an identifier, it is then interpreted as a *template-name*. The keyword template is used to indicate that a dependent qualified name ([temp.dep.type]) denotes a template where an expression might appear.]{.note}
+
+::: addu
+A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a `$template-name$` consisting of a `$splice-template-name$`.
+:::
+
+::: example
+```diff
+struct X {
+  template<std::size_t> X* alloc();
+  template<std::size_t> static X* adjust();
+};
+template<class T> void f(T* p) {
+  T* p1 = p->alloc<200>();              // error: < means less than
+  T* p2 = p->template alloc<200>();     // OK, < starts template argument list
+  T::adjust<100>();                     // error: < means less than
+  T::template adjust<100>();            // OK, < starts template argument list
+
++ static constexpr auto r = ^T::adjust;
++ T* p3 = [:r:]<200>();                 // error: < means less than
++ T* p4 = template [:r:]<200>();        // OK, < starts template argument list
+}
+```
+:::
 
 :::
+
+Change paragraph 9 to allow splicing into a *concept-id*:
+
+::: std
+[9]{.pnum} A *concept-id* is a *simple-template-id* where the *template-name* is [either]{.addu} a *concept-name* [or a *splice-template-name* whose *splice-specifier* designates a concept]{.addu}. A concept-id is a prvalue of type bool, and does not name a template specialization.
 :::
 
 
@@ -3703,7 +3737,7 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 
 ::: std
 
-[3]{.pnum} In a `$template-argument$` [which does not contain a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`. [In a `$template-argument$` containing a `$splice-template-argument$`, an ambiguity between a `$splice-template-argument$` and an expression is resolved to a `$splice-template-argument$`.]{.addu}
+[3]{.pnum} [A `$template-argument$` of the form `$splice-specifier$` is interpreted as a `$splice-template-argument$`.]{.addu} In a `$template-argument$` [that is not a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`.
 
 :::
 
@@ -3712,24 +3746,19 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 
 ::: std
-[1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$`. A `$template-argument$` having a `$splice-template-argument$` for such a `$template-parameter$` is treated as if it were a `$type-id$` nominating the type represented by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
+[1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$` whose `$splice-specifier$` designates a type]{.addu}.
 :::
 
 ### [temp.arg.nontype]{.sref} Template non-type arguments {-}
 
-Extend [temp.arg.nontype]{.sref}/2 to cover splice template arguments:
-
-::: std
-[2]{.pnum} The value of a non-type `$template-parameter$` _P_ of (possibly deduced) type `T` is determined from its template argument _A_ as follows. If `T` is not a class type and _A_ is [not]{.rm}[neither]{.addu} a `$braced-init-list$` [nor a `$splice-template-argument$`]{.addu}, _A_ shall be a converted constant expression ([expr.const]) of type `T`; the value of _P_ is _A_ (as converted).
-
-:::
+TODO: splice-specifier shall designate a value or something.
 
 ### [temp.arg.template]{.sref} Template template arguments {-}
 
 Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
 ::: std
-[1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$`. A `$template-argument$` for a template `$template-parameter$` having a `$splice-template-argument$` is treated as an `$id-expression$` nominating the class template or alias template represented by the `$constant-expression$` of the `$splice-template-argument$`.]{.addu}
+[1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be the name of a class template or an alias template, expressed as `$id-expression$`[, or a `$splice-template-argument$` whose `$splice-specifier$` designates a template]{.addu}.
 :::
 
 ### [temp.type]{.sref} Type equivalence {-}
@@ -3793,7 +3822,7 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 ::: std
 ::: addu
 
-[9]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
+[9]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$splice-specifier$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
 
 :::
 :::
@@ -3819,7 +3848,7 @@ alignof ( type-id )
 noexcept ( expression )
 ```
 
-[A `$reflect-expression$` is value dependent if the operand of the reflection operator is a type-dependent or value-dependent expression or if that operand is a dependent `$type-id$`, a dependent `$namespace-name$`, or a dependent `$template-name$`.]{.addu}
+[A `$reflect-expression$` is value-dependent if the operand of the reflection operator is a type-dependent or value-dependent expression or if that operand is a dependent `$type-id$`, a dependent `$namespace-name$`, or a dependent `$template-name$`.]{.addu}
 :::
 
 
@@ -3828,7 +3857,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 ::: std
 ::: addu
 
-[6]{.pnum} A `$primary-expression$` of the form `[: $constant-expression$ :]` or `template[: $constant-expression$ :]  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
+[6]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
 
 :::
 :::
@@ -3897,9 +3926,9 @@ Add a new primary type category type trait:
       constexpr bool is_void_v = is_void<T>::value;
 ...
     template<class T>
-      constexpr bool is_reflection_v = is_function<T>::value;
+      constexpr bool is_function_v = is_function<T>::value;
 +   template<class T>
-+     constexpr bool is_reflection_v = is_function<T>::value;
++     constexpr bool is_reflection_v = is_reflection<T>::value;
 ```
 :::
 
@@ -4077,15 +4106,15 @@ namespace std::meta {
     consteval T extract(info);
 
   // [meta.reflection.substitute], reflection substitution
+  template <class R>
+    concept reflection_range = $see below$;
+
   template <reflection_range R = initializer_list<info>>
     consteval bool can_substitute(info templ, R&& arguments);
   template <reflection_range R = initializer_list<info>>
     consteval info substitute(info templ, R&& arguments);
 
   // [meta.reflection.result], expression result reflection
-  template <class R>
-    concept reflection_range = $see below$;
-
   template<class T>
     consteval info reflect_value(T value);
   template<class T>
