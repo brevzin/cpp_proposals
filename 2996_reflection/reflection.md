@@ -34,8 +34,10 @@ Since [@P2996R4]:
 * changed `span<info const>` to `initializer_list<info>`
 * removed `test_trait`, `qualified_name_of`
 * renamed `display_name_of` to `display_string_of`
-* adding a number of missing predicates for special member functions (`is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`) and other members (`has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`)
+* adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`)
 * changed offset API to be one function that returns a type with named members
+* Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
+* Many wording updates in response to feedback from CWG.
 
 Since [@P2996R3]:
 
@@ -2269,6 +2271,7 @@ namespace std::meta {
   consteval auto is_explicit(info entity) -> bool;
   consteval auto is_noexcept(info entity) -> bool;
   consteval auto is_bit_field(info entity) -> bool;
+  consteval auto is_enumerator(info entity) -> bool;
   consteval auto is_const(info r) -> bool;
   consteval auto is_volatile(info r) -> bool;
   consteval auto is_lvalue_reference_qualified(info r) -> bool;
@@ -2294,6 +2297,9 @@ namespace std::meta {
   consteval auto is_variable_template(info entity) -> bool;
   consteval auto is_class_template(info entity) -> bool;
   consteval auto is_alias_template(info entity) -> bool;
+  consteval auto is_conversion_function_template(info entity) -> bool;
+  consteval auto is_operator_function_template(info entity) -> bool;
+  consteval auto is_literal_operator_template(info entity) -> bool;
   consteval auto is_constructor_template(info entity) -> bool;
   consteval auto is_concept(info entity) -> bool;
   consteval auto is_structured_binding(info entity) -> bool;
@@ -2303,6 +2309,9 @@ namespace std::meta {
   consteval auto has_default_member_initializer(info r) -> bool;
 
   consteval auto is_special_member(info r) -> bool;
+  consteval auto is_conversion_function(info r) -> bool;
+  consteval auto is_operator_function(info r) -> bool;
+  consteval auto is_literal_operator(info r) -> bool;
   consteval auto is_constructor(info r) -> bool;
   consteval auto is_default_constructor(info r) -> bool;
   consteval auto is_copy_constructor(info r) -> bool;
@@ -2391,7 +2400,7 @@ consteval auto type_doof(std::meta::info r) -> std::meta::info {
 ```
 :::
 
-If `r` represents a member of a class or namespace, `parent_of(r)` is a reflection designating its immediately enclosing class or (possibly inline or anonymous) namespace.
+`parent_of(r)` is a reflection designating its immediately enclosing class, function, or (possibly inline or anonymous) namespace.
 
 If `r` represents an alias, `dealias(r)` represents the underlying entity.
 Otherwise, `dealias(r)` produces `r`.
@@ -2700,7 +2709,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, static-ness, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of UTF-8 code-units (after converting any contained UCNs to UTF-8). Otherwise, the name of the data member is unspecified.
+`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
@@ -2726,15 +2735,13 @@ static_assert(is_type(define_class(^U, {
 template<typename T> struct S;
 constexpr auto s_int_refl = define_class(^S<int>, {
   data_member_spec(^int, {.name="i", .alignment=64}),
-  data_member_spec(^int, {.name=u8"こんにち", .alignment=64}),
-  data_member_spec(^int, {.name="v\\N{LATIN SMALL LETTER AE}rs\\u{e5}god"})
+  data_member_spec(^int, {.name=u8"こんにち"}),
 });
 
 // S<int> is now defined to the equivalent of
 // template<> struct S<int> {
 //   alignas(64) int i;
-//   alignas(64) int こんにち;
-//               int værsågod;
+//               int こんにち;
 // };
 ```
 :::
@@ -2970,7 +2977,7 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: addu
 
-[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to `std::meta::define_class`, every definition of that class shall be the result of a call to `std::meta::define_class` such that its corresponding members are equal in number and have respectively the same types, alignments, `[[no_unique_address]]` attributes (if any), bit-field widths (if any), and specified names (if any).
+[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to a specialization of `std::meta::define_class`, every definition of that class shall be the result of a call to the same specialization; and for every reflection in the range of reflections describing its class members, every other such call shall have a corresponding value, occupying the same position in its respective range, to which the reflection compares equal.
 
 :::
 
@@ -3078,10 +3085,10 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a class template, function template, variable template, alias template, or concept,
 * a namespace,
 * an alias of a type or namespace,
-* a base specifier, or
+* a base class specifier, or
 * a description of a non-static data member.
 
-An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base specifier, or description of a non-static data member.
+An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base class specifier, or description of a non-static data member.
 
 :::
 :::
@@ -3332,7 +3339,7 @@ When applied to a `$namespace-name$`, the reflection operator produces a reflect
 
 [#]{.pnum} When applied to a `$concept-name$`, the reflection operator produces a reflection for the indicated concept.
 
-[#]{.pnum} When applied to a `$type-id$`, the reflection operator produces a reflection for the indicated type alias if the `$type-id$` is a `$typedef-name$`, otherwise a reflection of the indicated type.
+[#]{.pnum} When applied to a `$typedef-name$`, the reflection operator produces a reflection of the indicated `$typedef-name$`. When applied to any other `$type-id$`, the reflection operator produces a reflection of the indicated type.
 
 [#]{.pnum} When applied to an `$id-expression$`, the reflection operator produces a reflection as follows:
 
@@ -3384,16 +3391,15 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 ::: addu
 [*]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
 
-* [*.#]{.pnum} If both operands are null reflection values, then they compare equal.
-* [*.#]{.pnum} Otherwise, if one operand is a null reflection value, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of a namespace alias, alias template, or type alias and the other operand is not a reflection of the same kind of alias, they compare unequal. [A reflection of a type and a reflection of an alias to that same type do not compare equal.]{.note}
-* [*.#]{.pnum} Otherwise, if both operands are reflections of a namespace alias, alias template, or type alias, then they compare equal if their reflected aliases share the same name, are declared within the same enclosing scope, and alias the same underlying entity.
-* [*.#]{.pnum} Otherwise, if both operands are reflections of a base class specifier, then they compare equal if they are reflections of the same base class specifier.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of a base class specifier and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if neither operand is a reflection of a value, then they compare equal if they are reflections of the same entity.
-* [*.#]{.pnum} Otherwise, if one operand is a reflection of a value and the other is not, then they compare unequal.
-* [*.#]{.pnum} Otherwise, if both operands are reflections of values, then they compare equal if and only if the reflected values are _template-argument-equivalent_ ([temp.type]{.sref}).
-* [*.#]{.pnum} Otherwise the result is unspecified. [For example, if the operands are results of calls to `data_member_spec`]{.note}
+* [*.#]{.pnum} If one operand is a null reflection value, then they compare equal if and only if the other operand is also a null reflection value.
+* [*.#]{.pnum} Otherwise, if one operand represents a variable, then they compare equal if and only if the other operand represents the same variable.
+* [*.#]{.pnum} Otherwise, if one operand represents a `$template-id$` referring to a specialization of an alias template, then they compare equal if and only if the other operand represents the same `$template-id$` ([temp.type]).
+* [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or a `$typedef-name$`, then they compare equal if and only if the other operand represents a namespace alias or `$typedef-name$` sharing the same name, declared within the same enclosing scope, and aliasing the same underlying entity.
+* [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a template-argument-equivalent value ([temp.type]{.sref}).
+* [*.#]{.pnum} Otherwise, if one operand represents an object, then they compare equal if and only if the other operand represents the same object.
+* [*.#]{.pnum} Otherwise, if one operand represents an entity, then they compare equal if and only if the other operand represents the same entity.
+* [*.#]{.pnum} Otherwise, if one operand represents a base class specifier, then they compare equal if and only if the other operand represents the same base class specifier.
+* [*.#]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent descriptions of declarations of non-static data members: Let `C@~_1_~@` and `C@~_2_~@` be invented class types such that each `C@~_k_~@` has a single non-static data member having the properties described by `O@~_k_~@`. The operands compare equal if and only if the data members of `C@~_1_~@` and `C@~_2_~@` would  share the same type, name (if any), `$alignment-specifiers$` (if any), width, and attributes.
 :::
 
 [6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
@@ -3419,20 +3425,6 @@ Add a new paragraph after the definition of _manifestly constant-evaluated_ [exp
     * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
   * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
 
-:::
-:::
-
-### [dcl.typedef]{.sref} The `typedef` specifier {-}
-
-Introduce the term "type alias" to [dcl.typedef]{.sref}:
-
-::: std
-[1]{.pnum} [...] A name declared with the `typedef` specifier becomes a typedef-name. A typedef-name names the type associated with the identifier ([dcl.decl]) or simple-template-id ([temp.pre]); a typedef-name is thus a synonym for another type. A typedef-name does not introduce a new type the way a class declaration ([class.name]) or enum declaration ([dcl.enum]) does.
-
-[2]{.pnum} A *typedef-name* can also be introduced by an alias-declaration. The identifier following the using keyword is not looked up; it becomes a typedef-name and the optional attribute-specifier-seq following the identifier appertains to that typedef-name. Such a typedef-name has the same semantics as if it were introduced by the typedef specifier. In particular, it does not define a new type.
-
-::: addu
-[*]{.pnum} A *type alias* is either a name declared with the `typedef` specifier or a name introduced by an *alias-declaration*.
 :::
 :::
 
@@ -3982,6 +3974,7 @@ namespace std::meta {
   consteval bool is_explicit(info r);
   consteval bool is_noexcept(info r);
   consteval bool is_bit_field(info r);
+  consteval bool is_enumerator(info r);
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
   consteval bool is_lvalue_reference_qualified(info r);
@@ -4003,6 +3996,9 @@ namespace std::meta {
   consteval bool is_variable_template(info r);
   consteval bool is_class_template(info r);
   consteval bool is_alias_template(info r);
+  consteval bool is_conversion_function_template(info r);
+  consteval bool is_operator_function_template(info r);
+  consteval bool is_literal_operator_template(info r);
   consteval bool is_constructor_template(info r);
   consteval bool is_concept(info r);
   consteval bool is_value(info r);
@@ -4015,6 +4011,10 @@ namespace std::meta {
   consteval bool is_static_member(info r);
   consteval bool is_base(info r);
   consteval bool has_default_member_initializer(info r);
+
+  consteval bool is_conversion_function(info r);
+  consteval bool is_operator_function(info r);
+  consteval bool is_literal_operator(info r);
 
   consteval bool is_special_member(info r);
   consteval bool is_constructor(info r);
@@ -4073,7 +4073,7 @@ namespace std::meta {
   consteval size_t bit_size_of(info entity);
 
   // [meta.reflection.extract], value extraction
-  template <typename T>
+  template<class T>
     consteval T extract(info);
 
   // [meta.reflection.substitute], reflection substitution
@@ -4086,11 +4086,11 @@ namespace std::meta {
   template <class R>
     concept reflection_range = $see below$;
 
-  template <typename T>
+  template<class T>
     consteval info reflect_value(T value);
-  template <typename T>
+  template<class T>
     consteval info reflect_object(T& object);
-  template <typename T>
+  template<class T>
     consteval info reflect_function(T& fn);
 
   template <reflection_range R = initializer_list<info>>
@@ -4101,10 +4101,10 @@ namespace std::meta {
   // [meta.reflection.define_class], class definition generation
   struct data_member_options_t {
     struct name_type {
-      template <typename T> requires constructible_from<u8string, T>
+      template<class T> requires constructible_from<u8string, T>
         consteval name_type(T &&);
 
-      template <typename T> requires constructible_from<string, T>
+      template<class T> requires constructible_from<string, T>
         consteval name_type(T &&);
     };
 
@@ -4325,12 +4325,12 @@ consteval bool is_protected(info r);
 consteval bool is_private(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a class member or base class that is public, protected, or private, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a class member or base class specifier that is public, protected, or private, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_virtual(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents either a virtual member function or a virtual base class. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents either a virtual member function or a virtual base class specifier. Otherwise, `false`.
 
 ```cpp
 consteval bool is_pure_virtual(info r);
@@ -4373,6 +4373,12 @@ consteval bool is_bit_field(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` represents a bit-field. Otherwise, `false`.
+
+```cpp
+consteval bool is_enumerator(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents an enumerator. Otherwise, `false`.
 
 ```cpp
 consteval bool is_const(info r);
@@ -4423,12 +4429,12 @@ consteval bool is_variable(info r);
 ```cpp
 consteval bool is_type(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a type or a type alias. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a type or a `$typedef-name$`. Otherwise, `false`.
 
 ```cpp
 consteval bool is_alias(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a type alias, alias template, or namespace alias. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$`, alias template, or namespace alias. Otherwise, `false`.
 
 ```cpp
 consteval bool is_incomplete_type(info r);
@@ -4451,12 +4457,15 @@ consteval bool is_function_template(info r);
 consteval bool is_variable_template(info r);
 consteval bool is_class_template(info r);
 consteval bool is_alias_template(info r);
+consteval bool is_conversion_function_template(info r);
+consteval bool is_operator_function_template(info r);
+consteval bool is_literal_operator_template(info r);
 consteval bool is_constructor_template(info r);
 consteval bool is_concept(info r);
 consteval bool is_structured_binding(info r);
 consteval bool is_value(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, conversion function template, operator function template, literal operator template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_object(info r);
@@ -4477,13 +4486,21 @@ consteval bool is_static_member(info r);
 consteval bool is_base(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, or base class member, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, or base class specifier, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool has_default_member_initializer(info r);
 ```
 
-[#]{.pnum} *Returns* `true` if `r` represents a non-static data member that has a default member initializer. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a non-static data member that has a default member initializer. Otherwise, `false`.
+
+```cpp
+consteval bool is_conversion_function(info r);
+consteval bool is_operator_function(info r);
+consteval bool is_literal_operator(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a conversion function, operator function, or literal operator, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_special_member(info r);
@@ -4511,9 +4528,9 @@ consteval bool is_user_provided(info r);
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a typed entity. `r` does not represent a constructor, destructor, or structured binding.
+[#]{.pnum} *Constant When*: `r` represents a typed entity or variable. `r` does not represent a constructor, destructor, or structured binding.
 
-[#]{.pnum} *Returns*: A reflection of the type of that entity.  If every declaration of that entity was declared with the same type alias (but not a template parameter substituted by a type alias), the reflection returned is for that alias.  Otherwise, if some declaration of that entity was declared with an alias it is unspecified whether the reflection returned is for that alias or for the type underlying that alias. Otherwise, the reflection returned shall not be a type alias reflection.
+[#]{.pnum} *Returns*: A reflection representing the type of that entity or variable. If every declaration of that entity or variable was declared with the same `$typedef-name$`, the reflection returned represents a `$typedef-name$`, and otherwise represents a type.
 
 ```cpp
 consteval info object_of(info r);
@@ -4535,15 +4552,15 @@ consteval info value_of(info r);
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a member of either a class or a namespace.
+[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace, alias of a type or namespace, or base class specifier.
 
-[#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class or namespace.
+[#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class, function, or namespace.
 
 ```cpp
 consteval info dealias(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` represents a type alias or a namespace alias, a reflection representing the underlying entity. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` represents a `$typedef-name$` or a namespace alias, a reflection representing the underlying entity. Otherwise, `r`.
 
 [#]{.pnum}
 
@@ -4605,8 +4622,8 @@ consteval vector<info> bases_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: Let `C` be the type represented by `type`. A `vector` containing the reflections of all the direct base classes `b`, if any, of `C`.
-The base classes are indexed in the order in which they appear in the *base-specifier-list* of `C`.
+[#]{.pnum} *Returns*: Let `C` be the type represented by `type`. A `vector` containing the reflections of all the direct base class specifiers `b`, if any, of `C`.
+The base class specifiers are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
@@ -4672,9 +4689,9 @@ consteval access_context::access_context()
 consteval bool is_accessible(info target, access_context from = {});
 ```
 
-[#]{.pnum} *Constant When*: `target` is a reflection representing a member of a class. `from` represents a function, class, or namespace.
+[#]{.pnum} *Constant When*: `target` is a reflection representing a member or base class specifier of a class.
 
-[#]{.pnum} *Returns*: `true` if the class member represented by `target` can be named within the scope of `from.$context_$`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if the class member or base class specifier represented by `target` can be named within the scope of `from.$context_$`. Otherwise, `false`.
 
 ```cpp
 consteval vector<info> accessible_members_of(info target, access_context from = {});
@@ -4740,7 +4757,7 @@ constexpr size_t member_offsets::total_bits() const;
 consteval member_offsets offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class.
+[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class specifier.
 
 [#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
@@ -4750,7 +4767,7 @@ consteval member_offsets offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class, object, value, or variable.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, or variable.
 
 [#]{.pnum} *Returns* If `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
@@ -4758,15 +4775,15 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member, or base class.
+[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, or base class specifier.
 
-[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
+[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class, object, value, or variable.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, or variable.
 
 [#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the reflected type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the reflected bit-field. Otherwise, `bit_size_of(type_of(r))`.
 :::
@@ -4886,10 +4903,9 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 `type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name` contains a valid identifier ([lex.name]{.sref}).
+If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
 
-
-[#]{.pnum} *Returns*: A reflection of a description of the declaration of non-static data member with a type represented by `type` and optional characteristics designated by `options`.
+[#]{.pnum} *Returns*: A reflection of a description of the declaration of a non-static data member with a type represented by `type` and optional characteristics designated by `options`.
 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
@@ -4905,8 +4921,6 @@ If `options.name` contains a value, the `string` or `u8string` value that was us
 `class_type` represents an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
 [For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
 Each `@*t*~i~@` represents a type that is valid types for data members.
-If `@*o*~K~@.width` (for some `$K$`) contains a value `$w$`, the corresponding type `@*t*~K~@` is a valid type for bit field of width `$w$`.
-If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, `alignas($a$)` is a valid `$alignment-specifier$` for a non-static data member of type `@*t*~K~@`.
 
 
 [#]{.pnum} *Effects*:
@@ -4917,7 +4931,7 @@ Defines `class_type` with properties as follows:
 * [#.#]{.pnum} The type of the respective members are the types represented by the reflection values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@`.
 * [#.#]{.pnum} If `@*o*~K~@.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
 * [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
-* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is aligned as if declared with `alignas($a$)`.
+* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is declared with the `$alignment-specifier$` `alignas($a$)`.
 * [#.#]{.pnum} If `@*o*~K~@.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
   Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `@*o*~K~@.name`.
 * [#.#]{.pnum} If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
@@ -4935,7 +4949,7 @@ Defines `class_type` with properties as follows:
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions that may be used to query the properties of a type at compile time.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or type alias. For each function taking an argument named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
+[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or `$typedef-name$`. For each function taking an argument named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a `$typedef-name$`.
 :::
 :::
 
@@ -4943,7 +4957,7 @@ Defines `class_type` with properties as follows:
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$TRAIT$` defined in this clause, `std::meta::type_$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$TRAIT$` defined in this clause, `std::meta::type_$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
 
 ```cpp
 consteval bool type_is_void(info type);
@@ -4989,7 +5003,7 @@ namespace std::meta {
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$TRAIT$` defined in this clause, `std::meta::type_$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$TRAIT$` defined in this clause, `std::meta::type_$TRAIT$(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
 
 ```cpp
 consteval bool type_is_reference(info type);
@@ -5007,11 +5021,11 @@ consteval bool type_is_member_pointer(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::type_$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::type_$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any types or type aliases `T` and `U`, for each function `std::meta::type_$BINARY-TRAIT$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::type_$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any types or `$typedef-names$` `T` and `U`, for each function `std::meta::type_$BINARY-TRAIT$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::type_$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each function template `std::meta::type_$VARIADIC-TRAIT$` defined in this clause, `std::meta::type_$VARIADIC-TRAIT$(^T, r)` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each function template `std::meta::type_$VARIADIC-TRAIT$` defined in this clause, `std::meta::type_$VARIADIC-TRAIT$(^T, r)` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
 
 ```cpp
 consteval bool type_is_const(info type);
@@ -5087,9 +5101,9 @@ consteval bool type_reference_converts_from_temporary(info type_dst, info type_s
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$PROP$` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::type_$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$PROP$` defined in this clause with signature `size_t(std::meta::info)`, `std::meta::type_$PROP$(^T)` equals the value of the corresponding type property `std::$PROP$_v<T>` as specified in [meta.unary.prop.query]{.sref}.
 
-[#]{.pnum} For any type or type alias `T` and unsigned integer value `I`, `std::meta::type_extent(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
+[#]{.pnum} For any type or `$typedef-name$` `T` and unsigned integer value `I`, `std::meta::type_extent(^T, I)` equals `std::extent_v<T, I>` ([meta.unary.prop.query]).
 
 ```cpp
 consteval size_t type_alignment_of(info type);
@@ -5105,11 +5119,11 @@ consteval size_t type_extent(info type, unsigned i = 0);
 ::: addu
 [1]{.pnum} The consteval functions specified in this clause may be used to query relationships between types at compile time.
 
-[#]{.pnum} For any types or type aliases `T` and `U`, for each function `std::meta::type_$REL$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::type_$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types or `$typedef-name$` `T` and `U`, for each function `std::meta::type_$REL$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::type_$REL$(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each binary function template `std::meta::type_$VARIADIC-REL$`, `std::meta::type_$VARIADIC-REL$(^T, r)` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each binary function template `std::meta::type_$VARIADIC-REL$`, `std::meta::type_$VARIADIC-REL$(^T, r)` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any types or type aliases `T` and `R`, pack of types or type aliases `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each ternary function template `std::meta::type_$VARIADIC-REL-R$` defined in this clause, `std::meta::type_$VARIADIC-REL-R$(^R, ^T, r)` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types or `$typedef-names$` `T` and `R`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each ternary function template `std::meta::type_$VARIADIC-REL-R$` defined in this clause, `std::meta::type_$VARIADIC-REL-R$(^R, ^T, r)` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
 
 ```cpp
 consteval bool type_is_same(info type1, info type2);
@@ -5146,7 +5160,7 @@ consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&& type
 #### [meta.reflection.trans.cv], Const-volatile modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
 
 ```cpp
 consteval info type_remove_const(info type);
@@ -5163,7 +5177,7 @@ consteval info type_add_cv(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
 
 ```cpp
 consteval info type_remove_reference(info type);
@@ -5177,7 +5191,7 @@ consteval info type_add_rvalue_reference(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
 ```cpp
 consteval info type_make_signed(info type);
 consteval info type_make_unsigned(info type);
@@ -5189,7 +5203,7 @@ consteval info type_make_unsigned(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
 ```cpp
 consteval info type_remove_extent(info type);
 consteval info type_remove_all_extents(info type);
@@ -5200,7 +5214,7 @@ consteval info type_remove_all_extents(info type);
 #### [meta.reflection.trans.ptr], Pointer modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
 ```cpp
 consteval info type_remove_pointer(info type);
 consteval info type_add_pointer(info type);
@@ -5214,11 +5228,11 @@ consteval info type_add_pointer(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `std::meta::type_$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any pack of types or type aliases `T...` and range `r` such that `ranges::to<vector>(r) == vector{^T...}` is `true`, for each unary function template `std::meta::type_$VARIADIC-MOD$` defined in this clause, `std::meta::type_$VARIADIC-MOD$(r)` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
+[#]{.pnum} For any pack of types or `$typedef-names$` `T...` and range `r` such that `ranges::to<vector>(r) == vector{^T...}` is `true`, for each unary function template `std::meta::type_$VARIADIC-MOD$` defined in this clause, `std::meta::type_$VARIADIC-MOD$(r)` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, `std::meta::type_invoke_result(^T, r)` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
+[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, `std::meta::type_invoke_result(^T, r)` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
 
 ```cpp
 consteval info type_remove_cvref(info type);
