@@ -32,7 +32,8 @@ Since [@P2996R4]:
 * cleaned up accessibility interface, removed `access_pair` type, and redid API to be based on an `access_context`
 * reduced specification of `is_noexcept`
 * changed `span<info const>` to `initializer_list<info>`
-* removed `test_trait`, `qualified_name_of`
+* removed `test_trait`
+* removed `(u8)name_of` and `(u8)qualified_name_of`; added `(u8)identifier_of`, `operator_of`, `define_static_string`.
 * renamed `display_name_of` to `display_string_of`
 * adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`)
 * changed offset API to be one function that returns a type with named members
@@ -211,7 +212,7 @@ template <typename E>
 constexpr std::string enum_to_string(E value) {
   template for (constexpr auto e : std::meta::enumerators_of(^E)) {
     if (value == [:e:]) {
-      return std::string(std::meta::name_of(e));
+      return std::string(std::meta::identifier_of(e));
     }
   }
 
@@ -227,7 +228,7 @@ constexpr std::string enum_to_string(E value) {
   std::string result = "<unnamed>";
   [:expand(std::meta::enumerators_of(^E)):] >> [&]<auto e>{
     if (value == [:e:]) {
-      result = std::meta::name_of(e);
+      result = std::meta::identifier_of(e);
     }
   };
   return result;
@@ -322,7 +323,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/Wb1vx7jqb), [Clang](https://go
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
-Another frequently-useful metafunction is `std::meta::name_of`, which returns a `std::string_view` describing the unqualified name of an entity represented by a given reflection value.
+Another frequently-useful metafunction is `std::meta::identifier_of`, which returns a `std::string_view` describing the identifier with which an entity represented by a given reflection value was declared.
 With such a facility, we could conceivably access non-static data members "by string":
 
 ::: std
@@ -331,7 +332,8 @@ struct S { unsigned i:2, j:6; };
 
 consteval auto member_named(std::string_view name) {
   for (std::meta::info field : nonstatic_data_members_of(^S)) {
-    if (name_of(field) == name) return field;
+    if (has_identifier(field) && identifier_of(field) == name)
+      return field;
   }
 }
 
@@ -343,7 +345,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://godbolt.org/z/vM46x4abW).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://godbolt.org/z/MEPb78ece).
 
 
 ## List of Types to List of Sizes
@@ -444,7 +446,7 @@ where Xd would be std::array<member_descriptor, 3>{@{@
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/rbbWY99TM), [Clang](https://godbolt.org/z/YEn3ojjWq).
+On Compiler Explorer: [EDG](https://godbolt.org/z/rbbWY99TM), [Clang](https://godbolt.org/z/v8e5boE1q).
 
 ## Enum to String
 
@@ -457,7 +459,7 @@ template <typename E>
 constexpr std::string enum_to_string(E value) {
   template for (constexpr auto e : std::meta::enumerators_of(^E)) {
     if (value == [:e:]) {
-      return std::string(std::meta::name_of(e));
+      return std::string(std::meta::identifier_of(e));
     }
   }
 
@@ -478,7 +480,7 @@ template <typename E>
   requires std::is_enum_v<E>
 constexpr std::optional<E> string_to_enum(std::string_view name) {
   template for (constexpr auto e : std::meta::enumerators_of(^E)) {
-    if (name == std::meta::name_of(e)) {
+    if (name == std::meta::identifier_of(e)) {
       return [:e:];
     }
   }
@@ -498,7 +500,7 @@ constexpr std::string enum_to_string(E value) {
   constexpr auto get_pairs = []{
     return std::meta::enumerators_of(^E)
       | std::views::transform([](std::meta::info e){
-          return std::pair<E, std::string>(std::meta::extract<E>(e), std::meta::name_of(e));
+          return std::pair<E, std::string>(std::meta::extract<E>(e), std::meta::identifier_of(e));
         })
   };
 
@@ -533,7 +535,7 @@ constexpr std::string enum_to_string(E value) {
 
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Y5va8MqzG), [Clang](https://godbolt.org/z/3doherKx8).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Y5va8MqzG), [Clang](https://godbolt.org/z/KW4437zrx).
 
 
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
@@ -557,7 +559,7 @@ auto parse_options(std::span<std::string_view const> args) -> Opts {
   template for (constexpr auto dm : nonstatic_data_members_of(^Opts)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
-        return arg.starts_with("--") && arg.substr(2) == name_of(dm);
+        return arg.starts_with("--") && arg.substr(2) == identifier_of(dm);
       });
 
     if (it == args.end()) {
@@ -592,7 +594,7 @@ int main(int argc, char *argv[]) {
 
 This example is based on a presentation by Matúš Chochlík.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://godbolt.org/z/v1PvGnafx).
+On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://godbolt.org/z/c36K9z5Wz).
 
 
 ## A Simple Tuple Type
@@ -791,7 +793,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R0].
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/faEaq16Kh).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/3bvo97fqf).
 
 ## Struct to Struct of Arrays
 
@@ -809,7 +811,7 @@ consteval auto make_struct_of_arrays(std::meta::info type,
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
     auto type_array = substitute(^std::array, {type_of(member), N });
-    auto mem_descr = data_member_spec(type_array, {.name = name_of(member)});
+    auto mem_descr = data_member_spec(type_array, {.name = identifier_of(member)});
     new_members.push_back(mem_descr);
   }
   return std::meta::define_class(
@@ -844,7 +846,7 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_class` is put to good use.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Whdvs3j1n), [Clang](https://godbolt.org/z/senWPW3eY).
+On Compiler Explorer: [EDG](https://godbolt.org/z/Whdvs3j1n), [Clang](https://godbolt.org/z/cY73aYKov).
 
 
 ## Parsing Command-Line Options II
@@ -899,7 +901,7 @@ consteval auto spec_to_opts(std::meta::info opts,
   std::vector<std::meta::info> new_members;
   for (std::meta::info member : nonstatic_data_members_of(spec)) {
     auto type_new = template_arguments_of(type_of(member))[0];
-    new_members.push_back(data_member_spec(type_new, {.name=name_of(member)}));
+    new_members.push_back(data_member_spec(type_new, {.name=identifier_of(member)}));
   }
   return define_class(opts, new_members);
 }
@@ -923,8 +925,8 @@ struct Clap {
       // find the argument associated with this option
       auto it = std::ranges::find_if(cmdline,
         [&](std::string_view arg){
-          return (cur.use_short && arg.size() == 2 && arg[0] == '-' && arg[1] == name_of(sm)[0])
-              || (cur.use_long && arg.starts_with("--") && arg.substr(2) == name_of(sm));
+          return (cur.use_short && arg.size() == 2 && arg[0] == '-' && arg[1] == identifier_of(sm)[0])
+              || (cur.use_long && arg.starts_with("--") && arg.substr(2) == identifier_of(sm));
         });
 
       // no such argument
@@ -937,11 +939,11 @@ struct Clap {
           opts.[:om:] = *cur.initializer;
           continue;
         } else {
-          std::print(stderr, "Missing required option {}\n", name_of(sm));
+          std::print(stderr, "Missing required option {}\n", display_string_of(sm));
           std::exit(EXIT_FAILURE);
         }
       } else if (it + 1 == cmdline.end()) {
-        std::print(stderr, "Option {} for {} is missing a value\n", *it, name_of(sm));
+        std::print(stderr, "Option {} for {} is missing a value\n", *it, display_string_of(sm));
         std::exit(EXIT_FAILURE);
       }
 
@@ -949,7 +951,7 @@ struct Clap {
       auto iss = ispanstream(it[1]);
       if (iss >> opts.[:om:]; !iss) {
         std::print(stderr, "Failed to parse {:?} into option {} of type {}\n",
-          it[1], name_of(sm), display_string_of(type));
+          it[1], display_string_of(sm), display_string_of(type));
         std::exit(EXIT_FAILURE);
       }
     }
@@ -959,7 +961,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/MWfqvMeTx), [Clang](https://godbolt.org/z/79MrYvPP3).
+On Compiler Explorer: [EDG](https://godbolt.org/z/MWfqvMeTx), [Clang](https://godbolt.org/z/e54E5nzd6).
 
 ## A Universal Formatter
 
@@ -972,7 +974,9 @@ struct universal_formatter {
 
   template <typename T>
   auto format(T const& t, auto& ctx) const {
-    auto out = std::format_to(ctx.out(), "{}@{@{", name_of(^T));
+    std::string_view name = has_identifier(^T) ? identifier_of(^T)
+                                               : "(unnamed-type)";
+    auto out = std::format_to(ctx.out(), "{}@{@{", type_label);
 
     auto delim = [first=true]() mutable {
       if (!first) {
@@ -989,7 +993,9 @@ struct universal_formatter {
 
     template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
       delim();
-      out = std::format_to(out, ".{}={}", name_of(mem), t.[:mem:]);
+      std::string_view mem_label = has_identifier(mem) ? identifier_of(mem)
+                                                       : "(unnamed-member)";
+      out = std::format_to(out, ".{}={}", mem_label, t.[:mem:]);
     }
 
     *out++ = '}';
@@ -1014,7 +1020,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/r7f8h38fq).
+On Compiler Explorer: [Clang](https://godbolt.org/z/MnGP186eT).
 
 Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is to use a cast:
 
@@ -1031,9 +1037,9 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-    template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
-        hash_append(algo, t.[:mem:]);
-    }
+  template for (constexpr auto mem : nonstatic_data_members_of(^T))
+    if (!(is_bitfield(mem) && !has_identifier(mem)))
+      hash_append(algo, t.[:mem:]);
 }
 ```
 :::
@@ -1844,8 +1850,8 @@ The namespace `std::meta` is an associated type of `std::meta::info`, which allo
 ```c++
 #include <meta>
 struct S {};
-std::string name2 = std::meta::name_of(^S);  // Okay.
-std::string name1 = name_of(^S);             // Also okay.
+std::string name2 = std::meta::identifier_of(^S);  // Okay.
+std::string name1 = identifier_of_of(^S);          // Also okay.
 ```
 :::
 
@@ -2067,11 +2073,10 @@ This paper is proposing that:
 * Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
   This is because `C` has its own template arguments that can be reflected on.
 
-
 ### Reflecting source text
 
 One of the most "obvious" abilities of reflection --- retrieving the name of an entity --- turns out to raise
-issues that aren't obvious at all: How do we represent source text in a C++ program.
+issues that aren't obvious at all: How do we represent source text in a C++ program?
 
 Thanks to recent work originating in SG16 (the "Unicode" study group) we can assume that all source code is
 ultimately representable as Unicode code points.  C++ now also has types to represent UTF-8-encoded text
@@ -2104,7 +2109,7 @@ implementation can easily have at least three potential representations of refle
 (some compilers might share some of those representations).  For transient text during constant evaluation we'd
 like to use `string`/`u8string` values, but because of the limitations on non-transient allocation during
 constant evaluation we cannot easily transfer such types to the non-constant (i.e., run-time) environment.
-E.g., if `name_of` were a (consteval) metafunction returning a `std::string` value, the following simple
+E.g., if `identifier_of` were a (consteval) metafunction returning a `std::string` value, the following simple
 example would not work:
 
 ::: std
@@ -2113,7 +2118,7 @@ example would not work:
 #include <meta>
 int main() {
   int hello_world = 42;
-  std::cout << name_of(^hello_world) << "\n";  // Doesn't work if name_of produces a std::string.
+  std::cout << identifier_of(^hello_world) << "\n";  // Doesn't work if identifier_of produces a std::string.
 }
 ```
 :::
@@ -2121,13 +2126,13 @@ int main() {
 We can instead return a `std::string_view` or `std::u8string_view`, but that has the downside
 that it effectively makes all results of querying source text persistent for the compilation.
 
-For now, however, we propose that queries like `name_of` do produce "string view" results.
+For now, however, we propose that queries like `identifier_of` do produce "string view" results.
 For example:
 
 ::: std
 ```cpp
-consteval std::string_view name_of(info);
-consteval std::u8string_view name_of(info);
+consteval std::string_view identifier_of(info);
+consteval std::u8string_view identifier_of(info);
 ```
 :::
 
@@ -2152,7 +2157,7 @@ namespace std::meta {
 where the `as<...>()` member function produces a string-like type as desired.  That idea was dropped,
 however, because it became unwieldy in actual use cases.
 
-With a source text query like `name_of(refl)` it is possible that the some source
+With a source text query like `identifier_of(refl)` it is possible that the some source
 characters of the result are not representable.  We can then consider multiple options, including:
 
   1) the query fails to evaluate,
@@ -2165,6 +2170,21 @@ characters of the result are not representable.  We can then consider multiple o
 
 Following much discussion with SG16, we propose #1: The query fails to evaluate if the identifier cannot be represented in the ordinary string literal encoding.
 
+### Reflecting names
+
+Earlier revisions of this proposal (and its predecessor, [@P1240R2]) included a metafunction called `name_of`, which we defined to return a `string_view` containing the "name" of the reflected entity. As the paper evolved, it became necessary to sharpen the specification of what this "name" contains. Subsequent revisions (beginning with P2996R2, presented in Tokyo) specified that `name_of` returns the unqualified name, whereas a new `qualified_name_of` would give the fully qualified name.
+
+Most would agree that `qualified_name_of(^size_t)` might reasonably return `"std::size_t"`, or that `qualified_name_of(^std::string::size)` could return `"std::string::size"`. But what about for local variables, or members of local classes? Should inline and anonymous namespaces be rendered as a part of the qualified name? Should we standardize the spelling of such scopes, or leave it implementation defined?
+
+The situation is possibly even less clear for unqualified names. Should cv-qualified types be rendered as `const int` or `int const`? Should the type for a function returning a pointer be rendered as `T *(*)()`, `T* (*)()`, or `T * (*)()`? Should such decisions be standardized, or left to implementations? But the real kicker is when one considers non-type template arguments, which can (and do) contain arbitrarily complex values of arbitrary structural types (along with any complete object, or subobject thereof, which has static storage duration).
+
+The more that we tried to specify formatting behavior for just the unqualified names of arbitrary types, the more convinced we became that this did not feel like an algorithm that should be frozen in the standard library - at least, not at this time. There are just too many toggles that a programmer might reasonably want to flip (one need only look at [Clang's `PrettyPrinter` class](https://github.com/llvm/llvm-project/blob/248c53429427034f45705af60d47f3b1090c4799/clang/include/clang/AST/PrettyPrinter.h#L59-L80) for inspiration). On the other hand, it is perfectly reasonable to ask that implementations give _some_ means of describing what it is that a reflection contains - that is exactly the purpose of the `display_string_of` function.
+
+Our stance is therefore that reflection pretty printers, for now, should be left to organically develop within the ecosystem of open-source C++ libraries. To ensure that this is possible, the Clang/P2996 fork has implemented its `display_string_of` metafunction entirely within the library. It is capable of printing type names, value representations, template arguments, and much more. Best of all, it can be extended without modifying the compiler.
+
+What of `name_of` and `qualified_name_of`? As of the R5 revision of this paper, we have removed them. In their stead is `identifier_of`, which is only a constant expression if the name of the represented construct is an identifier, and `has_identifier` for checking this condition. A few other metafunctions fill in some gaps: `operator_of` determines the identity of an overloaded operator, and predicates like `is_operator_function` and `is_conversion_function_template` let printing libraries handle those unqualified names that are not identifiers. `parent_of` supports walking up the chain of functions, namespaces, and classes enclosing the declaration of an entity, thus enabling homegrown implementations of `qualified_name_of`. Meanwhile, the prime real estate of `name_of` remains available for future library extensions.
+
+As a nice side-effect, the `identifier_of` model altogether dodges some contentious questions that arose during LEWG discussions in St Louis: Should asking the "name" of an anonymous entity (e.g., anonymous unions) return the empty string, or fail to be a constant expression? Since the C++ grammar requires that an `$identifier$` contain at least one character, the `identifier_of` function never returns an empty string: it is seen that the only possibility is to fail to be a constant expression.
 
 ### Freestanding implementations
 
@@ -2185,12 +2205,10 @@ namespace std::meta {
   concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
 
   // @[name and location](#name-loc)@
-  consteval auto name_of(info r) -> string_view;
-  consteval auto qualified_name_of(info r) -> string_view;
+  consteval auto identifier_of(info r) -> string_view;
+  consteval auto u8identifier_of(info r) -> u8string_view;
+  
   consteval auto display_string_of(info r) -> string_view;
-
-  consteval auto u8name_of(info r) -> u8string_view;
-  consteval auto u8qualified_name_of(info r) -> u8string_view;
   consteval auto u8display_string_of(info r) -> u8string_view;
 
   consteval auto source_location_of(info r) -> source_location;
@@ -2286,6 +2304,7 @@ namespace std::meta {
   consteval auto is_nonstatic_data_member(info entity) -> bool;
   consteval auto is_static_member(info entity) -> bool;
   consteval auto is_base(info entity) -> bool;
+  consteval auto is_data_member_spec(info r) -> bool;
   consteval auto is_namespace(info entity) -> bool;
   consteval auto is_function(info entity) -> bool;
   consteval auto is_variable(info entity) -> bool;
@@ -2329,6 +2348,10 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
   consteval auto define_class(info type_class, R&&) -> info;
 
+  // @[define_static_string](#define_static_string)@
+  consteval auto define_static_string(string_view str) -> const char *;
+  consteval auto u8define_static_string(u8string_view str) -> const char8_t *;
+
   // @[data layout](#data-layout-reflection)@
   struct member_offsets {
     size_t bytes;
@@ -2346,30 +2369,30 @@ namespace std::meta {
 ```
 :::
 
-### `name_of`, `display_string_of`, `source_location_of` {#name-loc}
+### `identifier_of`, `display_string_of`, `source_location_of` {#name-loc}
 
 ::: std
 ```c++
 namespace std::meta {
-  consteval auto name_of(info) -> string_view;
-  consteval auto display_string_of(info) -> string_view;
+  consteval auto identifier_of(info) -> string_view;
+  consteval auto u8identifier_of(info) -> u8string_view;
 
-  consteval auto u8name_of(info) -> u8string_view;
+  consteval auto display_string_of(info) -> string_view;
   consteval auto u8display_string_of(info) -> u8string_view;
+
+  consteval auto has_identifier(info) -> bool;
 
   consteval auto source_location_of(info r) -> source_location;
 }
 ```
 :::
 
-If a `string_view` is returned, its contents consist of characters representable by the ordinary string literal encoding only; if any character cannot be represented, it is not a constant expression. If the class of reflected entity cannot possibly have a name, the expression fails to be a constant expression.
+Given a reflection `r` representing a language construct `X` whose declaration introduces an identifier, and if that identifier is representable using the ordinary string literal encoding, then `identifier_of(r)` returns a non-empty `string_view` containing that identifier. Otherwise, it is not a constant expression. Whether a reflected construct has an identifier can be checked with the `has_identifier` metafunction.
 
-Given a reflection `r` that represents a declared entity `X`, `name_of(r)` and `qualified_name_of` return a `string_view` holding the unqualified and qualified name of `X`, respectively. `u8name_of(r)` and `u8qualified_name_of` return the same, respectively, as a `u8string_view`.
-For all other reflections, an empty string view is produced.
-For template instances, the name does not include the template argument list.
+The function `u8identifier_of` returns the same identifier but as a `u8string_view`. Note that since all identifiers can be represented as UTF-8 string literals, `u8identifier_of` never fails to be a constant expression because of representability concerns.
 
-Given a reflection `r`, `display_string_of(r)` and `u8display_string_of(r)` return an unspecified non-empty `string_view` and `u8string_view`, respectively.
-Implementations are encouraged to produce text that is helpful in identifying the reflected construct.
+Given any reflection `r`, `display_string_of(r)` and `u8display_string_of(r)` return an unspecified non-empty `string_view` and `u8string_view`, respectively.
+Implementations are encouraged to produce text that is helpful in identifying the reflected construct (note: as an exercise, the Clang implementation of this proposal implements a pretty-printing `display_string_of` as a non-intrinsic library function).
 
 Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
 Implementations are encouraged to produce the correct source location of the item designated by the reflection.
@@ -2709,7 +2732,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
+`data_member_spec` returns a reflection of a description of the declaration of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
@@ -2750,6 +2773,45 @@ When defining a `union`, if one of the alternatives has a non-trivial destructor
 This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
 
 If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
+
+### `define_static_string`
+::: std
+```c++
+namespace std::meta {
+  consteval auto define_static_string(string_view str) -> const char *;
+  consteval auto u8define_static_string(u8string_view str) -> const char8_t *;
+}
+```
+:::
+
+Given a `string_view` or `u8string_view`, returns a pointer to a null-terminated array of characters containing `str` which has static storage duration and is usable in constant expressions.
+
+In the absence of general support for non-transient constexpr allocation, such a facility is essential to building utilities like pretty printers.
+
+An example of such an interface might be built as follow:
+
+::: std
+```cpp
+template <std::meta::info R> requires is_value(R)
+  consteval auto render() -> std::string;
+
+template <std::meta::info R> requires is_type(R)
+  consteval auto render() -> std::string;
+
+template <std::meta::info R> requires is_variable(R)
+  consteval auto render() -> std::string;
+
+// ...
+
+template <std::meta::info R>
+consteval auto pretty_print() -> std::string_view {
+  return define_static_string(render<R>());
+}
+```
+:::
+
+This strategy [lies at the core](https://github.com/bloomberg/clang-p2996/blob/149cca52811b59b22608f6f6e303f6589969c999/libcxx/include/experimental/meta#L2317-L2321) of how the Clang/P2996 fork builds its example implementation of the `display_string_of` metafunction.
+
 
 ### Data Layout Reflection
 ::: std
@@ -3086,9 +3148,9 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a namespace,
 * an alias of a type or namespace,
 * a base class specifier, or
-* a description of a non-static data member.
+* a description of the declaration of a non-static data member.
 
-An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base class specifier, or description of a non-static data member.
+An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base class specifier, or description of the declaration of a non-static data member.
 
 :::
 :::
@@ -3219,7 +3281,7 @@ $splice-expression$:
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `E` be the value of the converted `$constant-expression$` of the `$splice-specifier$`.
 
-* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, a non-static data member, or a structured binding, the expression is an lvalue denoting the reflected entity.
+* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, a non-static data member that is not an unnamed bit-field, or a structured binding, the expression is an lvalue denoting the reflected entity.
 
 * [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity.
 
@@ -3979,14 +4041,22 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 namespace std::meta {
   using info = decltype(^::);
 
-  // [meta.reflection.names], reflection names and locations
-  consteval string_view name_of(info r);
-  consteval string_view qualified_name_of(info r);
-  consteval string_view display_string_of(info r);
+  // [meta.reflection.operators], operator representations
+  enum class operators {
+    $see below$;
+  };
+  using enum operators;
 
-  consteval u8string_view u8name_of(info r);
-  consteval u8string_view u8qualified_name_of(info r);
-  consteval u8string_view u8display_string_of(info r);
+  // [meta.reflection.names], reflection names and locations
+  consteval string_view identifier_of(info r);
+  consteval string_view u8identifier_of(info r);
+
+  consteval bool has_identifier(info r);
+
+  consteval auto operator_of(info r) -> operators;
+
+  consteval string_view display_string_of(info r);
+  consteval string_view u8display_string_of(info r);
 
   consteval source_location source_location_of(info r);
 
@@ -4039,6 +4109,7 @@ namespace std::meta {
   consteval bool is_nonstatic_data_member(info r);
   consteval bool is_static_member(info r);
   consteval bool is_base(info r);
+  consteval bool is_data_member_spec(info r);
   consteval bool has_default_member_initializer(info r);
 
   consteval bool is_conversion_function(info r);
@@ -4146,6 +4217,10 @@ namespace std::meta {
                                   data_member_options_t options = {});
   template <reflection_range R = initializer_list<info>>
   consteval info define_class(info type_class, R&&);
+
+  // [meta.reflection.static_string], static string generation
+  consteval const char *define_static_string(string_view str);
+  consteval const char8_t *u8define_static_string(u8string_view str);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -4305,27 +4380,79 @@ namespace std::meta {
 :::
 :::
 
+### [meta.reflection.operators] Operator representations
+
+::: std
+::: addu
+
+[#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
+
+<center> Table 1: Enum class `operators` [meta.reflection.operators]</center>
+<table  style="text-align:center">
+<tr><th>[Constant]{.addu}</th><th>[Corresponding operator]{.addu}</th></tr>
+<tr><td>[`op_new`]{.addu}</td><td>[`operator new`]{.addu}</td></tr>
+<tr><td>[`op_delete`]{.addu}</td><td>[`operator delete`]{.addu}</td></tr>
+<tr><td>[`op_array_new`]{.addu}</td><td>[`operator new[]`]{.addu}</td></tr>
+<tr><td>[`op_array_delete`]{.addu}</td><td>[`operator delete[]`]{.addu}</td></tr>
+<tr><td>[`op_co_await`]{.addu}</td><td>[`operator coawait`]{.addu}</td></tr>
+<tr><td>[`op_parentheses`]{.addu}</td><td>[`operator()`]{.addu}</td></tr>
+<tr><td>[`op_square_brackets`]{.addu}</td><td>[`operator[]`]{.addu}</td></tr>
+<tr><td>[`op_arrow`]{.addu}</td><td>[`operator->`]{.addu}</td></tr>
+<tr><td>[`op_arrow_asterisk`]{.addu}</td><td>[`operator->*`]{.addu}</td></tr>
+<tr><td>[`op_tilde`]{.addu}</td><td>[`operator~`]{.addu}</td></tr>
+<tr><td>[`op_exclamation_mark`]{.addu}</td><td>[`operator!`]{.addu}</td></tr>
+<tr><td>[`op_plus`]{.addu}</td><td>[`operator+`]{.addu}</td></tr>
+<tr><td>[`op_minus`]{.addu}</td><td>[`operator-`]{.addu}</td></tr>
+<tr><td>[`op_asterisk`]{.addu}</td><td>[`operator*`]{.addu}</td></tr>
+<tr><td>[`op_solidus`]{.addu}</td><td>[`operator/`]{.addu}</td></tr>
+<tr><td>[`op_percent`]{.addu}</td><td>[`operator%`]{.addu}</td></tr>
+<tr><td>[`op_caret`]{.addu}</td><td>[`operator^`]{.addu}</td></tr>
+<tr><td>[`op_ampersand`]{.addu}</td><td>[`operator&`]{.addu}</td></tr>
+<tr><td>[`op_pipe`]{.addu}</td><td>[`operator|`]{.addu}</td></tr>
+<tr><td>[`op_equals`]{.addu}</td><td>[`operator=`]{.addu}</td></tr>
+<tr><td>[`op_plus_equals`]{.addu}</td><td>[`operator+=`]{.addu}</td></tr>
+<tr><td>[`op_minus_equals`]{.addu}</td><td>[`operator-=`]{.addu}</td></tr>
+<tr><td>[`op_asterisk_equals`]{.addu}</td><td>[`operator*=`]{.addu}</td></tr>
+<tr><td>[`op_solidus_equals`]{.addu}</td><td>[`operator/=`]{.addu}</td></tr>
+<tr><td>[`op_percent_equals`]{.addu}</td><td>[`operator%=`]{.addu}</td></tr>
+<tr><td>[`op_caret_equals`]{.addu}</td><td>[`operator^=`]{.addu}</td></tr>
+<tr><td>[`op_ampersand_equals`]{.addu}</td><td>[`operator&=`]{.addu}</td></tr>
+<tr><td>[`op_pipe_equals`]{.addu}</td><td>[`operator|=`]{.addu}</td></tr>
+<tr><td>[`op_equals_equals`]{.addu}</td><td>[`operator==`]{.addu}</td></tr>
+<tr><td>[`op_exclamation_equals`]{.addu}</td><td>[`operator!=`]{.addu}</td></tr>
+<tr><td>[`op_less`]{.addu}</td><td>[`operator<`]{.addu}</td></tr>
+<tr><td>[`op_greater`]{.addu}</td><td>[`operator>`]{.addu}</td></tr>
+<tr><td>[`op_less_equals`]{.addu}</td><td>[`operator<=`]{.addu}</td></tr>
+<tr><td>[`op_greater_equals`]{.addu}</td><td>[`operator>=`]{.addu}</td></tr>
+<tr><td>[`op_three_way_compare`]{.addu}</td><td>[`operator<=>`]{.addu}</td></tr>
+<tr><td>[`op_ampersand_ampersand`]{.addu}</td><td>[`operator&&`]{.addu}</td></tr>
+<tr><td>[`op_pipe_pipe`]{.addu}</td><td>[`operator||`]{.addu}</td></tr>
+<tr><td>[`op_less_less`]{.addu}</td><td>[`operator<<`]{.addu}</td></tr>
+<tr><td>[`op_greater_greater`]{.addu}</td><td>[`operator>>`]{.addu}</td></tr>
+<tr><td>[`op_less_less_equals`]{.addu}</td><td>[`operator<<=`]{.addu}</td></tr>
+<tr><td>[`op_greater_greater_equals`]{.addu}</td><td>[`operator>>=`]{.addu}</td></tr>
+<tr><td>[`op_plus_plus`]{.addu}</td><td>[`operator++`]{.addu}</td></tr>
+<tr><td>[`op_minus_minus`]{.addu}</td><td>[`operator--`]{.addu}</td></tr>
+<tr><td>[`op_comma`]{.addu}</td><td>[`operator,`]{.addu}</td></tr>
+</table>
+
+:::
+:::
+
 ### [meta.reflection.names] Reflection names and locations {-}
 
 ::: std
 ::: addu
 ```cpp
-consteval string_view name_of(info r);
-consteval u8string_view u8name_of(info r);
+consteval string_view identifier_of(info r);
+consteval u8string_view u8identifier_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: If returning `string_view`, the unqualified name is representable using the ordinary string literal encoding. `r` represents a declared entity.
+[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary string literal encoding.
 
-[#]{.pnum} *Returns*: The unqualified name of the entity represented by `r`. If this entity has no name, then an empty `string_view` or `u8string_view`, respectively.
+[#]{.pnum} *Constant When*: If `r` represents a function, then when the function is not a constructor, destructor, operator function, or conversion function. Otherwise, if `r` is a function template, then when the function template is not a constructor template, a conversion function template, or an operator function template. Otherwise, if `r` represents a variable, an entity that is not a function or function template, or an alias of a type or namespace, then when the declaration of what is represented by `r` introduces an identifier representable by *E*. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by *E*. Otherwise, when `r` represents a description of the declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by *E*.
 
-```cpp
-consteval string_view qualified_name_of(info r);
-consteval u8string_view u8qualified_name_of(info r);
-```
-
-[#]{.pnum} *Constant When*: If returning `string_view`, the qualified name is representable using the ordinary string literal encoding. `r` represents a declared entity.
-
-[#]{.pnum} *Returns*: The qualified name of the entity represented by `r`. If this entity has no name, then an empty `string_view` or `u8string_view`, respectively.
+[#]{.pnum} *Returns*: If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template. Otherwise, if `r` represents a variable, entity, or alias of a type or namespace, then the identifier introduced by the the declaration of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class. Otherwise, if `r` represents a description of the declaration of a non-static data member, then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -4335,6 +4462,20 @@ consteval u8string_view u8display_string_of(info r);
 [#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary string literal encoding.
 
 [#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the reflected construct.
+
+```cpp
+consteval bool has_identifier(info r);
+```
+
+[#]{.pnum} *Returns*: If `r` represents a variable, entity, or alias of a type or namespace, then `true` if the declaration of what is represented by `r` introduces an identifier. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then `true`. Otherwise if `r` represents a description of the declaration of a non-static data member, then `true` if the declaration of a data member having the properties represented by `r` would introduce an identifier. Otherwise, `false`.
+
+```cpp
+consteval operators operator_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `r` represents an operator function or operator function template.
+
+[#]{.pnum} *Returns*: The value of the enumerator from `operators` for which the corresponding operator ([meta.reflection.operators]) has the same unqualified name as the entity represented by `r`.
 
 ```cpp
 consteval source_location source_location_of(info r);
@@ -4401,7 +4542,7 @@ consteval bool is_noexcept(info r);
 consteval bool is_bit_field(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a bit-field. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a description of the declaration of a non-static data member for which any data member declared with the properties represented by `r` would be a bit-field. Otherwise, `false`.
 
 ```cpp
 consteval bool is_enumerator(info r);
@@ -4513,9 +4654,10 @@ consteval bool is_namespace_member(info r);
 consteval bool is_nonstatic_data_member(info r);
 consteval bool is_static_member(info r);
 consteval bool is_base(info r);
+consteval bool is_data_member_spec(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, or base class specifier, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, base class specifier, or description of the declaration of a non-static data member, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool has_default_member_initializer(info r);
@@ -4557,9 +4699,9 @@ consteval bool is_user_provided(info r);
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a typed entity or variable. `r` does not represent a constructor, destructor, or structured binding.
+[#]{.pnum} *Constant When*: `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns*: A reflection representing the type of that entity or variable. If every declaration of that entity or variable was declared with the same `$typedef-name$`, the reflection returned represents a `$typedef-name$`, and otherwise represents a type.
+[#]{.pnum} *Returns*: If `r` represents an entity or variable for which every declaration specifies its type using the same `$typedef-name$`, a base class specifier whose base class is specified using a `$typedef-name$`, or a description of the declaration of a non-static data member whose type is specified using a `$typedef-name$`, then a reflection of the `$typedef-name$`. Otherwise, if `r` represents an entity or variable, then the type of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the type of the base class. Otherwise, the type of any data member declared with the properties represented by `r`.
 
 ```cpp
 consteval info object_of(info r);
@@ -4640,7 +4782,7 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of all the direct members `m` of the entity, excluding any structured bindings, represented by `r`.
+[#]{.pnum} *Returns*: A `vector` containing reflections representing all direct members of the represented entity, excluding any structured bindings. If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
 ```cpp
@@ -4720,7 +4862,9 @@ consteval bool is_accessible(info target, access_context from = {});
 
 [#]{.pnum} *Constant When*: `target` is a reflection representing a member or base class specifier of a class.
 
-[#]{.pnum} *Returns*: `true` if the class member or base class specifier represented by `target` can be named within the scope of `from.$context_$`. Otherwise, `false`.
+[#]{.pnum} Let `$C$` be the class for which `target` represents a member or base class specifier.
+
+[#]{.pnum} *Returns*: If `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]). Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`. Otherwise, `false`.
 
 ```cpp
 consteval vector<info> accessible_members_of(info target, access_context from = {});
@@ -4796,7 +4940,7 @@ consteval member_offsets offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, or variable.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, variable, or description of the declaration of a non-static data member.
 
 [#]{.pnum} *Returns* If `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
@@ -4804,17 +4948,17 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, or base class specifier.
+[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`.
+[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of the declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, or variable.
+[#]{.pnum} *Constant When*: `r` is a reflection of an object, value, variable, type, non-static data member, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the reflected type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the reflected bit-field. Otherwise, `bit_size_of(type_of(r))`.
+[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the reflected type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the reflected bit-field. Otherwise, if `r` represents a description of the declaration of a non-static data member for which any data member declared having the properties described by `r` would be a bit-field, then the width of such a bit-field. Otherwise, `bit_size_of(type_of(r))`.
 :::
 :::
 
@@ -4932,7 +5076,7 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 `type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`.
+If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`. If `options.width` contains the value zero, `options.name` does not contain a value.
 
 [#]{.pnum} *Returns*: A reflection of a description of the declaration of a non-static data member with a type represented by `type` and optional characteristics designated by `options`.
 
@@ -4961,13 +5105,30 @@ Defines `class_type` with properties as follows:
 * [#.#]{.pnum} If `@*o*~K~@.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
 * [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
 * [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is declared with the `$alignment-specifier$` `alignas($a$)`.
-* [#.#]{.pnum} If `@*o*~K~@.name` (for some `$K$`) does not contain a value, the corresponding member is declared with an implementation-defined name.
+* [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains the value zero, the corresponding member is declared without a name.
+  Otherwise, if `@*o*~K~@.name` does not contain a value, the corresponding member is declared with an implementation-defined name.
   Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `@*o*~K~@.name`.
 * [#.#]{.pnum} If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
   If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
 
 
 [#]{.pnum} *Returns*: `class_type`.
+
+:::
+:::
+
+### [meta.reflection.static_string] Static string generation  {-}
+
+::: std
+::: addu
+```cpp
+consteval const char *define_static_string(std::string_view str);
+consteval const char8_t *u8define_static_string(std::u8string_view str);
+```
+
+[#]{.pnum} *Returns*: A pointer to the first element of an array of `char` or `char8_t` objects, respectively, whose length is `str.size() + 1`. The values of the first `str.size()` array subobjects are `str[k]`, and the value of the last array subobject is `0`. The array has static storage duration, and is usable in constant expressions.
+
+[#]{.pnum} [Implementations are encouraged to return the same pointer whenever the same variant of these functions is called with the same argument.]{.note}
 
 :::
 :::
