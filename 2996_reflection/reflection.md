@@ -1826,7 +1826,7 @@ static_assert(^i != std::meta::reflect_value(42));  // A reflection of an object
 
 ### Linkage of reflections and templates specialized by reflections
 
-Nontype template arguments of type `std::meta::info` are permitted (and frequently useful!), but since reflections represent internal compiler state while processing a single translation unit, they cannot be allowed to leak across TUs. Therefore both variables of _consteval-only type_, and entities specialized by a non-type template argument of _consteval-only type_, cannot have module or external linkage (i.e., they must have either internal or no linkage). While this can lead to some code bloat, we aren't aware of any organic use cases for reflection that are harmed by this limitation.
+Non-type template arguments of type `std::meta::info` are permitted (and frequently useful!), but since reflections represent internal compiler state while processing a single translation unit, they cannot be allowed to leak across TUs. Therefore both variables of _consteval-only type_, and entities specialized by a non-type template argument of _consteval-only type_, cannot have module or external linkage (i.e., they must have either internal or no linkage). While this can lead to some code bloat, we aren't aware of any organic use cases for reflection that are harmed by this limitation.
 
 A corollary of this rule is that static data members of a class cannot have consteval-only types - such members always have external linkage, and to do otherwise would be an ODR violation. Again, we aren't aware of any affected use-cases that absolutely require this.
 
@@ -3602,7 +3602,7 @@ Modify paragraph 1 of [enum.udecl]{.sref} as follows:
 
 ::: std
 
-[1]{.pnum} A `$using-enum-declarator$` [not consisting of a `$splice-specifier$`]{.addu} names the set of declarations found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) for the `$using-enum-declarator$`. The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
+[1]{.pnum} A `$using-enum-declarator$` [that is not a `$splice-specifier$`]{.addu} names the set of declarations found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}) for the `$using-enum-declarator$`. The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
 :::
 
 ### [namespace.alias]{.sref} Namespace alias {-}
@@ -3627,7 +3627,7 @@ Add the following prior to paragraph 1, and renumber accordingly:
 
 ::: std
 :::addu
-[0]{.pnum} If a `$qualified-namespace-specifier$` consists of a `$splice-specifier$`, the `$splice-specifier$` shall designate a namespace or namespace alias; the `$qualified-namespace-specifier$` designates the same namespace or namespace alias designated by the `$splice-specifier$`. Otherwise, the `$qualified-namespace-specifier$` designates the namespace found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}).
+[0]{.pnum} If a `$qualified-namespace-specifier$` is a `$splice-specifier$`, the `$splice-specifier$` shall designate a namespace or namespace alias; the `$qualified-namespace-specifier$` designates the same namespace or namespace alias designated by the `$splice-specifier$`. Otherwise, the `$qualified-namespace-specifier$` designates the namespace found by lookup ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}).
 :::
 :::
 
@@ -3723,7 +3723,7 @@ bool operator!=(T, T);
 Extend the last sentence of paragraph 4 to disallow splicing concepts in template parameter declarations.
 
 ::: std
-[4]{.pnum} ... The concept designated by a type-constraint shall be a type concept ([temp.concept]) [that does not consist of a `$splice-template-name$`]{.addu}.
+[4]{.pnum} ... The concept designated by a type-constraint shall be a type concept ([temp.concept]) [that is not a `$splice-template-name$`]{.addu}.
 :::
 
 ### [temp.names]{.sref} Names of template specializations {-}
@@ -3771,7 +3771,7 @@ Extend paragraph 3 of [temp.names]{.sref}:
 [If the name is an identifier, it is then interpreted as a *template-name*. The keyword template is used to indicate that a dependent qualified name ([temp.dep.type]) denotes a template where an expression might appear.]{.note}
 
 ::: addu
-A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a `$template-name$` consisting of a `$splice-template-name$`.
+A `<` is also interpreted as the delimiter of a `$template-argument-list$` if it follows a `$splice-template-name$`.
 :::
 
 ::: example
@@ -3862,7 +3862,7 @@ Extend the grammar of `$concept-name$` to allow for splicing reflections of conc
 Modify paragraph 2 to account for splicing reflections of concepts:
 
 ::: std
-A `$concept-definition$` declares a concept. Its [`$concept-name$` shall consist of an `$identifier$`, and the]{.addu} `$identifier$` becomes a _concept-name_ referring to that concept within its scope. The optional _attribute-specifier-seq_ appertains to the concept.
+A `$concept-definition$` declares a concept. Its [`$concept-name$` shall be an `$identifier$`, and the]{.addu} `$identifier$` becomes a _concept-name_ referring to that concept within its scope. The optional _attribute-specifier-seq_ appertains to the concept.
 
 :::
 
@@ -3893,7 +3893,7 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 ::: std
 ::: addu
 
-[9]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$splice-specifier$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
+[9]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is type-dependent if the `$splice-specifier$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent non-type or template argument, or a dependent type argument.
 
 :::
 :::
@@ -3928,7 +3928,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 ::: std
 ::: addu
 
-[6]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent nontype or template argument, or a dependent type argument.
+[6]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent non-type or template argument, or a dependent type argument.
 
 :::
 :::
