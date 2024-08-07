@@ -1400,7 +1400,7 @@ When the operand is an _id-expression_, the resulting value is a reflection of t
 - a variable, static data member, or structured binding
 - a function or member function
 - a non-static data member
-- a template or member template
+- a primary template or primary member template
 - an enumerator
 
 For all other operands, the expression is ill-formed. In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to not evaluate to constant.
@@ -3153,7 +3153,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a type,
 * a class member,
 * a bit-field,
-* a class template, function template, variable template, alias template, or concept,
+* a primary class template, function template, primary variable template, alias template, or concept,
 * a namespace,
 * an alias of a type or namespace,
 * a base class specifier, or
@@ -4803,11 +4803,23 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing either a complete class type or a namespace.
 
+[#]{.pnum} A member of a class or namespace is a _representable member_ if it is either
+
+* a class,
+* a `$typedef-name$`,
+* a primary class template, function template, primary variable template, alias template, or concept,
+* a variable or reference,
+* a function,
+* a non-static data member,
+* a namespace, or
+* a namespace alias.
+
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections representing all direct members of the represented entity, excluding any structured bindings. If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
+[#]{.pnum} *Returns*: A `vector` containing all _representable members_ whose first declaration is directly within a definition of the entity `$E$` represented by `r`. If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 
+[#]{.pnum} [Examples of declarations within a class or namespace that are never represented as reflections include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
 ```cpp
 consteval vector<info> bases_of(info type);
 ```
