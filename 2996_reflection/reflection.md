@@ -4814,12 +4814,12 @@ consteval vector<info> members_of(info r);
 * a namespace, or
 * a namespace alias.
 
+[Counterexamples of representable members include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
+
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing all _representable members_ whose first declaration is directly within a definition of the entity `$E$` represented by `r`. If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
-
-[#]{.pnum} [Examples of declarations within a class or namespace that are never represented as reflections include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
 ```cpp
 consteval vector<info> bases_of(info type);
 ```
