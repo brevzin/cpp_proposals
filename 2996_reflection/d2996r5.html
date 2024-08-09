@@ -8142,14 +8142,20 @@ Static string generation<a href="#meta.reflection.static_string-static-string-ge
 <div class="sourceCode" id="cb208"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb208-1"><a href="#cb208-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> define_static_string<span class="op">(</span>string_view str<span class="op">)</span>;</span>
 <span id="cb208-2"><a href="#cb208-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> u8define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_272" id="pnum_272">1</a></span>
-Let <code class="sourceCode cpp">S</code> be a constexpr variable with
-static storage duration of type <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">char</span><span class="op">[</span>str<span class="op">.</span>size<span class="op">()]</span></code>
-or <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">char8_t</span><span class="op">[</span>str<span class="op">.</span>size<span class="op">()]</span></code>
-respectively, such that <code class="sourceCode cpp">S<span class="op">[</span>i<span class="op">]</span> <span class="op">==</span> str<span class="op">[</span>i<span class="op">]</span></code>
+Let <code class="sourceCode cpp">S</code> be a constexpr variable of
+array type with static storage duration, whose elements are of type
+<code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">char</span></code>
+or <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">char8_t</span></code>
+respectively, for which there exists some <code class="sourceCode cpp">k <span class="op">&gt;=</span> <span class="dv">0</span></code>
+such that:</p>
+<ul>
+<li><code class="sourceCode cpp">S<span class="op">[</span>k <span class="op">+</span> i<span class="op">]</span> <span class="op">==</span> str<span class="op">[</span>i<span class="op">]</span></code>
 for all 0 &lt;= <code class="sourceCode cpp">i</code> &lt; <code class="sourceCode cpp">str<span class="op">.</span>size<span class="op">()</span></code>,
-and <code class="sourceCode cpp">S<span class="op">[</span>str<span class="op">.</span>size<span class="op">()]</span> <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span></code>.</p>
+and</li>
+<li><code class="sourceCode cpp">S<span class="op">[</span>k <span class="op">+</span> str<span class="op">.</span>size<span class="op">()]</span> <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span></code>.</li>
+</ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_273" id="pnum_273">2</a></span>
-<em>Returns</em>: <code class="sourceCode cpp">S</code></p>
+<em>Returns</em>: <code class="sourceCode cpp"><span class="op">&amp;</span>S<span class="op">[</span>k<span class="op">]</span></code></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_274" id="pnum_274">3</a></span>
 Implementations are encouraged to return the same object whenever the
 same variant of these functions is called with the same argument.</p>

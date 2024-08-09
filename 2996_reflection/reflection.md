@@ -5196,9 +5196,12 @@ consteval const char* define_static_string(string_view str);
 consteval const char8_t* u8define_static_string(u8string_view str);
 ```
 
-[#]{.pnum} Let `S` be a constexpr variable with static storage duration of type `const char[str.size()]` or `const char8_t[str.size()]` respectively, such that `S[i] == str[i]` for all 0 <= `i` < `str.size()`, and `S[str.size()] == '\0'`.
+[#]{.pnum} Let `S` be a constexpr variable of array type with static storage duration, whose elements are of type `const char` or `const char8_t` respectively, for which there exists some `k >= 0` such that:
 
-[#]{.pnum} *Returns*: `S`
+- `S[k + i] == str[i]` for all 0 <= `i` < `str.size()`, and
+- `S[k + str.size()] == '\0'`.
+
+[#]{.pnum} *Returns*: `&S[k]`
 
 [#]{.pnum} Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument.
 
