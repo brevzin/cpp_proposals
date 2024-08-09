@@ -33,9 +33,9 @@ Since [@P2996R4]:
 * reduced specification of `is_noexcept`
 * changed `span<info const>` to `initializer_list<info>`
 * removed `test_trait`
-* removed `(u8)name_of` and `(u8)qualified_name_of`; added `(u8)identifier_of`, `operator_of`, `define_static_string`.
+* removed `(u8)name_of` and `(u8)qualified_name_of`; added `(u8)identifier_of`, `operator_of`, `(u8)define_static_string`.
 * renamed `display_name_of` to `display_string_of`
-* adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`)
+* adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`, `is_data_member_spec`
 * changed offset API to be one function that returns a type with named members
 * Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
 * Many wording updates in response to feedback from CWG.
@@ -974,9 +974,8 @@ struct universal_formatter {
 
   template <typename T>
   auto format(T const& t, auto& ctx) const {
-    std::string_view name = has_identifier(^T) ? identifier_of(^T)
-                                               : "(unnamed-type)";
-    auto out = std::format_to(ctx.out(), "{}@{@{", type_label);
+    auto out = std::format_to(ctx.out(), "{}@{@{", has_identifier(^T) ? identifier_of(^T)
+                                                                      : "(unnamed-type)";);
 
     auto delim = [first=true]() mutable {
       if (!first) {
@@ -1037,9 +1036,9 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-  template for (constexpr auto mem : nonstatic_data_members_of(^T))
-    if (!(is_bitfield(mem) && !has_identifier(mem)))
+  template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
       hash_append(algo, t.[:mem:]);
+  }
 }
 ```
 :::
@@ -2174,7 +2173,7 @@ Following much discussion with SG16, we propose #1: The query fails to evaluate 
 
 Earlier revisions of this proposal (and its predecessor, [@P1240R2]) included a metafunction called `name_of`, which we defined to return a `string_view` containing the "name" of the reflected entity. As the paper evolved, it became necessary to sharpen the specification of what this "name" contains. Subsequent revisions (beginning with P2996R2, presented in Tokyo) specified that `name_of` returns the unqualified name, whereas a new `qualified_name_of` would give the fully qualified name.
 
-Most would agree that `qualified_name_of(^size_t)` might reasonably return `"std::size_t"`, or that `qualified_name_of(^std::string::size)` could return `"std::string::size"`. But what about for local variables, or members of local classes? Should inline and anonymous namespaces be rendered as a part of the qualified name? Should we standardize the spelling of such scopes, or leave it implementation defined?
+Most would agree that `qualified_name_of(^size_t)` might reasonably return `"std::size_t"`, or that `qualified_name_of(^std::any::reset)` could return `"std::any::reset"`. But what about for local variables, or members of local classes? Should inline and anonymous namespaces be rendered as a part of the qualified name? Should we standardize the spelling of such scopes, or leave it implementation defined?
 
 The situation is possibly even less clear for unqualified names. Should cv-qualified types be rendered as `const int` or `int const`? Should the type for a function returning a pointer be rendered as `T *(*)()`, `T* (*)()`, or `T * (*)()`? Should such decisions be standardized, or left to implementations? But the real kicker is when one considers non-type template arguments, which can (and do) contain arbitrarily complex values of arbitrary structural types (along with any complete object, or subobject thereof, which has static storage duration).
 
@@ -2400,7 +2399,7 @@ Given a reflection `r` representing a language construct `X` whose declaration i
 The function `u8identifier_of` returns the same identifier but as a `u8string_view`. Note that since all identifiers can be represented as UTF-8 string literals, `u8identifier_of` never fails to be a constant expression because of representability concerns.
 
 Given any reflection `r`, `display_string_of(r)` and `u8display_string_of(r)` return an unspecified non-empty `string_view` and `u8string_view`, respectively.
-Implementations are encouraged to produce text that is helpful in identifying the reflected construct (note: as an exercise, the Clang implementation of this proposal implements a pretty-printing `display_string_of` as a non-intrinsic library function).
+Implementations are encouraged to produce text that is helpful in identifying the reflected construct (note: as an exercise, the Clang implementation of this proposal implements a pretty-printing `display_string_of` [as a non-intrinsic library function](https://github.com/bloomberg/clang-p2996/blob/8ce6449538510a2330f7227f53b40be7671b0b91/libcxx/include/experimental/meta#L2088-L2731)).
 
 Given a reflection `r`, `source_location_of(r)` returns an unspecified `source_location`.
 Implementations are encouraged to produce the correct source location of the item designated by the reflection.
@@ -2793,7 +2792,19 @@ namespace std::meta {
 ```
 :::
 
-Given a `string_view` or `u8string_view`, returns a pointer to a null-terminated array of characters containing `str` which has static storage duration and is usable in constant expressions.
+Given a `string_view` or `u8string_view`, returns a pointer to an array of characters containing the contents of `str` followed by a null terminator. The array object has static storage duration, is not a subobject of a string literal object, and is usable in constant expressions; a pointer to such an object meets the requirements for use as a non-type template argument.
+
+::: std
+```cpp
+template <const char *P> struct C { };
+
+const char msg[] = "strongly in favor";  // just an idea..
+
+C<msg> c1;                          // ok
+C<"nope"> c2;                       // ill-formed
+C<define_static_string("yay")> c3;  // ok
+```
+:::
 
 In the absence of general support for non-transient constexpr allocation, such a facility is essential to building utilities like pretty printers.
 
@@ -4410,54 +4421,54 @@ namespace std::meta {
 
 [#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
-<center> Table 1: Enum class `operators` [meta.reflection.operators]</center>
-<table  style="text-align:center">
-<tr><th>[Constant]{.addu}</th><th>[Corresponding operator]{.addu}</th></tr>
-<tr><td>[`op_new`]{.addu}</td><td>[`operator new`]{.addu}</td></tr>
-<tr><td>[`op_delete`]{.addu}</td><td>[`operator delete`]{.addu}</td></tr>
-<tr><td>[`op_array_new`]{.addu}</td><td>[`operator new[]`]{.addu}</td></tr>
-<tr><td>[`op_array_delete`]{.addu}</td><td>[`operator delete[]`]{.addu}</td></tr>
-<tr><td>[`op_co_await`]{.addu}</td><td>[`operator coawait`]{.addu}</td></tr>
-<tr><td>[`op_parentheses`]{.addu}</td><td>[`operator()`]{.addu}</td></tr>
-<tr><td>[`op_square_brackets`]{.addu}</td><td>[`operator[]`]{.addu}</td></tr>
-<tr><td>[`op_arrow`]{.addu}</td><td>[`operator->`]{.addu}</td></tr>
-<tr><td>[`op_arrow_asterisk`]{.addu}</td><td>[`operator->*`]{.addu}</td></tr>
-<tr><td>[`op_tilde`]{.addu}</td><td>[`operator~`]{.addu}</td></tr>
-<tr><td>[`op_exclamation_mark`]{.addu}</td><td>[`operator!`]{.addu}</td></tr>
-<tr><td>[`op_plus`]{.addu}</td><td>[`operator+`]{.addu}</td></tr>
-<tr><td>[`op_minus`]{.addu}</td><td>[`operator-`]{.addu}</td></tr>
-<tr><td>[`op_asterisk`]{.addu}</td><td>[`operator*`]{.addu}</td></tr>
-<tr><td>[`op_solidus`]{.addu}</td><td>[`operator/`]{.addu}</td></tr>
-<tr><td>[`op_percent`]{.addu}</td><td>[`operator%`]{.addu}</td></tr>
-<tr><td>[`op_caret`]{.addu}</td><td>[`operator^`]{.addu}</td></tr>
-<tr><td>[`op_ampersand`]{.addu}</td><td>[`operator&`]{.addu}</td></tr>
-<tr><td>[`op_pipe`]{.addu}</td><td>[`operator|`]{.addu}</td></tr>
-<tr><td>[`op_equals`]{.addu}</td><td>[`operator=`]{.addu}</td></tr>
-<tr><td>[`op_plus_equals`]{.addu}</td><td>[`operator+=`]{.addu}</td></tr>
-<tr><td>[`op_minus_equals`]{.addu}</td><td>[`operator-=`]{.addu}</td></tr>
-<tr><td>[`op_asterisk_equals`]{.addu}</td><td>[`operator*=`]{.addu}</td></tr>
-<tr><td>[`op_solidus_equals`]{.addu}</td><td>[`operator/=`]{.addu}</td></tr>
-<tr><td>[`op_percent_equals`]{.addu}</td><td>[`operator%=`]{.addu}</td></tr>
-<tr><td>[`op_caret_equals`]{.addu}</td><td>[`operator^=`]{.addu}</td></tr>
-<tr><td>[`op_ampersand_equals`]{.addu}</td><td>[`operator&=`]{.addu}</td></tr>
-<tr><td>[`op_pipe_equals`]{.addu}</td><td>[`operator|=`]{.addu}</td></tr>
-<tr><td>[`op_equals_equals`]{.addu}</td><td>[`operator==`]{.addu}</td></tr>
-<tr><td>[`op_exclamation_equals`]{.addu}</td><td>[`operator!=`]{.addu}</td></tr>
-<tr><td>[`op_less`]{.addu}</td><td>[`operator<`]{.addu}</td></tr>
-<tr><td>[`op_greater`]{.addu}</td><td>[`operator>`]{.addu}</td></tr>
-<tr><td>[`op_less_equals`]{.addu}</td><td>[`operator<=`]{.addu}</td></tr>
-<tr><td>[`op_greater_equals`]{.addu}</td><td>[`operator>=`]{.addu}</td></tr>
-<tr><td>[`op_three_way_compare`]{.addu}</td><td>[`operator<=>`]{.addu}</td></tr>
-<tr><td>[`op_ampersand_ampersand`]{.addu}</td><td>[`operator&&`]{.addu}</td></tr>
-<tr><td>[`op_pipe_pipe`]{.addu}</td><td>[`operator||`]{.addu}</td></tr>
-<tr><td>[`op_less_less`]{.addu}</td><td>[`operator<<`]{.addu}</td></tr>
-<tr><td>[`op_greater_greater`]{.addu}</td><td>[`operator>>`]{.addu}</td></tr>
-<tr><td>[`op_less_less_equals`]{.addu}</td><td>[`operator<<=`]{.addu}</td></tr>
-<tr><td>[`op_greater_greater_equals`]{.addu}</td><td>[`operator>>=`]{.addu}</td></tr>
-<tr><td>[`op_plus_plus`]{.addu}</td><td>[`operator++`]{.addu}</td></tr>
-<tr><td>[`op_minus_minus`]{.addu}</td><td>[`operator--`]{.addu}</td></tr>
-<tr><td>[`op_comma`]{.addu}</td><td>[`operator,`]{.addu}</td></tr>
-</table>
+<center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
+
+|Constant|Correspoding operator|
+|:-:|:-:|
+|`op_new`|`operator new`|
+|`op_delete`|`operator delete`|
+|`op_array_new`|`operator new[]`|
+|`op_array_delete`|`operator delete[]`|
+|`op_co_await`|`operator coawait`|
+|`op_parentheses`|`operator()`|
+|`op_square_brackets`|`operator[]`|
+|`op_arrow`|`operator->`|
+|`op_arrow_asterisk`|`operator->*`|
+|`op_tilde`|`operator~`|
+|`op_exclamation_mark`|`operator!`|
+|`op_plus`|`operator+`|
+|`op_minus`|`operator-`|
+|`op_asterisk`|`operator*`|
+|`op_solidus`|`operator/`|
+|`op_percent`|`operator%`|
+|`op_caret`|`operator^`|
+|`op_ampersand`|`operator&`|
+|`op_pipe`|`operator|`|
+|`op_equals`|`operator=`|
+|`op_plus_equals`|`operator+=`|
+|`op_minus_equals`|`operator-=`|
+|`op_asterisk_equals`|`operator*=`|
+|`op_solidus_equals`|`operator/=`|
+|`op_percent_equals`|`operator%=`|
+|`op_caret_equals`|`operator^=`|
+|`op_ampersand_equals`|`operator&=`|
+|`op_pipe_equals`|`operator|=`|
+|`op_equals_equals`|`operator==`|
+|`op_exclamation_equals`|`operator!=`|
+|`op_less`|`operator<`|
+|`op_greater`|`operator>`|
+|`op_less_equals`|`operator<=`|
+|`op_greater_equals`|`operator>=`|
+|`op_three_way_compare`|`operator<=>`|
+|`op_ampersand_ampersand`|`operator&&`|
+|`op_pipe_pipe`|`operator||`|
+|`op_less_less`|`operator<<`|
+|`op_greater_greater`|`operator>>`|
+|`op_less_less_equals`|`operator<<=`|
+|`op_greater_greater_equals`|`operator>>=`|
+|`op_plus_plus`|`operator++`|
+|`op_minus_minus`|`operator--`|
+|`op_comma`|`operator,`|
 
 :::
 :::
@@ -4910,7 +4921,12 @@ consteval bool is_accessible(
 
 [#]{.pnum} Let `$C$` be the class for which `target` represents a member or base class specifier.
 
-[#]{.pnum} *Returns*: If `from.$context_$` is the null reflection, then `false`. Otherwise, if `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]). Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`. Otherwise, `false`.
+[#]{.pnum} *Returns*:
+
+* If `from.$context_$` is the null reflection, then `false`.
+* Otherwise, if `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]).
+* Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`.
+* Otherwise, `false`.
 
 ```cpp
 consteval vector<info> accessible_members_of(
@@ -5176,13 +5192,15 @@ Defines `class_type` with properties as follows:
 ::: std
 ::: addu
 ```cpp
-consteval const char *define_static_string(std::string_view str);
-consteval const char8_t *u8define_static_string(std::u8string_view str);
+consteval const char* define_static_string(string_view str);
+consteval const char8_t* u8define_static_string(u8string_view str);
 ```
 
-[#]{.pnum} *Returns*: A pointer to the first element of an array of `char` or `char8_t` objects, respectively, whose length is `str.size() + 1`. The values of the first `str.size()` array subobjects are `str[k]`, and the value of the last array subobject is `0`. The array has static storage duration, and is usable in constant expressions.
+[#]{.pnum} Let `S` be a constexpr variable with static storage duration of type `const char[str.size()]` or `const char8_t[str.size()]` respectively, such that `S[i] == str[i]` for all 0 <= `i` < `str.size()`, and `S[str.size()] == '\0'`.
 
-[#]{.pnum} [Implementations are encouraged to return the same pointer whenever the same variant of these functions is called with the same argument.]{.note}
+[#]{.pnum} *Returns*: `S`
+
+[#]{.pnum} Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument.
 
 :::
 :::
