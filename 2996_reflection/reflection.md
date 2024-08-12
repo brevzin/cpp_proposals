@@ -2206,7 +2206,7 @@ namespace std::meta {
   // @[name and location](#name-loc)@
   consteval auto identifier_of(info r) -> string_view;
   consteval auto u8identifier_of(info r) -> u8string_view;
-  
+
   consteval auto display_string_of(info r) -> string_view;
   consteval auto u8display_string_of(info r) -> u8string_view;
 
@@ -4253,8 +4253,8 @@ namespace std::meta {
   consteval info define_class(info type_class, R&&);
 
   // [meta.reflection.static_string], static string generation
-  consteval const char *define_static_string(string_view str);
-  consteval const char8_t *u8define_static_string(u8string_view str);
+  consteval const char* define_static_string(string_view str);
+  consteval const char8_t* u8define_static_string(u8string_view str);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -4424,7 +4424,7 @@ namespace std::meta {
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
 |Constant|Correspoding operator|
-|:-:|:-:|
+|:-|:-|
 |`op_new`|`operator new`|
 |`op_delete`|`operator delete`|
 |`op_array_new`|`operator new[]`|
@@ -4486,7 +4486,12 @@ consteval u8string_view u8identifier_of(info r);
 
 [#]{.pnum} *Constant When*: If `r` represents a function, then when the function is not a constructor, destructor, operator function, or conversion function. Otherwise, if `r` is a function template, then when the function template is not a constructor template, a conversion function template, or an operator function template. Otherwise, if `r` represents a variable, an entity that is not a function or function template, or an alias of a type or namespace, then when the declaration of what is represented by `r` introduces an identifier representable by *E*. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by *E*. Otherwise, when `r` represents a description of the declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by *E*.
 
-[#]{.pnum} *Returns*: If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template. Otherwise, if `r` represents a variable, entity, or alias of a type or namespace, then the identifier introduced by the the declaration of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class. Otherwise, if `r` represents a description of the declaration of a non-static data member, then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, entity, or alias of a type or namespace, then the identifier introduced by the the declaration of what is represented by `r`.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of the declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -4923,10 +4928,10 @@ consteval bool is_accessible(
 
 [#]{.pnum} *Returns*:
 
-* If `from.$context_$` is the null reflection, then `false`.
-* Otherwise, if `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]).
-* Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`.
-* Otherwise, `false`.
+* [#.#]{.pnum} If `from.$context_$` is the null reflection, then `false`.
+* [#.#]{.pnum} Otherwise, if `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]).
+* [#.#]{.pnum} Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`.
+* [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
 consteval vector<info> accessible_members_of(
@@ -5198,8 +5203,8 @@ consteval const char8_t* u8define_static_string(u8string_view str);
 
 [#]{.pnum} Let `S` be a constexpr variable of array type with static storage duration, whose elements are of type `const char` or `const char8_t` respectively, for which there exists some `k >= 0` such that:
 
-- `S[k + i] == str[i]` for all 0 <= `i` < `str.size()`, and
-- `S[k + str.size()] == '\0'`.
+* [#.#]{.pnum} `S[k + i] == str[i]` for all 0 <= `i` < `str.size()`, and
+* [#.#]{.pnum} `S[k + str.size()] == '\0'`.
 
 [#]{.pnum} *Returns*: `&S[k]`
 
