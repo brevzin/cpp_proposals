@@ -4683,15 +4683,19 @@ consteval bool is_operator_function_template(info r);
 consteval bool is_literal_operator_template(info r);
 consteval bool is_constructor_template(info r);
 consteval bool is_concept(info r);
-consteval bool is_structured_binding(info r);
-consteval bool is_value(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, variable template, class template, alias template, conversion function template, operator function template, literal operator template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
+
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, variable template, class template, alias template, conversion function template, operator function template, literal operator template, constructor template, or concept respectively. Otherwise, `false`.
+
 
 ```cpp
+consteval bool is_structured_binding(info r);
+consteval bool is_value(info r);
 consteval bool is_object(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents an object. Otherwise, `false`.
+
+[#]{.pnum} *Returns*: `true` if `r` represents a structured binding, value, or object respectively. Otherwise, `false`.
+
 
 ```cpp
 consteval bool has_template_arguments(info r);
