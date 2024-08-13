@@ -4660,11 +4660,10 @@ consteval bool is_namespace_alias(info r);
 ```cpp
 consteval bool is_incomplete_type(info r);
 ```
-[#]{.pnum} *Constant When*: `r` is a reflection representing a type.
 
-[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: `true` if the type represented by `dealias(r)` is an incomplete type ([basic.types]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a type and  the type represented by `dealias(r)` is an incomplete type ([basic.types]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
