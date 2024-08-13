@@ -4686,7 +4686,7 @@ consteval bool is_concept(info r);
 consteval bool is_structured_binding(info r);
 consteval bool is_value(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, conversion function template, operator function template, literal operator template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, variable template, class template, alias template, conversion function template, operator function template, literal operator template, constructor template, concept, structured binding, or value respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_object(info r);
