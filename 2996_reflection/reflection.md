@@ -35,7 +35,7 @@ Since [@P2996R4]:
 * removed `test_trait`
 * removed `(u8)name_of` and `(u8)qualified_name_of`; added `(u8)identifier_of`, `operator_of`, `(u8)define_static_string`.
 * renamed `display_name_of` to `display_string_of`
-* adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`, `is_data_member_spec`
+* adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`, `is_data_member_spec`, `has_(thread|automatic)_storage_duration`
 * changed offset API to be one function that returns a type with named members
 * Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
 * Many wording updates in response to feedback from CWG.
@@ -2302,6 +2302,8 @@ namespace std::meta {
   consteval auto is_lvalue_reference_qualified(info r) -> bool;
   consteval auto is_rvalue_reference_qualified(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
+  consteval auto has_thread_storage_duration(info r) -> bool;
+  consteval auto has_automatic_storage_duration(info r) -> bool;
   consteval auto has_internal_linkage(info r) -> bool;
   consteval auto has_module_linkage(info r) -> bool;
   consteval auto has_external_linkage(info r) -> bool;
@@ -4100,6 +4102,8 @@ namespace std::meta {
   consteval bool is_lvalue_reference_qualified(info r);
   consteval bool is_rvalue_reference_qualified(info r);
   consteval bool has_static_storage_duration(info r);
+  consteval bool has_thread_storage_duration(info r);
+  consteval bool has_automatic_storage_duration(info r);
   consteval bool has_internal_linkage(info r);
   consteval bool has_module_linkage(info r);
   consteval bool has_external_linkage(info r);
@@ -4605,9 +4609,11 @@ consteval bool is_rvalue_reference_qualified(info r);
 
 ```cpp
 consteval bool has_static_storage_duration(info r);
+consteval bool has_thread_storage_duration(info r);
+consteval bool has_automatic_storage_duration(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents an object or variable that has static storage duration. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents an object or variable that has static, thread, or automatic storage duration, respectively ([basic.stc]). Otherwise, `false`.
 
 ```cpp
 consteval bool has_internal_linkage(info r);
