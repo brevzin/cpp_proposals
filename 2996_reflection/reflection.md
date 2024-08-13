@@ -4664,7 +4664,7 @@ consteval bool is_complete_type(info r);
 
 [#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: `true` if `r` represents a type and the type represented by `dealias(r)` is a complete type ([basic.types]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `is_type(r)` is `true` and the type represented by `dealias(r)` is a complete type ([basic.types]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
