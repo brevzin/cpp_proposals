@@ -39,6 +39,7 @@ Since [@P2996R4]:
 * changed offset API to be one function that returns a type with named members
 * Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
 * changed `is_alias` to `is_(type|namespace)_alias`
+* changed `is_incomplete_type` to `is_complete_type`
 * Many wording updates in response to feedback from CWG.
 
 Since [@P2996R3]:
@@ -1270,8 +1271,8 @@ public:
 
     // Search for the next incomplete 'Helper<k>'.
     std::meta::info r;
-    while (!is_incomplete_type(r = substitute(^Helper,
-                                             { std::meta::reflect_value(k) })))
+    while (is_complete_type(r = substitute(^Helper,
+                                           { std::meta::reflect_value(k) })))
       ++k;
 
     // Define 'Helper<k>' and return its index.
@@ -2321,7 +2322,7 @@ namespace std::meta {
   consteval auto is_type(info entity) -> bool;
   consteval auto is_type_alias(info entity) -> bool;
   consteval auto is_namespace_alias(info entity) -> bool;
-  consteval auto is_incomplete_type(info entity) -> bool;
+  consteval auto is_complete_type(info entity) -> bool;
   consteval auto is_template(info entity) -> bool;
   consteval auto is_function_template(info entity) -> bool;
   consteval auto is_variable_template(info entity) -> bool;
@@ -2970,7 +2971,7 @@ struct Cls {
 
 Two translation units including `cls.h` can generate different definitions of `Cls::odr_violator()` based on whether an odd or even number of declarations have been imported from `std`. Branching on the members of a namespace is dangerous because namespaces may be redeclared and reopened: the set of contained declarations can differ between program points.
 
-The creative programmer will find no difficulty coming up with other predicates which would be similarly dangerous if substituted into the same `if constexpr` condition: for instance, given a branch on `is_incomplete_type(^T)`, if one translation unit `#include`s a forward declaration of `T`, another `#include`s a complete definition of `T`, and they both afterwards `#include "cls.h"`, the result will be an ODR violation.
+The creative programmer will find no difficulty coming up with other predicates which would be similarly dangerous if substituted into the same `if constexpr` condition: for instance, given a branch on `is_complete_type(^T)`, if one translation unit `#include`s a forward declaration of `T`, another `#include`s a complete definition of `T`, and they both afterwards `#include "cls.h"`, the result will be an ODR violation.
 
 Additional papers are already in flight proposing additional metafunctions that pose similar dangers. For instance, [@P3096R1] proposes the `parameters_of` metafunction. This feature is important for generating language bindings (e.g., Python, JavaScript), but since parameter names can differ between declarations, it would be dangerous for a member function defined in a header file to branch on the name of a parameter.
 
@@ -4117,7 +4118,7 @@ namespace std::meta {
   consteval bool is_type(info r);
   consteval bool is_type_alias(info r);
   consteval bool is_namespace_alias(info r);
-  consteval bool is_incomplete_type(info r);
+  consteval bool is_complete_type(info r);
   consteval bool is_template(info r);
   consteval bool is_function_template(info r);
   consteval bool is_variable_template(info r);
@@ -4658,12 +4659,12 @@ consteval bool is_namespace_alias(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$` or namespace alias, respectively [An instantiation of an alias template is a `$typedef-name$`]{.note}. Otherwise, `false`.
 
 ```cpp
-consteval bool is_incomplete_type(info r);
+consteval bool is_complete_type(info r);
 ```
 
 [#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: `true` if `r` represents a type and  the type represented by `dealias(r)` is an incomplete type ([basic.types]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a type and the type represented by `dealias(r)` is a complete type ([basic.types]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
