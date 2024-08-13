@@ -38,6 +38,7 @@ Since [@P2996R4]:
 * adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`, `is_data_member_spec`, `has_(thread|automatic)_storage_duration`
 * changed offset API to be one function that returns a type with named members
 * Tightened constraints on calls to `data_member_spec`, and defined comparison among reflections returned by it.
+* changed `is_alias` to `is_(type|namespace)_alias`
 * Many wording updates in response to feedback from CWG.
 
 Since [@P2996R3]:
@@ -2318,7 +2319,8 @@ namespace std::meta {
   consteval auto is_function(info entity) -> bool;
   consteval auto is_variable(info entity) -> bool;
   consteval auto is_type(info entity) -> bool;
-  consteval auto is_alias(info entity) -> bool;
+  consteval auto is_type_alias(info entity) -> bool;
+  consteval auto is_namespace_alias(info entity) -> bool;
   consteval auto is_incomplete_type(info entity) -> bool;
   consteval auto is_template(info entity) -> bool;
   consteval auto is_function_template(info entity) -> bool;
@@ -4113,7 +4115,8 @@ namespace std::meta {
   consteval bool is_function(info r);
   consteval bool is_variable(info r);
   consteval bool is_type(info r);
-  consteval bool is_alias(info r);
+  consteval bool is_type_alias(info r);
+  consteval bool is_namespace_alias(info r);
   consteval bool is_incomplete_type(info r);
   consteval bool is_template(info r);
   consteval bool is_function_template(info r);
@@ -4622,7 +4625,9 @@ consteval bool has_external_linkage(info r);
 consteval bool has_linkage(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents an entity that has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
+TODO: this wording isn't quite right (names have linkage, not entities, but also typedef-names have linkage?)
+
+[#]{.pnum} *Returns*: `true` if `r` represents a named entity whose name has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
 
 
 ```cpp
@@ -4634,7 +4639,7 @@ consteval bool is_namespace(info r);
 ```cpp
 consteval bool is_function(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function or member function. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function. Otherwise, `false`.
 
 ```cpp
 consteval bool is_variable(info r);
@@ -4647,9 +4652,10 @@ consteval bool is_type(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a type or a `$typedef-name$`. Otherwise, `false`.
 
 ```cpp
-consteval bool is_alias(info r);
+consteval bool is_type_alias(info r);
+consteval bool is_namespace_alias(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$`, alias template, or namespace alias. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$` or namespace alias, respectively [An instantiation of an alias template is a `$typedef-name$`]{.note}. Otherwise, `false`.
 
 ```cpp
 consteval bool is_incomplete_type(info r);
