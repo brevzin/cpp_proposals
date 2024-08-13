@@ -4626,9 +4626,7 @@ consteval bool has_external_linkage(info r);
 consteval bool has_linkage(info r);
 ```
 
-TODO: this wording isn't quite right (names have linkage, not entities, but also typedef-names have linkage?)
-
-[#]{.pnum} *Returns*: `true` if `r` represents a named entity whose name has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a variable, function, type, template, or namespace whose name has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
 
 
 ```cpp
@@ -4669,7 +4667,7 @@ consteval bool is_complete_type(info r);
 ```cpp
 consteval bool is_template(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, or alias template. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, or concept. Otherwise, `false`.
 
 [#]{.pnum} [A template specialization is not a template. `is_template(^std::vector)` is `true` but `is_template(^std::vector<int>)` is `false`.]{.note}
 
@@ -4700,7 +4698,7 @@ consteval bool is_object(info r);
 ```cpp
 consteval bool has_template_arguments(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents an instantiation of a function template, variable template, class template, or an alias template. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a specialization of a function template, variable template, class template, or an alias template. Otherwise, `false`.
 
 
 ```cpp
@@ -4786,7 +4784,7 @@ consteval info parent_of(info r);
 consteval info dealias(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` represents a `$typedef-name$` or a namespace alias, a reflection representing the underlying entity. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` represents a `$typedef-name$` or namespace alias _A_, then a reflection representing the entity named by _A_. Otherwise, `r`.
 
 [#]{.pnum}
 

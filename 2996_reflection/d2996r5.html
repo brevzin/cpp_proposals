@@ -7242,14 +7242,13 @@ that has static, thread, or automatic storage duration, respectively
 <span id="cb154-2"><a href="#cb154-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_module_linkage<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb154-3"><a href="#cb154-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_external_linkage<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb154-4"><a href="#cb154-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_linkage<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p>TODO: this wording isn’t quite right (names have linkage, not
-entities, but also typedef-names have linkage?)</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_162" id="pnum_162">14</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
-<code class="sourceCode cpp">r</code> represents a named entity whose
-name has internal linkage, module linkage, external linkage, or any
-linkage, respectively ([basic.link]). Otherwise,
+<code class="sourceCode cpp">r</code> represents a variable, function,
+type, template, or namespace whose name has internal linkage, module
+linkage, external linkage, or any linkage, respectively ([basic.link]).
+Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb155"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_namespace<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_163" id="pnum_163">15</a></span>
@@ -7309,7 +7308,8 @@ is not an incomplete type ([basic.types]). Otherwise,
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp">r</code> represents a function template,
-class template, variable template, or alias template. Otherwise,
+class template, variable template, alias template, or concept.
+Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_171" id="pnum_171">23</a></span>
 <span class="note"><span>[ <em>Note 4:</em> </span>A template
@@ -7349,7 +7349,7 @@ value, or object respectively. Otherwise,
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_174" id="pnum_174">26</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
-<code class="sourceCode cpp">r</code> represents an instantiation of a
+<code class="sourceCode cpp">r</code> represents a specialization of a
 function template, variable template, class template, or an alias
 template. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
@@ -7475,9 +7475,9 @@ class, function, or namespace.</p>
 <div class="sourceCode" id="cb174"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb174-1"><a href="#cb174-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info dealias<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_189" id="pnum_189">41</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
-<code class="sourceCode cpp"><em>typedef-name</em></code> or a namespace
-alias, a reflection representing the underlying entity. Otherwise,
-<code class="sourceCode cpp">r</code>.</p>
+<code class="sourceCode cpp"><em>typedef-name</em></code> or namespace
+alias <em>A</em>, then a reflection representing the entity named by
+<em>A</em>. Otherwise, <code class="sourceCode cpp">r</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_190" id="pnum_190">42</a></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
