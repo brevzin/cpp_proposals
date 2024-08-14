@@ -33,7 +33,7 @@ Since [@P2996R4]:
 * reduced specification of `is_noexcept`
 * changed `span<info const>` to `initializer_list<info>`
 * removed `test_trait`
-* removed `(u8)name_of` and `(u8)qualified_name_of`; added `(u8)identifier_of`, `operator_of`, `(u8)define_static_string`.
+* removed `(u8)name_of` and `(u8)qualified_name_of`; added `(u8)identifier_of`, `operator_of`, `define_static_string`.
 * renamed `display_name_of` to `display_string_of`
 * adding a number of missing predicates: `is_enumerator`, `is_copy_constructor`, `is_move_constructor`, `is_assignment`, `is_move_assignment`, `is_copy_assignment`, `is_default_constructor`, `has_default_member_initializer`, `is_lvalue_reference_qualified`, `is_rvalue_reference_qualified`, `is_literal_operator(_template)`, `is_conversion_function(_template)`, `is_operator(_template)`, `is_data_member_spec`, `has_(thread|automatic)_storage_duration`
 * changed offset API to be one function that returns a type with named members
@@ -2362,7 +2362,7 @@ namespace std::meta {
 
   // @[define_static_string](#define_static_string)@
   consteval auto define_static_string(string_view str) -> const char *;
-  consteval auto u8define_static_string(u8string_view str) -> const char8_t *;
+  consteval auto define_static_string(u8string_view str) -> const char8_t *;
 
   // @[data layout](#data-layout-reflection)@
   struct member_offsets {
@@ -2792,7 +2792,7 @@ If `type_class` is a reflection of a type that already has a definition, or whic
 ```c++
 namespace std::meta {
   consteval auto define_static_string(string_view str) -> const char *;
-  consteval auto u8define_static_string(u8string_view str) -> const char8_t *;
+  consteval auto define_static_string(u8string_view str) -> const char8_t *;
 }
 ```
 :::
@@ -4272,7 +4272,7 @@ namespace std::meta {
 
   // [meta.reflection.static_string], static string generation
   consteval const char* define_static_string(string_view str);
-  consteval const char8_t* u8define_static_string(u8string_view str);
+  consteval const char8_t* define_static_string(u8string_view str);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -5253,7 +5253,7 @@ Defines `class_type` with properties as follows:
 ::: addu
 ```cpp
 consteval const char* define_static_string(string_view str);
-consteval const char8_t* u8define_static_string(u8string_view str);
+consteval const char8_t* define_static_string(u8string_view str);
 ```
 
 [#]{.pnum} Let `S` be a constexpr variable of array type with static storage duration, whose elements are of type `const char` or `const char8_t` respectively, for which there exists some `k >= 0` such that:
