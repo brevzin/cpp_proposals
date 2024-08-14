@@ -4940,12 +4940,12 @@ consteval access_context access_context::current() noexcept;
 consteval access_context::access_context() noexcept;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$context_$` to the null reflection.
+[#]{.pnum} *Effects*: Initializes `$context_$` to `^::`.
 
 ```cpp
 consteval bool is_accessible(
         info target,
-        access_context from = access_context::currrent());
+        access_context from = access_context::current());
 ```
 
 [#]{.pnum} *Constant When*: `target` is a reflection representing a member or base class specifier of a class.
@@ -4954,8 +4954,7 @@ consteval bool is_accessible(
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `from.$context_$` is the null reflection, then `false`.
-* [#.#]{.pnum} Otherwise, if `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]).
+* [#.#]{.pnum} If `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]).
 * [#.#]{.pnum} Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`.
 * [#.#]{.pnum} Otherwise, `false`.
 
