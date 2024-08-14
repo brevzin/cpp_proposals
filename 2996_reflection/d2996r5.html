@@ -948,7 +948,8 @@ to <code class="sourceCode cpp">initializer_list<span class="op">&lt;</span>info
 <li>removed <code class="sourceCode cpp"><span class="op">(</span>u8<span class="op">)</span>name_of</code>
 and <code class="sourceCode cpp"><span class="op">(</span>u8<span class="op">)</span>qualified_name_of</code>;
 added <code class="sourceCode cpp"><span class="op">(</span>u8<span class="op">)</span>identifier_of</code>,
-<code class="sourceCode cpp">operator_of</code>, <code class="sourceCode cpp"><span class="op">(</span>u8<span class="op">)</span>define_static_string</code>.</li>
+<code class="sourceCode cpp">operator_of</code>,
+<code class="sourceCode cpp">define_static_string</code>.</li>
 <li>renamed <code class="sourceCode cpp">display_name_of</code> to
 <code class="sourceCode cpp">display_string_of</code></li>
 <li>adding a number of missing predicates:
@@ -3836,7 +3837,7 @@ be explained below.</p>
 <span id="cb76-161"><a href="#cb76-161" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb76-162"><a href="#cb76-162" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#define_static_string">define_static_string</a></span></span>
 <span id="cb76-163"><a href="#cb76-163" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>;</span>
-<span id="cb76-164"><a href="#cb76-164" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> u8define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">const</span> <span class="dt">char8_t</span> <span class="op">*</span>;</span>
+<span id="cb76-164"><a href="#cb76-164" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">const</span> <span class="dt">char8_t</span> <span class="op">*</span>;</span>
 <span id="cb76-165"><a href="#cb76-165" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb76-166"><a href="#cb76-166" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data-layout-reflection">data layout</a></span></span>
 <span id="cb76-167"><a href="#cb76-167" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offsets <span class="op">{</span></span>
@@ -4395,7 +4396,7 @@ expression.</p>
 <blockquote>
 <div class="sourceCode" id="cb99"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
 <span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>string_view str<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>;</span>
-<span id="cb99-3"><a href="#cb99-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> u8define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">const</span> <span class="dt">char8_t</span> <span class="op">*</span>;</span>
+<span id="cb99-3"><a href="#cb99-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">const</span> <span class="dt">char8_t</span> <span class="op">*</span>;</span>
 <span id="cb99-4"><a href="#cb99-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -6650,7 +6651,7 @@ synopsis</strong></p>
 <span id="cb135-211"><a href="#cb135-211" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb135-212"><a href="#cb135-212" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.static_string], static string generation</span>
 <span id="cb135-213"><a href="#cb135-213" aria-hidden="true" tabindex="-1"></a>  consteval const char* define_static_string(string_view str);</span>
-<span id="cb135-214"><a href="#cb135-214" aria-hidden="true" tabindex="-1"></a>  consteval const char8_t* u8define_static_string(u8string_view str);</span>
+<span id="cb135-214"><a href="#cb135-214" aria-hidden="true" tabindex="-1"></a>  consteval const char8_t* define_static_string(u8string_view str);</span>
 <span id="cb135-215"><a href="#cb135-215" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb135-216"><a href="#cb135-216" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.unary.cat], primary type categories</span>
 <span id="cb135-217"><a href="#cb135-217" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_void(info type);</span>
@@ -8207,7 +8208,7 @@ Static string generation<a href="#meta.reflection.static_string-static-string-ge
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb212"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb212-1"><a href="#cb212-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> define_static_string<span class="op">(</span>string_view str<span class="op">)</span>;</span>
-<span id="cb212-2"><a href="#cb212-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> u8define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span>;</span></code></pre></div>
+<span id="cb212-2"><a href="#cb212-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> define_static_string<span class="op">(</span>u8string_view str<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_279" id="pnum_279">1</a></span>
 Let <code class="sourceCode cpp">S</code> be a constexpr variable of
 array type with static storage duration, whose elements are of type
