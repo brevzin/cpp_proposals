@@ -4072,14 +4072,13 @@ namespace std::meta {
     $see below$;
   };
   using enum operators;
+  consteval auto operator_of(info r) -> operators;
 
   // [meta.reflection.names], reflection names and locations
   consteval string_view identifier_of(info r);
   consteval string_view u8identifier_of(info r);
 
   consteval bool has_identifier(info r);
-
-  consteval auto operator_of(info r) -> operators;
 
   consteval string_view display_string_of(info r);
   consteval string_view u8display_string_of(info r);
@@ -4090,35 +4089,57 @@ namespace std::meta {
   consteval bool is_public(info r);
   consteval bool is_protected(info r);
   consteval bool is_private(info r);
+
   consteval bool is_virtual(info r);
   consteval bool is_pure_virtual(info r);
   consteval bool is_override(info r);
   consteval bool is_final(info r);
+
   consteval bool is_deleted(info r);
   consteval bool is_defaulted(info r);
+  consteval bool is_user_provided(info r);
   consteval bool is_explicit(info r);
   consteval bool is_noexcept(info r);
+
   consteval bool is_bit_field(info r);
   consteval bool is_enumerator(info r);
+
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
   consteval bool is_lvalue_reference_qualified(info r);
   consteval bool is_rvalue_reference_qualified(info r);
+
   consteval bool has_static_storage_duration(info r);
   consteval bool has_thread_storage_duration(info r);
   consteval bool has_automatic_storage_duration(info r);
+
   consteval bool has_internal_linkage(info r);
   consteval bool has_module_linkage(info r);
   consteval bool has_external_linkage(info r);
   consteval bool has_linkage(info r);
 
+  consteval bool is_complete_type(info r);
+
   consteval bool is_namespace(info r);
-  consteval bool is_function(info r);
   consteval bool is_variable(info r);
   consteval bool is_type(info r);
   consteval bool is_type_alias(info r);
   consteval bool is_namespace_alias(info r);
-  consteval bool is_complete_type(info r);
+
+  consteval bool is_function(info r);
+  consteval bool is_conversion_function(info r);
+  consteval bool is_operator_function(info r);
+  consteval bool is_literal_operator(info r);
+  consteval bool is_special_member(info r);
+  consteval bool is_constructor(info r);
+  consteval bool is_default_constructor(info r);
+  consteval bool is_copy_constructor(info r);
+  consteval bool is_move_constructor(info r);
+  consteval bool is_assignment(info r);
+  consteval bool is_copy_assignment(info r);
+  consteval bool is_move_assignment(info r);
+  consteval bool is_destructor(info r);
+
   consteval bool is_template(info r);
   consteval bool is_function_template(info r);
   consteval bool is_variable_template(info r);
@@ -4129,32 +4150,20 @@ namespace std::meta {
   consteval bool is_literal_operator_template(info r);
   consteval bool is_constructor_template(info r);
   consteval bool is_concept(info r);
+  consteval bool has_template_arguments(info r);
+
   consteval bool is_value(info r);
   consteval bool is_object(info r);
+
   consteval bool is_structured_binding(info r);
-  consteval bool has_template_arguments(info r);
+
   consteval bool is_class_member(info entity);
   consteval bool is_namespace_member(info entity);
   consteval bool is_nonstatic_data_member(info r);
   consteval bool is_static_member(info r);
   consteval bool is_base(info r);
-  consteval bool is_data_member_spec(info r);
+
   consteval bool has_default_member_initializer(info r);
-
-  consteval bool is_conversion_function(info r);
-  consteval bool is_operator_function(info r);
-  consteval bool is_literal_operator(info r);
-
-  consteval bool is_special_member(info r);
-  consteval bool is_constructor(info r);
-  consteval bool is_default_constructor(info r);
-  consteval bool is_copy_constructor(info r);
-  consteval bool is_move_constructor(info r);
-  consteval bool is_assignment(info r);
-  consteval bool is_copy_assignment(info r);
-  consteval bool is_move_assignment(info r);
-  consteval bool is_destructor(info r);
-  consteval bool is_user_provided(info r);
 
   consteval info type_of(info r);
   consteval info object_of(info r);
@@ -4257,6 +4266,7 @@ namespace std::meta {
   };
   consteval info data_member_spec(info type,
                                   data_member_options_t options = {});
+  consteval bool is_data_member_spec(info r);
   template <reflection_range R = initializer_list<info>>
   consteval info define_class(info type_class, R&&);
 
@@ -4426,6 +4436,11 @@ namespace std::meta {
 
 ::: std
 ::: addu
+```cpp
+enum class operators {
+  $see below$;
+};
+```
 
 [#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
@@ -4478,6 +4493,13 @@ namespace std::meta {
 |`op_minus_minus`|`operator--`|
 |`op_comma`|`operator,`|
 
+```cpp
+consteval operators operator_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `r` represents an operator function or operator function template.
+
+[#]{.pnum} *Returns*: The value of the enumerator from `operators` for which the corresponding operator has the same unqualified name as the entity represented by `r`.
 :::
 :::
 
@@ -4515,14 +4537,6 @@ consteval bool has_identifier(info r);
 ```
 
 [#]{.pnum} *Returns*: If `r` represents a variable, entity, or alias of a type or namespace, then `true` if the declaration of what is represented by `r` introduces an identifier. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then `true`. Otherwise if `r` represents a description of the declaration of a non-static data member, then `true` if the declaration of a data member having the properties represented by `r` would introduce an identifier. Otherwise, `false`.
-
-```cpp
-consteval operators operator_of(info r);
-```
-
-[#]{.pnum} *Constant When*: `r` represents an operator function or operator function template.
-
-[#]{.pnum} *Returns*: The value of the enumerator from `operators` for which the corresponding operator ([meta.reflection.operators]) has the same unqualified name as the entity represented by `r`.
 
 ```cpp
 consteval source_location source_location_of(info r);
@@ -4563,15 +4577,19 @@ consteval bool is_final(info r);
 
 ```cpp
 consteval bool is_deleted(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents a function that is defined as deleted ([dcl.fct.def.delete]). Otherwise, `false`.
-
-```cpp
 consteval bool is_defaulted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a function that is defined as defaulted ([dcl.fct.def.default]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is defined as deleted ([dcl.fct.def.delete])or defined as defaulted ([dcl.fct.def.default]), respectively. Otherwise, `false`.
+
+```cpp
+consteval bool is_user_provided(info r);
+```
+
+[#]{.pnum} *Constant When*: `r` represents a function.
+
+[#]{.pnum} *Returns*: `true` if `r` represents a user-provided ([dcl.fct.def.default]{.sref}) function. Otherwise, `false`.
+
 
 ```cpp
 consteval bool is_explicit(info r);
@@ -4628,17 +4646,19 @@ consteval bool has_linkage(info r);
 
 [#]{.pnum} *Returns*: `true` if `r` represents a variable, function, type, template, or namespace whose name has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
 
+```cpp
+consteval bool is_complete_type(info r);
+```
+
+[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: `true` if `is_type(r)` is `true` and the type represented by `dealias(r)` is not an incomplete type ([basic.types]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_namespace(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` represents a namespace or namespace alias. Otherwise, `false`.
-
-```cpp
-consteval bool is_function(info r);
-```
-[#]{.pnum} *Returns*: `true` if `r` represents a function. Otherwise, `false`.
 
 ```cpp
 consteval bool is_variable(info r);
@@ -4657,66 +4677,9 @@ consteval bool is_namespace_alias(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$` or namespace alias, respectively [An instantiation of an alias template is a `$typedef-name$`]{.note}. Otherwise, `false`.
 
 ```cpp
-consteval bool is_complete_type(info r);
+consteval bool is_function(info r);
 ```
-
-[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: `true` if `is_type(r)` is `true` and the type represented by `dealias(r)` is not an incomplete type ([basic.types]). Otherwise, `false`.
-
-```cpp
-consteval bool is_template(info r);
-```
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, or concept. Otherwise, `false`.
-
-[#]{.pnum} [A template specialization is not a template. `is_template(^std::vector)` is `true` but `is_template(^std::vector<int>)` is `false`.]{.note}
-
-```cpp
-consteval bool is_function_template(info r);
-consteval bool is_variable_template(info r);
-consteval bool is_class_template(info r);
-consteval bool is_alias_template(info r);
-consteval bool is_conversion_function_template(info r);
-consteval bool is_operator_function_template(info r);
-consteval bool is_literal_operator_template(info r);
-consteval bool is_constructor_template(info r);
-consteval bool is_concept(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents a function template, variable template, class template, alias template, conversion function template, operator function template, literal operator template, constructor template, or concept respectively. Otherwise, `false`.
-
-
-```cpp
-consteval bool is_structured_binding(info r);
-consteval bool is_value(info r);
-consteval bool is_object(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents a structured binding, value, or object respectively. Otherwise, `false`.
-
-
-```cpp
-consteval bool has_template_arguments(info r);
-```
-[#]{.pnum} *Returns*: `true` if `r` represents a specialization of a function template, variable template, class template, or an alias template. Otherwise, `false`.
-
-
-```cpp
-consteval bool is_class_member(info r);
-consteval bool is_namespace_member(info r);
-consteval bool is_nonstatic_data_member(info r);
-consteval bool is_static_member(info r);
-consteval bool is_base(info r);
-consteval bool is_data_member_spec(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, base class specifier, or description of the declaration of a non-static data member, respectively. Otherwise, `false`.
-
-```cpp
-consteval bool has_default_member_initializer(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents a non-static data member that has a default member initializer. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function. Otherwise, `false`.
 
 ```cpp
 consteval bool is_conversion_function(info r);
@@ -4741,12 +4704,61 @@ consteval bool is_destructor(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a special member function, non-template constructor, default constructor, copy constructor, move constructor, assignment operator, copy assignment operator, move assignment operator, or destructor, respectively. Otherwise, `false`.
 
 ```cpp
-consteval bool is_user_provided(info r);
+consteval bool is_template(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, or concept. Otherwise, `false`.
+
+[#]{.pnum} [A template specialization is not a template. `is_template(^std::vector)` is `true` but `is_template(^std::vector<int>)` is `false`.]{.note}
+
+```cpp
+consteval bool is_function_template(info r);
+consteval bool is_variable_template(info r);
+consteval bool is_class_template(info r);
+consteval bool is_alias_template(info r);
+consteval bool is_conversion_function_template(info r);
+consteval bool is_operator_function_template(info r);
+consteval bool is_literal_operator_template(info r);
+consteval bool is_constructor_template(info r);
+consteval bool is_concept(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a function.
+[#]{.pnum} *Returns*: `true` if `r` represents a function template, variable template, class template, alias template, conversion function template, operator function template, literal operator template, constructor template, or concept respectively. Otherwise, `false`.
 
-[#]{.pnum} *Returns*: `true` if `r` represents a user-provided ([dcl.fct.def.default]{.sref}) function. Otherwise, `false`.
+```cpp
+consteval bool has_template_arguments(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` represents a specialization of a function template, variable template, class template, or an alias template. Otherwise, `false`.
+
+```cpp
+consteval bool is_value(info r);
+consteval bool is_object(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a value or object, respectively. Otherwise, `false`.
+
+```cpp
+consteval bool is_structured_binding(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a structured binding. Otherwise, `false`.
+
+
+
+```cpp
+consteval bool is_class_member(info r);
+consteval bool is_namespace_member(info r);
+consteval bool is_nonstatic_data_member(info r);
+consteval bool is_static_member(info r);
+consteval bool is_base(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a class member, namespace member, non-static data member, static member, base class specifier, respectively. Otherwise, `false`.
+
+```cpp
+consteval bool has_default_member_initializer(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a non-static data member that has a default member initializer. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
@@ -5171,6 +5183,11 @@ If `options.name` contains a value, the `string` or `u8string` value that was us
 
 [#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
 
+```cpp
+consteval bool is_data_member_spec(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` is the description of the declaration of a non-static data member. Otherwise, `false`.
 
 ```c++
   template <reflection_range R = initializer_list<info>>
