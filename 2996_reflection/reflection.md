@@ -4776,6 +4776,18 @@ consteval info object_of(info r);
 
 [#]{.pnum} *Returns*: If `r` is a reflection of a variable, then a reflection of the object denoted by the variable. Otherwise, `r`.
 
+::: example
+```cpp
+int x;
+int& y = x;
+
+static_assert(^x != ^y);                       // OK, x and y are different variables so their
+                                               // reflections compare different
+static_assert(object_of(^x) == object_of(^y)); // OK, because y is a reference
+                                               // to x, their underlying objects are the same
+```
+:::
+
 ```cpp
 consteval info value_of(info r);
 ```
@@ -4783,6 +4795,19 @@ consteval info value_of(info r);
 [#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable usable in constant expressions ([expr.const]) whose type is a structural type ([temp.type]), an enumerator, or a value.
 
 [#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+
+::: example
+```cpp
+constexpr int x = 0;
+constexpr int y = 0;
+
+static_assert(^x != ^y);                         // OK, x and y are different variables so their
+                                                 // reflections compare different
+static_assert(value_of(^x) == value_of(^y));     // OK, both value_of(^x) and value_of(^y) represent
+                                                 // the value 0
+static_assert(value_of(^x) == reflect_value(0)); // OK, likewise
+```
+:::
 
 ```cpp
 consteval info parent_of(info r);
