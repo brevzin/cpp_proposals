@@ -26,6 +26,11 @@ tag: constexpr
 
 # Revision History
 
+Since [@P2996R5]:
+
+* changed `std::meta::operators` from an enum class to an enum; removed `op_`-prefixes.
+* in response to asks from SG16, added a `define_static_array` function to offer a the `define_static_string` facility for a wider family of types.
+
 Since [@P2996R4]:
 
 * removed filters from query functions
@@ -1301,7 +1306,7 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (extract<bool>(substitute(^std::predicate, {type_of(Pred), ^std::meta::info})))
+  requires (std::predicate<[:type_of(Pred):], std::meta::info>)
 struct metatype {
   std::meta::info value;
 
@@ -1329,8 +1334,10 @@ consteval std::meta::info enrich(std::meta::info r) {
   // Because we control the type, we know that the constructor taking info is
   // the first constructor. The copy/move constructors are added at the }, so
   // will be the last ones in the list.
-  std::array ctors = {members_of(^Choices, std::meta::is_constructor)[0]...,
-                      members_of(^unmatched, std::meta::is_constructor)[0]};
+  std::array ctors = {
+    *(members_of(^Choices) | std::views::filter(std::meta::is_constructor)).begin()...,
+    *(members_of(^unmatched) | std::views::filter(std::meta::is_constructor)).begin()
+  };
   std::array checks = {^Choices::check..., ^unmatched::check};
 
   for (auto [check, ctor] : std::views::zip(checks, ctors))
@@ -1379,7 +1386,7 @@ fn<classify(Arg1, Arg2, Arg3)>(Arg1, Arg2, Arg3).
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/q88dWYq8v).
+On Compiler Explorer: [Clang](https://godbolt.org/z/E8fc41s4q).
 
 # Proposed Features
 
@@ -2203,7 +2210,7 @@ namespace std::meta {
   using info = decltype(^::);
 
   template <typename R>
-  concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
+    concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
 
   // @[name and location](#name-loc)@
   consteval auto identifier_of(info r) -> string_view;
@@ -2263,15 +2270,15 @@ namespace std::meta {
 
   // @[substitute](#substitute)@
   template <reflection_range R = initializer_list<info>>
-  consteval auto can_substitute(info templ, R&& args) -> bool;
+    consteval auto can_substitute(info templ, R&& args) -> bool;
   template <reflection_range R = initializer_list<info>>
-  consteval auto substitute(info templ, R&& args) -> info;
+    consteval auto substitute(info templ, R&& args) -> info;
 
   // @[reflect_invoke](#reflect_invoke)@
   template <reflection_range R = initializer_list<info>>
-  consteval auto reflect_invoke(info target, R&& args) -> info;
+    consteval auto reflect_invoke(info target, R&& args) -> info;
   template <reflection_range R1 = initializer_list<info>, reflection_range R2 = initializer_list<info>>
-  consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
+    consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
 
   // @[reflect expression results](#reflect-expression-results)@
   template <typename T>
@@ -2358,9 +2365,14 @@ namespace std::meta {
   consteval auto data_member_spec(info type_class,
                                   data_member_options_t options = {}) -> info;
   template <reflection_range R = initializer_list<info>>
-  consteval auto define_class(info type_class, R&&) -> info;
+    consteval auto define_class(info type_class, R&&) -> info;
 
-  // @[define_static_string](#define_static_string)@
+  // @[define_static_array](#define_static_array)@
+  template <typename T, input_range<T> R = initializer_list<T>>
+    consteval auto define_static_array(R&& args) -> span<>;
+  template <input_range R>
+    consteval auto define_static_array(R&& args) -> span<ranges::range_value_t<R> const>;
+
   consteval auto define_static_string(string_view str) -> const char *;
   consteval auto define_static_string(u8string_view str) -> const char8_t *;
 
@@ -4068,10 +4080,9 @@ namespace std::meta {
   using info = decltype(^::);
 
   // [meta.reflection.operators], operator representations
-  enum class operators {
+  enum operators {
     $see below$;
   };
-  using enum operators;
   consteval auto operator_of(info r) -> operators;
 
   // [meta.reflection.names], reflection names and locations
@@ -4446,52 +4457,52 @@ enum class operators {
 
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
-|Constant|Correspoding operator|
+|Constant|Corresponding operator|
 |:-|:-|
-|`op_new`|`operator new`|
-|`op_delete`|`operator delete`|
-|`op_array_new`|`operator new[]`|
-|`op_array_delete`|`operator delete[]`|
-|`op_co_await`|`operator coawait`|
-|`op_parentheses`|`operator()`|
-|`op_square_brackets`|`operator[]`|
-|`op_arrow`|`operator->`|
-|`op_arrow_asterisk`|`operator->*`|
-|`op_tilde`|`operator~`|
-|`op_exclamation_mark`|`operator!`|
-|`op_plus`|`operator+`|
-|`op_minus`|`operator-`|
-|`op_asterisk`|`operator*`|
-|`op_solidus`|`operator/`|
-|`op_percent`|`operator%`|
-|`op_caret`|`operator^`|
-|`op_ampersand`|`operator&`|
-|`op_pipe`|`operator|`|
-|`op_equals`|`operator=`|
-|`op_plus_equals`|`operator+=`|
-|`op_minus_equals`|`operator-=`|
-|`op_asterisk_equals`|`operator*=`|
-|`op_solidus_equals`|`operator/=`|
-|`op_percent_equals`|`operator%=`|
-|`op_caret_equals`|`operator^=`|
-|`op_ampersand_equals`|`operator&=`|
-|`op_pipe_equals`|`operator|=`|
-|`op_equals_equals`|`operator==`|
-|`op_exclamation_equals`|`operator!=`|
-|`op_less`|`operator<`|
-|`op_greater`|`operator>`|
-|`op_less_equals`|`operator<=`|
-|`op_greater_equals`|`operator>=`|
-|`op_three_way_compare`|`operator<=>`|
-|`op_ampersand_ampersand`|`operator&&`|
-|`op_pipe_pipe`|`operator||`|
-|`op_less_less`|`operator<<`|
-|`op_greater_greater`|`operator>>`|
-|`op_less_less_equals`|`operator<<=`|
-|`op_greater_greater_equals`|`operator>>=`|
-|`op_plus_plus`|`operator++`|
-|`op_minus_minus`|`operator--`|
-|`op_comma`|`operator,`|
+|`single_object_new`|`operator new`|
+|`single_object_delete`|`operator delete`|
+|`array_new`|`operator new[]`|
+|`array_delete`|`operator delete[]`|
+|`coroutine_await`|`operator co_await`|
+|`parentheses`|`operator()`|
+|`square_brackets`|`operator[]`|
+|`arrow`|`operator->`|
+|`arrow_asterisk`|`operator->*`|
+|`tilde`|`operator~`|
+|`exclamation_mark`|`operator!`|
+|`plus`|`operator+`|
+|`minus`|`operator-`|
+|`asterisk`|`operator*`|
+|`solidus`|`operator/`|
+|`percent`|`operator%`|
+|`caret`|`operator^`|
+|`ampersand`|`operator&`|
+|`pipe`|`operator|`|
+|`equals`|`operator=`|
+|`plus_equals`|`operator+=`|
+|`minus_equals`|`operator-=`|
+|`asterisk_equals`|`operator*=`|
+|`solidus_equals`|`operator/=`|
+|`percent_equals`|`operator%=`|
+|`caret_equals`|`operator^=`|
+|`ampersand_equals`|`operator&=`|
+|`pipe_equals`|`operator|=`|
+|`equals_equals`|`operator==`|
+|`exclamation_equals`|`operator!=`|
+|`less`|`operator<`|
+|`greater`|`operator>`|
+|`less_equals`|`operator<=`|
+|`greater_equals`|`operator>=`|
+|`three_way_compare`|`operator<=>`|
+|`ampersand_ampersand`|`operator&&`|
+|`pipe_pipe`|`operator||`|
+|`less_less`|`operator<<`|
+|`greater_greater`|`operator>>`|
+|`less_less_equals`|`operator<<=`|
+|`greater_greater_equals`|`operator>>=`|
+|`plus_plus`|`operator++`|
+|`minus_minus`|`operator--`|
+|`comma`|`operator,`|
 
 ```cpp
 consteval operators operator_of(info r);
@@ -4514,7 +4525,13 @@ consteval u8string_view u8identifier_of(info r);
 
 [#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary string literal encoding.
 
-[#]{.pnum} *Constant When*: If `r` represents a function, then when the function is not a constructor, destructor, operator function, or conversion function. Otherwise, if `r` is a function template, then when the function template is not a constructor template, a conversion function template, or an operator function template. Otherwise, if `r` represents a variable, an entity that is not a function or function template, or an alias of a type or namespace, then when the declaration of what is represented by `r` introduces an identifier representable by *E*. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by *E*. Otherwise, when `r` represents a description of the declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by *E*.
+[#]{.pnum} *Constant When*:
+
+* [#.#]{.pnum} If `r` represents a function, then when the function is not a constructor, destructor, operator function, or conversion function.
+* [#.#]{.pnum} Otherwise, if `r` is a function template, then when the function template is not a constructor template, a conversion function template, or an operator function template.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, an entity that is not a function or function template, or an alias of a type or namespace, then when the declaration of what is represented by `r` introduces an identifier representable by *E*.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by *E*.
+* [#.#]{.pnum} Otherwise, when `r` represents a description of the declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by *E*.
 
 [#]{.pnum} *Returns*:
 
@@ -4536,7 +4553,12 @@ consteval u8string_view u8display_string_of(info r);
 consteval bool has_identifier(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` represents a variable, entity, or alias of a type or namespace, then `true` if the declaration of what is represented by `r` introduces an identifier. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then `true`. Otherwise if `r` represents a description of the declaration of a non-static data member, then `true` if the declaration of a data member having the properties represented by `r` would introduce an identifier. Otherwise, `false`.
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a variable, entity, or alias of a type or namespace, then `true` if the declaration of what is represented by `r` introduces an identifier. 
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier for which the base class is a named type, then `true`.
+* [#.#]{.pnum} Otherwise if `r` represents a description of the declaration of a non-static data member, then `true` if the declaration of a data member having the properties represented by `r` would introduce an identifier.
+* [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
 consteval source_location source_location_of(info r);
