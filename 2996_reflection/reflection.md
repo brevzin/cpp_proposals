@@ -2122,7 +2122,7 @@ int main() {
 
 is not standard C++ because the standard output stream does not have support for UTF-8 literals.
 
-In practice ordinary strings encoded in the "ordinary string literal encoding" (which may or may not be UTF-8)
+In practice ordinary strings encoded in the "ordinary literal encoding" (which may or may not be UTF-8)
 are often used.  We therefore need mechanisms to produce the corresponding ordinary string types as well.
 
 Orthogonal to the character representation is the data structure used to traffic in source text.  An
@@ -2196,7 +2196,7 @@ characters of the result are not representable.  We can then consider multiple o
   3) any source characters not in the basic source character set are translated to a different
      presentation (as in (2)).
 
-Following much discussion with SG16, we propose #1: The query fails to evaluate if the identifier cannot be represented in the ordinary string literal encoding.
+Following much discussion with SG16, we propose #1: The query fails to evaluate if the identifier cannot be represented in the ordinary literal encoding.
 
 ### Reflecting names
 
@@ -2431,7 +2431,7 @@ namespace std::meta {
 ```
 :::
 
-Given a reflection `r` representing a language construct `X` whose declaration introduces an identifier, and if that identifier is representable using the ordinary string literal encoding, then `identifier_of(r)` returns a non-empty `string_view` containing that identifier. Otherwise, it is not a constant expression. Whether a reflected construct has an identifier can be checked with the `has_identifier` metafunction.
+Given a reflection `r` representing a language construct `X` whose declaration introduces an identifier, and if that identifier is representable using the ordinary literal encoding, then `identifier_of(r)` returns a non-empty `string_view` containing that identifier. Otherwise, it is not a constant expression. Whether a reflected construct has an identifier can be checked with the `has_identifier` metafunction.
 
 The function `u8identifier_of` returns the same identifier but as a `u8string_view`. Note that since all identifiers can be represented as UTF-8 string literals, `u8identifier_of` never fails to be a constant expression because of representability concerns.
 
@@ -2777,7 +2777,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of the declaration of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
+`data_member_spec` returns a reflection of a description of a declaration of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
@@ -3232,7 +3232,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a primary class template, function template, primary variable template, alias template, or concept,
 * a namespace or namespace alias,
 * a base class specifier, or
-* a description of the declaration of a non-static data member.
+* a description of a declaration of a non-static data member.
 
 An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base class specifier, or description of the declaration of a non-static data member.
 
@@ -4580,7 +4580,7 @@ consteval string_view identifier_of(info r);
 consteval u8string_view u8identifier_of(info r);
 ```
 
-[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary string literal encoding.
+[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
 
 [#]{.pnum} *Constant When*:
 
@@ -4590,7 +4590,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typedef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier representable by `$E$`.
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, a namespace alias, or an entity that is not a function, a function template, or a type, then when the declaration of what is represented by `r` introduces an identifier representable by `$E$`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by `$E$`.
-* [#.#]{.pnum} Otherwise, when `r` represents a description of the declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, when `r` represents a description of a declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by `$E$`.
 
 [#]{.pnum} *Returns*:
 
@@ -4598,14 +4598,14 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
-* [#.#]{.pnum} Otherwise (if `r` represents a description of the declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
 
 ```cpp
 consteval string_view display_string_of(info r);
 consteval u8string_view u8display_string_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary string literal encoding.
+[#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary literal encoding.
 
 [#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the represented construct.
 
@@ -4622,7 +4622,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise, if `r` represents a description of the declaration of a non-static data member, then if the declaration of any data member having the properties represented by `r` would introduce an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a description of a declaration of a non-static data member, then if the declaration of any data member having the properties represented by `r` would introduce an identifier.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
@@ -4694,7 +4694,7 @@ consteval bool is_noexcept(info r);
 consteval bool is_bit_field(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a description of the declaration of a non-static data member for which any data member declared with the properties represented by `r` would be a bit-field. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a description of a declaration of a non-static data member for which any data member declared with the properties represented by `r` would be a bit-field. Otherwise, `false`.
 
 ```cpp
 consteval bool is_enumerator(info r);
@@ -5162,7 +5162,7 @@ consteval size_t alignment_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented non-static data member within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of the declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
+[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented non-static data member within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of a declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -5170,7 +5170,7 @@ consteval size_t bit_size_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection of an object, value, variable, type, non-static data member, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the represented type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the represented bit-field. Otherwise, if `r` represents a description of the declaration of a non-static data member for which any data member declared having the properties described by `r` would be a bit-field, then the width of such a bit-field. Otherwise, `bit_size_of(type_of(r))`.
+[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the represented type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the represented bit-field. Otherwise, if `r` represents a description of a declaration of a non-static data member for which any data member declared having the properties described by `r` would be a bit-field, then the width of such a bit-field. Otherwise, `bit_size_of(type_of(r))`.
 :::
 :::
 
@@ -5321,47 +5321,57 @@ consteval info data_member_spec(info type,
                                 data_member_options_t options = {});
 ```
 [1]{.pnum} *Constant When*:
-`type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`. If `options.width` contains the value zero, `options.name` does not contain a value.
 
-[#]{.pnum} *Returns*: A reflection of a description of the declaration of a non-static data member with a type represented by `type` and optional characteristics designated by `options`.
+- `type` represents a type;
+- if `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref});
+- if `options.width` contains a value, then: `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
+- if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`; and
+- if `options.width` contains the value zero, `options.name` does not contain a value.
 
-[#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
+[#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member having the type represented by `type`, and having the optional characteristics designated by `options`.
+
+[#]{.pnum} *Remarks*: The returned reflection value is primarily useful in conjunction with `define_class`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.
 
 ```cpp
 consteval bool is_data_member_spec(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` is the description of the declaration of a non-static data member. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a description of a declaration of a non-static data member. Otherwise, `false`.
 
 ```c++
   template <reflection_range R = initializer_list<info>>
-  consteval info define_class(info class_type, R&&  mdescrs);
+  consteval info define_class(info class_type, R&& mdescrs);
 ```
 
-[#]{.pnum} Let `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@` and `option` values `@*o*~1~@`, `@*o*~2~@`, ... `@*o*~N~@` respectively.
+[#]{.pnum} *Constant When*: Letting `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-[#]{.pnum} *Constant When*:
-`class_type` represents an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
-[For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
-Each `@*t*~i~@` represents a type that is valid types for data members.
+- `class_type` represents an incomplete class type,
+- `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
+- the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
+[`class_type` could represent a class template specialization for which there is no reachable definition.]{.note}
+
+[#]{.pnum} Let {`@$o$~k~@`} be a sequence of `data_member_options_t` values, such that
+
+    data_member_spec(type_of(@$r$~$k$~@), @$o$~$k$~@) == @$r$~$k$~@
+
+for every `@$r$~$k$~@` in `mdescrs`.
 
 [#]{.pnum} *Effects*:
 Defines `class_type` with properties as follows:
 
-* [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
-* [#.#]{.pnum} Non-static data members are declared in the definition of `class_type` according to `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@`, in that order.
-* [#.#]{.pnum} The type of the respective members are the types represented by the reflection values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@`.
-* [#.#]{.pnum} If `@*o*~K~@.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
-* [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
-* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is declared with the `$alignment-specifier$` `alignas($a$)`.
-* [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains the value zero, the corresponding member is declared without a name.
-  Otherwise, if `@*o*~K~@.name` does not contain a value, the corresponding member is declared with an implementation-defined name.
-  Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `@*o*~K~@.name`.
-* [#.#]{.pnum} If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
-  If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
-
+- [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
+- [#.#]{.pnum} The definition of `class_type` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type represented by `type_of(@$r$~$K$~@)`.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` are declared with the attribute `[[no_unique_address]]`.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.width` contains a value are declared as bit-fields whose width is that value.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value are declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` are declared with names determined as follows:
+  - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
+  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an implementation-defined name.
+  - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
+- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
+- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
 
