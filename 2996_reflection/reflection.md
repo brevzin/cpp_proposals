@@ -28,7 +28,7 @@ tag: constexpr
 
 Since [@P2996R5]:
 
-* changed `std::meta::operators` from an enum class to an enum; removed `op_`-prefixes.
+* removed `op_`-prefixes from `std::meta::operators` enumerators.
 * in response to asks from SG16, added a `define_static_array` function to offer a the `define_static_string` facility for a wider family of types.
 
 Since [@P2996R4]:
@@ -2366,7 +2366,7 @@ namespace std::meta {
   consteval auto has_template_arguments(info r) -> bool;
   consteval auto has_default_member_initializer(info r) -> bool;
 
-  consteval auto is_special_member(info r) -> bool;
+  consteval auto is_special_member_function(info r) -> bool;
   consteval auto is_conversion_function(info r) -> bool;
   consteval auto is_operator_function(info r) -> bool;
   consteval auto is_literal_operator(info r) -> bool;
@@ -4136,9 +4136,10 @@ namespace std::meta {
   using info = decltype(^::);
 
   // [meta.reflection.operators], operator representations
-  enum operators {
+  enum class operators {
     $see below$;
   };
+  using enum operators;
   consteval auto operator_of(info r) -> operators;
 
   // [meta.reflection.names], reflection names and locations
@@ -4197,7 +4198,7 @@ namespace std::meta {
   consteval bool is_conversion_function(info r);
   consteval bool is_operator_function(info r);
   consteval bool is_literal_operator(info r);
-  consteval bool is_special_member(info r);
+  consteval bool is_special_member_function(info r);
   consteval bool is_constructor(info r);
   consteval bool is_default_constructor(info r);
   consteval bool is_copy_constructor(info r);
@@ -4776,7 +4777,7 @@ consteval bool is_literal_operator(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a conversion function, operator function, or literal operator, respectively. Otherwise, `false`.
 
 ```cpp
-consteval bool is_special_member(info r);
+consteval bool is_special_member_function(info r);
 consteval bool is_constructor(info r);
 consteval bool is_default_constructor(info r);
 consteval bool is_copy_constructor(info r);
@@ -4787,7 +4788,7 @@ consteval bool is_move_assignment(info r);
 consteval bool is_destructor(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a special member function, non-template constructor, default constructor, copy constructor, move constructor, assignment operator, copy assignment operator, move assignment operator, or destructor, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is a special member function, a constructor, a default constructor, a copy constructor, a move constructor, an assignment operator, a copy assignment operator, a move assignment operator, or a prospective destructor, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
