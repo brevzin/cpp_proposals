@@ -5249,7 +5249,9 @@ template <typename T>
   consteval info reflect_value(T expr);
 ```
 
-[#]{.pnum} *Constant When*: `T` is a structural type that is not a reference type. Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression ([expr.const]).
+[#]{.pnum} *Mandates*: `T` is a structural type that is not a reference type.
+
+[#]{.pnum} *Constant When*: Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression ([expr.const]).
 
 [#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the represented value is the cv-unqualified version of `T`.
 
@@ -5258,7 +5260,9 @@ template <typename T>
   consteval info reflect_object(T& expr);
 ```
 
-[#]{.pnum} *Constant When*: `T` is not a function type. `expr` designates an entity that is a permitted result of a constant expression.
+[#]{.pnum} *Mandates*: `T` is not a function type.
+
+[#]{.pnum} *Constant When*: `expr` designates an entity that is a permitted result of a constant expression.
 
 [#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 
@@ -5267,7 +5271,7 @@ template <typename T>
   consteval info reflect_function(T& expr);
 ```
 
-[#]{.pnum} *Constant When*: `T` is a function type.
+[#]{.pnum} *Mandates*: `T` is a function type.
 
 [#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
 
