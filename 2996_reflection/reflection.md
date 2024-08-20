@@ -5183,9 +5183,22 @@ template <class T>
   consteval T extract(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a value, object, variable, function, enumerator, or non-static data member that is not a bit-field. If `r` represents a value or enumerator, then `T` is not a reference type. If `r` represents a value or enumerator of type `U`, or if `r` represents a variable or object of non-reference type `U`, then the cv-unqualified types of `T` and `U` are the same. If `r` represents a variable, object, or function with type `U`, and `T` is a reference type, then the cv-unqualified types of `T` and `U` are the same, and `T` is either `U` or more cv-qualified than `U`. If `r` represents a non-static data member, or if `r` represents a function and `T` is a reference type, then the statement `T v = &expr`, where `expr` is an lvalue naming the entity represented by `r`, is well-formed.
+[#]{.pnum} *Constant When*:
 
-[#]{.pnum} *Returns*: If `r` represents a value or enumerator, then the entity represented by `r`. Otherwise, if `r` represents an object, variable, or enumerator and `T` is not a reference type, then the result of an lvalue-to-rvalue conversion applied to an expression naming the entity represented by `r`. Otherwise, if `r` represents an object, variable, or function and `T` is a reference type, then the result of an lvalue naming the entity represented by `r`. Otherwise, if `r` represents a function or non-static data member, then a pointer value designating the entity represented by `r`.
+- [#.#]{.pnum} `r` represents a value or enumerator of type `U`, and the cv-unqualified types of `T` and `U` are the same,
+- [#.#]{.pnum} `T` is not a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions, and the cv-unqualified types of `T` and `U` are the same,
+- [#.#]{.pnum} `T` is a reference type, `r` represents an entity of type `U` that is either a variable or object usable in constant expressions or a function, the cv-unqualified types of `T` and `U` are the same, and `U` is not more cv-qualified than `T`,
+- [#.#]{.pnum} `T` is a pointer type, `r` represents a function or non-bit-field non-static data member, and the statement `T v = &expr`, where `expr` is an lvalue naming the entity represented by `r`, is well-formed, or
+- [#.#]{.pnum} `T` is a pointer type, `r` represents an entity of type `U` that is either an object or variable that is usable in constant expressions or a value, `U` is the closure type of a non-generic lambda, and the statement `T v = +expr`, where `expr` is an lvalue naming the entity represented by `r`, is well-formed.
+
+[#]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `r` represents a value or enumerator, then the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, if `r` represents an object or variable and `T` is not a reference type, then the value represented by `value_of(r)`.
+- [#.#]{.pnum} Otherwise, if `T` is a reference type, then the object represented by `object_of(r)`.
+- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a function or a non-static data member, then a pointer value designating the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a variable, object, or value of closure type `C`, then the same result as the conversion function of `C` applied to the entity represented by `r`.
+
 :::
 :::
 
@@ -5247,7 +5260,7 @@ template <typename T>
 
 [#]{.pnum} *Constant When*: `T` is not a function type. `expr` designates an entity that is a permitted result of a constant expression.
 
-[#]{.pnum} *Returns*: A reflection of the object referenced by `expr`.
+[#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 
 ```cpp
 template <typename T>
@@ -5256,7 +5269,7 @@ template <typename T>
 
 [#]{.pnum} *Constant When*: `T` is a function type.
 
-[#]{.pnum} *Returns*: `^fn`, where `fn` is the function referenced by `expr`.
+[#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
 
 ```cpp
 template <reflection_range R = initializer_list<info>>
@@ -5265,13 +5278,30 @@ template <reflection_range R1 = initializer_list<info>, reflection_range R2 = in
   consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
 ```
 
-[#]{.pnum} Let `F` be the entity represented by `target`, let `Arg0` be the entity represented by the first element of `args` (if any), let `Args...` be the sequence of entities represented by the elements of `args` excluding the first, and let `TArgs...` be the sequence of entities or aliases represented by the elements of `tmpl_args`.
+[#]{.pnum} In the following, let
 
-[#]{.pnum} If `F` is a non-member function, a value of pointer to function type, a value of pointer to member type, or a value of closure type, then let `INVOKE-EXPR` be the expression `INVOKE(F, Arg0, Args...)`. Otherwise, if `F` is a member function, then let `INVOKE-EXPR` be the expression `Arg0.F(Args...)`. Otherwise, if `F` is a constructor for a class `C`, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution. Otherwise, if `F` is a non-member function template or a member function template, then let `INVOKE-EXPR` be the expression `F<TArgs...>(Arg0, Args...)` or `Arg0.template F<TArgs...>(Args...)` respectively. Otherwise, if `F` is a constructor template, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution, and `TArgs...` are inferred as explicit template arguments for `F`.
+- `$F$` be the entity represented by `target`,
+- `$Arg0$` be the entity represented by the first element of `args` (if any),
+- `$Args$...` be the sequence of entities represented by the elements of `args` (if any) excluding the first,
+- `$TArgs$...` be the sequence of entities or aliases represented by the elements of `tmpl_args` (if any),
 
-[#]{.pnum} *Constant When*: `target` represents a function, a constructor, a constructor template, a value, or a function template. If `target` represents a value of type `T`, then `T` is a pointer to function type, pointer to member type, or closure type. The expression `INVOKE-EXPR` is a well-formed constant expression of structural type.
+and define an expression `$INVOKE-EXPR$`, for exposition only, as follows:
 
-[#]{.pnum} *Returns*: A reflection of the result of the expression `INVOKE-EXPR`.
+- If `$F$` is a non-member function, a value of pointer-to-function type, a value of pointer-to-member type, or a value of closure type, then let `$INVOKE-EXPR$` be the expression `$INVOKE$($F$, $Arg0$, $Args$...)`.
+
+- Otherwise, if `$F$` is a member function that is not a constructor, then let `$INVOKE-EXPR$` be the expression `$Arg0$.$F$($Args$...)`.
+
+- Otherwise, if `$F$` is a function template that is not a constructor template, then let `$INVOKE-EXPR$` be the expression `$Arg0$.template $F$<$TArgs$...>($Args$...)` if `$F$` is a member function template, and `$F$<$TArgs$...>($Arg0$, $Args$...)` otherwise.
+
+- Otherwise, if `$F$` is a constructor for a class `$C$`, then let `$INVOKE-EXPR$` be the expression `$C$($Arg0$, $Args$...)` for which only the constructor `$F$` is considered by overload resolution.
+
+- Otherwise, if `$F$` is a constructor template for a class `$C$`, then let `$INVOKE-EXPR$` be the expression `$C$($Arg0$, $Args$...)` for which only the constructor `$F$` is considered by overload resolution, and `$TArgs$...` are inferred as explicit template arguments for `$F$`.
+
+[#]{.pnum} *Constant When*: `target` represents a function, a function template, or a value having pointer-to-function, pointer-to-member, or closure type. The expression `$INVOKE-EXPR$` is a well-formed constant expression of structural type.
+
+[#]{.pnum} *Effects*: If `$F$` is a function template, the specialization of `$F$` that would be invoked by evaluation of `$INVOKE-EXPR$` is instantiated.
+
+[#]{.pnum} *Returns*: A reflection of the same result that would be computed from evaluation of `$INVOKE-EXPR$`.
 
 :::
 :::
