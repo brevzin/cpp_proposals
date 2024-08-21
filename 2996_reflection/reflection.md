@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R5
+document: D2996R6
 date: today
 audience: CWG, LEWG
 author:
@@ -28,8 +28,13 @@ tag: constexpr
 
 Since [@P2996R5]:
 
-* removed `op_`-prefixes from `std::meta::operators` enumerators.
-* in response to asks from SG16, added a `define_static_array` function to offer a the `define_static_string` facility for a wider family of types.
+* fixed broken "Emulating typeful reflection" example.
+* `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
+* constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
+* changed `is_special_member` to `is_special_member_function` to align with core language terminology.
+* revised wording for several metafunctions (`(u8)identifier_of`, `has_identifier`, `extract`, `data_member_spec`, `define_class`, `reflect_invoke`, `source_location_of`).
+* more changes and additions to core language wording.
+* minor edits: "representing" instead of "reflecting"; "ordinary ~~string~~ literal encoding"; prefer "`$typedef-name$`" over "alias of a type" in formal wording.
 
 Since [@P2996R4]:
 
@@ -2095,11 +2100,11 @@ constexpr std::meta::info RefTy = type_of(^Ref);
 
 What are `StrTy` and `RefTy`? This question is more difficult. Two distinct issues complicate the answer:
 
-1. Our experience using these facilities has consistently shown that if `StrTy` represents `std::string`, many uses of `StrTy` require writing `dealias(StrTy)` rather than using `StrTy` directly. Failure to do so often yields subtle bugs.
+1. Our experience using these facilities has consistently shown that if `StrTy` represents `std::string`, many uses of `StrTy` require writing `dealias(StrTy)` rather than using `StrTy` directly (because a reflection of a type aliases compares unequal with a reflection of the aliased type). Failure to do so often yields subtle bugs.
 
-2. While we would like for `RefTy` to represent `const std::string &`, it can only represent `const std::basic_string<char, std::allocator<char>>`. Why? Because since `std::string` is only a "name" for `std::basic_string<char, std::allocator<char>>`, the language provides no semantic answer to what "`const std::string &`" _is_. It is only a source-level "grammatical" construct: A _type-id_. Reflecting type-ids is a brittle path, since it opens questions like whether a reflection of `const int` is the same as a reflection of `int const`. Furthermore, nothing currently requires an implementation to "remember" that the type of `Ref` was "spelled" with the alias `std::string` after parsing it, and we aren't confident that all major implementations do so today.
+2. While we would like for `RefTy` to represent `const std::string &`, it can only represent `const std::basic_string<char, std::allocator<char>> &`. Why? Because since `std::string` is only a "name" for `std::basic_string<char, std::allocator<char>>`, the language provides no semantic answer to what "`const std::string &`" _is_. It is only a source-level "grammatical" construct: A _type-id_. Reflecting type-ids is a brittle path, since it opens questions like whether a reflection of `const int` is the same as a reflection of `int const`. Furthermore, nothing currently requires an implementation to "remember" that the type of `Ref` was "spelled" with the alias `std::string` after parsing it, and we aren't confident that all major implementations do so today. Lastly, even if we _could_ form a reflection of `const std::string &`, our existing metafunction and type-trait "machinery" gives no means of unwrapping the cv-ref qualification to get `^std::string` without decaying all the way to `^std::basic_string<char, std::allocator<char>>`.
 
-In light of the above, our position is that `type_of` should never return aliases: That is, `StrTy` represents `std::basic_string<char, std::allocator<char>>`. We believe that it would be desireable to in the future introduce an `aliased_type_of` function capable of returning representations of both `std::string` and `const std::string &` for `StrTy` and `RefTy` respectively - but this requires both discussions with implementers, and likely new wording technology for the Standard. To avoid jeopardizing the goal declared by the title of this paper, we are not proposing such a function at this time.
+In light of the above, our position is that `type_of` should never return aliases: That is, `StrTy` represents `std::basic_string<char, std::allocator<char>>`. We believe that it would be desirable to in the future introduce an `aliased_type_of` function capable of returning representations of both `std::string` and `const std::string &` for `Str` and `Ref` respectively - but this requires both discussions with implementers, and likely new wording technology for the Standard. To avoid jeopardizing the goal declared by the title of this paper, we are not proposing such a function at this time.
 
 ### Reflecting source text
 
@@ -2387,12 +2392,7 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
     consteval auto define_class(info type_class, R&&) -> info;
 
-  // @[define_static_array](#define_static_array)@
-  template <typename T, input_range<T> R = initializer_list<T>>
-    consteval auto define_static_array(R&& args) -> span<>;
-  template <input_range R>
-    consteval auto define_static_array(R&& args) -> span<ranges::range_value_t<R> const>;
-
+  // @[define_static_string](#define_static_string)@
   consteval auto define_static_string(string_view str) -> const char *;
   consteval auto define_static_string(u8string_view str) -> const char8_t *;
 
@@ -3162,10 +3162,10 @@ Add a bullet to paragraph 13:
 
 [13]{.pnum} A declaration `$D$` _names_ an entity `$E$` if
 
-* `$D$` contains a _lambda-expression_ whose closure type is `$E$`,
-* [`$D$` contains a _splice-specifier_ designating `$E$`,]{.addu}
-
-...
+* [13.1]{.pnum} `$D$` contains a _lambda-expression_ whose closure type is `$E$`,
+* [13.1+]{.pnum} [`$D$` contains a _splice-specifier_ designating `$E$`,]{.addu}
+* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an *id-expression*, *type-specifier*, *nested-name-specifier*, *template-name*, or *concept-name denoting* `$E$`, or
+* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an *id-expression* that refers to a set of overloads that contains `$E$`.
 
 :::
 
@@ -3176,8 +3176,8 @@ Extend the definition of _TU-local_ values and objects to include reflections:
 [16]{.pnum} A value or object is _TU-local_ if either
 
 * [16.1]{.pnum} it is, or is a pointer to, a TU-local function or the object associated with a TU-local variable, [or]{.rm}
-* [[16.2]{.pnum} it is a reflection representing a TU-local entity, or]{.addu}
-* [16.3]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
+* [[16.1+]{.pnum} it is a reflection representing a TU-local entity, or]{.addu}
+* [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
 :::
 
@@ -3927,7 +3927,7 @@ Extend *template-argument-equivalent* to handle `std::meta::info`:
 Extend paragraph 2 to enable reflection of alias template specializations.
 
 ::: std
-[2]{.pnum} [When]{.rm} [Except when used as the operand of a `$reflect-expression$`,]{.addu} a `$template-id$` refer[ring]{.addu}[s]{.rm} to a specialization of an alias template[, it]{.rm} is equivalent to the associated type obtained by substitution of its `$template-arguments$` for the `$template-parameter$`s in the `$defining-type-id$` of the alias template.
+[2]{.pnum} [When]{.rm} [Except when used as the operand of a `$reflect-expression$`,]{.addu} a `$template-id$` [refers]{.rm} [referring]{.addu} to a specialization of an alias template[, it]{.rm} is equivalent to the associated type obtained by substitution of its `$template-arguments$` for the `$template-parameter$`s in the `$defining-type-id$` of the alias template.
 
 :::
 
@@ -4511,56 +4511,56 @@ enum class operators {
 using enum operators;
 ```
 
-[#]{.pnum} This enum specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
+[#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
-<center>Table 1: Enum `operators` [meta.reflection.operators]</center>
+<center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
 |Constant|Corresponding operator|
 |:-|:-|
-|`new_object`|`operator new`|
-|`delete_object`|`operator delete`|
-|`new_array`|`operator new[]`|
-|`delete_array`|`operator delete[]`|
-|`coroutine_await`|`operator co_await`|
-|`parentheses`|`operator()`|
-|`square_brackets`|`operator[]`|
-|`arrow`|`operator->`|
-|`arrow_asterisk`|`operator->*`|
-|`tilde`|`operator~`|
-|`exclamation_mark`|`operator!`|
-|`plus`|`operator+`|
-|`minus`|`operator-`|
-|`asterisk`|`operator*`|
-|`solidus`|`operator/`|
-|`percent`|`operator%`
-|`caret`|`operator^`|
-|`ampersand`|`operator&`|
-|`pipe`|`operator|`|
-|`equals`|`operator=`|
-|`plus_equals`|`operator+=`|
-|`minus_equals`|`operator-=`|
-|`asterisk_equals`|`operator*=`|
-|`solidus_equals`|`operator/=`|
-|`percent_equals`|`operator%=`|
-|`caret_equals`|`operator^=`|
-|`ampersand_equals`|`operator&=`|
-|`pipe_equals`|`operator|=`|
-|`equals_equals`|`operator==`|
-|`exclamation_equals`|`operator!=`|
-|`less`|`operator<`|
-|`greater`|`operator>`|
-|`less_equals`|`operator<=`|
-|`greater_equals`|`operator>=`|
-|`three_way_compare`|`operator<=>`|
-|`ampersand_ampersand`|`operator&&`|
-|`pipe_pipe`|`operator||`|
-|`less_less`|`operator<<`|
-|`greater_greater`|`operator>>`|
-|`less_less_equals`|`operator<<=`|
-|`greater_greater_equals`|`operator>>=`|
-|`plus_plus`|`operator++`|
-|`minus_minus`|`operator--`|
-|`comma`|`operator,`|
+|`op_new`|`operator new`|
+|`op_delete`|`operator delete`|
+|`op_array_new`|`operator new[]`|
+|`op_array_delete`|`operator delete[]`|
+|`op_co_await`|`operator co_await`|
+|`op_parentheses`|`operator()`|
+|`op_square_brackets`|`operator[]`|
+|`op_arrow`|`operator->`|
+|`op_arrow_asterisk`|`operator->*`|
+|`op_tilde`|`operator~`|
+|`op_exclamation_mark`|`operator!`|
+|`op_plus`|`operator+`|
+|`op_minus`|`operator-`|
+|`op_asterisk`|`operator*`|
+|`op_solidus`|`operator/`|
+|`op_percent`|`operator%`|
+|`op_caret`|`operator^`|
+|`op_ampersand`|`operator&`|
+|`op_pipe`|`operator|`|
+|`op_equals`|`operator=`|
+|`op_plus_equals`|`operator+=`|
+|`op_minus_equals`|`operator-=`|
+|`op_asterisk_equals`|`operator*=`|
+|`op_solidus_equals`|`operator/=`|
+|`op_percent_equals`|`operator%=`|
+|`op_caret_equals`|`operator^=`|
+|`op_ampersand_equals`|`operator&=`|
+|`op_pipe_equals`|`operator|=`|
+|`op_equals_equals`|`operator==`|
+|`op_exclamation_equals`|`operator!=`|
+|`op_less`|`operator<`|
+|`op_greater`|`operator>`|
+|`op_less_equals`|`operator<=`|
+|`op_greater_equals`|`operator>=`|
+|`op_three_way_compare`|`operator<=>`|
+|`op_ampersand_ampersand`|`operator&&`|
+|`op_pipe_pipe`|`operator||`|
+|`op_less_less`|`operator<<`|
+|`op_greater_greater`|`operator>>`|
+|`op_less_less_equals`|`operator<<=`|
+|`op_greater_greater_equals`|`operator>>=`|
+|`op_plus_plus`|`operator++`|
+|`op_minus_minus`|`operator--`|
+|`op_comma`|`operator,`|
 
 ```cpp
 consteval operators operator_of(info r);
