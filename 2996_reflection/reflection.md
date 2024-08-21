@@ -4505,9 +4505,10 @@ namespace std::meta {
 ::: std
 ::: addu
 ```cpp
-enum operators {
+enum class operators {
   $see below$;
 };
+using enum operators;
 ```
 
 [#]{.pnum} This enum specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
@@ -4531,7 +4532,7 @@ enum operators {
 |`minus`|`operator-`|
 |`asterisk`|`operator*`|
 |`solidus`|`operator/`|
-|`percent`|`operator%`|
+|`percent`|`operator%`
 |`caret`|`operator^`|
 |`ampersand`|`operator&`|
 |`pipe`|`operator|`|
@@ -4629,7 +4630,9 @@ consteval bool has_identifier(info r);
 consteval source_location source_location_of(info r);
 ```
 
-[#]{.pnum} *Returns*: An implementation-defined `source_location` corresponding to the represented construct.
+[#]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a description of a non-static data member, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
+
+[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to the declaration.
 :::
 :::
 
