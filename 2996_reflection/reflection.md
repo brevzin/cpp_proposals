@@ -5224,7 +5224,7 @@ consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Constant When*: `templ` represents a template.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities or aliases represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or aliases represented by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
@@ -5237,7 +5237,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities or aliases represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or aliases represented by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `^Z<Args...>`.
 
@@ -5286,30 +5286,44 @@ template <reflection_range R1 = initializer_list<info>, reflection_range R2 = in
   consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
 ```
 
-[#]{.pnum} In the following, let
+[#]{.pnum} An expression `$E$` is said to be _reciprocal to_ a reflection `$r$` if
 
-- `$F$` be the entity represented by `target`,
-- `$Arg0$` be the entity represented by the first element of `args` (if any),
-- `$Args$...` be the sequence of entities represented by the elements of `args` (if any) excluding the first,
-- `$TArgs$...` be the sequence of entities or aliases represented by the elements of `tmpl_args` (if any),
+  - [#.#]{.pnum} `$r$` represents a variable, and `$E$` is an lvalue designating the object named by that variable,
+  - [#.#]{.pnum} `$r$` represents an object or function, and `$E$` is an lvalue that designates that object or function, or
+  - [#.#]{.pnum} `$r$` represents a value, and `$E$` is a prvalue that computes that value.
 
-and define an expression `$INVOKE-EXPR$`, for exposition only, as follows:
+[#]{.pnum} For exposition only, let
 
-- If `$F$` is a non-member function, a value of pointer-to-function type, a value of pointer-to-member type, or a value of closure type, then let `$INVOKE-EXPR$` be the expression `$INVOKE$($F$, $Arg0$, $Args$...)`.
+- [#.#]{.pnum} `$F$` be either an entity or an expression, such that if `target` represents a function or function template then `$F$` is that entity, and if `target` represents a variable, object, or value, then `$F$` is an expression reciprocal to `target`,
+- [#.#]{.pnum} `$TArgs$...` be a sequence of entities and expressions corresponding to the elements of `tmpl_args` (if any), such that for every `$targ$` in `tmpl_args`,
+  - [#.#.#]{.pnum} if `$targ$` represents a type or `$typedef-name$`, the corresponding element of `$TArgs$...` is that type, or the type named by that `$typedef-name$`, respectively,
+  - [#.#.#]{.pnum} if `$targ$` represents a variable, object, value, or function, the corresponding element of `$TArgs$...` is an expression reciprocal to `$targ$`, and
+  - [#.#.#]{.pnum} if `$targ$` represents a class or alias template, then the corresponding element of `$TArgs$...` is that template,
+- [#.#]{.pnum} `$Args$...` be a sequence of expressions {`@$E$~$K$~@`} corresponding to the reflections {`@$r$~$K$~@`} in `args`, such that for every `@$r$~$K$~@` that represents a variable, object, value, or function, `@$E$~$K$~@` is reciprocal to `@$r$~$K$~@`,
+- [#.#]{.pnum} `@$Arg$~0~@` be the first expression in `$Args$` (if any), and
+- [#.#]{.pnum} `@$Args$~$+$~@...` be the sequence of expressions in `$Args$` excluding `@$Arg$~0~@` (if any),
 
-- Otherwise, if `$F$` is a member function that is not a constructor, then let `$INVOKE-EXPR$` be the expression `$Arg0$.$F$($Args$...)`.
+and define an expression `$INVOKE-EXPR$` as follows:
 
-- Otherwise, if `$F$` is a function template that is not a constructor template, then let `$INVOKE-EXPR$` be the expression `$Arg0$.template $F$<$TArgs$...>($Args$...)` if `$F$` is a member function template, and `$F$<$TArgs$...>($Arg0$, $Args$...)` otherwise.
+- [#.#]{.pnum} If `target` represents a non-member function, variable, object, or value, then `$INVOKE-EXPR$` is the expression `$INVOKE$($F$, @$Arg$~0~@, @$Args$~$+$~@...)`.
 
-- Otherwise, if `$F$` is a constructor for a class `$C$`, then let `$INVOKE-EXPR$` be the expression `$C$($Arg0$, $Args$...)` for which only the constructor `$F$` is considered by overload resolution.
+- [#.#]{.pnum} Otherwise, if `$F$` is a member function that is not a constructor, then `$INVOKE-EXPR$` is the expression `@$Arg$~0~@.$F$(@$Args$~$+$~@...)`.
 
-- Otherwise, if `$F$` is a constructor template for a class `$C$`, then let `$INVOKE-EXPR$` be the expression `$C$($Arg0$, $Args$...)` for which only the constructor `$F$` is considered by overload resolution, and `$TArgs$...` are inferred as explicit template arguments for `$F$`.
+- [#.#]{.pnum} Otherwise, if `$F$` is a function template that is not a constructor template, then `$INVOKE-EXPR$` is either the expression `@$Arg$~0~@.template $F$<$TArgs$...>(@$Args$~$+$~@...)` if `$F$` is a member function template, or `$F$<$TArgs$...>(@$Arg$~0~@, @$Args$~$+$~@...)` otherwise.
 
-[#]{.pnum} *Constant When*: `target` represents a function, a function template, or a value having pointer-to-function, pointer-to-member, or closure type. The expression `$INVOKE-EXPR$` is a well-formed constant expression of structural type.
+- [#.#]{.pnum} Otherwise, if `$F$` is a constructor or constructor template for a class `$C$`, then `$INVOKE-EXPR$` is an expression `$C$(@$Arg$~0~@, @$Args$~$+$~@...)` for which only `$F$` is considered by overload resolution; furthermore, if `$F$` is a constructor template, then `$TArgs$...` are inferred as leading template arguments during template argument deduction for `$F$`.
 
-[#]{.pnum} *Effects*: If `$F$` is a function template, the specialization of `$F$` that would be invoked by evaluation of `$INVOKE-EXPR$` is instantiated.
+[#]{.pnum} *Constant When*:
 
-[#]{.pnum} *Returns*: A reflection of the same result that would be computed from evaluation of `$INVOKE-EXPR$`.
+- `target` represents either a function or function template, or a variable, object or value having pointer-to-function, pointer-to-member, or closure type,
+- `tmpl_args` is empty unless `target` represents a function template,
+- every reflection in `tmpl_args` represents a type, `$typedef-name$`, class or alias template, variable, object, value, or function,
+- every reflection in `args` represents a variable, object, value, or function, and
+- the expression `$INVOKE-EXPR$` is a well-formed constant expression of structural type.
+
+[#]{.pnum} *Effects*: If `target` represents a function template, any specialization of the represented template that would be invoked by evaluation of `$INVOKE-EXPR$` is instantiated.
+
+[#]{.pnum} *Returns*: A reflection of the same result computed by `$INVOKE-EXPR$`.
 
 :::
 :::
