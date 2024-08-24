@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R5
+document: D2996R6
 date: today
 audience: CWG, LEWG
 author:
@@ -25,6 +25,16 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P2996R5]:
+
+* fixed broken "Emulating typeful reflection" example.
+* `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
+* constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
+* changed `is_special_member` to `is_special_member_function` to align with core language terminology.
+* revised wording for several metafunctions (`(u8)identifier_of`, `has_identifier`, `extract`, `data_member_spec`, `define_class`, `reflect_invoke`, `source_location_of`).
+* more changes and additions to core language wording.
+* minor edits: "representing" instead of "reflecting"; "ordinary ~~string~~ literal encoding"; prefer "`$typedef-name$`" over "alias of a type" in formal wording.
 
 Since [@P2996R4]:
 
@@ -1301,7 +1311,7 @@ Although we believe a single opaque `std::meta::info` type to be the best and mo
 ```cpp
 // Represents a 'std::meta::info' constrained by a predicate.
 template <std::meta::info Pred>
-  requires (extract<bool>(substitute(^std::predicate, {type_of(Pred), ^std::meta::info})))
+  requires (std::predicate<[:type_of(Pred):], std::meta::info>)
 struct metatype {
   std::meta::info value;
 
@@ -1329,8 +1339,10 @@ consteval std::meta::info enrich(std::meta::info r) {
   // Because we control the type, we know that the constructor taking info is
   // the first constructor. The copy/move constructors are added at the }, so
   // will be the last ones in the list.
-  std::array ctors = {members_of(^Choices, std::meta::is_constructor)[0]...,
-                      members_of(^unmatched, std::meta::is_constructor)[0]};
+  std::array ctors = {
+    *(members_of(^Choices) | std::views::filter(std::meta::is_constructor)).begin()...,
+    *(members_of(^unmatched) | std::views::filter(std::meta::is_constructor)).begin()
+  };
   std::array checks = {^Choices::check..., ^unmatched::check};
 
   for (auto [check, ctor] : std::views::zip(checks, ctors))
@@ -1379,7 +1391,7 @@ fn<classify(Arg1, Arg2, Arg3)>(Arg1, Arg2, Arg3).
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/q88dWYq8v).
+On Compiler Explorer: [Clang](https://godbolt.org/z/E8fc41s4q).
 
 # Proposed Features
 
@@ -1917,7 +1929,7 @@ Still, we are not aware of incompatibilities between our proposal and [@P2758R1]
 
 ### Error-Handling in Reflection
 
-Earlier revisions of this proposal suggested several possible approaches to handling errors in reflection metafunctions. This question arises naturally when considering, for instance, examples like `template_of(^int)`: the argument is a reflection of a type, but that type is not a specialization of a template, so there is no valid reflected template for us to return.
+Earlier revisions of this proposal suggested several possible approaches to handling errors in reflection metafunctions. This question arises naturally when considering, for instance, examples like `template_of(^int)`: the argument is a reflection of a type, but that type is not a specialization of a template, so there is no valid template that we can return.
 
 Some of the possibilities that we have considered include:
 
@@ -2074,6 +2086,26 @@ This paper is proposing that:
 * Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
   This is because `C` has its own template arguments that can be reflected on.
 
+What about when querying the type of an entity?
+
+::: std
+```cpp
+std::string Str;
+const std::string &Ref = Str;
+
+constexpr std::meta::info StrTy = type_of(^Str);
+constexpr std::meta::info RefTy = type_of(^Ref);
+```
+:::
+
+What are `StrTy` and `RefTy`? This question is more difficult. Two distinct issues complicate the answer:
+
+1. Our experience using these facilities has consistently shown that if `StrTy` represents `std::string`, many uses of `StrTy` require writing `dealias(StrTy)` rather than using `StrTy` directly (because a reflection of a type aliases compares unequal with a reflection of the aliased type). Failure to do so often yields subtle bugs.
+
+2. While we would like for `RefTy` to represent `const std::string &`, it can only represent `const std::basic_string<char, std::allocator<char>> &`. Why? Because since `std::string` is only a "name" for `std::basic_string<char, std::allocator<char>>`, the language provides no semantic answer to what "`const std::string &`" _is_. It is only a source-level "grammatical" construct: A _type-id_. Reflecting type-ids is a brittle path, since it opens questions like whether a reflection of `const int` is the same as a reflection of `int const`. Furthermore, nothing currently requires an implementation to "remember" that the type of `Ref` was "spelled" with the alias `std::string` after parsing it, and we aren't confident that all major implementations do so today. Lastly, even if we _could_ form a reflection of `const std::string &`, our existing metafunction and type-trait "machinery" gives no means of unwrapping the cv-ref qualification to get `^std::string` without decaying all the way to `^std::basic_string<char, std::allocator<char>>`.
+
+In light of the above, our position is that `type_of` should never return aliases: That is, `StrTy` represents `std::basic_string<char, std::allocator<char>>`. We believe that it would be desirable to in the future introduce an `aliased_type_of` function capable of returning representations of both `std::string` and `const std::string &` for `Str` and `Ref` respectively - but this requires both discussions with implementers, and likely new wording technology for the Standard. To avoid jeopardizing the goal declared by the title of this paper, we are not proposing such a function at this time.
+
 ### Reflecting source text
 
 One of the most "obvious" abilities of reflection --- retrieving the name of an entity --- turns out to raise
@@ -2095,7 +2127,7 @@ int main() {
 
 is not standard C++ because the standard output stream does not have support for UTF-8 literals.
 
-In practice ordinary strings encoded in the "ordinary string literal encoding" (which may or may not be UTF-8)
+In practice ordinary strings encoded in the "ordinary literal encoding" (which may or may not be UTF-8)
 are often used.  We therefore need mechanisms to produce the corresponding ordinary string types as well.
 
 Orthogonal to the character representation is the data structure used to traffic in source text.  An
@@ -2169,7 +2201,7 @@ characters of the result are not representable.  We can then consider multiple o
   3) any source characters not in the basic source character set are translated to a different
      presentation (as in (2)).
 
-Following much discussion with SG16, we propose #1: The query fails to evaluate if the identifier cannot be represented in the ordinary string literal encoding.
+Following much discussion with SG16, we propose #1: The query fails to evaluate if the identifier cannot be represented in the ordinary literal encoding.
 
 ### Reflecting names
 
@@ -2203,7 +2235,7 @@ namespace std::meta {
   using info = decltype(^::);
 
   template <typename R>
-  concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
+    concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
 
   // @[name and location](#name-loc)@
   consteval auto identifier_of(info r) -> string_view;
@@ -2263,15 +2295,15 @@ namespace std::meta {
 
   // @[substitute](#substitute)@
   template <reflection_range R = initializer_list<info>>
-  consteval auto can_substitute(info templ, R&& args) -> bool;
+    consteval auto can_substitute(info templ, R&& args) -> bool;
   template <reflection_range R = initializer_list<info>>
-  consteval auto substitute(info templ, R&& args) -> info;
+    consteval auto substitute(info templ, R&& args) -> info;
 
   // @[reflect_invoke](#reflect_invoke)@
   template <reflection_range R = initializer_list<info>>
-  consteval auto reflect_invoke(info target, R&& args) -> info;
+    consteval auto reflect_invoke(info target, R&& args) -> info;
   template <reflection_range R1 = initializer_list<info>, reflection_range R2 = initializer_list<info>>
-  consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
+    consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
 
   // @[reflect expression results](#reflect-expression-results)@
   template <typename T>
@@ -2339,7 +2371,7 @@ namespace std::meta {
   consteval auto has_template_arguments(info r) -> bool;
   consteval auto has_default_member_initializer(info r) -> bool;
 
-  consteval auto is_special_member(info r) -> bool;
+  consteval auto is_special_member_function(info r) -> bool;
   consteval auto is_conversion_function(info r) -> bool;
   consteval auto is_operator_function(info r) -> bool;
   consteval auto is_literal_operator(info r) -> bool;
@@ -2358,7 +2390,7 @@ namespace std::meta {
   consteval auto data_member_spec(info type_class,
                                   data_member_options_t options = {}) -> info;
   template <reflection_range R = initializer_list<info>>
-  consteval auto define_class(info type_class, R&&) -> info;
+    consteval auto define_class(info type_class, R&&) -> info;
 
   // @[define_static_string](#define_static_string)@
   consteval auto define_static_string(string_view str) -> const char *;
@@ -2399,7 +2431,7 @@ namespace std::meta {
 ```
 :::
 
-Given a reflection `r` representing a language construct `X` whose declaration introduces an identifier, and if that identifier is representable using the ordinary string literal encoding, then `identifier_of(r)` returns a non-empty `string_view` containing that identifier. Otherwise, it is not a constant expression. Whether a reflected construct has an identifier can be checked with the `has_identifier` metafunction.
+Given a reflection `r` representing a language construct `X` whose declaration introduces an identifier, and if that identifier is representable using the ordinary literal encoding, then `identifier_of(r)` returns a non-empty `string_view` containing that identifier. Otherwise, it is not a constant expression. Whether a reflected construct has an identifier can be checked with the `has_identifier` metafunction.
 
 The function `u8identifier_of` returns the same identifier but as a `u8string_view`. Note that since all identifiers can be represented as UTF-8 string literals, `u8identifier_of` never fails to be a constant expression because of representability concerns.
 
@@ -2745,7 +2777,7 @@ namespace std::meta {
 ```
 :::
 
-`data_member_spec` returns a reflection of a description of the declaration of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
+`data_member_spec` returns a reflection of a description of a declaration of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
 
 `define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
@@ -3109,7 +3141,9 @@ Add a bullet to paragraph 4, and renumber accordingly:
 ::: std
 
 [4]{.pnum} An unnamed namespace or a namespace declared directly or indirectly within an unnamed namespace has internal linkage. All other namespaces have external linkage. The name of an entity that belongs to a namespace scope that has not been given internal linkage above and that is the name of
+
 * [4.1]{.pnum} a variable; or
+* [4.2]{.pnum} a function; or
 
 ...
 
@@ -3119,6 +3153,31 @@ has its linkage determined as follows:
 * [4.8]{.pnum} otherwise, if the declaration of the name is attached to a named module ([module.unit]) and is not exported ([module.interface]), the name has module linkage;
 * [4.9]{.pnum} [otherwise, if the declaration introduces a variable whose type is a consteval-only type ([basic.types.general]) or a class template specialization where one or more non-type template arguments are of consteval-only type, the name has internal linkage.]{.addu}
 * [4.10]{.pnum} otherwise, the name has external linkage.
+
+:::
+
+Add a bullet to paragraph 13:
+
+::: std
+
+[13]{.pnum} A declaration `$D$` _names_ an entity `$E$` if
+
+* [13.1]{.pnum} `$D$` contains a _lambda-expression_ whose closure type is `$E$`,
+* [13.1+]{.pnum} [`$D$` contains a _splice-specifier_ designating `$E$`,]{.addu}
+* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an *id-expression*, *type-specifier*, *nested-name-specifier*, *template-name*, or *concept-name denoting* `$E$`, or
+* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an *id-expression* that refers to a set of overloads that contains `$E$`.
+
+:::
+
+Extend the definition of _TU-local_ values and objects to include reflections:
+
+::: std
+
+[16]{.pnum} A value or object is _TU-local_ if either
+
+* [16.1]{.pnum} it is, or is a pointer to, a TU-local function or the object associated with a TU-local variable, [or]{.rm}
+* [[16.1+]{.pnum} it is a reflection representing a TU-local entity, or]{.addu}
+* [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
 :::
 
@@ -3167,13 +3226,13 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a function,
 * an enumerator,
 * a type,
+* a `$typedef-name$`,
 * a class member,
 * a bit-field,
 * a primary class template, function template, primary variable template, alias template, or concept,
-* a namespace,
-* an alias of a type or namespace,
+* a namespace or namespace alias,
 * a base class specifier, or
-* a description of the declaration of a non-static data member.
+* a description of a declaration of a non-static data member.
 
 An expression convertible to a reflection is said to _represent_ the corresponding entity, variable, alias, base class specifier, or description of the declaration of a non-static data member.
 
@@ -3306,11 +3365,11 @@ $splice-expression$:
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `E` be the value of the converted `$constant-expression$` of the `$splice-specifier$`.
 
-* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, a non-static data member that is not an unnamed bit-field, or a structured binding, the expression is an lvalue denoting the reflected entity.
+* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, a non-static data member that is not an unnamed bit-field, or a structured binding, the expression is an lvalue denoting the represented entity.
 
-* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the reflected entity.
+* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the represented entity.
 
-* [#.#]{.pnum} Otherwise, `E` shall be a reflection of a value or an enumerator, and the expression is a prvalue whose evaluation computes the reflected value.
+* [#.#]{.pnum} Otherwise, `E` shall be a reflection of a value or an enumerator, and the expression is a prvalue whose evaluation computes the represented value.
 
 [Access checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
 :::
@@ -3863,6 +3922,15 @@ Extend *template-argument-equivalent* to handle `std::meta::info`:
 * [2.5]{.pnum} [...]
 :::
 
+### [temp.alias]{.sref} Alias templates {-}
+
+Extend paragraph 2 to enable reflection of alias template specializations.
+
+::: std
+[2]{.pnum} [When]{.rm} [Except when used as the operand of a `$reflect-expression$`,]{.addu} a `$template-id$` [refers]{.rm} [referring]{.addu} to a specialization of an alias template[, it]{.rm} is equivalent to the associated type obtained by substitution of its `$template-arguments$` for the `$template-parameter$`s in the `$defining-type-id$` of the alias template.
+
+:::
+
 ### [temp.concept]{.sref} Concept definitions {-}
 
 Extend the grammar of `$concept-name$` to allow for splicing reflections of concepts:
@@ -4130,7 +4198,7 @@ namespace std::meta {
   consteval bool is_conversion_function(info r);
   consteval bool is_operator_function(info r);
   consteval bool is_literal_operator(info r);
-  consteval bool is_special_member(info r);
+  consteval bool is_special_member_function(info r);
   consteval bool is_constructor(info r);
   consteval bool is_default_constructor(info r);
   consteval bool is_copy_constructor(info r);
@@ -4440,19 +4508,20 @@ namespace std::meta {
 enum class operators {
   $see below$;
 };
+using enum operators;
 ```
 
 [#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
-|Constant|Correspoding operator|
+|Constant|Corresponding operator|
 |:-|:-|
 |`op_new`|`operator new`|
 |`op_delete`|`operator delete`|
 |`op_array_new`|`operator new[]`|
 |`op_array_delete`|`operator delete[]`|
-|`op_co_await`|`operator coawait`|
+|`op_co_await`|`operator co_await`|
 |`op_parentheses`|`operator()`|
 |`op_square_brackets`|`operator[]`|
 |`op_arrow`|`operator->`|
@@ -4512,37 +4581,58 @@ consteval string_view identifier_of(info r);
 consteval u8string_view u8identifier_of(info r);
 ```
 
-[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary string literal encoding.
+[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
 
-[#]{.pnum} *Constant When*: If `r` represents a function, then when the function is not a constructor, destructor, operator function, or conversion function. Otherwise, if `r` is a function template, then when the function template is not a constructor template, a conversion function template, or an operator function template. Otherwise, if `r` represents a variable, an entity that is not a function or function template, or an alias of a type or namespace, then when the declaration of what is represented by `r` introduces an identifier representable by *E*. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by *E*. Otherwise, when `r` represents a description of the declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by *E*.
+[#]{.pnum} *Constant When*:
+
+* [#.#]{.pnum} If `r` represents a function whose name is representable by `$E$`, then when the function is not a constructor, destructor, operator function, or conversion function.
+* [#.#]{.pnum} Otherwise, if `r` represents a function template whose name is representable by `$E$`, then when the function template is not a constructor template, a conversion function template, or an operator function template.
+* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typedef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, a namespace alias, or an entity that is not a function, a function template, or a type, then when the declaration of what is represented by `r` introduces an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, when `r` represents a description of a declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by `$E$`.
 
 [#]{.pnum} *Returns*:
 
 * [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, entity, or alias of a type or namespace, then the identifier introduced by the the declaration of what is represented by `r`.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
-* [#.#]{.pnum} Otherwise (if `r` represents a description of the declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
 
 ```cpp
 consteval string_view display_string_of(info r);
 consteval u8string_view u8display_string_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary string literal encoding.
+[#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary literal encoding.
 
-[#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the reflected construct.
+[#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the represented construct.
 
 ```cpp
 consteval bool has_identifier(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` represents a variable, entity, or alias of a type or namespace, then `true` if the declaration of what is represented by `r` introduces an identifier. Otherwise, if `r` represents a base class specifier for which the base class is a named type, then `true`. Otherwise if `r` represents a description of the declaration of a non-static data member, then `true` if the declaration of a data member having the properties represented by `r` would introduce an identifier. Otherwise, `false`.
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
+* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
+* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
+* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
+* [#.#]{.pnum} Otherwise, if `r` represents a description of a declaration of a non-static data member, then if the declaration of any data member having the properties represented by `r` would introduce an identifier.
+* [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
 consteval source_location source_location_of(info r);
 ```
 
-[#]{.pnum} *Returns*: An implementation-defined `source_location` corresponding to the reflected construct.
+[#]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a description of a non-static data member, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
+
+[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to the declaration.
 :::
 :::
 
@@ -4607,7 +4697,7 @@ consteval bool is_noexcept(info r);
 consteval bool is_bit_field(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a description of the declaration of a non-static data member for which any data member declared with the properties represented by `r` would be a bit-field. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a description of a declaration of a non-static data member for which any data member declared with the properties represented by `r` would be a bit-field. Otherwise, `false`.
 
 ```cpp
 consteval bool is_enumerator(info r);
@@ -4690,7 +4780,7 @@ consteval bool is_literal_operator(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a conversion function, operator function, or literal operator, respectively. Otherwise, `false`.
 
 ```cpp
-consteval bool is_special_member(info r);
+consteval bool is_special_member_function(info r);
 consteval bool is_constructor(info r);
 consteval bool is_default_constructor(info r);
 consteval bool is_copy_constructor(info r);
@@ -4701,7 +4791,7 @@ consteval bool is_move_assignment(info r);
 consteval bool is_destructor(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a special member function, non-template constructor, default constructor, copy constructor, move constructor, assignment operator, copy assignment operator, move assignment operator, or destructor, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is a special member function, a constructor, a default constructor, a copy constructor, a move constructor, an assignment operator, a copy assignment operator, a move assignment operator, or a prospective destructor, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
@@ -4766,7 +4856,7 @@ consteval info type_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns*: If `r` represents an entity or variable for which every declaration specifies its type using the same `$typedef-name$`, a base class specifier whose base class is specified using a `$typedef-name$`, or a description of the declaration of a non-static data member whose type is specified using a `$typedef-name$`, then a reflection of the `$typedef-name$`. Otherwise, if `r` represents an entity or variable, then the type of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the type of the base class. Otherwise, the type of any data member declared with the properties represented by `r`.
+[#]{.pnum} *Returns*: If `r` represents an entity or variable, then the type of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the type of the base class. Otherwise, the type of any data member declared with the properties represented by `r`.
 
 ```cpp
 consteval info object_of(info r);
@@ -4794,7 +4884,7 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable usable in constant expressions ([expr.const]) whose type is a structural type ([temp.type]), an enumerator, or a value.
 
-[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `dealias(type_of(o))`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
 
 ::: example
 ```cpp
@@ -4813,9 +4903,9 @@ static_assert(value_of(^x) == reflect_value(0)); // OK, likewise
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace, alias of a type or namespace, or base class specifier.
+[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias, `$typedef-name$`, or base class specifier.
 
-[#]{.pnum} *Returns*: A reflection of that entity's immediately enclosing class, function, or namespace.
+[#]{.pnum} *Returns*: A reflection of the class, function, or namespace enclosing the first declaration of what is represented by `r`.
 
 ```cpp
 consteval info dealias(info r);
@@ -4885,17 +4975,17 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing all _representable members_ whose first declaration is directly within a definition of the entity `$E$` represented by `r`. If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
+[#]{.pnum} *Returns*: A `vector` containing reflections of all _representable members_ whose first declaration is directly within a definition of the entity `$E$` represented by `r`. If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 ```cpp
 consteval vector<info> bases_of(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` is a reflection representing a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: Let `C` be the type represented by `type`. A `vector` containing the reflections of all the direct base class specifiers `b`, if any, of `C`.
+[#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class specifiers, if any, of `C`.
 The base class specifiers are indexed in the order in which they appear in the *base-specifier-list* of `C`.
 
 ```cpp
@@ -4953,7 +5043,7 @@ private:
 };
 ```
 
-[1]{.pnum} The type `access_context` is suitable for ensuring that only accessible members are reflected on.
+[1]{.pnum} The type `access_context` is suitable for ensuring that member queries return only reflections of accessible members.
 
 ```cpp
 consteval access_context access_context::current() noexcept;
@@ -5075,7 +5165,7 @@ consteval size_t alignment_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the reflected non-static data member within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of the declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
+[#]{.pnum} *Returns*: If `r` represents a type, object, or variable, then the alignment requirement of the entity. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented non-static data member within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of a declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -5083,7 +5173,7 @@ consteval size_t bit_size_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection of an object, value, variable, type, non-static data member, base class specifier, or description of the declaration of a non-static data member.
 
-[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the reflected type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the reflected bit-field. Otherwise, if `r` represents a description of the declaration of a non-static data member for which any data member declared having the properties described by `r` would be a bit-field, then the width of such a bit-field. Otherwise, `bit_size_of(type_of(r))`.
+[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the represented type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the represented bit-field. Otherwise, if `r` represents a description of a declaration of a non-static data member for which any data member declared having the properties described by `r` would be a bit-field, then the width of such a bit-field. Otherwise, `bit_size_of(type_of(r))`.
 :::
 :::
 
@@ -5097,9 +5187,22 @@ template <class T>
   consteval T extract(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a value, object, variable, function, enumerator, or non-static data member that is not a bit-field. If `r` represents a value or enumerator, then `T` is not a reference type. If `r` represents a value or enumerator of type `U`, or if `r` represents a variable or object of non-reference type `U`, then the cv-unqualified types of `T` and `U` are the same. If `r` represents a variable, object, or function with type `U`, and `T` is a reference type, then the cv-unqualified types of `T` and `U` are the same, and `T` is either `U` or more cv-qualified than `U`. If `r` represents a non-static data member, or if `r` represents a function and `T` is a reference type, then the statement `T v = &expr`, where `expr` is an lvalue naming the entity represented by `r`, is well-formed.
+[#]{.pnum} *Constant When*:
 
-[#]{.pnum} *Returns*: If `r` represents a value or enumerator, then the entity represented by `r`. Otherwise, if `r` represents an object, variable, or enumerator and `T` is not a reference type, then the result of an lvalue-to-rvalue conversion applied to an expression naming the entity represented by `r`. Otherwise, if `r` represents an object, variable, or function and `T` is a reference type, then the result of an lvalue naming the entity represented by `r`. Otherwise, if `r` represents a function or non-static data member, then a pointer value designating the entity represented by `r`.
+- [#.#]{.pnum} `r` represents a value or enumerator of type `U`, and the cv-unqualified types of `T` and `U` are the same,
+- [#.#]{.pnum} `T` is not a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions, and the cv-unqualified types of `T` and `U` are the same,
+- [#.#]{.pnum} `T` is a reference type, `r` represents an entity of type `U` that is either a variable or object usable in constant expressions or a function, the cv-unqualified types of `T` and `U` are the same, and `U` is not more cv-qualified than `T`,
+- [#.#]{.pnum} `T` is a pointer type, `r` represents a function or non-bit-field non-static data member, and the statement `T v = &expr`, where `expr` is an lvalue naming the entity represented by `r`, is well-formed, or
+- [#.#]{.pnum} `T` is a pointer type, `r` represents an entity of type `U` that is either an object or variable that is usable in constant expressions or a value, `U` is the closure type of a non-generic lambda, and the statement `T v = +expr`, where `expr` is an lvalue naming the entity represented by `r`, is well-formed.
+
+[#]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `r` represents a value or enumerator, then the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, if `r` represents an object or variable and `T` is not a reference type, then the value represented by `value_of(r)`.
+- [#.#]{.pnum} Otherwise, if `T` is a reference type, then the object represented by `object_of(r)`.
+- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a function or a non-static data member, then a pointer value designating the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a variable, object, or value of closure type `C`, then the same result as the conversion function of `C` applied to the entity represented by `r`.
+
 :::
 :::
 
@@ -5121,7 +5224,7 @@ consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Constant When*: `templ` represents a template.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities or aliases represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or aliases represented by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
@@ -5134,7 +5237,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities or aliases represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or aliases represented by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `^Z<Args...>`.
 
@@ -5150,27 +5253,31 @@ template <typename T>
   consteval info reflect_value(T expr);
 ```
 
-[#]{.pnum} *Constant When*: `T` is a structural type that is not a reference type. Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression ([expr.const]).
+[#]{.pnum} *Mandates*: `T` is a structural type that is not a reference type.
 
-[#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the reflected value is the cv-unqualified version of `T`.
+[#]{.pnum} *Constant When*: Any subobject of the value computed by `expr` having reference or pointer type designates an entity that is a permitted result of a constant expression ([expr.const]).
+
+[#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the represented value is the cv-unqualified version of `T`.
 
 ```cpp
 template <typename T>
   consteval info reflect_object(T& expr);
 ```
 
-[#]{.pnum} *Constant When*: `T` is not a function type. `expr` designates an entity that is a permitted result of a constant expression.
+[#]{.pnum} *Mandates*: `T` is not a function type.
 
-[#]{.pnum} *Returns*: A reflection of the object referenced by `expr`.
+[#]{.pnum} *Constant When*: `expr` designates an entity that is a permitted result of a constant expression.
+
+[#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 
 ```cpp
 template <typename T>
   consteval info reflect_function(T& expr);
 ```
 
-[#]{.pnum} *Constant When*: `T` is a function type.
+[#]{.pnum} *Mandates*: `T` is a function type.
 
-[#]{.pnum} *Returns*: `^fn`, where `fn` is the function referenced by `expr`.
+[#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
 
 ```cpp
 template <reflection_range R = initializer_list<info>>
@@ -5179,13 +5286,44 @@ template <reflection_range R1 = initializer_list<info>, reflection_range R2 = in
   consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
 ```
 
-[#]{.pnum} Let `F` be the entity represented by `target`, let `Arg0` be the entity represented by the first element of `args` (if any), let `Args...` be the sequence of entities represented by the elements of `args` excluding the first, and let `TArgs...` be the sequence of entities or aliases represented by the elements of `tmpl_args`.
+[#]{.pnum} An expression `$E$` is said to be _reciprocal to_ a reflection `$r$` if
 
-[#]{.pnum} If `F` is a non-member function, a value of pointer to function type, a value of pointer to member type, or a value of closure type, then let `INVOKE-EXPR` be the expression `INVOKE(F, Arg0, Args...)`. Otherwise, if `F` is a member function, then let `INVOKE-EXPR` be the expression `Arg0.F(Args...)`. Otherwise, if `F` is a constructor for a class `C`, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution. Otherwise, if `F` is a non-member function template or a member function template, then let `INVOKE-EXPR` be the expression `F<TArgs...>(Arg0, Args...)` or `Arg0.template F<TArgs...>(Args...)` respectively. Otherwise, if `F` is a constructor template, then let `INVOKE-EXPR` be the expression `C(Arg0, Args...)` for which only the constructor `F` is considered by overload resolution, and `TArgs...` are inferred as explicit template arguments for `F`.
+  - [#.#]{.pnum} `$r$` represents a variable, and `$E$` is an lvalue designating the object named by that variable,
+  - [#.#]{.pnum} `$r$` represents an object or function, and `$E$` is an lvalue that designates that object or function, or
+  - [#.#]{.pnum} `$r$` represents a value, and `$E$` is a prvalue that computes that value.
 
-[#]{.pnum} *Constant When*: `target` represents a function, a constructor, a constructor template, a value, or a function template. If `target` represents a value of type `T`, then `T` is a pointer to function type, pointer to member type, or closure type. The expression `INVOKE-EXPR` is a well-formed constant expression of structural type.
+[#]{.pnum} For exposition only, let
 
-[#]{.pnum} *Returns*: A reflection of the result of the expression `INVOKE-EXPR`.
+- [#.#]{.pnum} `$F$` be either an entity or an expression, such that if `target` represents a function or function template then `$F$` is that entity, and if `target` represents a variable, object, or value, then `$F$` is an expression reciprocal to `target`,
+- [#.#]{.pnum} `$TArgs$...` be a sequence of entities and expressions corresponding to the elements of `tmpl_args` (if any), such that for every `$targ$` in `tmpl_args`,
+  - [#.#.#]{.pnum} if `$targ$` represents a type or `$typedef-name$`, the corresponding element of `$TArgs$...` is that type, or the type named by that `$typedef-name$`, respectively,
+  - [#.#.#]{.pnum} if `$targ$` represents a variable, object, value, or function, the corresponding element of `$TArgs$...` is an expression reciprocal to `$targ$`, and
+  - [#.#.#]{.pnum} if `$targ$` represents a class or alias template, then the corresponding element of `$TArgs$...` is that template,
+- [#.#]{.pnum} `$Args$...` be a sequence of expressions {`@$E$~$K$~@`} corresponding to the reflections {`@$r$~$K$~@`} in `args`, such that for every `@$r$~$K$~@` that represents a variable, object, value, or function, `@$E$~$K$~@` is reciprocal to `@$r$~$K$~@`,
+- [#.#]{.pnum} `@$Arg$~0~@` be the first expression in `$Args$` (if any), and
+- [#.#]{.pnum} `@$Args$~$+$~@...` be the sequence of expressions in `$Args$` excluding `@$Arg$~0~@` (if any),
+
+and define an expression `$INVOKE-EXPR$` as follows:
+
+- [#.#]{.pnum} If `target` represents a non-member function, variable, object, or value, then `$INVOKE-EXPR$` is the expression `$INVOKE$($F$, @$Arg$~0~@, @$Args$~$+$~@...)`.
+
+- [#.#]{.pnum} Otherwise, if `$F$` is a member function that is not a constructor, then `$INVOKE-EXPR$` is the expression `@$Arg$~0~@.$F$(@$Args$~$+$~@...)`.
+
+- [#.#]{.pnum} Otherwise, if `$F$` is a function template that is not a constructor template, then `$INVOKE-EXPR$` is either the expression `@$Arg$~0~@.template $F$<$TArgs$...>(@$Args$~$+$~@...)` if `$F$` is a member function template, or `$F$<$TArgs$...>(@$Arg$~0~@, @$Args$~$+$~@...)` otherwise.
+
+- [#.#]{.pnum} Otherwise, if `$F$` is a constructor or constructor template for a class `$C$`, then `$INVOKE-EXPR$` is an expression `$C$(@$Arg$~0~@, @$Args$~$+$~@...)` for which only `$F$` is considered by overload resolution; furthermore, if `$F$` is a constructor template, then `$TArgs$...` are inferred as leading template arguments during template argument deduction for `$F$`.
+
+[#]{.pnum} *Constant When*:
+
+- `target` represents either a function or function template, or a variable, object or value having pointer-to-function, pointer-to-member, or closure type,
+- `tmpl_args` is empty unless `target` represents a function template,
+- every reflection in `tmpl_args` represents a type, `$typedef-name$`, class or alias template, variable, object, value, or function,
+- every reflection in `args` represents a variable, object, value, or function, and
+- the expression `$INVOKE-EXPR$` is a well-formed constant expression of structural type.
+
+[#]{.pnum} *Effects*: If `target` represents a function template, any specialization of the represented template that would be invoked by evaluation of `$INVOKE-EXPR$` is instantiated.
+
+[#]{.pnum} *Returns*: A reflection of the same result computed by `$INVOKE-EXPR$`.
 
 :::
 :::
@@ -5200,47 +5338,57 @@ consteval info data_member_spec(info type,
                                 data_member_options_t options = {});
 ```
 [1]{.pnum} *Constant When*:
-`type` represents a type.
-If `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary string literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref}). If `options.width` contains a value, then `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is false. If `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`. If `options.width` contains the value zero, `options.name` does not contain a value.
 
-[#]{.pnum} *Returns*: A reflection of a description of the declaration of a non-static data member with a type represented by `type` and optional characteristics designated by `options`.
+- `type` represents a type;
+- if `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref});
+- if `options.width` contains a value, then: `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
+- if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`; and
+- if `options.width` contains the value zero, `options.name` does not contain a value.
 
-[#]{.pnum} *Remarks*: The reflection value being returned is only useful for consumption by `define_class`.  No other function in `std::meta` recognizes such a value.
+[#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member having the type represented by `type`, and having the optional characteristics designated by `options`.
+
+[#]{.pnum} *Remarks*: The returned reflection value is primarily useful in conjunction with `define_class`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.
 
 ```cpp
 consteval bool is_data_member_spec(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` is the description of the declaration of a non-static data member. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a description of a declaration of a non-static data member. Otherwise, `false`.
 
 ```c++
   template <reflection_range R = initializer_list<info>>
-  consteval info define_class(info class_type, R&&  mdescrs);
+  consteval info define_class(info class_type, R&& mdescrs);
 ```
 
-[#]{.pnum} Let `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@` denote the reflection values of the range `mdescrs` obtained by calling `data_member_spec` with `type` values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@` and `option` values `@*o*~1~@`, `@*o*~2~@`, ... `@*o*~N~@` respectively.
+[#]{.pnum} *Constant When*: Letting `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-[#]{.pnum} *Constant When*:
-`class_type` represents an incomplete class type.  `mdescrs` is a (possibly empty) range of reflection values obtained by calls to `data_member_spec`.
-[For example, `class_type` could be a specialization of a class template that has not been instantiated or explicitly specialized.]{.note}
-Each `@*t*~i~@` represents a type that is valid types for data members.
+- `class_type` represents an incomplete class type,
+- `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
+- the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
+[`class_type` could represent a class template specialization for which there is no reachable definition.]{.note}
+
+[#]{.pnum} Let {`@$o$~k~@`} be a sequence of `data_member_options_t` values, such that
+
+    data_member_spec(type_of(@$r$~$k$~@), @$o$~$k$~@) == @$r$~$k$~@
+
+for every `@$r$~$k$~@` in `mdescrs`.
 
 [#]{.pnum} *Effects*:
 Defines `class_type` with properties as follows:
 
-* [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
-* [#.#]{.pnum} Non-static data members are declared in the definition of `class_type` according to `@*d*~1~@`, `@*d*~2~@`, ..., `@*d*~N~@`, in that order.
-* [#.#]{.pnum} The type of the respective members are the types represented by the reflection values `@*t*~1~@`, `@*t*~2~@`, ... `@*t*~N~@`.
-* [#.#]{.pnum} If `@*o*~K~@.no_unique_address` (for some `$K$`) is `true`, the corresponding member is declared with attribute `[[no_unique_address]]`.
-* [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains a value, the corresponding member is declared as a bit field with that value as its width.
-* [#.#]{.pnum} If `@*o*~K~@.alignment` (for some `$K$`) contains a value `$a$`, the corresponding member is declared with the `$alignment-specifier$` `alignas($a$)`.
-* [#.#]{.pnum} If `@*o*~K~@.width` (for some `$K$`) contains the value zero, the corresponding member is declared without a name.
-  Otherwise, if `@*o*~K~@.name` does not contain a value, the corresponding member is declared with an implementation-defined name.
-  Otherwise, the corresponding member is declared with a name corresponding to the `string` or `u8string` value that was used to initialize `@*o*~K~@.name`.
-* [#.#]{.pnum} If `class_type` is a union type and any of its members is not trivially default constructible, then it has a default constructor that is user-provided and has no effect.
-  If `class_type` is a union type and any of its members is not trivially default destructible, then it has a default destructor that is user-provided and has no effect.
-
+- [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
+- [#.#]{.pnum} The definition of `class_type` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type represented by `type_of(@$r$~$K$~@)`.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` are declared with the attribute `[[no_unique_address]]`.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.width` contains a value are declared as bit-fields whose width is that value.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value are declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` are declared with names determined as follows:
+  - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
+  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an implementation-defined name.
+  - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
+- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
+- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
 
