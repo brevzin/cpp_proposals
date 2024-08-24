@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-06-25" />
+  <meta name="dcterms.date" content="2024-08-24" />
   <title>Structured Bindings can introduce a Pack</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ introduce a Pack</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-06-25</td>
+    <td>2024-08-24</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -627,7 +627,8 @@ Acknowledgements<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>R9 has minor wording changes.</p>
+<p>R9 has minor wording changes and updates the <a href="#implementation-experience">implementation experience</a>
+section.</p>
 <p>R8 re-adds the <a href="#namespace-scope-packs">namespace-scope
 exclusion</a>, and more wording updates. Also rebases the wording to
 account for <span class="citation" data-cites="P0609R3">[<a href="https://wg21.link/p0609r3" role="doc-biblioref">P0609R3</a>]</span>.</p>
@@ -960,9 +961,16 @@ to be enabled everywhere - only when a pack declaration has been
 seen.</p>
 <h2 data-number="3.3" id="implementation-experience"><span class="header-section-number">3.3</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Jason Rice has implemented this in a <a href="https://github.com/ricejasonf/llvm-project/commits/ricejasonf/p1061">clang</a>.
-As far as we’ve been able to ascertain, it works great.</p>
+As far as we’ve been able to ascertain, it works great. It was initially
+done early in the process, before the concept of “implicit template
+region” was introduced in the wording — when he was updating the
+implementation to account for the new rules and to make sure that all
+the examples in the paper compiled, he noted that “Honestly, the
+implicit template region vastly simplified things, and much code was
+deleted.”</p>
 <p>It is also <a href="https://godbolt.org/z/Tnz4e1dY9">available on
-Compiler Explorer</a>.</p>
+Compiler Explorer</a>, including <a href="https://godbolt.org/z/6ebbqb1Kh">the most complex example</a> in
+the paper.</p>
 <h2 data-number="3.4" id="handling-non-dependent-packs-in-the-wording"><span class="header-section-number">3.4</span> Handling non-dependent packs in
 the wording<a href="#handling-non-dependent-packs-in-the-wording" class="self-link"></a></h2>
 <p>The strategy the wording takes to handle is to introduce the concept

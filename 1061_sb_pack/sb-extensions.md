@@ -13,7 +13,7 @@ toc: true
 
 # Revision History
 
-R9 has minor wording changes. 
+R9 has minor wording changes and updates the [implementation experience](#implementation-experience) section.
 
 R8 re-adds the [namespace-scope exclusion](#namespace-scope-packs), and more wording updates. Also rebases the wording to account for [@P0609R3].
 
@@ -348,9 +348,9 @@ when a pack declaration has been seen.
 
 Jason Rice has implemented this in a
 [clang](https://github.com/ricejasonf/llvm-project/commits/ricejasonf/p1061). As
-far as we've been able to ascertain, it works great.
+far as we've been able to ascertain, it works great. It was initially done early in the process, before the concept of "implicit template region" was introduced in the wording — when he was updating the implementation to account for the new rules and to make sure that all the examples in the paper compiled, he noted that "Honestly, the implicit template region vastly simplified things, and much code was deleted."
 
-It is also [available on Compiler Explorer](https://godbolt.org/z/Tnz4e1dY9).
+It is also [available on Compiler Explorer](https://godbolt.org/z/Tnz4e1dY9), including [the most complex example](https://godbolt.org/z/6ebbqb1Kh) in the paper.
 
 ## Handling non-dependent packs in the wording
 
@@ -633,7 +633,7 @@ the terms "structured binding size" and SB~_i_~:
 number of structured bindings that need to be introduced by the structured binding
 declaration. If there is no structured binding pack, then
 the number of elements in the _sb-identifier-list_ shall be equal to the
-structured binding size of `E`. 
+structured binding size of `E`.
 Otherwise, the number of non-pack elements shall be no more than the structured binding size of `E`; the number of elements of the structured
 binding pack is the structured binding size of `E` less the number of non-pack elements in the
  `$sb-identifier-list$`.
