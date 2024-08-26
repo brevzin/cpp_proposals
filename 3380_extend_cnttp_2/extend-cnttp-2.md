@@ -706,7 +706,7 @@ A value `v` of structural type `T` is *template-argument-normalized* as follows:
 
 Status quo so far is that *template-argument-normalization* is a no-op for all types.
 
-Third, we change the meaning of `std::meta::reflect_value` in in [@P2996R5] to perform template-argument-normalization on its argument.
+Third, we change the meaning of `std::meta::reflect_value` in [@P2996R5] to perform template-argument-normalization on its argument.
 
 Fourth, we extend the definition of structural (here it's either the first bullet or both of the next two — the additional rules on template registration functions will be covered in their own section):
 
