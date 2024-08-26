@@ -687,7 +687,7 @@ First, as with [@P2484R0], I'm referring to `operator template` as a template re
 1. It returns `void`, in which case every base class and non-static data member shall have structural type and none of them shall be `mutable`.
 2. It returns some value `R` such that:
     a. `R.data()` is convertible to `std::meta::info const*`, `R.size()` is convertible to `size_t`, and `static_cast<std::meta::info const*>(R.data())[i]` shall be valid for all `0 <= i < static_cast<size_t>(R.size())`, and
-    b. `T(std::from_template, R)` is a valid expression (where `std::from_template` is a value of tag type `std::from_template_t`).
+    b. `T(std::meta::from_template, R)` is a valid expression (where `std::meta::from_template` is a value of tag type `std::meta::from_template_t`).
 
 As with [@P2484R0], I think I still want this function to be non-user-invocable.
 
@@ -700,7 +700,7 @@ A value `v` of structural type `T` is *template-argument-normalized* as follows:
 * [#]{.pnum} Otherwise, if `T` is an array type, every element of the array is template-argument-normalized.
 * [#]{.pnum} Otherwise (if `T` is a class type), then
   * [#.#]{.pnum} If `T` provides a template representation function that returns `void`, then that function is invoked on `v` and then every subobject of `v` is template-argument-normalized.
-  * [#.#]{.pnum} Otherwise, if `T` provides a template representation function that returns a reflection range, then the new value `T(std::from_template, v.operator template())` is used in place of `v`.
+  * [#.#]{.pnum} Otherwise, if `T` provides a template representation function that returns a reflection range, then the new value `T(std::meta::from_template, v.operator template())` is used in place of `v`.
   * [#.#]{.pnum} Otherwise (if `T` does not provide a template registration function), then every subobject of `v` is template-argument-normalized.
 :::
 
