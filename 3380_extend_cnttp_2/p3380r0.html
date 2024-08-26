@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-08-25" />
+  <meta name="dcterms.date" content="2024-08-26" />
   <title>Extending support for class types as non-type template
 parameters</title>
   <style>
@@ -567,7 +567,7 @@ types as non-type template parameters</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-08-25</td>
+    <td>2024-08-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -608,8 +608,13 @@ It<span></span></a>
 <ul>
 <li><a href="#interesting-edge-case" id="toc-interesting-edge-case"><span class="toc-section-number">2.1</span> Interesting Edge
 Case<span></span></a></li>
+<li><a href="#splitting" id="toc-splitting"><span class="toc-section-number">2.2</span> Splitting<span></span></a></li>
 </ul></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#language" id="toc-language"><span class="toc-section-number">3.1</span> Language<span></span></a></li>
+<li><a href="#library" id="toc-library"><span class="toc-section-number">3.2</span> Library<span></span></a></li>
+</ul></li>
 <li><a href="#acknowledgements" id="toc-acknowledgements"><span class="toc-section-number">4</span>
 Acknowledgements<span></span></a></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -1405,11 +1410,48 @@ It doesn’t add too much complexity to the design (once we can return two
 different kinds, is it really that big a deal to return three different
 kinds?), but we should really only go this route if this is a
 sufficiently common use-case. Which I’m not sure it is.</p>
+<h2 data-number="2.2" id="splitting"><span class="header-section-number">2.2</span> Splitting<a href="#splitting" class="self-link"></a></h2>
+<p>There are two forms of this proposal:</p>
+<ol type="1">
+<li><code class="sourceCode cpp">T<span class="op">::</span><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code>
+returns a range of reflections and <code class="sourceCode cpp">T</code>
+is constructible from that range,</li>
+<li><code class="sourceCode cpp">T<span class="op">::</span><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code>
+returns
+<code class="sourceCode cpp"><span class="dt">void</span></code>.</li>
+</ol>
+<p>The first form is the full round-trip custom
+serialization/deserialization path that can support any type and is
+essential for containers. The second is a purely convenience form for
+simplicity, although one that covers a wide range of very common types
+(like
+<code class="sourceCode cpp">std<span class="op">::</span>tuple</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>optional</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>variant</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>span</code>,
+etc.).</p>
+<p>However, the first form also depends on reflection <span class="citation" data-cites="P2996R5">[<a href="https://wg21.link/p2996r5" role="doc-biblioref">P2996R5</a>]</span> and the latter does not. It is
+possible to adopt purely the
+<code class="sourceCode cpp"><span class="dt">void</span></code>-returning
+form first with the understanding that we can later extend it to the
+reflection-range-returning form. This immediately gives us support for
+many useful types, and we can’t use types like <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+or
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>
+as non-type template parameters yet anyway — not until we get
+non-transient constexpr allocation (<span class="citation" data-cites="P1974R0">[<a href="https://wg21.link/p1974r0" role="doc-biblioref">P1974R0</a>]</span> <span class="citation" data-cites="P2670R1">[<a href="https://wg21.link/p2670r1" role="doc-biblioref">P2670R1</a>]</span>).</p>
+<p>So it’s worth considering a reduced form of this proposal that is
+simply the
+<code class="sourceCode cpp"><span class="dt">void</span></code>-returning
+form. This also has significantly less implementation complexity, since
+it’s not a large extension over the existing rule.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This proposal extends class types as non-type parameters as follows.
 This isn’t exactly Core wording, but does contain something akin to
 wording because I think that might be a clearer way to express the
 idea.</p>
+<h2 data-number="3.1" id="language"><span class="header-section-number">3.1</span> Language<a href="#language" class="self-link"></a></h2>
 <p>First, as with <span class="citation" data-cites="P2484R0">[<a href="https://wg21.link/p2484r0" role="doc-biblioref">P2484R0</a>]</span>, I’m referring to <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>
 as a template representation function. A class type
 <code class="sourceCode cpp">T</code> can provide an <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>
@@ -1550,6 +1592,47 @@ subobjects and reference members are template-argument-equivalent.</li>
 class type, that we perform template-argument-normalization (so that the
 above rule on equivalence is only ever performed on normalized
 values).</p>
+<h2 data-number="3.2" id="library"><span class="header-section-number">3.2</span> Library<a href="#library" class="self-link"></a></h2>
+<p>Add a new tag type, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>from_template_t</code>
+and value of it named <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>from_template</code>.</p>
+<p>Add a new type trait for <code class="sourceCode cpp">std<span class="op">::</span>is_structural</code>,
+which we will need to provide constrained template registration
+functions (a real use, as <span class="citation" data-cites="LWG3354">[<a href="https://wg21.link/lwg3354" role="doc-biblioref">LWG3354</a>]</span> requested).</p>
+<p>Add a <code class="sourceCode cpp"><span class="kw">consteval</span> <span class="dt">void</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="op">{</span> <span class="op">}</span></code>
+(that is, the default subobject-wise serialization with no
+normalization) to all of the following library types, suitably
+constrained:</p>
+<ul>
+<li><code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>variant<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>basic_string_view<span class="op">&lt;</span>CharT, Traits<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T, Extent<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>chrono<span class="op">::</span>duration<span class="op">&lt;</span>Rep, Period<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>chrono<span class="op">::</span>time_point<span class="op">&lt;</span>Clock, Duration<span class="op">&gt;</span></code></li>
+</ul>
+<p>There may need to be some wording similar to what we have for in <a href="http://eel.is/c++draft/pairs.pair#4">[pairs.pair]/4</a> right
+now:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">4</a></span>
+<code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
+is a structural type ([temp.param]) if
+<code class="sourceCode cpp">T</code> and
+<code class="sourceCode cpp">U</code> are both structural types. Two
+values <code class="sourceCode cpp">p1</code> and
+<code class="sourceCode cpp">p2</code> of type <code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
+are template-argument-equivalent ([temp.type]) if and only if
+<code class="sourceCode cpp">p1<span class="op">.</span>first</code> and
+<code class="sourceCode cpp">p2<span class="op">.</span>first</code> are
+template-argument-equivalent and
+<code class="sourceCode cpp">p1<span class="op">.</span>second</code>
+and
+<code class="sourceCode cpp">p2<span class="op">.</span>second</code>
+are template-argument-equivalent.</p>
+</blockquote>
+</div>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">4</span>
 Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
 <p>Thanks to Richard Smith and Davis Herring for all the work in this
@@ -1560,6 +1643,10 @@ solution.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-LWG3354" class="csl-entry" role="doc-biblioentry">
+[LWG3354] Daniel Krügler. has_strong_structural_equality has a
+meaningless definition. <a href="https://wg21.link/lwg3354"><div class="csl-block">https://wg21.link/lwg3354</div></a>
+</div>
 <div id="ref-P0732R2" class="csl-entry" role="doc-biblioentry">
 [P0732R2] Jeff Snyder, Louis Dionne. 2018-06-06. Class Types in Non-Type
 Template Parameters. <a href="https://wg21.link/p0732r2"><div class="csl-block">https://wg21.link/p0732r2</div></a>
@@ -1572,9 +1659,17 @@ template parameters. <a href="https://wg21.link/p1907r0"><div class="csl-block">
 [P1907R1] Jens Maurer. 2019-11-08. Inconsistencies with non-type
 template parameters. <a href="https://wg21.link/p1907r1"><div class="csl-block">https://wg21.link/p1907r1</div></a>
 </div>
+<div id="ref-P1974R0" class="csl-entry" role="doc-biblioentry">
+[P1974R0] Jeff Snyder, Louis Dionne, Daveed Vandevoorde. 2020-05-15.
+Non-transient constexpr allocation using propconst. <a href="https://wg21.link/p1974r0"><div class="csl-block">https://wg21.link/p1974r0</div></a>
+</div>
 <div id="ref-P2484R0" class="csl-entry" role="doc-biblioentry">
 [P2484R0] Richard Smith. 2021-11-17. Extending class types as non-type
 template parameters. <a href="https://wg21.link/p2484r0"><div class="csl-block">https://wg21.link/p2484r0</div></a>
+</div>
+<div id="ref-P2670R1" class="csl-entry" role="doc-biblioentry">
+[P2670R1] Barry Revzin. 2023-02-03. Non-transient constexpr allocation.
+<a href="https://wg21.link/p2670r1"><div class="csl-block">https://wg21.link/p2670r1</div></a>
 </div>
 <div id="ref-P2741R3" class="csl-entry" role="doc-biblioentry">
 [P2741R3] Corentin Jabot. 2023-06-16. user-generated static_assert

@@ -678,9 +678,24 @@ class Fun {
 
 This seems like a much better approach than the explicit normalization one — but I'm still not sure it's actually worth pursuing. It doesn't add too much complexity to the design (once we can return two different kinds, is it really that big a deal to return three different kinds?), but we should really only go this route if this is a sufficiently common use-case. Which I'm not sure it is.
 
+## Splitting
+
+There are two forms of this proposal:
+
+1. `T::operator template()` returns a range of reflections and `T` is constructible from that range,
+2. `T::operator template()` returns `void`.
+
+The first form is the full round-trip custom serialization/deserialization path that can support any type and is essential for containers. The second is a purely convenience form for simplicity, although one that covers a wide range of very common types (like `std::tuple`, `std::optional`, `std::variant`, `std::string_view`, `std::span`, etc.).
+
+However, the first form also depends on reflection [@P2996R5] and the latter does not. It is possible to adopt purely the `void`-returning form first with the understanding that we can later extend it to the reflection-range-returning form. This immediately gives us support for many useful types, and we can't use types like `std::vector<T>` or `std::string` as non-type template parameters yet anyway — not until we get non-transient constexpr allocation ([@P1974R0] [@P2670R1]).
+
+So it's worth considering a reduced form of this proposal that is simply the `void`-returning form. This also has significantly less implementation complexity, since it's not a large extension over the existing rule.
+
 # Proposal
 
 This proposal extends class types as non-type parameters as follows. This isn't exactly Core wording, but does contain something akin to wording because I think that might be a clearer way to express the idea.
+
+## Language
 
 First, as with [@P2484R0], I'm referring to `operator template` as a template representation function. A class type `T` can provide an `operator template` that must be `consteval`, with one of two forms:
 
@@ -734,6 +749,30 @@ Two values are *template-argument-equivalent* if they are of the same type and [
 :::
 
 Sixth, ensure that when initializing a non-type template parameter of class type, that we perform template-argument-normalization (so that the above rule on equivalence is only ever performed on normalized values).
+
+## Library
+
+Add a new tag type, `std::meta::from_template_t` and value of it named `std::meta::from_template`.
+
+Add a new type trait for `std::is_structural`, which we will need to provide constrained template registration functions (a real use, as [@LWG3354] requested).
+
+Add a `consteval void operator template() { }` (that is, the default subobject-wise serialization with no normalization) to all of the following library types, suitably constrained:
+
+* `std::tuple<Ts...>`
+* `std::optional<T>`
+* `std::expected<T, E>`
+* `std::variant<Ts...>`
+* `std::basic_string_view<CharT, Traits>`
+* `std::span<T, Extent>`
+* `std::chrono::duration<Rep, Period>`
+* `std::chrono::time_point<Clock, Duration>`
+
+There may need to be some wording similar to what we have for in [\[pairs.pair\]/4](http://eel.is/c++draft/pairs.pair#4) right now:
+
+::: std
+[4]{.pnum} `pair<T, U>` is a structural type ([temp.param]) if `T` and `U` are both structural types.
+Two values `p1` and `p2` of type `pair<T, U>` are template-argument-equivalent ([temp.type]) if and only if `p1.first` and `p2.first` are template-argument-equivalent and `p1.second` and `p2.second` are template-argument-equivalent.
+:::
 
 # Acknowledgements
 
