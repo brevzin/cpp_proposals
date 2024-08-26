@@ -66,7 +66,7 @@ def mermaid(elem, doc):
 
         mermaid_dir = f'{MD_DIR}/mermaid-images'
         src_file = f'{mermaid_dir}/{filename}.mmd'
-        dst_img = f'{mermaid_dir}/{filename}.svg'
+        dst_img = f'{mermaid_dir}/{filename}.png'
         if not os.path.isfile(src_file):
             try:
                 os.mkdir(mermaid_dir)
@@ -77,10 +77,21 @@ def mermaid(elem, doc):
             with open(src_file, 'w') as f:
                 f.write(code)
 
-            subprocess.check_call(['mmdc', '-i', src_file, '-o', dst_img],
+            args = ['mmdc', '-i', src_file, '-o', dst_img]
+            for attr in ['height', 'width']:
+                value = elem.attributes.get(attr)
+                if value is not None:
+                    args.extend([f'--{attr}', value])
+
+            subprocess.check_call(args,
                 stderr=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL)
-        return pf.Para(pf.Image(pf.Str(caption), url=dst_img, title=caption))
+                stdout=subprocess.DEVNULL
+                )
+        return pf.Para(pf.Image(pf.Str(caption),
+                                url=dst_img,
+                                title=caption,
+                                attributes={attr: elem.attributes[attr] for attr in ['height', 'width'] if attr in elem.attributes}
+        ))
 
 def op(elem, doc):
     if isinstance(elem, pf.Code) and 'op' in elem.classes:
@@ -89,3 +100,4 @@ def op(elem, doc):
 if __name__ == '__main__':
     # pf.run_filters([h1hr, bq, graphviz, mermaid, op])
     pf.run_filters([h1hr, bq, mermaid, op])
+    # pf.run_filters([h1hr, bq, op])
