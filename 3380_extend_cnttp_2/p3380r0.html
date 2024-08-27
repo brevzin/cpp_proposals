@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-08-26" />
+  <meta name="dcterms.date" content="2024-08-27" />
   <title>Extending support for class types as non-type template
 parameters</title>
   <style>
@@ -567,7 +567,7 @@ types as non-type template parameters</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-08-26</td>
+    <td>2024-08-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -828,8 +828,8 @@ One possible representation of this is:</p>
 <p>For our purposes it doesn’t matter if
 <code class="sourceCode cpp"><span class="dt">size_t</span></code> and
 <code class="sourceCode cpp">capacity_</code> are themselves
-<code class="sourceCode cpp"><span class="dt">size_t</span></code>
-or<code class="sourceCode cpp">T<span class="op">*</span></code>, so I’m
+<code class="sourceCode cpp"><span class="dt">size_t</span></code> or
+<code class="sourceCode cpp">T<span class="op">*</span></code>, so I’m
 picking the simpler one to reason about.</p>
 <p>The template-argument-equivalence rule for pointers is that two
 pointers are equivalent if they have the same pointer value. That’s not
@@ -1155,15 +1155,14 @@ mentioned.</p>
 <span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
 <span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> Optional<span class="op">(</span>meta<span class="op">::</span>from_template_t,</span>
-<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>                       vector<span class="op">&lt;</span>meta<span class="op">::</span>info<span class="op">&gt;</span> repr<span class="op">)</span></span>
-<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> engaged<span class="op">(</span>repr<span class="op">)</span></span>
-<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>engaged<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>            <span class="op">::</span><span class="kw">new</span> <span class="op">(&amp;</span>value<span class="op">)</span> T<span class="op">(</span>extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>repr<span class="op">.</span>r<span class="op">))</span>;</span>
-<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> Optional<span class="op">(</span>meta<span class="op">::</span>from_template_t, Repr repr<span class="op">)</span></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> engaged<span class="op">(</span>repr<span class="op">)</span></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>engaged<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>            <span class="op">::</span><span class="kw">new</span> <span class="op">(&amp;</span>value<span class="op">)</span> T<span class="op">(</span>extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>repr<span class="op">.</span>r<span class="op">))</span>;</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>But it’s… really not the best for
@@ -1388,7 +1387,7 @@ a strongly type language. So what if instead we allowed the original
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Repr <span class="op">{</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">*&gt;</span> elems;</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">ptrdiff_t</span> index;</span>
 <span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>

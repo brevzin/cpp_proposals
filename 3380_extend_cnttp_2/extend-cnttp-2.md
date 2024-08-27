@@ -203,7 +203,7 @@ class vector {
 ```
 :::
 
-For our purposes it doesn't matter if `size_t` and `capacity_` are themselves `size_t` or` T*`, so I'm picking the simpler one to reason about.
+For our purposes it doesn't matter if `size_t` and `capacity_` are themselves `size_t` or `T*`, so I'm picking the simpler one to reason about.
 
 The template-argument-equivalence rule for pointers is that two pointers are equivalent if they have the same pointer value. That's not what we want for comparing two `std::vector<T>`s though, we want to compare the contents. In order for the default, subobject-wise equivalence to work in this case, we'd have to normalize the pointers to be _identical_. For `std::vector<T>` specifically, this is potentially feasible using a `std::meta::define_static_array` function that will be proposed as part of the reflection proposal ([@P2996R5], although it does not appear yet in that revision). But that's not going to help us with `std::map`, `std::list`, or any other container.
 
@@ -462,8 +462,7 @@ class Optional {
         }
     }
 
-    consteval Optional(meta::from_template_t,
-                       vector<meta::info> repr)
+    consteval Optional(meta::from_template_t, Repr repr)
         : engaged(repr)
     {
         if (engaged) {
@@ -657,7 +656,7 @@ class Fun {
     int* best; // within elems
 
     struct Repr {
-        std::vector<int*> elems;
+        std::vector<int> elems;
         ptrdiff_t index;
     };
 
