@@ -678,6 +678,12 @@ class Fun {
 
 This seems like a much better approach than the explicit normalization one — but I'm still not sure it's actually worth pursuing. It doesn't add too much complexity to the design (once we can return two different kinds, is it really that big a deal to return three different kinds?), but we should really only go this route if this is a sufficiently common use-case. Which I'm not sure it is.
 
+## Alternate Spelling
+
+Following the principle that the way to spell the operator invoked in the expression `c[x]` is `operator[]`, an alternate spelling to the way to spell the operator invoked in the `$type-id$` `C<x>` could be `operator<>` (instead of `operator template`).
+
+Ultimately I prefer `operator template`, simply because of the added searchability of using words instead of punctuation, and this invocation will never appear in code, so there is no added value of terseness.
+
 ## Splitting
 
 There are two forms of this proposal:
