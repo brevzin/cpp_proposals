@@ -34,14 +34,14 @@ It was pointed out that the syntax:
 
 ::: std
 ```cpp
-type-id(^ident)();
+$type-id$(^ident)();
 ```
 :::
 
 is ambiguous. This can be parsed as both:
 
-* a variable named `ident` holding a block returning `type-id` and taking no arguments, and
-* a cast of `std::meta::info` (a reflection of `ident`) into a `type-id` and then a call of `operator()`.
+* a variable named `ident` holding a block returning `$type-id$` and taking no arguments, and
+* a cast of `std::meta::info` (a reflection of `ident`) into a `$type-id$` and then a call of `operator()`.
 
 This gets worse with the [@P3294R1] usage of `^{ ... }` as a token sequence. This sequence is completely ambiguous:
 
