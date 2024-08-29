@@ -33,6 +33,7 @@ Since [@P2996R5]:
 * make friends with modules: define the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`.
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
+* specified constraints for `enumerators_of` in terms of `has_complete_definition`.
 * constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
 * changed `is_special_member` to `is_special_member_function` to align with core language terminology.
 * revised wording for several metafunctions (`(u8)identifier_of`, `has_identifier`, `extract`, `data_member_spec`, `define_class`, `reflect_invoke`, `source_location_of`).
@@ -5050,7 +5051,7 @@ consteval vector<info> subobjects_of(info type);
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Constant When*: `type_enum` is a reflection representing a complete enumeration type.
+[#]{.pnum} *Constant When*: `type_enum` represents an enumeration type and `has_complete_definition(type_enum)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `type_enum`, in the order in which they are declared.
 :::
