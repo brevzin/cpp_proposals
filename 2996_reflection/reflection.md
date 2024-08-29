@@ -4999,13 +4999,11 @@ and if its first declaration is within a definition of `$E$`.
 
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all _members-of-representable_ members of the entity represented by `r` that are _members-of-visible_ from one of the points in the evaluation context ([expr.const]).
+[#]{.pnum} *Returns*: A `vector` containing reflections of all _members-of-representable_ members of the entity represented by `r` that are _members-of-visible_ from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified.
 [Base classes are not members.]{.note}
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all _representable members_ whose first declaration is directly within a definition of the entity `$E$` represented by `r`. If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
-Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified. [Base classes are not members.]{.note}
 ```cpp
 consteval vector<info> bases_of(info type);
 ```
@@ -5391,7 +5389,7 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- `class_type` represents an incomplete class type `$C$`. One of the points in the evaluation context ([expr.const]) belongs to the same module to which `$C$` is attached,
+- `class_type` represents an incomplete class type `$C$`. A point in the evaluation context ([expr.const]) belongs to the same module to which `$C$` is attached,
 - `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
 - the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
