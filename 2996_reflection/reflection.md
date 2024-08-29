@@ -32,7 +32,7 @@ Since [@P2996R5]:
 * removed linkage restrictions on objects of consteval-only type that were introduced in St. Louis.
 * make friends with modules: define the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`.
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
-* added `define_static_array`.
+* added `define_static_array`, `has_complete_definition`.
 * constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
 * changed `is_special_member` to `is_special_member_function` to align with core language terminology.
 * revised wording for several metafunctions (`(u8)identifier_of`, `has_identifier`, `extract`, `data_member_spec`, `define_class`, `reflect_invoke`, `source_location_of`).
@@ -2341,6 +2341,7 @@ namespace std::meta {
   consteval auto is_type_alias(info r) -> bool;
   consteval auto is_namespace_alias(info r) -> bool;
   consteval auto is_complete_type(info r) -> bool;
+  consteval auto has_complete_definition(info r) -> bool;
   consteval auto is_template(info r) -> bool;
   consteval auto is_function_template(info r) -> bool;
   consteval auto is_variable_template(info r) -> bool;
@@ -4192,6 +4193,7 @@ namespace std::meta {
   consteval bool has_linkage(info r);
 
   consteval bool is_complete_type(info r);
+  consteval bool has_complete_definition(info r);
 
   consteval bool is_namespace(info r);
   consteval bool is_variable(info r);
@@ -4750,6 +4752,15 @@ consteval bool is_complete_type(info r);
 [#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: `true` if `is_type(r)` is `true` and the type represented by `dealias(r)` is not an incomplete type ([basic.types]). Otherwise, `false`.
+
+```cpp
+consteval bool has_complete_definition(info r);
+```
+
+[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition,
+the specialization is instantiated.
+
+[#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type `$E$`, such that no entities not already declared may be introduced within the scope of `$E$`. Otherwise `false`.
 
 ```cpp
 consteval bool is_namespace(info r);
