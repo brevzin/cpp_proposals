@@ -144,7 +144,7 @@ The downside of `?` is that this token tends to be strongly associated with pred
 </td><td>✅</td></tr>
 <tr><td>`@e`</td><td>`@` is already used as an extension in Objective-C.
 
-For many potential identifiers, there is already concrete meaning (`@property`, `@dynamic`, `@optional`, etc.). There is no way to escape this either, since `@(e)` is a boxed experssion, and `@[e]` and `@{e}` are container literals.
+For many potential identifiers, there is already concrete meaning (`@property`, `@dynamic`, `@optional`, etc.). There is no way to escape this either, since `@(e)` is a boxed expression, and `@[e]` and `@{e}` are container literals.
 </td><td>❌</td>
 </tr>
 <tr><td>`\e`</td><td>Similar to `/e`, this is viable. But we prefer it as an interpolator (for which there is prior art), so we'd rather not use it here.
@@ -152,7 +152,7 @@ For many potential identifiers, there is already concrete meaning (`@property`, 
 Additionally, this runs into issues with UCNs: `\u0` is parsed as a UCN, not a reflection of `u0`.</td><td>❌</td></tr>
 <tr><td>``e`</td><td>The third character recently added to the basic character set (after `$` and `@`) is the backtick (or GRAVE ACCENT). The backtick has the advantage that it's pretty small, even smaller than `^`.
 
-But it has the disadvantage that backtick is used by Markdown everywhere inline code blocks, and not all Markdown implementations properly give you mechanisms to escape it. While not necessarly a show-stopper, we also just don't think it's good enough to reasonably pursue.</td><td>❌</td></tr>
+But it has the disadvantage that backtick is used by Markdown everywhere inline code blocks, and not all Markdown implementations properly give you mechanisms to escape it. While not necessarily a show-stopper, we also just don't think it's good enough to reasonably pursue.</td><td>❌</td></tr>
 <tr><td>`|e`</td><td>The last available single token, this one is also viable, unambiguous, and not a part of a digraph:
 
 ::: std
