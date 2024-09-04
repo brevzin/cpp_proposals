@@ -3171,10 +3171,8 @@ Extend the definition of _TU-local_ values and objects to include reflections:
 :::addu
 * [16.1a]{.pnum} it is a value or object of a TU-local type,
 * [16.1b]{.pnum} it is a reflection representing
-  * [16.1b.#]{.pnum} a local entity,
-  * [16.1b.#]{.pnum} a TU-local value or object,
-  * [16.1b.#]{.pnum} a `$typedef-name$`, namespace alias, or base specifier introduced by a declaration that is either an exposure or declared at block scope, or
-  * [16.1b.#]{.pnum} an enumerator or a description of a declaration of a nonstatic data member whose type is TU-local, or
+  * [16.1b.#]{.pnum} a TU-local value or object, or
+  * [16.1b.#]{.pnum} a `$typedef-name$`, namespace alias, or base specifier introduced by an exposure, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
