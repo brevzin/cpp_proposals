@@ -497,6 +497,8 @@ While this paper was in flight, [@P0843R14] was moved, which had to work around 
 Strike [inplace.vector.overview]{.sref}/4:
 
 ::: std
+[3]{.pnum} For any `N`, `inplace_vector<T, N>​::​iterator` and `inplace_vector<T, N>​::​const_iterator` meet the constexpr iterator requirements.
+
 ::: rm
 [4]{.pnum} For any `N>0`, if `is_trivial_v<T>` is `false`, then no `inplace_vector<T, N>` member functions are usable in constant expressions.
 :::
