@@ -70,7 +70,7 @@ This is basically how any static/non-allocating/in-place vector is implemented: 
 
 The problem is that the above does not work (although there is [implementation divergence](https://godbolt.org/z/a3318n63v) - MSVC and EDG accept it and GCC did accept it even up to 13.2, but GCC trunk and Clang reject).
 
-Getting this example to work would allow `std::inplace_vector` ([@P0843R9]) to simply work during `constexpr` time for all times (instead of just trivial ones), and was a problem briefly touched on in [@P2747R0].
+Getting this example to work would allow `std::inplace_vector` ([@P0843R14]) to simply work during `constexpr` time for all times (instead of just trivial ones), and was a problem briefly touched on in [@P2747R0].
 
 ## The uninitialized storage problem
 
