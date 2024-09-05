@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-04" />
+  <meta name="dcterms.date" content="2024-09-05" />
   <title>trivial unions (was std::uninitialized&lt;T&gt;)</title>
   <style>
       code{white-space: pre-wrap;}
@@ -567,7 +567,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-04</td>
+    <td>2024-09-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -616,8 +616,11 @@ Practice<span></span></a></li>
 <ul>
 <li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">4.1</span> Implementation
 Experience<span></span></a></li>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">4.2</span> Wording<span></span></a></li>
-<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.3</span> Feature-Test
+<li><a href="#language-wording" id="toc-language-wording"><span class="toc-section-number">4.2</span> Language
+Wording<span></span></a></li>
+<li><a href="#library-wording" id="toc-library-wording"><span class="toc-section-number">4.3</span> Library
+Wording<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.4</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -1392,7 +1395,7 @@ began its lifetime):</p>
 wasn’t particularly surprising since this change is entirely about
 making existing ill-formed code valid — and the Clang implementation is
 already valid code.</p>
-<h2 data-number="4.2" id="wording"><span class="header-section-number">4.2</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="4.2" id="language-wording"><span class="header-section-number">4.2</span> Language Wording<a href="#language-wording" class="self-link"></a></h2>
 <p>Change <span>11.4.5.2 <a href="https://wg21.link/class.default.ctor">[class.default.ctor]</a></span>/2-3.
 <span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The third
 and fourth bullets can be removed because such cases become trivially
@@ -1503,16 +1506,48 @@ destructor.</li>
 </ul>
 </blockquote>
 </div>
-<h2 data-number="4.3" id="feature-test-macro"><span class="header-section-number">4.3</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="4.3" id="library-wording"><span class="header-section-number">4.3</span> Library Wording<a href="#library-wording" class="self-link"></a></h2>
+<p>While this paper was in flight, <span class="citation" data-cites="P0843R14">[<a href="https://wg21.link/p0843r14" role="doc-biblioref">P0843R14</a>]</span> was moved, which had to work
+around the lack of ability to actually support non-trivial types during
+constant evaluation. Since this paper now provides that, might as well
+fix the library to account for the new functionality.</p>
+<p>Strike <span>24.3.14.1 <a href="https://wg21.link/inplace.vector.overview">[inplace.vector.overview]</a></span>/4:</p>
+<div class="std">
+<blockquote>
+<div class="rm" style="color: #bf0303">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">4</a></span>
+For any <code class="sourceCode default">N&gt;0</code>, if
+<code class="sourceCode default">is_trivial_v&lt;T&gt;</code> is
+<code class="sourceCode default">false</code>, then no
+<code class="sourceCode default">inplace_vector&lt;T, N&gt;</code>
+member functions are usable in constant expressions.</p>
+</div>
+</blockquote>
+</div>
+<h2 data-number="4.4" id="feature-test-macro"><span class="header-section-number">4.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add a new macro to <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <div class="std ins">
 <blockquote>
 <div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>__cpp_trivial_union 2024XXL</span></code></pre></div>
 </blockquote>
 </div>
+<p>And update the macro for
+<code class="sourceCode cpp">inplace_vector</code> in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_inplace_vector 202406L // also in &lt;inplace_vector&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_inplace_vector 2024XXL // also in &lt;inplace_vector&gt;</span></span></code></pre></div>
+</div>
+</blockquote>
+</div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P0843R14" class="csl-entry" role="doc-biblioentry">
+[P0843R14] Gonzalo Brito Gadeschi, Timur Doumler, Nevin Liber, David
+Sankel. 2024-06-26. inplace_vector. <a href="https://wg21.link/p0843r14"><div class="csl-block">https://wg21.link/p0843r14</div></a>
+</div>
 <div id="ref-P0843R9" class="csl-entry" role="doc-biblioentry">
 [P0843R9] Gonzalo Brito Gadeschi, Timur Doumler, Nevin Liber, David
 Sankel. 2023-09-14. inplace_vector. <a href="https://wg21.link/p0843r9"><div class="csl-block">https://wg21.link/p0843r9</div></a>

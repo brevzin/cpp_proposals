@@ -451,7 +451,7 @@ static_assert(f1() == 6);
 
 I was able to compile Clang with this update successfully, which wasn't particularly surprising since this change is entirely about making existing ill-formed code valid — and the Clang implementation is already valid code.
 
-## Wording
+## Language Wording
 
 Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be removed because such cases become trivially default constructible too]{.ednote}
 
@@ -490,6 +490,20 @@ Change [class.dtor]{.sref}/7-8:
 :::
 
 
+## Library Wording
+
+While this paper was in flight, [@P0843R14] was moved, which had to work around the lack of ability to actually support non-trivial types during constant evaluation. Since this paper now provides that, might as well fix the library to account for the new functionality.
+
+Strike [inplace.vector.overview]{.sref}/4:
+
+::: std
+::: rm
+[4]{.pnum} For any `N>0`, if `is_trivial_v<T>` is `false`, then no `inplace_vector<T, N>` member functions are usable in constant expressions.
+:::
+:::
+
+
+
 ## Feature-Test Macro
 
 Add a new macro to [cpp.predefined]{.sref}:
@@ -497,5 +511,14 @@ Add a new macro to [cpp.predefined]{.sref}:
 ::: {.std .ins}
 ```
 __cpp_trivial_union 2024XXL
+```
+:::
+
+And update the macro for `inplace_vector` in [version.syn]{.sref}:
+
+::: std
+```diff
+- #define __cpp_lib_inplace_vector 202406L // also in <inplace_vector>
++ #define __cpp_lib_inplace_vector 2024XXL // also in <inplace_vector>
 ```
 :::
