@@ -1,6 +1,6 @@
 ---
-title: "`trivial union` (was `std::uninitialized<T>`)"
-document: P3074R3
+title: "trivial `union`s (was `std::uninitialized<T>`)"
+document: P3074R4
 date: today
 audience: EWG
 author:
@@ -17,6 +17,20 @@ tag: constexpr
 [@P3074R1] changed to propose `std::uninitialized<T>` and was discussed in an EWG telecon. There, the suggestion was made to make this a language feature, which this revision discusses and argues against. Also re-spelled `std::uninitialized<T>` to be a union instead of a class containing an anonymous union.
 
 [@P3074R2] still argued for `std::uninitialized<T>`. This revision changes to instead proposing a language change to unions to solve the problems presented.
+
+[@P3074R3] presented two options: a specifically annotated `trivial union` and simply changing the existing `union` rules to always be trivial ("just make it work"), on the basis that `union` is a sharp knife anyway so might as well make it be as useful as possible. In [St. Louis](https://github.com/cplusplus/papers/issues/1734#issuecomment-2195769496), EWG expressed a clear preference for "just make it work":
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|4|14|3|2|0|
+
+over `trivial union`:
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|0|3|13|4|1|
+
+This revision simply proposed to make it work and adds [implementation experience]
 
 # Introduction
 
@@ -306,10 +320,10 @@ That is, change the union rules as follows:
 
 |member|status quo|new rule|
 |-|-|-|
-|default constructor<br/>(absent default member initializers)|If all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|If the first alternative is an implicit-lifetime type, trivial and starts the lifetime of that alternative and sets it as the active member.<br/>Otherwise, if all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|
-|destructor|If all the alternatives are trivially destructible, trivial.<br/>Otherwise, deleted.|If the first alternative is an implicit-lifetime type or if all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|
+|default constructor<br/>(absent default member initializers)|If all the alternatives are trivially default constructible, trivial.<br/>Otherwise, deleted.|Unconditionally trivial<br />If the first alternative has implicit-lifetime type, starts the lifetime of that alternative and sets it as the active member (no initialization is performed).|
+|destructor|If all the alternatives are trivially destructible, trivial.<br/>Otherwise, deleted.|Unconditionally trivial.|
 
-This attempt at a minimal extension works fine for the `inplace_vector` example where we want a union holding a `T[N]`. Such a union would become trivially default constructible (and start the lifetime of the array) and trivially destructible, as desired. But it has odd effects for the typical uninitialized storage case:
+This isn't quite a _minimal_ extension, we could make it even more minimal by only allowing a trivial default constructor and trivial destructor for implicit-lifetime types, as in:
 
 ::: std
 ```cpp
@@ -321,7 +335,9 @@ union U2 { std::string a[1]; };
 ```
 :::
 
-For uninitialized storage, we really want trivial construction/destruction. And it would be nice to not have to resort to having members of type `T[1]` instead of `T` to achieve this. But I really don't think it's a good idea to just make all unions trivially constructible and destructible. Seems a bit too late for that. However...
+But that doesn't seem like a useful distinction to make. It's also actively harmful — for uninitialized storage, we really want trivial construction/destruction. And it would be nice to not have to resort to having members of type `T[1]` instead of `T` to achieve this.
+
+Simply stating that the default constructor (absent default member initializers) and destructor are always trivial is a simple rule.
 
 ## Trivial Unions
 
@@ -369,64 +385,73 @@ Kotlin has a [`lateinit var`](https://kotlinlang.org/docs/properties.html#late-i
 
 D has the ability to initialize a variable to `void`, as in `int x = void;` This leaves `x` uninitialized. However, this feature only affects construction - not destruction. A member `T[N] storage = void;` would leave the array uninitialized, but would destroy the whole array in the destructor. So not really suitable for this particular purpose.
 
+## St. Louis Meeting, 2024
+
+In [St. Louis](https://github.com/cplusplus/papers/issues/1734#issuecomment-2195769496), we discussed a previous revision of this paper ([@P3074R3]), specifically the [trivial union](#trivial-unions) and [just make it work](#just-make-it-work) designs. There, EWG expressed a clear preference for "just make it work":
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|4|14|3|2|0|
+
+over `trivial union`:
+
+|SF|F|N|A|SA|
+|-|-|-|-|-|
+|0|3|13|4|1|
+
+So this paper proposes the more favorable design.
+
 # Proposal
 
-This paper now proposes support for a new kind of union: [trivial union](#trivial-unions) with the following rules:
+This paper proposes to just [make it work](#just-make-it-work). That is:
 
-* a `union` may be declared `trivial` (this is a context-sensitive keyword). If any declaration of a union `U` contains `trivial`, every declaration of `U` must do so.
-* a `trivial union` shall not have any default member initializers.
-* a `trivial union` is trivially default constructible. If the first alternative has implicit-lifetime type, this also begins the lifetime of that alternative and sets it as the active member.
-* a `trivial union` is trivially destructible.
+* The default constructor, absent default member initializers, is always trivial. If the first alternative is an implicit-lifetime time, it begins its lifetime and becomes the active alternative.
+* The destructor is always trivial.
 
-The syntax is `trivial union` instead of `union trivial` (which might be more consistent with the use of `final`) because the former allows an anonymous union declaration as `trivial union { T n; }` whereas `union trivial { T n; }` is already a valid declaration today. Nor can you put the `trivial` even later - as in `union { T n; } trivial` since now that is declaring a variable.
+All other special members remain unchanged. The behavior for a few examples looks like this:
 
-A better syntax that wouldn't lead to conversations about context-sensitive keywords would be `union [[trivial]]`.
-
-Another potential choice of word instead of `trivial` here would be `uninitialized`.
-
-An alternative design would be to change all existing `union`s to have this behavior (except still allowing default member initializers). That is:
-
-::: cmptable
-### trivial union
+::: std
 ```cpp
-// trivial default constructor
-// does not start lifetime of s
+// trivial default constructor (does not start lifetime of s)
 // trivial destructor
-trivial union U1 { string s; };
-
-// deleted default constructor
-// deleted destructor
-union U2 { string s; };
-
-// trivial default constructor
-// starts lifetime of s
-// trivial destructor
-trivial union U3 { string s[10]; }
-```
-
-### just make it work
-```cpp
-// trivial default constructor
-// does not start lifetime of s
-// trivial destructor
-union U4 { string s; };
+// (status quo: deleted default constructor and destructor)
+union U1 { string s; };
 
 // non-trivial default constructor
 // deleted destructor
-union U5 { string s = "hello"; }
+// (status quo: deleted destructor)
+union U2 { string s = "hello"; }
 
 // trivial default constructor
 // starts lifetime of s
 // trivial destructor
-union U6 { string s[10]; }
+// (status quo: deleted default constructor and destructor)
+union U3 { string s[10]; }
 ```
 :::
 
-It's worth discussing both options. Unions already have very sharp edges, so perhaps this added protection of deleting the default constructor and destructor aren't really super useful - that's probably not the feature that really saves you.
+Note that just making work will change some code from ill-formed to well-formed, but seems unlikely to change the meaning of any existing already-valid code.
 
-Note that just making work will change some code from ill-formed to well-formed, whereas introducing a `trivial union` will not change the meaning of any existing code.
+## Implementation Experience
 
-## Wording for just making it work
+I implemented this paper in [clang](https://github.com/llvm/llvm-project/compare/main...brevzin:llvm-project:p3074?expand=1), it was not difficult. The clang tests that exist to check for the existing `union` behavior (i.e. that a union with an alternative with a non-trivial or no default constructor has a deleted default constructor) now fail, as expected. But something like this now passes (clang already implements `constexpr` placement new — the status quo is that referencing `&s[0]` is ill-formed because `s` has not began its lifetime):
+
+::: std
+```cpp
+constexpr int f1() {
+    union { int s[4]; };
+    new (&s[0]) int(1);
+    new (&s[1]) int(2);
+    new (&s[2]) int(3);
+    return s[0] + s[1] + s[2];
+}
+static_assert(f1() == 6);
+```
+:::
+
+I was able to compile Clang with this update successfully, which wasn't particularly surprising since this change is entirely about making existing ill-formed code valid — and the Clang implementation is already valid code.
+
+## Wording
 
 Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be removed because such cases become trivially default constructible too]{.ednote}
 
@@ -465,106 +490,12 @@ Change [class.dtor]{.sref}/7-8:
 :::
 
 
-## Wording for `trivial union`
-
-Add `trivial` to the identifiers with special meaning table in [lex.name]{.sref}:
-
-:::std
-```diff
-  final
-  import
-  module
-  override
-+ trivial
-```
-:::
-
-Change [class.pre]{.sref} to add the ability to declare a `union` trivial:
-
-::: std
-```diff
-  $class-key$:
-    class
-    struct
--   union
-+   trivial@~opt~@ union
-```
-:::
-
-Add to the end of [class.pre]{.sref}:
-
-::: {.std .ins}
-[8]{.pnum} A `$class-key$` shall only contain `trivial` when used in a `$class-head$`. If any declaration of a union `U` has a `trivial` specifier, then all declarations of `U` shall contain `trivial` [This includes those declarations that use an `$elaborated-type-specifier$`, which cannot provide the `trivial` specifier.]{.note}.
-:::
-
-Add to [class.union.general]{.sref}/1:
-
-::: std
-[1]{.pnum} A *union* is a class defined with the `$class-key$` `union`. [A *trivial union* is a union defined with the `$class-key$` `trivial union`. A trivial union shall not have a default member initializer.]{.addu}
-:::
-
-Change [class.union.anon]{.sref}/1:
-
-::: std
-[1]{.pnum} A union of the form
-```diff
-- union { $member-specification$ } ;
-+ trivial@~opt~@ union { $member-specification$ } ;
-```
-is called an *anonymous union* [...]
-:::
-
-Change [class.default.ctor]{.sref}/2-3.
-
-::: std
-[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is not a trivial union and]{.addu}:
-
-* [2.1]{.pnum} [...]
-
-[3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
-
-* [3.1]{.pnum} [its class]{.rm} [`X`]{.addu} has no virtual functions ([class.virtual]) and no virtual base classes ([class.mi]), and
-* [3.2]{.pnum} no non-static data member of [its class]{.rm} [`X`]{.addu} has a default member initializer ([class.mem]), and
-* [3.3]{.pnum} all the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial default constructors, and
-* [3.4]{.pnum} [either `X` is a trivial union or ]{.addu} for all the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
-
-Otherwise, the default constructor is *non-trivial*. [If the default constructor of a trivial union `X` is trivial and the first variant member of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member [It becomes the active member of the union]{.note}.]{.addu}
-:::
-
-Change [class.dtor]{.sref}/7-8:
-
-::: std
-[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if [`X` is not a trivial union and]{.addu}:
-
-* [7.1]{.pnum} [...]
-
-[8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
-
-* [8.1]{.pnum} the destructor is not virtual,
-* [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
-* [8.3]{.pnum} [either `X` is a trivial union or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
-:::
-
 ## Feature-Test Macro
 
-Either way, we need a new feature-test macro. Add a new macro to [cpp.predefined]{.sref}:
+Add a new macro to [cpp.predefined]{.sref}:
 
 ::: {.std .ins}
 ```
 __cpp_trivial_union 2024XXL
 ```
 :::
-
----
-references:
-  - id: P2747R2
-    citation-label: P2747R2
-    title: "`constexpr` placement new"
-    author:
-      - family: Barry Revzin
-    issued:
-      - year: 2024
-        month: 03
-        day: 19
-    URL: https://wg21.link/p2747r2
----
