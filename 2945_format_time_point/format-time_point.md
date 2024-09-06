@@ -1,6 +1,6 @@
 ---
 title: "Additional format specifiers for `time_point`"
-document: P2945R0
+document: P2945R1
 date: today
 audience: LEWG
 author:
@@ -8,6 +8,10 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 ---
+
+# Revision History
+
+From [@P2945R0] to R1: Removing any option to change the meaning of existing code. The current proposal is a pure extension.
 
 # Introduction
 
@@ -48,6 +52,8 @@ First, it is simply much more convenient for the user to write something like `%
 Second, `%.0T`{.op} ensures that they don't actually have to care about the underlying duration of their `time_point`, this will consistently produce the same output regardless of whether it's `time_point<system_clock, seconds>` or `time_point<system_clock, milliseconds>` or `time_point<system_clock, nanoseconds>`.
 
 Third, specifiers can nest in a way that those workarounds don't. For example, it is straightforward to implement formatting for `Optional<T>` such that it supports all of `T`'s format specifiers, so that `Optional<int>(42)` can format using `{:#x}`{.op} as `Some(0x2a)`. If `time_point` has the necessary specifiers then an `Optional<time_point>` can be formatted as desired simply using `time_point`'s specifiers. Otherwise, the workaround requires calling `Optional::transform`. The same argument can be made for ranges: use the underlying specifier, or have to resort to using `std::views::transform`. This certainly becomes inconvenient for the user pretty rapidly, but it also brings up a question of safety - something I'm going to call the capture problem [^naming].
+
+Fourth, the user may only even have access to provide the specifier and may not even have the ability to touch the `time_point` _at all_. This is the case in some logging libraries (like `spdlog`) where the user-facing API can provide a specifier for how the message is formatted, but never even sees the `time_point` object.
 
 [^naming]: This probably already exists in the literature under a much more suitable name, so I'm hoping by giving it a bad name somebody simply points me to the correct one later.
 
@@ -177,12 +183,24 @@ In [Ruby](https://docs.ruby-lang.org/en/master/strftime_formatting_rdoc.html), `
 
 I feel like yoctoseconds is probably not a unit people are going to use very often, but there it is.
 
+### spdlog
+
+Despite broadly using `{fmt}`, [spdlog](https://github.com/gabime/spdlog/wiki/3.-Custom-formatting) actually uses its own approach for `time_point` formatting specifically to allow full control over the timestamp. As I mentioned [earlier](#why-more-specifiers), `spdlog` never exposes the `time_point` — only the ability to format it with a custom specifier.
+
+While it also uses `%S` as an integer number of seconds, it instead uses `%E` as seconds since epoch. For the fractional part, it provides distinct specifiers for milliseconds, microseconds, and nanoseconds:
+
+|specifier|example|
+|-|-|
+|`%e`{.op}|`678`{.op}|
+|`%f`{.op}|`056789`{.op}|
+|`%F`{.op}|`256789123`{.op}|
+
 ### C++, `<chrono>`, and `<format>`
 
 As you can see above, there's a pretty impressive consensus on what a few specifiers mean. To everybody:
 
 * `%S` is a specifier that gives you a two-digit, integer number of seconds from `00`{.op} to `59`{.op}, and
-* `%s` is a specifier that gives you the integer number of seconds since epoch.
+* `%s` is a specifier that gives you the integer number of seconds since epoch (everyone except `spdlog`, which uses `%E` for this).
 
 To everyone, that is, except C++20's approach to chrono formatting. Why is that? Our wording comes from [@P1361R2], which itself comes from [@P0355R7]. That paper, since R0, has always defined `%S` in the same way. The specific words changed over time, but even [@P0355R0] states:
 
@@ -194,101 +212,24 @@ P0355 describes itself as proposing "`strftime`-like formatting" but offers no e
 
 [^differs]: You could argue that it doesn't actually differ from `strftime` in the sense that in both cases, `%S` formats all the sub-minute time - it's just that C did not have any subsecond precision. I don't find this argument particularly compelling - `%S` went from always printing a two-digit integer number of seconds to printing decimals.
 
-I consider this an unfortunate design choice.
+I consider this an unfortunate design choice, but it's the one we have.
 
 # Proposal
 
-I have two proposals here: the one that I think we should do, and the one that will likely get more support.
+This paper proposes that we:
 
-## Preferred Proposal
+* Add several new specifiers (`s`, `f`, `Q`, and `q`)
+* Add modifiers to some existing ones (`S` and `T`)
 
-My preference would be to revert `%S` to always be a two-digit, integer number of seconds (mirroring `%H` and `%M` for hours and minutes). This would be a breaking change, as this has been the behavior since C++20.
+I'll go through these in turn.
 
-Although it's notable that libstdc++ only implemented formatting in gcc 13 (released April 2023) and libc++ still doesn't implement formatting (it is currently labelled "implemented but still marked as an incomplete feature" and you must compile with `-fexperimental-library` to use it). Only the MSVC standard library has had this functionality for more than a few months (implemented in [April 2021](https://github.com/microsoft/STL/commit/c33874c3777f1596f4cecce6c00bdda41a4fc1b0)).
+## `%s`, `%S`, and `%T`
 
-The proposal is to break existing uses of `%S` to normalize our use of chrono specifiers with the rest of the `strftime` ecosystem:
-
-* Change `%S` to be a two-digit, integer number of seconds (`00`{.op} to `59`{.op}), mirroring `%H` and `%M` for hours and minutes.
-* Add `%s` to be the integer number of seconds since epoch.
-* Add `%f` to be sub-seconds up to the precision of the `time_point`. I think `%f` for fractional seconds makes more sense than `%N` for nanoseconds, in light of the fact that this can be used to format non-`nanoseconds` `time_point`s.
-
-It bears a little more explanation of how exactly `%f` would have to function for us, and here we do diverge slightly. Currently, we have this behavior:
-
-::: bq
-```cpp
-println("{:%S}", sys_time(1s));     // 01
-println("{:%S}", sys_time(1000ms)); // 01.000
-```
-:::
-
-Which materializes in how formatting works in `<iostream>` (assuming we still remember those). Streaming a `sys_time<Duration>` is defined as formatting using `"{:L%F %T}"`, which means:
-
-::: bq
-```cpp
-cout << sys_time(1s) << '\n';     // 1970-01-01 00:00:01
-cout << sys_time(1000ms) << '\n'; // 1970-01-01 00:00:01.000
-```
-:::
-
-In order to preserve that behavior, and achieve a similar precision-specific formatting, we would need to do something like this:
-
-<table>
-<tr><th /><th colspan="3">precision</th></tr>
-<tr><th>specifier</th><th>`seconds(1)`</th><th>`milliseconds(1234)`</th><th>`nanoseconds(1234567)`</th></tr>
-<tr><td>`%.f`{.op}</td><td>empty string</td><td>`.234`</td><td>`.001234567`</td></tr>
-<tr><td>`%.0f`{.op}</td><td>empty string</td><td>empty string</td><td>empty string</td></tr>
-<tr><td>`%.3f`{.op}</td><td>`.000`</td><td>`.234`</td><td>`.001`</td></tr>
-<tr><td>`%.5f`{.op}</td><td>`.00000`</td><td>`.23400`</td><td>`.00123`</td></tr>
-<tr><td>`%f`{.op}</td><td>empty string</td><td>`234`</td><td>`001234567`</td></tr>
-<tr><td>`%0f`{.op}</td><td>empty string</td><td>empty string</td><td>empty string</td></tr>
-<tr><td>`%3f`{.op}</td><td>`000`</td><td>`234`</td><td>`001`</td></tr>
-<tr><td>`%5f`{.op}</td><td>`00000`</td><td>`23400`</td><td>`00123`</td></tr>
-</table>
-
-That is: `%f` can take an optional `.` and an optional `$precision$`. If the `.` is provided, and digits need to be emitted, then a (localized) decimal point will be also. If `$precision$` is provided, that many digits are emitted. If `$precision$` is not provided, the precision of the `time_point` is used.
-
-In this way, the old `%S` can be achieved by the new `%S%.f`, just like the old `%T` can be achieved by the new `%T%.f`.
-
-`%f` can also take a dynamic precision, so `%.3f%`{.op} is always three digits following a decimal point while `%.{}f`{.op} would mean using another argument for the number of digits.
-
-This way, we end up with the same meaning of `%S` and `%s` as everyone else, and a pretty consistent `%f` as well.
-
-The examples for the initial table thus become:
-
-<table>
-<tr><th>desired output</th><th>proposed</th></tr>
-<tr>
-<td>1688830834295314673</t>
-<td>`std::format("{:%s%9f}", tp)`</td>
-</tr>
-<tr>
-<td>1688830834</t>
-<td>`std::format("{:%s}", tp)`</td>
-</tr>
-<tr>
-<td>15:40:34</td>
-<td>`std::format("{:%H:%M:%S}", tp)`</td>
-</tr>
-<tr>
-<td>15:40:34.295</td>
-<td>`std::format("{:%H:%M:%S%.3f}", tp)`</td>
-</tr>
-<tr>
-<td>15:40:34.295314</td>
-<td>`std::format("{:%H:%M:%S%.6f}", tp)`</td>
-</tr>
-</table>
-
-Note that we have to do it as `%.3f` rather than the perhaps more obvious `.%3f`{.op} because in order to localize the decimal point, it has to be part of the specifier, not just an arbitrary character.
-
-## Less-preferred Proposal
-
-If we cannot change `%S` as above, then:
+I propose that we:
 
 * Add `%s` to be the number of ticks since epoch in the `time_point`'s units.
 * Allow both `%S` and `%s` to be prefixed with a precision to indicate how many subsecond digits to include. For formatting milliseconds, this would look like `%.3S`{.op} for the former and `%.3s`{.op} for the latter.
 * Extend `%T` in the same way that we extend `%S`, so that `%.9T`{.op} means `%H:%M:%.9S`{.op}.
-* Add `%f` as well (as in the previous section), such that `%.0S%.3f`{.op} means the same thing as `%.03S`{.op}. `%f` may be less compelling in a world where you can print fractional seconds using `%S`, but I think if we're in this space, we might as well do it.
 
 Proposed examples (which assume that `system_clock::time_point` has nanosecond resolution):
 
@@ -316,7 +257,26 @@ Proposed examples (which assume that `system_clock::time_point` has nanosecond r
 </tr>
 </table>
 
-There's one more thing that needs to be touched on here, that doesn't need to be addressed in the preferred proposal. For `sys_time<nanoseconds>`, it's pretty clear what `%s` should mean (nanoseconds since epoch) and what `%.0s`{.op} would mean (seconds since epoch). But `nanoseconds` (and similar units like `microseconds` or `seconds`) aren't the only durations. We also have to consider other ones.
+## `%f`
+
+The meaning for `%f`, specifically, is as follows:
+
+<table>
+<tr><th /><th colspan="3">precision</th></tr>
+<tr><th>specifier</th><th>`seconds(1)`</th><th>`milliseconds(1234)`</th><th>`nanoseconds(1234567)`</th></tr>
+<tr><td>`%.f`{.op}</td><td>empty string</td><td>`.234`</td><td>`.001234567`</td></tr>
+<tr><td>`%.0f`{.op}</td><td>empty string</td><td>empty string</td><td>empty string</td></tr>
+<tr><td>`%.3f`{.op}</td><td>`.000`</td><td>`.234`</td><td>`.001`</td></tr>
+<tr><td>`%.5f`{.op}</td><td>`.00000`</td><td>`.23400`</td><td>`.00123`</td></tr>
+<tr><td>`%f`{.op}</td><td>empty string</td><td>`234`</td><td>`001234567`</td></tr>
+<tr><td>`%0f`{.op}</td><td>empty string</td><td>empty string</td><td>empty string</td></tr>
+<tr><td>`%3f`{.op}</td><td>`000`</td><td>`234`</td><td>`001`</td></tr>
+<tr><td>`%5f`{.op}</td><td>`00000`</td><td>`23400`</td><td>`00123`</td></tr>
+</table>
+
+## Exotic durations
+
+There's one more thing that needs to be touched on here. For `sys_time<nanoseconds>`, it's pretty clear what `%s` should mean (nanoseconds since epoch) and what `%.0s`{.op} would mean (seconds since epoch). But `nanoseconds` (and similar units like `microseconds` or `seconds`) aren't the only durations. We also have to consider other ones.
 
 The next most obvious one to consider is... everyone say it with me now... [microfortnights](https://en.wikipedia.org/wiki/FFF_system).
 
@@ -338,50 +298,15 @@ That is, a table of examples for formatting `sys_time(microfortnights(123))` wou
 |`%.4s`|`1487808`|
 |`%.6s`|`148780800`|
 
-## Comparison of the two proposals
+## `%Q` and `%q`
 
-Just putting those tables side by side for clarity:
-
-<table>
-<tr><th>preferred</th><th>desired output</th><th>less preferred</th></tr>
-<tr>
-<td>`std::format("{:%s%9f}", tp)`</td>
-<td>1688830834295314673</t>
-<td>`std::format("{:%s}", tp)`</td>
-</tr>
-<tr>
-<td>`std::format("{:%s}", tp)`</td>
-<td>1688830834</t>
-<td>`std::format("{:%.0s}", tp)`</td>
-</tr>
-<tr>
-<td>`std::format("{:%H:%M:%S}", tp)`<br />`std::format("{:%T}", tp)`</td>
-<td>15:40:34</td>
-<td>`std::format("{:%H:%M:%.0S}", tp)`<br />`std::format("{:%.0T}", tp)`</td>
-</tr>
-<tr>
-<td>`std::format("{:%H:%M:%S%.3f}", tp)`<br />`std::format("{:%T.%3f}", tp)`</td>
-<td>15:40:34.295</td>
-<td>`std::format("{:%H:%M:%.3S}", tp)`<br />`std::format("{:%.3T}", tp)`</td>
-</tr>
-<tr>
-<td>`std::format("{:%H:%M:%S%.6f}", tp)`<br />`std::format("{:%T.%6f}", tp)`</td>
-<td>15:40:34.295314</td>
-<td>`std::format("{:%H:%M:%.6S}", tp)`<br />`std::format("{:%.6T}", tp)`</td>
-</tr>
-</table>
-
-Note that my preferred approach here is longer in several of these examples - the reason it's my preferred approach is not because it's necessarily terser, but rather because it's more consistent.
-
-## Other Specifiers
-
-Separate from the question of what `%S` and `%s` should do: are there any other specifiers that we should add? One that I have not noted here is a specifier to simply format `tp.time_since_epoch().count()`. We have such a thing for `duration`s (`%Q`) but not for `time_point`s. In the less-preferred proposal, `%s` achieves this for the SI units - but not for microfortnights.
+Separate from the question of what `%S` and `%s` should do: are there any other specifiers that we should add? One that I have not noted here is a specifier to simply format `tp.time_since_epoch().count()`. We have such a thing for `duration`s (`%Q`) but not for `time_point`s. In the proposal right now, `%s` achieves this for the SI units - but not for microfortnights.
 
 When I originally set out to write this paper, my intent was to propose `%Q`. But given the uniformity of treating `%s` as (sub)seconds since epoch, that seemed like a better choice to handle formatting nanoseconds since epoch. This makes `%Q` for `time_point` seem less motivated. But I think we should consider extending `%Q` to work for `time_point` for broadly the reasons described above.
 
 ## Wording
 
-For either proposal, add `f` and `s` to the options for `$type$` and add support for precision modifiers in [time.format]{.sref}:
+Add `f` and `s` to the options for `$type$` and add support for precision modifiers in [time.format]{.sref}:
 
 ::: bq
 ```diff
@@ -401,9 +326,9 @@ For either proposal, add `f` and `s` to the options for `$type$` and add support
 ```
 :::
 
-### The `%f` specifier
+The rest of the wording adds and modifies entries in the conversion specifier table in [time.format]{.sref}.
 
-Add a row to the conversion specifier table in [time.format]{.sref}:
+### The `%f` specifier
 
 ::: bq
 :::addu
@@ -422,20 +347,7 @@ Add a row to the conversion specifier table in [time.format]{.sref}:
 |`%Q`|The duration's [or time_point's]{.addu} numeric value (as if extracted via `.count()` [or .`time_since_epoch().count()`, respectively]{.addu})|
 :::
 
-### Preferred Proposal Wording
-
-Change `%S` and add `%s` to the conversion specifier table in [time.format]{.sref}:
-
-::: bq
-|Specifier|Replacement|
-|-|-|
-|`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. [If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation.]{.rm}|
-|[`%s`]{.addu}|[Seconds since epoch as a decimal number.]{.addu}|
-:::
-
-All of the uses other uses of `%T` in [time]{.sref} for ostream formatters would also have to change to be `%T%f`.
-
-### Less-Preferred Proposal Wording
+### The `%S`, `%s`, and `%T` specifiers
 
 ::: bq
 |Specifier|Replacement|
