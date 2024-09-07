@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-05" />
+  <meta name="dcterms.date" content="2024-09-06" />
   <title>Additional format specifiers for time_point</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ for <code class="sourceCode cpp">time_point</code></h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-05</td>
+    <td>2024-09-06</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -607,8 +607,9 @@ Languages<span></span></a>
 <li><a href="#python" id="toc-python"><span class="toc-section-number">3.3.3</span> Python<span></span></a></li>
 <li><a href="#rust" id="toc-rust"><span class="toc-section-number">3.3.4</span> Rust<span></span></a></li>
 <li><a href="#ruby" id="toc-ruby"><span class="toc-section-number">3.3.5</span> Ruby<span></span></a></li>
-<li><a href="#spdlog" id="toc-spdlog"><span class="toc-section-number">3.3.6</span> spdlog<span></span></a></li>
-<li><a href="#c-chrono-and-format" id="toc-c-chrono-and-format"><span class="toc-section-number">3.3.7</span> C++, <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>,
+<li><a href="#c-logging-libraries" id="toc-c-logging-libraries"><span class="toc-section-number">3.3.6</span> C++ Logging
+Libraries<span></span></a></li>
+<li><a href="#standard-c-chrono-and-format" id="toc-standard-c-chrono-and-format"><span class="toc-section-number">3.3.7</span> Standard C++, <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>,
 and <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code><span></span></a></li>
 </ul></li>
 </ul></li>
@@ -625,23 +626,27 @@ durations<span></span></a></li>
 <li><a href="#q-and-q" id="toc-q-and-q"><span class="toc-section-number">4.4</span>
 <code class="sourceCode cpp"><span class="op">%</span>Q</code> and
 <code class="sourceCode cpp"><span class="op">%</span>q</code><span></span></a></li>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">4.5</span> Wording<span></span></a>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">4.5</span> Implementation
+Experience<span></span></a></li>
+</ul></li>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">5</span> Wording<span></span></a>
 <ul>
-<li><a href="#the-f-specifier" id="toc-the-f-specifier"><span class="toc-section-number">4.5.1</span> The
+<li><a href="#the-f-specifier" id="toc-the-f-specifier"><span class="toc-section-number">5.1</span> The
 <code class="sourceCode cpp"><span class="op">%</span>f</code>
 specifier<span></span></a></li>
-<li><a href="#the-q-and-q-specifiers" id="toc-the-q-and-q-specifiers"><span class="toc-section-number">4.5.2</span> The
+<li><a href="#the-q-and-q-specifiers" id="toc-the-q-and-q-specifiers"><span class="toc-section-number">5.2</span> The
 <code class="sourceCode cpp"><span class="op">%</span>Q</code> and
 <code class="sourceCode cpp"><span class="op">%</span>q</code>
 specifiers<span></span></a></li>
-<li><a href="#the-s-s-and-t-specifiers" id="toc-the-s-s-and-t-specifiers"><span class="toc-section-number">4.5.3</span> The
+<li><a href="#the-s-s-and-t-specifiers" id="toc-the-s-s-and-t-specifiers"><span class="toc-section-number">5.3</span> The
 <code class="sourceCode cpp"><span class="op">%</span>S</code>,
 <code class="sourceCode cpp"><span class="op">%</span>s</code>, and
 <code class="sourceCode cpp"><span class="op">%</span>T</code>
 specifiers<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">5.4</span> Feature-test
+Macro<span></span></a></li>
 </ul></li>
-</ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
@@ -824,7 +829,11 @@ dangle.</p>
 <p>Note that this is not specific to ranges and views at all, I’m just
 using it as a simple example.</p>
 <p>Allowing more common logic into the specifiers simply avoids this
-problem.</p>
+problem. We don’t have to figure out how and when to wrap arguments,
+since the logic entirely lives in the specifier. Here, I’m not trying to
+solve the general capture problem, I’m only trying to help a little bit
+more in the context of
+<code class="sourceCode cpp">time_point</code>s.</p>
 <h2 data-number="3.2" id="why-not-use-precision"><span class="header-section-number">3.2</span> Why not use precision?<a href="#why-not-use-precision" class="self-link"></a></h2>
 <p>Rather than having a prefixed specifier to do millisecond precision,
 like <code><span class="op">%3S</span></code> or
@@ -1056,7 +1065,7 @@ precision:</p>
 </table>
 <p>I feel like yoctoseconds is probably not a unit people are going to
 use very often, but there it is.</p>
-<h3 data-number="3.3.6" id="spdlog"><span class="header-section-number">3.3.6</span> spdlog<a href="#spdlog" class="self-link"></a></h3>
+<h3 data-number="3.3.6" id="c-logging-libraries"><span class="header-section-number">3.3.6</span> C++ Logging Libraries<a href="#c-logging-libraries" class="self-link"></a></h3>
 <p>Despite broadly using <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>,
 <a href="https://github.com/gabime/spdlog/wiki/3.-Custom-formatting">spdlog</a>
 actually uses its own approach for
@@ -1064,8 +1073,7 @@ actually uses its own approach for
 to allow full control over the timestamp. As I mentioned <a href="#why-more-specifiers">earlier</a>,
 <code class="sourceCode cpp">spdlog</code> never exposes the
 <code class="sourceCode cpp">time_point</code> — only the ability to
-format it with a custom specifier.</p>
-<p>While it also uses
+format it with a custom specifier. While it also uses
 <code class="sourceCode cpp"><span class="op">%</span>S</code> as an
 integer number of seconds, it instead uses
 <code class="sourceCode cpp"><span class="op">%</span>E</code> as
@@ -1097,8 +1105,18 @@ specifiers for milliseconds, microseconds, and nanoseconds:</p>
 </tr>
 </tbody>
 </table>
-<h3 data-number="3.3.7" id="c-chrono-and-format"><span class="header-section-number">3.3.7</span> C++, <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>,
-and <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code><a href="#c-chrono-and-format" class="self-link"></a></h3>
+<p>Similarly, <a href="https://quillcpp.readthedocs.io/en/latest/formatters.html">Quill</a>,
+uses <code class="sourceCode cpp">strftime</code> as its model and thus
+has <code class="sourceCode cpp"><span class="op">%</span>S</code> as
+two-digit integral seconds and
+<code class="sourceCode cpp"><span class="op">%</span>s</code> as
+seconds since epoch, and additionally provides
+<code class="sourceCode cpp"><span class="op">%</span>Qms</code>,
+<code class="sourceCode cpp"><span class="op">%</span>Qus</code>, and
+<code class="sourceCode cpp"><span class="op">%</span>Qns</code> for the
+fractional parts.</p>
+<h3 data-number="3.3.7" id="standard-c-chrono-and-format"><span class="header-section-number">3.3.7</span> Standard C++, <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>,
+and <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code><a href="#standard-c-chrono-and-format" class="self-link"></a></h3>
 <p>As you can see above, there’s a pretty impressive consensus on what a
 few specifiers mean. To everybody:</p>
 <ul>
@@ -1141,13 +1159,14 @@ have.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes that we:</p>
 <ul>
-<li>Add several new specifiers (<code class="sourceCode cpp">s</code>,
-<code class="sourceCode cpp">f</code>,
-<code class="sourceCode cpp">Q</code>, and
-<code class="sourceCode cpp">q</code>)</li>
+<li>Add several new specifiers
+(<code class="sourceCode cpp"><span class="op">%</span>s</code>,
+<code class="sourceCode cpp"><span class="op">%</span>f</code>,
+<code class="sourceCode cpp"><span class="op">%</span>Q</code>, and
+<code class="sourceCode cpp"><span class="op">%</span>q</code>)</li>
 <li>Add modifiers to some existing ones
-(<code class="sourceCode cpp">S</code> and
-<code class="sourceCode cpp">T</code>)</li>
+(<code class="sourceCode cpp"><span class="op">%</span>S</code> and
+<code class="sourceCode cpp"><span class="op">%</span>T</code>)</li>
 </ul>
 <p>I’ll go through these in turn.</p>
 <h2 data-number="4.1" id="s-s-and-t"><span class="header-section-number">4.1</span>
@@ -1225,7 +1244,9 @@ proposed
 </table>
 <h2 data-number="4.2" id="f"><span class="header-section-number">4.2</span>
 <code class="sourceCode cpp"><span class="op">%</span>f</code><a href="#f" class="self-link"></a></h2>
-<p>The meaning for
+<p><code class="sourceCode cpp"><span class="op">%</span>f</code> is a
+new specifier that gives you the fractional seconds, with or without the
+decimal point, with customizable precision. The meaning for
 <code class="sourceCode cpp"><span class="op">%</span>f</code>,
 specifically, is as follows:</p>
 <table>
@@ -1385,7 +1406,7 @@ to pick a more interesting time point that is more than a minute since
 epoch, formatting 123 microfortnights (148.7808 seconds) using
 <code class="sourceCode cpp"><span class="op">%</span>S</code> would
 yield
-<code class="sourceCode cpp"><span class="fl">28.7808</span></code>.The
+<code class="sourceCode cpp"><span class="fl">28.7808</span></code>. The
 question is: what should
 <code class="sourceCode cpp"><span class="op">%</span>s</code> print for
 123 microfortnights? I think the appropriate answer is
@@ -1478,7 +1499,22 @@ I think we should consider extending
 <code class="sourceCode cpp"><span class="op">%</span>Q</code> to work
 for <code class="sourceCode cpp">time_point</code> for broadly the
 reasons described above.</p>
-<h2 data-number="4.5" id="wording"><span class="header-section-number">4.5</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="4.5" id="implementation-experience"><span class="header-section-number">4.5</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>I’ve implemented part of this in a fork of <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>,
+you can find a diff <a href="https://github.com/fmtlib/fmt/compare/master...brevzin:fmt:p2945">here</a>.
+That just implements the suggested changes to
+<code class="sourceCode cpp"><span class="op">%</span>S</code> and the
+addition of
+<code class="sourceCode cpp"><span class="op">%</span>s</code>, but
+that’s basically all the work
+— <code class="sourceCode cpp"><span class="op">%</span>f</code> is just
+part of the formatting of
+<code class="sourceCode cpp"><span class="op">%</span>S</code>, and
+<code class="sourceCode cpp"><span class="op">%</span>Q</code> and
+<code class="sourceCode cpp"><span class="op">%</span>q</code> simply
+treat the <code class="sourceCode cpp">time_point</code> as its
+underlying <code class="sourceCode cpp">duration</code>.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Add <code class="sourceCode cpp">f</code> and
 <code class="sourceCode cpp">s</code> to the options for
 <code class="sourceCode cpp"><em>type</em></code> and add support for
@@ -1502,9 +1538,9 @@ precision modifiers in <span>29.12 <a href="https://wg21.link/time.format">[time
 </blockquote>
 <p>The rest of the wording adds and modifies entries in the conversion
 specifier table in <span>29.12 <a href="https://wg21.link/time.format">[time.format]</a></span>.</p>
-<h3 data-number="4.5.1" id="the-f-specifier"><span class="header-section-number">4.5.1</span> The
+<h2 data-number="5.1" id="the-f-specifier"><span class="header-section-number">5.1</span> The
 <code class="sourceCode cpp"><span class="op">%</span>f</code>
-specifier<a href="#the-f-specifier" class="self-link"></a></h3>
+specifier<a href="#the-f-specifier" class="self-link"></a></h2>
 <blockquote>
 <div class="addu">
 <table>
@@ -1530,19 +1566,19 @@ floating-point number with a fixed format and precision matching that of
 the precision of the input (or to the
 <code class="sourceCode cpp"><em>tp-precision</em></code> if provided or
 otherwise to microseconds precision if the conversion to floating-point
-decimal seconds cannot be mae within 18 fractional digits). The
+decimal seconds cannot be made within 18 fractional digits). The
 localized decimal point is included if the
 <code class="sourceCode cpp"><span class="op">.</span></code> appears in
-the specifier.</td>
+the <code class="sourceCode cpp"><em>tp-precision</em></code>.</td>
 </tr>
 </tbody>
 </table>
 </div>
 </blockquote>
-<h3 data-number="4.5.2" id="the-q-and-q-specifiers"><span class="header-section-number">4.5.2</span> The
+<h2 data-number="5.2" id="the-q-and-q-specifiers"><span class="header-section-number">5.2</span> The
 <code class="sourceCode cpp"><span class="op">%</span>Q</code> and
 <code class="sourceCode cpp"><span class="op">%</span>q</code>
-specifiers<a href="#the-q-and-q-specifiers" class="self-link"></a></h3>
+specifiers<a href="#the-q-and-q-specifiers" class="self-link"></a></h2>
 <blockquote>
 <table>
 <colgroup>
@@ -1577,11 +1613,11 @@ respectively</span>)</td>
 </tbody>
 </table>
 </blockquote>
-<h3 data-number="4.5.3" id="the-s-s-and-t-specifiers"><span class="header-section-number">4.5.3</span> The
+<h2 data-number="5.3" id="the-s-s-and-t-specifiers"><span class="header-section-number">5.3</span> The
 <code class="sourceCode cpp"><span class="op">%</span>S</code>,
 <code class="sourceCode cpp"><span class="op">%</span>s</code>, and
 <code class="sourceCode cpp"><span class="op">%</span>T</code>
-specifiers<a href="#the-s-s-and-t-specifiers" class="self-link"></a></h3>
+specifiers<a href="#the-s-s-and-t-specifiers" class="self-link"></a></h2>
 <blockquote>
 <table>
 <colgroup>
@@ -1613,7 +1649,9 @@ seconds cannot be made within 18 fractional digits). The character for
 the decimal point is localized according to the locale. The modified
 command %OS produces the locale’s alternative representation. <span class="addu">The modified command <code class="sourceCode cpp"><span class="op">%</span><em>tp-precision</em>S</code>
 instead uses <code class="sourceCode cpp"><em>tp-precision</em></code>
-as the precision for the input.</span></td>
+as the precision for the input. The
+<code class="sourceCode cpp"><em>tp-precision</em></code> must include a
+<code class="sourceCode cpp"><span class="op">.</span></code>.</span></td>
 </tr>
 <tr class="even">
 <td><span class="addu"><code class="sourceCode cpp"><span class="op">%</span>s</code></span></td>
@@ -1622,7 +1660,10 @@ precision of the input (or in microseconds if the conversion to
 floating-point decimal seconds cannot be made within 18 fractional
 digits). The modified command <code class="sourceCode cpp"><span class="op">%</span><em>tp-precision</em>s</code>
 instead uses <code class="sourceCode cpp"><em>tp-precision</em></code>
-as the precision of the input</span></td>
+as the precision of the input. The localized decimal point is included
+if the <code class="sourceCode cpp"><span class="op">.</span></code>
+appears in the
+<code class="sourceCode cpp"><em>tp-precision</em></code>.</span></td>
 </tr>
 <tr class="odd">
 <td><code class="sourceCode cpp"><span class="op">%</span>T</code></td>
@@ -1633,7 +1674,19 @@ is equivalent to <code class="sourceCode cpp"><span class="op">%</span>H<span cl
 </tbody>
 </table>
 </blockquote>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
+<h2 data-number="5.4" id="feature-test-macro"><span class="header-section-number">5.4</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Since the chrono formatters were still handled by
+<code class="sourceCode cpp">__cpp_lib_format</code>, let’s just bump
+that one in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_format 202311L // also in &lt;format&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_format 2024XXL // also in &lt;format&gt;</span></span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
 <div id="ref-P0355R0" class="csl-entry" role="doc-biblioentry">

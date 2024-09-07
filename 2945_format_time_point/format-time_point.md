@@ -109,7 +109,7 @@ We have no way of "just doing the right thing" here. We have no way using the `v
 
 Note that this is not specific to ranges and views at all, I'm just using it as a simple example.
 
-Allowing more common logic into the specifiers simply avoids this problem.
+Allowing more common logic into the specifiers simply avoids this problem. We don't have to figure out how and when to wrap arguments, since the logic entirely lives in the specifier. Here, I'm not trying to solve the general capture problem, I'm only trying to help a little bit more in the context of `time_point`s.
 
 ## Why not use precision?
 
@@ -183,11 +183,9 @@ In [Ruby](https://docs.ruby-lang.org/en/master/strftime_formatting_rdoc.html), `
 
 I feel like yoctoseconds is probably not a unit people are going to use very often, but there it is.
 
-### spdlog
+### C++ Logging Libraries
 
-Despite broadly using `{fmt}`, [spdlog](https://github.com/gabime/spdlog/wiki/3.-Custom-formatting) actually uses its own approach for `time_point` formatting specifically to allow full control over the timestamp. As I mentioned [earlier](#why-more-specifiers), `spdlog` never exposes the `time_point` — only the ability to format it with a custom specifier.
-
-While it also uses `%S` as an integer number of seconds, it instead uses `%E` as seconds since epoch. For the fractional part, it provides distinct specifiers for milliseconds, microseconds, and nanoseconds:
+Despite broadly using `{fmt}`, [spdlog](https://github.com/gabime/spdlog/wiki/3.-Custom-formatting) actually uses its own approach for `time_point` formatting specifically to allow full control over the timestamp. As I mentioned [earlier](#why-more-specifiers), `spdlog` never exposes the `time_point` — only the ability to format it with a custom specifier. While it also uses `%S` as an integer number of seconds, it instead uses `%E` as seconds since epoch. For the fractional part, it provides distinct specifiers for milliseconds, microseconds, and nanoseconds:
 
 |specifier|example|
 |-|-|
@@ -195,7 +193,9 @@ While it also uses `%S` as an integer number of seconds, it instead uses `%E` as
 |`%f`{.op}|`056789`{.op}|
 |`%F`{.op}|`256789123`{.op}|
 
-### C++, `<chrono>`, and `<format>`
+Similarly, [Quill](https://quillcpp.readthedocs.io/en/latest/formatters.html), uses `strftime` as its model and thus has `%S` as two-digit integral seconds and `%s` as seconds since epoch, and additionally provides `%Qms`, `%Qus`, and `%Qns` for the fractional parts.
+
+### Standard C++, `<chrono>`, and `<format>`
 
 As you can see above, there's a pretty impressive consensus on what a few specifiers mean. To everybody:
 
@@ -218,8 +218,8 @@ I consider this an unfortunate design choice, but it's the one we have.
 
 This paper proposes that we:
 
-* Add several new specifiers (`s`, `f`, `Q`, and `q`)
-* Add modifiers to some existing ones (`S` and `T`)
+* Add several new specifiers (`%s`, `%f`, `%Q`, and `%q`)
+* Add modifiers to some existing ones (`%S` and `%T`)
 
 I'll go through these in turn.
 
@@ -259,7 +259,7 @@ Proposed examples (which assume that `system_clock::time_point` has nanosecond r
 
 ## `%f`
 
-The meaning for `%f`, specifically, is as follows:
+`%f` is a new specifier that gives you the fractional seconds, with or without the decimal point, with customizable precision. The meaning for `%f`, specifically, is as follows:
 
 <table>
 <tr><th /><th colspan="3">precision</th></tr>
@@ -282,7 +282,7 @@ The next most obvious one to consider is... everyone say it with me now... [micr
 
 A microfornight is, as the name suggests, one millionth of a fortnight - which is 14 days. In more familiar units, a microfortnight is equal to 1.2096 seconds.
 
-Following the rules that we have today, formatting 1 microfortnight using `%S` would yield `01.2096`. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using `%S` would yield `28.7808`.The question is: what should `%s` print for 123 microfortnights? I think the appropriate answer is `1487808`. That is: while `%S` prints in seconds modulo 60, `%s` prints in the unit that would avoid any decimals - in this case in units of 100μs - and without any modulo. And then explicitly providing a precision would affect the number of "decimal" points that are present. This makes `%.0s`{.op} always seconds since epoch, regardless of underlying precision.
+Following the rules that we have today, formatting 1 microfortnight using `%S` would yield `01.2096`. Or, to pick a more interesting time point that is more than a minute since epoch, formatting 123 microfortnights (148.7808 seconds) using `%S` would yield `28.7808`. The question is: what should `%s` print for 123 microfortnights? I think the appropriate answer is `1487808`. That is: while `%S` prints in seconds modulo 60, `%s` prints in the unit that would avoid any decimals - in this case in units of 100μs - and without any modulo. And then explicitly providing a precision would affect the number of "decimal" points that are present. This makes `%.0s`{.op} always seconds since epoch, regardless of underlying precision.
 
 That is, a table of examples for formatting `sys_time(microfortnights(123))` would be:
 
@@ -304,7 +304,11 @@ Separate from the question of what `%S` and `%s` should do: are there any other 
 
 When I originally set out to write this paper, my intent was to propose `%Q`. But given the uniformity of treating `%s` as (sub)seconds since epoch, that seemed like a better choice to handle formatting nanoseconds since epoch. This makes `%Q` for `time_point` seem less motivated. But I think we should consider extending `%Q` to work for `time_point` for broadly the reasons described above.
 
-## Wording
+## Implementation Experience
+
+I've implemented part of this in a fork of `{fmt}`, you can find a diff [here](https://github.com/fmtlib/fmt/compare/master...brevzin:fmt:p2945). That just implements the suggested changes to `%S` and the addition of `%s`, but that's basically all the work — `%f` is just part of the formatting of `%S`, and `%Q` and `%q` simply treat the `time_point` as its underlying `duration`.
+
+# Wording
 
 Add `f` and `s` to the options for `$type$` and add support for precision modifiers in [time.format]{.sref}:
 
@@ -328,17 +332,17 @@ Add `f` and `s` to the options for `$type$` and add support for precision modifi
 
 The rest of the wording adds and modifies entries in the conversion specifier table in [time.format]{.sref}.
 
-### The `%f` specifier
+## The `%f` specifier
 
 ::: bq
 :::addu
 |Specifier|Replacement|
 |-|-|
-|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to the `$tp-precision$` if provided or otherwise to microseconds precision if the conversion to floating-point decimal seconds cannot be mae within 18 fractional digits). The localized decimal point is included if the `.` appears in the specifier.|
+|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to the `$tp-precision$` if provided or otherwise to microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The localized decimal point is included if the `.` appears in the `$tp-precision$`.|
 :::
 :::
 
-### The `%Q` and `%q` specifiers
+## The `%Q` and `%q` specifiers
 
 ::: bq
 |Specifier|Replacement|
@@ -347,12 +351,24 @@ The rest of the wording adds and modifies entries in the conversion specifier ta
 |`%Q`|The duration's [or time_point's]{.addu} numeric value (as if extracted via `.count()` [or .`time_since_epoch().count()`, respectively]{.addu})|
 :::
 
-### The `%S`, `%s`, and `%T` specifiers
+## The `%S`, `%s`, and `%T` specifiers
 
 ::: bq
 |Specifier|Replacement|
 |-|-|
-|`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation. [The modified command `%$tp-precision$S` instead uses `$tp-precision$` as the precision for the input.]{.addu}|
-|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$tp-precision$s` instead uses `$tp-precision$` as the precision of the input]{.addu}|
+|`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation. [The modified command `%$tp-precision$S` instead uses `$tp-precision$` as the precision for the input. The `$tp-precision$` must include a `.`.]{.addu}|
+|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$tp-precision$s` instead uses `$tp-precision$` as the precision of the input. The localized decimal point is included if the `.` appears in the `$tp-precision$`.]{.addu}|
 |`%T`|Equivalent to `%H:%M:%S`. [The modified command `%$tp-precision$T` is equivalent to `%H:%M:%$tp-precision$S`.]{.addu}|
 :::
+
+## Feature-test Macro
+
+Since the chrono formatters were still handled by `__cpp_lib_format`, let's just bump that one in [version.syn]{.sref}:
+
+::: std
+```diff
+- #define __cpp_lib_format 202311L // also in <format>
++ #define __cpp_lib_format 2024XXL // also in <format>
+```
+:::
+
