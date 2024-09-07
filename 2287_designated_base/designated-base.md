@@ -293,7 +293,7 @@ And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
 [4]{.pnum} For each explicitly initialized element:
 
 ::: addu
-* [4.0]{.pnum} If the initializer list is a brace-enclosed *designated-initializer-list* and the element is a direct base class, then let `C` denote that direct base class and let `T` denote the class. The element is initialized from a synthesized brace-enclosed *designated-initializer-list* containing each *designator* for which lookup in `T` names a direct or indirect non-static data member of `C` in the same order as in the original *designated-initializer-list*.
+* [4.0]{.pnum} If the initializer list is a brace-enclosed *designated-initializer-list* with no `$initializer-list$` and the element is a direct base class, then let `C` denote that direct base class and let `T` denote the class. The element is initialized from a synthesized brace-enclosed *designated-initializer-list* containing each *designator* for which lookup in `T` names a direct or indirect non-static data member of `C` in the same order as in the original *designated-initializer-list*.
 
 ::: example
 ```
