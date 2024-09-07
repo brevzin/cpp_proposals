@@ -125,7 +125,7 @@ Similar to the problems we ran into with `C<%T>` not working because `<%` is a d
 </td><td>❌</td>
 </tr>
 <tr><td>`=e`</td><td>While `^` and `%` already exist as binary operators, they are fairly rare. `=` just seems way too common to be viable to overload to mean reflection</td><td>❌</td>
-<tr><td>`?e`</td><td>Actually this one doesn't seem to have any particular problems associated with it. It's not ambiguous with the conditional operator. We could even come up with a story for why the question mark — we are asking what an entity is, and getting a reflection back to answer the question. It's just not our favorite, but it is viable.
+<tr><td>`?e`</td><td>While `?` already exists in the language today, we do not believe that using `?e` would be ambiguous with the conditional operator. We could even come up with a story for why the question mark — we are asking what an entity is, and getting a reflection back to answer the question. It's just not our favorite, but it is potentially viable.
 
 ::: std
 ```cpp
@@ -141,7 +141,9 @@ fn<?R>();
 :::
 
 The downside of `?` is that this token tends to be strongly associated with predicates across programming languages. In C++ we just have the conditional operator, but in other languages we have null coalescing, optional chaining, and error propagation all spelled with `?` - plus for some languages it's convention to spell predicates as `v.empty?`, all of which has nothing to do with reflection.
-</td><td>✅</td></tr>
+
+Pattern Matching ([@P2688R1]) additionally proposes using `? $pattern$` as the optional pattern, which would conflict with the use of `?` as the reflection operator. So while it's technically available for use today, The optional pattern strikes us as a better use of unary `?` than reflection.
+</td><td>🤷</td></tr>
 <tr><td>`@e`</td><td>`@` is already used as an extension in Objective-C.
 
 For many potential identifiers, there is already concrete meaning (`@property`, `@dynamic`, `@optional`, etc.). There is no way to escape this either, since `@(e)` is a boxed expression, and `@[e]` and `@{e}` are container literals.
@@ -183,10 +185,10 @@ While not ambiguous to the compiler, those with math backgrounds might want to s
 To summarize, there are only a few single tokens that we feel are completely viable:
 
 * `/e`
-* `?e`
 * `|e`
+* `?e` is viable today, but would compete with pattern matching
+* `%e` if we're open to people struggling with digraphs
 
-If we're open to people struggling with digraphs, also `%e`.
 
 # Multiple Characters
 
@@ -198,7 +200,7 @@ Some choices that we have considered:
 
 * `^^e` — While a single caret isn't viable, two carets would have no ambiguity with blocks. It's twice as long as the status quo, but requiring an additional character wouldn't be the end of the world. Two characters is short enough.
 * `^[e]` — A different way to work around the block ambiguity is to throw more characters at it, in this case surrounding the operand with square brackets. On the one hand, this is more symmetric with splicing. On the other hand, it's a heavier syntax.
-* `${e}`{.op} — One way to work around the identifier issue with `$`{.op} presented in the previous section is to use additional tokens that cannot be in identifiers. This would work fine for reflection, but doesn't have as nice a mirror for token sequences — would those use an extra set of braces?
+* `${e}`{.op} or `$(e)`{.op} — One way to work around the identifier issue with `$`{.op} presented in the previous section is to use additional tokens that cannot be in identifiers. This would work fine for reflection, but doesn't have as nice a mirror for token sequences — would those use an extra set of braces? Additionally `$`{.op} seems more associated with interpolation than reflection in many languages, so simply seems like the opposite choice here.
 * `/\e`{.op} — If we can't have a small caret, can we have a big caret? This actually has the same issue as just `\e` because of the UCN issue.
 
 # Proposal

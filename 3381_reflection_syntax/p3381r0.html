@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-02" />
+  <meta name="dcterms.date" content="2024-09-07" />
   <title>Syntax for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-02</td>
+    <td>2024-09-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -833,11 +833,13 @@ way too common to be viable to overload to mean reflection
 <code class="sourceCode cpp"><span class="op">?</span>e</code>
 </td>
 <td>
-<p>Actually this one doesn’t seem to have any particular problems
-associated with it. It’s not ambiguous with the conditional operator. We
-could even come up with a story for why the question mark — we are
-asking what an entity is, and getting a reflection back to answer the
-question. It’s just not our favorite, but it is viable.</p>
+<p>While <code class="sourceCode cpp"><span class="op">?</span></code>
+already exists in the language today, we do not believe that using
+<code class="sourceCode cpp"><span class="op">?</span>e</code> would be
+ambiguous with the conditional operator. We could even come up with a
+story for why the question mark — we are asking what an entity is, and
+getting a reflection back to answer the question. It’s just not our
+favorite, but it is potentially viable.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> <span class="op">?</span><span class="dt">int</span>;</span>
@@ -850,7 +852,7 @@ question. It’s just not our favorite, but it is viable.</p>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="op">[:?</span><span class="dt">int</span><span class="op">:]</span></span></code></pre></div>
 </blockquote>
 </div>
-The downside of
+<p>The downside of
 <code class="sourceCode cpp"><span class="op">?</span></code> is that
 this token tends to be strongly associated with predicates across
 programming languages. In C++ we just have the conditional operator, but
@@ -858,10 +860,18 @@ in other languages we have null coalescing, optional chaining, and error
 propagation all spelled with
 <code class="sourceCode cpp"><span class="op">?</span></code> - plus for
 some languages it’s convention to spell predicates as <code class="sourceCode cpp">v<span class="op">.</span>empty<span class="op">?</span></code>,
-all of which has nothing to do with reflection.
+all of which has nothing to do with reflection.</p>
+Pattern Matching (<span class="citation" data-cites="P2688R1">[<a href="https://wg21.link/p2688r1" role="doc-biblioref">P2688R1</a>]</span>) additionally proposes using
+<code class="sourceCode cpp"><span class="op">?</span> <em>pattern</em></code>
+as the optional pattern, which would conflict with the use of
+<code class="sourceCode cpp"><span class="op">?</span></code> as the
+reflection operator. So while it’s technically available for use today,
+The optional pattern strikes us as a better use of unary
+<code class="sourceCode cpp"><span class="op">?</span></code> than
+reflection.
 </td>
 <td>
-✅
+🤷
 </td>
 </tr>
 <tr>
@@ -961,11 +971,12 @@ as a magnitude of some sort.
 completely viable:</p>
 <ul>
 <li><code class="sourceCode cpp"><span class="op">/</span>e</code></li>
-<li><code class="sourceCode cpp"><span class="op">?</span>e</code></li>
 <li><code class="sourceCode cpp"><span class="op">|</span>e</code></li>
+<li><code class="sourceCode cpp"><span class="op">?</span>e</code> is
+viable today, but would compete with pattern matching</li>
+<li><code class="sourceCode cpp"><span class="op">%</span>e</code> if
+we’re open to people struggling with digraphs</li>
 </ul>
-<p>If we’re open to people struggling with digraphs, also
-<code class="sourceCode cpp"><span class="op">%</span>e</code>.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="multiple-characters"><span class="header-section-number">3</span>
 Multiple Characters<a href="#multiple-characters" class="self-link"></a></h1>
 <p>Once we extend our search space to multiple characters, there are an
@@ -988,12 +999,15 @@ short enough.</li>
 characters at it, in this case surrounding the operand with square
 brackets. On the one hand, this is more symmetric with splicing. On the
 other hand, it’s a heavier syntax.</li>
-<li><code><span class="op">${e}</span></code> — One way to work around
-the identifier issue with <code><span class="op">$</span></code>
-presented in the previous section is to use additional tokens that
-cannot be in identifiers. This would work fine for reflection, but
-doesn’t have as nice a mirror for token sequences — would those use an
-extra set of braces?</li>
+<li><code><span class="op">${e}</span></code> or
+<code><span class="op">$(e)</span></code> — One way to work around the
+identifier issue with <code><span class="op">$</span></code> presented
+in the previous section is to use additional tokens that cannot be in
+identifiers. This would work fine for reflection, but doesn’t have as
+nice a mirror for token sequences — would those use an extra set of
+braces? Additionally <code><span class="op">$</span></code> seems more
+associated with interpolation than reflection in many languages, so
+simply seems like the opposite choice here.</li>
 <li><code><span class="op">/\e</span></code> — If we can’t have a small
 caret, can we have a big caret? This actually has the same issue as just
 <code class="sourceCode cpp">\e</code> because of the UCN issue.</li>
@@ -1026,6 +1040,10 @@ References<a href="#bibliography" class="self-link"></a></h1>
 <div id="ref-P1240R2" class="csl-entry" role="doc-biblioentry">
 [P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal
 Vali. 2022-01-14. Scalable Reflection. <a href="https://wg21.link/p1240r2"><div class="csl-block">https://wg21.link/p1240r2</div></a>
+</div>
+<div id="ref-P2688R1" class="csl-entry" role="doc-biblioentry">
+[P2688R1] Michael Park. 2024-02-15. Pattern Matching: `match`
+Expression. <a href="https://wg21.link/p2688r1"><div class="csl-block">https://wg21.link/p2688r1</div></a>
 </div>
 <div id="ref-P2996R5" class="csl-entry" role="doc-biblioentry">
 [P2996R5] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
