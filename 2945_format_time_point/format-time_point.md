@@ -244,6 +244,10 @@ Proposed examples (which assume that `system_clock::time_point` has nanosecond r
 <td>`std::format("{:%.0s}", tp)`</td>
 </tr>
 <tr>
+<td>1688830834.295</t>
+<td>`std::format("{:%.3s}", tp)`</td>
+</tr>
+<tr>
 <td>15:40:34</td>
 <td>`std::format("{:%H:%M:%.0S}", tp)`</td>
 </tr>
@@ -338,7 +342,7 @@ The rest of the wording adds and modifies entries in the conversion specifier ta
 :::addu
 |Specifier|Replacement|
 |-|-|
-|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to the `$tp-precision$` if provided or otherwise to microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The localized decimal point is included if the `.` appears in the `$tp-precision$`.|
+|`%f`|Sub-seconds as a decimal number. The format is a decimal floating-point number with a fixed format and precision matching that of the precision of the input (or to the `$tp-precision$` if provided or otherwise to microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The localized decimal point is included if the `.` appears in the `$tp-precision$` and the precision is non-zero.|
 :::
 :::
 
@@ -357,7 +361,7 @@ The rest of the wording adds and modifies entries in the conversion specifier ta
 |Specifier|Replacement|
 |-|-|
 |`%S`|Seconds as a decimal number. If the number of seconds is less than `10`, the result is prefixed with `0`. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command %OS produces the locale's alternative representation. [The modified command `%$tp-precision$S` instead uses `$tp-precision$` as the precision for the input. The `$tp-precision$` must include a `.`.]{.addu}|
-|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$tp-precision$s` instead uses `$tp-precision$` as the precision of the input. The localized decimal point is included if the `.` appears in the `$tp-precision$`.]{.addu}|
+|[`%s`]{.addu}|[Duration since epoch as a decimal number in the precision of the input (or in microseconds if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The modified command `%$tp-precision$s` instead uses `$tp-precision$` as the precision of the input. The localized decimal point is included if the `.` appears in the `$tp-precision$` and the precision is non-zero.]{.addu}|
 |`%T`|Equivalent to `%H:%M:%S`. [The modified command `%$tp-precision$T` is equivalent to `%H:%M:%$tp-precision$S`.]{.addu}|
 :::
 
