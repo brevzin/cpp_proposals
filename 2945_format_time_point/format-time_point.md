@@ -323,7 +323,7 @@ Add `f` and `s` to the options for `$type$` and add support for precision modifi
 +   E O @[*tp-precision*]{.diffins}@
 
 + $tp-precision$:
-+   .@~opt~@ $nonnegative-integer$@~opt~@
++   .@~opt~@ $nonnegative-integer$
 +   .@~opt~@ { $arg-id$@~opt~@ }
 
   $type$: one of
