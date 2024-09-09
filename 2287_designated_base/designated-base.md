@@ -33,9 +33,9 @@ struct B : A {
 ```
 :::
 
-While I can initialize an `A` like `A{.a=1}`, I cannot designated-initialize `B`. An attempt like `B{@{.a=1}@, .b=2}` runs afoul of the rule that the initializers must either be all designated or none designated. But there is currently no way to designate the base class here.
+While I can initialize an `A` like `A{.a=1}`, I cannot designated-initialize `B`. An attempt like `B{{.a=1}, .b=2}` runs afoul of the rule that the initializers must either be all designated or none designated. But there is currently no way to designate the base class here.
 
-Which means that my only options for initializing a `B` are to fall-back to regular aggregate initialization and write either `B{@{1}@, 2}` or `B{1, 2}`. Neither are especially satisfactory.
+Which means that my only options for initializing a `B` are to fall-back to regular aggregate initialization and write either `B{{1}, 2}` or `B{1, 2}`. Neither are especially satisfactory.
 
 ## Design Space
 
@@ -97,12 +97,12 @@ This paper proposes extending designated initialization syntax to:
 
 ::: std
 ```cpp
-B{@{1}@, 2}         // already valid in C++17
+B{{1}, 2}         // already valid in C++17
 B{1, 2}           // already valid in C++17
 
 B{.a=1, .b=2}     // proposed
 B{{.a=1}, .b=2}   // proposed
-B{.a{1}, .b@{2}@}   // proposed
+B{.a{1}, .b{2}}   // proposed
 B{.b=2, .a=1}     // still ill-formed
 ```
 :::

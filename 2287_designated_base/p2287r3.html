@@ -659,13 +659,13 @@ members. This means that if I have a type like:</p>
 <p>While I can initialize an <code class="sourceCode cpp">A</code> like
 <code class="sourceCode cpp">A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span></code>,
 I cannot designated-initialize <code class="sourceCode cpp">B</code>. An
-attempt like <code class="sourceCode cpp">B<span class="op">{</span>{.a=1}, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>
+attempt like <code class="sourceCode cpp">B<span class="op">{{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>
 runs afoul of the rule that the initializers must either be all
 designated or none designated. But there is currently no way to
 designate the base class here.</p>
 <p>Which means that my only options for initializing a
 <code class="sourceCode cpp">B</code> are to fall-back to regular
-aggregate initialization and write either <code class="sourceCode cpp">B<span class="op">{</span>{1}, <span class="dv">2</span><span class="op">}</span></code>
+aggregate initialization and write either <code class="sourceCode cpp">B<span class="op">{{</span><span class="dv">1</span><span class="op">}</span>, <span class="dv">2</span><span class="op">}</span></code>
 or <code class="sourceCode cpp">B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span></code>.
 Neither are especially satisfactory.</p>
 <h2 data-number="2.1" id="design-space"><span class="header-section-number">2.1</span> Design Space<a href="#design-space" class="self-link"></a></h2>
@@ -785,12 +785,12 @@ subobjects.</li>
 following declarations:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>B<span class="op">{</span>{1}, <span class="dv">2</span><span class="op">}</span>         <span class="co">// already valid in C++17</span></span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>B<span class="op">{{</span><span class="dv">1</span><span class="op">}</span>, <span class="dv">2</span><span class="op">}</span>         <span class="co">// already valid in C++17</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>           <span class="co">// already valid in C++17</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>     <span class="co">// proposed</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>B<span class="op">{{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>   <span class="co">// proposed</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>B<span class="op">{.</span>a<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b{2}<span class="op">}</span>   <span class="co">// proposed</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>B<span class="op">{.</span>a<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">{</span><span class="dv">2</span><span class="op">}}</span>   <span class="co">// proposed</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>B<span class="op">{.</span>b<span class="op">=</span><span class="dv">2</span>, <span class="op">.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>     <span class="co">// still ill-formed</span></span></code></pre></div>
 </blockquote>
 </div>
