@@ -761,7 +761,14 @@ initializing a base class subobject and
 initializing a direct member. So it strikes me as especially contrary to
 the design to suddenly mandate braces here.</p>
 <p>But <em>allowing</em> (not mandating) braces? That seems totally
-fine.</p>
+fine. Also, notably, gcc in <code class="sourceCode cpp"><span class="op">-</span>std<span class="op">=</span>c<span class="op">++</span><span class="dv">17</span></code>
+mode — still to this day on trunk — supports <code class="sourceCode cpp">B<span class="op">{{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>.
+We actually had some code break while upgrading to C++20 that
+initialized aggregates in this way. While I think <code class="sourceCode cpp">B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>
+is the clearest way to initialize this type, <code class="sourceCode cpp">B<span class="op">{{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>
+is still great — and both are substantial improvements over the best you
+can do in valid C++20 today, which would be either <code class="sourceCode cpp">B<span class="op">{{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="dv">2</span><span class="op">}</span></code>
+or simply <code class="sourceCode cpp">B<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span></code>.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes extending designated initialization syntax
 to:</p>
