@@ -1,6 +1,8 @@
 ---
 title: "Designated-initializers for Base Classes"
-document: P2287R3
+draft: false
+document: 2287
+revision: 3
 date: today
 audience: EWG
 author:
