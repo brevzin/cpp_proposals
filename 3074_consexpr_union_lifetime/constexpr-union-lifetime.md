@@ -223,7 +223,7 @@ There are several potential solutions in this space:
 
 The first revision of this paper ([@P3074R0]) proposed that last option. However, with the addition of the overlapping subobjects problem and the realization that the union solution has overhead compared to the buffer storage solution, it would be more desirable to solve both problems in one go. That is, it's not enough to just start the lifetime of the alternative, we also want a trivially constructible/destructible solution for uninitialized storage.
 
-[@P3074R1] and [@P3074R2] proposed the first solution (`std::uninitialized<T>`). This revision proposes the third or fourth.
+[@P3074R1] and [@P3074R2] proposed the first solution (`std::uninitialized<T>`). [@P3074R3] proposed either the third or fourth. This revision (R4) proposes specifically the third (just make it work).
 
 Let's go over some of the solutions.
 
