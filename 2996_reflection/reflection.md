@@ -30,7 +30,7 @@ Since [@P2996R5]:
 
 * fixed broken "Emulating typeful reflection" example.
 * removed linkage restrictions on objects of consteval-only type that were introduced in St. Louis.
-* make friends with modules: define the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`.
+* make friends with modules: define _injected declarations_ and _injected points_, as well as the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`.
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
 * specified constraints for `enumerators_of` in terms of `has_complete_definition`.
@@ -3553,7 +3553,10 @@ Add a new paragraph after the definition of _potentially constant-evaluated_ [ex
 ::: std
 ::: addu
 
-[22]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are visible to certain expressions used for reflection. During the evaluation of a set of manifestly constant-evaluated expressions `$M$`, let `$E$` be the unique such expression whose result is required for the evaluation of every other expression in `$M$`. The evaluation context comprises the points in the instantiation context of `$E$` ([module.context]).
+[22]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context an expression `$E$` comprises the union of
+
+* [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
+* [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before the next evaluation of `$E$`.
 
 :::
 :::
@@ -3574,6 +3577,18 @@ Add another new paragraph defining _plainly constant-evaluated_ expressions:
     * in a `$concept-id$` ([temp.names]{.sref}), or
     * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
   * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
+
+:::
+:::
+
+Add new paragraphs defining _injected declarations_ and _injected points_:
+
+::: std
+::: addu
+
+[24]{.pnum} The evaluation of a manifestly constant-evaluated expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`, and for which special rules apply ([module.reach]). The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
+
+[25]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
 
 :::
 :::
@@ -3784,6 +3799,18 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 ::: std
 
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
+:::
+
+### [module.reach] Reachability
+
+Modify the definition of reachability to account for injected declarations:
+
+::: std
+[3]{.pnum} A declaration `$D$` is _reachable from_ a point `$P$` if
+
+* [#.#]{.pnum} [`$P$` is not an injected point and]{.addu} `$D$` appears prior to `$P$` in the same translation unit, [or]{.rm}
+* [#.#]{.pnum} [`$D$` is an injected declaration for which `$P$` is the corresponding injected point, or]{.addu}
+* [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]), appears in a translation unit that is reachable from `$P$`, and does not appear within a _private-module-framgent_.
 :::
 
 ### [over.built]{.sref} Built-in operators {-}
@@ -4748,9 +4775,9 @@ consteval bool has_linkage(info r);
 consteval bool is_complete_type(info r);
 ```
 
-[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a definition reachable from the evaluation context, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: `true` if `is_type(r)` is `true` and the type represented by `dealias(r)` is not an incomplete type ([basic.types]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `is_type(r)` is `true` and there is some point in the evaluation context from which the type represented by `dealias(r)` is not an incomplete type ([basic.types]). Otherwise, `false`.
 
 ```cpp
 consteval bool has_complete_definition(info r);
@@ -4899,7 +4926,7 @@ static_assert(object_of(^x) == object_of(^y)); // OK, because y is a reference
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable usable in constant expressions ([expr.const]) whose type is a structural type ([temp.type]), an enumerator, or a value.
+[#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]), an enumerator, or a value.
 
 [#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
 
@@ -4975,7 +5002,7 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 consteval vector<info> members_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either a complete class type or a namespace.
+[#]{.pnum} *Constant When*: `r` is a reflection representing either a namespace or a class type that is complete from some point in the evaluation context.
 
 [#]{.pnum} A member of a class or namespace `$E$` is _members-of-representable_ if it is either
 
@@ -4994,8 +5021,7 @@ and if its first declaration is within a definition of `$E$`.
 
 [#]{.pnum} A member `$M$` of a class or namespace is _members-of-visible_ from a point `$P$` if there exists a declaration `$D$` of `$M$` that is reachable from `$P$`, and either `$M$` is not TU-local or `$D$` is declared in the translation unit containing `$P$`.
 
-
-[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a definition reachable from the evaluation context, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all _members-of-representable_ members of the entity represented by `r` that are _members-of-visible_ from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
@@ -5215,10 +5241,10 @@ template <class T>
 [#]{.pnum} *Constant When*:
 
 - [#.#]{.pnum} `r` represents a value or enumerator of type `U`, and the cv-unqualified types of `T` and `U` are the same,
-- [#.#]{.pnum} `T` is not a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions, and the cv-unqualified types of `T` and `U` are the same,
-- [#.#]{.pnum} `T` is a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions or a function, the cv-unqualified types of `T` and `U` are the same, and `U` is not more cv-qualified than `T`,
+- [#.#]{.pnum} `T` is not a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context, and the cv-unqualified types of `T` and `U` are the same,
+- [#.#]{.pnum} `T` is a reference type, `r` represents a function or a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context, the cv-unqualified types of `T` and `U` are the same, and `U` is not more cv-qualified than `T`,
 - [#.#]{.pnum} `T` is a pointer type, `r` represents a function or non-bit-field non-static data member, and the statement `T v = &$expr$`, where `$expr$` is an lvalue naming the entity represented by `r`, is well-formed, or
-- [#.#]{.pnum} `T` is a pointer type, `r` represents an object or variable `$V$` of type `U` that is usable in constant expressions or a value, `U` is the closure type of a non-generic lambda, and the statement `T v = +$expr$`, where `$expr$` is an lvalue designating `$V$`, is well-formed.
+- [#.#]{.pnum} `T` is a pointer type, `r` represents a value or an object or variable `$V$` of type `U` that is usable in constant expressions from a point in the evaluation context, `U` is the closure type of a non-generic lambda, and the statement `T v = +$expr$`, where `$expr$` is an lvalue designating `$V$`, is well-formed.
 
 [#]{.pnum} *Returns*:
 
@@ -5387,7 +5413,8 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- `class_type` represents an incomplete class type `$C$`. A point in the evaluation context ([expr.const]) belongs to the same module to which `$C$` is attached,
+- `class_type` represents a class type `$C$` that is incomplete from every point in the evaluation context.
+- the manifestly constant-evaluated expression under evaluation belongs to a translation unit in the same module to which `$C$` is attached.
 - `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
 - the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
@@ -5400,7 +5427,7 @@ consteval bool is_data_member_spec(info r);
 for every `@$r$~$k$~@` in `mdescrs`.
 
 [#]{.pnum} *Effects*:
-Defines `class_type` with properties as follows:
+Produces an injected definition ([expr.const]) of `class_type`, whose locus is immediately after the manifestly constant-evaluated expression whose evaluation is producing the definition, with properties as follows:
 
 - [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
 - [#.#]{.pnum} The definition of `class_type` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
