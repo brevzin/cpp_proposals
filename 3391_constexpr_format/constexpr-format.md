@@ -69,16 +69,51 @@ The chrono types (all of them) are specified to be formatted as if by streaming 
 
 ## Other Types
 
-There are a few other types in the standard library that have formatters that rely on functionality that is not currently `constexpr`. I have not investigated these, so they will remain non-`constexpr`:
-
-* `stacktrace_entry`
-* `filesystem::path`
-
+There are a few other types in the standard library that have formatters that rely on functionality that is not currently `constexpr`: `stacktrace_entry`, `filesystem::path`, and `thread::id`. Those will remain non-`constexpr` formattable. Additionally, `void const*` cannot be formatted at compile time because it cannot be converted to an address.
 
 
 ## Implementation Experience
 
 The `{fmt}` library has supported compile-time formatting for a while, just through a different API with the format string annotated: as `format_to(out, FMT_COMPILE("x={}"), x)`. That implementation even supports floating point types at compile time ([example](https://godbolt.org/z/W13nxE9ds)), but not the chrono types.
+
+Implementing this in libstdc++ was mostly a matter of marking a lot of functions `constexpr` (which is easy thanks to `-fimplicit-constexpr`). There were only two specific changes I had to make:
+
+1. When assigning into the union, the current implementation [does this](https://github.com/gcc-mirror/gcc/blob/8c01976b8e34eaa2483ab37d1bd18ebc5c8ada95/libstdc%2B%2B-v3/include/std/format#L3270):
+   ```cpp
+   template<typename _Tp>
+   	[[__gnu__::__always_inline__]]
+   	void
+   	_M_set(_Tp __v) noexcept
+   	{
+   	  if constexpr (derived_from<_Tp, _HandleBase>)
+   	    std::construct_at(&_M_handle, __v);
+   	  else
+   	    _S_get<_Tp>(*this) = __v;
+   	}
+   ```
+   In that last assignment, `_S_get<_Tp>(*this)` returns the appropriate member of the `union` for the type `_Tp`. That doesn't work during constant evaluation (although it can probably be made to) since there's no active member yet. So I had to change that to be a new function invoked like `_S_set(*this, __v)`.
+
+2. Like `{fmt}`, libstdc++ has a derived scanner type that is only constructed during constant evaluation time and is only used for parsing. This gets confusing when we also do formatting at compile time, because we don't have that compile-time scanner type, so casting down to it will fail. In libstdc++, this is easy to fix though since there is a member pointer to array of types that is just `nullptr` if that scanner isn't used — so we can check that before downcasting.
+
+And with that, [this works](https://godbolt.org/z/ffbzP7eqb) (you can see the changes in question on line 3322 for the changed call to `_S_set` and 4392 for the check, at compile-time only, of `_M_types`):
+
+::: std
+```cpp
+template <auto F>
+constexpr auto formatted = []{
+    static constexpr auto array = []{
+        std::array<char, 100> a = {};
+        F(a.data());
+        return a;
+    }();
+
+    return std::string_view(array.data());
+}();
+
+static_assert(formatted<[](char* p){std::format_to(p, "x={}", 42);}> == "x=42");
+static_assert(formatted<[](char* p){std::format_to(p, "x={:{}}", 42, 5);}> == "x=   42");
+```
+:::
 
 # Proposal
 
@@ -313,9 +348,12 @@ Each header that declares the template `formatter` provides the following enable
   ```cpp
   template<> struct formatter<ArithmeticT, charT>;
   ```
-* [2.4]{.pnum} For each `charT`, the [constexpr-enabled]{addu} pointer type specializations
+* [2.4]{.pnum} For each `charT`, the [constexpr-enabled]{.addu} pointer type specialization[s]{.rm}
   ```cpp
   template<> struct formatter<nullptr_t, charT>;
+  ```
+* [2.5]{.pnum} [For each `charT`, the pointer type specializations]{.addu}
+  ```cpp
   template<> struct formatter<void*, charT>;
   template<> struct formatter<const void*, charT>;
   ```
@@ -347,7 +385,7 @@ Mark `basic_format_context` as mostly `constexpr` in [format.context]{.sref} (ev
 -     iterator out();
 -     void advance_to(iterator it);
 +     constexpr iterator out();
-+     void advance_to(iterator it);
++     constexpr void advance_to(iterator it);
     };
   }
 ```
@@ -526,8 +564,8 @@ The `basic_format_arg` class template can be made entirely `constexpr` too, in [
 -     basic_format_arg() noexcept;
 +     constexpr basic_format_arg() noexcept;
 
-      explicit operator bool() const noexcept;
--     constexpr explicit operator bool() const noexcept;
+-     explicit operator bool() const noexcept;
++     constexpr explicit operator bool() const noexcept;
 
       template<class Visitor>
 -       decltype(auto) visit(this basic_format_arg arg, Visitor&& vis);
@@ -678,15 +716,4 @@ And the container adaptors in [container.adaptors.format]{.sref}:
     };
   }
 ```
-:::
-
-And specify the `thread::id` formatter to be `constexpr`-enabled in [thread.thread.id]{.sref}/11:
-
-::: std
-```cpp
-template<class charT> struct formatter<thread::id, charT>;
-```
-
-[11]{.pnum} `formatter<thread​::​id, charT>` [is a constexpr-enabled specialization that]{.addu} interprets format-spec as a thread-id-format-spec.
-The syntax of format specifications is as follows:
 :::
