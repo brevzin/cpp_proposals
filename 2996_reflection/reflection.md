@@ -3898,7 +3898,7 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
 
-### [module.reach] Reachability
+### [module.reach]{.sref} Reachability {-}
 
 Modify the definition of reachability to account for injected declarations:
 
@@ -3908,6 +3908,17 @@ Modify the definition of reachability to account for injected declarations:
 * [#.#]{.pnum} [`$P$` is not an injected point and]{.addu} `$D$` appears prior to `$P$` in the same translation unit, [or]{.rm}
 * [#.#]{.pnum} [`$D$` is an injected declaration for which `$P$` is the corresponding injected point, or]{.addu}
 * [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]), appears in a translation unit that is reachable from `$P$`, and does not appear within a _private-module-framgent_.
+:::
+
+### [class.mem.general]{.sref} General {-}
+
+Extend paragraph 5, and modify note 3, to clarify the existence of subobjects corresponding to non-static data members of reference types.
+
+::: std
+[5]{.pnum} A data member or member function may be declared `static` in its _member-declaration_, in which case it is a _static member_ (see [class.static]) (a _static data member_ ([class.static.data]) or _static member function_ ([class.static.mfct]), respectively) of the class. Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non.static]), respectively). [For each non-static data member of reference type, there is a unique member subobject whose size and alignment is the same as if the data member were declared with the corresponding pointer type.]{.addu}
+
+[[A non-static data member of non-reference type is a member subobject of a class object.]{.rm} An object of class type has a member subobject corresponding to each non-static data member of its class]{.note3}
+
 :::
 
 ### [over.built]{.sref} Built-in operators {-}
@@ -4632,7 +4643,7 @@ namespace std::meta {
 :::
 :::
 
-### [meta.reflection.operators] Operator representations
+### [meta.reflection.operators] Operator representations {-}
 
 ::: std
 ::: addu
@@ -5176,7 +5187,7 @@ consteval vector<info> enumerators_of(info type_enum);
 :::
 :::
 
-### [meta.reflection.member.access], Reflection member access queries
+### [meta.reflection.member.access], Reflection member access queries {-}
 
 ::: std
 ::: addu
@@ -5295,35 +5306,35 @@ consteval member_offsets offset_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class specifier.
 
-[#]{.pnum} If `r` represents a non-static data member of reference type for some class type `$Cls$`, then let `$V$` be the number of bits from the beginning of the object representation of `$Cls$` to the value representation of the 
-
 [#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
 [#]{.pnum} *Returns*: `{V / CHAR_BIT * CHAR_BIT, V % CHAR_BIT}`.
+
+[The subobject corresponding to a non-static data member of reference type has the same size as the corresponding pointer type.]{.note}
 
 ```cpp
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, non-static data member, base class specifier, object, value, variable, or description of a declaration of a non-static data member.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns* If `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member whose associated subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
 ```cpp
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing an object, variable, type, non-static data member that is not a bit-field, base class specifier, or description of a declaration of a non-static data member.
+[#]{.pnum} *Constant When*: `r` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a type, variable, or object, then the alignment requirement of the entity or object. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented non-static data member within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of a declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
+[#]{.pnum} *Returns*: If `r` represents a type, variable, or object, then the alignment requirement of the entity or object. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of a declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of an object, value, variable, type, non-static data member, base class specifier, or description of a declaration of a non-static data member.
+[#]{.pnum} *Constant When*: `r` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns* If `r` represents a type, then the size in bits of any object having the represented type. Otherwise, if `r` represents a non-static data member that is a bit-field, then the width of the represented bit-field. Otherwise, if `r` represents a description of a declaration of a non-static data member for which any data member declared having the properties described by `r` would be a bit-field, then the width of such a bit-field. Otherwise, `bit_size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field, or a description of a declaration of such a bit-field data member, then the width of the bit-field. Otherwise, `CHAR_BIT * size_of(r)`.
 :::
 :::
 
