@@ -5118,7 +5118,7 @@ consteval vector<info> members_of(info r);
 * a `$typedef-name$`,
 * a primary class template, function template, primary variable template, alias template, or concept,
 * a variable or reference,
-* a function,
+* a function whose constraints (if any) are satisfied,
 * a non-static data member,
 * a namespace, or
 * a namespace alias,
