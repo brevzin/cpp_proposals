@@ -5114,7 +5114,7 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} A member of a class or namespace `$E$` is _members-of-representable_ if it is either
 
-* a class,
+* a class that is not a closure type,
 * a `$typedef-name$`,
 * a primary class template, function template, primary variable template, alias template, or concept,
 * a variable or reference,
