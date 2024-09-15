@@ -257,7 +257,7 @@ But is much uglier and filled with tons of syntactic noise that doesn't contribu
 ```
 :::
 
-The impulsive to emphasize the reflection operation by making it stand out is, while understandable, fundamentally misguided. The code is never about taking a reflection; it's always about passing an entity to a function that then operates on it. The fact that we need to prefix the entity with `^^` is the price we're paying because entities aren't ordinary values so we need to apply an operator to turn them into ones. Not something to proudly write home about.
+The impulse to emphasize the reflection operation by making it stand out is, while understandable, fundamentally misguided. The code is never about taking a reflection; it's always about passing an entity to a function that then operates on it. The fact that we need to prefix the entity with `^^` is the price we're paying because entities aren't ordinary values so we need to apply an operator to turn them into ones. Not something to proudly write home about.
 
 Or, in other words, we cannot write the expression `f(int, float)` so we have to write `f(^^int, ^^float)`, which is the next best thing. Adding a ton of `metaof` is not a feature.
 
