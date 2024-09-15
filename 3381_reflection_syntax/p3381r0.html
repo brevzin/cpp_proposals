@@ -1111,7 +1111,8 @@ entity with
 price we’re paying because entities aren’t ordinary values so we need to
 apply an operator to turn them into ones. Not something to proudly write
 home about.</p>
-<p>Or, in other words, we cannot write the expression <code class="sourceCode cpp">f<span class="op">(</span><span class="dt">int</span>, <span class="dt">float</span><span class="op">)</span></code>
+<p>Or, in other words, we cannot <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> write the expression
+<code class="sourceCode cpp">f<span class="op">(</span><span class="dt">int</span>, <span class="dt">float</span><span class="op">)</span></code>
 so we have to write <code class="sourceCode cpp">f<span class="op">(^^</span><span class="dt">int</span>, <span class="op">^^</span><span class="dt">float</span><span class="op">)</span></code>,
 which is the next best thing. Adding a ton of
 <code class="sourceCode cpp">metaof</code> is not a feature.</p>
@@ -1167,7 +1168,7 @@ expression (<code class="sourceCode cpp">E</code>). Getting the
 reflection of the type/expression is <em>not</em> an important operation
 here. Making it stand out more does not have value. It would hide the
 actual operation.</p>
-<p>The same is true for all operations that might want to perform.
+<p>The same is true for all operations that we might want to perform.
 Consider wanting to iterate over the numerators of
 <code class="sourceCode cpp">Color</code>:</p>
 <div class="std">
@@ -1206,9 +1207,26 @@ the keyword-name enters the “internal token stream,” the user cannot
 hope to understand the meaning of the expression without learning the
 meaning of <code class="sourceCode cpp">reflectof</code> (or
 <code class="sourceCode cpp">metaof</code> or
-<code class="sourceCode cpp">reflof</code> or …).</p>
+<code class="sourceCode cpp">reflof</code> or …). That is exactly the
+opposite of novice-friendly.</p>
+<p>A parallel can be made with templates. In <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>
+the template machinery is often “invisible”. the
+<code class="sourceCode cpp"><span class="op">&lt;&gt;</span></code>
+could be replaced by a keyword here as well. For instance, we could’ve
+had a keyword <code class="sourceCode cpp">substitute</code> and made
+forming a template something like <code class="sourceCode cpp">substitute<span class="op">(</span>vector, <span class="dt">int</span><span class="op">)</span></code>
+instead of <code class="sourceCode cpp">vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>.
+However, we think most people would agree the punctuator puts the focus
+on the operation itself not the grammatical limitations of the language.
+Lots of novices engage in using templates long before writing templates,
+and while we’ve seen arguments in favor of a <em>different</em>
+punctuator for template arguments (such as <code class="sourceCode cpp">vector<span class="op">(</span><span class="dt">int</span><span class="op">)</span></code>
+or D’s <code class="sourceCode cpp">vector<span class="op">!(</span><span class="dt">int</span><span class="op">)</span></code>,
+which avoid the
+<code class="sourceCode cpp"><span class="op">&lt;</span></code>
+ambiguity), we’ve never seen an argument for a keyword here.</p>
 <p>The other thing to point out is that reflection is not necessarily
-going ot be a prominently user-facing facility. Certainly not a
+going to be a prominently user-facing facility. Certainly not a
 novice-facing one. Reflection opens the door to a large variety of
 libraries that can make otherwise very complex operations very easy —
 from even expert-unfriendly to novice-friendly. But the user-facing API
@@ -1242,6 +1260,18 @@ C++26. <a href="https://wg21.link/p2996r5"><div class="csl-block">https://wg21.l
 2024-07-16. Code Injection with Token Sequences. <a href="https://wg21.link/p3294r1"><div class="csl-block">https://wg21.link/p3294r1</div></a>
 </div>
 </div>
+<section class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Consider the expression <code class="sourceCode cpp">f<span class="op">(</span>X<span class="op">(</span><span class="dt">int</span><span class="op">))</span></code>,
+where <code class="sourceCode cpp">X</code> is a type. This could be
+calling <code class="sourceCode cpp">f</code> with the function type
+<code class="sourceCode cpp">X<span class="op">(</span><span class="dt">int</span><span class="op">)</span></code>
+or with a value of <code class="sourceCode cpp">X</code> constructed
+with <code class="sourceCode cpp"><span class="dt">int</span></code>.
+How do you differentiate?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
 </div>
 </div>
 </body>

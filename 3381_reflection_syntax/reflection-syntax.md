@@ -259,7 +259,9 @@ But is much uglier and filled with tons of syntactic noise that doesn't contribu
 
 The impulse to emphasize the reflection operation by making it stand out is, while understandable, fundamentally misguided. The code is never about taking a reflection; it's always about passing an entity to a function that then operates on it. The fact that we need to prefix the entity with `^^` is the price we're paying because entities aren't ordinary values so we need to apply an operator to turn them into ones. Not something to proudly write home about.
 
-Or, in other words, we cannot write the expression `f(int, float)` so we have to write `f(^^int, ^^float)`, which is the next best thing. Adding a ton of `metaof` is not a feature.
+Or, in other words, we cannot [^sucks] write the expression `f(int, float)` so we have to write `f(^^int, ^^float)`, which is the next best thing. Adding a ton of `metaof` is not a feature.
+
+[^sucks]: Consider the expression `f(X(int))`, where `X` is a type. This could be calling `f` with the function type `X(int)` or with a value of `X` constructed with `int`. How do you differentiate?
 
 We can see this more clearly if we compare some language operators with their reflection equivalents. We have several operators in the language that take a type and produce a value of specific type — which makes them initially seem like precedent for how the reflection operator should behave. But:
 
@@ -271,7 +273,7 @@ We can see this more clearly if we compare some language operators with their re
 
 In all cases, the operation being performed is to get the size of the type (`sizeof` or `size_of`), the alignment of the type (`alignof` or `align_of`), or to check whether the expression is noexcept (`noexcept` or `is_noexcept`, noting that we don't have expression reflection yet — but when we do it'll look like this) and the operand is the type (`T`) or expression (`E`). Getting the reflection of the type/expression is *not* an important operation here. Making it stand out more does not have value. It would hide the actual operation.
 
-The same is true for all operations that might want to perform. Consider wanting to iterate over the numerators of `Color`:
+The same is true for all operations that we might want to perform. Consider wanting to iterate over the numerators of `Color`:
 
 ::: std
 ```cpp
@@ -297,6 +299,8 @@ substitute(reflectof(^^std::map, {reflectof(^^std::string), reflectof(^^int)}))
 :::
 
 
-The former reading more clearly expresses the intent. Keywords demand to be read, whereas sigils may be internally skipped over. Eliding the sigil from the internal dialogue lets the user put aside the fact that reflection is happening. They may read it as "enumerators of `Color`" or "substitute `map` with `string` and `int`." Once the keyword-name enters the "internal token stream," the user cannot hope to understand the meaning of the expression without learning the meaning of `reflectof` (or `metaof` or `reflof` or ...).
+The former reading more clearly expresses the intent. Keywords demand to be read, whereas sigils may be internally skipped over. Eliding the sigil from the internal dialogue lets the user put aside the fact that reflection is happening. They may read it as "enumerators of `Color`" or "substitute `map` with `string` and `int`." Once the keyword-name enters the "internal token stream," the user cannot hope to understand the meaning of the expression without learning the meaning of `reflectof` (or `metaof` or `reflof` or ...). That is exactly the opposite of novice-friendly.
 
-The other thing to point out is that reflection is not necessarily going ot be a prominently user-facing facility. Certainly not a novice-facing one. Reflection opens the door to a large variety of libraries that can make otherwise very complex operations very easy — from even expert-unfriendly to novice-friendly. But the user-facing API of those libraries need not actually expose the reflection operator at all, and most use-cases would not do so at all. Arguing for a reflection keyword to be novice-friendly thus doubly misses the point — not only is it not novice friendly, but novices may rarely even have to look at such code.
+A parallel can be made with templates. In `vector<int>` the template machinery is often "invisible". the `<>` could be replaced by a keyword here as well. For instance, we could've had a keyword `substitute` and made forming a template something like `substitute(vector, int)` instead of `vector<int>`. However, we think most people would agree the punctuator puts the focus on the operation itself not the grammatical limitations of the language. Lots of novices engage in using templates long before writing templates, and while we've seen arguments in favor of a _different_ punctuator for template arguments (such as `vector(int)` or D's `vector!(int)`, which avoid the `<` ambiguity), we've never seen an argument for a keyword here.
+
+The other thing to point out is that reflection is not necessarily going to be a prominently user-facing facility. Certainly not a novice-facing one. Reflection opens the door to a large variety of libraries that can make otherwise very complex operations very easy — from even expert-unfriendly to novice-friendly. But the user-facing API of those libraries need not actually expose the reflection operator at all, and most use-cases would not do so at all. Arguing for a reflection keyword to be novice-friendly thus doubly misses the point — not only is it not novice friendly, but novices may rarely even have to look at such code.
