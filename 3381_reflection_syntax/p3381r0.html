@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-09" />
+  <meta name="dcterms.date" content="2024-09-15" />
   <title>Syntax for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-09</td>
+    <td>2024-09-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -601,7 +601,9 @@ Character<span></span></a></li>
 <li><a href="#multiple-characters" id="toc-multiple-characters"><span class="toc-section-number">3</span> Multiple
 Characters<span></span></a></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#why-not-a-keyword" id="toc-why-not-a-keyword"><span class="toc-section-number">5</span> Why Not A
+Keyword?<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
@@ -1007,7 +1009,11 @@ identifiers. This would work fine for reflection, but doesn’t have as
 nice a mirror for token sequences — would those use an extra set of
 braces? Additionally <code><span class="op">$</span></code> seems more
 associated with interpolation than reflection in many languages, so
-simply seems like the opposite choice here.</li>
+simply seems like the opposite choice here. In contrast,
+<code><span class="op">$$(e)</span></code> might be an interesting
+choice for a splice operator — and could arguably have some symmetry
+with <code class="sourceCode cpp"><span class="op">^^</span>e</code>
+with reflection (both having a double character).</li>
 <li><code><span class="op">/\e</span></code> — If we can’t have a small
 caret, can we have a big caret? This actually has the same issue as just
 <code class="sourceCode cpp">\e</code> because of the UCN issue.</li>
@@ -1034,9 +1040,190 @@ addition in the wording of
 <code class="sourceCode cpp"><span class="op">^^</span></code> to the
 grammar of
 <code class="sourceCode cpp"><em>operator-or-punctuator</em></code>.</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="why-not-a-keyword"><span class="header-section-number">5</span> Why
+Not A Keyword?<a href="#why-not-a-keyword" class="self-link"></a></h1>
+<p>The question that always comes up is: why some kind of punctuation
+mark (<code class="sourceCode cpp"><span class="op">^^</span></code> as
+proposed) instead of a keyword as originally proposed?</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong><span class="citation" data-cites="P1240R0">[<a href="https://wg21.link/p1240r0" role="doc-biblioref">P1240R0</a>]</span></strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> reflexpr<span class="op">(</span>S<span class="op">::</span>m<span class="op">)</span>;</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m <span class="op">=</span> s<span class="op">.</span>unreflexpr<span class="op">(</span>r<span class="op">)</span>;</span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^^</span>S<span class="op">::</span>m;</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> m <span class="op">=</span> s<span class="op">.[:</span>r<span class="op">:]</span>;</span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<p>Whether that keyword is <code class="sourceCode cpp">reflexpr</code>
+or <code class="sourceCode cpp">reflectof</code> or
+<code class="sourceCode cpp">reflof</code> or
+<code class="sourceCode cpp">metaof</code>, we feel that a keyword would
+be the wrong choice for a reflection (or, especially, a splice) operator
+and are strongly opposed to that direction.</p>
+<p>The primary reason for this is how heavy any keyword solution is
+compared to a punctuation solution, and how much that distracts from the
+intent of the code being presented.</p>
+<p>We can start with a simple example of a typelist:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>mp_list<span class="op">&lt;</span><span class="dt">signed</span> <span class="dt">char</span>, <span class="dt">short</span>, <span class="dt">int</span>, <span class="dt">long</span>, <span class="dt">long</span> <span class="dt">long</span><span class="op">&gt;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Which corresponds to this as proposed, which still makes the types
+themselves stand out:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">{^^</span><span class="dt">signed</span> <span class="dt">char</span>, <span class="op">^^</span><span class="dt">short</span>, <span class="op">^^</span><span class="dt">int</span>,  <span class="op">^^</span><span class="dt">long</span>, <span class="op">^^</span><span class="dt">long</span> <span class="dt">long</span><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>But is much uglier and filled with tons of syntactic noise that
+doesn’t contribute at all to readability if using a keyword:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span>metaof<span class="op">(</span><span class="dt">signed</span> <span class="dt">char</span><span class="op">)</span>, metaof<span class="op">(</span><span class="dt">short</span><span class="op">)</span>, metaof<span class="op">(</span><span class="dt">int</span><span class="op">)</span>, metaof<span class="op">(</span><span class="dt">long</span><span class="op">)</span>, metaof<span class="op">(</span><span class="dt">long</span> <span class="dt">long</span><span class="op">)}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The impulsive to emphasize the reflection operation by making it
+stand out is, while understandable, fundamentally misguided. The code is
+never about taking a reflection; it’s always about passing an entity to
+a function that then operates on it. The fact that we need to prefix the
+entity with
+<code class="sourceCode cpp"><span class="op">^^</span></code> is the
+price we’re paying because entities aren’t ordinary values so we need to
+apply an operator to turn them into ones. Not something to proudly write
+home about.</p>
+<p>Or, in other words, we cannot write the expression <code class="sourceCode cpp">f<span class="op">(</span><span class="dt">int</span>, <span class="dt">float</span><span class="op">)</span></code>
+so we have to write <code class="sourceCode cpp">f<span class="op">(^^</span><span class="dt">int</span>, <span class="op">^^</span><span class="dt">float</span><span class="op">)</span></code>,
+which is the next best thing. Adding a ton of
+<code class="sourceCode cpp">metaof</code> is not a feature.</p>
+<p>We can see this more clearly if we compare some language operators
+with their reflection equivalents. We have several operators in the
+language that take a type and produce a value of specific type — which
+makes them initially seem like precedent for how the reflection operator
+should behave. But:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Operation</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Language Operator</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Reflection</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>size</td>
+<td><code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">size_of<span class="op">(^^</span>T<span class="op">)</span></code></td>
+</tr>
+<tr class="even">
+<td>alignment</td>
+<td><code class="sourceCode cpp"><span class="kw">alignof</span><span class="op">(</span>T<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">align_of<span class="op">(^^</span>T<span class="op">)</span></code></td>
+</tr>
+<tr class="odd">
+<td>is noexcept?</td>
+<td><code class="sourceCode cpp"><span class="kw">noexcept</span><span class="op">(</span>E<span class="op">)</span></code></td>
+<td><code class="sourceCode cpp">is_noexcept<span class="op">(^^(</span>E<span class="op">))</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>In all cases, the operation being performed is to get the size of the
+type (<code class="sourceCode cpp"><span class="kw">sizeof</span></code>
+or <code class="sourceCode cpp">size_of</code>), the alignment of the
+type
+(<code class="sourceCode cpp"><span class="kw">alignof</span></code> or
+<code class="sourceCode cpp">align_of</code>), or to check whether the
+expression is noexcept
+(<code class="sourceCode cpp"><span class="kw">noexcept</span></code> or
+<code class="sourceCode cpp">is_noexcept</code>, noting that we don’t
+have expression reflection yet — but when we do it’ll look like this)
+and the operand is the type (<code class="sourceCode cpp">T</code>) or
+expression (<code class="sourceCode cpp">E</code>). Getting the
+reflection of the type/expression is <em>not</em> an important operation
+here. Making it stand out more does not have value. It would hide the
+actual operation.</p>
+<p>The same is true for all operations that might want to perform.
+Consider wanting to iterate over the numerators of
+<code class="sourceCode cpp">Color</code>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">// reads as the enumerators of Color</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>enumerators_of<span class="op">(^^</span>Color<span class="op">)</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">// reads as the enumerators of the reflection of Color</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>enumerators_of<span class="op">(</span>reflectof<span class="op">(</span>Color<span class="op">))</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Or to substituting
+<code class="sourceCode cpp">std<span class="op">::</span>map</code>
+with
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>
+and <code class="sourceCode cpp"><span class="dt">int</span></code>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">// reads as substitute map with string and int</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>substitute<span class="op">(^^</span>std<span class="op">::</span>map, <span class="op">{^^</span>std<span class="op">::</span>string, <span class="op">^^</span><span class="dt">int</span><span class="op">})</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">// reads as substitute the reflection of map of with</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">// the reflection of string and the reflection of int</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>substitute<span class="op">(</span>reflectof<span class="op">(^^</span>std<span class="op">::</span>map, <span class="op">{</span>reflectof<span class="op">(^^</span>std<span class="op">::</span>string<span class="op">)</span>, reflectof<span class="op">(^^</span><span class="dt">int</span><span class="op">)}))</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The former reading more clearly expresses the intent. Keywords demand
+to be read, whereas sigils may be internally skipped over. Eliding the
+sigil from the internal dialogue lets the user put aside the fact that
+reflection is happening. They may read it as “enumerators of
+<code class="sourceCode cpp">Color</code>” or “substitute
+<code class="sourceCode cpp">map</code> with
+<code class="sourceCode cpp">string</code> and
+<code class="sourceCode cpp"><span class="dt">int</span></code>.” Once
+the keyword-name enters the “internal token stream,” the user cannot
+hope to understand the meaning of the expression without learning the
+meaning of <code class="sourceCode cpp">reflectof</code> (or
+<code class="sourceCode cpp">metaof</code> or
+<code class="sourceCode cpp">reflof</code> or …).</p>
+<p>The other thing to point out is that reflection is not necessarily
+going ot be a prominently user-facing facility. Certainly not a
+novice-facing one. Reflection opens the door to a large variety of
+libraries that can make otherwise very complex operations very easy —
+from even expert-unfriendly to novice-friendly. But the user-facing API
+of those libraries need not actually expose the reflection operator at
+all, and most use-cases would not do so at all. Arguing for a reflection
+keyword to be novice-friendly thus doubly misses the point — not only is
+it not novice friendly, but novices may rarely even have to look at such
+code.</p>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P1240R0" class="csl-entry" role="doc-biblioentry">
+[P1240R0] Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2018-10-08.
+Scalable Reflection in C++. <a href="https://wg21.link/p1240r0"><div class="csl-block">https://wg21.link/p1240r0</div></a>
+</div>
 <div id="ref-P1240R2" class="csl-entry" role="doc-biblioentry">
 [P1240R2] Daveed Vandevoorde, Wyatt Childers, Andrew Sutton, Faisal
 Vali. 2022-01-14. Scalable Reflection. <a href="https://wg21.link/p1240r2"><div class="csl-block">https://wg21.link/p1240r2</div></a>

@@ -200,7 +200,7 @@ Some choices that we have considered:
 
 * `^^e` — While a single caret isn't viable, two carets would have no ambiguity with blocks. It's twice as long as the status quo, but requiring an additional character wouldn't be the end of the world. Two characters is short enough.
 * `^[e]` — A different way to work around the block ambiguity is to throw more characters at it, in this case surrounding the operand with square brackets. On the one hand, this is more symmetric with splicing. On the other hand, it's a heavier syntax.
-* `${e}`{.op} or `$(e)`{.op} — One way to work around the identifier issue with `$`{.op} presented in the previous section is to use additional tokens that cannot be in identifiers. This would work fine for reflection, but doesn't have as nice a mirror for token sequences — would those use an extra set of braces? Additionally `$`{.op} seems more associated with interpolation than reflection in many languages, so simply seems like the opposite choice here.
+* `${e}`{.op} or `$(e)`{.op} — One way to work around the identifier issue with `$`{.op} presented in the previous section is to use additional tokens that cannot be in identifiers. This would work fine for reflection, but doesn't have as nice a mirror for token sequences — would those use an extra set of braces? Additionally `$`{.op} seems more associated with interpolation than reflection in many languages, so simply seems like the opposite choice here. In contrast, `$$(e)`{.op} might be an interesting choice for a splice operator — and could arguably have some symmetry with `^^e` with reflection (both having a double character).
 * `/\e`{.op} — If we can't have a small caret, can we have a big caret? This actually has the same issue as just `\e` because of the UCN issue.
 
 # Proposal
@@ -211,3 +211,92 @@ It doesn't have any of the issues of the single-character solutions. Having the 
 
 This has already been implemented in both EDG and Clang. Pending Evolution approval, we will simply update [@P2996R5] to use the new syntax throughout — mostly just a search and replace, but with the extra addition in the wording of `^^` to the grammar of `$operator-or-punctuator$`.
 
+# Why Not A Keyword?
+
+The question that always comes up is: why some kind of punctuation mark (`^^` as proposed) instead of a keyword as originally proposed?
+
+::: cmptable
+### [@P1240R0]
+```cpp
+constexpr auto r = reflexpr(S::m);
+auto m = s.unreflexpr(r);
+```
+
+### Proposed
+```cpp
+constexpr auto r = ^^S::m;
+auto m = s.[:r:];
+```
+:::
+
+Whether that keyword is `reflexpr` or `reflectof` or `reflof` or `metaof`, we feel that a keyword would be the wrong choice for a reflection (or, especially, a splice) operator and are strongly opposed to that direction.
+
+The primary reason for this is how heavy any keyword solution is compared to a punctuation solution, and how much that distracts from the intent of the code being presented.
+
+We can start with a simple example of a typelist:
+
+::: std
+```cpp
+mp_list<signed char, short, int, long, long long>
+```
+:::
+
+Which corresponds to this as proposed, which still makes the types themselves stand out:
+
+::: std
+```cpp
+{^^signed char, ^^short, ^^int,  ^^long, ^^long long}
+```
+:::
+
+But is much uglier and filled with tons of syntactic noise that doesn't contribute at all to readability if using a keyword:
+
+::: std
+```cpp
+{metaof(signed char), metaof(short), metaof(int), metaof(long), metaof(long long)}
+```
+:::
+
+The impulsive to emphasize the reflection operation by making it stand out is, while understandable, fundamentally misguided. The code is never about taking a reflection; it's always about passing an entity to a function that then operates on it. The fact that we need to prefix the entity with `^^` is the price we're paying because entities aren't ordinary values so we need to apply an operator to turn them into ones. Not something to proudly write home about.
+
+Or, in other words, we cannot write the expression `f(int, float)` so we have to write `f(^^int, ^^float)`, which is the next best thing. Adding a ton of `metaof` is not a feature.
+
+We can see this more clearly if we compare some language operators with their reflection equivalents. We have several operators in the language that take a type and produce a value of specific type — which makes them initially seem like precedent for how the reflection operator should behave. But:
+
+|Operation|Language Operator|Reflection|
+|-|-|-|
+|size|`sizeof(T)`|`size_of(^^T)`|
+|alignment|`alignof(T)`|`align_of(^^T)`|
+|is noexcept?|`noexcept(E)`|`is_noexcept(^^(E))`|
+
+In all cases, the operation being performed is to get the size of the type (`sizeof` or `size_of`), the alignment of the type (`alignof` or `align_of`), or to check whether the expression is noexcept (`noexcept` or `is_noexcept`, noting that we don't have expression reflection yet — but when we do it'll look like this) and the operand is the type (`T`) or expression (`E`). Getting the reflection of the type/expression is *not* an important operation here. Making it stand out more does not have value. It would hide the actual operation.
+
+The same is true for all operations that might want to perform. Consider wanting to iterate over the numerators of `Color`:
+
+::: std
+```cpp
+// reads as the enumerators of Color
+enumerators_of(^^Color)
+
+// reads as the enumerators of the reflection of Color
+enumerators_of(reflectof(Color))
+```
+:::
+
+Or to substituting `std::map` with `std::string` and `int`:
+
+::: std
+```cpp
+// reads as substitute map with string and int
+substitute(^^std::map, {^^std::string, ^^int})
+
+// reads as substitute the reflection of map of with
+// the reflection of string and the reflection of int
+substitute(reflectof(^^std::map, {reflectof(^^std::string), reflectof(^^int)}))
+```
+:::
+
+
+The former reading more clearly expresses the intent. Keywords demand to be read, whereas sigils may be internally skipped over. Eliding the sigil from the internal dialogue lets the user put aside the fact that reflection is happening. They may read it as "enumerators of `Color`" or "substitute `map` with `string` and `int`." Once the keyword-name enters the "internal token stream," the user cannot hope to understand the meaning of the expression without learning the meaning of `reflectof` (or `metaof` or `reflof` or ...).
+
+The other thing to point out is that reflection is not necessarily going ot be a prominently user-facing facility. Certainly not a novice-facing one. Reflection opens the door to a large variety of libraries that can make otherwise very complex operations very easy — from even expert-unfriendly to novice-friendly. But the user-facing API of those libraries need not actually expose the reflection operator at all, and most use-cases would not do so at all. Arguing for a reflection keyword to be novice-friendly thus doubly misses the point — not only is it not novice friendly, but novices may rarely even have to look at such code.
