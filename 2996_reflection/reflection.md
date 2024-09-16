@@ -5416,7 +5416,13 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is a structural type that is not a reference type.
 
-[#]{.pnum} *Constant When*: Any subobject of the value computed by `expr` having reference or pointer type designates an object or entity that is a permitted result of a constant expression ([expr.const]).
+[#]{.pnum} *Constant When*: Any value computed by `expr` having pointer type, or every subobject of the value computed by `expr` having pointer or reference type, shall be the address of or refer to an object or entity that
+
+  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
+  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
+  - [#.#]{.pnum} is not a string literal object ([lex.string]),
+  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
+  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
 
 [#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the represented value is the cv-unqualified version of `T`.
 
@@ -5427,7 +5433,13 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is not a function type.
 
-[#]{.pnum} *Constant When*: `expr` designates an object or entity that is a permitted result of a constant expression.
+[#]{.pnum} *Constant When*: `expr` designates an object or entity that
+
+  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
+  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
+  - [#.#]{.pnum} is not a string literal object ([lex.string]),
+  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
+  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
 
 [#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 
