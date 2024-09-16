@@ -294,7 +294,7 @@ substitute(^^std::map, {^^std::string, ^^int})
 
 // reads as substitute the reflection of map of with
 // the reflection of string and the reflection of int
-substitute(reflectof(^^std::map, {reflectof(^^std::string), reflectof(^^int)}))
+substitute(reflectof(std::map), {reflectof(std::string), reflectof(int)}))
 ```
 :::
 
