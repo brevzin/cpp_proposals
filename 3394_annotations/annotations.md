@@ -40,7 +40,7 @@ There are problems with this approach, unfortunately:
 
 * It doesn't work for all contexts where we might want to annotate declarations (e.g., enumerators).
 * It doesn't directly express the intent.
-* It turns out that providing access to aliases used in the declaration of reflected entities raises difficult questions and P2996 is therefore likely going to drop the ability to access that information (with the intention of resurrecting the capability with a later paper once specification and implementation challenges have been addressed).
+* It turns out that providing access to aliases used in the declaration of reflected entities raises difficult questions and P2996 is therefore likely going to drop the ability to access that information (with the intention of resurrecting the capability with a later paqper once specification and implementation challenges have been addressed).
 
 In this paper, we propose simple mechanisms that more directly support the ability to annotate C++ constructs.
 
@@ -52,7 +52,7 @@ These examples are inspired from libraries in other programming languages that p
 
 ### Command-Line Argument Parsing
 
-Rust's [clap](https://docs.rs/clap/latest/clap/) library provides a way to add annotations to declarations to help drive how the parser is declared. We can now [do the same](https://godbolt.org/z/1sdqdEfro):
+Rust's [clap](https://docs.rs/clap/latest/clap/) library provides a way to add annotations to declarations to help drive how the parser is declared. We can now [do the same](https://godbolt.org/z/GsYKWjdeh):
 
 ```cpp
 struct Args {
@@ -123,6 +123,8 @@ auto parse(int argc, char** argv) -> Args {
 
         cli.add_argument(opt);
     }
+
+    // ...
 };
 ```
 
@@ -250,11 +252,73 @@ void invoke_all() {
                         fixture.[:F:](args...);
                     });
                 }
-            };
+            }
         }
-    };
+    }
 }
 ```
+
+### Serialization
+
+Rust's [serde](https://serde.rs/) library is a framework for serialization and deserialization. It is easy enough with reflection to do member-wise serialization. But how do you opt into that? An annotation provides a cheap mechanism of [doing just that](https://godbolt.org/z/51qjha8he) (built on top of [Boost.Json](https://www.boost.org/doc/libs/1_85_0/libs/json/doc/html/index.html)):
+
+```cpp
+struct [[=serde::derive]] Point {
+    int x, y;
+};
+```
+
+Allowing:
+
+```cpp
+// prints {"x":1,"y":2}
+std::cout << boost::json::value_from(Point{.x=1, .y=2});
+```
+
+But opting in is just the first thing you might want to do with serialization. You might also, for instance, want to change how fields are serialized. `serde` provides a lot of attributes to do so. The easiest to look at is `rename`, which uses the provided string instead of the name of the non-static data member:
+
+```cpp
+struct [[=serde::derive]] Person {
+    [[=serde::rename("firstName")]] std::string first;
+    [[=serde::rename("lastName")]] std::string last;
+};
+```
+
+Which leads to:
+
+```cpp
+// prints {"firstName":"Peter","lastName":"Dimov"}
+std::cout << boost::json::value_from(Person{.first="Peter", .last="Dimov"});
+```
+
+The implementation for these pieces is fairly straightforward. We provide an opt-in for the value conversion function when the `serde::derive` annotation is present. In that case, we walk all the non-static data members and write them into the `boost::json::value` output. If a `serde::Rename` annotation is present, we use that instead of the data member's name:
+
+```cpp
+namespace serde {
+    inline constexpr struct{} derive{};
+    struct Rename { char const* field; };
+    consteval auto rename(char const* field) -> Rename { return Rename{field}; }
+}
+
+namespace boost::json {
+    template <class T>
+        requires (has_annotation(^^T, serde::derive))
+    void tag_invoke(value_from_tag const&, value& v, T const& t) {
+        auto& obj = v.emplace_object();
+        template for (auto M : nonstatic_data_members_of(^^T)) {
+            constexpr auto field = annotation_of<serde::Rename>(M)
+                .transform([](serde::Rename r){
+                    return std::string_view(r.field);
+                })
+                .value_or(identifier_of(M));
+
+            obj[field] = boost::json::value_from(t.[:M:]);
+        }
+    }
+}
+```
+
+You can imagine extending this out to support a wide variety of other serialization-specific attributes that shouldn't otherwise affect the C++ usage of the type.
 
 ## Proposal
 
@@ -301,7 +365,12 @@ namespace std::meta {
   consteval vector<info> annotations_of(info item);            // (1)
   consteval vector<info> annotations_of(info item, info type); // (2)
   template<class T>
-    consteval optional<T> annotations_of(info item);           // (3)
+    consteval optional<T> annotation_of(info item);
+
+  template<class T>
+    consteval bool has_annotation(info item);                 // (3)
+  template<class T>
+    consteval bool has_annotation(info item, T const& value); // (4)
 
   consteval info annotate(info item,
                           info value,
@@ -311,11 +380,19 @@ namespace std::meta {
 
 `is_annotation` checks whether a particular reflection represents an annotation.
 
-We provide three overloads of `annotations_of` to retrieve all the annotations on a particular item:
+We provide two overloads of `annotations_of` to retrieve all the annotations on a particular item:
 
 1. Returns all the annotations.
 2. Returns all the annotations `a` such that `type_of(a) == type`.
-3. Returns the annotation `a` such that `dealias(type_of(a)) == ^^T`. If no such annotation exists, returns `nullopt`. If more than one such annotation exists and all the values are not template-argument-equivalent, this call is not a constant expression.
+
+And a singular version, `annotation_of<T>`, that returns the annotation `a` such that `dealias(type_of(a)) == ^^T`. If no such annotation exists, returns `nullopt`. If more than one such annotation exists and all the values are not template-argument-equivalent, this call is not a constant expression.
+
+And then two overloads of `has_annotation` that simply checks if a given annotation exists:
+
+3. Checks if there exists an annotation `a` such that `dealias(type_of(a)) == ^^T`.
+4. Checks if there exists an annotation `a` such that `value_of(a) == reflect_value(value)`.
+
+Of these, four can be directly implemented in terms of the unary `annotations_of(item)`, but we think they'll be common enough to merit inclusion.
 
 And lastly, `annotate` provides the ability to programmatically add an annotation to a declaration.
 
@@ -361,4 +438,4 @@ int select_footgun(int);
 
 ### Implementation Experience
 
-The core language feature and the basic query functions have been implemented in the EDG front end and in Dan Katz's P2996 Clang fork (with option `-freflection-latest`), both available on Compiler Explorer.
+The core language feature and the basic query functions have been implemented in the EDG front end and in Bloomberg's P2996 Clang fork (with option `-freflection-latest`), both available on Compiler Explorer.
