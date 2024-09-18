@@ -5535,8 +5535,7 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- `class_type` represents a class type `$C$` that is incomplete from every point in the evaluation context.
-- the manifestly constant-evaluated expression under evaluation belongs to a translation unit in the same module to which `$C$` is attached.
+- `class_type` represents a class type `$C$` that is incomplete from every point in the evaluation context,
 - `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
 - the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
