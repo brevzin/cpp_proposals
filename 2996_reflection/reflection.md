@@ -4161,7 +4161,7 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 ## Library
 
-### [structure.specifications]{.sref} Detailed specifications
+### [structure.specifications]{.sref} Detailed specifications {-}
 
 For convenience, we're going to add a new library element to [structure.specifications]{.sref}/3:
 
@@ -4178,7 +4178,7 @@ For convenience, we're going to add a new library element to [structure.specific
 
 :::
 
-### [namespace.std]{.sref} Namespace std
+### [namespace.std]{.sref} Namespace std {-}
 
 Insert before paragraph 7:
 
@@ -4201,7 +4201,7 @@ If F does not designate an addressable function, it is unspecified if or how a r
 :::
 
 
-### [meta.type.synop]{.sref} Header `<type_traits>` synopsis
+### [meta.type.synop]{.sref} Header `<type_traits>` synopsis {-}
 
 Add a new primary type category type trait:
 
@@ -4227,7 +4227,7 @@ Add a new primary type category type trait:
 ```
 :::
 
-### [meta.unary.cat]{.sref} Primary type categories
+### [meta.unary.cat]{.sref} Primary type categories {-}
 
 Add the `is_reflection` primary type category to the table in paragraph 3:
 
@@ -5925,6 +5925,21 @@ consteval info type_unwrap_reference(info type) {
 :::
 
 :::
+:::
+
+### [bit.cast]{.sref} Function template `bit_cast` {-}
+
+And we have adjust the requirements of `std::bit_cast` to not allow casting to or from `std::meta::info` as a constant, in [bit.cast]{.sref}/3:
+
+::: std
+[3]{.pnum} *Remarks*: This function is constexpr if and only if `To`, `From`, and the types of all subobjects of `To` and `From` are types `T` such that:
+
+* [#.1]{.pnum} `is_union_v<T>` is `false`;
+* [#.2]{.pnum} `is_pointer_v<T>` is `false`;
+* [#.3]{.pnum} `is_member_pointer_v<T>` is `false`;
+* [#.π]{.pnum} [`is_reflection_v<T>` is `false`;]{.addu}
+* [#.4]{.pnum} `is_volatile_v<T>` is `false`; and
+* [#.5]{.pnum} `T` has no non-static data members of reference type.
 :::
 
 ## Feature-Test Macro
