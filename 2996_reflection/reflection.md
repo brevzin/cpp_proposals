@@ -4015,16 +4015,16 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 
 ::: example2
 ```diff
-template<class T> void f();
-template<int I> void f();
+  template<class T> void f();
+  template<int I> void f();
 
-void g() {
-  f<int()>();       // int() is a type-id: call the first f()
+  void g() {
+    f<int()>();       // int() is a type-id: call the first f()
 
-+ constexpr int x = 42;
-+ f<[:^int:]>();    // splice-template-argument: calls the first f()
-+ f<[:^x:]>();      // splice-template-argument: calls the second f()
-}
++   constexpr int x = 42;
++   f<[:^int:]>();    // splice-template-argument: calls the first f()
++   f<[:^x:]>();      // splice-template-argument: calls the second f()
+  }
 ```
 :::
 
