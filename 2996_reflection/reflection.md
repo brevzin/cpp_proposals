@@ -33,6 +33,7 @@ Since [@P2996R5]:
 * make friends with modules: define _injected declarations_ and _injected points_, as well as the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`. An informal elaboration on this is included in a new section on "Reachability and injected declarations".
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
+* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by a separate paper).
 * specified constraints for `enumerators_of` in terms of `has_complete_definition`.
 * constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
 * changed `is_special_member` to `is_special_member_function` to align with core language terminology.
@@ -2348,7 +2349,6 @@ namespace std::meta {
   consteval auto bases_of(info type_class) -> vector<info>;
   consteval auto static_data_members_of(info type_class) -> vector<info>;
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
-  consteval auto subobjects_of(info type_class) -> vector<info>;
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 
   // @[member access](#member-access)@
@@ -2371,9 +2371,6 @@ namespace std::meta {
           info target,
           access_context from = access_context::current()) -> vector<info>;
   consteval auto accessible_static_data_members_of(
-          info target,
-          access_context from = access_context::current()) -> vector<info>;
-  consteval auto accessible_subobjects_of(
           info target,
           access_context from = access_context::current()) -> vector<info>;
 
@@ -2622,7 +2619,7 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 
 
 
-### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of`, `subobjects_of` {#member-queries}
+### `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `bases_of`, `enumerators_of` {#member-queries}
 
 ::: std
 ```c++
@@ -2632,12 +2629,6 @@ namespace std::meta {
 
   consteval auto static_data_members_of(info type_class) -> vector<info>;
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
-
-  consteval auto subobjects_of(info type_class) -> vector<info> {
-    auto subobjects = bases_of(type_class);
-    subobjects.append_range(nonstatic_data_members_of(type_class));
-    return subobjects;
-  }
 
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 }
@@ -2652,8 +2643,6 @@ Reflections of structured bindings shall not appear in the returned vector.
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
 `static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, in order, respectively.
-
-`subobjects_of` returns the base class subobjects and the non-static data members of a type, in declaration order. Note that the term [subobject](https://eel.is/c++draft/intro.object#def:subobject) also includes _array elements_, which we are excluding here. Such reflections would currently be of minimal use since you could not splice them with access (e.g. `arr.[:elem:]` is not supported), so would need some more thought first.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
@@ -2673,7 +2662,6 @@ namespace std::meta {
   consteval auto accessible_bases_of(info target, access_context from = {}) -> vector<info>;
   consteval auto accessible_static_data_members_of(info target, access_context from = {}) -> vector<info>;
   consteval auto accessible_nonstatic_data_members_of(info target, access_context from = {}) -> vector<info>;
-  consteval auto accessible_subobjects_of(info target, access_context from = {}) -> vector<info>;
 }
 ```
 :::
@@ -2697,8 +2685,8 @@ class C {
 // which does not have access to C::k
 // but once we acquire the access context from C, that is proof that
 // we have access, so we can get a reflection to C::k
-static_assert(accessible_subobjects_of(^C).size() == 0);
-static_assert(accessible_subobjects_of(^C, C::make_context()).size() == 1);
+static_assert(accessible_nonstatic_data_members_of(^C).size() == 0);
+static_assert(accessible_nonstatic_data_members_of(^C, C::make_context()).size() == 1);
 ```
 :::
 
@@ -3202,7 +3190,7 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: addu
 
-[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to a specialization of `std::meta::define_class`, every definition of that class shall be the result of a call to the same specialization; and for every reflection in the range of reflections describing its class members, every other such call shall have a corresponding value, occupying the same position in its respective range, to which the reflection compares equal.
+[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to a specialization of `std::meta::define_class`, every definition of that class shall be the result of a call to the same specialization; and for every reflection in the range of reflections describing its class members and unnamed bit-fields, every other such call shall have a corresponding value, occupying the same position in its respective range, to which the reflection compares equal.
 
 :::
 
@@ -3969,7 +3957,7 @@ Modify the grammars for `$template-id$` and `$template-argument$` as follows:
 Extend paragraph 1 to cover template splicers:
 
 ::: std
-The component name of a `$simple-template-id$`, `$template-id$`, or `$template-name$` [that is an `$identifier$`]{.addu} is the first name in it. [If the `$template-name$` is a `$splice-template-name$`, the `$splice-specifier$` shall designate a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template; the `$splice-template-name$` names the entity designated by the `$splice-specifier$`.]{.addu}
+The component name of a `$simple-template-id$`, `$template-id$`, or `$template-name$` [that is an `$identifier$`]{.addu} is the first name in it. [If the `$template-name$` is a `$splice-template-name$`, the `$splice-specifier$` shall designate a concept, variable template, class template, alias template, or function template that is not a constructor template or destructor template; the `$splice-template-name$` designates the entity designated by the `$splice-specifier$`.]{.addu}
 :::
 
 Extend paragraph 3 of [temp.names]{.sref}:
@@ -4024,6 +4012,26 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 ::: std
 
 [3]{.pnum} [A `$template-argument$` of the form `$splice-specifier$` is interpreted as a `$splice-template-argument$`.]{.addu} In a `$template-argument$` [that is not a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`.
+
+::: example2
+```cpp
+template<class T> void f();
+template<int I> void f();
+
+void g() {
+  f<int()>();       // int() is a type-id: call the first f()
+```
+::: addu
+```cpp
+  constexpr int x = 42;
+  f<[:^int:]>();      // splice-template-argument: calls the first f()
+  f<[:^x:]>();      // splice-template-argument: calls the second f()
+```
+:::
+```cpp
+}
+```
+:::
 
 :::
 
@@ -4387,7 +4395,6 @@ namespace std::meta {
   consteval vector<info> bases_of(info type);
   consteval vector<info> static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
-  consteval vector<info> subobjects_of(info type);
   consteval vector<info> enumerators_of(info type_enum);
 
   // [meta.reflection.member.access], reflection member access queries
@@ -4414,9 +4421,6 @@ namespace std::meta {
           info target,
           access_context from = access_context::current());
   consteval vector<info> accessible_static_data_members_of(
-          info target,
-          access_context from = access_context::current());
-  consteval vector<info> accessible_subobjects_of(
           info target,
           access_context from = access_context::current());
 
@@ -5168,16 +5172,6 @@ consteval vector<info> nonstatic_data_members_of(info type);
 [#]{.pnum} *Returns*: A `vector` containing the reflections of the non-static data members of the type represented by `type`, in the order in which they are declared.
 
 ```cpp
-consteval vector<info> subobjects_of(info type);
-```
-
-[#]{.pnum} *Constant When*: `type` is a reflection representing a complete class type.
-
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
-
-```cpp
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
@@ -5279,14 +5273,6 @@ consteval vector<info> accessible_static_data_members_of(
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_accessible(e, from)` is `true`, in order.
-
-```cpp
-consteval vector<info> accessible_subobjects_of(
-        info target,
-        access_context from = access_context::current());
-```
-
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `accessible_bases_of(target, from)` followed by all the reflections in `accessible_nonstatic_data_members_of(target, from)`.
 
 :::
 :::
