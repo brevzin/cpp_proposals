@@ -5950,68 +5950,6 @@ and [version.syn]{.sref}:
 
 ---
 references:
-  - id: P2996R4
-    citation-label: P2996R4
-    title: "Reflection for C++26"
-    author:
-      - family: Wyatt Childers
-      - family: Dan Katz
-      - family: Barry Revzin
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2024
-        month: 06
-        day: 26
-    URL: https://wg21.link/p2996r4
-  - id: P1306R2
-    citation-label: P1306R2
-    title: "Expansion statements"
-    author:
-      - family: Andrew Sutton
-      - family: Sam Goodrick
-      - family: Daveed Vandevoorde
-      - family: Dan Katz
-    issued:
-      - year: 2024
-        month: 05
-        day: 07
-    URL: https://wg21.link/p1306r2
-  - id: P3096R1
-    citation-label: P3096R1
-    title: "Function Parameter Reflection in Reflection for C++26"
-    author:
-      - family: Adam Lach
-      - family: Walter Genovese
-    issued:
-      - year: 2024
-        month: 04
-        day: 29
-    URL: https://wg21.link/p3096r1
-  - id: P3068R1
-    citation-label: P3068R1
-    title: "Allowing exception throwing in constant-evaluation"
-    author:
-      - family: Hana Dusíková
-    issued:
-      - year: 2024
-        month: 03
-        day: 18
-    URL: https://wg21.link/p3293r0
-  - id: P3293R0
-    citation-label: P3293R0
-    title: "Splicing a base class subobject"
-    author:
-      - family: Peter Dimov
-      - family: Dan Katz
-      - family: Barry Revzin
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2024
-        month: 05
-        day: 19
-    URL: https://wg21.link/p3293r0
   - id: P3293R2
     citation-label: P3293R2
     title: "Splicing a base class subobject"
@@ -6020,14 +5958,9 @@ references:
       - family: Dan Katz
       - family: Barry Revzin
       - family: Daveed Vandevoorde
-  - id: P3295R0
-    citation-label: P3295R0
-    title: "Freestanding constexpr containers and constexpr exception types"
-    author:
-      - family: Ben Craig
     issued:
       - year: 2024
-        month: 05
-        day: 18
-    URL: https://wg21.link/p3295r0
+        month: 10
+        day: 15
+    URL: https://wg21.link/p3293r2
 ---
