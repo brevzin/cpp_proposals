@@ -33,7 +33,7 @@ Since [@P2996R5]:
 * make friends with modules: define _injected declarations_ and _injected points_, as well as the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`. An informal elaboration on this is included in a new section on "Reachability and injected declarations".
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
-* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by a separate paper).
+* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by [@P3293R2]).
 * specified constraints for `enumerators_of` in terms of `has_complete_definition`.
 * constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
 * changed `is_special_member` to `is_special_member_function` to align with core language terminology.
@@ -808,7 +808,7 @@ The question here is whether we should be should be able to directly initialize 
 ```
 :::
 
-Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R0].
+Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R2].
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/3bvo97fqf).
 
@@ -4014,21 +4014,16 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 [3]{.pnum} [A `$template-argument$` of the form `$splice-specifier$` is interpreted as a `$splice-template-argument$`.]{.addu} In a `$template-argument$` [that is not a `$splice-template-argument$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`.
 
 ::: example2
-```cpp
+```diff
 template<class T> void f();
 template<int I> void f();
 
 void g() {
   f<int()>();       // int() is a type-id: call the first f()
-```
-::: addu
-```cpp
-  constexpr int x = 42;
-  f<[:^int:]>();      // splice-template-argument: calls the first f()
-  f<[:^x:]>();      // splice-template-argument: calls the second f()
-```
-:::
-```cpp
+
++ constexpr int x = 42;
++ f<[:^int:]>();    // splice-template-argument: calls the first f()
++ f<[:^x:]>();      // splice-template-argument: calls the second f()
 }
 ```
 :::
@@ -6017,6 +6012,14 @@ references:
         month: 05
         day: 19
     URL: https://wg21.link/p3293r0
+  - id: P3293R2
+    citation-label: P3293R2
+    title: "Splicing a base class subobject"
+    author:
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Daveed Vandevoorde
   - id: P3295R0
     citation-label: P3295R0
     title: "Freestanding constexpr containers and constexpr exception types"
