@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R6
+document: D2996R7
 date: today
 audience: CWG, LEWG
 author:
@@ -25,6 +25,10 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P2996R6]:
+
+* changed `access_context` from being default-constructible to having an `access_context::global()`
 
 Since [@P2996R5]:
 
@@ -2354,7 +2358,9 @@ namespace std::meta {
   // @[member access](#member-access)@
   struct access_context {
     static consteval access_context current() noexcept;
-    consteval access_context() noexcept;
+    static consteval access_context global() noexcept;
+  private:
+    consteval access_context(info) noexcept;
   };
 
   consteval auto is_accessible(
@@ -2653,7 +2659,9 @@ The template `bases_of` returns the direct base classes of the class type repres
 namespace std::meta {
   struct access_context {
     static consteval access_context current() noexcept;
-    consteval access_context() noexcept;
+    static consteval access_context global() noexcept;
+  private:
+    consteval access_context(info) noexcept;
   };
 
   consteval auto is_accessible(info target, access_context from = {}) -> bool;
@@ -2666,7 +2674,7 @@ namespace std::meta {
 ```
 :::
 
-The `access_context` type acts as a pass-key for the purposes of checking access control. Construction with `access_context::current()` stores the current context - access checking will be done from the context from which the `access_context` was originally created.
+The `access_context` type acts as a pass-key for the purposes of checking access control. Construction with `access_context::current()` stores the current context - access checking will be done from the context from which the `access_context` was originally created. Construction from `access_context::global()` stores the global context (i.e.`^::`).
 
 Each function named `accessible_meow_of` returns the result of `meow_of` filtered on `is_accessible`. If `from` is not specified, the default argument captures the current access context of the caller via the default argument. Each function also provides an overload whereby `target` and `from` may be specified as distinct arguments.
 
@@ -4396,9 +4404,9 @@ namespace std::meta {
   struct access_context {
     // access context construction
     static consteval access_context current() noexcept;
-    consteval access_context() noexcept;
-
+    static consteval access_context global() noexcept;
   private:
+    consteval access_context(info) noexcept; // exposition-only
     info $context_$; // exposition-only
   };
 
@@ -5184,9 +5192,9 @@ consteval vector<info> enumerators_of(info type_enum);
 struct access_context {
   // access context construction
   static consteval access_context current() noexcept;
-  consteval access_context() noexcept;
-
+  static consteval access_context global() noexcept;
 private:
+  consteval access_context(info i) noexcept; // exposition-only
   info $context_$; // exposition-only
 };
 ```
@@ -5200,10 +5208,16 @@ consteval access_context access_context::current() noexcept;
 [#]{.pnum} *Effects*: Initializes `$context_$` to a reflection of the function, class, or namespace scope most nearly enclosing the function call.
 
 ```cpp
-consteval access_context::access_context() noexcept;
+consteval access_context access_context::global() noexcept;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$context_$` to `^::`.
+[#]{.pnum} *Returns*: `access_context(^::)`.
+
+```cpp
+consteval access_context::access_context(info i) noexcept;
+```
+
+[#]{.pnum} *Effects*: Initializes `$context_$` to `i`.
 
 ```cpp
 consteval bool is_accessible(
