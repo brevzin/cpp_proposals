@@ -3582,12 +3582,12 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Add a new paragraph after the definition of _potentially constant-evaluated_ [expr.const]{.sref}/21:
+Add a new paragraph after the example following the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
 
 ::: std
 ::: addu
 
-[22]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an expression `$E$` comprises the union of
+[21]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an expression `$E$` comprises the union of
 
 * [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
 * [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before the next evaluation of `$E$`.
@@ -3600,17 +3600,16 @@ Add another new paragraph defining _plainly constant-evaluated_ expressions:
 ::: std
 ::: addu
 
-[23]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
+[22]{.pnum} A manifestly constant-evaluated expression is also _plainly constant-evaluated_ unless it is:
 
-* [#.#]{.pnum} a `$constant-expression$`, or
-* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
-* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
-* [#.#]{.pnum} an immediate invocation, unless it
-  * [#.#.#]{.pnum} results from the substitution of template parameters
-    * during template argument deduction ([temp.deduct]{.sref}),
-    * in a `$concept-id$` ([temp.names]{.sref}), or
-    * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-  * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
+* [#.#]{.pnum} an initializer of a variable that is neither `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}),
+* [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]), or
+* [#.#]{.pnum} an immediate invocation resulting from the substitution of template parameters
+  * [#.#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
+  * [#.#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
+  * [#.#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}).
+
+[As detailed below, the evaluation of a plainly constant-evaluated expression may produce new declarations. Their definition excludes expressions that may be evaluated more than once.]{.note}
 
 :::
 :::
@@ -3620,9 +3619,22 @@ Add new paragraphs defining _injected declarations_ and _injected points_:
 ::: std
 ::: addu
 
-[24]{.pnum} The evaluation of a manifestly constant-evaluated expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`, and for which special rules apply ([module.reach]). The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
+[23]{.pnum} The evaluation of a manifestly constant-evaluated expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`, and for which special rules apply ([module.reach]). The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
 
-[25]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
+[24]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
+
+::: example11
+```cpp
+consteval bool fn(int);         // produces a declaration
+
+template <int R> requires (fn(R))
+  bool tfn();
+
+constexpr bool b1 = !fn(42);    // constexpr variable, ok
+bool b2 = !fn(42);              // ill-formed
+constexpr bool b3 = tfn<42>();  // ill-formed
+```
+:::
 
 :::
 :::
