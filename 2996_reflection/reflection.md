@@ -1606,7 +1606,8 @@ The most obvious solution would be to introduce a `concept [:R:]` syntax that re
 
 ```cpp
 template <std::meta::info R> struct Outer {
-  template <typename T> requires template [:R:]<T> { /* ... */ };
+  template <typename T> requires template [:R:]<T>
+  struct Inner { /* ... */ };
 };
 ```
 
@@ -5138,9 +5139,9 @@ and if its first declaration is within a definition of `$E$`.
 
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a definition reachable from the evaluation context, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all _members-of-representable_ members of the entity represented by `r` that are _members-of-visible_ from a point in the evaluation context ([expr.const]).
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-visible from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
-Non-static data members are indexed in the order in which they are declared, but the order of other kinds of members is unspecified.
+Non-static data members and unnamed bit-fields are indexed in the order in which they are declared, but the order of other kinds of members is unspecified.
 [Base classes are not members.]{.note}
 
 ```cpp
@@ -5205,7 +5206,9 @@ private:
 consteval access_context access_context::current() noexcept;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$context_$` to a reflection of the function, class, or namespace scope most nearly enclosing the function call.
+[#]{.pnum} Let `r` be a reflection of the function, class, or namespace scope most nearly enclosing the function call.
+
+[#]{.pnum} *Returns*: `access_context(r)`.
 
 ```cpp
 consteval access_context access_context::global() noexcept;
