@@ -28,7 +28,8 @@ tag: constexpr
 
 Since [@P2996R6]:
 
-* replaced the `accessible_members` family of functions with a `get_public` family of functions
+* removed the `accessible_members` family of functions
+* added the `get_public` family of functions
 
 Since [@P2996R5]:
 
@@ -3582,46 +3583,55 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Add a new paragraph after the example following the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
+Add a new paragraph prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
 
 ::: std
 ::: addu
 
-[21]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an expression `$E$` comprises the union of
+[20]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
 
-* [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
-* [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before the next evaluation of `$E$`.
+* [#.#]{.pnum} a `$constant-expression$`, or
+* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} an immediate invocation, unless it
+  * [#.#.#]{.pnum} results from the substitution of template parameters
+    * during template argument deduction ([temp.deduct]{.sref}),
+    * in a `$concept-id$` ([temp.names]{.sref}), or
+    * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
+  * [#.#.#]{.pnum} is, or is a subexpression of, an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
+
+[As detailed below, the evaluation of a plainly constant-evaluated expression may produce new declarations. Their definition precludes expressions that may be evaluated repeatedly.]{.note12}
 
 :::
 :::
 
-Add another new paragraph defining _plainly constant-evaluated_ expressions:
+Modify the definition of _manifestly constant-evaluated_ to leverage that of _plainly constant-evaluated_:
+
+::: std
+
+[21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
+
+* [#.#]{.pnum} a [`$constant-expression$`]{.rm} [plainly constant-evaluated expression]{.addu}, or
+
+::: rm
+* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
+:::
+* [#.#]{.pnum} an immediate invocation, or
+* [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
+* [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
+
+:::
+
+Add new paragraphs defining _evaluation context_, _injected declaration_, and _injected point_ after the example following the definition of _manifestly constant-evaluated_, and renumber accordingly:
 
 ::: std
 ::: addu
 
-[22]{.pnum} A manifestly constant-evaluated expression is also _plainly constant-evaluated_ unless it is:
+[22]{.pnum} The evaluation of an expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
 
-* [#.#]{.pnum} an initializer of a variable that is neither `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}),
-* [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]), or
-* [#.#]{.pnum} an immediate invocation resulting from the substitution of template parameters
-  * [#.#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
-  * [#.#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
-  * [#.#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}).
+[Special rules concerning reachability apply to injected points ([module.reach]).]{.note13}
 
-[As detailed below, the evaluation of a plainly constant-evaluated expression may produce new declarations. Their definition excludes expressions that may be evaluated more than once.]{.note}
-
-:::
-:::
-
-Add new paragraphs defining _injected declarations_ and _injected points_:
-
-::: std
-::: addu
-
-[23]{.pnum} The evaluation of a manifestly constant-evaluated expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`, and for which special rules apply ([module.reach]). The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
-
-[24]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
+[23]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
 
 ::: example11
 ```cpp
@@ -3635,6 +3645,11 @@ bool b2 = !fn(42);              // ill-formed
 constexpr bool b3 = tfn<42>();  // ill-formed
 ```
 :::
+
+[24]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an evaluation `$E$` comprises the union of
+
+* [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
+* [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before `$E$`.
 
 :::
 :::
@@ -5071,7 +5086,7 @@ and if its first declaration is within a definition of `$E$`.
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-visible from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
-Non-static data members and unnamed bit-fields are indexed in the order in which they are declared, but the order of other kinds of members is unspecified.
+Class members are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members.]{.note}
 
 ```cpp
@@ -5093,7 +5108,7 @@ consteval vector<info> static_data_members_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the static data members of the type represented by `type`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the static data members of the type represented by `type`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
