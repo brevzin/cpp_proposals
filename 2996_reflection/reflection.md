@@ -30,6 +30,8 @@ Since [@P2996R6]:
 
 * removed the `accessible_members` family of functions
 * added the `get_public` family of functions
+* stronger guarantees on order reflections returned by `members_of`
+* several core wording fixes
 
 Since [@P2996R5]:
 
@@ -3393,15 +3395,17 @@ $splice-expression$:
    template $splice-specifier$ < $template-argument-list$@~_opt_~@ >
 ```
 
-[#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `E` be the value of the converted `$constant-expression$` of the `$splice-specifier$`.
+[#]{.pnum} `$splice-specifier$` shall not designate an unnamed bit-field, a constructor or destructor, or a constructor template or destructor template.
 
-* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, or a non-static data member that is not an unnamed bit-field, the expression is an lvalue denoting the represented object, function, or data member.
+[#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$E$` be the object, value, or entity designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the represented entity.
+* [#.#]{.pnum} If `$E$` is an object, a function, or a non-static data member, the expression is an lvalue designating `$E$`. The expression has the same type as `$E$`, and is a bit-field if and only if `$E$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, `E` shall be a reflection of a value or an enumerator, and the expression is a prvalue whose evaluation computes the represented value.
+* [#.#]{.pnum} Otherwise, if `$E$` is a variable or a structured binding, the expression is an lvalue designating the same object as `$E$`. The expression has the same type as `$E$`, and is a bit-field if and only if `$E$` is a bit-field.
 
-[Access checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
+* [#.#]{.pnum} Otherwise, `$E$` shall be a value or an enumerator. The expression is a prvalue whose evaluation computes `$E$` and whose type is the same as `$E$`.
+
+[Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
 :::
 :::
 
@@ -3484,6 +3488,21 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
      $delete-expression$
 +    $reflect-expression$
 ```
+:::
+
+### [expr.unary.op]{.sref} Unary operators {-}
+
+Modify paragraphs 3 and 4 to permit forming a pointer-to-member with a splice.
+
+::: std
+[3]{.pnum} The operand of the unary `&` operator shall be an lvalue of some type `T`.
+
+* [#.#]{.pnum} If the operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} [naming]{.rm} [designating]{.addu} a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
+
+* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand names an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
+
+[4]{.pnum} A pointer to member is only formed when an explicit `&` is used and its operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} not enclosed in parentheses.
+
 :::
 
 ### 7.6.2.10* [expr.reflect] The reflection operator {-}
@@ -5273,7 +5292,7 @@ template <class T>
 - [#.#]{.pnum} `r` represents a value or enumerator of type `U`, and the cv-unqualified types of `T` and `U` are the same,
 - [#.#]{.pnum} `T` is not a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context, and the cv-unqualified types of `T` and `U` are the same,
 - [#.#]{.pnum} `T` is a reference type, `r` represents a function or a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context, the cv-unqualified types of `T` and `U` are the same, and `U` is not more cv-qualified than `T`,
-- [#.#]{.pnum} `T` is a pointer type, `r` represents a function or non-bit-field non-static data member, and the statement `T v = &$expr$`, where `$expr$` is an lvalue naming the entity represented by `r`, is well-formed, or
+- [#.#]{.pnum} `T` is a pointer type, `r` represents a function or non-bit-field non-static member, and the statement `T v = &$expr$`, where `$expr$` is an lvalue naming the entity represented by `r`, is well-formed, or
 - [#.#]{.pnum} `T` is a pointer type, `r` represents a value or an object or variable `$V$` of type `U` that is usable in constant expressions from a point in the evaluation context, `U` is the closure type of a non-generic lambda, and the statement `T v = +$expr$`, where `$expr$` is an lvalue designating `$V$`, is well-formed.
 
 [#]{.pnum} *Returns*:
@@ -5281,7 +5300,7 @@ template <class T>
 - [#.#]{.pnum} If `r` represents a value or enumerator `$V$`, then `$V$`.
 - [#.#]{.pnum} Otherwise, if `r` represents an object or variable and `T` is not a reference type, then the value represented by `value_of(r)`.
 - [#.#]{.pnum} Otherwise, if `T` is a reference type, then the object represented by `object_of(r)`.
-- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a function or a non-static data member, then a pointer value designating the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a function or a non-static member, then a pointer value designating the entity represented by `r`.
 - [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a variable, object, or value `$V$` with closure type `C`, then the same result as the conversion function of `C` applied to `$V$`.
 
 :::
