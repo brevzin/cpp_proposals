@@ -4138,6 +4138,23 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 
 
 
+### [cpp.cond]{.sref} Conditional inclusion {-}
+
+Extend paragraph 9 to clarify that `$splice-specifier$`s may not appear in preprocessor directives, while also applying a "drive-by fix" to disallow lambdas in the same context.
+
+::: std
+
+[9]{.pnum} Preprocessing directives of the forms
+```cpp
+     # if      $constant-expression$ $new-line$ $group$@~_opt_~@
+     # elif    $constant-expression$ $new-line$ $group$@~_opt_~@
+```
+check whether the controlling constant expression evaluates to nonzero. [The program is ill-formed if a `$splice-specifier$` or `$lambda-expression$` appears in the controlling constant expression.]{.addu}
+
+:::
+
+
+
 ## Library
 
 ### [structure.specifications]{.sref} Detailed specifications {-}
