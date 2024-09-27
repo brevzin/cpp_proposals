@@ -28,7 +28,7 @@ tag: constexpr
 
 Since [@P2996R6]:
 
-* changed `access_context` from being default-constructible to having an `access_context::global()`
+* replaced the `accessible_members` family of functions with a `get_public` family of functions
 
 Since [@P2996R5]:
 
@@ -2350,36 +2350,16 @@ namespace std::meta {
   consteval auto template_arguments_of(info r) -> vector<info>;
 
   // @[member queries](#member-queries)@
-  consteval auto members_of(info type_class) -> vector<info>;
+  consteval auto members_of(info r) -> vector<info>;
   consteval auto bases_of(info type_class) -> vector<info>;
   consteval auto static_data_members_of(info type_class) -> vector<info>;
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 
-  // @[member access](#member-access)@
-  struct access_context {
-    static consteval access_context current() noexcept;
-    static consteval access_context global() noexcept;
-  private:
-    consteval access_context(info) noexcept;
-  };
-
-  consteval auto is_accessible(
-          info r,
-          acess_context from = access_context::current());
-
-  consteval auto accessible_members_of(
-          info target,
-          access_context from = access_context::current()) -> vector<info>;
-  consteval auto accessible_bases_of(info target,
-          info target,
-          access_context from = access_context::current()) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(
-          info target,
-          access_context from = access_context::current()) -> vector<info>;
-  consteval auto accessible_static_data_members_of(
-          info target,
-          access_context from = access_context::current()) -> vector<info>;
+  consteval auto get_public_members(info type) -> vector<info>;
+  consteval auto get_public_static_data_members(info type) -> vector<info>;
+  consteval auto get_public_nonstatic_data_members(info type) -> vector<info>;
+  consteval auto get_public_bases(info type) -> vector<info>;
 
   // @[substitute](#substitute)@
   template <reflection_range R = initializer_list<info>>
@@ -2631,18 +2611,23 @@ static_assert(template_arguments_of(type_of(^v))[0] == ^int);
 ::: std
 ```c++
 namespace std::meta {
-  consteval auto members_of(info type_class) -> vector<info>;
+  consteval auto members_of(info r) -> vector<info>;
   consteval auto bases_of(info type_class) -> vector<info>;
 
   consteval auto static_data_members_of(info type_class) -> vector<info>;
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
 
   consteval auto enumerators_of(info type_enum) -> vector<info>;
+
+  consteval auto get_public_members(info type_class) -> vector<info>;
+  consteval auto get_public_static_data_members(info type_class) -> vector<info>;
+  consteval auto get_public_nonstatic_data_members(info type_class) -> vector<info>;
+  consteval auto get_public_bases(info type_class) -> vector<info>;
 }
 ```
 :::
 
-The template `members_of` returns a vector of reflections representing the direct members of the class type represented by its first argument.
+The template `members_of` returns a vector of reflections representing the direct members of the class type or namespace represented by its first argument.
 Any non-static data members appear in declaration order within that vector.
 Anonymous unions appear as a non-static data member of corresponding union type.
 Reflections of structured bindings shall not appear in the returned vector.
@@ -2653,54 +2638,9 @@ The template `bases_of` returns the direct base classes of the class type repres
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
-### Member Access Reflection {#member-access}
-
-::: std
-```c++
-namespace std::meta {
-  struct access_context {
-    static consteval access_context current() noexcept;
-    static consteval access_context global() noexcept;
-  private:
-    consteval access_context(info) noexcept;
-  };
-
-  consteval auto is_accessible(info target, access_context from = {}) -> bool;
-
-  consteval auto accessible_members_of(info target, access_context from = {}) -> vector<info>;
-  consteval auto accessible_bases_of(info target, access_context from = {}) -> vector<info>;
-  consteval auto accessible_static_data_members_of(info target, access_context from = {}) -> vector<info>;
-  consteval auto accessible_nonstatic_data_members_of(info target, access_context from = {}) -> vector<info>;
-}
-```
-:::
-
-The `access_context` type acts as a pass-key for the purposes of checking access control. Construction with `access_context::current()` stores the current context - access checking will be done from the context from which the `access_context` was originally created. Construction from `access_context::global()` stores the global context (i.e.`^::`).
-
-Each function named `accessible_meow_of` returns the result of `meow_of` filtered on `is_accessible`. If `from` is not specified, the default argument captures the current access context of the caller via the default argument. Each function also provides an overload whereby `target` and `from` may be specified as distinct arguments.
-
-For example:
-
-::: std
-```cpp
-class C {
-  int k;
-  static_assert(is_accessible(^C::k));  // ok: context is 'C'.
-
-  static auto make_context() { return std::meta::access_context::current(); }
-}
-
-// by default, the context is going to be from global scope
-// which does not have access to C::k
-// but once we acquire the access context from C, that is proof that
-// we have access, so we can get a reflection to C::k
-static_assert(accessible_nonstatic_data_members_of(^C).size() == 0);
-static_assert(accessible_nonstatic_data_members_of(^C, C::make_context()).size() == 1);
-```
-:::
-
-Unlike previous versions of this API (see [@P2996R4]), the only way to gain access to protected or private members using the `access_context`-based API presented here is to have acquired an `access_token` from a context which has such access.
-This satisfies the requirements for an API that does not subvert access control and whose usage can be easily grepped.
+The `get_public_meow` functions are equivalent to `meow_of` functions except that they additionally filter the results on those members for which `is_public(member)` is `true`.
+The only other distinction is that `members_of` can be invoked on a namespace, while `get_public_members` can only be invoked on a class type (because it does not make sense to ask for the public members of a namespace).
+This set of functions has a distinct API by demand for ease of grepping.
 
 ### `substitute`
 
@@ -4292,7 +4232,7 @@ namespace std::meta {
     $see below$;
   };
   using enum operators;
-  consteval auto operator_of(info r) -> operators;
+  consteval operators operator_of(info r);
 
   // [meta.reflection.names], reflection names and locations
   consteval string_view identifier_of(info r);
@@ -4395,38 +4335,16 @@ namespace std::meta {
   consteval vector<info> template_arguments_of(info r);
 
   // [meta.reflection.member.queries], reflection member queries
-  consteval vector<info> members_of(info type);
+  consteval vector<info> members_of(info r);
   consteval vector<info> bases_of(info type);
   consteval vector<info> static_data_members_of(info type);
   consteval vector<info> nonstatic_data_members_of(info type);
   consteval vector<info> enumerators_of(info type_enum);
 
-  // [meta.reflection.member.access], reflection member access queries
-  struct access_context {
-    // access context construction
-    static consteval access_context current() noexcept;
-    static consteval access_context global() noexcept;
-  private:
-    consteval access_context(info) noexcept; // exposition-only
-    info $context_$; // exposition-only
-  };
-
-  consteval bool is_accessible(
-          info r,
-          access_context from = access_context::current());
-
-  consteval vector<info> accessible_members_of(
-          info target,
-          access_context from = access_context::current());
-  consteval vector<info> accessible_bases_of(
-          info target,
-          access_context from = access_context::current());
-  consteval vector<info> accessible_nonstatic_data_members_of(
-          info target,
-          access_context from = access_context::current());
-  consteval vector<info> accessible_static_data_members_of(
-          info target,
-          access_context from = access_context::current());
+  consteval vector<info> get_public_members(info type);
+  consteval vector<info> get_public_static_data_members(info type);
+  consteval vector<info> get_public_nonstatic_data_members(info type);
+  consteval vector<info> get_public_bases(info type);
 
   // [meta.reflection.layout], reflection layout queries
   struct member_offsets {
@@ -5182,112 +5100,49 @@ consteval vector<info> enumerators_of(info type_enum);
 [#]{.pnum} *Constant When*: `type_enum` represents an enumeration type and `has_complete_definition(type_enum)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `type_enum`, in the order in which they are declared.
-:::
-:::
-
-### [meta.reflection.member.access], Reflection member access queries {-}
-
-::: std
-::: addu
-```cpp
-struct access_context {
-  // access context construction
-  static consteval access_context current() noexcept;
-  static consteval access_context global() noexcept;
-private:
-  consteval access_context(info i) noexcept; // exposition-only
-  info $context_$; // exposition-only
-};
-```
-
-[1]{.pnum} The type `access_context` is suitable for ensuring that member queries return only reflections of accessible members.
 
 ```cpp
-consteval access_context access_context::current() noexcept;
+consteval vector<info> get_public_members(info type);
 ```
 
-[#]{.pnum} Let `r` be a reflection of the function, class, or namespace scope most nearly enclosing the function call.
-
-[#]{.pnum} *Returns*: `access_context(r)`.
-
-```cpp
-consteval access_context access_context::global() noexcept;
-```
-
-[#]{.pnum} *Returns*: `access_context(^::)`.
-
-```cpp
-consteval access_context::access_context(info i) noexcept;
-```
-
-[#]{.pnum} *Effects*: Initializes `$context_$` to `i`.
-
-```cpp
-consteval bool is_accessible(
-        info target,
-        access_context from = access_context::current());
-```
-
-[#]{.pnum} *Constant When*: `target` is a reflection representing a member or base class specifier of a class.
-
-[#]{.pnum} Let `$C$` be the class for which `target` represents a member or base class specifier.
-
-[#]{.pnum} *Returns*:
-
-* [#.#]{.pnum} If `target` represents a class member, then `true` if the member is accessible at all program points within the definition of the entity represented by `from.$context_$` when named in class `$C$` ([class.access]).
-* [#.#]{.pnum} Otherwise, `true` if the base class represented by `target` is accessible at all program points within the definition of the entity represented by `from.$context_$`.
-* [#.#]{.pnum} Otherwise, `false`.
-
-```cpp
-consteval vector<info> accessible_members_of(
-        info target,
-        access_context from = access_context::current());
-```
-
-[#]{.pnum} *Constant When*: `target` is a reflection representing a complete class type. `from` represents a function, class, or namespace.
+[#]{.pnum} *Constant When*: `type` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_accessible(e, from)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
-consteval vector<info> accessible_bases_of(
-        info target,
-        access_context from = access_context::current());
+consteval vector<info> get_public_static_data_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `target` is a reflection representing a complete class type. `from` represents a function, class, or namespace.
+[#]{.pnum} *Constant When*: `type` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_accessible(e, from)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
-consteval vector<info> accessible_nonstatic_data_members_of(
-        info target,
-        access_context from = access_context::current());
+consteval vector<info> get_public_nonstatic_data_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `target` is a reflection representing a complete class type. `from` represents a function, class, or namespace.
+[#]{.pnum} *Constant When*: `type` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_accessible(e, from)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
-consteval vector<info> accessible_static_data_members_of(
-        info target,
-        access_context from = access_context::current());
+consteval vector<info> get_public_bases(info type);
 ```
 
-[#]{.pnum} *Constant When*: `target` is a reflection representing a complete class type. `from` represents a function, class, or namespace.
+[#]{.pnum} *Constant When*: `type` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_accessible(e, from)` is `true`, in order.
-
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_public(e)` is `true`, in order.
 :::
 :::
+
 
 ### [meta.reflection.layout] Reflection layout queries {-}
 
