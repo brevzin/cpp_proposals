@@ -4677,6 +4677,21 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
 * [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
 
+[Alternatively...]{.draftnote}
+
+[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
+
+[#]{.pnum} *Returns*: As follows:
+
+* [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type. A call to this function is only a core constant expression when either `$C$` has a typedef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`. A call to this function is only a core constant expression when:
+  * [#.#.#]{.pnum} `r` represents a function whose name is representable by `$E$` and the function is not a constructor, destructor, operator function, or conversion function,
+  * [#.#.#]{.pnum} `r` represents a `$typedef-name$` whose identifier is representable by `$E$`, or
+  * [#.#.#]{.pnum} `r` represents a namespace alias or an entity that is not a function, a function template, or a type and `r`'s declaration introduces an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class. A call to this function is only a core constant expression when the base class is a named type and the name of that type is an identifier representable by `$E$`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`. A call to this function is only a core constant expression when the declaration of any data member having the properties represented by `r` would introduce an identifier representable by `$E$`.
+
 ```cpp
 consteval string_view display_string_of(info r);
 consteval u8string_view u8display_string_of(info r);
