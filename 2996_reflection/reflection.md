@@ -29,6 +29,7 @@ tag: constexpr
 Since [@P2996R6]:
 
 * replaced the `accessible_members` family of functions with a `get_public` family of functions
+* added missing `tuple` and `variant` traits
 
 Since [@P2996R5]:
 
