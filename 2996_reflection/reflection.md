@@ -4564,6 +4564,13 @@ namespace std::meta {
     `consteval info type_invoke_result(info type, R&& type_args);
   consteval info type_unwrap_reference(info type);
   consteval info type_unwrap_ref_decay(info type);
+
+  // [meta.reflection.tuple.variant], tuple and variant queries
+  consteval size_t type_tuple_size(info type);
+  consteval info type_tuple_element(size_t index, info type);
+
+  consteval size_t type_variant_size(info type);
+  consteval info type_variant_alternative(size_t index, info type);
 }
 ```
 :::
@@ -5780,6 +5787,24 @@ consteval info type_unwrap_reference(info type) {
 :::
 :::
 
+#### [meta.reflection.tuple.variant], Tuple and Variant Queries {-}
+
+::: std
+::: addu
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$UNARY-TRAIT$` defined in this clause with the signature `size_t(std::meta::info)`, `std::meta::type_$UNARY-TRAIT$(^T)` equals the value of the corresponding property `std::$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+
+[2]{.pnum} For any type or `$typedef-name$` `T` and value `I`, for each function `std::meta::type_$BINARY-TRAIT$` defined in this clause with the signature `info(size_t, std::meta::info)`, `std::meta::type_$BINARY-TRAIT$(I, ^T)` returns a reflection representing the type `std::$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+
+```cpp
+consteval size_t type_tuple_size(info type);
+consteval info type_tuple_element(size_t index, info type);
+
+consteval size_t type_variant_size(info type);
+consteval info type_variant_alternative(size_t index, info type);
+```
+:::
+:::
+
 ### [bit.cast]{.sref} Function template `bit_cast` {-}
 
 And we have adjust the requirements of `std::bit_cast` to not allow casting to or from `std::meta::info` as a constant, in [bit.cast]{.sref}/3:
@@ -5822,6 +5847,22 @@ and [version.syn]{.sref}:
 
 ---
 references:
+  - id: P2996R6
+    citation-label: P2996R6
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2024
+        month: 09
+        day: 24
+    URL: https://wg21.link/p2996r6
   - id: P3293R2
     citation-label: P3293R2
     title: "Splicing a base class subobject"

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-26" />
+  <meta name="dcterms.date" content="2024-09-28" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-26</td>
+    <td>2024-09-28</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -926,6 +926,8 @@ Array modifications<span></span></a></li>
 Pointer modifications<span></span></a></li>
 <li><a href="#meta.reflection.trans.other-other-transformations" id="toc-meta.reflection.trans.other-other-transformations">[meta.reflection.trans.other],
 Other transformations<span></span></a></li>
+<li><a href="#meta.reflection.tuple.variant-tuple-and-variant-queries" id="toc-meta.reflection.tuple.variant-tuple-and-variant-queries">[meta.reflection.tuple.variant],
+Tuple and Variant Queries<span></span></a></li>
 </ul></li>
 <li><a href="#bit.cast-function-template-bit_cast" id="toc-bit.cast-function-template-bit_cast"><span>22.15.3
 <span>[bit.cast]</span></span> Function template
@@ -939,7 +941,7 @@ Macro<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P2996R6">[<a href="#ref-P2996R6" role="doc-biblioref"><strong>P2996R6?</strong></a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span>:</p>
 <ul>
 <li>replaced the <code class="sourceCode cpp">accessible_members</code>
 family of functions with a
@@ -7215,7 +7217,14 @@ synopsis</strong></p>
 <span id="cb138-343"><a href="#cb138-343" aria-hidden="true" tabindex="-1"></a>    `consteval info type_invoke_result(info type, R&amp;&amp; type_args);</span>
 <span id="cb138-344"><a href="#cb138-344" aria-hidden="true" tabindex="-1"></a>  consteval info type_unwrap_reference(info type);</span>
 <span id="cb138-345"><a href="#cb138-345" aria-hidden="true" tabindex="-1"></a>  consteval info type_unwrap_ref_decay(info type);</span>
-<span id="cb138-346"><a href="#cb138-346" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb138-346"><a href="#cb138-346" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb138-347"><a href="#cb138-347" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.tuple.variant], tuple and variant queries</span>
+<span id="cb138-348"><a href="#cb138-348" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_tuple_size(info type);</span>
+<span id="cb138-349"><a href="#cb138-349" aria-hidden="true" tabindex="-1"></a>  consteval info type_tuple_element(size_t index, info type);</span>
+<span id="cb138-350"><a href="#cb138-350" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb138-351"><a href="#cb138-351" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_variant_size(info type);</span>
+<span id="cb138-352"><a href="#cb138-352" aria-hidden="true" tabindex="-1"></a>  consteval info type_variant_alternative(size_t index, info type);</span>
+<span id="cb138-353"><a href="#cb138-353" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9333,6 +9342,36 @@ returns the reflection of the corresponding type <code class="sourceCode cpp">st
 </div>
 </blockquote>
 </div>
+<h4 class="unnumbered" id="meta.reflection.tuple.variant-tuple-and-variant-queries">[meta.reflection.tuple.variant],
+Tuple and Variant Queries<a href="#meta.reflection.tuple.variant-tuple-and-variant-queries" class="self-link"></a></h4>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_379" id="pnum_379">1</a></span>
+For any type or
+<code class="sourceCode cpp"><em>typedef-name</em></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em></code>
+defined in this clause with the signature <code class="sourceCode cpp"><span class="dt">size_t</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
+equals the value of the corresponding property <code class="sourceCode cpp">std<span class="op">::</span><em>UNARY-TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+as defined in <span>22.4 <a href="https://wg21.link/tuple">[tuple]</a></span> or <span>22.6 <a href="https://wg21.link/variant">[variant]</a></span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_380" id="pnum_380">2</a></span>
+For any type or
+<code class="sourceCode cpp"><em>typedef-name</em></code>
+<code class="sourceCode cpp">T</code> and value
+<code class="sourceCode cpp">I</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em></code>
+defined in this clause with the signature <code class="sourceCode cpp">info<span class="op">(</span><span class="dt">size_t</span>, std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em><span class="op">(</span>I, <span class="op">^</span>T<span class="op">)</span></code>
+returns a reflection representing the type <code class="sourceCode cpp">std<span class="op">::</span><em>BINARY-TRAIT</em>_t<span class="op">&lt;</span>I, T<span class="op">&gt;</span></code>
+as defined in <span>22.4 <a href="https://wg21.link/tuple">[tuple]</a></span> or <span>22.6 <a href="https://wg21.link/variant">[variant]</a></span>.</p>
+<div class="sourceCode" id="cb226"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_tuple_size<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb226-2"><a href="#cb226-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_tuple_element<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span>
+<span id="cb226-3"><a href="#cb226-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb226-4"><a href="#cb226-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_variant_size<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb226-5"><a href="#cb226-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_variant_alternative<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span></code></pre></div>
+</div>
+</blockquote>
+</div>
 <h3 class="unnumbered" id="bit.cast-function-template-bit_cast"><span>22.15.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span> Function
 template <code class="sourceCode cpp">bit_cast</code><a href="#bit.cast-function-template-bit_cast" class="self-link"></a></h3>
 <p>And we have adjust the requirements of <code class="sourceCode cpp">std<span class="op">::</span>bit_cast</code> to
@@ -9340,7 +9379,7 @@ not allow casting to or from <code class="sourceCode cpp">std<span class="op">::
 as a constant, in <span>22.15.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span>/3:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_379" id="pnum_379">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_381" id="pnum_381">3</a></span>
 <em>Remarks</em>: This function is constexpr if and only if
 <code class="sourceCode cpp">To</code>,
 <code class="sourceCode cpp">From</code>, and the types of all
@@ -9348,27 +9387,27 @@ subobjects of <code class="sourceCode cpp">To</code> and
 <code class="sourceCode cpp">From</code> are types
 <code class="sourceCode cpp">T</code> such that:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_380" id="pnum_380">(3.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_382" id="pnum_382">(3.1)</a></span>
 <code class="sourceCode cpp">is_union_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_381" id="pnum_381">(3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_383" id="pnum_383">(3.2)</a></span>
 <code class="sourceCode cpp">is_pointer_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_382" id="pnum_382">(3.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_384" id="pnum_384">(3.3)</a></span>
 <code class="sourceCode cpp">is_member_pointer_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_383" id="pnum_383">(3.π)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_385" id="pnum_385">(3.π)</a></span>
 <span class="addu"><code class="sourceCode cpp">is_reflection_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_384" id="pnum_384">(3.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_386" id="pnum_386">(3.4)</a></span>
 <code class="sourceCode cpp">is_volatile_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">false</span></code>;
 and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_385" id="pnum_385">(3.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_387" id="pnum_387">(3.5)</a></span>
 <code class="sourceCode cpp">T</code> has no non-static data members of
 reference type.</li>
 </ul>
@@ -9386,10 +9425,10 @@ makes sense to provide one?</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb226"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_coroutine 201902L</span>
-<span id="cb226-2"><a href="#cb226-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_destroying_delete 201806L</span>
-<span id="cb226-3"><a href="#cb226-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_three_way_comparison 201907L</span>
-<span id="cb226-4"><a href="#cb226-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection 2024XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb227"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_coroutine 201902L</span>
+<span id="cb227-2"><a href="#cb227-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_destroying_delete 201806L</span>
+<span id="cb227-3"><a href="#cb227-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_three_way_comparison 201907L</span>
+<span id="cb227-4"><a href="#cb227-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection 2024XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9397,7 +9436,7 @@ makes sense to provide one?</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb227"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection 2024XXL // also in &lt;meta&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb228"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb228-1"><a href="#cb228-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection 2024XXL // also in &lt;meta&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9474,6 +9513,11 @@ C++26. <a href="https://wg21.link/p2996r4"><div class="csl-block">https://wg21.l
 [P2996R5] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-08-14. Reflection for
 C++26. <a href="https://wg21.link/p2996r5"><div class="csl-block">https://wg21.link/p2996r5</div></a>
+</div>
+<div id="ref-P2996R6" class="csl-entry" role="doc-biblioentry">
+[P2996R6] Wyatt Childers, Peter Dimov, Dan Katz, Barry Revzin, Andrew
+Sutton, Faisal Vali, and Daveed Vandevoorde. 2024-09-24. Reflection for
+C++26. <a href="https://wg21.link/p2996r6"><div class="csl-block">https://wg21.link/p2996r6</div></a>
 </div>
 <div id="ref-P3068R1" class="csl-entry" role="doc-biblioentry">
 [P3068R1] Hana Dusíková. 2024-03-30. Allowing exception throwing in
