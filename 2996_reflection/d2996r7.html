@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-28" />
+  <meta name="dcterms.date" content="2024-09-29" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-28</td>
+    <td>2024-09-29</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -6056,13 +6056,19 @@ detailed below, evaluations of such expressions are allowed to produce
 injected declarations.<span> — <em>end note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb121"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> fn<span class="op">()</span>;</span>
-<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> cfn<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span>
-<span id="cb121-3"><a href="#cb121-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> V<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>cfn<span class="op">(</span>V<span class="op">))</span>;  <span class="co">// cfn(V) is not plainly constant-evaluated</span></span>
-<span id="cb121-4"><a href="#cb121-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb121-5"><a href="#cb121-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> b1 <span class="op">=</span> <span class="op">!</span>cfn<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;         <span class="co">// !cfn(1) is plainly constant-evaluated</span></span>
-<span id="cb121-6"><a href="#cb121-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">bool</span> b2 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;              <span class="co">// cfn(1) is not plainly constant-evaluated</span></span>
-<span id="cb121-7"><a href="#cb121-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">bool</span> b3 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">&amp;&amp;</span> fn<span class="op">()</span>;      <span class="co">// cfn(1) is not plainly constant-evaluated</span></span></code></pre></div>
+<div class="sourceCode" id="cb121"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> cfn<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">true</span>; <span class="op">}</span></span>
+<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb121-3"><a href="#cb121-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> V<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>cfn<span class="op">(</span>V<span class="op">))</span>  <span class="co">// cfn(V) is not plainly constant-evaluated</span></span>
+<span id="cb121-4"><a href="#cb121-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb121-5"><a href="#cb121-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>cfn<span class="op">(</span>V<span class="op">+</span><span class="dv">1</span><span class="op">))</span> <span class="op">{</span>       <span class="co">// cfn(V+1) is plainly constant-evaluated</span></span>
+<span id="cb121-6"><a href="#cb121-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cfn<span class="op">(</span>V<span class="op">+</span><span class="dv">2</span><span class="op">)</span>;            <span class="co">// cfn(V+2) is plainly constant-evaluated</span></span>
+<span id="cb121-7"><a href="#cb121-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb121-8"><a href="#cb121-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb121-9"><a href="#cb121-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb121-10"><a href="#cb121-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb121-11"><a href="#cb121-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb121-12"><a href="#cb121-12" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> b1 <span class="op">=</span> <span class="op">!</span>cfn<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;        <span class="co">// !cfn(1) is plainly constant-evaluated</span></span>
+<span id="cb121-13"><a href="#cb121-13" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">bool</span> b2 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;             <span class="co">// cfn(2) is not plainly constant-evaluated</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -6103,8 +6109,11 @@ has constant initialization (<span>6.9.3.2 <a href="https://wg21.link/basic.star
 <p><span class="note"><span>[ <em>Note 2:</em> </span>All plainly
 constant-evaluated expressions are manifestly constant-evaluated, but
 some manifestly constant-evaluated expressions (e.g., initializers that
-can require trial evaluations) are not plainly constant-evaluated.<span>
-— <em>end note</em> ]</span></span></p>
+can require trial evaluations) are not plainly constant-evaluated. Such
+expressions are still evaluated during translation, but (unlike plainly
+constant-evaluated expressions) may be evaluated multiple times, and
+there are no constraints on the relative order of their
+evaluation.<span> — <em>end note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>

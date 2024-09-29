@@ -3647,13 +3647,19 @@ Add a new paragraph prior to the definition of _manifestly constant evaluated_ (
 
 ::: example
 ```cpp
-bool fn();
-consteval bool cfn(int);
-template <int V> requires (cfn(V));  // cfn(V) is not plainly constant-evaluated
+consteval bool cfn(int) { return true; }
 
-constexpr bool b1 = !cfn(1);         // !cfn(1) is plainly constant-evaluated
-const bool b2 = cfn(1);              // cfn(1) is not plainly constant-evaluated
-const bool b3 = cfn(1) && fn();      // cfn(1) is not plainly constant-evaluated
+template <int V> requires (cfn(V))  // cfn(V) is not plainly constant-evaluated
+consteval int g() {
+    if constexpr (cfn(V+1)) {       // cfn(V+1) is plainly constant-evaluated
+        return cfn(V+2);            // cfn(V+2) is plainly constant-evaluated
+    } else {
+        return 0;
+    }
+}
+
+constexpr bool b1 = !cfn(1);        // !cfn(1) is plainly constant-evaluated
+const bool b2 = cfn(2);             // cfn(2) is not plainly constant-evaluated
 
 ```
 :::
@@ -3677,7 +3683,7 @@ Modify the definition of _manifestly constant-evaluated_ to leverage that of _pl
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
 
 ::: addu
-[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., initializers that can require trial evaluations) are not plainly constant-evaluated.]{.note}
+[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., initializers that can require trial evaluations) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) may be evaluated multiple times, and there are no constraints on the relative order of their evaluation.]{.note}
 :::
 
 :::
