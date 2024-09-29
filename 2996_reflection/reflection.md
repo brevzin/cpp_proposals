@@ -3071,13 +3071,13 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
 [7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
 [ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.
-  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated.]{.addu}
+  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated exactly once.]{.addu}
 [...]
 
 [8]{.pnum} [...]
 All the required instantiations are performed to produce instantiation units.
 [ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantiation process.
-  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated.]{.addu}
+  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated exactly once.]{.addu}
 [...]
 
 :::
@@ -3395,7 +3395,7 @@ $splice-expression$:
    template $splice-specifier$ < $template-argument-list$@~_opt_~@ >
 ```
 
-[#]{.pnum} `$splice-specifier$` shall not designate an unnamed bit-field, a constructor or destructor, or a constructor template or destructor template.
+[#]{.pnum} The `$splice-specifier$` shall not designate an unnamed bit-field, a constructor or destructor, or a constructor template or destructor template.
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$E$` be the object, value, or entity designated by `$splice-specifier$`.
 
@@ -3499,7 +3499,7 @@ Modify paragraphs 3 and 4 to permit forming a pointer-to-member with a splice.
 
 * [#.#]{.pnum} If the operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} [naming]{.rm} [designating]{.addu} a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
 
-* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand names an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
+* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
 
 [4]{.pnum} A pointer to member is only formed when an explicit `&` is used and its operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} not enclosed in parentheses.
 
@@ -3642,7 +3642,20 @@ Add a new paragraph prior to the definition of _manifestly constant evaluated_ (
     * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
   * [#.#.#]{.pnum} is, or is a subexpression of, an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
 
-[As detailed below, the evaluation of a plainly constant-evaluated expression may produce new declarations. Their definition precludes expressions that may be evaluated repeatedly.]{.note12}
+[Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
+
+::: example
+```cpp
+bool fn();
+consteval bool cfn(int);
+template <int V> requires (cfn(V));  // cfn(V) is not plainly constant-evaluated
+
+constexpr bool b1 = !cfn(1);         // !cfn(1) is plainly constant-evaluated
+const bool b2 = cfn(1);              // cfn(1) is not plainly constant-evaluated
+const bool b3 = cfn(1) && fn();      // cfn(1) is not plainly constant-evaluated
+
+```
+:::
 
 :::
 :::
@@ -3662,6 +3675,10 @@ Modify the definition of _manifestly constant-evaluated_ to leverage that of _pl
 * [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
 
+::: addu
+[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., initializers that can require trial evaluations) are not plainly constant-evaluated.]{.note}
+:::
+
 :::
 
 Add new paragraphs defining _evaluation context_, _injected declaration_, and _injected point_ after the example following the definition of _manifestly constant-evaluated_, and renumber accordingly:
@@ -3675,16 +3692,23 @@ Add new paragraphs defining _evaluation context_, _injected declaration_, and _i
 
 [23]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
 
-::: example11
+::: example
 ```cpp
-consteval bool fn(int);         // produces a declaration
+consteval bool make_decl(int);       // produces a declaration
 
-template <int R> requires (fn(R))
+template <int R> requires (make_decl(R))
   bool tfn();
 
-constexpr bool b1 = !fn(42);    // constexpr variable, ok
-bool b2 = !fn(42);              // ill-formed
-constexpr bool b3 = tfn<42>();  // ill-formed
+constexpr bool b1 = !make_decl(42);  // OK, constexpr variable so this is plainly
+                                     // constant evaluated
+
+bool b2 = !make_decl(42);            // error: initializer !make_decl(42) produced
+                                     // a declaration but is not plainly constant 
+                                     // evaluated
+
+constexpr bool b3 = tfn<42>();       // error: the invocation of make_decl(R) in the 
+                                     // requires clause produced a declaration but is
+                                     // not plainly constant evaluated
 ```
 :::
 
