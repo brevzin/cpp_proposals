@@ -30,6 +30,7 @@ Since [@P2996R6]:
 
 * removed the `accessible_members` family of functions
 * added the `get_public` family of functions
+* added missing `tuple` and `variant` traits
 * stronger guarantees on order reflections returned by `members_of`
 * several core wording fixes
 
@@ -4345,10 +4346,10 @@ namespace std::meta {
   consteval operators operator_of(info r);
 
   // [meta.reflection.names], reflection names and locations
+  consteval bool has_identifier(info r);
+
   consteval string_view identifier_of(info r);
   consteval string_view u8identifier_of(info r);
-
-  consteval bool has_identifier(info r);
 
   consteval string_view display_string_of(info r);
   consteval string_view u8display_string_of(info r);
@@ -4674,6 +4675,13 @@ namespace std::meta {
     `consteval info type_invoke_result(info type, R&& type_args);
   consteval info type_unwrap_reference(info type);
   consteval info type_unwrap_ref_decay(info type);
+
+  // [meta.reflection.tuple.variant], tuple and variant queries
+  consteval size_t type_tuple_size(info type);
+  consteval info type_tuple_element(size_t index, info type);
+
+  consteval size_t type_variant_size(info type);
+  consteval info type_variant_alternative(size_t index, info type);
 }
 ```
 :::
@@ -4756,21 +4764,29 @@ consteval operators operator_of(info r);
 ::: std
 ::: addu
 ```cpp
+consteval bool has_identifier(info r);
+```
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
+* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
+* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
+* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
+* [#.#]{.pnum} Otherwise, if `r` represents a description of a declaration of a non-static data member, then if the declaration of any data member having the properties represented by `r` would introduce an identifier.
+* [#.#]{.pnum} Otherwise, `false`.
+
+```cpp
 consteval string_view identifier_of(info r);
 consteval u8string_view u8identifier_of(info r);
 ```
 
 [#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
 
-[#]{.pnum} *Constant When*:
-
-* [#.#]{.pnum} If `r` represents a function whose name is representable by `$E$`, then when the function is not a constructor, destructor, operator function, or conversion function.
-* [#.#]{.pnum} Otherwise, if `r` represents a function template whose name is representable by `$E$`, then when the function template is not a constructor template, a conversion function template, or an operator function template.
-* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier representable by `$E$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typedef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier representable by `$E$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a namespace alias or an entity that is not a function, a function template, or a type, then when the declaration of what is represented by `r` introduces an identifier representable by `$E$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier for which the base class is a named type, then when the name of that type is an identifier representable by `$E$`.
-* [#.#]{.pnum} Otherwise, when `r` represents a description of a declaration of a non-static data member, and the declaration of any data member having the properties represented by `r` would introduce an identifier representable by `$E$`.
+[#]{.pnum} *Constant When*: `has_identifier(r)` is `true` and the identifier that would be returned (see below) is representable by `$E$`.
 
 [#]{.pnum} *Returns*:
 
@@ -4788,22 +4804,6 @@ consteval u8string_view u8display_string_of(info r);
 [#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary literal encoding.
 
 [#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the represented construct.
-
-```cpp
-consteval bool has_identifier(info r);
-```
-
-[#]{.pnum} *Returns*:
-
-* [#.#]{.pnum} If `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
-* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
-* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
-* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
-* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise, if `r` represents a description of a declaration of a non-static data member, then if the declaration of any data member having the properties represented by `r` would introduce an identifier.
-* [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
 consteval source_location source_location_of(info r);
@@ -5890,6 +5890,24 @@ consteval info type_unwrap_reference(info type) {
 :::
 :::
 
+#### [meta.reflection.tuple.variant], Tuple and Variant Queries {-}
+
+::: std
+::: addu
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$UNARY-TRAIT$` defined in this clause with the signature `size_t(std::meta::info)`, `std::meta::type_$UNARY-TRAIT$(^T)` equals the value of the corresponding property `std::$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+
+[2]{.pnum} For any type or `$typedef-name$` `T` and value `I`, for each function `std::meta::type_$BINARY-TRAIT$` defined in this clause with the signature `info(size_t, std::meta::info)`, `std::meta::type_$BINARY-TRAIT$(I, ^T)` returns a reflection representing the type `std::$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+
+```cpp
+consteval size_t type_tuple_size(info type);
+consteval info type_tuple_element(size_t index, info type);
+
+consteval size_t type_variant_size(info type);
+consteval info type_variant_alternative(size_t index, info type);
+```
+:::
+:::
+
 ### [bit.cast]{.sref} Function template `bit_cast` {-}
 
 And we have adjust the requirements of `std::bit_cast` to not allow casting to or from `std::meta::info` as a constant, in [bit.cast]{.sref}/3:
@@ -5932,6 +5950,22 @@ and [version.syn]{.sref}:
 
 ---
 references:
+  - id: P2996R6
+    citation-label: P2996R6
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2024
+        month: 09
+        day: 24
+    URL: https://wg21.link/p2996r6
   - id: P3293R2
     citation-label: P3293R2
     title: "Splicing a base class subobject"
