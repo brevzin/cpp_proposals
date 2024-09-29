@@ -3635,13 +3635,13 @@ Add a new paragraph prior to the definition of _manifestly constant evaluated_ (
 
 * [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
-* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or a subexpression thereof, or
 * [#.#]{.pnum} an immediate invocation, unless it
   * [#.#.#]{.pnum} results from the substitution of template parameters
     * during template argument deduction ([temp.deduct]{.sref}),
     * in a `$concept-id$` ([temp.names]{.sref}), or
     * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-  * [#.#.#]{.pnum} is, or is a subexpression of, an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
+  * [#.#.#]{.pnum} is an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}), or a subexpression thereof.
 
 [Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
 
