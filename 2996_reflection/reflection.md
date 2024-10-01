@@ -5077,7 +5077,7 @@ The base class specifiers are indexed in the order in which they appear in the *
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -5087,7 +5087,7 @@ consteval vector<info> static_data_members_of(info type);
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -5097,7 +5097,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Constant When*: `type_enum` represents an enumeration type and `has_complete_definition(type_enum)` is `true`.
+[#]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `type_enum`, in the order in which they are declared.
 
@@ -5105,7 +5105,7 @@ consteval vector<info> enumerators_of(info type_enum);
 consteval vector<info> get_public_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -5115,7 +5115,7 @@ consteval vector<info> get_public_members(info type);
 consteval vector<info> get_public_static_data_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -5125,7 +5125,7 @@ consteval vector<info> get_public_static_data_members(info type);
 consteval vector<info> get_public_nonstatic_data_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -5135,7 +5135,7 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 consteval vector<info> get_public_bases(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-09-28" />
+  <meta name="dcterms.date" content="2024-10-01" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-09-28</td>
+    <td>2024-10-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -8090,7 +8090,7 @@ indexed in the order in which they appear in the
 <code class="sourceCode cpp">C</code>.</p>
 <div class="sourceCode" id="cb187"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb187-1"><a href="#cb187-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> static_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_234" id="pnum_234">9</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type</code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_235" id="pnum_235">10</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
@@ -8102,7 +8102,7 @@ containing the reflections of the static data members of the type
 represented by <code class="sourceCode cpp">type</code>.</p>
 <div class="sourceCode" id="cb188"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_237" id="pnum_237">12</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type</code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_238" id="pnum_238">13</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
@@ -8115,8 +8115,8 @@ represented by <code class="sourceCode cpp">type</code>, in the order in
 which they are declared.</p>
 <div class="sourceCode" id="cb189"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_240" id="pnum_240">15</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type_enum</code>
-represents an enumeration type and <code class="sourceCode cpp">has_complete_definition<span class="op">(</span>type_enum<span class="op">)</span></code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type_enum<span class="op">)</span></code>
+represents an enumeration type and <code class="sourceCode cpp">has_complete_definition<span class="op">(</span>dealias<span class="op">(</span>type_enum<span class="op">))</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_241" id="pnum_241">16</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
@@ -8125,7 +8125,7 @@ represented by <code class="sourceCode cpp">type_enum</code>, in the
 order in which they are declared.</p>
 <div class="sourceCode" id="cb190"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb190-1"><a href="#cb190-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_242" id="pnum_242">17</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type</code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_243" id="pnum_243">18</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
@@ -8139,7 +8139,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>, in
 order.</p>
 <div class="sourceCode" id="cb191"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb191-1"><a href="#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_static_data_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_245" id="pnum_245">20</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type</code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_246" id="pnum_246">21</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
@@ -8153,7 +8153,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>, in
 order.</p>
 <div class="sourceCode" id="cb192"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb192-1"><a href="#cb192-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_nonstatic_data_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_248" id="pnum_248">23</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type</code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_249" id="pnum_249">24</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
@@ -8167,7 +8167,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>, in
 order.</p>
 <div class="sourceCode" id="cb193"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb193-1"><a href="#cb193-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_bases<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_251" id="pnum_251">26</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">type</code>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_252" id="pnum_252">27</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
