@@ -3697,7 +3697,12 @@ Add new paragraphs defining _evaluation context_, _injected declaration_, and _i
 
 [Special rules concerning reachability apply to injected points ([module.reach]).]{.note13}
 
-[23]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
+[23]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
+
+* [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated, or
+* within the body of an immediate-escalating function `$F$`, unless
+  * [#.#.#]{.pnum} `$E$` is a plainly constant-evaluated expression or a subexpression thereof, or
+  * [#.#.#]{.pnum} `$F$` does not contain an immediate-escalating expression.
 
 ::: example
 ```cpp
@@ -3706,16 +3711,28 @@ consteval bool make_decl(int);       // produces a declaration
 template <int R> requires (make_decl(R))
   bool tfn();
 
-constexpr bool b1 = !make_decl(42);  // OK, constexpr variable so this is plainly
-                                     // constant evaluated
+constexpr bool b1 = !make_decl(1);  // OK, constexpr variable so this is plainly
+                                    // constant evaluated
 
-bool b2 = !make_decl(42);            // error: initializer !make_decl(42) produced
-                                     // a declaration but is not plainly constant 
-                                     // evaluated
+bool b2 = !make_decl(2);            // error: initializer !make_decl(42) produced
+                                    // a declaration but is not plainly constant 
+                                    // evaluated
 
-constexpr bool b3 = tfn<42>();       // error: the invocation of make_decl(R) in the 
-                                     // requires clause produced a declaration but is
-                                     // not plainly constant evaluated
+constexpr bool b3 = tfn<3>();       // error: the invocation of make_decl(R) in the 
+                                    // requires clause produced a declaration but is
+                                    // not plainly constant evaluated
+
+consteval int *not_constant() {
+  make_decl(4);
+  return new int {};
+}
+constexpr bool b4 = [] {
+  int *p = not_constant();          // error: not_constant() produces a declaration
+                                    // in an immediate-escalated function, but is
+                                    // not plainly constant-evalauted.
+  delete p;
+  return true;
+}();
 ```
 :::
 
