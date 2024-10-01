@@ -5159,7 +5159,7 @@ consteval member_offsets offset_of(info r);
 
 [#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
-[#]{.pnum} *Returns*: `{V / CHAR_BIT * CHAR_BIT, V % CHAR_BIT}`.
+[#]{.pnum} *Returns*: `{V / CHAR_BIT, V % CHAR_BIT}`.
 
 [The subobject corresponding to a non-static data member of reference type has the same size as the corresponding pointer type.]{.note}
 
