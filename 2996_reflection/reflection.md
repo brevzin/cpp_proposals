@@ -4958,9 +4958,17 @@ static_assert(object_of(^x) == object_of(^y)); // OK, because y is a reference
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]), an enumerator, or a value.
+[#]{.pnum} *Constant When*: `r` is a reflection representing
 
-[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+* [#.#]{.pnum} either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
+* [#.#]{.pnum} an enumerator, or
+* [#.#]{.pnum} a value.
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type
+* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator.
+* [#.#]{.pnum} Otherwise, `r`.
 
 ::: example
 ```cpp
