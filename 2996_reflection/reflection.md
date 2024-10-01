@@ -5081,7 +5081,7 @@ consteval vector<info> static_data_members_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the static data members of the type represented by `type`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct static data members of the type represented by `dealias(type)`.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
@@ -5091,7 +5091,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the non-static data members of the type represented by `type`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct non-static data members of the type represented by `dealias(type)`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
@@ -5099,7 +5099,7 @@ consteval vector<info> enumerators_of(info type_enum);
 
 [#]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `type_enum`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `dealias(type_enum)`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> get_public_members(info type);
@@ -5109,7 +5109,7 @@ consteval vector<info> get_public_members(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_static_data_members(info type);
@@ -5119,7 +5119,7 @@ consteval vector<info> get_public_static_data_members(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_nonstatic_data_members(info type);
@@ -5129,7 +5129,7 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_bases(info type);
@@ -5139,7 +5139,7 @@ consteval vector<info> get_public_bases(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(type)` such that `is_public(e)` is `true`, in order.
 :::
 :::
 
