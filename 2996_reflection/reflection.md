@@ -4745,9 +4745,7 @@ consteval bool is_defaulted(info r);
 consteval bool is_user_provided(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a function.
-
-[#]{.pnum} *Returns*: `true` if `r` represents a user-provided ([dcl.fct.def.default]{.sref}) function. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is user-provided ([dcl.fct.def.default]{.sref}). Otherwise, `false`.
 
 
 ```cpp
