@@ -4878,9 +4878,7 @@ consteval bool is_defaulted(info r);
 consteval bool is_user_provided(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a function.
-
-[#]{.pnum} *Returns*: `true` if `r` represents a user-provided ([dcl.fct.def.default]{.sref}) function. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is user-provided ([dcl.fct.def.default]{.sref}). Otherwise, `false`.
 
 
 ```cpp
@@ -5093,9 +5091,17 @@ static_assert(object_of(^x) == object_of(^y)); // OK, because y is a reference
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]), an enumerator, or a value.
+[#]{.pnum} *Constant When*: `r` is a reflection representing
 
-[#]{.pnum} *Returns*: If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type. Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. Otherwise, `r`.
+* [#.#]{.pnum} either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
+* [#.#]{.pnum} an enumerator, or
+* [#.#]{.pnum} a value.
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type
+* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator.
+* [#.#]{.pnum} Otherwise, `r`.
 
 ::: example
 ```cpp
@@ -5114,7 +5120,7 @@ static_assert(value_of(^x) == reflect_value(0)); // OK, likewise
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias, `$typedef-name$`, or base class specifier.
+[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), `$typedef-name$`, or base class specifier.
 
 [#]{.pnum} *Returns*: A reflection of the class, function, or namespace enclosing the first declaration of what is represented by `r`.
 
@@ -5210,69 +5216,69 @@ The base class specifiers are indexed in the order in which they appear in the *
 consteval vector<info> static_data_members_of(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the static data members of the type represented by `type`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct static data members of the type represented by `dealias(type)`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the non-static data members of the type represented by `type`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct non-static data members of the type represented by `dealias(type)`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} *Constant When*: `type_enum` represents an enumeration type and `has_complete_definition(type_enum)` is `true`.
+[#]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `type_enum`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `dealias(type_enum)`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> get_public_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_static_data_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_nonstatic_data_members(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_bases(info type);
 ```
 
-[#]{.pnum} *Constant When*: `type` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(target)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(type)` such that `is_public(e)` is `true`, in order.
 :::
 :::
 
@@ -5294,7 +5300,7 @@ consteval member_offsets offset_of(info r);
 
 [#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
-[#]{.pnum} *Returns*: `{V / CHAR_BIT * CHAR_BIT, V % CHAR_BIT}`.
+[#]{.pnum} *Returns*: `{V / CHAR_BIT, V % CHAR_BIT}`.
 
 [The subobject corresponding to a non-static data member of reference type has the same size as the corresponding pointer type.]{.note}
 
