@@ -5202,26 +5202,57 @@ consteval size_t bit_size_of(info r);
 
 ::: std
 ::: addu
+[1]{.pnum} The `extract` function template may be used to extract a value out of a reflection when the type is known.
+
+[#]{.pnum} The following are defined for exposition only to aid in the specification of `extract`:
+```cpp
+template <class T>
+  consteval T $extract-ref$(info r); // exposition only
+```
+
+[#]{.pnum} [`T` is a reference type.]{.note}
+
+[#]{.pnum} *Constant When*: `r` represents a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context and `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`.
+
+[#]{.pnum} *Returns*: the object represented by `object_of(r)`.
+
+```cpp
+template <class T>
+  consteval T $extract-member-or-function$(info r); // exposition only
+```
+
+[#]{.pnum} *Constant When*:
+
+- [#.#]{.pnum} If `r` represents either an implicit object member function or a non-static data member of a class `C` with type `X`, then when `T` is `X C::*` and `r` does not represent a bit-field.
+- [#.#]{.pnum} Otherwise, `r` represents a function or member function of function type `X`, then when `T` is `X*`.
+
+[#]{.pnum} *Returns*: a pointer value designating the entity represented by `r`.
+
+```cpp
+template <class T>
+  consteval T $extract-val$(info r); // exposition only
+```
+
+[#]{.pnum} Let `U` be the type of the value or enumerator that `r` represents.
+
+[#]{.pnum} *Constant When*:
+
+  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
+  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
+  - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value `r` represents is convertible to `T`.
+
+[#]{.pnum} *Returns*: the value or enumerator `$V$` represented by `r`, converted to `T`.
+
 ```cpp
 template <class T>
   consteval T extract(info r);
 ```
 
-[#]{.pnum} *Constant When*:
+[#]{.pnum} *Effects*:
 
-- [#.#]{.pnum} `r` represents a value or enumerator of type `U`, and the cv-unqualified types of `T` and `U` are the same,
-- [#.#]{.pnum} `T` is not a reference type, `r` represents a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context, and the cv-unqualified types of `T` and `U` are the same,
-- [#.#]{.pnum} `T` is a reference type, `r` represents a function or a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context, the cv-unqualified types of `T` and `U` are the same, and `U` is not more cv-qualified than `T`,
-- [#.#]{.pnum} `T` is a pointer type, `r` represents a function or non-bit-field non-static data member, and the statement `T v = &$expr$`, where `$expr$` is an lvalue naming the entity represented by `r`, is well-formed, or
-- [#.#]{.pnum} `T` is a pointer type, `r` represents a value or an object or variable `$V$` of type `U` that is usable in constant expressions from a point in the evaluation context, `U` is the closure type of a non-generic lambda, and the statement `T v = +$expr$`, where `$expr$` is an lvalue designating `$V$`, is well-formed.
-
-[#]{.pnum} *Returns*:
-
-- [#.#]{.pnum} If `r` represents a value or enumerator `$V$`, then `$V$`.
-- [#.#]{.pnum} Otherwise, if `r` represents an object or variable and `T` is not a reference type, then the value represented by `value_of(r)`.
-- [#.#]{.pnum} Otherwise, if `T` is a reference type, then the object represented by `object_of(r)`.
-- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a function or a non-static data member, then a pointer value designating the entity represented by `r`.
-- [#.#]{.pnum} Otherwise, if `T` is a pointer type and `r` represents a variable, object, or value `$V$` with closure type `C`, then the same result as the conversion function of `C` applied to `$V$`.
+- [#]{.pnum} If `T` is a reference type, then equivalent to `return $extract-ref$<T>(r);`
+- [#]{.pnum} Otherwise, if `r` represents a function, non-static data member, or member function, equivalent to `return $extract-member-or-function$<T>(r);`
+- [#]{.pnum} Otherwise, equivalent to `return $extract-value$<T>(value_of(r))`
 
 :::
 :::
