@@ -5249,8 +5249,9 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} If `r` represents either an implicit object member function or a non-static data member of a class `C` with type `X`, then when `T` is `X C::*` and `r` does not represent a bit-field.
-- [#.#]{.pnum} Otherwise, if `r` represents a function or member function of function type `X`, then when `T` is `X*`.
+- [#.#]{.pnum} If `r` represents a non-static data member of a class `C` with type `X`, then when `T` is `X C::*` and `r` does not represent a bit-field.
+- [#.#]{.pnum} Otherwise, if `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, then when `T` is `F C::*`.
+- [#.#]{.pnum} Otherwise, `r` represents a function, static member function, or explicit object member function of function type `F` or `F noexcept`, then when `T` is `F*`.
 
 [#]{.pnum} *Returns*: a pointer value designating the entity represented by `r`.
 
