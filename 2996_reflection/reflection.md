@@ -2405,6 +2405,7 @@ namespace std::meta {
   consteval auto is_enumerator(info r) -> bool;
   consteval auto is_const(info r) -> bool;
   consteval auto is_volatile(info r) -> bool;
+  consteval auto is_mutable_member(info r) -> bool;
   consteval auto is_lvalue_reference_qualified(info r) -> bool;
   consteval auto is_rvalue_reference_qualified(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
@@ -3704,9 +3705,11 @@ Add new paragraphs defining _evaluation context_, _injected declaration_, and _i
   * [#.#.#]{.pnum} `$E$` is a plainly constant-evaluated expression or a subexpression thereof, or
   * [#.#.#]{.pnum} `$F$` does not contain an immediate-escalating expression.
 
+[An immediate invocation within an immediate-escalating function is similar to a trial evaluation of a variable initializer: if it fails to be a constant expression, the implementation may be forced to evaluate it again. The above rule is intended to only permit evaluations to produce declarations when such evaluations can be guaranteed to only happen once.]{.note}
+
 ::: example
 ```cpp
-consteval bool make_decl(int);       // produces a declaration
+consteval bool make_decl(int);      // calling 'make_decl(n)' produces a declaration
 
 template <int R> requires (make_decl(R))
   bool tfn();
@@ -4400,6 +4403,7 @@ namespace std::meta {
 
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
+  consteval bool is_mutable_member(info r);
   consteval bool is_lvalue_reference_qualified(info r);
   consteval bool is_rvalue_reference_qualified(info r);
 
@@ -4913,6 +4917,12 @@ consteval bool is_volatile(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a const or volatile type (respectively), a const- or volatile-qualified function type (respectively), or an object, variable, non-static data member, or function with such a type. Otherwise, `false`.
 
 ```cpp
+consteval bool is_mutable_member(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a mutable non-static data member. Otherwise, `false`.
+
+```cpp
 consteval bool is_lvalue_reference_qualified(info r);
 consteval bool is_rvalue_reference_qualified(info r);
 ```
@@ -5296,11 +5306,14 @@ constexpr size_t member_offsets::total_bits() const;
 consteval member_offsets offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class specifier.
+[#]{.pnum} *Constant When*: `r` represents a non-static data member or base class specifier.
 
-[#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+[#]{.pnum} Let `$V$` be a constant defined as follows:
 
-[#]{.pnum} *Returns*: `{V / CHAR_BIT, V % CHAR_BIT}`.
+- [#.#]{.pnum} If `r` represents a virtual base class specifier of an abstract class, then `$V$` is an implementation-defined value.
+- [#.#]{.pnum} Otherwise, `$V$` is the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+
+[#]{.pnum} *Returns*: `{$V$ / CHAR_BIT, $V$ % CHAR_BIT}`.
 
 [The subobject corresponding to a non-static data member of reference type has the same size as the corresponding pointer type.]{.note}
 
