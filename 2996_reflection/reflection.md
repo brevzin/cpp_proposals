@@ -5564,17 +5564,19 @@ consteval bool is_data_member_spec(info r);
 
 [`class_type` could represent a class template specialization for which there is no reachable definition.]{.note}
 
-[#]{.pnum} Let {`@$o$~k~@`} be a sequence of `data_member_options_t` values, such that
+[#]{.pnum} Let `$C$` be the class represented by `class_type`, and let {`@$o$~k~@`} be a sequence of `data_member_options_t` values such that
 
     data_member_spec(type_of(@$r$~$k$~@), @$o$~$k$~@) == @$r$~$k$~@
 
 for every `@$r$~$k$~@` in `mdescrs`.
 
 [#]{.pnum} *Effects*:
-Produces an injected declaration ([expr.const]) that provides a definition for `class_type`, whose locus is immediately after the manifestly constant-evaluated expression whose evaluation is producing the definition, with properties as follows:
+Produces an injected declaration `$D$` ([expr.const]) that provides a definition for `$C$` with properties as follows:
 
-- [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
-- [#.#]{.pnum} The definition of `class_type` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
+- [#.#]{.pnum} The locus of `$D$` follows immediately after the manifestly constant-evaluated expression currently under evaluation.
+- [#.#]{.pnum} If `$C$` is a specialization of a class template `$T$`, then `$D$` is is an explicit specialization of `$T$`.
+- [#.#]{.pnum} `$D$` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type represented by `type_of(@$r$~$K$~@)`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` are declared with the attribute `[[no_unique_address]]`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.width` contains a value are declared as bit-fields whose width is that value.
@@ -5583,8 +5585,8 @@ Produces an injected declaration ([expr.const]) that provides a definition for `
   - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
   - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an implementation-defined name.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
-- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
-- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
 
