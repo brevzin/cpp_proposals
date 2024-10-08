@@ -4800,7 +4800,7 @@ consteval bool is_volatile(info r);
 consteval bool is_mutable_member(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a mutable non-static data member. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a `mutable` non-static data member. Otherwise, `false`.
 
 ```cpp
 consteval bool is_lvalue_reference_qualified(info r);
