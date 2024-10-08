@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-06-25" />
+  <meta name="dcterms.date" content="2024-10-07" />
   <title>Splicing a base class subobject</title>
   <style>
       code{white-space: pre-wrap;}
@@ -562,11 +562,11 @@ subobject</h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P3293R1</td>
+    <td>P3293R1 <a href="https://wg21.link/P3293">[Latest]</a> <a href="https://wg21.link/P3293/status">[Status]</a></td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-06-25</td>
+    <td>2024-10-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -596,24 +596,32 @@ subobject</h1>
 <li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
 History<span></span></a></li>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<li><a href="#kinds-of-subobjects" id="toc-kinds-of-subobjects"><span class="toc-section-number">3</span> Kinds of Subobjects<span></span></a>
 <ul>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">3.1</span> Wording<span></span></a></li>
+<li><a href="#base-class-subobjects" id="toc-base-class-subobjects"><span class="toc-section-number">3.1</span> Base Class
+Subobjects<span></span></a></li>
+<li><a href="#array-elements" id="toc-array-elements"><span class="toc-section-number">3.2</span> Array
+Elements<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">4.1</span> Wording<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>Since <span class="citation" data-cites="P3293R0">[<a href="https://wg21.link/p3293r0" role="doc-biblioref">P3293R0</a>]</span>, noted that <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
-cannot work for virtual base classes. Added wording.</p>
+cannot work for virtual base classes. Talking about arrays. Added
+wording.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>There are many contexts in which it is useful to perform the same
 operation on each subobject of an object in sequence. These include
 serialization or <a href="https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_print_function">formatting</a>
 or <a href="https://www.boost.org/doc/libs/1_85_0/libs/describe/doc/html/describe.html#example_hash_value">hashing</a>.</p>
-<p><span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> seems like it gives us an ideal
+<p><span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span> seems like it gives us an ideal
 solution to this problem, in the form of being able to iterate over all
 the subobjects of an object and splicing accesses to them. However, it
 is not quite complete:</p>
@@ -701,79 +709,346 @@ template:</p>
 </blockquote>
 </div>
 <p>But this feels a bit silly? Why should we have to write this?</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>We propose to define <code class="sourceCode cpp">obj<span class="op">.[:</span>mem<span class="op">:]</span></code>
-(where <code class="sourceCode cpp">mem</code> is a reflection of a base
-class of the type of <code class="sourceCode cpp">obj</code>) as being
-an access to that base class subobject, in the same way that <code class="sourceCode cpp">obj<span class="op">.[:</span>nsdm<span class="op">:]</span></code>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="kinds-of-subobjects"><span class="header-section-number">3</span>
+Kinds of Subobjects<a href="#kinds-of-subobjects" class="self-link"></a></h1>
+<p>There are three kinds of subobjects as specified in <span>6.7.2 <a href="https://wg21.link/intro.object">[intro.object]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span>
+Objects can contain other objects, called <em>subobjects</em>. A
+subobject can be a <em>member subobject</em> ([class.mem]), a <em>base
+class subobject</em> ([class.derived]), or an array element.</p>
+</blockquote>
+</div>
+<p>Currently, the reflection proposal only supports splicing member
+subobjects. Let’s go over the other two.</p>
+<h2 data-number="3.1" id="base-class-subobjects"><span class="header-section-number">3.1</span> Base Class Subobjects<a href="#base-class-subobjects" class="self-link"></a></h2>
+<p>Unlike member subobjects, there is <em>no</em> way today to access a
+base class subobject directly outside of one of the casts described
+above. Part of the reason for this is that while a data member is always
+just an <code class="sourceCode cpp"><em>identifier</em></code>, a base
+class subobject can have an arbitrary complex name. Reflection allows us
+to sidestep the question of complex names since we just have a
+reflection to the appropriate base class subobject already, so it
+becomes a matter of asking what <code class="sourceCode cpp">obj<span class="op">.[:</span>base<span class="op">:]</span></code>
+means.</p>
+<p>But what else could it mean? We argue that the obvious, useful, and
+only possible meaning of this syntax would be to access the appropriate
+base class subobject (in the same way that <code class="sourceCode cpp">obj<span class="op">.[:</span>nsdm<span class="op">:]</span></code>
+— where <code class="sourceCode cpp">nsdm</code> represents a non-static
+data member — is access to that data member).</p>
+<p>Additionally, <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
+where <code class="sourceCode cpp">base</code> represents a base class
+<code class="sourceCode cpp">B</code> of type
+<code class="sourceCode cpp">T</code> could yield a
+<code class="sourceCode cpp">B T<span class="op">::*</span></code> with
+appropriate offset. Likewise, there is no way to directly get such a
+member pointer today. But that would be a useful bit of functionality to
+add. That is, unless <code class="sourceCode cpp">base</code> represents
+a reflection of a virtual base class subobject, which wouldn’t be
+representable as a pointer to member.</p>
+<p>The only reason <span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span> doesn’t support splicing base
+class subobjects is the lack of equivalent language support today. This
+means that adding this support in reflection would mean that splicing
+can achieve something the language cannot do natively. But we don’t
+really see that as a problem. Reflection is already allowing all sorts
+of things that the language cannot do natively. What’s one more?</p>
+<h2 data-number="3.2" id="array-elements"><span class="header-section-number">3.2</span> Array Elements<a href="#array-elements" class="self-link"></a></h2>
+<p>The more complicated question is array elements. <code class="sourceCode cpp">subobjects_of<span class="op">(^</span><span class="dt">int</span><span class="op">[</span><span class="dv">4</span><span class="op">])</span></code>
+needs to return four subobjects, which would effectively each represent
+“index <code class="sourceCode cpp">i</code> into <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">4</span><span class="op">]</span></code>”
+for each <code class="sourceCode cpp">i</code> in <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">]</span></code>.
+We would want both the index and the type here. That, in of itself,
+isn’t any different from dealing with the non-static data members of a
+class. These subobjects likewise have offsets, types, etc, in the same
+way.</p>
+<p>The challenge is more in terms of access. With base class subobjects,
+we talked about how there is no non-splice equivalent to <code class="sourceCode cpp">obj<span class="op">.[:</span>base<span class="op">:]</span></code>.
+But today there isn’t any even any such valid syntax for arrays today at
+all! Indeed, the standard refers to the expression
+<code class="sourceCode cpp">E1<span class="op">.</span>E2</code> as
+<em>class</em> member access (<span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>), and arrays are
+not actually classes. That adds complexity.</p>
+<p>Moreover, arrays have the additional problem that the number of array
+elements can explode quite quickly. <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">1&#39;000</span><span class="op">]</span></code>
+already has 1000 subobjects. That’s expensive. Especially since array
+elements aren’t quite the same as the other kinds of subobjects — we
+know they are all the same type. All the use-cases that we have, unlike
+for base class subobjects, would want to treat arrays separately
+anyway.</p>
+<p>That is, being able to splice base class subobjects is small language
+extension with good bang for the buck. Being able to splice array
+subobjects requires being able to even represent array subobjects as
+reflections (which currently does not exist) as well as being able to
+extend class member access to support arrays. Not to mention pointers to
+members? It’s a much larger change with a much smaller benefit.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>We propose two language changes:</p>
+<ol type="1">
+<li>to define <code class="sourceCode cpp">obj<span class="op">.[:</span>base<span class="op">:]</span></code>
+(where <code class="sourceCode cpp">base</code> is a reflection of a
+base class of the type of <code class="sourceCode cpp">obj</code>) as
+being an access to that base class subobject, in the same way that <code class="sourceCode cpp">obj<span class="op">.[:</span>nsdm<span class="op">:]</span></code>
 (where <code class="sourceCode cpp">nsdm</code> is a reflection of a
-non-static data member) is an access to that data member.</p>
-<p>Additionally <code class="sourceCode cpp"><span class="op">&amp;[:</span>mem<span class="op">:]</span></code>
-where <code class="sourceCode cpp">mem</code> is a reflection of a base
+non-static data member) is an access to that data member.</li>
+<li>to define <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
+where <code class="sourceCode cpp">base</code> is a reflection of a base
 class <code class="sourceCode cpp">B</code> of type
 <code class="sourceCode cpp">T</code> should yield a
 <code class="sourceCode cpp">B T<span class="op">::*</span></code> with
-appropriate offset. Unless <code class="sourceCode cpp">mem</code> is a
+appropriate offset. Unless <code class="sourceCode cpp">base</code> is a
 reflection of a virtual base class, which wouldn’t really be
-representable as a pointer to member.</p>
+representable as a pointer to member.</li>
+</ol>
 <p>We argue that these are the obvious, useful, and only possible
 meanings of these syntaxes, so we should simply support them in the
 language.</p>
-<p>The only reason this isn’t initially part of <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span> is that while there <em>is</em>
+<p>The only reason this isn’t initially part of <span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span> is that while there <em>is</em>
 a way to access a data member of an object directly (just
 <code class="sourceCode cpp">obj<span class="op">.</span>mem</code>),
 there is <em>no</em> way to access a base class subobject directly
-outside of one of the casts described above. Part of the reason for this
-is that while a data member is always just an
-<code class="sourceCode cpp"><em>identifier</em></code>, a base class
-subobject can have an arbitrary complex name.</p>
-<p>This means that adding this support in reflection would mean that
-splicing can achieve something the language cannot do natively. But we
-don’t really see that as a problem. Reflection is already allowing all
-sorts of things that the language cannot do natively. What’s one
-more?</p>
-<h2 data-number="3.1" id="wording"><span class="header-section-number">3.1</span> Wording<a href="#wording" class="self-link"></a></h2>
-<p>Add a bullet to <span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7:</p>
+outside of one of the casts described above.</p>
+<p>We then additionally propose to back <code class="sourceCode cpp">subobjects_of<span class="op">()</span></code>
+(and <code class="sourceCode cpp">get_public_subobjects<span class="op">()</span></code>)
+that <span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span> removed. These were removed
+because iterating over <em>all</em> the subobjects uniformly wasn’t
+really possible until these language additions.</p>
+<h2 data-number="4.1" id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Handle base class splices in <span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7-8:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">7</a></span>
 Otherwise, one of the following rules applies.</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(7.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(7.1)</a></span>
 …</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(7.4)</a></span>
-If E2 is a nested type, the expression E1.E2 is ill-formed.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(7.4)</a></span>
+If E2 designates a nested type, the expression E1.E2 is
+ill-formed.</p></li>
 </ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(7.4b)</a></span>
-If E2 is a direct, non-virtual base class subobject of the type of E1
-and the type of E1 is
-“<code class="sourceCode cpp"><em>cv</em> X</code>”, the expression
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(7.4b)</a></span>
+If E2 designates a direct, non-virtual base class subobject
+<code class="sourceCode cpp"><em>B</em></code> and type of
+<code class="sourceCode cpp"><em>B</em></code> is
+<code class="sourceCode cpp"><em>T</em></code>, the expression
 designates the corresponding base class subobject of the object
 designated by the first expression. If E1 is an lvalue, then E1.E2 is an
 lvalue; otherwise E1.E2 is an xvalue. The type of E1.E2 is
-“<code class="sourceCode cpp"><em>cv</em> E2</code>”. <span class="note"><span>[ <em>Note 1:</em> </span>This can only occur in an
+“<code class="sourceCode cpp"><em>cv</em> <em>T</em></code>”. <span class="note"><span>[ <em>Note 1:</em> </span>This can only occur in an
 expression of the form <code class="sourceCode cpp">e1<span class="op">.[:</span>e2<span class="op">:]</span></code>
 where <code class="sourceCode cpp">e2</code> is a reflection designating
-a base class subobject.<span> — <em>end note</em> ]</span></span></li>
+a base class subobject.<span> — <em>end note</em> ]</span></span></p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> b;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> B <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> d;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> base_of<span class="op">(^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:].</span>b <span class="op">+=</span> <span class="dv">10</span>;</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> <span class="op">^</span>D<span class="op">::</span>d <span class="op">:]</span> <span class="op">+=</span> <span class="dv">1</span>;</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> d<span class="op">.</span>b <span class="op">*</span> d<span class="op">.</span>d;</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">()</span> <span class="op">==</span> <span class="dv">33</span><span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div></li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(7.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(7.5)</a></span>
 If E2 is a member enumerator and the type of E2 is T, the expression
 E1.E2 is a prvalue of type T whose value is the value of the
 enumerator.</li>
 </ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">8</a></span>
+If <code class="sourceCode cpp">E2</code> designates a non-static member
+<code class="sourceCode cpp"><em>M</em></code>, the program is
+ill-formed if the class of which
+<code class="sourceCode cpp"><em>M</em></code> is directly a member is
+an ambiguous base ([class.member.lookup]) of the naming class
+([class.access.base]) of <code class="sourceCode cpp"><em>M</em></code>.
+<span class="addu">If <code class="sourceCode cpp">E2</code> designates
+a base class subobject <code class="sourceCode cpp"><em>B</em></code>,
+the program is ill-formed if
+<code class="sourceCode cpp"><em>B</em></code> is not a direct base
+class of the naming class of
+<code class="sourceCode cpp"><em>B</em></code>.</span></p>
 </blockquote>
 </div>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
+<p>Handle base class pointers to members in <span>7.6.2.2 <a href="https://wg21.link/expr.unary.op">[expr.unary.op]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">3</a></span>
+The operand of the unary
+<code class="sourceCode cpp"><span class="op">&amp;</span></code>
+operator shall be an lvalue of some type
+<code class="sourceCode cpp">T</code>.</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.1)</a></span>
+If the operand is a
+<code class="sourceCode cpp"><em>qualified-id</em></code> or
+<code class="sourceCode cpp"><em>splice-expression</em></code>
+designating a non-static or variant member of some class
+<code class="sourceCode cpp">C</code>, other than an explicit object
+member function, the result has type “pointer to member of class
+<code class="sourceCode cpp">C</code> of type
+<code class="sourceCode cpp">T</code>” and designates
+<code class="sourceCode cpp">C<span class="op">::</span>m</code>.</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.1+)</a></span>
+If the operand is a
+<code class="sourceCode cpp"><em>splice-expression</em></code>
+designated a base class subobject of some class
+<code class="sourceCode cpp">C</code> of type
+<code class="sourceCode cpp">T</code>, other than a virtual base class
+subobject, the result has type pointer to mbmer of class
+<code class="sourceCode cpp">C</code> of type
+<code class="sourceCode cpp">T</code> and designates that base class
+subobject.</li>
+</ul>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.2)</a></span>
+Otherwise, the result has type “pointer to
+<code class="sourceCode cpp">T</code>” and points to the designated
+object (<span>6.7.1 <a href="https://wg21.link/intro.memory">[intro.memory]</a></span>) or
+function (<span>6.8.4 <a href="https://wg21.link/basic.compound">[basic.compound]</a></span>). If
+the operand designates an explicit object member function (<span>9.3.4.6
+<a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>), the operand
+shall be a <code class="sourceCode cpp"><em>qualified-id</em></code> or
+a <code class="sourceCode cpp"><em>splice-expression</em></code>.</li>
+</ul>
+<div class="addu">
+<div class="example">
+<span>[ <em>Example 2:</em> </span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> b;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> B <span class="op">{</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> d;</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> B<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> bases_of<span class="op">(^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> D<span class="op">::*</span>pd <span class="op">=</span> <span class="op">&amp;</span>D<span class="op">::</span>d;</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">((</span>d<span class="op">.*</span>pb<span class="op">).</span>b <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>d<span class="op">.*</span>pd <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">4</a></span>
+A pointer to member is only formed when an explicit
+<code class="sourceCode cpp"><span class="op">&amp;</span></code> is
+used and its operand is a
+<code class="sourceCode cpp"><em>qualified-id</em></code> or
+<code class="sourceCode cpp"><em>splice-expression</em></code> not
+enclosed in parentheses.</p>
+</blockquote>
+</div>
+<p>Add to meta.synop:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.member.queries], reflection member queries</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; members_of(info r);</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; bases_of(info type);</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; static_data_members_of(info type);</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; nonstatic_data_members_of(info type);</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; subobjects_of(info type);</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; enumerators_of(info type_enum);</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; get_public_members(info type);</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; get_public_static_data_members(info type);</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; get_public_nonstatic_data_members(info type);</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; get_public_bases(info type);</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; get_public_subobjects(info type);</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Add to [meta.reflection.member.queries] in the appropriate spot:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">12</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a complete class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">13</a></span>
+<em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a class template specialization with a reachable definition,
+the specialization is instantiated.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">14</a></span>
+<em>Returns</em>: A <code class="sourceCode cpp">vector</code>
+containing the reflections of the direct non-static data members of the
+type represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>,
+in the order in which they are declared.</p>
+<div class="addu">
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>consteval vector&lt;info&gt; subobjects_of(info type);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">14+1</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a complete class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">14+2</a></span>
+<em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a class template specialization with a reachable definition,
+the specialization is instantiated.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">14+3</a></span>
+<em>Returns</em>: A <code class="sourceCode cpp">vector</code>
+containing all the reflections in <code class="sourceCode cpp">bases_of<span class="op">(</span>type<span class="op">)</span></code>
+followed by all the reflections in <code class="sourceCode cpp">nonstatic_data_members_of<span class="op">(</span>type<span class="op">)</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_bases<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">26</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a complete class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">27</a></span>
+<em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a class template specialization with a reachable definition,
+the specialization is instantiated.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">28</a></span>
+<em>Returns</em>: A <code class="sourceCode cpp">vector</code>
+containing each element, <code class="sourceCode cpp">e</code>, of <code class="sourceCode cpp">bases_of<span class="op">(</span>type<span class="op">)</span></code>
+such that <code class="sourceCode cpp">is_public<span class="op">(</span>e<span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>, in
+order.</p>
+<div class="addu">
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_subobjects_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">29</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a complete class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">30</a></span>
+<em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a class template specialization with a reachable definition,
+the specialization is instantiated.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">31</a></span>
+<em>Returns</em>: A <code class="sourceCode cpp">vector</code>
+containing all the reflections in <code class="sourceCode cpp">get_public_bases<span class="op">(</span>type<span class="op">)</span></code>
+followed by all the reflections in <code class="sourceCode cpp">get_public_nonstatic_data_members<span class="op">(</span>type<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+</div>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
-<div id="ref-P2996R3" class="csl-entry" role="doc-biblioentry">
-[P2996R3] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024-05-16. Reflection
-for C++26. <a href="https://wg21.link/p2996r3"><div class="csl-block">https://wg21.link/p2996r3</div></a>
+<div id="ref-P2996R6" class="csl-entry" role="doc-biblioentry">
+[P2996R6] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024-09-24. Reflection
+for C++26. <a href="https://wg21.link/p2996r6"><div class="csl-block">https://wg21.link/p2996r6</div></a>
 </div>
 <div id="ref-P3293R0" class="csl-entry" role="doc-biblioentry">
 [P3293R0] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
