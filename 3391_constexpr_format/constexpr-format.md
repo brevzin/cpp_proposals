@@ -1,6 +1,6 @@
 ---
 title: "`constexpr std::format`"
-document: P3391R0
+document: P3391R1
 date: today
 audience: LEWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+Since [@P3391R0], also noted that using the `L` locale specifier prevents constexpr formatting.
 
 # Introduction
 
@@ -319,6 +323,13 @@ Add `constexpr` to a lot of places in [format.syn]{.sref}:
 :::
 
 Apply the same changes where these functions are referenced.
+
+Change [format.string.std]{.sref}/17:
+
+::: std
+[17]{.pnum} When the `L` option is used, the form used for the conversion is called the *locale-specific* form.
+The `L` option is only valid for arithmetic types, and its effect depends upon the type. [A call to `format` on a given `formatter` specialization is not a core constant expression if the locale-specific form is specified.]{.addu}
+:::
 
 Add to [format.formatter.spec]{.sref}:
 
