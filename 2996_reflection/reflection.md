@@ -28,8 +28,12 @@ tag: constexpr
 
 Since [@P2996R6]:
 
-* replaced the `accessible_members` family of functions with a `get_public` family of functions
+* removed the `accessible_members` family of functions
+* added the `get_public` family of functions
 * added missing `tuple` and `variant` traits
+* added missing `is_mutable_member` function
+* added `(u8)operator_symbol_of` functions, tweaked enumerator names in `std::meta::operators`
+* stronger guarantees on order reflections returned by `members_of`
 
 Since [@P2996R5]:
 
@@ -2402,6 +2406,7 @@ namespace std::meta {
   consteval auto is_enumerator(info r) -> bool;
   consteval auto is_const(info r) -> bool;
   consteval auto is_volatile(info r) -> bool;
+  consteval auto is_mutable_member(info r) -> bool;
   consteval auto is_lvalue_reference_qualified(info r) -> bool;
   consteval auto is_rvalue_reference_qualified(info r) -> bool;
   consteval auto has_static_storage_duration(info r) -> bool;
@@ -4234,6 +4239,8 @@ namespace std::meta {
   };
   using enum operators;
   consteval operators operator_of(info r);
+  consteval string_view operator_symbol_of(operators op);
+  consteval u8string_view u8operator_symbol_of(operators op);
 
   // [meta.reflection.names], reflection names and locations
   consteval bool has_identifier(info r);
@@ -4267,6 +4274,7 @@ namespace std::meta {
 
   consteval bool is_const(info r);
   consteval bool is_volatile(info r);
+  consteval bool is_mutable_member(info r);
   consteval bool is_lvalue_reference_qualified(info r);
   consteval bool is_rvalue_reference_qualified(info r);
 
@@ -4592,52 +4600,52 @@ using enum operators;
 
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
-|Constant|Corresponding operator|
-|:-|:-|
-|`op_new`|`operator new`|
-|`op_delete`|`operator delete`|
-|`op_array_new`|`operator new[]`|
-|`op_array_delete`|`operator delete[]`|
-|`op_co_await`|`operator co_await`|
-|`op_parentheses`|`operator()`|
-|`op_square_brackets`|`operator[]`|
-|`op_arrow`|`operator->`|
-|`op_arrow_asterisk`|`operator->*`|
-|`op_tilde`|`operator~`|
-|`op_exclamation_mark`|`operator!`|
-|`op_plus`|`operator+`|
-|`op_minus`|`operator-`|
-|`op_asterisk`|`operator*`|
-|`op_solidus`|`operator/`|
-|`op_percent`|`operator%`|
-|`op_caret`|`operator^`|
-|`op_ampersand`|`operator&`|
-|`op_pipe`|`operator|`|
-|`op_equals`|`operator=`|
-|`op_plus_equals`|`operator+=`|
-|`op_minus_equals`|`operator-=`|
-|`op_asterisk_equals`|`operator*=`|
-|`op_solidus_equals`|`operator/=`|
-|`op_percent_equals`|`operator%=`|
-|`op_caret_equals`|`operator^=`|
-|`op_ampersand_equals`|`operator&=`|
-|`op_pipe_equals`|`operator|=`|
-|`op_equals_equals`|`operator==`|
-|`op_exclamation_equals`|`operator!=`|
-|`op_less`|`operator<`|
-|`op_greater`|`operator>`|
-|`op_less_equals`|`operator<=`|
-|`op_greater_equals`|`operator>=`|
-|`op_three_way_compare`|`operator<=>`|
-|`op_ampersand_ampersand`|`operator&&`|
-|`op_pipe_pipe`|`operator||`|
-|`op_less_less`|`operator<<`|
-|`op_greater_greater`|`operator>>`|
-|`op_less_less_equals`|`operator<<=`|
-|`op_greater_greater_equals`|`operator>>=`|
-|`op_plus_plus`|`operator++`|
-|`op_minus_minus`|`operator--`|
-|`op_comma`|`operator,`|
+|Constant|Corresponding operator|Operator symbol name|
+|:-|:-|:-|
+|`op_new`|`operator new`|`new`|
+|`op_delete`|`operator delete`|`delete`|
+|`op_array_new`|`operator new[]`|`new[]`|
+|`op_array_delete`|`operator delete[]`|`delete`|
+|`op_co_await`|`operator co_await`|`co_await`|
+|`op_parentheses`|`operator()`|`()`|
+|`op_square_brackets`|`operator[]`|`[]`|
+|`op_arrow`|`operator->`|`->`|
+|`op_arrow_star`|`operator->*`|`->*`|
+|`op_tilde`|`operator~`|`~`|
+|`op_exclaim`|`operator!`|`!`|
+|`op_plus`|`operator+`|`+`|
+|`op_minus`|`operator-`|`-`|
+|`op_star`|`operator*`|`*`|
+|`op_slash`|`operator/`|`/`|
+|`op_percent`|`operator%`|`%`|
+|`op_caret`|`operator^`|`^`|
+|`op_ampersand`|`operator&`|`&`|
+|`op_pipe`|`operator|`|`|`|
+|`op_equals`|`operator=`|`=`|
+|`op_plus_equals`|`operator+=`|`+=`|
+|`op_minus_equals`|`operator-=`|`-=`|
+|`op_star_equals`|`operator*=`|`*=`|
+|`op_slash_equals`|`operator/=`|`/=`|
+|`op_percent_equals`|`operator%=`|`%=`|
+|`op_caret_equals`|`operator^=`|`^=`|
+|`op_ampersand_equals`|`operator&=`|`&=`|
+|`op_pipe_equals`|`operator|=`|`|=`|
+|`op_equals_equals`|`operator==`|`==`|
+|`op_exclaim_equals`|`operator!=`|`!=`|
+|`op_less`|`operator<`|`<`|
+|`op_greater`|`operator>`|`>`|
+|`op_less_equals`|`operator<=`|`<=`|
+|`op_greater_equals`|`operator>=`|`>=`|
+|`op_three_way_compare`|`operator<=>`|`<=>`|
+|`op_ampersand_and`|`operator&&`|`&&`|
+|`op_pipe_pipe`|`operator||`|`||`|
+|`op_less_less`|`operator<<`|`<<`|
+|`op_greater_greater`|`operator>>`|`>>`|
+|`op_less_less_equals`|`operator<<=`|`<<=`|
+|`op_greater_greater_equals`|`operator>>=`|`>>=`|
+|`op_plus_plus`|`operator++`|`++`|
+|`op_minus_minus`|`operator--`|`--`|
+|`op_comma`|`operator,`|`,`|
 
 ```cpp
 consteval operators operator_of(info r);
@@ -4646,6 +4654,15 @@ consteval operators operator_of(info r);
 [#]{.pnum} *Constant When*: `r` represents an operator function or operator function template.
 
 [#]{.pnum} *Returns*: The value of the enumerator from `operators` for which the corresponding operator has the same unqualified name as the entity represented by `r`.
+
+```cpp
+consteval string_view operator_symbol_of(operators op);
+consteval u8string_view u8operator_symbol_of(operators op);
+```
+
+[#]{.pnum} *Constant When*: The value of `op` corresponds to one of the enumerators in `operators`.
+
+[#]{.pnum} *Returns*: A `string_view` or `u8string_view` containing the characters of the operator symbol name corresponding to `op`, respectively encoded with the ordinary literal encoding or with UTF-8.
 :::
 :::
 
@@ -4778,6 +4795,12 @@ consteval bool is_volatile(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` represents a const or volatile type (respectively), a const- or volatile-qualified function type (respectively), or an object, variable, non-static data member, or function with such a type. Otherwise, `false`.
+
+```cpp
+consteval bool is_mutable_member(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a `mutable` non-static data member. Otherwise, `false`.
 
 ```cpp
 consteval bool is_lvalue_reference_qualified(info r);
@@ -5065,7 +5088,7 @@ and if its first declaration is within a definition of `$E$`.
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-visible from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
-Non-static data members and unnamed bit-fields are indexed in the order in which they are declared, but the order of other kinds of members is unspecified.
+Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members.]{.note}
 
 ```cpp
@@ -5087,7 +5110,7 @@ consteval vector<info> static_data_members_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct static data members of the type represented by `dealias(type)`.
+[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct static data members of the type represented by `dealias(type)`, in the order in which they are declared.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
@@ -5163,13 +5186,14 @@ constexpr size_t member_offsets::total_bits() const;
 consteval member_offsets offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or non-virtual base class specifier.
+[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or base class specifier.
 
-[#]{.pnum} Let `V` be the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+[#]{.pnum} Let `$V$` be a constant defined as follows:
 
-[#]{.pnum} *Returns*: `{V / CHAR_BIT, V % CHAR_BIT}`.
+- [#.#]{.pnum} If `r` represents a virtual base class specifier of an abstract class, then `$V$` is an implementation-defined value.
+- [#.#]{.pnum} Otherwise, `$V$` is the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
-[The subobject corresponding to a non-static data member of reference type has the same size as the corresponding pointer type.]{.note}
+[#]{.pnum} *Returns*: `{$V$ / CHAR_BIT, $V$ % CHAR_BIT}`.
 
 ```cpp
 consteval size_t size_of(info r);
@@ -5178,6 +5202,8 @@ consteval size_t size_of(info r);
 [#]{.pnum} *Constant When*: `r` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
 [#]{.pnum} *Returns*: If `r` represents a non-static data member whose associated subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+
+[The subobject corresponding to a non-static data member of reference type has the same size and alignment as the corresponding pointer type.]{.note}
 
 ```cpp
 consteval size_t alignment_of(info r);
@@ -5424,25 +5450,27 @@ consteval bool is_data_member_spec(info r);
   consteval info define_class(info class_type, R&& mdescrs);
 ```
 
-[#]{.pnum} *Constant When*: Letting `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
+[#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- `class_type` represents a class type `$C$` that is incomplete from every point in the evaluation context,
+- `$C$` is incomplete from every point in the evaluation context,
 - `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
 - the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
-[`class_type` could represent a class template specialization for which there is no reachable definition.]{.note}
+[`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
 
-[#]{.pnum} Let {`@$o$~k~@`} be a sequence of `data_member_options_t` values, such that
+[#]{.pnum} Let {`@$o$~k~@`} be a sequence of `data_member_options_t` values such that
 
     data_member_spec(type_of(@$r$~$k$~@), @$o$~$k$~@) == @$r$~$k$~@
 
 for every `@$r$~$k$~@` in `mdescrs`.
 
 [#]{.pnum} *Effects*:
-Produces an injected declaration ([expr.const]) that provides a definition for `class_type`, whose locus is immediately after the manifestly constant-evaluated expression whose evaluation is producing the definition, with properties as follows:
+Produces an injected declaration `$D$` ([expr.const]) that provides a definition for `$C$` with properties as follows:
 
-- [#.1]{.pnum} If `class_type` represents a specialization of a class template, the specialization is explicitly specialized.
-- [#.#]{.pnum} The definition of `class_type` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
+- [#.#]{.pnum} The locus of `$D$` follows immediately after the manifestly constant-evaluated expression currently under evaluation.
+- [#.#]{.pnum} If `$C$` is a specialization of a class template `$T$`, then `$D$` is is an explicit specialization of `$T$`.
+- [#.#]{.pnum} `$D$` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type represented by `type_of(@$r$~$K$~@)`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` are declared with the attribute `[[no_unique_address]]`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.width` contains a value are declared as bit-fields whose width is that value.
@@ -5451,8 +5479,8 @@ Produces an injected declaration ([expr.const]) that provides a definition for `
   - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
   - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an implementation-defined name.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
-- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
-- [#.#]{.pnum} If `class_type` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
 
