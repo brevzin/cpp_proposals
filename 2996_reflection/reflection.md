@@ -4402,9 +4402,7 @@ namespace std::meta {
       template<class T> requires constructible_from<string, T>
         consteval name_type(T &&);
 
-      u8string $get-u8string$() const;    // $exposition only$
-      string $get-string$() const;        // $exposition only$
-      bool $is-utf8$() const;             // $exposition only$
+      variant<u8string, string> $contents$;    // $exposition only$
     };
 
     optional<name_type> name;
@@ -4705,7 +4703,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
-* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$` and `$o$.name->$is-utf8$()` is `true`, the contents of `$o$.name->$get-u8string$()` encoded with `$E$`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$` and `holds_alternative<u8string>($o$.name.$contents$)` is `true`, the contents of `get<u8string>($o$.name.$contents$)` encoded with `$E$`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -5430,14 +5428,15 @@ and define an expression `$INVOKE-EXPR$` as follows:
 ```cpp
 template <class T> requires constructible_from<u8string, T>
 consteval data_member_options_t::name_type(T&& value);
+```
 
+[1]{.pnum} *Postconditions*: `$contents$` is equal to `variant<u8string, string>(u8string(value))`.
+
+```cpp
 template<class T> requires constructible_from<string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
-[1]{.pnum} *Postconditions*:
-
-- [#.#]{.pnum} `$get-u8string$()` is equal to `u8string(value)`, or `$get-string$()` is equal to `string(value)`, respectively.
-- [#.#]{.pnum} `$is-utf8$()` is `true` or `false`, respectively.
+[1]{.pnum} *Postconditions*: `$contents$` is equal to `variant<u8string, string>(string(value))`.
 
 ::: note
 `name_type` provides a simple inner class that can be implicitly constructed from anything convertible to `string` or `u8string`. This allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc) equally well.
@@ -5456,9 +5455,9 @@ consteval info data_member_spec(info type,
 [1]{.pnum} *Constant When*:
 
 - [#.#]{.pnum} `type` represents a type;
-- [#.#]{.pnum} if `options.name` contains a value `$NAME$` then either:
-  - [#.#.#]{.pnum} `$NAME$.$is-utf8$()` is `true` and `$NAME$.$get-u8string$()` contains a valid identifier when interpreted with UTF-8, or
-  - [#.#.#]{.pnum} `$NAME$.$is-utf8$()` is `false` and `$NAME$.$get-string$()` contains a valid identifier when interpreted with the ordinary literal encoding;
+- [#.#]{.pnum} if `options.name.$contents$` contains a value `$NAME$` then either:
+  - [#.#.#]{.pnum} `holds_alternative<u8string>($NAME$)` is `true` and `get<u8string>($NAME$)` contains a valid identifier when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>($NAME$)` is `false` and `get<string>($NAME$)` contains a valid identifier when interpreted with the ordinary literal encoding;
 - [#.#]{.pnum} if `options.width` contains a value, then: `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
 - [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`; and
 - [#.#]{.pnum} if `options.width` contains the value zero, `options.name` does not contain a value.
