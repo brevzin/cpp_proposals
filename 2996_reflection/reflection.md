@@ -5430,13 +5430,13 @@ template <class T> requires constructible_from<u8string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
 
-[1]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value))`.
+[1]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
-[#]{.pnum} *Effects*: Initializes `$contents$` with `string(value))`.
+[#]{.pnum} *Effects*: Initializes `$contents$` with `string(value)`.
 
 ::: note
 `name_type` provides a simple inner class that can be implicitly constructed from anything convertible to `string` or `u8string`. This allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc) equally well.
