@@ -4703,7 +4703,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
-* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$` and `holds_alternative<u8string>($o$.name.$contents$)` is `true`, the contents of `get<u8string>($o$.name.$contents$)` encoded with `$E$`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
 
 ```cpp
 consteval string_view display_string_of(info r);
