@@ -5430,20 +5430,20 @@ template <class T> requires constructible_from<u8string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
 
-[1]{.pnum} *Postconditions*: `$contents$` is equal to `variant<u8string, string>(u8string(value))`.
+[1]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value))`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
-[1]{.pnum} *Postconditions*: `$contents$` is equal to `variant<u8string, string>(string(value))`.
+[#]{.pnum} *Effects*: Initializes `$contents$` with `string(value))`.
 
 ::: note
 `name_type` provides a simple inner class that can be implicitly constructed from anything convertible to `string` or `u8string`. This allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc) equally well.
 
 ```cpp
-constexpr mem1 = data_member_spec(^T, {.name="ordinary_literal_encoding"});
-constexpr mem2 = data_member_spec(^T, {.name=u8"utf8_encoding"});
+constexpr auto mem1 = data_member_spec(^int, {.name="ordinary_literal_encoding"});
+constexpr auto mem2 = data_member_spec(^int, {.name=u8"utf8_encoding"});
 ```
 
 :::
