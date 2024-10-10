@@ -42,7 +42,7 @@ Since [@P2996R5]:
 * make friends with modules: define _injected declarations_ and _injected points_, as well as the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`. An informal elaboration on this is included in a new section on "Reachability and injected declarations".
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
-* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by [@P3293R2]).
+* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by [@P3293R1]).
 * specified constraints for `enumerators_of` in terms of `has_complete_definition`.
 * constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
 * changed `is_special_member` to `is_special_member_function` to align with core language terminology.
@@ -817,7 +817,7 @@ The question here is whether we should be should be able to directly initialize 
 ```
 :::
 
-Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R2].
+Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R1].
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/3bvo97fqf).
 
@@ -5950,8 +5950,8 @@ references:
         month: 09
         day: 24
     URL: https://wg21.link/p2996r6
-  - id: P3293R2
-    citation-label: P3293R2
+  - id: P3293R1
+    citation-label: P3293R1
     title: "Splicing a base class subobject"
     author:
       - family: Peter Dimov
@@ -5962,5 +5962,5 @@ references:
       - year: 2024
         month: 10
         day: 15
-    URL: https://wg21.link/p3293r2
+    URL: https://wg21.link/p3293r1
 ---
