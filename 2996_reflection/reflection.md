@@ -4534,6 +4534,8 @@ namespace std::meta {
 
       template<class T> requires constructible_from<string, T>
         consteval name_type(T &&);
+
+      variant<u8string, string> $contents$;    // $exposition only$
     };
 
     optional<name_type> name;
@@ -4816,7 +4818,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise, if `r` represents a description of a declaration of a non-static data member, then if the declaration of any data member having the properties represented by `r` would introduce an identifier.
+* [#.#]{.pnum} Otherwise if `r` represents a description of a declaration of a non-static data member, then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then `true` if `$o$.name` contains a value.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
@@ -4834,7 +4836,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
-* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then the identifier that would be introduced by the declaration of a data member having the properties represented by `r`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -5557,16 +5559,41 @@ and define an expression `$INVOKE-EXPR$` as follows:
 ::: addu
 
 ```cpp
+template <class T> requires constructible_from<u8string, T>
+consteval data_member_options_t::name_type(T&& value);
+```
+
+[1]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
+
+```cpp
+template<class T> requires constructible_from<string, T>
+consteval data_member_options_t::name_type(T&& value);
+```
+[#]{.pnum} *Effects*: Initializes `$contents$` with `string(value)`.
+
+::: note
+`name_type` provides a simple inner class that can be implicitly constructed from anything convertible to `string` or `u8string`. This allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc) equally well.
+
+```cpp
+constexpr auto mem1 = data_member_spec(^int, {.name="ordinary_literal_encoding"});
+constexpr auto mem2 = data_member_spec(^int, {.name=u8"utf8_encoding"});
+```
+
+:::
+
+```cpp
 consteval info data_member_spec(info type,
                                 data_member_options_t options = {});
 ```
 [1]{.pnum} *Constant When*:
 
-- `type` represents a type;
-- if `options.name` contains a value, the `string` or `u8string` value that was used to initialize `options.name`, respectively interpreted using the ordinary literal encoding or with UTF-8, contains a valid identifier ([lex.name]{.sref});
-- if `options.width` contains a value, then: `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
-- if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`; and
-- if `options.width` contains the value zero, `options.name` does not contain a value.
+- [#.#]{.pnum} `type` represents a type;
+- [#.#]{.pnum} if `options.name.$contents$` contains a value `$NAME$` then either:
+  - [#.#.#]{.pnum} `holds_alternative<u8string>($NAME$)` is `true` and `get<u8string>($NAME$)` contains a valid identifier when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>($NAME$)` is `false` and `get<string>($NAME$)` contains a valid identifier when interpreted with the ordinary literal encoding;
+- [#.#]{.pnum} if `options.width` contains a value, then: `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`; and
+- [#.#]{.pnum} if `options.width` contains the value zero, `options.name` does not contain a value.
 
 [#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member having the type represented by `type`, and having the optional characteristics designated by `options`.
 
@@ -5585,9 +5612,9 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- `$C$` is incomplete from every point in the evaluation context,
-- `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
-- the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
+- [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context,
+- [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
+- [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
 
