@@ -4678,10 +4678,11 @@ consteval bool has_identifier(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
+* [#.#]{.pnum} If `r` represents an entity with an implementation-defined name, then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
 * [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
-* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then `true` when the `$typedef-name$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then `true` when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
@@ -4701,7 +4702,7 @@ consteval u8string_view u8identifier_of(info r);
 
 * [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
-* [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
 * [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
 
