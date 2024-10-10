@@ -43,7 +43,7 @@ Since [@P2996R5]:
 * make friends with modules: define _injected declarations_ and _injected points_, as well as the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`. An informal elaboration on this is included in a new section on "Reachability and injected declarations".
 * `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
-* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by [@P3293R2]).
+* removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by [@P3293R1]).
 * specified constraints for `enumerators_of` in terms of `has_complete_definition`.
 * constraints on type template parameter of `reflect_{value, object, function}` are expressed as mandates.
 * changed `is_special_member` to `is_special_member_function` to align with core language terminology.
@@ -818,7 +818,7 @@ The question here is whether we should be should be able to directly initialize 
 ```
 :::
 
-Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R2].
+Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R1].
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/3bvo97fqf).
 
@@ -4811,10 +4811,11 @@ consteval bool has_identifier(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
+* [#.#]{.pnum} If `r` represents an entity with an unnamed name, then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
 * [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
-* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then when the `$typedef-name$` is an identifier.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then `true` when the `$typedef-name$` is an identifier.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then `true` when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
@@ -4834,7 +4835,7 @@ consteval u8string_view u8identifier_of(info r);
 
 * [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
-* [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the the declaration of what is represented by `r`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or namespace alias, then the identifier introduced by the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
 * [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
 
@@ -5637,7 +5638,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value are declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` are declared with names determined as follows:
   - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
-  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an implementation-defined name.
+  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an unnamed name.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
@@ -6082,8 +6083,8 @@ references:
         month: 09
         day: 24
     URL: https://wg21.link/p2996r6
-  - id: P3293R2
-    citation-label: P3293R2
+  - id: P3293R1
+    citation-label: P3293R1
     title: "Splicing a base class subobject"
     author:
       - family: Peter Dimov
@@ -6094,5 +6095,5 @@ references:
       - year: 2024
         month: 10
         day: 15
-    URL: https://wg21.link/p3293r2
+    URL: https://wg21.link/p3293r1
 ---
