@@ -4678,7 +4678,7 @@ consteval bool has_identifier(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents an entity with an implementation-defined name, then `false`.
+* [#.#]{.pnum} If `r` represents an entity with an unnamed name, then `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
 * [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
 * [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then `true` when the `$typedef-name$` is an identifier.
@@ -5505,7 +5505,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value are declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` are declared with names determined as follows:
   - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
-  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an implementation-defined name.
+  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an unnamed name.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
