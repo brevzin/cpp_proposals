@@ -1862,7 +1862,7 @@ The namespace `std::meta` is an associated type of `std::meta::info`, which allo
 #include <meta>
 struct S {};
 std::string name2 = std::meta::identifier_of(^S);  // Okay.
-std::string name1 = identifier_of_of(^S);          // Also okay.
+std::string name1 = identifier_of(^S);             // Also okay.
 ```
 :::
 
