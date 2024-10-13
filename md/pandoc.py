@@ -97,7 +97,15 @@ def op(elem, doc):
     if isinstance(elem, pf.Code) and 'op' in elem.classes:
         return pf.RawInline(f'<code><span class="op">{elem.text}</span></code>')
 
+def std(elem, doc):
+    if not doc.get_metadata('hackmd', False):
+        return
+
+    if isinstance(elem, pf.RawBlock) and not isinstance(elem.parent, pf.BlockQuote):
+        return pf.Div(pf.BlockQuote(elem), classes=["std"])
+
+
 if __name__ == '__main__':
     # pf.run_filters([h1hr, bq, graphviz, mermaid, op])
-    pf.run_filters([h1hr, bq, mermaid, op])
+    pf.run_filters([h1hr, bq, std, mermaid, op])
     # pf.run_filters([h1hr, bq, op])

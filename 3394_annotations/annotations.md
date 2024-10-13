@@ -1,25 +1,24 @@
 ---
 title: Annotations for Reflection
 tag: constexpr
+document: P3394R0
+date: today
+audience: EWG
+hackmd: true
+author:
+    - name: Wyatt Childers
+      email: <wcc@edg.com>
+    - name: Dan Katz
+      email: <dkatz85@bloomberg.net>
+    - name: Barry Revzin
+      email: <barry.revzin@gmail.com>
+    - name: Daveed Vandevoorde
+      email: <daveed@edg.com>
 ---
 
-Annotations for Reflection
-===
+# Introduction
 
-**Document number**: P3394R0 [\[Latest\]](https://wg21.link/p3394) [\[Status\]](https://wg21.link/p3394/status)
-**Date**: 2024-09-14
-**Authors**:
-    - Wyatt Childers (wcc@edg.com)
-    - Dan Katz (dkatz85@bloomberg.net)
-    - Barry Revzin (barry.revzin@gmail.com)
-    - Daveed Vandevoorde (daveed@edg.com)
-**Audience**: Evolution
-
-
-
-## Introduction
-
-Ever since writing [P1240R2](https://wg21.link/p1240r2) ("Scalable Reflection in C++")], but more so since [P2996R5](https://wg21.link/p2996r5) ("Reflection for C++26"), we have been requested to add a capability to annotate declarations in a way that reflection can observe. For example, Jeremy Ong presented compelling arguments in a post to the SG7 reflector: https://lists.isocpp.org/sg7/2023/10/0450.php. Corentin Jabot also noticed the need while P1240 was evolving and wrote [P1887R0](https://wg21.link/p1887) ("Reflection on Attributes"), which proposes syntax not entirely unlike what we present here.
+Ever since writing [@P1240R0] ("Scalable Reflection in C++"), but more so since [@P2996R0] ("Reflection for C++26"), we have been requested to add a capability to annotate declarations in a way that reflection can observe. For example, Jeremy Ong presented compelling arguments in a post to the SG7 reflector: https://lists.isocpp.org/sg7/2023/10/0450.php. Corentin Jabot also noticed the need while P1240 was evolving and wrote [@P1887R0] ("Reflection on Attributes"), which proposes syntax not entirely unlike what we present here.
 
 
 In early versions of P2996 (and P1240 before that), a workaround was to encode properties in the template arguments of alias template specializations:
@@ -40,19 +39,19 @@ There are problems with this approach, unfortunately:
 
 * It doesn't work for all contexts where we might want to annotate declarations (e.g., enumerators).
 * It doesn't directly express the intent.
-* It turns out that providing access to aliases used in the declaration of reflected entities raises difficult questions and P2996 is therefore likely going to drop the ability to access that information (with the intention of resurrecting the capability with a later paqper once specification and implementation challenges have been addressed).
+* It turns out that providing access to aliases used in the declaration of reflected entities raises difficult questions and P2996 is therefore likely going to drop the ability to access that information (with the intention of resurrecting the capability with a later paper once specification and implementation challenges have been addressed).
 
 In this paper, we propose simple mechanisms that more directly support the ability to annotate C++ constructs.
 
-## Motivating Examples
+# Motivating Examples
 
 We'll start with a few motivating examples for the feature. We'll describe the details of the feature in the subsequent section.
 
 These examples are inspired from libraries in other programming languages that provide some mechanism to annotate declarations.
 
-### Command-Line Argument Parsing
+## Command-Line Argument Parsing
 
-Rust's [clap](https://docs.rs/clap/latest/clap/) library provides a way to add annotations to declarations to help drive how the parser is declared. We can now [do the same](https://godbolt.org/z/GsYKWjdeh):
+Rust's [clap](https://docs.rs/clap/latest/clap/) library provides a way to add annotations to declarations to help drive how the parser is declared. We can now [do the same](https://godbolt.org/z/dM3erErrz):
 
 ```cpp
 struct Args {
@@ -152,7 +151,7 @@ namespace clap {
 
 Overall, a fairly concise implementation for an extremely user-friendly approach to command-line argument parsing.
 
-### Test Parametrization
+## Test Parametrization
 
 The pytest framework comes with a decorator to [parametrize](https://docs.pytest.org/en/7.1.x/how-to/parametrize.html) test functions. We can now do [the same](https://godbolt.org/z/vnT51585G):
 
@@ -258,9 +257,9 @@ void invoke_all() {
 }
 ```
 
-### Serialization
+## Serialization
 
-Rust's [serde](https://serde.rs/) library is a framework for serialization and deserialization. It is easy enough with reflection to do member-wise serialization. But how do you opt into that? An annotation provides a cheap mechanism of [doing just that](https://godbolt.org/z/51qjha8he) (built on top of [Boost.Json](https://www.boost.org/doc/libs/1_85_0/libs/json/doc/html/index.html)):
+Rust's [serde](https://serde.rs/) library is a framework for serialization and deserialization. It is easy enough with reflection to do member-wise serialization. But how do you opt into that? An annotation provides a cheap mechanism of [doing just that](https://godbolt.org/z/cjP8EdTj3) (built on top of [Boost.Json](https://www.boost.org/doc/libs/1_85_0/libs/json/doc/html/index.html)):
 
 ```cpp
 struct [[=serde::derive]] Point {
@@ -279,15 +278,15 @@ But opting in is just the first thing you might want to do with serialization. Y
 
 ```cpp
 struct [[=serde::derive]] Person {
-    [[=serde::rename("firstName")]] std::string first;
-    [[=serde::rename("lastName")]] std::string last;
+    [[=serde::rename("first name")]] std::string first;
+    [[=serde::rename("last name")]] std::string last;
 };
 ```
 
 Which leads to:
 
 ```cpp
-// prints {"firstName":"Peter","lastName":"Dimov"}
+// prints {"first name":"Peter","last name":"Dimov"}
 std::cout << boost::json::value_from(Person{.first="Peter", .last="Dimov"});
 ```
 
@@ -306,8 +305,8 @@ namespace boost::json {
     void tag_invoke(value_from_tag const&, value& v, T const& t) {
         auto& obj = v.emplace_object();
         template for (auto M : nonstatic_data_members_of(^^T)) {
-            constexpr auto field = annotation_of<serde::Rename>(M)
-                .transform([](serde::Rename r){
+            constexpr auto field = annotation_of<serde::rename>(M)
+                .transform([](serde::rename r){
                     return std::string_view(r.field);
                 })
                 .value_or(identifier_of(M));
@@ -318,9 +317,9 @@ namespace boost::json {
 }
 ```
 
-You can imagine extending this out to support a wide variety of other serialization-specific attributes that shouldn't otherwise affect the C++ usage of the type.
+You can imagine extending this out to support a wide variety of other serialization-specific attributes that shouldn't otherwise affect the C++ usage of the type. For instance, a [more complex approach](https://godbolt.org/z/jaKTe57Gf) additionally supports the `skip_serializing_if` annotation while first collecting all `serde` annotations into a struct.
 
-## Proposal
+# Proposal
 
 The core idea is that an *annotation* is a compile-time value that can be associated with a construct to which attributes can appertain. Annotation and attributes are somewhat related ideas, and we therefore propose a syntax for the former that builds on the existing syntax for the latter.
 
@@ -336,7 +335,7 @@ Syntactically, an annotation is an attribute of the form `= expr` where `expr` i
 
 Currently, we require that an annotation has structural type because we're going to return annotations through `std::meta::info`, and currently all reflection values must be structural.
 
-### Why not Attributes?
+## Why not Attributes?
 
 Attributes are very close in spirit to annotations.  So it made sense to piggy-back on the attribute syntax to add annotations. Existing attributes are designed with fairly open grammar and they can be ignored by implementations, which makes it difficult to connect them to user code. Given a declarations like:
 
@@ -354,7 +353,7 @@ Originally, the plus sign (`+`) was considered (as in P1887), but it is not idea
 
 As such, this paper proposes annotations as distinct from attributes, introduced with a prefix `=`.
 
-### Library Queries
+## Library Queries
 
 We propose the following set of library functions to work with annotations:
 
@@ -396,7 +395,7 @@ Of these, four can be directly implemented in terms of the unary `annotations_of
 
 And lastly, `annotate` provides the ability to programmatically add an annotation to a declaration.
 
-### Additional Syntactic Constraints
+## Additional Syntactic Constraints
 
 Annotations can be repeated:
 
@@ -436,6 +435,56 @@ Instead, use:
 int select_footgun(int);
 ```
 
-### Implementation Experience
+## Implementation Experience
 
 The core language feature and the basic query functions have been implemented in the EDG front end and in Bloomberg's P2996 Clang fork (with option `-freflection-latest`), both available on Compiler Explorer.
+
+## Other Directions To Go
+
+As evidenced in the motivating examples earlier, there is a lot of value in this proposal even in this simple form. However, there is more to consider when it comes to annotations.
+
+This proposal right now lets us unconditionally add an annotation to a type:
+
+```cpp
+struct [[=X]] Always;
+```
+
+But it does not let us conditionally add an annotation to a type:
+
+```cpp
+template <class T>
+struct /* X only for some T */ Sometimes;
+```
+
+Or to really generalize annotations. For instance, in the clap example earlier, our example showed usage with `clap::Short` and `clap::Long`. What if somebody wants to compose these into their own annotation that attaches both `clap::Short` and `clap::Long` to a declaration?
+
+More broadly, there is clear value in having an annotation be able to be invoked by the declaration itself. Doing so allows the two uses above easily enough. The interesting question, though, is whether this callback (syntax to be determined) is invoked at the _beginning_ of the declaration or at the _end_ of the declaration. For annotations on classes, this would be before the class is complete or after the class is complete. Before completeness allows the class to observe the annotation during instantiation. After completeness allows the annotation callback to observe properties of the type. In some sense, Herb Sutter's [@P0707R4] ("Metaclass functions: Generative C++") was adding annotations on classes, invoked on class completeness, that allow mutation of the class.
+
+One concrete, simpler example. We can, with this proposal as-is, create a `Debug` annotation that a user can add to their type and a specialization of `std::formatter` for all types that have a `Debug` annotation [as follows](https://godbolt.org/z/bcYE7nY4s):
+
+```cpp
+template <auto V> struct Derive { };
+template <auto V> inline constexpr Derive<V> derive;
+
+inline constexpr struct{} Debug;
+
+template <class T> requires (has_annotation(^^T, derive<Debug>))
+struct std::formatter<T> {
+    // ...
+};
+
+struct [[=derive<Debug>]] Point {
+    int x;
+    int y;
+};
+
+int main() {
+    auto p = Point{.x=1, .y=2};
+    // prints p=Point{.x=1, .y=2}
+    std::println("p={}", p);
+}
+```
+
+This *works*, but it's not really the ideal way of doing it. This could still run into potential issues with ambiguous specialization of `std::formatter`. Better would be to allow the `Debug` annotation to, at the point of completion of `Point`, inject an explicit specialization of `std::formatter`. This would rely both on the ability for the annotation to be called back and language support for such injection (see [@P3294R1] ("Code Injection with Token Sequences")).
+
+There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks?
