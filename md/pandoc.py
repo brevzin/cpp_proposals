@@ -98,10 +98,16 @@ def op(elem, doc):
         return pf.RawInline(f'<code><span class="op">{elem.text}</span></code>')
 
 def std(elem, doc):
+    # only applies to HackMD docs
     if not doc.get_metadata('hackmd', False):
         return
 
-    if isinstance(elem, pf.RawBlock) and not isinstance(elem.parent, pf.BlockQuote):
+    # only wrap code blocks (which were already put into a RawBlock)
+    if isinstance(elem, pf.RawBlock) and elem.text.startswith('<div class="sourceCode"'):
+        # if it's already wrapped, don't need to wrap again
+        if isinstance(elem.parent, pf.BlockQuote):
+            return
+
         return pf.Div(pf.BlockQuote(elem), classes=["std"])
 
 
