@@ -1,6 +1,6 @@
 ---
 title: Annotations for Reflection
-tag: constexpr
+tag: reflection
 document: P3394R0
 date: today
 audience: EWG
