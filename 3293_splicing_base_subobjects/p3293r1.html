@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-10-07" />
+  <meta name="dcterms.date" content="2024-10-13" />
   <title>Splicing a base class subobject</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ subobject</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-10-07</td>
+    <td>2024-10-13</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -851,11 +851,12 @@ a base class subobject.<span> — <em>end note</em> ]</span></span></p>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> base_of<span class="op">(^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:].</span>b <span class="op">+=</span> <span class="dv">10</span>;</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> <span class="op">^</span>D<span class="op">::</span>d <span class="op">:]</span> <span class="op">+=</span> <span class="dv">1</span>;</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> d<span class="op">.</span>b <span class="op">*</span> d<span class="op">.</span>d;</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">()</span> <span class="op">==</span> <span class="dv">33</span><span class="op">)</span>;</span></code></pre></div>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  B<span class="op">&amp;</span> b <span class="op">=</span> d<span class="op">.[:</span> bases_of<span class="op">(^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  b<span class="op">.</span>b <span class="op">+=</span> <span class="dv">10</span>;</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> <span class="op">^</span>D<span class="op">::</span>d <span class="op">:]</span> <span class="op">+=</span> <span class="dv">1</span>;</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> d<span class="op">.</span>b <span class="op">*</span> d<span class="op">.</span>d;</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">()</span> <span class="op">==</span> <span class="dv">33</span><span class="op">)</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div></li>
 </ul>
@@ -909,7 +910,7 @@ If the operand is a
 designated a base class subobject of some class
 <code class="sourceCode cpp">C</code> of type
 <code class="sourceCode cpp">T</code>, other than a virtual base class
-subobject, the result has type pointer to mbmer of class
+subobject, the result has type pointer to member of class
 <code class="sourceCode cpp">C</code> of type
 <code class="sourceCode cpp">T</code> and designates that base class
 subobject.</li>
@@ -942,7 +943,7 @@ a <code class="sourceCode cpp"><em>splice-expression</em></code>.</li>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> B<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> bases_of<span class="op">(^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> D<span class="op">::*</span>pd <span class="op">=</span> <span class="op">&amp;</span>D<span class="op">::</span>d;</span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">((</span>d<span class="op">.*</span>pb<span class="op">).</span>b <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(&amp;(</span>d<span class="op">.*</span>pb<span class="op">)</span> <span class="op">==</span> <span class="op">&amp;</span><span class="kw">static_cast</span><span class="op">&lt;</span>B<span class="op">&amp;&gt;(</span>d<span class="op">))</span>;</span>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>d<span class="op">.*</span>pd <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>

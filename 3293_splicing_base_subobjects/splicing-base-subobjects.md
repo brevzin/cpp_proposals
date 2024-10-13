@@ -176,7 +176,8 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
 
   constexpr int f() {
     D d = {1, 2};
-    d.[: base_of(^D)[0] :].b += 10;
+    B& b = d.[: bases_of(^D)[0] :];
+    b.b += 10;
     d.[: ^D::d :] += 1;
     return d.b * d.d;
   }
@@ -198,7 +199,7 @@ Handle base class pointers to members in [expr.unary.op]{.sref}:
 * [#.#]{.pnum} If the operand is a `$qualified-id$` or `$splice-expression$` designating a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
 
 ::: addu
-* [3.1+]{.pnum} If the operand is a `$splice-expression$` designated a base class subobject of some class `C` of type `T`, other than a virtual base class subobject, the result has type pointer to mbmer of class `C` of type `T` and designates that base class subobject.
+* [3.1+]{.pnum} If the operand is a `$splice-expression$` designated a base class subobject of some class `C` of type `T`, other than a virtual base class subobject, the result has type pointer to member of class `C` of type `T` and designates that base class subobject.
 :::
 
 * [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` or a `$splice-expression$`.
@@ -219,7 +220,7 @@ constexpr D d = {1, 2};
 constexpr int B::*pb = &[: bases_of(^D)[0] :];
 constexpr int D::*pd = &D::d;
 
-static_assert((d.*pb).b == 1);
+static_assert(&(d.*pb) == &static_cast<B&>(d));
 static_assert(d.*pd == 2);
 ```
 :::
