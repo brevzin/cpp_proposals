@@ -34,6 +34,7 @@ Since [@P2996R6]:
 * added missing `is_mutable_member` function
 * added `(u8)operator_symbol_of` functions, tweaked enumerator names in `std::meta::operators`
 * stronger guarantees on order reflections returned by `members_of`
+* several core wording fixes
 * added `is_user_declared` for completeness with `is_user_provided`
 
 Since [@P2996R5]:
@@ -3076,13 +3077,13 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
 [7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
 [ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.
-  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated.]{.addu}
+  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated exactly once.]{.addu}
 [...]
 
 [8]{.pnum} [...]
 All the required instantiations are performed to produce instantiation units.
 [ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantiation process.
-  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated.]{.addu}
+  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated exactly once.]{.addu}
 [...]
 
 :::
@@ -3400,15 +3401,17 @@ $splice-expression$:
    template $splice-specifier$ < $template-argument-list$@~_opt_~@ >
 ```
 
-[#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `E` be the value of the converted `$constant-expression$` of the `$splice-specifier$`.
+[#]{.pnum} The `$splice-specifier$` shall not designate an unnamed bit-field, a constructor or destructor, or a constructor template or destructor template.
 
-* [#.#]{.pnum} If `E` is a reflection for an object, a function which is not a constructor or destructor, or a non-static data member that is not an unnamed bit-field, the expression is an lvalue denoting the represented object, function, or data member.
+[#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$E$` be the object, value, or entity designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} Otherwise, if `E` is a reflection for a variable or a structured binding, the expression is an lvalue denoting the object designated by the represented entity.
+* [#.#]{.pnum} If `$E$` is an object, a function, or a non-static data member, the expression is an lvalue designating `$E$`. The expression has the same type as `$E$`, and is a bit-field if and only if `$E$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, `E` shall be a reflection of a value or an enumerator, and the expression is a prvalue whose evaluation computes the represented value.
+* [#.#]{.pnum} Otherwise, if `$E$` is a variable or a structured binding, the expression is an lvalue designating the same object as `$E$`. The expression has the same type as `$E$`, and is a bit-field if and only if `$E$` is a bit-field.
 
-[Access checking of class members occurs during name lookup, and therefore does not pertain to splicing.]{.note}
+* [#.#]{.pnum} Otherwise, `$E$` shall be a value or an enumerator. The expression is a prvalue whose evaluation computes `$E$` and whose type is the same as `$E$`.
+
+[Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
 :::
 :::
 
@@ -3433,7 +3436,7 @@ Add a production to `$postfix-expression$` for splices in member access expressi
 Modify paragraph 1 to account for splices in member access expressions:
 
 ::: std
-[1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, optionally followed by the keyword template, and then followed by an _id-expression_ [or a _splice-expression_]{.addu}, is a postfix expression. [If the keyword `template` is used, the following unqualified name is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `​::`​, the _id-expression_ [or _splice-expression_]{.addu} is a qualified-id.]{.note}
+[1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, optionally followed by the keyword template, and then followed by an _id-expression_[, or a _splice-expression_ designating a class member]{.addu}, is a postfix expression. [If the keyword `template` is used, the following unqualified name is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `​::`​, the _id-expression_ [or _splice-expression_]{.addu} is a qualified-id.]{.note}
 
 :::
 
@@ -3452,7 +3455,30 @@ Modify paragraph 3 to account for splices in member access expressions:
 Modify paragraph 4 to account for splices in member access expressions:
 
 ::: std
-[4]{.pnum} Abbreviating [`$postfix-expression$`.`$id-expression$`]{.rm} [`$postfix-expression$.EXPR`, where `EXPR` is the `$id-expression$` or `$splice-expression$` following the dot,]{.addu} as `E1.E2`, `E1` is called the `$object expression$`. If the object expression is of scalar type, `E2` shall [name]{.rm} [designate]{.addu} the pseudo-destructor of that same type (ignoring cv-qualifications) and `E1.E2` is a prvalue of type “function of () returning `void`”.
+[4]{.pnum} Abbreviating [`$postfix-expression$`.`$id-expression$`]{.rm} [`$postfix-expression$.EXPR`, where `EXPR` is the `$id-expression$` or `$splice-expression$` following the dot,]{.addu} as `E1.E2`, `E1` is called the `$object expression$`. [...]
+
+:::
+
+Adjust the language in paragraphs 6-9 to account for splice-specifiers.
+
+::: std
+
+[6]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a bit-field, `E1.E2` is a bit-field. [...]
+
+[7]{.pnum} If [the entity designated by]{.addu} `E2` is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. If `E2` [is]{.rm} [designates]{.addu} a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
+
+* [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a static data member and the type of `E2` is `T`, then `E1.E2` is an lvalue; [...]
+* [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", [...]. If [the entity designated by]{.addu} `E2` is declared to be a `mutable` member, then the type of `E1.E2` is "_vq12_ `T`". If [the entity designated by]{.addu} `E2` is not declared to be a `mutable` member, then the type of `E1.E2` is "_cq12_ _vq12_ `T`".
+
+[...]
+
+* [#.4]{.pnum} If `E` [is]{.rm} [designates]{.addu} a nested type, the expression `E1.E2` is ill-formed.
+
+* [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a member enumerator and the type of `E2` is `T`, the expression `E1.E2` is a prvalue of type `T` whose value is the value of the enumerator.
+
+[8]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static member [`$M$`]{.addu}, the program is ill-formed if the class of which [`E2`]{.rm} [`$M$`]{.addu} is directly a member is an ambiguous base ([class.member.lookup]) of the naming class ([class.access.base]) of [`E2`]{.rm} [`$M$`]{.addu}.
+
+[9]{.pnum} If [the entity designated by]{.addu} `E2` is a non-static member and the result of `E1` is an object whose type is not similar ([conv.qual]) to the type of `E1`, the behavior is undefined.
 
 :::
 
@@ -3468,6 +3494,21 @@ Change [expr.unary.general]{.sref} paragraph 1 to add productions for the new op
      $delete-expression$
 +    $reflect-expression$
 ```
+:::
+
+### [expr.unary.op]{.sref} Unary operators {-}
+
+Modify paragraphs 3 and 4 to permit forming a pointer-to-member with a splice.
+
+::: std
+[3]{.pnum} The operand of the unary `&` operator shall be an lvalue of some type `T`.
+
+* [#.#]{.pnum} If the operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} [naming]{.rm} [designating]{.addu} a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
+
+* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
+
+[4]{.pnum} A pointer to member is only formed when an explicit `&` is used and its operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} not enclosed in parentheses.
+
 :::
 
 ### 7.6.2.10* [expr.reflect] The reflection operator {-}
@@ -3590,47 +3631,122 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Add a new paragraph after the definition of _potentially constant-evaluated_ [expr.const]{.sref}/21:
+Add a new paragraph prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
 
 ::: std
 ::: addu
 
-[22]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an expression `$E$` comprises the union of
-
-* [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
-* [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before the next evaluation of `$E$`.
-
-:::
-:::
-
-Add another new paragraph defining _plainly constant-evaluated_ expressions:
-
-::: std
-::: addu
-
-[23]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
+[20]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
 
 * [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
-* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or a subexpression thereof, or
 * [#.#]{.pnum} an immediate invocation, unless it
   * [#.#.#]{.pnum} results from the substitution of template parameters
     * during template argument deduction ([temp.deduct]{.sref}),
     * in a `$concept-id$` ([temp.names]{.sref}), or
     * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-  * [#.#.#]{.pnum} is a manifestly constant-evaluated initializer of a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
+  * [#.#.#]{.pnum} is an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}), or a subexpression thereof.
+
+[Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
+
+::: example
+```cpp
+consteval bool cfn(int) { return true; }
+
+template <int V> requires (cfn(V))  // cfn(V) is not plainly constant-evaluated
+consteval int g() {
+    if constexpr (cfn(V+1)) {       // cfn(V+1) is plainly constant-evaluated
+        return cfn(V+2);            // cfn(V+2) is plainly constant-evaluated
+    } else {
+        return 0;
+    }
+}
+
+constexpr bool b1 = !cfn(1);        // !cfn(1) is plainly constant-evaluated
+const bool b2 = cfn(2);             // cfn(2) is not plainly constant-evaluated
+
+```
+:::
 
 :::
 :::
 
-Add new paragraphs defining _injected declarations_ and _injected points_:
+Modify the definition of _manifestly constant-evaluated_ to leverage that of _plainly constant-evaluated_:
+
+::: std
+
+[21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
+
+* [#.#]{.pnum} a [`$constant-expression$`]{.rm} [plainly constant-evaluated expression]{.addu}, or
+
+::: rm
+* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
+:::
+* [#.#]{.pnum} an immediate invocation, or
+* [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
+* [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
+
+::: addu
+[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., initializers that can require trial evaluations) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) may be evaluated multiple times, and there are no constraints on the relative order of their evaluation.]{.note}
+:::
+
+:::
+
+Add new paragraphs defining _evaluation context_, _injected declaration_, and _injected point_ after the example following the definition of _manifestly constant-evaluated_, and renumber accordingly:
 
 ::: std
 ::: addu
 
-[24]{.pnum} The evaluation of a manifestly constant-evaluated expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`, and for which special rules apply ([module.reach]). The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
+[22]{.pnum} The evaluation of an expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
 
-[25]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated produces an injected declaration.
+[Special rules concerning reachability apply to injected points ([module.reach]).]{.note13}
+
+[23]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
+
+* [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated, or
+* within the body of an immediate-escalating function `$F$`, unless
+  * [#.#.#]{.pnum} `$E$` is a plainly constant-evaluated expression or a subexpression thereof, or
+  * [#.#.#]{.pnum} `$F$` does not contain an immediate-escalating expression.
+
+[An immediate invocation within an immediate-escalating function is similar to a trial evaluation of a variable initializer: if it fails to be a constant expression, the implementation may be forced to evaluate it again. The above rule is intended to only permit evaluations to produce declarations when such evaluations can be guaranteed to only happen once.]{.note}
+
+::: example
+```cpp
+consteval bool make_decl(int);      // calling 'make_decl(n)' produces a declaration
+
+template <int R> requires (make_decl(R))
+  bool tfn();
+
+constexpr bool b1 = !make_decl(1);  // OK, constexpr variable so this is plainly
+                                    // constant evaluated
+
+bool b2 = !make_decl(2);            // error: initializer !make_decl(42) produced
+                                    // a declaration but is not plainly constant
+                                    // evaluated
+
+constexpr bool b3 = tfn<3>();       // error: the invocation of make_decl(R) in the
+                                    // requires clause produced a declaration but is
+                                    // not plainly constant evaluated
+
+consteval int *not_constant() {
+  make_decl(4);
+  return new int {};
+}
+constexpr bool b4 = [] {
+  int *p = not_constant();          // error: not_constant() produces a declaration
+                                    // in an immediate-escalated function, but is
+                                    // not plainly constant-evalauted.
+  delete p;
+  return true;
+}();
+```
+:::
+
+[24]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an evaluation `$E$` comprises the union of
+
+* [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
+* [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before `$E$`.
 
 :::
 :::
@@ -4115,6 +4231,23 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/4:
 [6]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$  < $template-argument-list$@~_opt_~@ >` is value-dependent if the `$constant-expression$` is value-dependent or if the optional `$template-argument-list$` contains a value-dependent non-type or template argument, or a dependent type argument.
 
 :::
+:::
+
+
+
+### [cpp.cond]{.sref} Conditional inclusion {-}
+
+Extend paragraph 9 to clarify that `$splice-specifier$`s may not appear in preprocessor directives, while also applying a "drive-by fix" to disallow lambdas in the same context.
+
+::: std
+
+[9]{.pnum} Preprocessing directives of the forms
+```cpp
+     # if      $constant-expression$ $new-line$ $group$@~_opt_~@
+     # elif    $constant-expression$ $new-line$ $group$@~_opt_~@
+```
+check whether the controlling constant expression evaluates to nonzero. [The program is ill-formed if a `$splice-specifier$` or `$lambda-expression$` appears in the controlling constant expression.]{.addu}
+
 :::
 
 
@@ -5193,7 +5326,7 @@ constexpr size_t member_offsets::total_bits() const;
 consteval member_offsets offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a non-static data member or base class specifier.
+[#]{.pnum} *Constant When*: `r` represents a non-static data member or base class specifier.
 
 [#]{.pnum} Let `$V$` be a constant defined as follows:
 
