@@ -963,26 +963,25 @@ name:</p>
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> serde <span class="op">{</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">struct</span><span class="op">{}</span> derive<span class="op">{}</span>;</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Rename <span class="op">{</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> field; <span class="op">}</span>;</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> rename<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> field<span class="op">)</span> <span class="op">-&gt;</span> Rename <span class="op">{</span> <span class="cf">return</span> Rename<span class="op">{</span>field<span class="op">}</span>; <span class="op">}</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> boost<span class="op">::</span>json <span class="op">{</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">requires</span> <span class="op">(</span>has_annotation<span class="op">(^^</span>T, serde<span class="op">::</span>derive<span class="op">))</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> tag_invoke<span class="op">(</span>value_from_tag <span class="kw">const</span><span class="op">&amp;</span>, value<span class="op">&amp;</span> v, T <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span><span class="op">&amp;</span> obj <span class="op">=</span> v<span class="op">.</span>emplace_object<span class="op">()</span>;</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> M <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>            <span class="kw">constexpr</span> <span class="kw">auto</span> field <span class="op">=</span> annotation_of<span class="op">&lt;</span>serde<span class="op">::</span>rename<span class="op">&gt;(</span>M<span class="op">)</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>transform<span class="op">([](</span>serde<span class="op">::</span>rename r<span class="op">){</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> std<span class="op">::</span>string_view<span class="op">(</span>r<span class="op">.</span>field<span class="op">)</span>;</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>                <span class="op">})</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>value_or<span class="op">(</span>identifier_of<span class="op">(</span>M<span class="op">))</span>;</span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>            obj<span class="op">[</span>field<span class="op">]</span> <span class="op">=</span> boost<span class="op">::</span>json<span class="op">::</span>value_from<span class="op">(</span>t<span class="op">.[:</span>M<span class="op">:])</span>;</span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> rename <span class="op">{</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> field; <span class="op">}</span>;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> boost<span class="op">::</span>json <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">requires</span> <span class="op">(</span>has_annotation<span class="op">(^^</span>T, serde<span class="op">::</span>derive<span class="op">))</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> tag_invoke<span class="op">(</span>value_from_tag <span class="kw">const</span><span class="op">&amp;</span>, value<span class="op">&amp;</span> v, T <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span><span class="op">&amp;</span> obj <span class="op">=</span> v<span class="op">.</span>emplace_object<span class="op">()</span>;</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> M <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">constexpr</span> <span class="kw">auto</span> field <span class="op">=</span> annotation_of<span class="op">&lt;</span>serde<span class="op">::</span>rename<span class="op">&gt;(</span>M<span class="op">)</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>transform<span class="op">([](</span>serde<span class="op">::</span>rename r<span class="op">){</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> std<span class="op">::</span>string_view<span class="op">(</span>r<span class="op">.</span>field<span class="op">)</span>;</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>                <span class="op">})</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>value_or<span class="op">(</span>identifier_of<span class="op">(</span>M<span class="op">))</span>;</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            obj<span class="op">[</span>field<span class="op">]</span> <span class="op">=</span> boost<span class="op">::</span>json<span class="op">::</span>value_from<span class="op">(</span>t<span class="op">.[:</span>M<span class="op">:])</span>;</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>You can imagine extending this out to support a wide variety of other

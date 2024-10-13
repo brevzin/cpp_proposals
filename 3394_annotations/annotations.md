@@ -295,8 +295,7 @@ The implementation for these pieces is fairly straightforward. We provide an opt
 ```cpp
 namespace serde {
     inline constexpr struct{} derive{};
-    struct Rename { char const* field; };
-    consteval auto rename(char const* field) -> Rename { return Rename{field}; }
+    struct rename { char const* field; };
 }
 
 namespace boost::json {
