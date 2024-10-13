@@ -35,6 +35,7 @@ Since [@P2996R6]:
 * added `(u8)operator_symbol_of` functions, tweaked enumerator names in `std::meta::operators`
 * stronger guarantees on order reflections returned by `members_of`
 * several core wording fixes
+* added `is_user_declared` for completeness with `is_user_provided`
 
 Since [@P2996R5]:
 
@@ -1863,7 +1864,7 @@ The namespace `std::meta` is an associated type of `std::meta::info`, which allo
 #include <meta>
 struct S {};
 std::string name2 = std::meta::identifier_of(^S);  // Okay.
-std::string name1 = identifier_of_of(^S);          // Also okay.
+std::string name1 = identifier_of(^S);             // Also okay.
 ```
 :::
 
@@ -2460,6 +2461,7 @@ namespace std::meta {
   consteval auto is_move_assignment(info r) -> bool;
   consteval auto is_destructor(info r) -> bool;
   consteval auto is_user_provided(info r) -> bool;
+  consteval auto is_user_declared(info r) -> bool;
 
   // @[define_class](#data_member_spec-define_class)@
   struct data_member_options_t;
@@ -4399,6 +4401,7 @@ namespace std::meta {
   consteval bool is_deleted(info r);
   consteval bool is_defaulted(info r);
   consteval bool is_user_provided(info r);
+  consteval bool is_user_declared(info r);
   consteval bool is_explicit(info r);
   consteval bool is_noexcept(info r);
 
@@ -4896,9 +4899,10 @@ consteval bool is_defaulted(info r);
 
 ```cpp
 consteval bool is_user_provided(info r);
+consteval bool is_user_declared(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a function that is user-provided ([dcl.fct.def.default]{.sref}). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is user-provided or user-declared ([dcl.fct.def.default]{.sref}), respectively. Otherwise, `false`.
 
 
 ```cpp
