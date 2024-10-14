@@ -438,7 +438,7 @@ int select_footgun(int);
 
 The core language feature and the basic query functions have been implemented in the EDG front end and in Bloomberg's P2996 Clang fork (with option `-freflection-latest`), both available on Compiler Explorer.
 
-## Other Directions To Go
+## Other Directions We Are Exploring
 
 As evidenced in the motivating examples earlier, there is a lot of value in this proposal even in this simple form. However, there is more to consider when it comes to annotations.
 
@@ -457,7 +457,7 @@ struct /* X only for some T */ Sometimes;
 
 Or to really generalize annotations. For instance, in the clap example earlier, our example showed usage with `clap::Short` and `clap::Long`. What if somebody wants to compose these into their own annotation that attaches both `clap::Short` and `clap::Long` to a declaration?
 
-More broadly, there is clear value in having an annotation be able to be invoked by the declaration itself. Doing so allows the two uses above easily enough. The interesting question, though, is whether this callback (syntax to be determined) is invoked at the _beginning_ of the declaration or at the _end_ of the declaration. For annotations on classes, this would be before the class is complete or after the class is complete. Before completeness allows the class to observe the annotation during instantiation. After completeness allows the annotation callback to observe properties of the type. In some sense, Herb Sutter's [@P0707R4] ("Metaclass functions: Generative C++") was adding annotations on classes, invoked on class completeness, that allow mutation of the class.
+More broadly, there is clear value in having an annotation be able to be invoked by the declaration itself. Doing so allows the two uses above easily enough. An interesting question, though, is whether this callback (syntax to be determined) is invoked at the _beginning_ of the declaration or at the _end_ of the declaration. For annotations on classes, this would be before the class is complete or after the class is complete. Before completeness allows the class to observe the annotation during instantiation. After completeness allows the annotation callback to observe properties of the type. In some sense, Herb Sutter's [@P0707R4] ("Metaclass functions: Generative C++") was adding annotations on classes, invoked on class completeness, that allow mutation of the class.
 
 One concrete, simpler example. We can, with this proposal as-is, create a `Debug` annotation that a user can add to their type and a specialization of `std::formatter` for all types that have a `Debug` annotation [as follows](https://godbolt.org/z/bcYE7nY4s):
 
@@ -486,4 +486,4 @@ int main() {
 
 This *works*, but it's not really the ideal way of doing it. This could still run into potential issues with ambiguous specialization of `std::formatter`. Better would be to allow the `Debug` annotation to, at the point of completion of `Point`, inject an explicit specialization of `std::formatter`. This would rely both on the ability for the annotation to be called back and language support for such injection (see [@P3294R1] ("Code Injection with Token Sequences")).
 
-There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks?
+There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks? Should the callback be registered implicitly (e.g., if an annotation of type `X` with member `X::annotate_declaration(...)` appears, that member is automatically a callback invoked when an entity is first declared with an annotation of type `X`) or explicitly (e.g., calling `annotated_declaration_callback(^^X, X_handler)` would cause `X_handler(...)` to be invoked when an entity is first declared with an annotation of type `X`).

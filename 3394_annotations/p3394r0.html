@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-10-13" />
+  <meta name="dcterms.date" content="2024-10-14" />
   <title>Annotations for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-10-13</td>
+    <td>2024-10-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -613,8 +613,8 @@ Queries<span></span></a></li>
 Constraints<span></span></a></li>
 <li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">3.4</span> Implementation
 Experience<span></span></a></li>
-<li><a href="#other-directions-to-go" id="toc-other-directions-to-go"><span class="toc-section-number">3.5</span> Other Directions To
-Go<span></span></a></li>
+<li><a href="#other-directions-we-are-exploring" id="toc-other-directions-we-are-exploring"><span class="toc-section-number">3.5</span> Other Directions We Are
+Exploring<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
@@ -1153,7 +1153,8 @@ appear in the <em>attribute-specifier-seq</em> of a
 implemented in the EDG front end and in Bloomberg’s P2996 Clang fork
 (with option <code class="sourceCode cpp"><span class="op">-</span>freflection<span class="op">-</span>latest</code>),
 both available on Compiler Explorer.</p>
-<h2 data-number="3.5" id="other-directions-to-go"><span class="header-section-number">3.5</span> Other Directions To Go<a href="#other-directions-to-go" class="self-link"></a></h2>
+<h2 data-number="3.5" id="other-directions-we-are-exploring"><span class="header-section-number">3.5</span> Other Directions We Are
+Exploring<a href="#other-directions-we-are-exploring" class="self-link"></a></h2>
 <p>As evidenced in the motivating examples earlier, there is a lot of
 value in this proposal even in this simple form. However, there is more
 to consider when it comes to annotations.</p>
@@ -1184,14 +1185,14 @@ and
 to a declaration?</p>
 <p>More broadly, there is clear value in having an annotation be able to
 be invoked by the declaration itself. Doing so allows the two uses above
-easily enough. The interesting question, though, is whether this
-callback (syntax to be determined) is invoked at the <em>beginning</em>
-of the declaration or at the <em>end</em> of the declaration. For
-annotations on classes, this would be before the class is complete or
-after the class is complete. Before completeness allows the class to
-observe the annotation during instantiation. After completeness allows
-the annotation callback to observe properties of the type. In some
-sense, Herb Sutter’s <span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span> (“Metaclass functions:
+easily enough. An interesting question, though, is whether this callback
+(syntax to be determined) is invoked at the <em>beginning</em> of the
+declaration or at the <em>end</em> of the declaration. For annotations
+on classes, this would be before the class is complete or after the
+class is complete. Before completeness allows the class to observe the
+annotation during instantiation. After completeness allows the
+annotation callback to observe properties of the type. In some sense,
+Herb Sutter’s <span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span> (“Metaclass functions:
 Generative C++”) was adding annotations on classes, invoked on class
 completeness, that allow mutation of the class.</p>
 <p>One concrete, simpler example. We can, with this proposal as-is,
@@ -1236,7 +1237,16 @@ Sequences”)).</p>
 <p>There are still open questions as to how to handle such callbacks.
 Does an annotation that gets called back merit different syntax from an
 annotation that doesn’t? Can it mutate the entity that it is attached
-to? How do we name the potential callbacks?</p>
+to? How do we name the potential callbacks? Should the callback be
+registered implicitly (e.g., if an annotation of type
+<code class="sourceCode cpp">X</code> with member <code class="sourceCode cpp">X<span class="op">::</span>annotate_declaration<span class="op">(...)</span></code>
+appears, that member is automatically a callback invoked when an entity
+is first declared with an annotation of type
+<code class="sourceCode cpp">X</code>) or explicitly (e.g., calling
+<code class="sourceCode cpp">annotated_declaration_callback<span class="op">(^^</span>X, X_handler<span class="op">)</span></code>
+would cause <code class="sourceCode cpp">X_handler<span class="op">(...)</span></code> to
+be invoked when an entity is first declared with an annotation of type
+<code class="sourceCode cpp">X</code>).</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
