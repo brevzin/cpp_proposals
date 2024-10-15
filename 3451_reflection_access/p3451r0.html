@@ -788,7 +788,7 @@ is:</p>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> get<span class="op">()</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">^^</span>C<span class="op">::</span>i; <span class="op">}</span></span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> outer <span class="op">=</span> nonstatic_data_membmers_of<span class="op">(^^</span>C<span class="op">)[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> outer <span class="op">=</span> nonstatic_data_members_of<span class="op">(^^</span>C<span class="op">)[</span><span class="dv">0</span><span class="op">]</span>;</span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> inner <span class="op">=</span> C<span class="op">::</span>get<span class="op">()</span>;</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>is_accessible<span class="op">(</span>outer<span class="op">))</span>;</span>
@@ -850,7 +850,8 @@ part of equality.</p></li>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_accessible<span class="op">(</span>info r<span class="op">)</span>;</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info force_accessibility<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info force_accessibility<span class="op">(</span>info r<span class="op">)</span>;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info make_inaccessible<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The first returns
@@ -862,9 +863,16 @@ was generated, otherwise
 phrasing gets us <code class="sourceCode cpp">is_accessible<span class="op">(^^</span>std<span class="op">)</span></code>,
 which will make it more straightforward to word splice access
 checking).</p>
-<p>The second returns a new reflection with all the same properties of
-<code class="sourceCode cpp">r</code> except that it is
-accessible.</p></li>
+<p>The second and third return new reflections with all the same
+properties of <code class="sourceCode cpp">r</code> except that it is
+accessible and inaccessible, respectively. They have deliberately
+distinct names for ease of search.
+<code class="sourceCode cpp">force_accessibility</code> is valuable to
+bypass accessibility.
+<code class="sourceCode cpp">make_inaccessible</code> is going to be
+valuable to be able to do an
+<code class="sourceCode cpp"><span class="op">==</span></code> check
+without having to strip accessibility.</p></li>
 <li><p>Change the rules for splicing as follows: <code class="sourceCode cpp"><span class="op">[:</span>r<span class="op">:]</span></code>
 is valid if either <code class="sourceCode cpp">is_accessible<span class="op">(</span>r<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> or

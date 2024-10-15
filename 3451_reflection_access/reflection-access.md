@@ -203,12 +203,13 @@ I don't have much experience with using `==` with objects of type `info` yet. Mo
    ```cpp
    consteval bool is_accessible(info r);
    consteval info force_accessibility(info r);
+   consteval info make_inaccessible(info r);
    ```
    :::
 
    The first returns `false` if `r` is a reflection of a base class subobject or member that was not accessible from the point at which it was generated, otherwise `true` (this phrasing gets us `is_accessible(^^std)`, which will make it more straightforward to word splice access checking).
 
-   The second returns a new reflection with all the same properties of `r` except that it is accessible.
+   The second and third return new reflections with all the same properties of `r` except that it is accessible and inaccessible, respectively. They have deliberately distinct names for ease of search. `force_accessibility` is valuable to bypass accessibility. `make_inaccessible` is going to be valuable to be able to do an `==` check without having to strip accessibility.
 
 3. Change the rules for splicing as follows: `[:r:]` is valid if either `is_accessible(r)` is `true` or `r` represents a base class subobject or a member that is accessible from the point of splice.
 

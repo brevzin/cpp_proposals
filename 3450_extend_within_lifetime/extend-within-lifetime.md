@@ -80,7 +80,7 @@ And change the specification of this function:
 ```
 
 ::: addu
-[*]{.pnum} *Mandates*: `U` is either `void` or a cv-unqualified object type.
+[*]{.pnum} *Mandates*: `static_cast<const U*>(p)` is well-formed.
 :::
 
 [3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]) [and `static_cast<const U*>(p)` is a core constant expression]{.addu}; otherwise, `false`.
