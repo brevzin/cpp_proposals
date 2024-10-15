@@ -1,6 +1,6 @@
 ---
 title: "Code Injection with Token Sequences"
-document: P3294R1
+document: P3294R2
 date: today
 audience: SG7, EWG
 author:
@@ -17,6 +17,10 @@ tag: reflection
 
 # Revision History
 
+Since [@P3294R1]:
+
+* ...
+
 Since [@P3294R0]:
 
 * Changed syntax for introducing token sequences to `^{ ... }`
@@ -27,7 +31,7 @@ Since [@P3294R0]:
 
 # Introduction
 
-This paper is proposing augmenting [@P2996R4] to add code injection in the form of token sequences.
+This paper is proposing augmenting [@P2996R7] to add code injection in the form of token sequences.
 
 We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic (e.g. [@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
 
@@ -1191,7 +1195,7 @@ With that out of the way, we can now go through our examples from earlier.
 
 ## Token Sequence Type
 
-In this paper (and the current implementation), the type of a token sequence is also `std::meta::info`. This follows the general [@P2996R4] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
+In this paper (and the current implementation), the type of a token sequence is also `std::meta::info`. This follows the general [@P2996R7] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
 
 However, unlike reflections of source constructs, token sequence manipulation is a completely disjoint set of operations. The only kinds of reflection that can produce token sequences can only ever produce token sequences (e.g. getting the `noexcept` specifier of a function template).
 
@@ -2170,8 +2174,8 @@ Note that the macro proposal, and even the facilities for splitting/iterating/qu
 
 ---
 references:
-  - id: P2996R4
-    citation-label: P2996R4
+  - id: P2996R7
+    citation-label: P2996R7
     title: "Reflection for C++26"
     author:
       - family: Wyatt Childers
@@ -2182,7 +2186,7 @@ references:
       - family: Daveed Vandevoorde
     issued:
       - year: 2024
-        month: 06
-        day: 26
-    URL: https://wg21.link/p2996r4
+        month: 10
+        day: 12
+    URL: https://wg21.link/p2996r7
 ---
