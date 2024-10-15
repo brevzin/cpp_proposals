@@ -169,7 +169,7 @@ public:
   static consteval auto get() { return ^^C::i; }
 };
 
-constexpr auto outer = nonstatic_data_membmers_of(^^C)[0];
+constexpr auto outer = nonstatic_data_members_of(^^C)[0];
 constexpr auto inner = C::get();
 
 static_assert(!is_accessible(outer));
