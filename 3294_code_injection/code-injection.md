@@ -2,7 +2,7 @@
 title: "Code Injection with Token Sequences"
 document: P3294R2
 date: today
-audience: SG7, EWG
+audience: EWG
 author:
     - name: Andrei Alexandrescu, NVIDIA
       email: <andrei@nvidia.com>
@@ -19,7 +19,8 @@ tag: reflection
 
 Since [@P3294R1]:
 
-* ...
+* Cleaned up the paper, corrected our understanding of fragments.
+* Fixed/demonstrated implementation of `LoggingVector`.
 
 Since [@P3294R0]:
 
@@ -68,13 +69,13 @@ We are already separately proposing `consteval` blocks [@P3289R0] and we would l
 ```cpp
 struct C {
     consteval {
-        inject(data_member_spec{.name="x", .type=^int});
+        queue_injection(data_member_spec{.name="x", .type=^int});
     }
 };
 ```
 :::
 
-Here, `std::meta::inject` is a new metafunction that takes a spec, which gets injected into the context of the `consteval` block which began our evaluation as a side-effect.
+Here, `std::meta::queue_injection` is a new metafunction that takes a spec, which gets injected into the context of the `consteval` block which began our evaluation as a side-effect.
 
 We already think of this as an improvement. But let's go through several use-cases to expand the API and see how well it holds up.
 
@@ -89,8 +90,8 @@ struct Tuple {
     consteval {
         std::array types{^Ts...};
         for (size_t i = 0; i != types.size() ;++i) {
-            inject(data_member_spec{.name=std::format("_{}", i),
-                                    .type=types[i]});
+            queue_injection(data_member_spec{.name=std::format("_{}", i),
+                                             .type=types[i]});
         }
     }
 };
@@ -109,7 +110,7 @@ template <bool B, class T=void>
 struct enable_if {
     consteval {
         if (B) {
-            inject(alias_spec{.name="type", .type=^T});
+            queue_injection(alias_spec{.name="type", .type=^T});
         }
     }
 };
@@ -144,8 +145,8 @@ We start by injecting the member:
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    inject(data_member_spec{.name=std::format("m_{}", name),
-                            .type=type});
+    queue_injection(data_member_spec{.name=std::format("m_{}", name),
+                                     .type=type});
 
     // ...
 }
@@ -160,11 +161,11 @@ Now, we need to inject two functions. We'll need a new kind of `spec` for that c
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    inject(data_member_spec{.name=std::format("m_{}", name),
-                            .type=type});
+    queue_injection(data_member_spec{.name=std::format("m_{}", name),
+                                     .type=type});
 
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("get_{}", name),
         .body=^[](auto const& self) -> auto const& {
             return self./* ????? */;
@@ -183,12 +184,12 @@ Okay. Uh. What do we return? For the title property, this needs to be `return se
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    auto member = inject(data_member_spec{
+    auto member = queue_injection(data_member_spec{
         .name=std::format("m_{}", name),
         .type=type
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("get_{}", name),
         .body=^[member](auto const& self) -> auto const& {
             return self.[:member:];
@@ -202,7 +203,7 @@ consteval auto property(string_view name, meta::info type)
 
 But that doesn't work - in order to splice `member`, it needs to be a constant expression - and it's not in this context.
 
-Now, the body of the lambda isn't going to be evaluted in this constant evaluation, so it's possible to maybe come up with some mechanism to pass a context through - such that from the body we _can_ simply splice `member`. We basically need to come up with a way to defer this instantiation.
+Now, the body of the lambda isn't going to be evaluated in this constant evaluation, so it's possible to maybe come up with some mechanism to pass a context through - such that from the body we _can_ simply splice `member`. We basically need to come up with a way to defer this instantiation.
 
 For now, let's try a spelling like this:
 
@@ -211,12 +212,12 @@ For now, let's try a spelling like this:
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    auto member = inject(data_member_spec{
+    auto member = queue_injection(data_member_spec{
         .name=std::format("m_{}", name),
         .type=type
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("get_{}", name),
         .body=defer(member, ^[]<std::meta::info M>(auto const& self) -> auto const& {
             return self.[:M:];
@@ -235,19 +236,19 @@ and we can do something similar with the setter:
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    auto member = inject(data_member_spec{
+    auto member = queue_injection(data_member_spec{
         .name=std::format("m_{}", name),
         .type=type
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("get_{}", name),
         .body=defer(member, ^[]<std::meta::info M>(auto const& self) -> auto const& {
             return self.[:M:];
         })
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("set_{}", name),
         .body=defer(member, ^[]<std::meta::info M>(auto& self, typename [:type_of(M):] const& x) -> void {
             self.[:M:] = x;
@@ -285,12 +286,12 @@ template <class T> using setter_type = auto(T const&) -> void;
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    auto member = inject(data_member_spec{
+    auto member = queue_injection(data_member_spec{
         .name=std::format("m_{}", name),
         .type=type
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("get_{}", name),
         .signature=substitute(^getter_type, {^type}),
         .body=defer(member, ^[]<std::meta::info M>(auto const& self) -> auto const& {
@@ -298,7 +299,7 @@ consteval auto property(string_view name, meta::info type)
         })
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("set_{}", name),
         .signature=substitute(^setter_type, {^type}),
         .body=defer(member, ^[]<std::meta::info M>(auto& self, typename [:type_of(M):] const& x) -> void {
@@ -316,7 +317,7 @@ Which then maybe feels like the correct spelling is actually more like this, so 
 consteval auto property(string_view name, meta::info type)
     -> void
 {
-    auto member = inject(data_member_spec{
+    auto member = queue_injection(data_member_spec{
         .name=std::format("m_{}", name),
         .type=type
     });
@@ -332,7 +333,7 @@ consteval auto property(string_view name, meta::info type)
       .member=member
     };
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("get_{}", name),
         .body=defer(context, ^[]<Context C>(){
             return [](typename [:C.type:] const& self) -> auto const& {
@@ -341,7 +342,7 @@ consteval auto property(string_view name, meta::info type)
         })
     });
 
-    inject(function_member_spec{
+    queue_injection(function_member_spec{
         .name=std::format("set_{}", name),
         .body=defer(context, ^[]<Context C>(){
             return [](typename [:C.type:]& self, typename [:type_of(C.member):] const& x) -> void {
@@ -560,7 +561,7 @@ struct Tuple {
     consteval {
         std::array types{^Ts...};
         for (size_t i = 0; i != types.size(); ++i) {
-            inject(std::format(
+            queue_injection(std::format(
                 "[[no_unique_address]] {} _{};",
                 qualified_name_of(types[i]),
                 i));
@@ -583,7 +584,7 @@ struct Tuple {
     consteval {
         std::array types{^Ts...};
         for (size_t i = 0; i != types.size(); ++i) {
-            inject(
+            queue_injection(
                 {{"type", types[i]}},
                 "[[no_unique_address]] [:type:] _{};",
                 i);
@@ -603,7 +604,7 @@ template <bool B, class T=void>
 struct enable_if {
     consteval {
         if (B) {
-            inject("using type = T;");
+            queue_injection("using type = T;");
         }
     };
 };
@@ -617,7 +618,7 @@ Unlike with the spec API, implementing a property by way of code is straightforw
 ::: std
 ```cpp
 consteval auto property(info type, string_view name) -> void {
-    inject(meta::format_with_environment(
+    queue_injection(meta::format_with_environment(
         {{"T", type}},
         R"(
         private:
@@ -651,7 +652,7 @@ Similarly, the postfix increment implementation just writes itself. In this case
 ::: std
 ```cpp
 consteval auto postfix_increment() -> void {
-    inject(R"(
+    queue_injection(R"(
         auto operator++(int) {
             auto tmp = *this;
             ++*this;
@@ -781,66 +782,17 @@ It's a bit busy because nearly everything in properties involves interpolating o
 
 Now, there's one very important property that fragments (as designed in these papers) adhere to: every fragment must be parsable in its context. A fragment does not leak its declarations out of its context; only out of the context where it is injected. Not only that, we get full name lookup and everything.
 
-On the one hand, this seems like a big advantage: the fragment is checked at the point of its declaration, not at the point of its use. With the string model above, that was not the case - you can write whatever garbage string you want and it's still a perfectly valid string, it only becomes invalid C++ code when it's injected.
+This initially seems like a big advantage: the fragment is checked at the point of its declaration, not at the point of its use. With the string model above, that was not the case - you can write whatever garbage string you want and it's still a perfectly valid string, it only becomes invalid C++ code when it's injected.
 
-On the other, it has some consequences for how we can code using fragments. In the above implementation, we inject the whole property in one go. But let's say we wanted to split it up for whatever reason. We can't. This is invalid:
-
-::: std
-```cpp
-consteval auto property(meta::info type, char const* name) -> void
-{
-    -> fragment struct {
-        typename(%{type}) unqualid("m_", %{name});
-    };
-
-    -> fragment struct {
-        auto unqualid("get_", %{name})() -> typename(%{type}) const& {
-            return unqualid("m_", %{name}); // error
-        }
-
-        auto unqualid("set_", %{name})(typename(%{type}) const& x) -> void {
-            unqualid("m_", %{name}) = x; // error
-        }
-    };
-}
-```
-:::
-
-In this second fragment, name lookup for `m_author` fails in both function bodies. We can't do that. We have to teach the fragment how to find the name, which requires writing this (note the added `requires` statement):
-
-::: std
-```cpp
-consteval auto property(meta::info type, char const* name) -> void
-{
-    -> fragment struct {
-        typename(%{type}) unqualid("m_", %{name});
-    };
-
-    -> fragment struct {
-        requires typename(%{type}) unqualid("m_", %{name});
-
-        auto unqualid("get_", %{name})() -> typename(%{type}) const& {
-            return unqualid("m_", %{name}); // error
-        }
-
-        auto unqualid("set_", %{name})(typename(%{type}) const& x) -> void {
-            unqualid("m_", %{name}) = x; // error
-        }
-    };
-}
-```
-:::
 
 ### Postfix increment
 
-Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any interpolated names. But it does surface the issue of name lookup in fragments.
+Postfix increment ends up being [much simpler to implement](https://godbolt.org/z/r1v3e43sd) with fragments than properties - due to not having to deal with any interpolated names:
 
 ::: std
 ```cpp
 consteval auto postfix_increment() {
     -> fragment struct T {
-        requires T& operator++();
-
         auto operator++(int) -> T {
             auto tmp = *this;
             ++*this;
@@ -861,8 +813,6 @@ struct C {
 };
 ```
 :::
-
-Now, the rule in the fragments implementation is that the fragments themselves are checked. This includes name lookup. So any name used in the body of the fragment has to be found and pre-declared, which is what we're doing in the `requires` clause there. The implementation right now appears to have a bug with respect to operators (if you change the body to calling `inc(*this)`, it does get flagged), which is why it's commented out in the link.
 
 ### Disposition
 
@@ -911,7 +861,7 @@ struct C {
 ```cpp
 consteval auto postfix_increment() {
     -> fragment struct T {
-        requires T& operator++();
+
 
         auto operator++(int) -> T {
 
@@ -952,7 +902,31 @@ We also think it's a better idea than the string injection model, since we want 
 
 But we think the fragment model still isn't quite right. By nobly trying to diagnose errors at the point of fragment declaration, it adds a complexity to the fragment model in a way that we don't think carries its weight. The fragment papers ([@P1717R0] and [@P2237R0]) each go into some detail of different approaches of how to do name checking at the point of fragment declaration. They are all complicated.
 
-We basically want something between strings and fragments.
+It's the restriction on having a *complete* block of code that really ends up being a limitation. A fragment has to be a completely valid piece of C++. This is okay in the examples we've shown where we're building up part of a class. But there are a lot of weird parts of C++ — how do you build up a *mem-initializer-list*? Or put pieces of a function template together? Consider function parameters. One of the examples we'll show later involves wanting to inject a function like this, where the signature comes from some reflection:
+
+::: std
+```cpp
+auto $fun$(P1 p1, P2 p2, ..., PN pn) -> R {
+    return vtable->$fun$(p1, p2, ..., pn);
+}
+```
+:::
+
+With fragments, we can't build such a thing up piecewise — that is, add one parameter at a time into the parameter list and then one expression at a time into the call expression. We can't do that because that would involve either producing some fragment `P1 p1, P2 p2` or `auto $fun$(P1 p1` or some such, and those aren't valid... fragments of C++. As such, a fragments approach requires a workaround for building up lists — function parameter lists, call expression lists, etc. The [@P2237R0] approach would have required injecting something like this:
+
+::: std
+```cpp
+auto $fun$(auto... params << meta::parameters_of(F)) -> R {
+    return vtable->$fun$(params...);
+}
+```
+:::
+
+This superficially works but it's a fairly problematic approach. For starters, it's dropping the main advantage of fragments — which is that they're just C++ code. Of course, we need some kind of interpolation facility (i.e. `%{var}` and `unqualid(name)`), but adding more features on top of that seems like it's pushing. And in this case, while it's helpful to think of parameters as a pack (in this example, we really do actually want to just expand them into another function), the model of pack/expansion happens entirely at the wrong layer. The pack expansion has to happen at the point of fragment interpolation. But this implementation really looks like we're declaring a variadic function template — even though the intent was to declare a regular function!
+
+Of course, it is possible to solve this problem. Just with more types. Fragments already need to be annotated with where they will be injected into so that the compiler can check them properly, so we already have a class fragment, an enum fragment, a namespace fragment, and a function fragment. But this calls for something like a parameter list fragment and an expression list fragment. These would work, but it begs the question of exactly how many of these things we'll eventually need to have? Is the added complexity worth it?
+
+We really don't think it is. As such, we basically want something between strings and fragments. Something that gives us the benefits of just writing C++ code, but without the burden of having to do checking to add more complexity to the model.
 
 # Token Sequences
 
@@ -1005,7 +979,7 @@ constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
 ```
 :::
 
-[We are aware of the conflict with Objective-C/C++ blocks that makes this syntax untenable. For now, the paper is written still using `^` and a subsequent version will have to find something else, probably still choosing the same prefix operator as reflection.]{.ednote}
+[We are aware of the conflict with Objective-C/C++ blocks that makes this syntax untenable and [@P3381R0]. For now, the paper is written still using `^` and a subsequent version will have to find something else, probably still choosing the same prefix operator as reflection.]{.ednote}
 
 ## Interpolating into a Token Sequence
 
@@ -1071,7 +1045,16 @@ Or, with a handy using-directive or using-declaration:
 ```
 :::
 
-This loses some orthogonality, namely what if we want to inject a *value* of type `token_sequence`. But for that we can always resort to `\(reflect_value(tokens))`, which is probably a rare use-case.
+This loses some orthogonality, namely what if we want to inject a *value* of type `token_sequence`. But for that we can always resort to `\(reflect_value(tokens))`, which is probably a rare use-case. Importantly though, it would let us define interpolating an object of type `std::meta::info` as meaning injecting a pseudotoken which represents what the `info` represents. Which would mean that in the common case of wanting to interpolate a type, you could write just `\(type)` instead of additionally needing to splice: `[:\(type):]`.
+
+A comparison of interpolations might be (using `$` instead of `\` purely for differentiation):
+
+|What|As Presented|Type Based|
+|-|-|-|
+|Tokens|`\tokens(tok)`|`$(tok)`|
+|A type|`[:\(type):] v;`|`$(type) v;`|
+|An `int`|`int x = \(val);`|`int x = $(lit(val));`
+|An identifier|`T \id("get_", name)();`|`T $(id("get_", name))();`|
 
 
 ## Phase of Translation
@@ -1252,11 +1235,7 @@ struct enable_if {
 :::
 
 
-The property example likewise could be identical to the fragment implementation, but we do not run into any name lookup issues, so we can write it any way we want - either as injecting one token sequence or even injecting three. Both work fine without needing any additional declarations.
-
-But we may want to restrict injection to one declaration at a time for error reporting purposes (this is currently enforced by the EDG implementation).
-
-That implementation [looks like this](https://godbolt.org/z/sqKs6eKzG):
+The property example likewise could be identical to the fragment implementation. We may want to restrict injection to one declaration at a time for error reporting purposes (this is currently enforced by the EDG implementation). That implementation [looks like this](https://godbolt.org/z/sqKs6eKzG):
 
 ::: std
 ```cpp
@@ -1297,7 +1276,6 @@ With the postfix increment example, we see some more interesting difference. We 
 ```cpp
 consteval auto postfix_increment() -> void {
     -> fragment struct T {
-        requires T& operator++();
 
         auto operator++(int) -> T {
             auto tmp = *this;
@@ -1313,7 +1291,6 @@ consteval auto postfix_increment() -> void {
 consteval auto postfix_increment() -> void {
     auto T = std::meta::nearest_class_or_namespace();
     queue_injection(^{
-
         auto operator++(int) -> [:\(T):] {
             auto tmp = *this;
             ++*this;
@@ -1324,7 +1301,7 @@ consteval auto postfix_increment() -> void {
 ```
 :::
 
-The syntax here is, unsurprisingly, largely the same. We're mostly writing C++ code. The difference is that we no longer need to pre-declare the functions we're using and the feature set is smaller. While declaring `T` as part of the fragment is certainly convenient, we're shooting for a smaller feature.
+The syntax here is, unsurprisingly, largely the same. We're mostly writing C++ code.
 
 ## Type Erasure
 
@@ -1394,7 +1371,53 @@ That implementation is currently non-owning, but it isn't that much of a differe
 
 There is a lot of code on the right (especially compared to the left), but the transformation is *purely* mechanical. It is so mechanical, in fact, that it lends itself very nicely to precisely the kind of code injection being proposed in this paper.
 
-You can find the implementation [here](https://godbolt.org/z/8hqTPhje4). Note that the current implementation uses `namespace_inject` to produce the entire template specialization of `Dyn`. We hope to not have to require that approach, but at the moment EDG cannot inject nested type defintions in a class template. It's a healthy amount of code, but it's actually fairly straightforward.
+You can find the implementation [here](https://godbolt.org/z/TE5YT9jTz).
+
+It's useful at this point to take a step back and return to a claim we made earlier about the comparison between fragments and token sequences. For type erasure, we need to build up a bunch of functions and forwarding calls. That requires building a parameter list — given a range of parameters (e.g. in the above, that would be just `[std::ostream&]`), we need to produce a parameter list and an argument list. We can do that like so:
+
+::: std
+```cpp
+consteval info param_tokens(std::vector<info>  params,
+                            std::string_view   name_prefix = "") {
+  std::meta::list_builder  result{};
+  for (int k = 0; info p : params) {
+    if (is_function_parameter(p)) p = type_of(p);
+    if (name_prefix.size() != 0) {
+      result += ^^{ typename[:\(p):] \id(name_prefix, k++) };
+    } else {
+      result += ^^{ typename[:\(p):] };
+    }
+  }
+  return result;
+}
+```
+:::
+
+`list_builder` is a simple type that facilitates building up a delimited list. If we called this function with a parameter of type `int` and one of type `string`, then if we provided no prefix this would produce the sequence `int, string` and if we did provide a prefix it would produce the sequence, e.g., `int pre0, string pre1`. Importantly, we do this by basic token concatenation and interpolation. All the same facilities that everything else uses.
+
+And then we can use `param_tokens` to build up each function in our `Interface`:
+
+::: std
+```cpp
+info r = return_type_of(mem);
+auto name = identifier_of(mem);
+auto param_list = parameters_of(mem);
+auto params = param_tokens(param_list, "p");
+
+std::meta::list_builder args;
+args += ^^{ data };
+for (int k = 0, N = param_list.size(); k<N; ++k) {
+    args += ^^{ \id("p", k++) };
+}
+forwarders += ^^{                                       // e.g. int f(char, double) becomes...
+    [:\(r):] \id(name)(\tokens(params)) {               // int f(char p0, double p1) {
+        return vtable->\id(name)(\tokens(args));        //   return vtable->f(p0, p1);
+    }                                                   // }
+};
+```
+:::
+
+Note that this relies on [@P3096R1] to get reflections of function parameters, but otherwise it would be impossible to do anything here.
 
 ## Logging Vector: Cloning a Type
 
@@ -1430,132 +1453,7 @@ Now, we have two problems to solve in the body (as well as a few more problems w
 
 First, we need to print the name of the function we're calling. This is easy, since we have the function and can just ask for its name.
 
-Second, we need to actually forward the parameters of the function into our member `impl`. This is, seemingly, very hard:
-
-::: std
-```cpp
-consteval {
-    for (std::meta::info fun : /* public, non-special member functions */) {
-        queue_injection(^{
-            \tokens(make_decl_of(fun)) {
-                std::println("Calling {}", \(name_of(fun)));
-                return impl.[:\(fun):](/* ???? */);
-            }
-        });
-    }
-}
-```
-:::
-
-This is where the ability of token sequences to be concatenated from purely sequences of tokens really gives us a lot of value. How do we forward the parameters along? We don't even have the parameter names here - the declaration that we're cloning might not even _have_ parameter names.
-
-So there are two approaches that we can use here:
-
-### Reflections of Parameters
-
-We need the ability to just ask for the parameters themselves (which [@P3096R1] should provide). And then the goal here is to inject the tokens for the call:
-
-::: std
-```cpp
-return impl.[:fun:]([:p@~0~@:], [:p@~1~@:], ..., [:p@~n~@:])
-```
-:::
-
-But the tricky part is that we can't ask for the parameters of the function we're cloning (i.e. `fun` in the loop above - which is a reflection of a non-static member function of `std::vector<T>`), we have to ask for the parameters of the function that we're *currently* defining. Which we haven't defined yet so we can't reflect on it.
-
-But we could split this in pieces and ask `inject` to give us back a reflection of what it injected, since `inject` must operate on full token boundaries.
-
-So that might be:
-
-::: std
-```cpp
-template <typename T>
-class LoggingVector {
-    std::vector<T> impl;
-
-public:
-    LoggingVector(std::vector<T> v) : impl(std::move(v)) { }
-
-    consteval {
-        for (std::meta::info fun : /* public, non-special member functions */) {
-            // note that this one doesn't even require a token sequence
-            auto log_fun = queue_injection(decl_of(fun));
-
-            // convenience type for building a comma-delimited sequence
-            auto argument_list = list_builder();
-
-            for (auto param : parameters_of(log_fun)) { // <== NB, not fun
-                argument_list += ^{
-                    static_cast<[:\(type_of(param)):]&&>([: \(param) :])
-                };
-            }
-
-            queue_injection(^{
-                \tokens(make_decl_of(fun)) {
-                    std::println("Calling {}", \(name_of(fun)));
-                    return impl.[:\(fun):]( [:\tokens(argument_list):] );
-                }
-            });
-        }
-    }
-};
-```
-:::
-
-The `argument_list` is simply building up the token sequence `[: p@~0~@ :], [: p@~1~@ :], ..., [: p@~N~@ :]` for each parameter (except forwarded). There is no name lookup going on, no checking of fragment correctness. Just building up the right tokens.
-
-Once we have those tokens, we can concatenate this token sequence using the same interpolator that we've used for other problems and then splice them in. In the same way that splicing a reflection of a type produces a type, splicing a reflection of a token sequence produces those tokens.
-
-Note that we didn't actually have to implement it using a separate `argument_list` local variable - we could've concatenated the entire token sequence piecewise. But this structure allows factoring out parameter-forwarding into its own function:
-
-::: std
-```cpp
-consteval auto forward_parameters(std::meta::info fun) -> std::meta::info {
-    auto argument_list = list_builder();
-    for (auto param : parameters_of(fun)) {
-        argument_list += ^{
-            static_cast<[:\(type_of(param)):]&&>([:\param:])
-        };
-    }
-    return argument_list;
-}
-```
-:::
-
-And then:
-
-::: std
-```cpp
-consteval {
-    for (std::meta::info fun : /* public, non-special member functions */) {
-        auto log_fun = queue_injection(decl_of(fun));
-
-        queue_injection(^{
-            \tokens(make_decl_of(fun)) :] {
-                std::println("Calling {}", \(name_of(fun)));
-                return impl.[:\(fun):]( [: \tokens(forward_parameters(log_fun)) :] );
-            }
-        });
-    }
-}
-```
-:::
-
-The problem is - this direction isn't really viable. Injection queues up requests for later. It may not be feasible for us to get back a reflection of `log_fun` in the way that we are using this example, so we probably cannot actually get back and access the reflections of the parameters as described in this example.
-
-### Introducing Parameter Names
-
-We said we have the problem that the functions we're cloning might not have parameter names. So what? We're creating a new function, we can pick our names!
-
-Since our approach to cloning function declarations is just writing our function that creates the tokens:
-
-::: std
-```cpp
-\tokens(make_decl_of(fun)) { /* ... */ }
-```
-:::
-
-We can simply pass another argument to `make_decl_of` that gives us a prefix for each parameter name. So maybe `make_decl_of(fun, "p")` would give us parameter names of `p0`, `p1`, and so forth. That gives us a similar looking solution, but now we never need the reflection of the new function - just the old one:
+Second, we need to actually forward the parameters of the function into our member `impl`. This we just went through in the type erasure example. We'll similarly need to provide known names for the parameters, so perhaps `make_decl_of(fun, "p")` would give us the names `p0`, `p1`, `p2` and so forth:
 
 ::: std
 ```cpp
@@ -1581,7 +1479,7 @@ public:
             queue_injection(^{
                 \tokens(make_decl_of(fun, "p")) {
                     std::println("Calling {}", \(name_of(fun)));
-                    return impl.[:\(fun):]( [:\(argument_list):] );
+                    return impl.[:\(fun):]( [:\tokens(argument_list):] );
                 }
             });
         }
@@ -1590,7 +1488,9 @@ public:
 ```
 :::
 
-This approach is arguably simpler than reflecting on parameter names and requires no extra implementation effort to get there.
+The hard part here is just cloning the declaration, and we're slightly punting on that here. This is because in order to really do this right we need to be able to reflect on far more parts of the language. But if we're solely talking about regular, non-static member functions, that don't have anything special like `requires` clauses or a `noexcept` specifier — in that case the approach in the type erasure example earlier suffices: we just stamp out the return type, the function name, and the parameters.
+
+But the rest? It's not so bad.
 
 ## Logging Vector II: Cloning with Modifications
 
@@ -1657,7 +1557,49 @@ But this... isn't right. Or rather, it could potentially be right in some design
 ```
 :::
 
-Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that? We don't quite have a good answer yet. But this is much farther than we've come with any other design.
+Two changes here: the parameter needs to change from `std::vector<T>&` to `LoggingVector<T>&`, and then in the call-forwarding we need to forward not `other` (which is now the wrong type) but rather `other.impl`. How can we do that? By simply checking every parameter to see if, after stripping cv-ref, you end up with `std::vector`. If you do, then you copy the cv-ref qualifiers from the parameter onto `LoggingVector` and then do an extra argument adjustment.
+
+The whole implementation, for a given function, [looks like this](https://godbolt.org/z/soPYvEreM) (there are some EDG bugs around member function types, so the implementation is a bit reduced - it uses a `fake::vector<T>` which just doesn't have `const`-qualified member functions):
+
+::: std
+```cpp
+list_builder params, args;
+for (int k = 0; info p : parameters_of(fun)) {
+    p = type_of(p);
+
+    if (type_remove_cvref(p) == ^^std::vector<T>) {
+        // need to adjust this parameter, from e.g. vector& to LoggingVector&
+        p = copy_cvref(p, ^^LoggingVector);
+        params += ^^{ typename[:\(p):] \id("p"sv, k) };
+        args += ^^{ static_cast<[:\(p):]&&>(\id("p"sv, k)).impl };
+    } else {
+        // this parameter is fine as is
+        params += ^^{ typename[:\(p):] \id("p"sv, k) };
+        args += ^^{ static_cast<[:\(p):]&&>(\id("p"sv, k)) };
+    }
+
+    ++k;
+}
+
+auto quals = is_const(fun) ? ^^{ const } : ^^{ };
+
+auto logged_f = ^^{
+    auto \id(identifier_of(fun))(\tokens(params)) \tokens(quals)
+        -> [:\(return_type_of(fun)):]
+    {
+        std::cout << "Calling " << \(identifier_of(fun)) << '\n';
+        return impl.[:\(fun):](\tokens(args));
+    }
+};
+
+queue_injection(logged_f);
+```
+:::
+
+There is probably a better library API that can be thrown on top of this, but this already gets us a lot of the way there.
+
+Note the treatment of `const` qualification here. We are producing a token sequence that is either empty or contains the single token `const`. That's an example of another weirdness in C++, where an implicit object parameter is presented very different from an explicit object one. In fragments, this would likely be a situation where you would have to just use an explicit object parameter.
+
 
 # Scoped Macros
 
