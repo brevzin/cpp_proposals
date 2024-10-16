@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-10-15" />
+  <meta name="dcterms.date" content="2024-10-16" />
   <title>Reflection of Templates</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-10-15</td>
+    <td>2024-10-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -582,6 +582,7 @@ background-color: #ffff00;
     <td>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
       Andrei Alexandrescu, NVIDIA<br>&lt;<a href="mailto:andrei@nvidia.com" class="email">andrei@nvidia.com</a>&gt;<br>
+      Daveed Vandevoorde, EDG<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
       Michael Garland, NVIDIA<br>&lt;<a href="mailto:mgarland@nvidia.com" class="email">mgarland@nvidia.com</a>&gt;<br>
     </td>
   </tr>
@@ -610,8 +611,8 @@ Declarations<span></span></a>
 <code class="sourceCode cpp">template_parameter_prefix</code><span></span></a></li>
 <li><a href="#attributes_of" id="toc-attributes_of"><span class="toc-section-number">2.1.3</span>
 <code class="sourceCode cpp">attributes_of</code><span></span></a></li>
-<li><a href="#template_requires_clause_of" id="toc-template_requires_clause_of"><span class="toc-section-number">2.1.4</span>
-<code class="sourceCode cpp">template_requires_clause_of</code><span></span></a></li>
+<li><a href="#requires_clause_of" id="toc-requires_clause_of"><span class="toc-section-number">2.1.4</span>
+<code class="sourceCode cpp">requires_clause_of</code><span></span></a></li>
 <li><a href="#is_primary_template" id="toc-is_primary_template"><span class="toc-section-number">2.1.5</span>
 <code class="sourceCode cpp">is_primary_template</code><span></span></a></li>
 <li><a href="#specialization_arguments_of" id="toc-specialization_arguments_of"><span class="toc-section-number">2.1.6</span>
@@ -661,6 +662,8 @@ of Class Templates<span></span></a></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
+<div lang="en" style="hyphens: auto;">
+
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="motivation"><span class="header-section-number">1</span>
 Motivation<a href="#motivation" class="self-link"></a></h1>
 <p>A key characteristic that makes a reflection facility powerful is
@@ -840,7 +843,9 @@ return tokens.</li>
 <p>In particular, user code should not assume token sequences returned
 by implementation-defined metafunctions compare equal with tokens
 assumed to be equivalent. The only guarantee is that splicing the tokens
-back has the same effect.</p>
+back has the same effect. We hope that this proposal sets a useful
+precedent for all future standard metafunctions that return tokenized
+representation of existing code.</p>
 <p>Producing a printable token stream on demand remains important for
 debugging purposes. We consider it a quality of implementation
 matter.</p>
@@ -936,12 +941,12 @@ adding a conjunction to the
 clause or eliminating the <code class="sourceCode cpp">deprecated</code>
 attribute. Simply returning an opaque token sequence of the entire
 declaration and leaving it to user-level code to painstakingly parse it
-once again is self-defeating; therefore, we aim to identify structural
-components of the declaration and define primitives that return each in
-turn. That way, we offer unbounded customization opportunities by
-allowing users to mix and match elements of the original declaration
-with custom code. Once we have all components of the template
-declaration, implementing
+once again would be inefficient and burdensome; therefore, we aim to
+identify structural components of the declaration and define primitives
+that return each in turn. That way, we offer unbounded customization
+opportunities by allowing users to mix and match elements of the
+original declaration with custom code. Once we have all components of
+the template declaration, implementing
 <code class="sourceCode cpp">copy_signature</code> as a shorthand for
 assembling them together is trivially easy.</p>
 <p>In addition to template parameters,
@@ -999,7 +1004,7 @@ extended semantics.</p>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Attributes - extension of semantics in P3385</span></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> attributes_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Template-level requires clause</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_requires_clause_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> requires_clause_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Is this the reflection of the primary template declaration?</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_primary_template<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Arguments of an explicit specialization or partial specialization</span></span>
@@ -1213,11 +1218,11 @@ functionality of <code class="sourceCode cpp">attributes_of</code> as
 defined in <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3385r0.html">P3385</a>
 to template declarations. We defer details and particulars to that
 proposal.</p>
-<h3 data-number="2.1.4" id="template_requires_clause_of"><span class="header-section-number">2.1.4</span>
-<code class="sourceCode cpp">template_requires_clause_of</code><a href="#template_requires_clause_of" class="self-link"></a></h3>
+<h3 data-number="2.1.4" id="requires_clause_of"><span class="header-section-number">2.1.4</span>
+<code class="sourceCode cpp">requires_clause_of</code><a href="#requires_clause_of" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>info template_requires_clause_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>info requires_clause_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given the reflection of a template, returns the template-level
@@ -1234,29 +1239,28 @@ fully-qualified form. For example:</p>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> A;</span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns `^^{(sizeof(::X) &gt; 1 &amp;&amp; ::std::is_default_constructible_v&lt;_T0&gt;)}`</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> template_requires_clause_of<span class="op">(^^</span>A<span class="op">)</span>;</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> requires_clause_of<span class="op">(^^</span>A<span class="op">)</span>;</span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">1</span> <span class="op">&amp;&amp;</span> std<span class="op">::</span>is_default_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;)</span></span>
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> V <span class="op">=</span> std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns `^^{(sizeof(_T0) &gt; 1 &amp;&amp; ::std::is_default_constructible_v&lt;_T0&gt;)}`</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r2 <span class="op">=</span> template_requires_clause_of<span class="op">(^^</span>V<span class="op">)</span>;</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r2 <span class="op">=</span> requires_clause_of<span class="op">(^^</span>V<span class="op">)</span>;</span>
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>is_convertible_v<span class="op">&lt;</span><span class="dt">int</span>, T<span class="op">&gt;)</span></span>
 <span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> zero <span class="op">=</span> T<span class="op">(</span><span class="dv">0</span><span class="op">)</span>;</span>
 <span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns `^^{(::std::is_convertible_v&lt;int, _T0&gt;)}`</span></span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r3 <span class="op">=</span> template_requires_clause_of<span class="op">(^^</span>zero<span class="op">)</span>;</span></code></pre></div>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r3 <span class="op">=</span> requires_clause_of<span class="op">(^^</span>zero<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>Calling
-<code class="sourceCode cpp">template_requires_clause_of</code> against
-a template that has no such clause returns an empty token sequence.
-Calling <code class="sourceCode cpp">template_requires_clause_of</code>
-against a non-template, as in <code class="sourceCode cpp">template_requires_clause_of<span class="op">(^^</span><span class="dt">int</span><span class="op">)</span></code>
-or <code class="sourceCode cpp">template_requires_clause_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;)</span></code>,
+<p>Calling <code class="sourceCode cpp">requires_clause_of</code>
+against a template that has no such clause returns an empty token
+sequence. Calling <code class="sourceCode cpp">requires_clause_of</code>
+against a non-template, as in <code class="sourceCode cpp">requires_clause_of<span class="op">(^^</span><span class="dt">int</span><span class="op">)</span></code>
+or <code class="sourceCode cpp">requires_clause_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;)</span></code>,
 fails to evaluate to a constant expression.</p>
 <h3 data-number="2.1.5" id="is_primary_template"><span class="header-section-number">2.1.5</span>
 <code class="sourceCode cpp">is_primary_template</code><a href="#is_primary_template" class="self-link"></a></h3>
@@ -1549,13 +1553,13 @@ possible to migrate this metafunction to a future revision of P2996.</p>
 </div>
 <p>Extends the homonym metafunctions defined by P2996 to function
 templates.</p>
-<p>For <code class="sourceCode cpp">is_noexcept</code> and
-<code class="sourceCode cpp">is_explicit</code>,
-<code class="sourceCode cpp"><span class="kw">true</span></code> is
-returned if the
-<code class="sourceCode cpp"><span class="kw">noexcept</span></code> and
-<code class="sourceCode cpp"><span class="kw">explicit</span></code>
-clause, respectively, is predicated.</p>
+<p>In order to avoid confusion, in case a predicate is present for
+<code class="sourceCode cpp">is_noexcept</code> or
+<code class="sourceCode cpp">is_explicit</code>, the call fails to
+resolve to a constant expression. Therefore, for templates it is best to
+use the <code class="sourceCode cpp">noexcept_of</code> and
+<code class="sourceCode cpp">explicit_specifier_of</code> metafunctions
+(below), which support all cases.</p>
 <h3 data-number="2.1.14" id="noexcept_of"><span class="header-section-number">2.1.14</span>
 <code class="sourceCode cpp">noexcept_of</code><a href="#noexcept_of" class="self-link"></a></h3>
 <div class="std">
@@ -1597,8 +1601,8 @@ constructor. If the constructor has no explicit specifier, returns the
 empty sequence. If the constructor has an unconditional
 <code class="sourceCode cpp"><span class="kw">explicit</span></code>
 specifier, returns the token sequence <code class="sourceCode cpp"><span class="op">^^{</span><span class="kw">explicit</span><span class="op">}</span></code>.
-If the constructor has a predicated <code class="sourceCode cpp"><span class="kw">explicit</span><span class="op">(</span>constant<span class="op">-</span>expression<span class="op">)</span></code>,
-returns the token sequence <code class="sourceCode cpp"><span class="op">^^{</span><span class="kw">explicit</span><span class="op">(</span>constant<span class="op">-</span>expression<span class="op">)}</span></code>.
+If the constructor has a predicated <code class="sourceCode cpp"><span class="kw">explicit</span><span class="op">(</span>constant_expression<span class="op">)</span></code>,
+returns the token sequence <code class="sourceCode cpp"><span class="op">^^{</span><span class="kw">explicit</span><span class="op">(</span>constant_expression<span class="op">)}</span></code>.
 All nondependent identifier in the token sequence are fully
 namespace-qualified.</p>
 <h3 data-number="2.1.16" id="is_declared_constexpr-is_declared_consteval"><span class="header-section-number">2.1.16</span>
