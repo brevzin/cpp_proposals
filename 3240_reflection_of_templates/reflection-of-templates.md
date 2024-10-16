@@ -8,12 +8,16 @@ author:
       email: <barry.revzin@gmail.com>
     - name: Andrei Alexandrescu, NVIDIA
       email: <andrei@nvidia.com>
+    - name: Daveed Vandevoorde, EDG
+      email: <daveed@edg.com>
     - name: Michael Garland, NVIDIA
       email: <mgarland@nvidia.com>
 toc: true
 tag: reflection
 hackmd: true
 ---
+
+<div lang="en" style="hyphens: auto;">
 
 # Motivation
 
@@ -91,7 +95,7 @@ Given these realities of current compiler implementations, demanding that the co
 - Returning empty token sequences is always observed.
 - There is no other guaranteed assumption about metafunctions that return tokens.
 
-In particular, user code should not assume token sequences returned by implementation-defined metafunctions compare equal with tokens assumed to be equivalent. The only guarantee is that splicing the tokens back has the same effect.
+In particular, user code should not assume token sequences returned by implementation-defined metafunctions compare equal with tokens assumed to be equivalent. The only guarantee is that splicing the tokens back has the same effect. We hope that this proposal sets a useful precedent for all future standard metafunctions that return tokenized representation of existing code.
 
 Producing a printable token stream on demand remains important for debugging purposes. We consider it a quality of implementation matter.
 
@@ -138,7 +142,7 @@ In order to be able to define metafunctions such as `copy_signature`, `params_of
 
 All template declarations (whether a class template or specialization thereof, a function template, an alias template, or a variable template), have some common elements: a template parameter list, an optional list of attributes, and an optional template-level `requires` clause.
 
-If our goal were simply to splice a template declaration back in its entirety&mdash;possibly with a different name and/or with normalized parameter names&mdash;the introspection metafunction `copy_signature(^^X, "Y")` showcased above could be defined as an implementation-defined primitive that simply splices the entire declaration of template `X` to declare a new template `Y` that is (save for the name) identical to `X`. However, most often code generation needs to tweak elements of the declaration&mdash;for example, adding a conjunction to the `requires` clause or eliminating the `deprecated` attribute. Simply returning an opaque token sequence of the entire declaration and leaving it to user-level code to painstakingly parse it once again is self-defeating; therefore, we aim to identify structural components of the declaration and define primitives that return each in turn. That way, we offer unbounded customization opportunities by allowing users to mix and match elements of the original declaration with custom code. Once we have all components of the template declaration, implementing `copy_signature` as a shorthand for assembling them together is trivially easy.
+If our goal were simply to splice a template declaration back in its entirety&mdash;possibly with a different name and/or with normalized parameter names&mdash;the introspection metafunction `copy_signature(^^X, "Y")` showcased above could be defined as an implementation-defined primitive that simply splices the entire declaration of template `X` to declare a new template `Y` that is (save for the name) identical to `X`. However, most often code generation needs to tweak elements of the declaration&mdash;for example, adding a conjunction to the `requires` clause or eliminating the `deprecated` attribute. Simply returning an opaque token sequence of the entire declaration and leaving it to user-level code to painstakingly parse it once again would be inefficient and burdensome; therefore, we aim to identify structural components of the declaration and define primitives that return each in turn. That way, we offer unbounded customization opportunities by allowing users to mix and match elements of the original declaration with custom code. Once we have all components of the template declaration, implementing `copy_signature` as a shorthand for assembling them together is trivially easy.
 
 In addition to template parameters, `requires` clause, and attributes, certain template declarations have additional elements as follows:
 
@@ -175,7 +179,7 @@ namespace std::meta {
     // Attributes - extension of semantics in P3385
     consteval auto attributes_of(info) -> vector<info>;
     // Template-level requires clause
-    consteval auto template_requires_clause_of(info) -> info;
+    consteval auto requires_clause_of(info) -> info;
     // Is this the reflection of the primary template declaration?
     consteval auto is_primary_template(info) -> bool;
     // Arguments of an explicit specialization or partial specialization
@@ -335,10 +339,10 @@ vector<info> attributes_of(info);
 
 Returns all attributes associated with `info`. The intent is to extend the functionality of `attributes_of` as defined in [P3385](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3385r0.html) to template declarations. We defer details and particulars to that proposal.
 
-### `template_requires_clause_of`
+### `requires_clause_of`
 
 ```cpp
-info template_requires_clause_of(info);
+info requires_clause_of(info);
 ```
 
 Given the reflection of a template, returns the template-level `requires` clause as a token sequence. The names of template parameters found in the `requires` clause are normalized. Non-dependent identifiers are returned in fully-qualified form. For example:
@@ -350,24 +354,24 @@ requires (sizeof(X) > 256 && std::is_default_constructible_v<T>)
 class A;
 
 // Returns `^^{(sizeof(::X) > 1 && ::std::is_default_constructible_v<_T0>)}`
-constexpr auto r1 = template_requires_clause_of(^^A);
+constexpr auto r1 = requires_clause_of(^^A);
 
 template <typename T>
 requires (sizeof(T) > 1 && std::is_default_constructible_v<T>)
 using V = std::vector<T>;
 
 // Returns `^^{(sizeof(_T0) > 1 && ::std::is_default_constructible_v<_T0>)}`
-constexpr auto r2 = template_requires_clause_of(^^V);
+constexpr auto r2 = requires_clause_of(^^V);
 
 template <class T>
 requires (std::is_convertible_v<int, T>)
 auto zero = T(0);
 
 // Returns `^^{(::std::is_convertible_v<int, _T0>)}`
-constexpr auto r3 = template_requires_clause_of(^^zero);
+constexpr auto r3 = requires_clause_of(^^zero);
 ```
 
-Calling `template_requires_clause_of` against a template that has no such clause returns an empty token sequence. Calling `template_requires_clause_of` against a non-template, as in `template_requires_clause_of(^^int)` or `template_requires_clause_of(^^std::vector<int>)`, fails to evaluate to a constant expression.
+Calling `requires_clause_of` against a template that has no such clause returns an empty token sequence. Calling `requires_clause_of` against a non-template, as in `requires_clause_of(^^int)` or `requires_clause_of(^^std::vector<int>)`, fails to evaluate to a constant expression.
 
 ### `is_primary_template`
 
@@ -587,7 +591,7 @@ bool is_noexcept(info);
 
 Extends the homonym metafunctions defined by P2996 to function templates.
 
-For `is_noexcept` and `is_explicit`, `true` is returned if the `noexcept` and `explicit` clause, respectively, is predicated.
+In order to avoid confusion, in case a predicate is present for `is_noexcept` or `is_explicit`, the call fails to resolve to a constant expression. Therefore, for templates it is best to use the `noexcept_of` and `explicit_specifier_of` metafunctions (below), which support all cases.
 
 ### `noexcept_of`
 
@@ -608,7 +612,7 @@ Returns the `noexcept` clause of a function or function template, if any, as a t
 info explicit_specifier_of(info);
 ```
 
-Returns the `explicit` specifier of the given `info` of a constructor. If the constructor has no explicit specifier, returns the empty sequence. If the constructor has an unconditional `explicit` specifier, returns the token sequence `^^{explicit}`. If the constructor has a predicated `explicit(constant-expression)`, returns the token sequence `^^{explicit(constant-expression)}`. All nondependent identifier in the token sequence are fully namespace-qualified.
+Returns the `explicit` specifier of the given `info` of a constructor. If the constructor has no explicit specifier, returns the empty sequence. If the constructor has an unconditional `explicit` specifier, returns the token sequence `^^{explicit}`. If the constructor has a predicated `explicit(constant_expression)`, returns the token sequence `^^{explicit(constant_expression)}`. All nondependent identifier in the token sequence are fully namespace-qualified.
 
 ### `is_declared_constexpr`, `is_declared_consteval`
 
