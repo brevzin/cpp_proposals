@@ -15,6 +15,8 @@ tag: reflection
 hackmd: true
 ---
 
+<div style="min-width: 120%; text-align: justify; hyphens: auto; " />
+
 # Motivation
 
 A key characteristic that makes a reflection facility powerful is *completeness*, i.e., the ability to reflect the entirety of the source language. Current proposals facilitate reflection of certain declarations in a namespace or a `struct`/`class`/`union` definition. Although [@P2996R7]'s `members_of` metafunction includes template members (function template and class template declarations), it does not offer primitives for reflection of template declarations themselves. In this proposal, we aim to define a comprehensive API for reflection of C++ templates.
