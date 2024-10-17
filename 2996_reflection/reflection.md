@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R7
+document: P2996R8
 date: today
 audience: CWG, LEWG
 author:
@@ -25,6 +25,10 @@ tag: reflection
 ---
 
 # Revision History
+
+Since [@P2996R7]:
+
+* renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 
 Since [@P2996R6]:
 
@@ -4374,8 +4378,8 @@ namespace std::meta {
   };
   using enum operators;
   consteval operators operator_of(info r);
-  consteval string_view operator_symbol_of(operators op);
-  consteval u8string_view u8operator_symbol_of(operators op);
+  consteval string_view symbol_of(operators op);
+  consteval u8string_view u8symbol_of(operators op);
 
   // [meta.reflection.names], reflection names and locations
   consteval bool has_identifier(info r);
@@ -4738,19 +4742,19 @@ using enum operators;
 
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
-|Constant|Corresponding operator|Operator symbol name|
+|Constant|Corresponding `$operator-function-id$`|Operator symbol name|
 |:-|:-|:-|
 |`op_new`|`operator new`|`new`|
 |`op_delete`|`operator delete`|`delete`|
 |`op_array_new`|`operator new[]`|`new[]`|
-|`op_array_delete`|`operator delete[]`|`delete`|
+|`op_array_delete`|`operator delete[]`|`delete[]`|
 |`op_co_await`|`operator co_await`|`co_await`|
 |`op_parentheses`|`operator()`|`()`|
 |`op_square_brackets`|`operator[]`|`[]`|
 |`op_arrow`|`operator->`|`->`|
 |`op_arrow_star`|`operator->*`|`->*`|
 |`op_tilde`|`operator~`|`~`|
-|`op_exclaim`|`operator!`|`!`|
+|`op_exclamation`|`operator!`|`!`|
 |`op_plus`|`operator+`|`+`|
 |`op_minus`|`operator-`|`-`|
 |`op_star`|`operator*`|`*`|
@@ -4769,12 +4773,12 @@ using enum operators;
 |`op_ampersand_equals`|`operator&=`|`&=`|
 |`op_pipe_equals`|`operator|=`|`|=`|
 |`op_equals_equals`|`operator==`|`==`|
-|`op_exclaim_equals`|`operator!=`|`!=`|
+|`op_exclamation_equals`|`operator!=`|`!=`|
 |`op_less`|`operator<`|`<`|
 |`op_greater`|`operator>`|`>`|
 |`op_less_equals`|`operator<=`|`<=`|
 |`op_greater_equals`|`operator>=`|`>=`|
-|`op_three_way_compare`|`operator<=>`|`<=>`|
+|`op_spaceship`|`operator<=>`|`<=>`|
 |`op_ampersand_and`|`operator&&`|`&&`|
 |`op_pipe_pipe`|`operator||`|`||`|
 |`op_less_less`|`operator<<`|`<<`|
@@ -4791,11 +4795,11 @@ consteval operators operator_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents an operator function or operator function template.
 
-[#]{.pnum} *Returns*: The value of the enumerator from `operators` for which the corresponding operator has the same unqualified name as the entity represented by `r`.
+[#]{.pnum} *Returns*: The value of the enumerator from `operators` whose corresponding `$operator-function-id$` is the unqualified name of the entity represented by `r`.
 
 ```cpp
-consteval string_view operator_symbol_of(operators op);
-consteval u8string_view u8operator_symbol_of(operators op);
+consteval string_view symbol_of(operators op);
+consteval u8string_view u8symbol_of(operators op);
 ```
 
 [#]{.pnum} *Constant When*: The value of `op` corresponds to one of the enumerators in `operators`.
@@ -4847,9 +4851,9 @@ consteval string_view display_string_of(info r);
 consteval u8string_view u8display_string_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: If returning `string_view`, the implementation-defined name is representable using the ordinary literal encoding.
+[#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively.
 
-[#]{.pnum} *Returns*: An implementation-defined `string_view` or `u8string_view`, respectively, suitable for identifying the represented construct.
+[#]{.pnum} *Recommended practice*: Where possible, implementations should return a string suitable for identifying the represented construct.
 
 ```cpp
 consteval source_location source_location_of(info r);
