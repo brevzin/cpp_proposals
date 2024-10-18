@@ -29,6 +29,7 @@ tag: reflection
 Since [@P2996R7]:
 
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
+* renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
 
 Since [@P2996R6]:
 
@@ -4740,6 +4741,8 @@ using enum operators;
 
 [#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
+[The names here are chosen after the punctuation marks, not the semantic semantic operation, and we are sticking with the Unicode names — or resorting to the secondary name when the primary name is not well known (e.g. `solidus` -> `slash`)]{.draftnote}
+
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
 |Constant|Corresponding `$operator-function-id$`|Operator symbol name|
@@ -4779,7 +4782,7 @@ using enum operators;
 |`op_less_equals`|`operator<=`|`<=`|
 |`op_greater_equals`|`operator>=`|`>=`|
 |`op_spaceship`|`operator<=>`|`<=>`|
-|`op_ampersand_and`|`operator&&`|`&&`|
+|`op_ampersand_ampersand`|`operator&&`|`&&`|
 |`op_pipe_pipe`|`operator||`|`||`|
 |`op_less_less`|`operator<<`|`<<`|
 |`op_greater_greater`|`operator>>`|`>>`|
@@ -4787,7 +4790,7 @@ using enum operators;
 |`op_greater_greater_equals`|`operator>>=`|`>>=`|
 |`op_plus_plus`|`operator++`|`++`|
 |`op_minus_minus`|`operator--`|`--`|
-|`op_comma`|`operator,`|`,`|
+|`op_comma`|`operator,`|`,`{.op}|
 
 ```cpp
 consteval operators operator_of(info r);
