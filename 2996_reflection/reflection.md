@@ -30,6 +30,7 @@ Since [@P2996R7]:
 
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
+* clarified that `data_member_options_t` is a non-structural consteval-only type
 
 Since [@P2996R6]:
 
@@ -4741,7 +4742,7 @@ using enum operators;
 
 [#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
-[The names here are chosen after the punctuation marks, not the semantic semantic operation, and we are sticking with the Unicode names — or resorting to the secondary name when the primary name is not well known (e.g. `solidus` -> `slash`)]{.draftnote}
+[The names here are chosen after the punctuation marks, not the semantic operation, and we are sticking with the Unicode names — or resorting to the secondary name when the primary name is not well known (e.g. `solidus` -> `slash`)]{.draftnote}
 
 <center>Table 1: Enum class `operators` [meta.reflection.operators]</center>
 
@@ -5570,12 +5571,14 @@ and define an expression `$INVOKE-EXPR$` as follows:
 ::: std
 ::: addu
 
+[1]{.pnum} The class `data_member_options_t` is a consteval-only type ([basic.types.general]), and is not a structural type ([temp.param]).
+
 ```cpp
 template <class T> requires constructible_from<u8string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
 
-[1]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
+[#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
