@@ -5578,7 +5578,7 @@ template <class T> requires constructible_from<u8string, T>
 consteval data_member_options_t::name_type(T&& value);
 ```
 
-[1]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
+[#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
