@@ -122,6 +122,7 @@ Such a facility exists in other languages as well.
 * Rust using declarations, of the form `use std::collections::{BTreeSet, hash_map::{self, HashMap}};` as proposed here
 * Shell brace expansion works similar to as proposed here, except that it would swallow the comma. Nevertheless, it is a familiar enough syntax that many users will recognize the syntax and deduce the correct meaning from it.
 * Python does not use this syntax, but does support a short-hand for importing several names from a module by way of `from a.b.c import x, y`, which is preferred to `from a.b.c import *`
+* The D language also has a way of importing a named list via `import std.stdio : writeln, readln;`
 
 ## Should we support `using *`?
 
@@ -230,10 +231,8 @@ Change the grammar in [namespace.udecl]{.sref} to:
 +   $nested-name-specifier$ { $possibly-qualified-id-list$ }
 
 + $possibly-qualified-id-list$:
-+   $unqualified-id$
-+   $qualified-id$
-+   $possibly-qualified-id-list$ , $unqualified-id$
-+   $possibly-qualified-id-list$ , $qualified-id$
++   typename@~opt~@ $nested-name-specifier$@~opt~@ $unqualified-id$
++   $possibly-qualified-id-list$ , typename@~opt~@ $nested-name-specifier$@~opt~@ $unqualified-id$
 
   $using-declarator$:
     typename@~opt~@ $nested-name-specifier$ $unqualified-id$
