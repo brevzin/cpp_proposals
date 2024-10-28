@@ -120,6 +120,7 @@ These are close to the desired syntax and avoids the problem of introducing a ne
 Such a facility exists in other languages as well.
 
 * Rust using declarations, of the form `use std::collections::{BTreeSet, hash_map::{self, HashMap}};` as proposed here
+* Scala likewise uses similar syntax, of the form `import scala.concurrent.{Future, Promise, blocking}`
 * Shell brace expansion works similar to as proposed here, except that it would swallow the comma. Nevertheless, it is a familiar enough syntax that many users will recognize the syntax and deduce the correct meaning from it.
 * Python does not use this syntax, but does support a short-hand for importing several names from a module by way of `from a.b.c import x, y`, which is preferred to `from a.b.c import *`
 * The D language also has a way of importing a named list via `import std.stdio : writeln, readln;`
