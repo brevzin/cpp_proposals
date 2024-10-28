@@ -31,6 +31,7 @@ Since [@P2996R7]:
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
 * clarified that `data_member_options_t` is a non-structural consteval-only type
+* clarified that everything in `std::meta` is addressable
 
 Since [@P2996R6]:
 
@@ -4726,6 +4727,8 @@ namespace std::meta {
   consteval info type_variant_alternative(size_t index, info type);
 }
 ```
+
+[1]{.pnum} Each function, and each instantiation of each function template, specified in this header is a designated addressable function ([namespace.std]).
 :::
 :::
 
@@ -6085,33 +6088,5 @@ and [version.syn]{.sref}:
 
 ---
 references:
-  - id: P2996R6
-    citation-label: P2996R6
-    title: "Reflection for C++26"
-    author:
-      - family: Wyatt Childers
-      - family: Peter Dimov
-      - family: Dan Katz
-      - family: Barry Revzin
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2024
-        month: 09
-        day: 24
-    URL: https://wg21.link/p2996r6
-  - id: P3293R1
-    citation-label: P3293R1
-    title: "Splicing a base class subobject"
-    author:
-      - family: Peter Dimov
-      - family: Dan Katz
-      - family: Barry Revzin
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2024
-        month: 10
-        day: 15
-    URL: https://wg21.link/p3293r1
+
 ---
