@@ -4822,7 +4822,7 @@ consteval bool has_identifier(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents an entity with an unnamed name, then `false`.
+* [#.#]{.pnum} If `r` represents an unnamed entity, then `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
 * [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
 * [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then `true` when the `$typedef-name$` is an identifier.
@@ -5602,15 +5602,15 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `type` represents a type;
+- [#.#]{.pnum} `type` represents either a type `$T$`, or a `$typedef-name$` designating a type `$T$`;
 - [#.#]{.pnum} if `options.name.$contents$` contains a value `$NAME$` then either:
   - [#.#.#]{.pnum} `holds_alternative<u8string>($NAME$)` is `true` and `get<u8string>($NAME$)` contains a valid identifier when interpreted with UTF-8, or
-  - [#.#.#]{.pnum} `holds_alternative<string>($NAME$)` is `false` and `get<string>($NAME$)` contains a valid identifier when interpreted with the ordinary literal encoding;
-- [#.#]{.pnum} if `options.width` contains a value, then: `type` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of the type represented by `type`; and
+  - [#.#.#]{.pnum} `holds_alternative<string>($NAME$)` is `true` and `get<string>($NAME$)` contains a valid identifier when interpreted with the ordinary literal encoding;
+- [#.#]{.pnum} if `options.width` contains a value, then: `$T$` represents an integral or (possibly cv-qualified) enumeration type, `options.alignment` contains no value, and `options.no_unique_address` is `false`;
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of `$T$`; and
 - [#.#]{.pnum} if `options.width` contains the value zero, `options.name` does not contain a value.
 
-[#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member having the type represented by `type`, and having the optional characteristics designated by `options`.
+[#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member declared with the type `$T$`, and having the optional characteristics designated by `options`.
 
 [#]{.pnum} *Remarks*: The returned reflection value is primarily useful in conjunction with `define_class`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.
 
@@ -5630,6 +5630,7 @@ consteval bool is_data_member_spec(info r);
 - [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context,
 - [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
 - [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`.
+- [#.#]{.pnum} if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` for any `@$r$~$K$~@` and `@$r$~$L$~@` in `mdescrs`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`.
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
 
@@ -5652,7 +5653,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value are declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` are declared with names determined as follows:
   - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
-  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is declared with an unnamed name.
+  - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is unnamed.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
