@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-10-27" />
+  <meta name="dcterms.date" content="2024-10-28" />
   <title>Grouping using declarations with braces</title>
   <style>
       code{white-space: pre-wrap;}
@@ -567,7 +567,7 @@ declarations with braces</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-10-27</td>
+    <td>2024-10-28</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -781,14 +781,17 @@ simple language feature either.</p>
 it would swallow the comma. Nevertheless, it is a familiar enough syntax
 that many users will recognize the syntax and deduce the correct meaning
 from it.</li>
-<li>Rust using declarations, of the form <code class="sourceCode cpp">use std<span class="op">::</span>collections<span class="op">::{</span>BTreeSet, hash_map<span class="op">::{</span>self, HashMap<span class="op">}}</span>;</code>
+<li>Rust using declarations, of the form <code class="sourceCode rust"><span class="kw">use</span> <span class="pp">std::collections::</span><span class="op">{</span>BTreeSet<span class="op">,</span> <span class="pp">hash_map::</span><span class="op">{</span><span class="kw">self</span><span class="op">,</span> HashMap<span class="op">}};</span></code>
 as proposed here</li>
 <li>Scala likewise uses similar syntax, of the form <code class="sourceCode cpp"><span class="kw">import</span> scala<span class="op">.</span>concurrent<span class="op">.{</span>Future, Promise, blocking<span class="op">}</span></code></li>
 <li>Python does not use this syntax, but does support a short-hand for
-importing several names from a module by way of <code class="sourceCode cpp">from a<span class="op">.</span>b<span class="op">.</span>c <span class="kw">import</span> x, y</code>,
-which is preferred to <code class="sourceCode cpp">from a<span class="op">.</span>b<span class="op">.</span>c <span class="kw">import</span> <span class="op">*</span></code></li>
+importing several names from a module by way of <code class="sourceCode python"><span class="im">from</span> a.b.c <span class="im">import</span> x, y</code>,
+which is preferred to <code class="sourceCode python"><span class="im">from</span> a.b.c <span class="im">import</span> <span class="op">*</span></code></li>
 <li>JavaScript/TypeScript is a mix of each, with the syntax <code class="sourceCode cpp"><span class="kw">import</span> <span class="op">{</span>a, b<span class="op">}</span> from <span class="st">&quot;module&quot;</span></code></li>
 <li>The D language also has a way of importing a named list via <code class="sourceCode cpp"><span class="kw">import</span> std<span class="op">.</span>stdio <span class="op">:</span> writeln, readln;</code></li>
+<li>Perhaps surprisingly, even C++ has existing practice here — but only
+for attributes: <code class="sourceCode cpp"><span class="op">[[</span><span class="kw">using</span><span class="at"> CC</span><span class="op">:</span><span class="at"> opt</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>,<span class="at"> debug</span><span class="op">]]</span></code>
+is equivalent to <code class="sourceCode cpp"><span class="op">[[</span><span class="at">CC</span><span class="op">::</span><span class="at">opt</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>,<span class="at"> CC</span><span class="op">::</span><span class="at">debug</span><span class="op">]]</span></code></li>
 </ul>
 <h2 data-number="1.3" id="should-we-support-using"><span class="header-section-number">1.3</span> Should we support <code class="sourceCode cpp"><span class="kw">using</span> <span class="op">*</span></code>?<a href="#should-we-support-using" class="self-link"></a></h2>
 <p>A follow-up question might be whether we should support <code class="sourceCode cpp"><span class="kw">using</span> std<span class="op">::</span>chrono<span class="op">::*</span>;</code>
