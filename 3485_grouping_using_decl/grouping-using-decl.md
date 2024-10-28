@@ -228,18 +228,18 @@ Change the grammar in [namespace.udecl]{.sref} to:
 
 + $using-declarator-elem$:
 +   $using-declarator$ ...@~opt~@
-+   $nested-name-specifier$ { $possibly-qualified-id-list$ }
++   typename@~opt~@ $nested-name-specifier$ { $possibly-qualified-id-list$ }
 
 + $possibly-qualified-id-list$:
-+   typename@~opt~@ $nested-name-specifier$@~opt~@ $unqualified-id$
-+   $possibly-qualified-id-list$ , typename@~opt~@ $nested-name-specifier$@~opt~@ $unqualified-id$
++   $nested-name-specifier$@~opt~@ $unqualified-id$
++   $possibly-qualified-id-list$ , $nested-name-specifier$@~opt~@ $unqualified-id$
 
   $using-declarator$:
     typename@~opt~@ $nested-name-specifier$ $unqualified-id$
 ```
 
 ::: addu
-[0]{.pnum} For the purposes of this clause, a `$using-declarator-elem$` of the form `$nested-name-specifier$ { $possibly-qualified-id-list$ }` is equivalent to the sequence `$nested-name-specifier$ $id$@~1~@, $nested-name-specifier$ $id$@~2~@, ..., $nested-name-specifier$ $id$@~N~@`, where `$id$@~i~@` are the constituents of the `$possibly-qualified-id-list$`.
+[0]{.pnum} For the purposes of this clause, a `$using-declarator-elem$` of the form `typename@~opt~@ $nested-name-specifier$ { $possibly-qualified-id-list$ }` is equivalent to the sequence `typename@~opt~@ $nested-name-specifier$ $id$@~1~@, typename@~opt~@ $nested-name-specifier$ $id$@~2~@, ..., typename@~opt~@ $nested-name-specifier$ $id$@~N~@`, where `$id$@~i~@` are the constituents of the `$possibly-qualified-id-list$`.
 
 ::: example
 ```cpp
