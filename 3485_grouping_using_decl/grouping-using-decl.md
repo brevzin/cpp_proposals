@@ -70,40 +70,6 @@ using std::chrono::{duration, time_point, duration_cast};
 ```
 :::
 
-## Other Language Support
-
-Such a facility exists in other languages as well.
-
-* Rust using declarations, of the form `use std::collections::{BTreeSet, hash_map::{self, HashMap}};` as proposed here
-* Shell brace expansion works similar to as proposed here, except that it would swallow the comma. Nevertheless, it is a familiar enough syntax that many users will recognize the syntax and deduce the correct meaning from it.
-* Python does not use this syntax, but does support a short-hand for importing several names from a module by way of `from a.b.c import x, y`, which is preferred to `from a.b.c import *`
-
-## Should we support `using *`?
-
-A follow-up question might be whether we should support `using std::chrono::*;` in addition to what I'm suggesting here. I don't think it's a good idea to do so.
-
-For one thing, `using namespace std::chrono` already exists. For another, we would then have to ask if the globbing syntax means the same as the using-directive or not. It probably shouldn't. But I'd rather not even have to get into those questions, because I don't think it's a good idea in practice.
-
-## Should we support more than a single set of braces?
-
-Basically in addition to:
-
-::: std
-```cpp
-using std::chrono::{duration, time_point};
-```
-:::
-
-Should we also allow:
-
-::: std
-```cpp
-using std::{formatter, chrono::{duration, time_point}};
-```
-:::
-
-This isn't really any harder to implement than only allowing a single set of braces. But I don't think that personally I would ever write declarations with nested braces, while I definitely would declarations with one. For now, I'm only proposing one set of braces, not nested braces.
-
 ## Workarounds
 
 There are two workarounds I'm aware of for not having this feature.
@@ -149,6 +115,66 @@ using!(^^std::chrono, {"duration", "time_point", "duration_cast"});
 
 These are close to the desired syntax and avoids the problem of introducing a new name for `std::chrono`. But uh... doesn't seem like an especially great substitute for a very simple language feature either.
 
+## Other Language Support
+
+Such a facility exists in other languages as well.
+
+* Rust using declarations, of the form `use std::collections::{BTreeSet, hash_map::{self, HashMap}};` as proposed here
+* Shell brace expansion works similar to as proposed here, except that it would swallow the comma. Nevertheless, it is a familiar enough syntax that many users will recognize the syntax and deduce the correct meaning from it.
+* Python does not use this syntax, but does support a short-hand for importing several names from a module by way of `from a.b.c import x, y`, which is preferred to `from a.b.c import *`
+
+## Should we support `using *`?
+
+A follow-up question might be whether we should support `using std::chrono::*;` in addition to what I'm suggesting here. I don't think it's a good idea to do so.
+
+For one thing, `using namespace std::chrono` already exists. For another, we would then have to ask if the globbing syntax means the same as the using-directive or not. It probably shouldn't. But I'd rather not even have to get into those questions, because I don't think it's a good idea in practice.
+
+## Should we support more than a single set of braces?
+
+Basically in addition to:
+
+::: std
+```cpp
+using std::chrono::{duration, time_point};
+```
+:::
+
+Should we also allow:
+
+::: std
+```cpp
+using std::{formatter, chrono::{duration, time_point}};
+```
+:::
+
+This isn't really any harder to implement than only allowing a single set of braces. But I don't think that personally I would ever write declarations with nested braces, while I definitely would declarations with one. For now, I'm only proposing one set of braces, not nested braces.
+
+One single set of braces is probably at least 95% of the value of this feature. And, depending your view of the complexity of potential nested declarations, could be more than 100%.
+
+## Where do the ellipses go?
+
+If you want a using declaration that brings in two packs, do you write it like this:
+
+::: std
+```cpp
+using Ts::{as..., bs...};
+```
+:::
+
+Or like this:
+
+::: std
+```cpp
+using Ts::{as, bs}...;
+```
+:::
+
+The latter is shorter (don't have to repeat the `...`s), while the former is easier to implement (since you don't have to keep track of all the names while waiting for the `}`).
+
+In practice, needing _two_ such `using` declarations strikes me as exceedingly unlikely. And attempting to search for such usage on Github could only find a use in an [LLVM comment](https://github.com/llvm/llvm-project/blob/5aa1275d03b679f45f47f29f206292f663afed83/clang/include/clang/AST/DeclCXX.h#L3794-L3797) introducing what a `UsingPackDecl` is.
+
+I'll err on the side of just not supporting it, since it doesn't seem worthwhile. The vanishingly rare occurrence can just write it out the long way. Sorry to that one person.
+
 ## Implementation Experience
 
 I implemented this [in clang](https://github.com/llvm/llvm-project/compare/main...brevzin:llvm-project:p3485?expand=1), it was pretty straightforward. I'd estimate that somebody actually familiar with this codebase could have implemented it in 30 minutes.
@@ -176,6 +202,9 @@ using std::{formatter, format_to}, std::chrono::{duration, time_point};
 using std::{formatter, format_to};
 using std::chrono::{duration, time_point};
 
+// proposed OK
+using std::{formatter, format_to, chrono::duration, chrono::time_point};
+
 // proposed ill-formed
 using std::{formatter, format_to, chrono::{duration, time_point}};
 ```
@@ -198,21 +227,20 @@ Change the grammar in [namespace.udecl]{.sref} to:
 
 + $using-declarator-elem$:
 +   $using-declarator$ ...@~opt~@
-+   $nested-name-specifier$ { $unqualified-id-list$ }
++   $nested-name-specifier$ { $possibly-qualified-id-list$ }
 
-+ $unqualified-id-list$:
-+   $inner-using-declarator$ ...@~opt~@
-+   $unqualified-id-list$ , $inner-using-declarator$ ...@~opt~@
-
-+ $inner-using-declarator$:
++ $possibly-qualified-id-list$:
 +   $unqualified-id$
++   $qualified-id$
++   $possibly-qualified-id-list$ , $unqualified-id$
++   $possibly-qualified-id-list$ , $qualified-id$
 
   $using-declarator$:
     typename@~opt~@ $nested-name-specifier$ $unqualified-id$
 ```
 
 ::: addu
-[0]{.pnum} For the purposes of this clause, a `$using-declarator-elem$` of the form `$nested-name-specifier$ { $unqualified-id-list$ }` is equivalent to the sequence `$nested-name-specifier$ $id$@~1~@, $nested-name-specifier$ $id$@~2~@, ..., $nested-name-specifier$ $id$@~N~@`, where `$id$@~i~@` are the constituents of the `$unqualified-id-list$`.
+[0]{.pnum} For the purposes of this clause, a `$using-declarator-elem$` of the form `$nested-name-specifier$ { $possibly-qualified-id-list$ }` is equivalent to the sequence `$nested-name-specifier$ $id$@~1~@, $nested-name-specifier$ $id$@~2~@, ..., $nested-name-specifier$ $id$@~N~@`, where `$id$@~i~@` are the constituents of the `$possibly-qualified-id-list$`.
 
 ::: example
 ```cpp
@@ -232,3 +260,7 @@ static_assert(o + n + a == 2044); // OK
 ## Feature-Test Macro
 
 Unnecessary. If you need to support older compilers, write the older code. There is no benefit to writing both.
+
+# Acknowledgements
+
+Thanks to John Filleau for originally [floating this idea](https://lists.isocpp.org/std-proposals/2023/04/6413.php) on the std-proposals list. Thanks to Tim Song for help with the edge cases.
