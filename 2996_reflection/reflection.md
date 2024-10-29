@@ -5163,7 +5163,7 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), `$typedef-name$`, or base class specifier.
 
-[#]{.pnum} *Returns*: A reflection of the class, function, or namespace enclosing the first declaration of what is represented by `r`.
+[#]{.pnum} *Returns*: A reflection of the class, function, or namespace that is the target scope ([basic.scope.scope]) of the first declaration of what is represented by `r`.
 
 ```cpp
 consteval info dealias(info r);
