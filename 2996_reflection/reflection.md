@@ -2998,52 +2998,70 @@ Technically, the functionality isn't strictly necessary - since it can be provid
 ::: cmptable
 ### Direct
 ```cpp
-std::meta::type_remove_cvref(type)
+type_remove_cvref(type)
 ```
 
 ### Indirect
 ```cpp
-std::meta::substitute(^std::remove_cvref_t, {type})
+dealias(substitute(^std::remove_cvref_t, {type}))
 ```
 
 ---
 
 ```cpp
-std::meta::type_is_const(type)
+type_is_const(type)
 ```
 
 ```cpp
-std::meta::extract<bool>(std::meta::substitute(^std::is_const_v, {type}))
+extract<bool>(substitute(^std::is_const_v, {type}))
 ```
 :::
 
-Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API.
-There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
+The indirect approach is a lot more typing, and you have to remember to `dealias` the result of the type traits as well (because `substitute(^std::remove_cvref_t, {^int const})` gives you a reflection of an alias to `int`, not a reflection of `int`), so it's both more tedious and more error pone.
+
+Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API. There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
 So we're doing it.
 
-Now, one thing that came up is that the straightforward thing we want to do is to simply add a `std::meta::meow` for every trait `std::meow` and word it appropriately. That's what the current wording in this revision does.
-However, we've run into a conflict.
+Now, one thing that came up is that the straightforward thing we want to do is to simply add a `std::meta::meow` for every trait `std::meow` and word it appropriately. That's what we initially tried to do. However, we've run into some conflicts.
+
 The standard library type traits are all *type* traits - they only accept types.
 As such, their names are simply things like `std::is_pointer`, `std::is_const`, `std::is_lvalue_reference`, and so forth.
 Renaming it to `std::type_is_pointer`, for instance, would be a waste of characters since there's nothing else the argument could be save for a type.
-But this is no longer the case.
-Consider `std::meta::is_function(e)`, which is currently actually specified twice in our wording having two different meanings:
 
-1. A consteval function equivalent of the type trait `std::is_function<T>`, such that `std::meta::is_function(e)` mandates that `e` reflect a type and checks if that type is a function type.
-  This is the same category of type trait as the ones mentioned above.
+But this is no longer the case. Consider the name `is_function`. It could be:
+
+1. A consteval function equivalent of the type trait `std::is_function<T>`, such that `std::meta::is_function(e)` mandates that `e` represents a type and checks if that type is a function type.
+
 2. A new kind of reflection query `std::meta::is_function(e)` which asks if `e` is the reflection of a function (as opposed to a type or a namespace or a template, etc.).
   This is the same category of query as `std::meta::is_template` or `std::meta::is_concept` or `std::meta::is_namespace`.
 
 Both of these are useful, yet they mean different things entirely - the first is ill-formed when passed a reflection of a function (as opposed to a function type), and the second would simply answer `false` for the reflection of _any_ type (function type or otherwise).
-So what do we do?
 
-Probably the most straightforward choice would be to either prefix or suffix all of the type traits with `_type`.
-We think prefix is a little bit better because it groups all the type traits together and perhaps make it clearer that the argument(s) must be types.
-That is: `std::is_pointer<T>` because `std::meta::type_is_pointer(^T)`, `std::is_arithmetic<T>` becomes `std::meta::type_is_arithmetic(^T)`, and so forth.
-The advantage of this approach is that it very likely just works, also opening the door to making a more general `std::meta::is_const(e)` that checks not just if `e` is a `const`-qualified type but also if it's a `const`-qualified object or a `const`-qualified member, etc.
-The disadvantage is that the suffixed names would not be familiar - we're much more familiar with the name `is_copy_constructible` than we would be with `type_is_copy_constructible`.
+Moreover, in this case it's actually import than the reflection query `std::meta::is_function` does _not_ return `true` for a function type so that using `is_function`as a filter for `members_of` does the expected thing — only giving you back functions, rather than also types.
 
-That said, it's not too much added mental overhead to remember `type_is_copy_constructible` and this avoids have to remember which type traits have the suffix and which don't. Not to mention that _many_ of the type traits read as if they would accept objects just fine (e.g. `is_trivially_copyable`). So we propose that simply all the type traits be suffixed with `*_type`.
+There are a few other examples of name clashes where we want the reflection query to apply to more inputs than simply types. For example, the type trait `std::is_final` can only ask if a type is a final class type, but the metafunction `std::meta::is_final` can ask if a member function is a final member function. Likewise `std::meta::is_const` can apply to objects or types too, and so forth.
+
+The question becomes — how can we incorporate the type traits into the consteval metafunction domain while avoiding these name clash issues. We know of a few approaches.
+
+1. Put all the type traits in their own namespace, like `std::meta::traits::meow`. This has the benefit that we preserve the existing name, but now we lose ADL. We can't write `traits::remove_cvref(type)` unless we bring in `traits` as a namespace alias for `std::meta::traits`, and if we bring in the entire namespace then we're back to the name clash problem (it's just that now the calls become ambiguous).
+
+2. Add a prefix or suffix to every type trait. This preserves the ability to use ADL and makes the new names easy to remember (since `std::meow_v<T>` just directly translates into `std::meta::type_meow(type)` for all `meow`), at the cost of worse names.
+
+3. Do something more tailored on a case-by-case basis.
+
+We don't think the nested namespace approach (#1) is a good idea because of the loss of ADL and the more inconvenient call syntax.
+
+The current revision of this proposal uses the `type_` prefix (#2) uniformly. This has the downside that some type traits end up reading awkwardly (`type_is_pointer` as opposed to `is_pointer_type`) but several others do read much better (`type_has_virtual_destructor` as opposed to `has_virtual_destructor_type`). Some type traits look equally ridiculous with either a prefix or suffix (`type_common_type` vs `common_type_type`).
+
+A more bespoke approach (#3) would be to do something based on the grammar of the existing type traits:
+
+* All the type traits of the form `is_meow` can become `is_meow_type`. This reads quite nicely for most of them (`is_pointer_type`, `is_trivially_copyable_type`, `is_void_type`, etc.). `is_swappable_with_type` or `is_pointer_convertible_base_of_type` or `is_invocable_type` maybe aren't amazing, but they're not terrible either. There are 76 of these and having a uniform transformation is valuable.
+* The remaining ones could potentially keep their current name in `std::meta::` form as well. There are a few things to point out with these remaining traits though:
+  * a couple type transformations like `add_const` could potentially also apply to member functions for the purposes of generating code (although some of these, like `add_lvalue_reference`, we'd want to spell in terms of the qualifier, so those wouldn't conflict). It'd probably be okay to start with an `add_const` that only applies to types and eventually extend it, if we go that route though.
+  * `alignment_of` goes away entirely (since we already have `std::meta::alignment_of`). Nobody will notice.
+  * a couple of these could meaningfully apply to objects as well as types, like `has_virtual_destructor`, but we would still only apply to types.
+
+Note that either way, we're also including a few common traits that aren't defined in the same places — those are the tuple traits (`tuple_size`/`tuple_element`) and the variant traits (`variant_size`/`variant_alternative`).
 
 ## ODR Concerns
 

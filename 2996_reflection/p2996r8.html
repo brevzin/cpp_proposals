@@ -4836,29 +4836,37 @@ necessary - since it can be provided indirectly:</p>
 <tr class="odd">
 <td><div>
 
-<div class="sourceCode" id="cb106"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>type_remove_cvref<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb106"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a>type_remove_cvref<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
 
 </div></td>
 <td><div>
 
-<div class="sourceCode" id="cb107"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>substitute<span class="op">(^</span>std<span class="op">::</span>remove_cvref_t, <span class="op">{</span>type<span class="op">})</span></span></code></pre></div>
+<div class="sourceCode" id="cb107"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>dealias<span class="op">(</span>substitute<span class="op">(^</span>std<span class="op">::</span>remove_cvref_t, <span class="op">{</span>type<span class="op">}))</span></span></code></pre></div>
 
 </div></td>
 </tr>
 <tr class="even">
 <td><div>
 
-<div class="sourceCode" id="cb108"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>type_is_const<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb108"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a>type_is_const<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
 
 </div></td>
 <td><div>
 
-<div class="sourceCode" id="cb109"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>extract<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;(</span>std<span class="op">::</span>meta<span class="op">::</span>substitute<span class="op">(^</span>std<span class="op">::</span>is_const_v, <span class="op">{</span>type<span class="op">}))</span></span></code></pre></div>
+<div class="sourceCode" id="cb109"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a>extract<span class="op">&lt;</span><span class="dt">bool</span><span class="op">&gt;(</span>substitute<span class="op">(^</span>std<span class="op">::</span>is_const_v, <span class="op">{</span>type<span class="op">}))</span></span></code></pre></div>
 
 </div></td>
 </tr>
 </tbody>
 </table>
+<p>The indirect approach is a lot more typing, and you have to remember
+to <code class="sourceCode cpp">dealias</code> the result of the type
+traits as well (because <code class="sourceCode cpp">substitute<span class="op">(^</span>std<span class="op">::</span>remove_cvref_t, <span class="op">{^</span><span class="dt">int</span> <span class="kw">const</span><span class="op">})</span></code>
+gives you a reflection of an alias to
+<code class="sourceCode cpp"><span class="dt">int</span></code>, not a
+reflection of
+<code class="sourceCode cpp"><span class="dt">int</span></code>), so
+it’s both more tedious and more error pone.</p>
 <p>Having <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>meow</code>
 for every trait
 <code class="sourceCode cpp">std<span class="op">::</span>meow</code> is
@@ -4870,66 +4878,122 @@ should be easy enough to specify all of them. So we’re doing it.</p>
 to do is to simply add a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>meow</code>
 for every trait
 <code class="sourceCode cpp">std<span class="op">::</span>meow</code>
-and word it appropriately. That’s what the current wording in this
-revision does. However, we’ve run into a conflict. The standard library
-type traits are all <em>type</em> traits - they only accept types. As
-such, their names are simply things like <code class="sourceCode cpp">std<span class="op">::</span>is_pointer</code>,
+and word it appropriately. That’s what we initially tried to do.
+However, we’ve run into some conflicts.</p>
+<p>The standard library type traits are all <em>type</em> traits - they
+only accept types. As such, their names are simply things like <code class="sourceCode cpp">std<span class="op">::</span>is_pointer</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>is_const</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>is_lvalue_reference</code>,
 and so forth. Renaming it to <code class="sourceCode cpp">std<span class="op">::</span>type_is_pointer</code>,
 for instance, would be a waste of characters since there’s nothing else
-the argument could be save for a type. But this is no longer the case.
-Consider <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_function<span class="op">(</span>e<span class="op">)</span></code>,
-which is currently actually specified twice in our wording having two
-different meanings:</p>
+the argument could be save for a type.</p>
+<p>But this is no longer the case. Consider the name
+<code class="sourceCode cpp">is_function</code>. It could be:</p>
 <ol type="1">
-<li>A consteval function equivalent of the type trait <code class="sourceCode cpp">std<span class="op">::</span>is_function<span class="op">&lt;</span>T<span class="op">&gt;</span></code>,
+<li><p>A consteval function equivalent of the type trait <code class="sourceCode cpp">std<span class="op">::</span>is_function<span class="op">&lt;</span>T<span class="op">&gt;</span></code>,
 such that <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_function<span class="op">(</span>e<span class="op">)</span></code>
-mandates that <code class="sourceCode cpp">e</code> reflect a type and
-checks if that type is a function type. This is the same category of
-type trait as the ones mentioned above.</li>
-<li>A new kind of reflection query <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_function<span class="op">(</span>e<span class="op">)</span></code>
+mandates that <code class="sourceCode cpp">e</code> represents a type
+and checks if that type is a function type.</p></li>
+<li><p>A new kind of reflection query <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_function<span class="op">(</span>e<span class="op">)</span></code>
 which asks if <code class="sourceCode cpp">e</code> is the reflection of
 a function (as opposed to a type or a namespace or a template, etc.).
 This is the same category of query as <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_template</code>
 or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_concept</code>
-or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_namespace</code>.</li>
+or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_namespace</code>.</p></li>
 </ol>
 <p>Both of these are useful, yet they mean different things entirely -
 the first is ill-formed when passed a reflection of a function (as
 opposed to a function type), and the second would simply answer
 <code class="sourceCode cpp"><span class="kw">false</span></code> for
-the reflection of <em>any</em> type (function type or otherwise). So
-what do we do?</p>
-<p>Probably the most straightforward choice would be to either prefix or
-suffix all of the type traits with
-<code class="sourceCode cpp">_type</code>. We think prefix is a little
-bit better because it groups all the type traits together and perhaps
-make it clearer that the argument(s) must be types. That is: <code class="sourceCode cpp">std<span class="op">::</span>is_pointer<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-because <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_is_pointer<span class="op">(^</span>T<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>is_arithmetic<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-becomes <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_is_arithmetic<span class="op">(^</span>T<span class="op">)</span></code>,
-and so forth. The advantage of this approach is that it very likely just
-works, also opening the door to making a more general <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_const<span class="op">(</span>e<span class="op">)</span></code>
-that checks not just if <code class="sourceCode cpp">e</code> is a
-<code class="sourceCode cpp"><span class="kw">const</span></code>-qualified
-type but also if it’s a
-<code class="sourceCode cpp"><span class="kw">const</span></code>-qualified
-object or a
-<code class="sourceCode cpp"><span class="kw">const</span></code>-qualified
-member, etc. The disadvantage is that the suffixed names would not be
-familiar - we’re much more familiar with the name
-<code class="sourceCode cpp">is_copy_constructible</code> than we would
-be with
-<code class="sourceCode cpp">type_is_copy_constructible</code>.</p>
-<p>That said, it’s not too much added mental overhead to remember
-<code class="sourceCode cpp">type_is_copy_constructible</code> and this
-avoids have to remember which type traits have the suffix and which
-don’t. Not to mention that <em>many</em> of the type traits read as if
-they would accept objects just fine
-(e.g. <code class="sourceCode cpp">is_trivially_copyable</code>). So we
-propose that simply all the type traits be suffixed with
-<code class="sourceCode cpp"><span class="op">*</span>_type</code>.</p>
+the reflection of <em>any</em> type (function type or otherwise).</p>
+<p>Moreover, in this case it’s actually import than the reflection query
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_function</code>
+does <em>not</em> return
+<code class="sourceCode cpp"><span class="kw">true</span></code> for a
+function type so that using
+<code class="sourceCode cpp">is_function</code>as a filter for
+<code class="sourceCode cpp">members_of</code> does the expected thing —
+only giving you back functions, rather than also types.</p>
+<p>There are a few other examples of name clashes where we want the
+reflection query to apply to more inputs than simply types. For example,
+the type trait <code class="sourceCode cpp">std<span class="op">::</span>is_final</code> can
+only ask if a type is a final class type, but the metafunction <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_final</code>
+can ask if a member function is a final member function. Likewise <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_const</code>
+can apply to objects or types too, and so forth.</p>
+<p>The question becomes — how can we incorporate the type traits into
+the consteval metafunction domain while avoiding these name clash
+issues. We know of a few approaches.</p>
+<ol type="1">
+<li><p>Put all the type traits in their own namespace, like <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>traits<span class="op">::</span>meow</code>.
+This has the benefit that we preserve the existing name, but now we lose
+ADL. We can’t write <code class="sourceCode cpp">traits<span class="op">::</span>remove_cvref<span class="op">(</span>type<span class="op">)</span></code>
+unless we bring in <code class="sourceCode cpp">traits</code> as a
+namespace alias for <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>traits</code>,
+and if we bring in the entire namespace then we’re back to the name
+clash problem (it’s just that now the calls become ambiguous).</p></li>
+<li><p>Add a prefix or suffix to every type trait. This preserves the
+ability to use ADL and makes the new names easy to remember (since <code class="sourceCode cpp">std<span class="op">::</span>meow_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+just directly translates into <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_meow<span class="op">(</span>type<span class="op">)</span></code>
+for all <code class="sourceCode cpp">meow</code>), at the cost of worse
+names.</p></li>
+<li><p>Do something more tailored on a case-by-case basis.</p></li>
+</ol>
+<p>We don’t think the nested namespace approach (#1) is a good idea
+because of the loss of ADL and the more inconvenient call syntax.</p>
+<p>The current revision of this proposal uses the
+<code class="sourceCode cpp">type_</code> prefix (#2) uniformly. This
+has the downside that some type traits end up reading awkwardly
+(<code class="sourceCode cpp">type_is_pointer</code> as opposed to
+<code class="sourceCode cpp">is_pointer_type</code>) but several others
+do read much better
+(<code class="sourceCode cpp">type_has_virtual_destructor</code> as
+opposed to
+<code class="sourceCode cpp">has_virtual_destructor_type</code>). Some
+type traits look equally ridiculous with either a prefix or suffix
+(<code class="sourceCode cpp">type_common_type</code> vs
+<code class="sourceCode cpp">common_type_type</code>).</p>
+<p>A more bespoke approach (#3) would be to do something based on the
+grammar of the existing type traits:</p>
+<ul>
+<li>All the type traits of the form
+<code class="sourceCode cpp">is_meow</code> can become
+<code class="sourceCode cpp">is_meow_type</code>. This reads quite
+nicely for most of them
+(<code class="sourceCode cpp">is_pointer_type</code>,
+<code class="sourceCode cpp">is_trivially_copyable_type</code>,
+<code class="sourceCode cpp">is_void_type</code>, etc.).
+<code class="sourceCode cpp">is_swappable_with_type</code> or
+<code class="sourceCode cpp">is_pointer_convertible_base_of_type</code>
+or <code class="sourceCode cpp">is_invocable_type</code> maybe aren’t
+amazing, but they’re not terrible either. There are 76 of these and
+having a uniform transformation is valuable.</li>
+<li>The remaining ones could potentially keep their current name in
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span></code>
+form as well. There are a few things to point out with these remaining
+traits though:
+<ul>
+<li>a couple type transformations like
+<code class="sourceCode cpp">add_const</code> could potentially also
+apply to member functions for the purposes of generating code (although
+some of these, like
+<code class="sourceCode cpp">add_lvalue_reference</code>, we’d want to
+spell in terms of the qualifier, so those wouldn’t conflict). It’d
+probably be okay to start with an
+<code class="sourceCode cpp">add_const</code> that only applies to types
+and eventually extend it, if we go that route though.</li>
+<li><code class="sourceCode cpp">alignment_of</code> goes away entirely
+(since we already have <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>alignment_of</code>).
+Nobody will notice.</li>
+<li>a couple of these could meaningfully apply to objects as well as
+types, like <code class="sourceCode cpp">has_virtual_destructor</code>,
+but we would still only apply to types.</li>
+</ul></li>
+</ul>
+<p>Note that either way, we’re also including a few common traits that
+aren’t defined in the same places — those are the tuple traits
+(<code class="sourceCode cpp">tuple_size</code>/<code class="sourceCode cpp">tuple_element</code>)
+and the variant traits
+(<code class="sourceCode cpp">variant_size</code>/<code class="sourceCode cpp">variant_alternative</code>).</p>
 <h2 data-number="4.5" id="odr-concerns"><span class="header-section-number">4.5</span> ODR Concerns<a href="#odr-concerns" class="self-link"></a></h2>
 <p>Static reflection invariably brings new ways to violate ODR.</p>
 <div class="sourceCode" id="cb110"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a><span class="co">// File &#39;cls.h&#39;</span></span>
