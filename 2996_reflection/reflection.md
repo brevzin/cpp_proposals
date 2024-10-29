@@ -32,7 +32,7 @@ Since [@P2996R7]:
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
 * clarified that `data_member_options_t` is a non-structural consteval-only type
 * clarified that everything in `std::meta` is addressable
-* changing `member_offsets` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
+* renaming `member_offsets` to `member_offset` and changing `member_offset` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
 
 Since [@P2996R6]:
 
@@ -2487,14 +2487,14 @@ namespace std::meta {
 
 
   // @[data layout](#data-layout-reflection)@
-  struct member_offsets {
+  struct member_offset {
     ptrdiff_t bytes;
     ptrdiff_t bits;
     constexpr auto total_bits() const -> ptrdiff_t;
-    auto operator<=>(member_offsets const&) const = default;
+    auto operator<=>(member_offset const&) const = default;
   };
 
-  consteval auto offset_of(info r) -> member_offsets;
+  consteval auto offset_of(info r) -> member_offset;
   consteval auto size_of(info r) -> size_t;
   consteval auto alignment_of(info r) -> size_t;
   consteval auto bit_size_of(info r) -> size_t;
@@ -2934,7 +2934,7 @@ But that's a fairly awkward implementation, and the string use-case is sufficien
 ::: std
 ```c++
 namespace std::meta {
-  struct member_offsets {
+  struct member_offset {
     ptrdiff_t bytes;
     ptrdiff_t bits;
 
@@ -2942,10 +2942,10 @@ namespace std::meta {
       return CHAR_BIT * bytes + bits;
     }
 
-    auto operator<=>(member_offsets const&) const = default;
+    auto operator<=>(member_offset const&) const = default;
   };
 
-  consteval auto offset_of(info r) -> member_offsets;
+  consteval auto offset_of(info r) -> member_offset;
   consteval auto size_of(info r) -> size_t;
   consteval auto alignment_of(info r) -> size_t;
   consteval auto bit_size_of(info r) -> size_t;
@@ -2970,10 +2970,10 @@ struct Msg {
     uint64_t d : 21;
 };
 
-static_assert(offset_of(^Msg::a) == member_offsets{0, 0});
-static_assert(offset_of(^Msg::b) == member_offsets{1, 2});
-static_assert(offset_of(^Msg::c) == member_offsets{2, 2});
-static_assert(offset_of(^Msg::d) == member_offsets{5, 3});
+static_assert(offset_of(^Msg::a) == member_offset{0, 0});
+static_assert(offset_of(^Msg::b) == member_offset{1, 2});
+static_assert(offset_of(^Msg::c) == member_offset{2, 2});
+static_assert(offset_of(^Msg::d) == member_offset{5, 3});
 
 static_assert(bit_size_of(^Msg::a) == 10);
 static_assert(bit_size_of(^Msg::b) == 8);
@@ -4500,13 +4500,13 @@ namespace std::meta {
   consteval vector<info> get_public_bases(info type);
 
   // [meta.reflection.layout], reflection layout queries
-  struct member_offsets {
+  struct member_offset {
     ptrdiff_t bytes;
     ptrdiff_t bits;
     constexpr ptrdiff_t total_bits() const;
-    auto operator<=>(member_offsets const&) const = default;
+    auto operator<=>(member_offset const&) const = default;
   };
-  consteval member_offsets offset_of(info r);
+  consteval member_offset offset_of(info r);
   consteval size_t size_of(info r);
   consteval size_t alignment_of(info r);
   consteval size_t bit_size_of(info r);
@@ -5330,12 +5330,12 @@ consteval vector<info> get_public_bases(info type);
 ::: std
 ::: addu
 ```cpp
-constexpr ptrdiff_t member_offsets::total_bits() const;
+constexpr ptrdiff_t member_offset::total_bits() const;
 ```
 [#]{.pnum} *Returns*: `bytes * CHAR_BIT + bits`.
 
 ```cpp
-consteval member_offsets offset_of(info r);
+consteval member_offset offset_of(info r);
 ```
 
 [#]{.pnum} *Constant When*: `r` represents a non-static data member or base class specifier.
@@ -5343,7 +5343,7 @@ consteval member_offsets offset_of(info r);
 [#]{.pnum} Let `$V$` be a constant defined as follows:
 
 - [#.#]{.pnum} If `r` represents a virtual base class specifier of an abstract class, then `$V$` is an implementation-defined value.
-- [#.#]{.pnum} Otherwise, `$V$` is the offset in bits from the beginning of an object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, `$V$` is the offset in bits from the beginning of a complete object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
 [#]{.pnum} *Returns*: `{$V$ / CHAR_BIT, $V$ % CHAR_BIT}`.
 

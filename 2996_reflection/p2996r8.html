@@ -964,8 +964,9 @@ non-structural consteval-only type</li>
 <li>clarified that everything in
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is
 addressable</li>
-<li>changing <code class="sourceCode cpp">member_offsets</code> members
-to be
+<li>renaming <code class="sourceCode cpp">member_offsets</code> to
+<code class="sourceCode cpp">member_offset</code> and changing
+<code class="sourceCode cpp">member_offset</code> members to be
 <code class="sourceCode cpp"><span class="dt">ptrdiff_t</span></code>
 instead of
 <code class="sourceCode cpp"><span class="dt">size_t</span></code>, to
@@ -4174,14 +4175,14 @@ and define_static_array</a></span></span>
 <span id="cb79-149"><a href="#cb79-149" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb79-150"><a href="#cb79-150" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb79-151"><a href="#cb79-151" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data-layout-reflection">data layout</a></span></span>
-<span id="cb79-152"><a href="#cb79-152" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offsets <span class="op">{</span></span>
+<span id="cb79-152"><a href="#cb79-152" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offset <span class="op">{</span></span>
 <span id="cb79-153"><a href="#cb79-153" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bytes;</span>
 <span id="cb79-154"><a href="#cb79-154" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bits;</span>
 <span id="cb79-155"><a href="#cb79-155" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> total_bits<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">ptrdiff_t</span>;</span>
-<span id="cb79-156"><a href="#cb79-156" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>member_offsets <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb79-156"><a href="#cb79-156" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>member_offset <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb79-157"><a href="#cb79-157" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
 <span id="cb79-158"><a href="#cb79-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb79-159"><a href="#cb79-159" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> offset_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> member_offsets;</span>
+<span id="cb79-159"><a href="#cb79-159" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> offset_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> member_offset;</span>
 <span id="cb79-160"><a href="#cb79-160" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> size_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
 <span id="cb79-161"><a href="#cb79-161" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> alignment_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
 <span id="cb79-162"><a href="#cb79-162" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_size_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
@@ -4751,7 +4752,7 @@ is sufficiently common as to merit a more ergonomic solution.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb104"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offsets <span class="op">{</span></span>
+<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offset <span class="op">{</span></span>
 <span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bytes;</span>
 <span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bits;</span>
 <span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a></span>
@@ -4759,10 +4760,10 @@ is sufficiently common as to merit a more ergonomic solution.</p>
 <span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> CHAR_BIT <span class="op">*</span> bytes <span class="op">+</span> bits;</span>
 <span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-10"><a href="#cb104-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>member_offsets <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb104-10"><a href="#cb104-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>member_offset <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb104-11"><a href="#cb104-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
 <span id="cb104-12"><a href="#cb104-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-13"><a href="#cb104-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> offset_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> member_offsets;</span>
+<span id="cb104-13"><a href="#cb104-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> offset_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> member_offset;</span>
 <span id="cb104-14"><a href="#cb104-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> size_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
 <span id="cb104-15"><a href="#cb104-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> alignment_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
 <span id="cb104-16"><a href="#cb104-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> bit_size_of<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
@@ -4797,10 +4798,10 @@ base class subobject or non-static data member, except in bits.</li>
 <span id="cb105-5"><a href="#cb105-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint64_t</span> d <span class="op">:</span> <span class="dv">21</span>;</span>
 <span id="cb105-6"><a href="#cb105-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb105-7"><a href="#cb105-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb105-8"><a href="#cb105-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>a<span class="op">)</span> <span class="op">==</span> member_offsets<span class="op">{</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">})</span>;</span>
-<span id="cb105-9"><a href="#cb105-9" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>b<span class="op">)</span> <span class="op">==</span> member_offsets<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span>;</span>
-<span id="cb105-10"><a href="#cb105-10" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>c<span class="op">)</span> <span class="op">==</span> member_offsets<span class="op">{</span><span class="dv">2</span>, <span class="dv">2</span><span class="op">})</span>;</span>
-<span id="cb105-11"><a href="#cb105-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>d<span class="op">)</span> <span class="op">==</span> member_offsets<span class="op">{</span><span class="dv">5</span>, <span class="dv">3</span><span class="op">})</span>;</span>
+<span id="cb105-8"><a href="#cb105-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>a<span class="op">)</span> <span class="op">==</span> member_offset<span class="op">{</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">})</span>;</span>
+<span id="cb105-9"><a href="#cb105-9" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>b<span class="op">)</span> <span class="op">==</span> member_offset<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span>;</span>
+<span id="cb105-10"><a href="#cb105-10" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>c<span class="op">)</span> <span class="op">==</span> member_offset<span class="op">{</span><span class="dv">2</span>, <span class="dv">2</span><span class="op">})</span>;</span>
+<span id="cb105-11"><a href="#cb105-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>offset_of<span class="op">(^</span>Msg<span class="op">::</span>d<span class="op">)</span> <span class="op">==</span> member_offset<span class="op">{</span><span class="dv">5</span>, <span class="dv">3</span><span class="op">})</span>;</span>
 <span id="cb105-12"><a href="#cb105-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb105-13"><a href="#cb105-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>bit_size_of<span class="op">(^</span>Msg<span class="op">::</span>a<span class="op">)</span> <span class="op">==</span> <span class="dv">10</span><span class="op">)</span>;</span>
 <span id="cb105-14"><a href="#cb105-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>bit_size_of<span class="op">(^</span>Msg<span class="op">::</span>b<span class="op">)</span> <span class="op">==</span> <span class="dv">8</span><span class="op">)</span>;</span>
@@ -7313,13 +7314,13 @@ synopsis</strong></p>
 <span id="cb141-130"><a href="#cb141-130" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; get_public_bases(info type);</span>
 <span id="cb141-131"><a href="#cb141-131" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb141-132"><a href="#cb141-132" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.layout], reflection layout queries</span>
-<span id="cb141-133"><a href="#cb141-133" aria-hidden="true" tabindex="-1"></a>  struct member_offsets {</span>
+<span id="cb141-133"><a href="#cb141-133" aria-hidden="true" tabindex="-1"></a>  struct member_offset {</span>
 <span id="cb141-134"><a href="#cb141-134" aria-hidden="true" tabindex="-1"></a>    ptrdiff_t bytes;</span>
 <span id="cb141-135"><a href="#cb141-135" aria-hidden="true" tabindex="-1"></a>    ptrdiff_t bits;</span>
 <span id="cb141-136"><a href="#cb141-136" aria-hidden="true" tabindex="-1"></a>    constexpr ptrdiff_t total_bits() const;</span>
-<span id="cb141-137"><a href="#cb141-137" aria-hidden="true" tabindex="-1"></a>    auto operator&lt;=&gt;(member_offsets const&amp;) const = default;</span>
+<span id="cb141-137"><a href="#cb141-137" aria-hidden="true" tabindex="-1"></a>    auto operator&lt;=&gt;(member_offset const&amp;) const = default;</span>
 <span id="cb141-138"><a href="#cb141-138" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb141-139"><a href="#cb141-139" aria-hidden="true" tabindex="-1"></a>  consteval member_offsets offset_of(info r);</span>
+<span id="cb141-139"><a href="#cb141-139" aria-hidden="true" tabindex="-1"></a>  consteval member_offset offset_of(info r);</span>
 <span id="cb141-140"><a href="#cb141-140" aria-hidden="true" tabindex="-1"></a>  consteval size_t size_of(info r);</span>
 <span id="cb141-141"><a href="#cb141-141" aria-hidden="true" tabindex="-1"></a>  consteval size_t alignment_of(info r);</span>
 <span id="cb141-142"><a href="#cb141-142" aria-hidden="true" tabindex="-1"></a>  consteval size_t bit_size_of(info r);</span>
@@ -8604,10 +8605,10 @@ Reflection layout queries<a href="#meta.reflection.layout-reflection-layout-quer
 <div class="std">
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb199"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">ptrdiff_t</span> member_offsets<span class="op">::</span>total_bits<span class="op">()</span> <span class="kw">const</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb199"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">ptrdiff_t</span> member_offset<span class="op">::</span>total_bits<span class="op">()</span> <span class="kw">const</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_287" id="pnum_287">1</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">bytes <span class="op">*</span> CHAR_BIT <span class="op">+</span> bits</code>.</p>
-<div class="sourceCode" id="cb200"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> member_offsets offset_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb200"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> member_offset offset_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_288" id="pnum_288">2</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">r</code> represents
 a non-static data member or base class specifier.</p>
@@ -8622,7 +8623,7 @@ specifier of an abstract class, then
 implementation-defined value.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_291" id="pnum_291">(3.2)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>V</em></code> is the offset
-in bits from the beginning of an object of type <code class="sourceCode cpp">parent_of<span class="op">(</span>r<span class="op">)</span></code>
+in bits from the beginning of a complete object of type <code class="sourceCode cpp">parent_of<span class="op">(</span>r<span class="op">)</span></code>
 to the subobject associated with the entity represented by
 <code class="sourceCode cpp">r</code>.</li>
 </ul>
