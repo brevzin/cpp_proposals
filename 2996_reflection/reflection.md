@@ -5363,7 +5363,12 @@ consteval size_t alignment_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a type, variable, or object, then the alignment requirement of the entity or object. Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`. Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`. Otherwise, if `r` represents a description of a declaration of a non-static data member, then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a type, variable, or object, then the alignment requirement of the entity or object.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`.
+* [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
+* [#.#]{.pnum} Otherwise (when `r` represents a description of a declaration of a non-static data member), then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
