@@ -5689,9 +5689,9 @@ consteval const char8_t* define_static_string(u8string_view str);
 * [#.#]{.pnum} `$S$[k + i] == str[i]` for all 0 &leq; `i` < `str.size()`, and
 * [#.#]{.pnum} `$S$[k + str.size()] == '\0'`.
 
-[#]{.pnum} *Returns*: `&$S$[k]`
+[#]{.pnum} *Returns*: `&$S$[k]`.
 
-[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument.
+[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument. [The returned object is distinct from any string literal]{.note}
 
 ```cpp
 template<ranges::input_range R>
