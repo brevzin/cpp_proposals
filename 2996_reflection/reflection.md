@@ -3039,6 +3039,8 @@ Both of these are useful, yet they mean different things entirely - the first is
 
 Moreover, in this case it's actually import than the reflection query `std::meta::is_function` does _not_ return `true` for a function type so that using `is_function` as a filter for `members_of` does the expected thing — only giving you back functions, rather than also types.
 
+A similar kind of clash could occur with other functions — for instance, we don't have an `is_array(r)` right now that would check if `r` were the reflection of an array (as opposed to an array type), but we could in the future.
+
 There are a few other examples of name clashes where we want the reflection query to apply to more inputs than simply types. For example, the type trait `std::is_final` can only ask if a type is a final class type, but the metafunction `std::meta::is_final` can ask if a member function is a final member function. Likewise `std::meta::is_const` can apply to objects or types too, and so forth.
 
 The question becomes — how can we incorporate the type traits into the consteval metafunction domain while avoiding these name clash issues. We know of a few approaches.
@@ -3055,7 +3057,7 @@ The current revision of this proposal uses the `type_` prefix (#2) uniformly. Th
 
 A more bespoke approach (#3) would be to do something based on the grammar of the existing type traits:
 
-* All the type traits of the form `is_meow` can become `is_meow_type`. This reads quite nicely for most of them (`is_pointer_type`, `is_trivially_copyable_type`, `is_void_type`, etc.). `is_swappable_with_type` or `is_pointer_convertible_base_of_type` or `is_invocable_type` maybe aren't amazing, but they're not terrible either. There are 76 of these and having a uniform transformation is valuable.
+* All the type traits of the form `is_meow` can become `is_meow_type`. This reads quite nicely for most of them (`is_pointer_type`, `is_trivially_copyable_type`, `is_void_type`, etc.). `is_swappable_with_type` or `is_pointer_convertible_base_of_type` or `is_invocable_type` maybe aren't amazing, but they're not terrible either. There are 76 of these and having a uniform transformation is valuable. We could even simply special case the few that are known to conflict (or, in the case of `is_array`, might conflict in the future, but that's a little harder to internalize).
 * The remaining ones could potentially keep their current name in `std::meta::` form as well. There are a few things to point out with these remaining traits though:
   * a couple type transformations like `add_const` could potentially also apply to member functions for the purposes of generating code (although some of these, like `add_lvalue_reference`, we'd want to spell in terms of the qualifier, so those wouldn't conflict). It'd probably be okay to start with an `add_const` that only applies to types and eventually extend it, if we go that route though.
   * `alignment_of` goes away entirely (since we already have `std::meta::alignment_of`). Nobody will notice.

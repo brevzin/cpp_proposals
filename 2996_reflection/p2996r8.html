@@ -4914,6 +4914,11 @@ function type so that using
 <code class="sourceCode cpp">is_function</code> as a filter for
 <code class="sourceCode cpp">members_of</code> does the expected thing —
 only giving you back functions, rather than also types.</p>
+<p>A similar kind of clash could occur with other functions — for
+instance, we don’t have an <code class="sourceCode cpp">is_array<span class="op">(</span>r<span class="op">)</span></code>
+right now that would check if <code class="sourceCode cpp">r</code> were
+the reflection of an array (as opposed to an array type), but we could
+in the future.</p>
 <p>There are a few other examples of name clashes where we want the
 reflection query to apply to more inputs than simply types. For example,
 the type trait <code class="sourceCode cpp">std<span class="op">::</span>is_final</code> can
@@ -4966,7 +4971,10 @@ nicely for most of them
 <code class="sourceCode cpp">is_pointer_convertible_base_of_type</code>
 or <code class="sourceCode cpp">is_invocable_type</code> maybe aren’t
 amazing, but they’re not terrible either. There are 76 of these and
-having a uniform transformation is valuable.</li>
+having a uniform transformation is valuable. We could even simply
+special case the few that are known to conflict (or, in the case of
+<code class="sourceCode cpp">is_array</code>, might conflict in the
+future, but that’s a little harder to internalize).</li>
 <li>The remaining ones could potentially keep their current name in
 <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span></code>
 form as well. There are a few things to point out with these remaining
