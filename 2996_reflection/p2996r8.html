@@ -779,9 +779,9 @@ types<span></span></a></li>
 expressions<span></span></a></li>
 <li><a href="#expr.prim.id.splice-splice-specifiers" id="toc-expr.prim.id.splice-splice-specifiers">7.5.4.0*
 [expr.prim.id.splice] Splice specifiers<span></span></a></li>
-<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.4.1
+<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.5.1
 <span>[expr.prim.id.general]</span></span> General<span></span></a></li>
-<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.4.3
+<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.5.3
 <span>[expr.prim.id.qual]</span></span> Qualified
 names<span></span></a></li>
 <li><a href="#expr.prim.splice-expression-splicing" id="toc-expr.prim.splice-expression-splicing">7.5.8* [expr.prim.splice]
@@ -964,6 +964,12 @@ non-structural consteval-only type</li>
 <li>clarified that everything in
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is
 addressable</li>
+<li>changing <code class="sourceCode cpp">member_offsets</code> members
+to be
+<code class="sourceCode cpp"><span class="dt">ptrdiff_t</span></code>
+instead of
+<code class="sourceCode cpp"><span class="dt">size_t</span></code>, to
+allow for future use with negative offsets</li>
 </ul>
 <p>Since <span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span>:</p>
 <ul>
@@ -1005,7 +1011,7 @@ Aliases”</a> section.</li>
 <code class="sourceCode cpp">has_complete_definition</code>.</li>
 <li>removed <code class="sourceCode cpp">subobjects_of</code> and
 <code class="sourceCode cpp">accessible_subobjects_of</code> (will be
-reintroduced by <span class="citation" data-cites="P3293R1">[<a href="#ref-P3293R1" role="doc-biblioref"><strong>P3293R1?</strong></a>]</span>).</li>
+reintroduced by <span class="citation" data-cites="P3293R1">[<a href="https://wg21.link/p3293r1" role="doc-biblioref">P3293R1</a>]</span>).</li>
 <li>specified constraints for
 <code class="sourceCode cpp">enumerators_of</code> in terms of
 <code class="sourceCode cpp">has_complete_definition</code>.</li>
@@ -1924,7 +1930,7 @@ initialize members of a defined union using a splicer, as in:</p>
 </blockquote>
 </div>
 <p>Arguably, the answer should be yes - this would be consistent with
-how other accesses work. This is instead proposed in <span class="citation" data-cites="P3293R1">[<a href="#ref-P3293R1" role="doc-biblioref"><strong>P3293R1?</strong></a>]</span>.</p>
+how other accesses work. This is instead proposed in <span class="citation" data-cites="P3293R1">[<a href="https://wg21.link/p3293r1" role="doc-biblioref">P3293R1</a>]</span>.</p>
 <p>On Compiler Explorer: <a href="https://godbolt.org/z/Efz5vsjaa">EDG</a>, <a href="https://godbolt.org/z/3bvo97fqf">Clang</a>.</p>
 <h2 data-number="3.10" id="struct-to-struct-of-arrays"><span class="header-section-number">3.10</span> Struct to Struct of Arrays<a href="#struct-to-struct-of-arrays" class="self-link"></a></h2>
 <div class="std">
@@ -4169,9 +4175,9 @@ and define_static_array</a></span></span>
 <span id="cb79-150"><a href="#cb79-150" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb79-151"><a href="#cb79-151" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data-layout-reflection">data layout</a></span></span>
 <span id="cb79-152"><a href="#cb79-152" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offsets <span class="op">{</span></span>
-<span id="cb79-153"><a href="#cb79-153" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> bytes;</span>
-<span id="cb79-154"><a href="#cb79-154" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> bits;</span>
-<span id="cb79-155"><a href="#cb79-155" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> total_bits<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span>;</span>
+<span id="cb79-153"><a href="#cb79-153" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bytes;</span>
+<span id="cb79-154"><a href="#cb79-154" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bits;</span>
+<span id="cb79-155"><a href="#cb79-155" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> total_bits<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">ptrdiff_t</span>;</span>
 <span id="cb79-156"><a href="#cb79-156" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="kw">operator</span><span class="op">&lt;=&gt;(</span>member_offsets <span class="kw">const</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb79-157"><a href="#cb79-157" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
 <span id="cb79-158"><a href="#cb79-158" aria-hidden="true" tabindex="-1"></a></span>
@@ -4746,10 +4752,10 @@ is sufficiently common as to merit a more ergonomic solution.</p>
 <blockquote>
 <div class="sourceCode" id="cb104"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
 <span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offsets <span class="op">{</span></span>
-<span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> bytes;</span>
-<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> bits;</span>
+<span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bytes;</span>
+<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ptrdiff_t</span> bits;</span>
 <span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-6"><a href="#cb104-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> total_bits<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
+<span id="cb104-6"><a href="#cb104-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> total_bits<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">ptrdiff_t</span> <span class="op">{</span></span>
 <span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> CHAR_BIT <span class="op">*</span> bytes <span class="op">+</span> bits;</span>
 <span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a></span>
@@ -5399,10 +5405,10 @@ value-dependent.</p>
 </div>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.4.1
+<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.5.1
 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>
 General<a href="#expr.prim.id.general-general" class="self-link"></a></h3>
-<p>Add a carve-out for reflection in <span>7.5.4.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
+<p>Add a carve-out for reflection in <span>7.5.5.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">4</a></span>
@@ -5430,7 +5436,7 @@ an unevaluated operand.</li>
 </ul>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.4.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
+<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.5.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
 Qualified names<a href="#expr.prim.id.qual-qualified-names" class="self-link"></a></h3>
 <p>Add a production to the grammar for
 <code class="sourceCode cpp"><em>nested-name-specifier</em></code> as
@@ -5527,7 +5533,7 @@ let <em>T</em> be the template <span class="rm" style="color: #bf0303"><del>nomi
 <h3 class="unnumbered" id="expr.prim.splice-expression-splicing">7.5.8*
 [expr.prim.splice] Expression splicing<a href="#expr.prim.splice-expression-splicing" class="self-link"></a></h3>
 <p>Add a new subsection of <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span> following
-<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
+<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
 <div class="std">
 <blockquote>
 <div class="addu">
@@ -6065,7 +6071,7 @@ results from the substitution of template parameters
 (<span>13.3 <a href="https://wg21.link/temp.names">[temp.names]</a></span>), or</li>
 <li>in a
 <code class="sourceCode cpp"><em>requires-expression</em></code>
-(<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span>),
+(<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span>),
 or</li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_100" id="pnum_100">(20.4.2)</a></span>
@@ -7308,9 +7314,9 @@ synopsis</strong></p>
 <span id="cb141-131"><a href="#cb141-131" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb141-132"><a href="#cb141-132" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.layout], reflection layout queries</span>
 <span id="cb141-133"><a href="#cb141-133" aria-hidden="true" tabindex="-1"></a>  struct member_offsets {</span>
-<span id="cb141-134"><a href="#cb141-134" aria-hidden="true" tabindex="-1"></a>    size_t bytes;</span>
-<span id="cb141-135"><a href="#cb141-135" aria-hidden="true" tabindex="-1"></a>    size_t bits;</span>
-<span id="cb141-136"><a href="#cb141-136" aria-hidden="true" tabindex="-1"></a>    constexpr size_t total_bits() const;</span>
+<span id="cb141-134"><a href="#cb141-134" aria-hidden="true" tabindex="-1"></a>    ptrdiff_t bytes;</span>
+<span id="cb141-135"><a href="#cb141-135" aria-hidden="true" tabindex="-1"></a>    ptrdiff_t bits;</span>
+<span id="cb141-136"><a href="#cb141-136" aria-hidden="true" tabindex="-1"></a>    constexpr ptrdiff_t total_bits() const;</span>
 <span id="cb141-137"><a href="#cb141-137" aria-hidden="true" tabindex="-1"></a>    auto operator&lt;=&gt;(member_offsets const&amp;) const = default;</span>
 <span id="cb141-138"><a href="#cb141-138" aria-hidden="true" tabindex="-1"></a>  };</span>
 <span id="cb141-139"><a href="#cb141-139" aria-hidden="true" tabindex="-1"></a>  consteval member_offsets offset_of(info r);</span>
@@ -8598,7 +8604,7 @@ Reflection layout queries<a href="#meta.reflection.layout-reflection-layout-quer
 <div class="std">
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb199"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">size_t</span> member_offsets<span class="op">::</span>total_bits<span class="op">()</span> <span class="kw">const</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb199"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">ptrdiff_t</span> member_offsets<span class="op">::</span>total_bits<span class="op">()</span> <span class="kw">const</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_287" id="pnum_287">1</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">bytes <span class="op">*</span> CHAR_BIT <span class="op">+</span> bits</code>.</p>
 <div class="sourceCode" id="cb200"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> member_offsets offset_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
@@ -10010,6 +10016,10 @@ constant-evaluation. <a href="https://wg21.link/p3068r1"><div class="csl-block">
 <div id="ref-P3096R1" class="csl-entry" role="doc-biblioentry">
 [P3096R1] Adam Lach, Walter Genovese. 2024-05-15. Function Parameter
 Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r1"><div class="csl-block">https://wg21.link/p3096r1</div></a>
+</div>
+<div id="ref-P3293R1" class="csl-entry" role="doc-biblioentry">
+[P3293R1] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
+2024-10-13. Splicing a base class subobject. <a href="https://wg21.link/p3293r1"><div class="csl-block">https://wg21.link/p3293r1</div></a>
 </div>
 <div id="ref-P3295R0" class="csl-entry" role="doc-biblioentry">
 [P3295R0] Ben Craig. 2024-05-21. Freestanding constexpr containers and

@@ -32,6 +32,7 @@ Since [@P2996R7]:
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
 * clarified that `data_member_options_t` is a non-structural consteval-only type
 * clarified that everything in `std::meta` is addressable
+* changing `member_offsets` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
 
 Since [@P2996R6]:
 
@@ -2487,9 +2488,9 @@ namespace std::meta {
 
   // @[data layout](#data-layout-reflection)@
   struct member_offsets {
-    size_t bytes;
-    size_t bits;
-    constexpr auto total_bits() const -> size_t;
+    ptrdiff_t bytes;
+    ptrdiff_t bits;
+    constexpr auto total_bits() const -> ptrdiff_t;
     auto operator<=>(member_offsets const&) const = default;
   };
 
@@ -2934,10 +2935,10 @@ But that's a fairly awkward implementation, and the string use-case is sufficien
 ```c++
 namespace std::meta {
   struct member_offsets {
-    size_t bytes;
-    size_t bits;
+    ptrdiff_t bytes;
+    ptrdiff_t bits;
 
-    constexpr auto total_bits() const -> size_t {
+    constexpr auto total_bits() const -> ptrdiff_t {
       return CHAR_BIT * bytes + bits;
     }
 
@@ -4500,9 +4501,9 @@ namespace std::meta {
 
   // [meta.reflection.layout], reflection layout queries
   struct member_offsets {
-    size_t bytes;
-    size_t bits;
-    constexpr size_t total_bits() const;
+    ptrdiff_t bytes;
+    ptrdiff_t bits;
+    constexpr ptrdiff_t total_bits() const;
     auto operator<=>(member_offsets const&) const = default;
   };
   consteval member_offsets offset_of(info r);
@@ -5329,7 +5330,7 @@ consteval vector<info> get_public_bases(info type);
 ::: std
 ::: addu
 ```cpp
-constexpr size_t member_offsets::total_bits() const;
+constexpr ptrdiff_t member_offsets::total_bits() const;
 ```
 [#]{.pnum} *Returns*: `bytes * CHAR_BIT + bits`.
 
