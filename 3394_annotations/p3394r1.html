@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2024-10-28" />
+  <title>Annotations for Reflection</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.csl-block{margin-left: 1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      .sourceCode { overflow: visible; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+text-align: justify;
+}
+@media screen and (max-width: 30em) {
+body {
+margin: 1.5em;
+}
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #C9FBC9;
+--diff-strongins: #acf2bd;
+--diff-del: #FFC8EB;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.std blockquote del { text-decoration: line-through;
+color: #000000; background-color: var(--diff-del);
+border: none; }
+code del { border: 1px solid #ECB3C7; }
+span.orange {
+background-color: #ffa500;
+}
+span.yellow {
+background-color: #ffff00;
+}</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Annotations for
+Reflection</h1>
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P3394R1 <a href="https://wg21.link/P3394">[Latest]</a> <a href="https://wg21.link/P3394/status">[Status]</a></td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2024-10-28</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Wyatt Childers<br>&lt;<a href="mailto:wcc@edg.com" class="email">wcc@edg.com</a>&gt;<br>
+      Dan Katz<br>&lt;<a href="mailto:dkatz85@bloomberg.net" class="email">dkatz85@bloomberg.net</a>&gt;<br>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
+History<span></span></a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#motivating-examples" id="toc-motivating-examples"><span class="toc-section-number">3</span> Motivating Examples<span></span></a>
+<ul>
+<li><a href="#command-line-argument-parsing" id="toc-command-line-argument-parsing"><span class="toc-section-number">3.1</span> Command-Line Argument
+Parsing<span></span></a></li>
+<li><a href="#test-parametrization" id="toc-test-parametrization"><span class="toc-section-number">3.2</span> Test
+Parametrization<span></span></a></li>
+<li><a href="#serialization" id="toc-serialization"><span class="toc-section-number">3.3</span>
+Serialization<span></span></a></li>
+</ul></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<ul>
+<li><a href="#why-not-attributes" id="toc-why-not-attributes"><span class="toc-section-number">4.1</span> Why not
+Attributes?<span></span></a></li>
+<li><a href="#library-queries" id="toc-library-queries"><span class="toc-section-number">4.2</span> Library
+Queries<span></span></a></li>
+<li><a href="#additional-syntactic-constraints" id="toc-additional-syntactic-constraints"><span class="toc-section-number">4.3</span> Additional Syntactic
+Constraints<span></span></a></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">4.4</span> Implementation
+Experience<span></span></a></li>
+<li><a href="#other-directions-we-are-exploring" id="toc-other-directions-we-are-exploring"><span class="toc-section-number">4.5</span> Other Directions We Are
+Exploring<span></span></a></li>
+</ul></li>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">5</span> Wording<span></span></a>
+<ul>
+<li><a href="#language" id="toc-language"><span class="toc-section-number">5.1</span> Language<span></span></a></li>
+<li><a href="#library" id="toc-library"><span class="toc-section-number">5.2</span> Library<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
+Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P3394R0">[<a href="https://wg21.link/p3394r0" role="doc-biblioref">P3394R0</a>]</span>, added wording.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
+Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Ever since writing <span class="citation" data-cites="P1240R0">[<a href="https://wg21.link/p1240r0" role="doc-biblioref">P1240R0</a>]</span> (“Scalable Reflection in C++”),
+but more so since <span class="citation" data-cites="P2996R0">[<a href="https://wg21.link/p2996r0" role="doc-biblioref">P2996R0</a>]</span> (“Reflection for C++26”), we
+have been requested to add a capability to annotate declarations in a
+way that reflection can observe. For example, Jeremy Ong presented
+compelling arguments in a post to the SG7 reflector:
+https://lists.isocpp.org/sg7/2023/10/0450.php. Corentin Jabot also
+noticed the need while P1240 was evolving and wrote <span class="citation" data-cites="P1887R0">[<a href="https://wg21.link/p1887r0" role="doc-biblioref">P1887R0</a>]</span> (“Reflection on Attributes”),
+which proposes syntax not entirely unlike what we present here.</p>
+<p>In early versions of P2996 (and P1240 before that), a workaround was
+to encode properties in the template arguments of alias template
+specializations:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">auto</span><span class="op">...</span> Annotations<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> Noted <span class="op">=</span> T;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    Noted<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;</span> a;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    Noted<span class="op">&lt;</span><span class="dt">int</span><span class="op">*</span>, some, thing<span class="op">&gt;</span> b;</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>It was expected that something like <code class="sourceCode cpp">type_of<span class="op">(^</span>C<span class="op">::</span>a<span class="op">)</span></code>
+would produce a reflection of <code class="sourceCode cpp">Noted<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">1</span><span class="op">&gt;</span></code>
+and that can be taken apart with metafunctions like
+<code class="sourceCode cpp">template_arguments_of</code> — which both
+preserves the type as desired (<code class="sourceCode cpp">a</code> is
+still an
+<code class="sourceCode cpp"><span class="dt">int</span></code>) and
+allows reflection queries to get at the desired annotations (the
+<code class="sourceCode cpp"><span class="dv">1</span></code>,
+<code class="sourceCode cpp">some</code>, and
+<code class="sourceCode cpp">thing</code> in this case).</p>
+<p>There are problems with this approach, unfortunately:</p>
+<ul>
+<li>It doesn’t work for all contexts where we might want to annotate
+declarations (e.g., enumerators).</li>
+<li>It doesn’t directly express the intent.</li>
+<li>It turns out that providing access to aliases used in the
+declaration of reflected entities raises difficult questions and P2996
+is therefore likely going to drop the ability to access that information
+(with the intention of resurrecting the capability with a later paper
+once specification and implementation challenges have been
+addressed).</li>
+</ul>
+<p>In this paper, we propose simple mechanisms that more directly
+support the ability to annotate C++ constructs.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="motivating-examples"><span class="header-section-number">3</span>
+Motivating Examples<a href="#motivating-examples" class="self-link"></a></h1>
+<p>We’ll start with a few motivating examples for the feature. We’ll
+describe the details of the feature in the subsequent section.</p>
+<p>These examples are inspired from libraries in other programming
+languages that provide some mechanism to annotate declarations.</p>
+<h2 data-number="3.1" id="command-line-argument-parsing"><span class="header-section-number">3.1</span> Command-Line Argument Parsing<a href="#command-line-argument-parsing" class="self-link"></a></h2>
+<p>Rust’s <a href="https://docs.rs/clap/latest/clap/">clap</a> library
+provides a way to add annotations to declarations to help drive how the
+parser is declared. We can now <a href="https://godbolt.org/z/dM3erErrz">do the same</a>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Args <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">clap</span><span class="op">::</span><span class="at">Help</span><span class="op">(</span><span class="st">&quot;Name of the person to greet&quot;</span><span class="op">)]]</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">clap</span><span class="op">::</span><span class="at">Short</span>,<span class="at"> </span><span class="op">=</span><span class="at">clap</span><span class="op">::</span><span class="at">Long</span><span class="op">]]</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string name;</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">clap</span><span class="op">::</span><span class="at">Help</span><span class="op">(</span><span class="st">&quot;Number of times to greet&quot;</span><span class="op">)]]</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">clap</span><span class="op">::</span><span class="at">Short</span>,<span class="at"> </span><span class="op">=</span><span class="at">clap</span><span class="op">::</span><span class="at">Long</span><span class="op">]]</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> count <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc, <span class="dt">char</span><span class="op">**</span> argv<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    Args args <span class="op">=</span> clap<span class="op">::</span>parse<span class="op">&lt;</span>Args<span class="op">&gt;(</span>argc, argv<span class="op">)</span>;</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> args<span class="op">.</span>count; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;Hello &quot;</span> <span class="op">&lt;&lt;</span> args<span class="op">.</span>name <span class="op">&lt;&lt;</span> <span class="ch">&#39;</span><span class="sc">\n</span><span class="ch">&#39;</span>;</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Here, we provide three types
+(<code class="sourceCode cpp">Short</code>,
+<code class="sourceCode cpp">Long</code>, and
+<code class="sourceCode cpp">Help</code>) which help define how these
+member variables are intended to be used on the command-line. This is
+implemented on top of <a href="https://github.com/bfgroup/Lyra">Lyra</a>.</p>
+<p>When run:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>$ demo -h</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>USAGE:</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  demo [-?|-h|--help] [-n|--name &lt;name&gt;] [-c|--count &lt;count&gt;]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>Display usage information.</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>OPTIONS, ARGUMENTS:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  -?, -h, --help</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  -n, --name &lt;name&gt;       Name of the person to greet</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  -c, --count &lt;count&gt;     Number of times to greet</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>$ demo -n wg21 --count 3</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>Hello wg21</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>Hello wg21</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>Hello wg21</span></code></pre></div>
+</blockquote>
+</div>
+<p>While <code class="sourceCode cpp">Short</code> and
+<code class="sourceCode cpp">Long</code> can take explicit values, by
+default they use the first letter and whole name of the member that they
+annotate.</p>
+<p>The core of the implementation is that <code class="sourceCode cpp">parse<span class="op">&lt;</span>Args<span class="op">&gt;</span></code>
+loops over all the non-static data members of
+<code class="sourceCode cpp">Args</code>, then finds all the
+<code class="sourceCode cpp">clap</code>-related annotations and invokes
+them:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> Args<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> parse<span class="op">(</span><span class="dt">int</span> argc, <span class="dt">char</span><span class="op">**</span> argv<span class="op">)</span> <span class="op">-&gt;</span> Args <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    Args args;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> cli <span class="op">=</span> lyra<span class="op">::</span>cli<span class="op">()</span>;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> info M <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>Args<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> id <span class="op">=</span> std<span class="op">::</span>string id<span class="op">(</span>identifier_of<span class="op">(</span>mem<span class="op">))</span>;</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> opt <span class="op">=</span> lyra<span class="op">::</span>opt<span class="op">(</span>args<span class="op">.[:</span>M<span class="op">:]</span>, id<span class="op">)</span>;</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> info A <span class="op">:</span> annotations_of<span class="op">(</span>M<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>parent_of<span class="op">(</span>type_of<span class="op">(</span>A<span class="op">))</span> <span class="op">==</span> <span class="op">^^</span>clap<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                <span class="co">// for those annotions that are in the clap namespace</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>                <span class="co">// invoke them on our option</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>                extract<span class="op">&lt;[:</span>type_of<span class="op">(</span>A<span class="op">):]&gt;(</span>A<span class="op">).</span>apply_annotation<span class="op">(</span>opt, id<span class="op">)</span>;</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        cli<span class="op">.</span>add_argument<span class="op">(</span>opt<span class="op">)</span>;</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>So, for instance, <code class="sourceCode cpp">Short</code> would be
+implemented like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> clap <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> ShortArg <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">// optional isn&#39;t structural yet but let&#39;s pretend</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        optional<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> value;</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">()(</span><span class="dt">char</span> c<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> ShortArg <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="op">{.</span>value<span class="op">=</span>c<span class="op">}</span>;</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> apply_annotation<span class="op">(</span>lyra<span class="op">::</span>opt<span class="op">&amp;</span> opt, std<span class="op">::</span>string_view id<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            <span class="dt">char</span> first <span class="op">=</span> value<span class="op">.</span>value_or<span class="op">(</span>id<span class="op">[</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            opt<span class="op">[</span>std<span class="op">::</span>string<span class="op">(</span><span class="st">&quot;-&quot;</span><span class="op">)</span> <span class="op">+</span> first<span class="op">]</span>;</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> Short <span class="op">=</span> ShortArg<span class="op">()</span>;</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Overall, a fairly concise implementation for an extremely
+user-friendly approach to command-line argument parsing.</p>
+<h2 data-number="3.2" id="test-parametrization"><span class="header-section-number">3.2</span> Test Parametrization<a href="#test-parametrization" class="self-link"></a></h2>
+<p>The pytest framework comes with a decorator to <a href="https://docs.pytest.org/en/7.1.x/how-to/parametrize.html">parametrize</a>
+test functions. We can now do <a href="https://godbolt.org/z/vnT51585G">the same</a>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> N <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">parametrize</span><span class="op">({</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="at">        Tuple</span><span class="op">{</span><span class="dv">1</span>,<span class="at"> </span><span class="dv">1</span>,<span class="at"> </span><span class="dv">2</span><span class="op">}</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="at">        Tuple</span><span class="op">{</span><span class="dv">1</span>,<span class="at"> </span><span class="dv">2</span>,<span class="at"> </span><span class="dv">3</span><span class="op">}</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="op">})]]</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> test_sum<span class="op">(</span><span class="dt">int</span> x, <span class="dt">int</span> y, <span class="dt">int</span> z<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;Called test_sum(x={}, y={}, z={})&quot;</span>, x, y, z<span class="op">)</span>;</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Fixture <span class="op">{</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        Fixture<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;setup fixture&quot;</span><span class="op">)</span>;</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">~</span>Fixture<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;teardown fixture&quot;</span><span class="op">)</span>;</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">[[=</span><span class="at">parametrize</span><span class="op">({</span><span class="at">Tuple</span><span class="op">{</span><span class="dv">1</span><span class="op">}</span>,<span class="at"> Tuple</span><span class="op">{</span><span class="dv">2</span><span class="op">}})]]</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> test_one<span class="op">(</span><span class="dt">int</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;test one({})&quot;</span>, x<span class="op">)</span>;</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> test_two<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;test two&quot;</span><span class="op">)</span>;</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    invoke_all<span class="op">&lt;^^</span>N<span class="op">&gt;()</span>;</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>When run, this prints:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>Called test_sum(x=1, y=1, z=2)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>Called test_sum(x=1, y=2, z=3)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>setup fixture</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>test one(1)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>teardown fixture</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>setup fixture</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>test one(2)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>teardown fixture</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>setup fixture</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>test two</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>teardown fixture</span></code></pre></div>
+</blockquote>
+</div>
+<p>Here, <code class="sourceCode cpp">parametrize</code> returns a value
+that is some specialization of
+<code class="sourceCode cpp">Parametrize</code> (which is basically an
+array of tuples, except that
+<code class="sourceCode cpp">std<span class="op">::</span>tuple</code>
+isn’t structural so the implementation rolls its own).</p>
+<p>The rest of the implementation looks for all the free functions named
+<code class="sourceCode cpp">test_<span class="op">*</span></code> or
+nonstatic member functions of class types that start with
+<code class="sourceCode cpp">test_<span class="op">*</span></code> and
+invokes them once, or with each parameter, depending on the presence of
+the annotation. That looks like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> parametrization_of<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info M<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> a <span class="op">:</span> annotations_of<span class="op">(</span>M<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> t <span class="op">=</span> type_of<span class="op">(</span>a<span class="op">)</span>;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>has_template_arguments<span class="op">(</span>t<span class="op">)</span> <span class="kw">and</span> template_of<span class="op">(</span>t<span class="op">)</span> <span class="op">==</span> <span class="op">^^</span>Parametrize<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> a;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">()</span>;</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info M, <span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> invoke_single_test<span class="op">(</span>F f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> A <span class="op">=</span> parametrization_of<span class="op">(</span>M<span class="op">)</span>;</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>A <span class="op">!=</span> std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// if we are parametrized, pull out that value</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">// and for each tuple, invoke the function</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">// this is basically calling std::apply on an array of tuples</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="kw">constexpr</span> <span class="kw">auto</span> Params <span class="op">=</span> extract<span class="op">&lt;[:</span>type_of<span class="op">(</span>A<span class="op">):]&gt;(</span>A<span class="op">)</span>;</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> P <span class="op">:</span> Params<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>            P<span class="op">.</span>apply<span class="op">(</span>f<span class="op">)</span>;</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        f<span class="op">()</span>;</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info Namespace<span class="op">&gt;</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> invoke_all<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info M <span class="op">:</span> members_of<span class="op">(</span>Namespace<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_function<span class="op">(</span>M<span class="op">)</span> <span class="kw">and</span> identifier_of<span class="op">(</span>M<span class="op">).</span>starts_with<span class="op">(</span><span class="st">&quot;test_&quot;</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>            invoke_single_test<span class="op">&lt;</span>M<span class="op">&gt;([:</span>M<span class="op">:])</span>;</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_type<span class="op">(</span>M<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>            <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info F <span class="op">:</span> nonstatic_member_functions_of<span class="op">(</span>M<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>identifier_of<span class="op">(</span>F<span class="op">).</span>starts_with<span class="op">(</span><span class="st">&quot;test_&quot;</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>                    invoke_single_test<span class="op">&lt;</span>F<span class="op">&gt;([&amp;](</span><span class="kw">auto</span><span class="op">...</span> args<span class="op">){</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>                        <span class="kw">typename</span> <span class="op">[:</span>M<span class="op">:]</span> fixture;</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>                        fixture<span class="op">.[:</span>F<span class="op">:](</span>args<span class="op">...)</span>;</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>                    <span class="op">})</span>;</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="3.3" id="serialization"><span class="header-section-number">3.3</span> Serialization<a href="#serialization" class="self-link"></a></h2>
+<p>Rust’s <a href="https://serde.rs/">serde</a> library is a framework
+for serialization and deserialization. It is easy enough with reflection
+to do member-wise serialization. But how do you opt into that? An
+annotation provides a cheap mechanism of <a href="https://godbolt.org/z/cjP8EdTj3">doing just that</a> (built on top
+of <a href="https://www.boost.org/doc/libs/1_85_0/libs/json/doc/html/index.html">Boost.Json</a>):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="op">[[=</span><span class="at">serde</span><span class="op">::</span><span class="at">derive</span><span class="op">]]</span> Point <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x, y;</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Allowing:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">// prints {&quot;x&quot;:1,&quot;y&quot;:2}</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> boost<span class="op">::</span>json<span class="op">::</span>value_from<span class="op">(</span>Point<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>y<span class="op">=</span><span class="dv">2</span><span class="op">})</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>But opting in is just the first thing you might want to do with
+serialization. You might also, for instance, want to change how fields
+are serialized. <code class="sourceCode cpp">serde</code> provides a lot
+of attributes to do so. The easiest to look at is
+<code class="sourceCode cpp">rename</code>, which uses the provided
+string instead of the name of the non-static data member:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="op">[[=</span><span class="at">serde</span><span class="op">::</span><span class="at">derive</span><span class="op">]]</span> Person <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">serde</span><span class="op">::</span><span class="at">rename</span><span class="op">(</span><span class="st">&quot;first name&quot;</span><span class="op">)]]</span> std<span class="op">::</span>string first;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">serde</span><span class="op">::</span><span class="at">rename</span><span class="op">(</span><span class="st">&quot;last name&quot;</span><span class="op">)]]</span> std<span class="op">::</span>string last;</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Which leads to:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">// prints {&quot;first name&quot;:&quot;Peter&quot;,&quot;last name&quot;:&quot;Dimov&quot;}</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> boost<span class="op">::</span>json<span class="op">::</span>value_from<span class="op">(</span>Person<span class="op">{.</span>first<span class="op">=</span><span class="st">&quot;Peter&quot;</span>, <span class="op">.</span>last<span class="op">=</span><span class="st">&quot;Dimov&quot;</span><span class="op">})</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The implementation for these pieces is fairly straightforward. We
+provide an opt-in for the value conversion function when the <code class="sourceCode cpp">serde<span class="op">::</span>derive</code>
+annotation is present. In that case, we walk all the non-static data
+members and write them into the <code class="sourceCode cpp">boost<span class="op">::</span>json<span class="op">::</span>value</code>
+output. If a <code class="sourceCode cpp">serde<span class="op">::</span>Rename</code>
+annotation is present, we use that instead of the data member’s
+name:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> serde <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">struct</span><span class="op">{}</span> derive<span class="op">{}</span>;</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> rename <span class="op">{</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> field; <span class="op">}</span>;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> boost<span class="op">::</span>json <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">requires</span> <span class="op">(</span>has_annotation<span class="op">(^^</span>T, serde<span class="op">::</span>derive<span class="op">))</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> tag_invoke<span class="op">(</span>value_from_tag <span class="kw">const</span><span class="op">&amp;</span>, value<span class="op">&amp;</span> v, T <span class="kw">const</span><span class="op">&amp;</span> t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span><span class="op">&amp;</span> obj <span class="op">=</span> v<span class="op">.</span>emplace_object<span class="op">()</span>;</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> M <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">constexpr</span> <span class="kw">auto</span> field <span class="op">=</span> annotation_of<span class="op">&lt;</span>serde<span class="op">::</span>rename<span class="op">&gt;(</span>M<span class="op">)</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>transform<span class="op">([](</span>serde<span class="op">::</span>rename r<span class="op">){</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> std<span class="op">::</span>string_view<span class="op">(</span>r<span class="op">.</span>field<span class="op">)</span>;</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>                <span class="op">})</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>value_or<span class="op">(</span>identifier_of<span class="op">(</span>M<span class="op">))</span>;</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            obj<span class="op">[</span>field<span class="op">]</span> <span class="op">=</span> boost<span class="op">::</span>json<span class="op">::</span>value_from<span class="op">(</span>t<span class="op">.[:</span>M<span class="op">:])</span>;</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>You can imagine extending this out to support a wide variety of other
+serialization-specific attributes that shouldn’t otherwise affect the
+C++ usage of the type. For instance, a <a href="https://godbolt.org/z/jaKTe57Gf">more complex approach</a>
+additionally supports the
+<code class="sourceCode cpp">skip_serializing_if</code> annotation while
+first collecting all <code class="sourceCode cpp">serde</code>
+annotations into a struct.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The core idea is that an <em>annotation</em> is a compile-time value
+that can be associated with a construct to which attributes can
+appertain. Annotation and attributes are somewhat related ideas, and we
+therefore propose a syntax for the former that builds on the existing
+syntax for the latter.</p>
+<p>At its simplest:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="dv">1</span><span class="op">]]</span> <span class="dt">int</span> a;</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Syntactically, an annotation is an attribute of the form
+<code class="sourceCode cpp"><span class="op">=</span> expr</code> where
+<code class="sourceCode cpp">expr</code> is a <em><code class="sourceCode cpp">constant<span class="op">-</span>expression</code></em>
+(which syntactically excludes, e.g., <em><code class="sourceCode cpp">comma<span class="op">-</span>expression</code></em>)
+to which the glvalue-to-prvalue conversion has been applied if the
+expression wasn’t a prvalue to start with.</p>
+<p>Currently, we require that an annotation has structural type because
+we’re going to return annotations through <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,
+and currently all reflection values must be structural.</p>
+<h2 data-number="4.1" id="why-not-attributes"><span class="header-section-number">4.1</span> Why not Attributes?<a href="#why-not-attributes" class="self-link"></a></h2>
+<p>Attributes are very close in spirit to annotations. So it made sense
+to piggy-back on the attribute syntax to add annotations. Existing
+attributes are designed with fairly open grammar and they can be ignored
+by implementations, which makes it difficult to connect them to user
+code. Given a declarations like:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="at">nodiscard</span>,<span class="at"> </span><span class="ex">gnu::always_inline</span><span class="op">]]</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="at">deprecated</span><span class="op">(</span><span class="st">&quot;don&#39;t use me&quot;</span><span class="op">)]]</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>What could reflecting on <code class="sourceCode cpp">f</code>
+return? Because attributes are ignorable, an implementation might simply
+ignore them. Additionally, there is no particular value associated with
+any of these attributes that would be sensible to return. We’re limited
+to returning either a sequence of strings. Or, with <a href="https://wg21.link/p3294">P3294</a>, token sequences.</p>
+<p>But it turns out to be quite helpful to preserve the actual values
+without requiring libraries to do additional parsing work. Thus, we need
+to distinguish annotations (whose values we need to preserve and return
+back to the user) from attributes (whose values we do not). Thus, we
+looked for a sigil introducing a general expression.</p>
+<p>Originally, the plus sign
+(<code class="sourceCode cpp"><span class="op">+</span></code>) was
+considered (as in P1887), but it is not ideal because a prefix
+<code class="sourceCode cpp"><span class="op">+</span></code> has a
+meaning for some expressions and not for others, and that would not
+carry over to the attribute notation. A prefix
+<code class="sourceCode cpp"><span class="op">=</span></code> was found
+to be reasonably meaningful in the sense that the annotation “equals”
+the value on the right, while also being syntactically unambiguous. We
+also discussed using the reflection operator
+(<code class="sourceCode cpp"><span class="op">^</span></code>) as an
+introducer (which is attractive because the annotation ultimately comes
+back to the programmer as a reflection value), but that raised questions
+about an annotation itself being a reflection value (which is not
+entirely improbable).</p>
+<p>As such, this paper proposes annotations as distinct from attributes,
+introduced with a prefix
+<code class="sourceCode cpp"><span class="op">=</span></code>.</p>
+<h2 data-number="4.2" id="library-queries"><span class="header-section-number">4.2</span> Library Queries<a href="#library-queries" class="self-link"></a></h2>
+<p>We propose the following set of library functions to work with
+annotations:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> is_annotation<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item<span class="op">)</span>;            <span class="co">// (1)</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item, info type<span class="op">)</span>; <span class="co">// (2)</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> annotation_of<span class="op">(</span>info item<span class="op">)</span>;</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">bool</span> has_annotation<span class="op">(</span>info item<span class="op">)</span>;                 <span class="co">// (3)</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">bool</span> has_annotation<span class="op">(</span>info item, T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span>; <span class="co">// (4)</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info annotate<span class="op">(</span>info item,</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>                          info value,</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>                          source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p><code class="sourceCode cpp">is_annotation</code> checks whether a
+particular reflection represents an annotation.</p>
+<p>We provide two overloads of
+<code class="sourceCode cpp">annotations_of</code> to retrieve all the
+annotations on a particular item:</p>
+<ol type="1">
+<li>Returns all the annotations.</li>
+<li>Returns all the annotations <code class="sourceCode cpp">a</code>
+such that <code class="sourceCode cpp">type_of<span class="op">(</span>a<span class="op">)</span> <span class="op">==</span> type</code>.</li>
+</ol>
+<p>And a singular version, <code class="sourceCode cpp">annotation_of<span class="op">&lt;</span>T<span class="op">&gt;</span></code>,
+that returns the annotation <code class="sourceCode cpp">a</code> such
+that <code class="sourceCode cpp">dealias<span class="op">(</span>type_of<span class="op">(</span>a<span class="op">))</span> <span class="op">==</span> <span class="op">^^</span>T</code>.
+If no such annotation exists, returns
+<code class="sourceCode cpp">nullopt</code>. If more than one such
+annotation exists and all the values are not
+template-argument-equivalent, this call is not a constant
+expression.</p>
+<p>And then two overloads of
+<code class="sourceCode cpp">has_annotation</code> that simply checks if
+a given annotation exists:</p>
+<ol start="3" type="1">
+<li>Checks if there exists an annotation
+<code class="sourceCode cpp">a</code> such that <code class="sourceCode cpp">dealias<span class="op">(</span>type_of<span class="op">(</span>a<span class="op">))</span> <span class="op">==</span> <span class="op">^^</span>T</code>.</li>
+<li>Checks if there exists an annotation
+<code class="sourceCode cpp">a</code> such that <code class="sourceCode cpp">value_of<span class="op">(</span>a<span class="op">)</span> <span class="op">==</span> reflect_value<span class="op">(</span>value<span class="op">)</span></code>.</li>
+</ol>
+<p>Of these, four can be directly implemented in terms of the unary
+<code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>,
+but we think they’ll be common enough to merit inclusion.</p>
+<p>And lastly, <code class="sourceCode cpp">annotate</code> provides the
+ability to programmatically add an annotation to a declaration.</p>
+<h2 data-number="4.3" id="additional-syntactic-constraints"><span class="header-section-number">4.3</span> Additional Syntactic
+Constraints<a href="#additional-syntactic-constraints" class="self-link"></a></h2>
+<p>Annotations can be repeated:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">42</span>,<span class="at"> </span><span class="op">=</span><span class="dv">42</span><span class="op">]]</span> <span class="dt">int</span> x;</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^</span>x<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Annotations spread over multiple declarations of the same entity
+accumulate:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">42</span><span class="op">]]</span> <span class="dt">int</span> f<span class="op">()</span>;</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">24</span><span class="op">]]</span> <span class="dt">int</span> f<span class="op">()</span>;</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^</span>f<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Annotations follow appertainance rules like attributes, but shall not
+appear in the <em>attribute-specifier-seq</em> of a
+<em>type-specifier-seq</em> or an <em>empty-declaration</em>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="op">[[=</span><span class="dv">0</span><span class="op">]]</span> S <span class="op">{}</span>;  <span class="co">// Okay: Appertains to S.</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">42</span><span class="op">]]</span> <span class="dt">int</span> f<span class="op">()</span>;     <span class="co">// Okay: Appertains to f().</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f<span class="op">[[=</span><span class="dv">0</span><span class="op">]]</span> f<span class="op">()</span>;     <span class="co">// Ditto.</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> <span class="op">[[=</span><span class="dv">24</span><span class="op">]]</span> f<span class="op">()</span>;     <span class="co">// Error: Cannot appertain to int.</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">123</span><span class="op">]]</span>;            <span class="co">// Error: No applicable construct.</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>To avoid confusion, annotations are not permitted after an
+<em>attribute-using-prefix</em>. So this is an error:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="kw">using</span><span class="at"> </span><span class="ex">clang</span><span class="op">:</span><span class="at"> amdgpu_waves_per_eu</span>,<span class="at"> </span><span class="op">=</span><span class="at">nick</span><span class="op">(</span><span class="st">&quot;weapon&quot;</span><span class="op">)]]</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> select_footgun<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Instead, use:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="kw">using</span><span class="at"> </span><span class="ex">clang</span><span class="op">:</span><span class="at"> amdgpu_waves_per_eu</span><span class="op">]]</span> <span class="op">[[=</span><span class="at">nick</span><span class="op">(</span><span class="st">&quot;weapon&quot;</span><span class="op">)]]</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> select_footgun<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="4.4" id="implementation-experience"><span class="header-section-number">4.4</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>The core language feature and the basic query functions have been
+implemented in the EDG front end and in Bloomberg’s P2996 Clang fork
+(with option <code class="sourceCode cpp"><span class="op">-</span>freflection<span class="op">-</span>latest</code>),
+both available on Compiler Explorer.</p>
+<h2 data-number="4.5" id="other-directions-we-are-exploring"><span class="header-section-number">4.5</span> Other Directions We Are
+Exploring<a href="#other-directions-we-are-exploring" class="self-link"></a></h2>
+<p>As evidenced in the motivating examples earlier, there is a lot of
+value in this proposal even in this simple form. However, there is more
+to consider when it comes to annotations.</p>
+<p>This proposal right now lets us unconditionally add an annotation to
+a type:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="op">[[=</span><span class="at">X</span><span class="op">]]</span> Always;</span></code></pre></div>
+</blockquote>
+</div>
+<p>But it does not let us conditionally add an annotation to a type:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="co">/* X only for some T */</span> Sometimes;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Or to really generalize annotations. For instance, in the clap
+example earlier, our example showed usage with
+<code class="sourceCode cpp">clap<span class="op">::</span>Short</code>
+and
+<code class="sourceCode cpp">clap<span class="op">::</span>Long</code>.
+What if somebody wants to compose these into their own annotation that
+attaches both
+<code class="sourceCode cpp">clap<span class="op">::</span>Short</code>
+and
+<code class="sourceCode cpp">clap<span class="op">::</span>Long</code>
+to a declaration?</p>
+<p>More broadly, there is clear value in having an annotation be able to
+be invoked by the declaration itself. Doing so allows the two uses above
+easily enough. An interesting question, though, is whether this callback
+(syntax to be determined) is invoked at the <em>beginning</em> of the
+declaration or at the <em>end</em> of the declaration. For annotations
+on classes, this would be before the class is complete or after the
+class is complete. Before completeness allows the class to observe the
+annotation during instantiation. After completeness allows the
+annotation callback to observe properties of the type. In some sense,
+Herb Sutter’s <span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span> (“Metaclass functions:
+Generative C++”) was adding annotations on classes, invoked on class
+completeness, that allow mutation of the class.</p>
+<p>One concrete, simpler example. We can, with this proposal as-is,
+create a <code class="sourceCode cpp">Debug</code> annotation that a
+user can add to their type and a specialization of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code> for
+all types that have a <code class="sourceCode cpp">Debug</code>
+annotation <a href="https://godbolt.org/z/bcYE7nY4s">as follows</a>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">struct</span> Derive <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">inline</span> <span class="kw">constexpr</span> Derive<span class="op">&lt;</span>V<span class="op">&gt;</span> derive;</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">struct</span><span class="op">{}</span> Debug;</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>has_annotation<span class="op">(^^</span>T, derive<span class="op">&lt;</span>Debug<span class="op">&gt;))</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> std<span class="op">::</span>formatter<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="op">[[=</span><span class="at">derive</span><span class="op">&lt;</span><span class="at">Debug</span><span class="op">&gt;]]</span> Point <span class="op">{</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x;</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> y;</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> p <span class="op">=</span> Point<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>y<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">// prints p=Point{.x=1, .y=2}</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;p={}&quot;</span>, p<span class="op">)</span>;</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This <em>works</em>, but it’s not really the ideal way of doing it.
+This could still run into potential issues with ambiguous specialization
+of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code>.
+Better would be to allow the <code class="sourceCode cpp">Debug</code>
+annotation to, at the point of completion of
+<code class="sourceCode cpp">Point</code>, inject an explicit
+specialization of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code>.
+This would rely both on the ability for the annotation to be called back
+and language support for such injection (see <span class="citation" data-cites="P3294R1">[<a href="https://wg21.link/p3294r1" role="doc-biblioref">P3294R1</a>]</span> (“Code Injection with Token
+Sequences”)).</p>
+<p>There are still open questions as to how to handle such callbacks.
+Does an annotation that gets called back merit different syntax from an
+annotation that doesn’t? Can it mutate the entity that it is attached
+to? How do we name the potential callbacks? Should the callback be
+registered implicitly (e.g., if an annotation of type
+<code class="sourceCode cpp">X</code> with member <code class="sourceCode cpp">X<span class="op">::</span>annotate_declaration<span class="op">(...)</span></code>
+appears, that member is automatically a callback invoked when an entity
+is first declared with an annotation of type
+<code class="sourceCode cpp">X</code>) or explicitly (e.g., calling
+<code class="sourceCode cpp">annotated_declaration_callback<span class="op">(^^</span>X, X_handler<span class="op">)</span></code>
+would cause <code class="sourceCode cpp">X_handler<span class="op">(...)</span></code> to
+be invoked when an entity is first declared with an annotation of type
+<code class="sourceCode cpp">X</code>).</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>The wording is relative to <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>.</p>
+<h2 data-number="5.1" id="language"><span class="header-section-number">5.1</span> Language<a href="#language" class="self-link"></a></h2>
+<p>Change <span class="addu">basic.pre</span> to consider annotations
+entities (similar to enumerators):</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">3</a></span>
+An <em>entity</em> is a value, object, reference, structured binding,
+function, enumerator, <span class="addu">annotation,</span> type, class
+member, bit-field, template, template specialization, namespace, or
+pack.</p>
+</blockquote>
+</div>
+<p>Change [expr.prim.splice] to handle splicing a reflection of an
+annotation:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span>
+For a <code class="sourceCode cpp"><em>splice-expression</em></code> of
+the form <code class="sourceCode cpp"><em>splice-specifier</em></code>,
+let <code class="sourceCode cpp"><em>E</em></code> be the object, value,
+<span class="addu">annotation,</span> or entity designated by
+<code class="sourceCode cpp"><em>splice-specifier</em></code>.</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.1)</a></span>
+[…]</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span>
+Otherwise, <code class="sourceCode cpp"><em>E</em></code> shall be a
+value<span class="addu">, an annotation,</span> or an enumerator. The
+expression is a prvalue whose evaluation computes
+<code class="sourceCode cpp"><em>E</em></code> and whose type is the
+same as <code class="sourceCode cpp"><em>E</em></code>.</p></li>
+</ul>
+</blockquote>
+</div>
+<p>Extend the grammar in <span>9.12.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span>
+Attributes <span class="addu">and annotations</span> specify additional
+information for various source constructs such as types, variables,
+names, blocks, or translation units.</p>
+<div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  <em>attribute-specifier-seq</em>:</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>attribute-specifier</em></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <em>attribute-specifier</em>:</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    [ [ <em>attribute-using-prefix</em><sub>opt</sub> <em>attribute-list</em> ] ]</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <em>alignment-specifier</em></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <em>alignment-specifier</em>:</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    alignas ( <em>type-id</em> ...<sub>opt</sub> )</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    alignas ( <em>constant-expression</em> ...<sub>opt</sub> )</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  <em>attribute-using-prefix</em>:</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    using <em>attribute-namespace</em> :</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  <em>attribute-list</em>:</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>attribute</em><sub>opt</sub></span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>attribute-list</em> , <em>attribute</em><sub>opt</sub></span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>attribute</em> ...</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>attribute-list</em> , <em>attribute</em> ...</span></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>attribute-or-annotation</em><sub>opt</sub></span></span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>attribute-or-annotation-list</em> , <em>attribute-or-annotation</em><sub>opt</sub></span></span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>attribute-or-annotation</em> ...</span></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>attribute-list-or-annotation</em> , <em>attribute-or-annotation</em> ...</span></span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>attribute-or-annotation</em>:</span></span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>attribute</em></span></span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>annotation</em></span></span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>  <em>attribute</em>:</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>    <em>attribute-token</em> <em>attribute-argument-clause</em><sub>opt</sub></span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>annotation</em>:</span></span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a><span class="va">+   = <em>constant-expression</em></span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span>
+If an <code class="sourceCode cpp"><em>attribute-specifier</em></code>
+contains an
+<code class="sourceCode cpp"><em>attribute-using-prefix</em></code>, the
+<code class="sourceCode cpp"><em>attribute-list</em></code> following
+that <code class="sourceCode cpp"><em>attribute-using-prefix</em></code>
+shall not contain <span class="addu">either</span> an
+<code class="sourceCode cpp"><em>attribute-scoped-token</em></code>
+<span class="addu">or an
+<code class="sourceCode cpp"><em>annotation</em></code></span> and every
+<code class="sourceCode cpp"><em>attribute-token</em></code> in that
+<code class="sourceCode cpp"><em>attribute-list</em></code> is treated
+as if its identifier were prefixed with
+<code class="sourceCode cpp">N​<span class="op">::</span></code>​, where
+<code class="sourceCode cpp">N</code> is the
+<code class="sourceCode cpp"><em>attribute-namespace</em></code>
+specified in the
+<code class="sourceCode cpp"><em>attribute-using-prefix</em></code>.</p>
+</blockquote>
+</div>
+<p>Adjust the restriction on ellipses in <span>9.12.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>/4:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">4</a></span>
+In an <code class="sourceCode cpp"><em>attribute-list</em></code>, an
+ellipsis may <span class="rm" style="color: #bf0303"><del>appear
+only</del></span> <span class="addu">only appear following an
+<code class="sourceCode cpp"><em>attribute</em></code></span> if that
+<code class="sourceCode cpp"><em>attribute</em></code>’s specification
+permits it. An <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>attribute</em></code></span></del></span>
+<span class="addu"><code class="sourceCode cpp"><em>attribute-or-annotation</em></code></span>
+followed by an ellipsis is a pack expansion. An
+<code class="sourceCode cpp"><em>attribute-specifier</em></code> that
+contains no <code class="sourceCode cpp"><em>attribute</em></code>s has
+no effect. The order in which the
+<code class="sourceCode cpp"><em>attribute-tokens</em></code> appear in
+an <code class="sourceCode cpp"><em>attribute-list</em></code> is not
+significant. <span class="addu">The
+<code class="sourceCode cpp"><em>constant-expression</em></code>s in
+each <code class="sourceCode cpp"><em>annotation</em></code> in an
+<code class="sourceCode cpp"><em>attribute-list</em></code> are
+evaluated in lexical order.</span> […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">5</a></span>
+Each
+<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code> is
+said to appertain to some entity or statement, identified by the
+syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
+If an
+<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
+that appertains to some entity or statement contains an
+<code class="sourceCode cpp"><em>attribute</em></code> or
+<code class="sourceCode cpp"><em>alignment-specifier</em></code> that is
+not allowed to apply to that entity or statement, the program is
+ill-formed. If an
+<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
+appertains to a friend declaration ([class.friend]), that declaration
+shall be a definition. <span class="addu">The
+<code class="sourceCode cpp"><em>constant-expression</em></code> in each
+<code class="sourceCode cpp"><em>annotation</em></code> in an
+<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code> is
+evaluated in lexical order and shall have structural type ([temp.param])
+<span class="note"><span>[ <em>Note 1:</em> </span>Reflections
+representing annotations can be retrieved with functions like <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>annotations_of</code>
+([meta.reflection.annotation])<span> — <em>end
+note</em> ]</span></span>.</span></p>
+</blockquote>
+</div>
+<p>Change the pack expansion rule in <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>/5.9:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
+[…] Pack expansions can occur in the following contexts:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.9)</a></span>
+In an <code class="sourceCode cpp"><em>attribute-list</em></code>
+([dcl.attr.grammar]); the pattern is an <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>attribute</em></code></span></del></span>
+<span class="addu"><code class="sourceCode cpp"><em>attribute-or-annotation</em></code></span>.</li>
+</ul>
+</blockquote>
+</div>
+<h2 data-number="5.2" id="library"><span class="header-section-number">5.2</span> Library<a href="#library" class="self-link"></a></h2>
+<p>Add to the <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code>
+synopsis:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  consteval bool is_bit_field(info r);</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  consteval bool is_enumerator(info r);</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_annotation(info);</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  // ..</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.annotation], annotation reflection</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; annotations_of(info item);</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; annotations_of(info item, info type);</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval optional&lt;T&gt; annotation_of(info item);</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool has_annotation(info item);</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool has_annotation(info item, T const&amp; value);</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Add <code class="sourceCode cpp">is_annotation</code> to
+[meta.reflection.queries]:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>  consteval bool is_enumerator(info r);</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_annotation(info r);</span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1</a></span>
+<em>Returns</em>:
+<code class="sourceCode cpp"><span class="kw">true</span></code> if
+<code class="sourceCode cpp">r</code> represents an enumerator <span class="addu">or annotation, respectively</span>. Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+</blockquote>
+</div>
+<p>Update the meanings of <code class="sourceCode cpp">type_of</code>
+and <code class="sourceCode cpp">value_of</code> in
+[meta.reflection.queries]:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">35</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">r</code> represents
+a value, object, variable, function that is not a constructor or
+destructor, enumerator, <span class="addu">annotation,</span> non-static
+data member, bit-field, base class specifier, or description of a
+declaration of a non-static data member.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">36</a></span>
+<em>Returns</em>: If <code class="sourceCode cpp">r</code> represents an
+entity, object, or value, then the type of what is represented by
+<code class="sourceCode cpp">r</code>. Otherwise, if
+<code class="sourceCode cpp">r</code> represents a base class specifier,
+then the type of the base class. Otherwise, the type of any data member
+declared with the properties represented by
+<code class="sourceCode cpp">r</code>.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info value_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">39</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">r</code> is a
+reflection representing</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(39.1)</a></span>
+either an object or variable, usable in constant expressions from a
+point in the evaluation context ([expr.const]), whose type is a
+structural type ([temp.type]),</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(39.2)</a></span>
+an annotation,</li>
+</ul>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(39.3)</a></span>
+an enumerator, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(39.4)</a></span>
+a value.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">40</a></span>
+<em>Returns</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(40.1)</a></span>
+If <code class="sourceCode cpp">r</code> is a reflection of an object
+<code class="sourceCode cpp">o</code>, or a reflection of a variable
+which designates an object <code class="sourceCode cpp">o</code>, then a
+reflection of the value held by <code class="sourceCode cpp">o</code>.
+The reflected value has type <code class="sourceCode cpp">type_of<span class="op">(</span>o<span class="op">)</span></code>,
+with the cv-qualifiers removed if this is a scalar type</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(40.2)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> is a reflection of
+an enumerator <span class="addu">or an annotation</span>, then a
+reflection of the value of the enumerator <span class="addu">or
+annotation, respectively</span>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(40.3)</a></span>
+Otherwise, <code class="sourceCode cpp">r</code>.</li>
+</ul>
+</blockquote>
+</div>
+<p>And update <code class="sourceCode cpp">extract</code> in
+[meta.reflection.extract], specifically
+<code class="sourceCode cpp"><em>extract-val</em></code>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-val</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">41</a></span>
+Let <code class="sourceCode cpp">U</code> be the type of the value<span class="addu">, annotation,</span> or enumerator that
+<code class="sourceCode cpp">r</code> represents.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">42</a></span>
+<em>Constant When</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(42.1)</a></span>
+<code class="sourceCode cpp">U</code> is a pointer type,
+<code class="sourceCode cpp">T</code> and
+<code class="sourceCode cpp">U</code> are similar types ([conv.qual]),
+and <code class="sourceCode cpp">is_convertible_v<span class="op">&lt;</span>U, T<span class="op">&gt;</span></code>
+is
+<code class="sourceCode cpp"><span class="kw">true</span></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(42.2)</a></span>
+<code class="sourceCode cpp">U</code> is not a pointer type and the
+cv-unqualified types of <code class="sourceCode cpp">T</code> and
+<code class="sourceCode cpp">U</code> are the same, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(42.3)</a></span>
+<code class="sourceCode cpp">U</code> is a closure type,
+<code class="sourceCode cpp">T</code> is a function pointer type, and
+the value <code class="sourceCode cpp">r</code> represents is
+convertible to <code class="sourceCode cpp">T</code>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">43</a></span>
+<em>Returns</em>: the value <span class="addu">, annotation,</span> or
+enumerator <code class="sourceCode cpp"><em>V</em></code> represented by
+<code class="sourceCode cpp">r</code>, converted to
+<code class="sourceCode cpp">T</code>.</p>
+</blockquote>
+</div>
+<p>And to the new section [meta.reflection.annotation]:</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">1</a></span>
+Annotations can be used to add additional information to declarations
+for future introspection.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">2</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">item</code>
+represents a type,
+<code class="sourceCode cpp"><em>typedef-name</em></code>, variable,
+function, or a specialization of a function template, class template,
+alias template, or variable template.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">3</a></span>
+<em>Returns</em>: For each
+<code class="sourceCode cpp"><em>annotation</em></code> in each
+<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
+appertaining to the entity represented by
+<code class="sourceCode cpp">item</code>, in lexical order, a reflection
+representing that annotation, whose value is the result of the
+corresponding
+<code class="sourceCode cpp"><em>constant-expression</em></code>.</p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Option <span class="op">{</span> <span class="dt">bool</span> value; <span class="op">}</span>;</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">1</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">2</span>,<span class="at"> </span><span class="op">=</span><span class="dv">3</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">4</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">true</span><span class="op">}]]</span> <span class="dt">int</span> a;</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">false</span><span class="op">}]]</span> <span class="dt">int</span> b;</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^</span>f<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^</span>g<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">([:</span>annotations_of<span class="op">(^</span>g<span class="op">)[</span><span class="dv">0</span><span class="op">]:]</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">([:</span>annotations_of<span class="op">(^</span>g<span class="op">)[</span><span class="dv">1</span><span class="op">]:]</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">([:</span>annotations_of<span class="op">(^</span>g<span class="op">)[</span><span class="dv">2</span><span class="op">]:]</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span>Option<span class="op">&gt;(</span>annotations_of<span class="op">(^</span>C<span class="op">::</span>a<span class="op">)[</span><span class="dv">0</span><span class="op">]).</span>value<span class="op">)</span>;</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>extract<span class="op">&lt;</span>Option<span class="op">&gt;(</span>annotations_of<span class="op">(^</span>C<span class="op">::</span>b<span class="op">)[</span><span class="dv">0</span><span class="op">]).</span>value<span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item, info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">4</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>
+is constant and <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+is a reflection representing a complete class type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">5</a></span>
+<em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a class template specialization with a reachable definition,
+the specialization is instantiated.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">6</a></span>
+<em>Returns</em> A <code class="sourceCode cpp">vector</code> containing
+each element, <code class="sourceCode cpp">e</code>, of <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>
+such that <code class="sourceCode cpp">dealias<span class="op">(</span>type_of<span class="op">(</span>e<span class="op">))</span> <span class="op">==</span> dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> annotation_of<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">7</a></span>
+Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp">annotations_of<span class="op">(</span>item, <span class="op">^</span>T<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">8</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">V</code> is a core
+constant expression and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(8.1)</a></span>
+<code class="sourceCode cpp">V<span class="op">.</span>size<span class="op">()</span> <span class="op">&lt;=</span> <span class="dv">1</span></code>,
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(8.2)</a></span>
+all the reflections in <code class="sourceCode cpp">V</code> compare
+equal.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">9</a></span>
+<em>Returns</em>: If <code class="sourceCode cpp">V<span class="op">.</span>empty<span class="op">()</span></code>,
+then
+<code class="sourceCode cpp">std<span class="op">::</span>nullopt</code>.
+Otherwise, <code class="sourceCode cpp">extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>V<span class="op">[</span><span class="dv">0</span><span class="op">])</span></code>.</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_annotation<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">10</a></span>
+Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp">annotations_of<span class="op">(</span>item, <span class="op">^</span>T<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">11</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">V</code> is a core
+constant expression.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">12</a></span>
+<em>Returns</em>: <code class="sourceCode cpp">V<span class="op">.</span>empty<span class="op">()</span></code>
+is
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_annotation<span class="op">(</span>info item, T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">13</a></span>
+Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp">annotations_of<span class="op">(</span>item, <span class="op">^</span>T<span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">14</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">V</code> is a core
+constant expression.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">15</a></span>
+<em>Returns</em>:
+<code class="sourceCode cpp"><span class="kw">true</span></code> if
+there exists a reflection <code class="sourceCode cpp">r</code> in
+<code class="sourceCode cpp">V</code> such that <code class="sourceCode cpp">r <span class="op">==</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>value<span class="op">)</span></code>.
+Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code> <span class="note"><span>[ <em>Note 1:</em> </span>This checks for
+template-argument-equivalence, it does not invoke either a built-in or
+user-provided <code class="sourceCode cpp"><span class="kw">operator</span><span class="op">==</span></code><span>
+— <em>end note</em> ]</span></span>.</p>
+<div class="example">
+<span>[ <em>Example 2:</em> </span>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Option <span class="op">{</span> <span class="dt">int</span> value; <span class="op">}</span>;</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="dv">9</span><span class="op">}]]</span> <span class="dt">int</span> x;</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="dv">17</span><span class="op">}]]</span> <span class="dt">int</span> y;</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> z;</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotation_of<span class="op">&lt;</span>Option<span class="op">&gt;(^</span>C<span class="op">::</span>x<span class="op">)</span> <span class="op">==</span> <span class="dv">9</span><span class="op">)</span>;</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotation_of<span class="op">&lt;</span>Option<span class="op">&gt;(^</span>C<span class="op">::</span>y<span class="op">)</span> <span class="op">==</span> <span class="dv">17</span><span class="op">)</span>;</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>annotation_of<span class="op">&lt;</span>Option<span class="op">&gt;(^</span>C<span class="op">::</span>z<span class="op">))</span>;</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>has_annotation<span class="op">&lt;</span>Option<span class="op">&gt;(^</span>C<span class="op">::</span>x<span class="op">))</span>;</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>has_annotation<span class="op">&lt;</span>Option<span class="op">&gt;(^</span>C<span class="op">::</span>y<span class="op">))</span>;</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>has_annotation<span class="op">&lt;</span>Option<span class="op">&gt;(^</span>C<span class="op">::</span>z<span class="op">))</span>;</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>has_annotation<span class="op">(^</span>C<span class="op">::</span>x, Option<span class="op">{</span><span class="dv">9</span><span class="op">}))</span>;</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>has_annotation<span class="op">(^</span>C<span class="op">::</span>y, Option<span class="op">{</span><span class="dv">9</span><span class="op">}))</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+</div>
+</blockquote>
+</div>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
+References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P0707R4" class="csl-entry" role="doc-biblioentry">
+[P0707R4] Herb Sutter. 2019-06-17. Metaclasses: Generative C++. <a href="https://wg21.link/p0707r4"><div class="csl-block">https://wg21.link/p0707r4</div></a>
+</div>
+<div id="ref-P1240R0" class="csl-entry" role="doc-biblioentry">
+[P1240R0] Andrew Sutton, Faisal Vali, Daveed Vandevoorde. 2018-10-08.
+Scalable Reflection in C++. <a href="https://wg21.link/p1240r0"><div class="csl-block">https://wg21.link/p1240r0</div></a>
+</div>
+<div id="ref-P1887R0" class="csl-entry" role="doc-biblioentry">
+[P1887R0] Corentin Jabot. 2019-10-06. Typesafe Reflection on attributes.
+<a href="https://wg21.link/p1887r0"><div class="csl-block">https://wg21.link/p1887r0</div></a>
+</div>
+<div id="ref-P2996R0" class="csl-entry" role="doc-biblioentry">
+[P2996R0] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde. 2023-10-15. Reflection for C++26. <a href="https://wg21.link/p2996r0"><div class="csl-block">https://wg21.link/p2996r0</div></a>
+</div>
+<div id="ref-P2996R7" class="csl-entry" role="doc-biblioentry">
+[P2996R7] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-10-13. Reflection for
+C++26. <a href="https://wg21.link/p2996r7"><div class="csl-block">https://wg21.link/p2996r7</div></a>
+</div>
+<div id="ref-P3294R1" class="csl-entry" role="doc-biblioentry">
+[P3294R1] Barry Revzin, Andrei Alexandrescu, Daveed Vandevoorde.
+2024-07-16. Code Injection with Token Sequences. <a href="https://wg21.link/p3294r1"><div class="csl-block">https://wg21.link/p3294r1</div></a>
+</div>
+<div id="ref-P3394R0" class="csl-entry" role="doc-biblioentry">
+[P3394R0] Daveed Vandevoorde, Wyatt Childers, Dan Katz,. 2024-10-14.
+Annotations for Reflection. <a href="https://wg21.link/p3394r0"><div class="csl-block">https://wg21.link/p3394r0</div></a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

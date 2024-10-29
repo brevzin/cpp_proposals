@@ -1,7 +1,7 @@
 ---
 title: Annotations for Reflection
 tag: reflection
-document: P3394R0
+document: P3394R1
 date: today
 audience: EWG
 hackmd: true
@@ -15,6 +15,10 @@ author:
     - name: Daveed Vandevoorde
       email: <daveed@edg.com>
 ---
+
+# Revision History
+
+Since [@P3394R0], added wording.
 
 # Introduction
 
@@ -487,3 +491,293 @@ int main() {
 This *works*, but it's not really the ideal way of doing it. This could still run into potential issues with ambiguous specialization of `std::formatter`. Better would be to allow the `Debug` annotation to, at the point of completion of `Point`, inject an explicit specialization of `std::formatter`. This would rely both on the ability for the annotation to be called back and language support for such injection (see [@P3294R1] ("Code Injection with Token Sequences")).
 
 There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks? Should the callback be registered implicitly (e.g., if an annotation of type `X` with member `X::annotate_declaration(...)` appears, that member is automatically a callback invoked when an entity is first declared with an annotation of type `X`) or explicitly (e.g., calling `annotated_declaration_callback(^^X, X_handler)` would cause `X_handler(...)` to be invoked when an entity is first declared with an annotation of type `X`).
+
+# Wording
+
+The wording is relative to [@P2996R7].
+
+## Language
+
+Change [basic.pre]{.addu} to consider annotations entities (similar to enumerators):
+
+::: std
+[3]{.pnum} An *entity* is a value, object, reference, structured binding, function, enumerator, [annotation,]{.addu} type, class member, bit-field, template, template specialization, namespace, or pack.
+:::
+
+Change [expr.prim.splice] to handle splicing a reflection of an annotation:
+
+::: std
+[2]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$E$` be the object, value, [annotation,]{.addu} or entity designated by `$splice-specifier$`.
+
+* [#.#]{.pnum} [...]
+
+* [#.#]{.pnum} Otherwise, `$E$` shall be a value[, an annotation,]{.addu} or an enumerator. The expression is a prvalue whose evaluation computes `$E$` and whose type is the same as `$E$`.
+:::
+
+Extend the grammar in [dcl.attr.grammar]{.sref}:
+
+::: std
+[1]{.pnum} Attributes [and annotations]{.addu} specify additional information for various source constructs such as types, variables, names, blocks, or translation units.
+
+```diff
+  $attribute-specifier-seq$:
+    $attribute-specifier-seq$@~opt~@ $attribute-specifier$
+
+  $attribute-specifier$:
+    [ [ $attribute-using-prefix$@~opt~@ $attribute-list$ ] ]
+    $alignment-specifier$
+
+  $alignment-specifier$:
+    alignas ( $type-id$ ...@~opt~@ )
+    alignas ( $constant-expression$ ...@~opt~@ )
+
+  $attribute-using-prefix$:
+    using $attribute-namespace$ :
+
+  $attribute-list$:
+-   $attribute$@~opt~@
+-   $attribute-list$ , $attribute$@~opt~@
+-   $attribute$ ...
+-   $attribute-list$ , $attribute$ ...
++   $attribute-or-annotation$@~opt~@
++   $attribute-or-annotation-list$ , $attribute-or-annotation$@~opt~@
++   $attribute-or-annotation$ ...
++   $attribute-list-or-annotation$ , $attribute-or-annotation$ ...
+
++ $attribute-or-annotation$:
++   $attribute$
++   $annotation$
+
+  $attribute$:
+    $attribute-token$ $attribute-argument-clause$@~opt~@
+
++ $annotation$:
++   = $constant-expression$
+```
+
+[2]{.pnum} If an `$attribute-specifier$` contains an `$attribute-using-prefix$`, the `$attribute-list$` following that `$attribute-using-prefix$` shall not contain [either]{.addu} an `$attribute-scoped-token$` [or an `$annotation$`]{.addu} and every `$attribute-token$` in that `$attribute-list$` is treated as if its identifier were prefixed with `N​::`​, where `N` is the `$attribute-namespace$` specified in the `$attribute-using-prefix$`.
+:::
+
+Adjust the restriction on ellipses in [dcl.attr.grammar]{.sref}/4:
+
+::: std
+[4]{.pnum} In an `$attribute-list$`, an ellipsis may [appear only]{.rm} [only appear following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
+The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [The `$constant-expression$`s in each `$annotation$` in an `$attribute-list$` are evaluated in lexical order.]{.addu} [...]
+
+[5]{.pnum} Each `$attribute-specifier-seq$` is said to appertain to some entity or statement, identified by the syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
+If an `$attribute-specifier-seq$` that appertains to some entity or statement contains an `$attribute$` or `$alignment-specifier$` that is not allowed to apply to that entity or statement, the program is ill-formed.
+If an `$attribute-specifier-seq$` appertains to a friend declaration ([class.friend]), that declaration shall be a definition. [The `$constant-expression$` in each `$annotation$` in an `$attribute-specifier-seq$` is evaluated in lexical order and shall have structural type ([temp.param]) [Reflections representing annotations can be retrieved with functions like `std::meta::annotations_of` ([meta.reflection.annotation])]{.note}.]{.addu}
+:::
+
+Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
+
+::: std
+[5]{.pnum} [...] Pack expansions can occur in the following contexts:
+
+* [5.9]{.pnum} In an `$attribute-list$` ([dcl.attr.grammar]); the pattern is an [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu}.
+:::
+
+## Library
+
+Add to the `<meta>` synopsis:
+
+::: std
+```diff
+namespace std::meta {
+  // ...
+  consteval bool is_bit_field(info r);
+  consteval bool is_enumerator(info r);
++ consteval bool is_annotation(info);
+  // ..
+
+  // [meta.reflection.annotation], annotation reflection
++ consteval vector<info> annotations_of(info item);
++ consteval vector<info> annotations_of(info item, info type);
++
++ template<class T>
++   consteval optional<T> annotation_of(info item);
++
++ template<class T>
++   consteval bool has_annotation(info item);
++ template<class T>
++   consteval bool has_annotation(info item, T const& value);
+}
+```
+:::
+
+Add `is_annotation` to [meta.reflection.queries]:
+
+::: std
+```diff
+  consteval bool is_enumerator(info r);
++ consteval bool is_annotation(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents an enumerator [or annotation, respectively]{.addu}. Otherwise, `false`.
+
+:::
+
+Update the meanings of `type_of` and `value_of` in [meta.reflection.queries]:
+
+::: std
+```cpp
+consteval info type_of(info r);
+```
+
+[35]{.pnum} *Constant When*: `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, [annotation,]{.addu} non-static data member, bit-field, base class specifier, or description of a declaration of a non-static data member.
+
+[#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then the type of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the type of the base class. Otherwise, the type of any data member declared with the properties represented by `r`.
+
+```cpp
+consteval info value_of(info r);
+```
+
+[39]{.pnum} *Constant When*: `r` is a reflection representing
+
+* [#.#]{.pnum} either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
+
+::: addu
+* [#.#]{.pnum} an annotation,
+:::
+
+* [#.#]{.pnum} an enumerator, or
+* [#.#]{.pnum} a value.
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type
+* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator [or an annotation]{.addu}, then a reflection of the value of the enumerator [or annotation, respectively]{.addu}.
+* [#.#]{.pnum} Otherwise, `r`.
+:::
+
+
+And update `extract` in [meta.reflection.extract], specifically `$extract-val$`:
+
+::: std
+```cpp
+template <class T>
+  consteval T $extract-val$(info r); // exposition only
+```
+
+[#]{.pnum} Let `U` be the type of the value[, annotation,]{.addu} or enumerator that `r` represents.
+
+[#]{.pnum} *Constant When*:
+
+  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
+  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
+  - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value `r` represents is convertible to `T`.
+
+[#]{.pnum} *Returns*: the value [, annotation,]{.addu} or enumerator `$V$` represented by `r`, converted to `T`.
+:::
+
+
+And to the new section [meta.reflection.annotation]:
+
+::: std
+::: addu
+[1]{.pnum} Annotations can be used to add additional information to declarations for future introspection.
+
+```cpp
+consteval vector<info> annotations_of(info item);
+```
+
+[#]{.pnum} *Constant When*: `item` represents a type, `$typedef-name$`, variable, function, or a specialization of a function template, class template, alias template, or variable template.
+
+[#]{.pnum} *Returns*: For each `$annotation$` in each `$attribute-specifier-seq$` appertaining to the entity represented by `item`, in lexical order, a reflection representing that annotation, whose value is the result of the corresponding `$constant-expression$`.
+
+::: example
+```cpp
+struct Option { bool value; };
+
+[[=1]] void f();
+[[=2, =3]] void g();
+[[=4]] void g();
+
+struct C {
+    [[=Option{true}]] int a;
+    [[=Option{false}]] int b;
+};
+
+static_assert(annotations_of(^f).size() == 1);
+static_assert(annotations_of(^g).size() == 3);
+static_assert([:annotations_of(^g)[0]:] == 2);
+static_assert([:annotations_of(^g)[1]:] == 3);
+static_assert([:annotations_of(^g)[2]:] == 4);
+
+static_assert(extract<Option>(annotations_of(^C::a)[0]).value);
+static_assert(!extract<Option>(annotations_of(^C::b)[0]).value);
+```
+:::
+
+```cpp
+consteval vector<info> annotations_of(info item, info type);
+```
+
+[#]{.pnum} *Constant When*: `annotations_of(item)` is constant and `dealias(type)` is a reflection representing a complete class type.
+
+[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)` such that `dealias(type_of(e)) == dealias(type)`.
+
+```cpp
+template<class T>
+  consteval optional<T> annotation_of(info item);
+```
+
+[#]{.pnum} Let `V` be `annotations_of(item, ^T)`.
+
+[#]{.pnum} *Constant When*: `V` is a core constant expression and either:
+
+* [#.#]{.pnum} `V.size() <= 1`, or
+* [#.#]{.pnum} all the reflections in `V` compare equal.
+
+[#]{.pnum} *Returns*: If `V.empty()`, then `std::nullopt`. Otherwise, `extract<T>(V[0])`.
+
+```cpp
+template<class T>
+  consteval bool has_annotation(info item);
+```
+
+[#]{.pnum} Let `V` be `annotations_of(item, ^T)`.
+
+[#]{.pnum} *Constant When*: `V` is a core constant expression.
+
+[#]{.pnum} *Returns*: `V.empty()` is `false`.
+
+```cpp
+template<class T>
+  consteval bool has_annotation(info item, T const& value);
+```
+
+[#]{.pnum} Let `V` be `annotations_of(item, ^T)`.
+
+[#]{.pnum} *Constant When*: `V` is a core constant expression.
+
+[#]{.pnum} *Returns*: `true` if there exists a reflection `r` in `V` such that `r == std::meta::reflect_value(value)`. Otherwise, `false` [This checks for template-argument-equivalence, it does not invoke either a built-in or user-provided `operator==`]{.note}.
+
+::: example
+```cpp
+struct Option { int value; };
+
+struct C {
+    [[=Option{9}]] int x;
+    [[=Option{17}]] int y;
+    int z;
+};
+
+static_assert(annotation_of<Option>(^C::x) == 9);
+static_assert(annotation_of<Option>(^C::y) == 17);
+static_assert(!annotation_of<Option>(^C::z));
+
+static_assert(has_annotation<Option>(^C::x));
+static_assert(has_annotation<Option>(^C::y));
+static_assert(!has_annotation<Option>(^C::z));
+
+static_assert(has_annotation(^C::x, Option{9}));
+static_assert(!has_annotation(^C::y, Option{9}));
+```
+:::
+
+
+:::
+:::

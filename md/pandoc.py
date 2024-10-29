@@ -105,8 +105,13 @@ def std(elem, doc):
     # only wrap code blocks (which were already put into a RawBlock)
     if isinstance(elem, pf.RawBlock) and elem.text.startswith('<div class="sourceCode"'):
         # if it's already wrapped, don't need to wrap again
-        if isinstance(elem.parent, pf.BlockQuote):
-            return
+        p = elem.parent
+        while True:
+            if isinstance(p, pf.BlockQuote):
+                return
+            if p is None:
+                break
+            p = p.parent
 
         return pf.Div(pf.BlockQuote(elem), classes=["std"])
 
