@@ -667,7 +667,7 @@ template <class T>
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value `r` represents is convertible to `T`.
 
-[#]{.pnum} *Returns*: the value [, annotation,]{.addu} or enumerator `$V$` represented by `r`, converted to `T`.
+[#]{.pnum} *Returns*: the value[, annotation,]{.addu} or enumerator `$V$` represented by `r`, converted to `T`.
 :::
 
 
