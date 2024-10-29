@@ -713,7 +713,7 @@ static_assert(!extract<Option>(annotations_of(^C::b)[0]).value);
 consteval vector<info> annotations_of(info item, info type);
 ```
 
-[#]{.pnum} *Constant When*: `annotations_of(item)` is constant and `dealias(type)` is a reflection representing a complete class type.
+[#]{.pnum} *Constant When*: `annotations_of(item)` is constant and `dealias(type)` is a reflection representing a complete type.
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
@@ -729,7 +729,7 @@ template<class T>
 [#]{.pnum} *Constant When*: `V` is a core constant expression and either:
 
 * [#.#]{.pnum} `V.size() <= 1`, or
-* [#.#]{.pnum} all the reflections in `V` compare equal.
+* [#.#]{.pnum} all the values of the reflections in `V` compare equal.
 
 [#]{.pnum} *Returns*: If `V.empty()`, then `std::nullopt`. Otherwise, `extract<T>(V[0])`.
 
@@ -738,11 +738,7 @@ template<class T>
   consteval bool has_annotation(info item);
 ```
 
-[#]{.pnum} Let `V` be `annotations_of(item, ^T)`.
-
-[#]{.pnum} *Constant When*: `V` is a core constant expression.
-
-[#]{.pnum} *Returns*: `V.empty()` is `false`.
+[#]{.pnum} *Effects*: Equivalent to `return !annotations_of(item, ^T).empty();`
 
 ```cpp
 template<class T>
@@ -753,7 +749,7 @@ template<class T>
 
 [#]{.pnum} *Constant When*: `V` is a core constant expression.
 
-[#]{.pnum} *Returns*: `true` if there exists a reflection `r` in `V` such that `r == std::meta::reflect_value(value)`. Otherwise, `false` [This checks for template-argument-equivalence, it does not invoke either a built-in or user-provided `operator==`]{.note}.
+[#]{.pnum} *Returns*: `true` if there exists a reflection `r` in `V` such that `value_of(r) == std::meta::reflect_value(value)`. Otherwise, `false` [This checks for template-argument-equivalence, it does not invoke either a built-in or user-provided `operator==`]{.note}.
 
 ::: example
 ```cpp

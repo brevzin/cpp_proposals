@@ -1607,7 +1607,7 @@ corresponding
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">4</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>
 is constant and <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
-is a reflection representing a complete class type.</p>
+is a reflection representing a complete type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">5</a></span>
 <em>Effects</em>: If <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a class template specialization with a reachable definition,
@@ -1628,8 +1628,8 @@ constant expression and either:</p>
 <code class="sourceCode cpp">V<span class="op">.</span>size<span class="op">()</span> <span class="op">&lt;=</span> <span class="dv">1</span></code>,
 or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(8.2)</a></span>
-all the reflections in <code class="sourceCode cpp">V</code> compare
-equal.</li>
+all the values of the reflections in
+<code class="sourceCode cpp">V</code> compare equal.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">9</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">V<span class="op">.</span>empty<span class="op">()</span></code>,
@@ -1639,26 +1639,19 @@ Otherwise, <code class="sourceCode cpp">extract<span class="op">&lt;</span>T<spa
 <div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_annotation<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">10</a></span>
-Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp">annotations_of<span class="op">(</span>item, <span class="op">^</span>T<span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">11</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">V</code> is a core
-constant expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">12</a></span>
-<em>Returns</em>: <code class="sourceCode cpp">V<span class="op">.</span>empty<span class="op">()</span></code>
-is
-<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <span class="op">!</span>annotations_of<span class="op">(</span>item, <span class="op">^</span>T<span class="op">).</span>empty<span class="op">()</span>;</code></p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="dt">bool</span> has_annotation<span class="op">(</span>info item, T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">11</a></span>
 Let <code class="sourceCode cpp">V</code> be <code class="sourceCode cpp">annotations_of<span class="op">(</span>item, <span class="op">^</span>T<span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">14</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">12</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">V</code> is a core
 constant expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">15</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">13</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 there exists a reflection <code class="sourceCode cpp">r</code> in
-<code class="sourceCode cpp">V</code> such that <code class="sourceCode cpp">r <span class="op">==</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>value<span class="op">)</span></code>.
+<code class="sourceCode cpp">V</code> such that <code class="sourceCode cpp">value_of<span class="op">(</span>r<span class="op">)</span> <span class="op">==</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>value<span class="op">)</span></code>.
 Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code> <span class="note"><span>[ <em>Note 1:</em> </span>This checks for
 template-argument-equivalence, it does not invoke either a built-in or
