@@ -4868,7 +4868,7 @@ consteval source_location source_location_of(info r);
 
 [#]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a description of a declaration of a non-static data member, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
 
-[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to the declaration. If multiple such declarations exist and one is a definition, a value corresponding to the definition is preferred.
+[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct. If multiple such declarations exist and one is a definition, a value corresponding to the definition is preferred.
 :::
 :::
 
