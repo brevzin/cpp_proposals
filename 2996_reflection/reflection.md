@@ -5691,7 +5691,7 @@ consteval const char8_t* define_static_string(u8string_view str);
 
 [#]{.pnum} *Returns*: `&$S$[k]`
 
-[#]{.pnum} Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument.
+[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument.
 
 ```cpp
 template<ranges::input_range R>
@@ -5704,7 +5704,7 @@ template<ranges::input_range R>
 
 [#]{.pnum} *Returns*: `span(addressof($S$[$k$]), $D$)`
 
-[#]{.pnum} Implementations are encouraged to return the same object whenever the same the function is called with the same argument.
+[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same the function is called with the same argument.
 
 
 :::
