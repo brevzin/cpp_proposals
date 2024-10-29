@@ -5338,7 +5338,7 @@ constexpr ptrdiff_t member_offset::total_bits() const;
 consteval member_offset offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a non-static data member or base class specifier.
+[#]{.pnum} *Constant When*: `r` represents a non-static data member, unnamed bit-field, or base class specifier.
 
 [#]{.pnum} Let `$V$` be a constant defined as follows:
 
