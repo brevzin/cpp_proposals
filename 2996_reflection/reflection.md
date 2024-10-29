@@ -3017,7 +3017,7 @@ extract<bool>(substitute(^std::is_const_v, {type}))
 ```
 :::
 
-The indirect approach is a lot more typing, and you have to remember to `dealias` the result of the type traits as well (because `substitute(^std::remove_cvref_t, {^int const})` gives you a reflection of an alias to `int`, not a reflection of `int`), so it's both more tedious and more error pone.
+The indirect approach is a lot more typing, and you have to remember to `dealias` the result of the type traits as well (because `substitute(^std::remove_cvref_t, {^int const})` gives you a reflection of an alias to `int`, not a reflection of `int`), so it's both more tedious and more error prone.
 
 Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API. There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
 So we're doing it.
@@ -3037,7 +3037,7 @@ But this is no longer the case. Consider the name `is_function`. It could be:
 
 Both of these are useful, yet they mean different things entirely - the first is ill-formed when passed a reflection of a function (as opposed to a function type), and the second would simply answer `false` for the reflection of _any_ type (function type or otherwise).
 
-Moreover, in this case it's actually import than the reflection query `std::meta::is_function` does _not_ return `true` for a function type so that using `is_function`as a filter for `members_of` does the expected thing — only giving you back functions, rather than also types.
+Moreover, in this case it's actually import than the reflection query `std::meta::is_function` does _not_ return `true` for a function type so that using `is_function` as a filter for `members_of` does the expected thing — only giving you back functions, rather than also types.
 
 There are a few other examples of name clashes where we want the reflection query to apply to more inputs than simply types. For example, the type trait `std::is_final` can only ask if a type is a final class type, but the metafunction `std::meta::is_final` can ask if a member function is a final member function. Likewise `std::meta::is_const` can apply to objects or types too, and so forth.
 
