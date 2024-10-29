@@ -498,7 +498,7 @@ The wording is relative to [@P2996R7].
 
 ## Language
 
-Change [basic.pre]{.addu} to consider annotations entities (similar to enumerators):
+Change [basic.pre]{.sref} to consider annotations entities (similar to enumerators):
 
 ::: std
 [3]{.pnum} An *entity* is a value, object, reference, structured binding, function, enumerator, [annotation,]{.addu} type, class member, bit-field, template, template specialization, namespace, or pack.
