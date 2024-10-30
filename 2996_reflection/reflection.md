@@ -30,6 +30,8 @@ Since [@P2996R7]:
 
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
+* removed `define_static_array` and `define_static_string`
+* clarified that `sizeof(std::meta::info) == `sizeof(void *)`
 * clarified that `data_member_options_t` is a non-structural consteval-only type
 * clarified that everything in `std::meta` is addressable
 * renaming `member_offsets` to `member_offset` and changing `member_offset` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
@@ -2478,14 +2480,6 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
     consteval auto define_class(info type_class, R&&) -> info;
 
-  // @[define_static_string and define_static_array](#define_static_string-define_static_array)@
-  consteval auto define_static_string(string_view str) -> const char *;
-  consteval auto define_static_string(u8string_view str) -> const char8_t *;
-
-  template <ranges::input_range R>
-  consteval auto define_static_array(R&& r) -> span<ranges::range_value_t<R> const>;
-
-
   // @[data layout](#data-layout-reflection)@
   struct member_offset {
     ptrdiff_t bytes;
@@ -2862,74 +2856,6 @@ This allows implementing [variant](#a-simple-variant-type) without having to fur
 
 If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
-### `define_static_string`, `define_static_array`
-::: std
-```c++
-namespace std::meta {
-  consteval auto define_static_string(string_view str) -> const char *;
-  consteval auto define_static_string(u8string_view str) -> const char8_t *;
-
-  template <ranges::input_range R>
-  consteval auto define_static_array(R&& r) -> span<ranges::range_value_t<R> const>;
-}
-```
-:::
-
-Given a `string_view` or `u8string_view`, `define_static_string` returns a pointer to an array of characters containing the contents of `str` followed by a null terminator. The array object has static storage duration, is not a subobject of a string literal object, and is usable in constant expressions; a pointer to such an object meets the requirements for use as a non-type template argument.
-
-::: std
-```cpp
-template <const char *P> struct C { };
-
-const char msg[] = "strongly in favor";  // just an idea..
-
-C<msg> c1;                          // ok
-C<"nope"> c2;                       // ill-formed
-C<define_static_string("yay")> c3;  // ok
-```
-:::
-
-In the absence of general support for non-transient constexpr allocation, such a facility is essential to building utilities like pretty printers.
-
-An example of such an interface might be built as follow:
-
-::: std
-```cpp
-template <std::meta::info R> requires is_value(R)
-  consteval auto render() -> std::string;
-
-template <std::meta::info R> requires is_type(R)
-  consteval auto render() -> std::string;
-
-template <std::meta::info R> requires is_variable(R)
-  consteval auto render() -> std::string;
-
-// ...
-
-template <std::meta::info R>
-consteval auto pretty_print() -> std::string_view {
-  return define_static_string(render<R>());
-}
-```
-:::
-
-This strategy [lies at the core](https://github.com/bloomberg/clang-p2996/blob/149cca52811b59b22608f6f6e303f6589969c999/libcxx/include/experimental/meta#L2317-L2321) of how the Clang/P2996 fork builds its example implementation of the `display_string_of` metafunction.
-
-`define_static_array` is a more general version of `define_static_string` that works for all types. The difference between the two is that `define_static_string` produces a null-terminated array, and thus returns just a pointer, while `define_static_array` produces an array that is the same size as the input range.
-
-Technically, `define_static_array` can be used to implement `define_static_string`:
-
-::: std
-```cpp
-consteval auto define_static_string(string_view str) -> char const* {
-  return define_static_array(views::concat(str, views::single('\0'))).data();
-}
-```
-:::
-
-But that's a fairly awkward implementation, and the string use-case is sufficiently common as to merit a more ergonomic solution.
-
-
 ### Data Layout Reflection
 ::: std
 ```c++
@@ -3300,7 +3226,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a base class specifier, or
 * a description of a declaration of a non-static data member.
 
-An expression convertible to a reflection is said to _represent_ the corresponding entity, alias, object, value, base class specifier, or description of a declaration of a non-static data member.
+An expression convertible to a reflection is said to _represent_ the corresponding entity, alias, object, value, base class specifier, or description of a declaration of a non-static data member. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 
 :::
 :::
@@ -4580,12 +4506,6 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
   consteval info define_class(info type_class, R&&);
 
-  // [meta.reflection.define_static], static array generation
-  consteval const char* define_static_string(string_view str);
-  consteval const char8_t* define_static_string(u8string_view str);
-  template<ranges::input_range R>
-    consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
-
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
   consteval bool type_is_null_pointer(info type);
@@ -4889,7 +4809,7 @@ consteval source_location source_location_of(info r);
 
 [#]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a description of a declaration of a non-static data member, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
 
-[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct. If multiple such declarations exist and one is a definition, a value corresponding to the definition is preferred.
+[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct that is reachable from the evaluation construct. If there are multiple such declarations and one is a definition, a value corresponding to the definition is preferred.
 :::
 :::
 
@@ -5691,41 +5611,6 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
-
-:::
-:::
-
-### [meta.reflection.define_static] Static array generation  {-}
-
-::: std
-::: addu
-```cpp
-consteval const char* define_static_string(string_view str);
-consteval const char8_t* define_static_string(u8string_view str);
-```
-
-[#]{.pnum} Let `$S$` be a constexpr variable of array type with static storage duration, whose elements are of type `const char` or `const char8_t` respectively, for which there exists some `k` &geq; `0` such that:
-
-* [#.#]{.pnum} `$S$[k + i] == str[i]` for all 0 &leq; `i` < `str.size()`, and
-* [#.#]{.pnum} `$S$[k + str.size()] == '\0'`.
-
-[#]{.pnum} *Returns*: `&$S$[k]`.
-
-[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument. [The returned object is distinct from any string literal]{.note}
-
-```cpp
-template<ranges::input_range R>
-    consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
-```
-
-[#]{.pnum} *Constraints*: `is_constructible_v<ranges::range_value_t<R>, ranges::range_reference_t<R>>` is `true`.
-
-[#]{.pnum} Let `D` be `ranges::distance(r)` and `S` be a constexpr variable of array type with static storage duration, whose elements are of type `const ranges::range_value_t<R>`, for which there exists some `k` &geq; `0` such that `$S$[k + i] == r[i]` for all 0 &leq; `i` < `$D$`.
-
-[#]{.pnum} *Returns*: `span(addressof($S$[$k$]), $D$)`
-
-[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same the function is called with the same argument.
-
 
 :::
 :::
