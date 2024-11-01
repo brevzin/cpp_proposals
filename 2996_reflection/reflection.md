@@ -3590,23 +3590,22 @@ Add new paragraphs prior to the definition of _manifestly constant evaluated_ ([
 ::: std
 ::: addu
 
-[20]{.pnum} An expression or conversion is _potentially plainly constant-evaluated_ if it is:
+[20]{.pnum} An expression or conversion is _in substitution context_ if it results from the substitution of template parameters
 
-* [#.#]{.pnum} a `$constant-expression$`,
+* [#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
+* [#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
+* [#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}).
+
+[#]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is
+
+* [#.#]{.pnum} a `$constant-expression$` that is not in substitution context,
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
 * [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
-* [#.#]{.pnum} an immediate invocation.
+* [#.#]{.pnum} an immediate invocation, unless it is
+  * [#.#.#]{.pnum} in substitution context, or
+  * [#.#.#]{.pnum} within the body of an immediate-escalating function that contains an immediate-escalating expression.
 
-[#]{.pnum} A potentially plainly constant-evaluated expression or conversion is also _plainly constant-evaluated_ unless it
-
-* [#.#]{.pnum} is a subexpression of an initializer for a variable that is neither `constexpr` nor `constinit`,
-* [#.#]{.pnum} results from the substitution of template parameters
-  * [#.#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
-  * [#.#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
-  * [#.#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-* [#.#]{.pnum} is an immediate invocation appearing within the body of an immediate-escalating function that contains an immediate-escalating expression.
-
-[Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
+[A plainly constant-evaluated expression `$E$` is evaluated exactly once, may produce injected declarations (see below), and any such declarations are reachable at a point immediatelly following `$E$`.]{.note}
 
 ::: example
 ```cpp
