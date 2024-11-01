@@ -3592,20 +3592,24 @@ Add a new paragraph prior to the definition of _manifestly constant evaluated_ (
 
 [20]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
 
-* [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
-* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or a subexpression thereof, or
-* [#.#]{.pnum} an immediate invocation, unless it
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} a `$constant-expression$` or an immediate invocation, unless it
   * [#.#.#]{.pnum} results from the substitution of template parameters
     * during template argument deduction ([temp.deduct]{.sref}),
     * in a `$concept-id$` ([temp.names]{.sref}), or
     * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-  * [#.#.#]{.pnum} is an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}), or a subexpression thereof.
+  * [#.#.#]{.pnum} is an initializer, or a subexpression thereof, for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
 
 [Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
 
 ::: example
 ```cpp
+template <class> struct RV {};
+
+// instantiations of 'T::f(0)' are not plainly constant-evaluated
+template <class T> RV<T::f(0)> check(int);
+
 consteval bool cfn(int) { return true; }
 
 template <int V> requires (cfn(V))  // cfn(V) is not plainly constant-evaluated
@@ -3626,17 +3630,14 @@ const bool b2 = cfn(2);             // cfn(2) is not plainly constant-evaluated
 :::
 :::
 
-Modify the definition of _manifestly constant-evaluated_ to leverage that of _plainly constant-evaluated_:
+Add a note following the definition of _manifestly constant-evaluated_ to clarify the relationship with _plainly constant-evaluated_ expressions:
 
 ::: std
 
 [21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
 
-* [#.#]{.pnum} a [`$constant-expression$`]{.rm} [plainly constant-evaluated expression]{.addu}, or
-
-::: rm
+* [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
-:::
 * [#.#]{.pnum} an immediate invocation, or
 * [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
@@ -3658,7 +3659,8 @@ Add new paragraphs defining _evaluation context_, _injected declaration_, and _i
 
 [23]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
 
-* [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated, or
+* [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated,
+* required for the lookup of a name appearing within an unevaluated operand,
 * within the body of an immediate-escalating function `$F$`, unless
   * [#.#.#]{.pnum} `$E$` is a plainly constant-evaluated expression or a subexpression thereof, or
   * [#.#.#]{.pnum} `$F$` does not contain an immediate-escalating expression.
