@@ -3585,21 +3585,26 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Add a new paragraph prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
+Add new paragraphs prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
 
 ::: std
 ::: addu
 
-[20]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
+[20]{.pnum} An expression or conversion is _potentially plainly constant-evaluated_ if it is:
 
+* [#.#]{.pnum} a `$constant-expression$`,
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
 * [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
-* [#.#]{.pnum} a `$constant-expression$` or an immediate invocation, unless it
-  * [#.#.#]{.pnum} results from the substitution of template parameters
-    * during template argument deduction ([temp.deduct]{.sref}),
-    * in a `$concept-id$` ([temp.names]{.sref}), or
-    * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-  * [#.#.#]{.pnum} is an initializer, or a subexpression thereof, for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}).
+* [#.#]{.pnum} an immediate invocation.
+
+[#]{.pnum} A potentially plainly constant-evaluated expression or conversion is also _plainly constant-evaluated_ unless it
+
+* [#.#]{.pnum} is a subexpression of an initializer for a variable that is neither `constexpr` nor `constinit`,
+* [#.#]{.pnum} results from the substitution of template parameters
+  * [#.#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
+  * [#.#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
+  * [#.#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}), or
+* [#.#]{.pnum} is an immediate invocation appearing within the body of an immediate-escalating function that contains an immediate-escalating expression.
 
 [Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
 
@@ -3634,7 +3639,7 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 
 ::: std
 
-[21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
+[#]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
 
 * [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
@@ -3653,17 +3658,14 @@ Add new paragraphs defining _evaluation context_, _injected declaration_, and _i
 ::: std
 ::: addu
 
-[22]{.pnum} The evaluation of an expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
+[#]{.pnum} The evaluation of an expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
 
 [Special rules concerning reachability apply to injected points ([module.reach]).]{.note13}
 
-[23]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
+[#]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
 
-* [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated,
-* required for the lookup of a name appearing within an unevaluated operand,
-* within the body of an immediate-escalating function `$F$`, unless
-  * [#.#.#]{.pnum} `$E$` is a plainly constant-evaluated expression or a subexpression thereof, or
-  * [#.#.#]{.pnum} `$F$` does not contain an immediate-escalating expression.
+* [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated, or
+* within the body of an immediate-escalating function `$F$`, unless `$E$` is a plainly constant-evaluated expression or a subexpression thereof.
 
 [An immediate invocation within an immediate-escalating function is similar to a trial evaluation of a variable initializer: if it fails to be a constant expression, the implementation may be forced to evaluate it again. The above rule is intended to only permit evaluations to produce declarations when such evaluations can be guaranteed to only happen once.]{.note}
 
