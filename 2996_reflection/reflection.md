@@ -3037,7 +3037,7 @@ But this is no longer the case. Consider the name `is_function`. It could be:
 
 Both of these are useful, yet they mean different things entirely - the first is ill-formed when passed a reflection of a function (as opposed to a function type), and the second would simply answer `false` for the reflection of _any_ type (function type or otherwise).
 
-Moreover, in this case it's actually import than the reflection query `std::meta::is_function` does _not_ return `true` for a function type so that using `is_function` as a filter for `members_of` does the expected thing — only giving you back functions, rather than also types.
+Moreover, in this case it's actually important that the reflection query `std::meta::is_function` does _not_ return `true` for a function type so that using `is_function` as a filter for `members_of` does the expected thing — only giving you back functions, rather than also types.
 
 A similar kind of clash could occur with other functions — for instance, we don't have an `is_array(r)` right now that would check if `r` were the reflection of an array (as opposed to an array type), but we could in the future.
 
