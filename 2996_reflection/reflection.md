@@ -30,7 +30,7 @@ Since [@P2996R7]:
 
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
-* removed `define_static_array` and `define_static_string`
+* removed `define_static_array`, `define_static_string`, and `reflect_invoke`
 * clarified that `sizeof(std::meta::info) == `sizeof(void *)`
 * clarified that `data_member_options_t` is a non-structural consteval-only type
 * clarified that everything in `std::meta` is addressable
@@ -1330,95 +1330,6 @@ static_assert(z == 2);
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/MEYd3771Y), [Clang](https://godbolt.org/z/K4KWEqevv).
 
-## Emulating typeful reflection
-Although we believe a single opaque `std::meta::info` type to be the best and most scalable foundation for reflection, we acknowledge the desire expressed by SG7 for future support for "typeful reflection". The following demonstrates one possible means of assembling a typeful reflection library, in which different classes of reflections are represented by distinct types, on top of the facilities proposed here.
-
-::: std
-```cpp
-// Represents a 'std::meta::info' constrained by a predicate.
-template <std::meta::info Pred>
-  requires (std::predicate<[:type_of(Pred):], std::meta::info>)
-struct metatype {
-  std::meta::info value;
-
-  // Construction is ill-formed unless predicate is satisfied.
-  consteval metatype(std::meta::info r) : value(r) {
-    if (![:Pred:](r))
-      throw "Reflection is not a member of this metatype";
-  }
-
-  // Cast to 'std::meta::info' allows values of this type to be spliced.
-  consteval operator std::meta::info() const { return value; }
-
-  static consteval bool check(std::meta::info r) { return [:Pred:](r); }
-};
-
-// Type representing a "failure to match" any known metatypes.
-struct unmatched {
-  consteval unmatched(std::meta::info) {}
-  static consteval bool check(std::meta::info) { return true; }
-};
-
-// Returns the given reflection "enriched" with a more descriptive type.
-template <typename... Choices>
-consteval std::meta::info enrich(std::meta::info r) {
-  // Because we control the type, we know that the constructor taking info is
-  // the first constructor. The copy/move constructors are added at the }, so
-  // will be the last ones in the list.
-  std::array ctors = {
-    *(members_of(^Choices) | std::views::filter(std::meta::is_constructor)).begin()...,
-    *(members_of(^unmatched) | std::views::filter(std::meta::is_constructor)).begin()
-  };
-  std::array checks = {^Choices::check..., ^unmatched::check};
-
-  for (auto [check, ctor] : std::views::zip(checks, ctors))
-    if (extract<bool>(reflect_invoke(check, {reflect_value(r)})))
-      return reflect_invoke(ctor, {reflect_value(r)});
-
-  std::unreachable();
-}
-```
-:::
-
-We can leverage this machinery to select different function overloads based on the "type" of reflection provided as an argument.
-
-::: std
-```cpp
-using type_t = metatype<^std::meta::is_type>;
-using template_t = metatype<^std::meta::is_template>;
-
-// Example of a function overloaded for different "types" of reflections.
-void PrintKind(type_t) { std::println("type"); }
-void PrintKind(template_t) { std::println("template"); }
-void PrintKind(unmatched) { std::println("unknown kind"); }
-
-int main() {
-  // Classifies any reflection as one of: Type, Function, or Unmatched.
-  auto enrich = [](std::meta::info r) { return ::enrich<type_t,
-                                                        template_t>(r); };
-
-  // Demonstration of using 'enrich' to select an overload.
-  PrintKind([:enrich(^metatype):]);                   // "template"
-  PrintKind([:enrich(^type_t):]);                     // "type"
-  PrintKind([:enrich(std::meta::reflect_value(3):]);  // "unknown kind"
-}
-```
-:::
-
-Note that the `metatype` class can be generalized to wrap values of any literal type, or to wrap multiple values of possibly different types. This has been used, for instance, to select compile-time overloads based on: whether two integers share the same parity, the presence or absence of a value in an `optional`, the type of the value held by a `variant` or an `any`, or the syntactic form of a compile-time string.
-
-Achieving the same in C++23, with the same generality, would require spelling the argument(s) twice: first to obtain a "classification tag" to use as a template argument, and again to call the function, i.e.,
-
-::: std
-```cpp
-Printer::PrintKind<classify(^int)>(^int).
-// or worse...
-fn<classify(Arg1, Arg2, Arg3)>(Arg1, Arg2, Arg3).
-```
-:::
-
-On Compiler Explorer: [Clang](https://godbolt.org/z/E8fc41s4q).
-
 # Proposed Features
 
 ## The Reflection Operator (`^`)
@@ -2384,12 +2295,6 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
     consteval auto substitute(info templ, R&& args) -> info;
 
-  // @[reflect_invoke](#reflect_invoke)@
-  template <reflection_range R = initializer_list<info>>
-    consteval auto reflect_invoke(info target, R&& args) -> info;
-  template <reflection_range R1 = initializer_list<info>, reflection_range R2 = initializer_list<info>>
-    consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
-
   // @[reflect expression results](#reflect-expression-results)@
   template <typename T>
     consteval auto reflect_value(T value) -> info;
@@ -2693,29 +2598,6 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 
 `can_substitute(templ, args)` simply checks if the substitution can succeed (with the same caveat about instantiations outside of the immediate context).
 If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will be ill-formed.
-
-### `reflect_invoke`
-
-::: std
-```c++
-namespace std::meta {
-  template <reflection_range R = initializer_list<info>>
-  consteval auto reflect_invoke(info target, R&& args) -> info;
-  template <reflection_range R1 = initializer_list<info>, reflection_range R2 = initializer_list<info>>
-  consteval auto reflect_invoke(info target, R1&& tmpl_args, R2&& args) -> info;
-}
-```
-:::
-
-These metafunctions produce a reflection of the result of a call expression.
-
-For the first overload: Letting `F` be the entity represented by `target`, and `A@~0~@, A@~1~@, ..., A@~N~@` be the sequence of entities represented by the values held by `args`: if the expression `F(A@~0~@, A@~1~@, ..., A@~N~@)` is a well-formed constant expression evaluating to a structural type that is not `void`, and if every value in `args` is a reflection of a value or object usable in constant expressions, then `reflect_invoke(target, args)` evaluates to a reflection of the result of `F(A@~0~@, A@~1~@, ..., A@~N~@)`. For all other invocations, `reflect_invoke(target, args)` is not a constant expression.
-
-The second overload behaves the same as the first overload, except instead of evaluating `F(A@~0~@, A@~1~@, ..., A@~N~@)`, we require that `F` be a reflection of a template and evaluate `F<T@~0~@, T@~1~@, ..., T@~M~@>(A@~0~@, A@~1~@, ..., A@~N~@)`. This allows evaluating `reflect_invoke(^std::get, {std::meta::reflect_value(0)}, {e})` to evaluate to, approximately, `^std::get<0>([: e :])`.
-
-If the returned reflection is of a value (rather than an object), the type of the reflected value is the cv-qualified (de-aliased) type of what's returned by the function.
-
-A few possible extensions for `reflect_invoke` have been discussed among the authors. Given the advent of constant evaluations with side-effects, it may be worth allowing `void`-returning functions, but this would require some representation of "a returned value of type `void`". Construction of runtime call expressions is another exciting possibility. Both extensions require more thought and implementation experience, and we are not proposing either at this time.
 
 ### `reflect_value`, `reflect_object`, `reflect_function` {#reflect-expression-results}
 
@@ -4481,11 +4363,6 @@ namespace std::meta {
   template<class T>
     consteval info reflect_function(T& fn);
 
-  template <reflection_range R = initializer_list<info>>
-    consteval info reflect_invoke(info target, R&& args);
-  template <reflection_range R1 = initializer_list<info>, reflection_range R2 = initializer_list<info>>
-    consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
-
   // [meta.reflection.define_class], class definition generation
   struct data_member_options_t {
     struct name_type {
@@ -5468,55 +5345,6 @@ template <typename T>
 [#]{.pnum} *Mandates*: `T` is a function type.
 
 [#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
-
-```cpp
-template <reflection_range R = initializer_list<info>>
-  consteval info reflect_invoke(info target, R&& args);
-template <reflection_range R1 = initializer_list<info>, reflection_range R2 = initializer_list<info>>
-  consteval info reflect_invoke(info target, R1&& tmpl_args, R2&& args);
-```
-
-[#]{.pnum} An expression `$E$` is said to be _reciprocal to_ a reflection `$r$` if
-
-  - [#.#]{.pnum} `$r$` represents a variable, and `$E$` is an lvalue designating the object named by that variable,
-  - [#.#]{.pnum} `$r$` represents an object or function, and `$E$` is an lvalue that designates that object or function, or
-  - [#.#]{.pnum} `$r$` represents a value, and `$E$` is a prvalue that computes that value.
-
-[#]{.pnum} For exposition only, let
-
-- [#.#]{.pnum} `$F$` be either an entity or an expression, such that if `target` represents a function or function template then `$F$` is that entity, and if `target` represents a variable, object, or value, then `$F$` is an expression reciprocal to `target`,
-- [#.#]{.pnum} `$TArgs$...` be a sequence of entities and expressions corresponding to the elements of `tmpl_args` (if any), such that for every `$targ$` in `tmpl_args`,
-  - [#.#.#]{.pnum} if `$targ$` represents a type or `$typedef-name$`, the corresponding element of `$TArgs$...` is that type, or the type named by that `$typedef-name$`, respectively,
-  - [#.#.#]{.pnum} if `$targ$` represents a variable, object, value, or function, the corresponding element of `$TArgs$...` is an expression reciprocal to `$targ$`, and
-  - [#.#.#]{.pnum} if `$targ$` represents a class or alias template, then the corresponding element of `$TArgs$...` is that template,
-- [#.#]{.pnum} `$Args$...` be a sequence of expressions {`@$E$~$K$~@`} corresponding to the reflections {`@$r$~$K$~@`} in `args`, such that for every `@$r$~$K$~@` that represents a variable, object, value, or function, `@$E$~$K$~@` is reciprocal to `@$r$~$K$~@`,
-- [#.#]{.pnum} `@$Arg$~0~@` be the first expression in `$Args$` (if any), and
-- [#.#]{.pnum} `@$Args$~$+$~@...` be the sequence of expressions in `$Args$` excluding `@$Arg$~0~@` (if any),
-
-and define an expression `$INVOKE-EXPR$` as follows:
-
-- [#.#]{.pnum} If `target` represents a non-member function, variable, object, or value, then `$INVOKE-EXPR$` is the expression `$INVOKE$($F$, @$Arg$~0~@, @$Args$~$+$~@...)`.
-
-- [#.#]{.pnum} Otherwise, if `$F$` is a member function that is not a constructor, then `$INVOKE-EXPR$` is the expression `@$Arg$~0~@.$F$(@$Args$~$+$~@...)`.
-
-- [#.#]{.pnum} Otherwise, if `$F$` is a function template that is not a constructor template, then `$INVOKE-EXPR$` is either the expression `@$Arg$~0~@.template $F$<$TArgs$...>(@$Args$~$+$~@...)` if `$F$` is a member function template, or `$F$<$TArgs$...>(@$Arg$~0~@, @$Args$~$+$~@...)` otherwise.
-
-- [#.#]{.pnum} Otherwise, if `$F$` is a constructor or constructor template for a class `$C$`, then `$INVOKE-EXPR$` is an expression `$C$(@$Arg$~0~@, @$Args$~$+$~@...)` for which only `$F$` is considered by overload resolution; furthermore, if `$F$` is a constructor template, then `$TArgs$...` are inferred as leading template arguments during template argument deduction for `$F$`.
-
-[#]{.pnum} *Constant When*:
-
-- `target` represents either a function or function template, or a variable, object or value having pointer-to-function, pointer-to-member, or closure type,
-- `tmpl_args` is empty unless `target` represents a function template,
-- every reflection in `tmpl_args` represents a type, `$typedef-name$`, class or alias template, variable, object, value, or function,
-- every reflection in `args` represents a variable, object, value, or function, and
-- the expression `$INVOKE-EXPR$` is a well-formed constant expression of structural type.
-
-[#]{.pnum} *Effects*: If `target` represents a function template, any specialization of the represented template that would be invoked by evaluation of `$INVOKE-EXPR$` is instantiated.
-
-[#]{.pnum} *Returns*: A reflection of the same result computed by `$INVOKE-EXPR$`.
-
-:::
-:::
 
 ### [meta.reflection.define_class] Reflection class definition generation  {-}
 
