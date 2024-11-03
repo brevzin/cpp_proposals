@@ -746,10 +746,12 @@ This proposal extends class types as non-type parameters as follows. This isn't 
 
 First, as with [@P2484R0], I'm referring to `to_meta_representation` as a template representation function. A class type `T` can provide an `to_meta_representation` that must be `consteval`, with one of two forms:
 
-1. It is a possibly-mutable function that returns `void`, in which case every base class and non-static data member shall have structural type and none of them shall be `mutable`.
+1. It is a possibly-mutable function that returns `void`, in which case every base class and non-static data member shall have structural type.
 2. It is a `const` function that returns some value `R` such that:
     a. `R.data()` is convertible to `std::meta::info const*`, `R.size()` is convertible to `size_t`, and `static_cast<std::meta::info const*>(R.data())[i]` shall be valid for all `0 <= i < static_cast<size_t>(R.size())`, and
     b. `T::from_meta_representation(R)` is a valid expression that yields a prvalue of type `T`.
+
+Either way, no non-static data member of `T` can be `mutable`.
 
 Second, we introduce the concept of template argument normalization and allow string literal template arguments:
 
