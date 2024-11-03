@@ -663,8 +663,8 @@ as well as a helper function for dealing with string literals:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> string_literal_of<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> p<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span>;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> string_literal_of<span class="op">(</span><span class="dt">char8_t</span> <span class="kw">const</span><span class="op">*</span> p<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">char8_t</span> <span class="kw">const</span><span class="op">*</span>;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_string_literal<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> p<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_string_literal<span class="op">(</span><span class="dt">char8_t</span> <span class="kw">const</span><span class="op">*</span> p<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span> <span class="co">// only if the value_type is char or char8_t</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">*</span>;</span>
@@ -674,14 +674,18 @@ as well as a helper function for dealing with string literals:</p>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p><code class="sourceCode cpp">string_literal_of</code> takes a pointer
+<p><code class="sourceCode cpp">is_string_literal</code> takes a pointer
 to either <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span></code>
 or <code class="sourceCode cpp"><span class="dt">char8_t</span> <span class="kw">const</span></code>.
 If it’s a pointer to either a string literal
 <code class="sourceCode cpp">V</code> or a subobject thereof, these
-functions return <code class="sourceCode cpp">V</code>. Otherwise, they
-return
-<code class="sourceCode cpp"><span class="kw">nullptr</span></code>.</p>
+functions return
+<code class="sourceCode cpp"><span class="kw">true</span></code>.
+Otherwise, they return
+<code class="sourceCode cpp"><span class="kw">false</span></code>. Note
+that we can’t necessarily return a pointer to the start of the string
+literal because in the case of overlapping string literals — how do you
+know which pointer to return?</p>
 <p><code class="sourceCode cpp">define_static_string</code> is limited
 to ranges over
 <code class="sourceCode cpp"><span class="dt">char</span></code> or
@@ -798,60 +802,90 @@ paper ensures this.</p>
 <p>For <code class="sourceCode cpp">define_static_array</code>, if the
 underlying type <code class="sourceCode cpp">T</code> is not structural,
 this isn’t actually feasible: how would we know how to return the same
-array? So we propose that if <code class="sourceCode cpp">T</code> is
-structural, that we ensure that equal invocations produce the
-<em>same</em> <code class="sourceCode cpp">span</code> result, but if
-<code class="sourceCode cpp">T</code> is not structural we make no
-promises (in this case we don’t have to worry about whether
-instantiations yield the same type because
-<code class="sourceCode cpp">T</code> isn’t structural so instantiation
-is impossible).</p>
+array? If <code class="sourceCode cpp">T</code> is structural, we can
+easily ensure that equal invocations produce the <em>same</em>
+<code class="sourceCode cpp">span</code> result.</p>
+<p>But if <code class="sourceCode cpp">T</code> is not structural, we
+have a problem, because
+<code class="sourceCode cpp">T<span class="op">*</span></code> is,
+regardless. So we have to answer the question of what to do with:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>define_static_array<span class="op">(</span>r<span class="op">).</span>data<span class="op">()&gt;</span> c1;</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>define_static_array<span class="op">(</span>r<span class="op">).</span>data<span class="op">()&gt;</span> c2;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Either:</p>
+<ul>
+<li>this works, and it is unspecified whether
+<code class="sourceCode cpp">c1</code> and
+<code class="sourceCode cpp">c2</code> have the same type.</li>
+<li>the call to <code class="sourceCode cpp">define_static_array</code>
+works, but the resulting pointer is not usable as a non-type template
+argument (in the same way that string literals are not).</li>
+<li>the call to <code class="sourceCode cpp">define_static_array</code>
+mandates that the underlying type is structural.</li>
+</ul>
+<p>None of these options is particularly appealing. The last prevents
+some very motivating use-cases since neither
+<code class="sourceCode cpp">span</code> nor
+<code class="sourceCode cpp">string_view</code> are structural types
+yet, which means you cannot reify a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>
+into a <code class="sourceCode cpp">span<span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>,
+but hopefully that can be resolved soon (<span class="citation" data-cites="P3380R0">[<a href="https://wg21.link/p3380r0" role="doc-biblioref">P3380R0</a>]</span>). You can at least reify it
+into a <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*&gt;</span></code>?</p>
+<p>For now, this paper proposes the last option, as it’s the simplest
+(and the relative cost will hopefully decrease over time). Allowing the
+call but rejecting use as non-type template parameters is appealing
+though.</p>
 <h2 data-number="2.2" id="possible-implementation"><span class="header-section-number">2.2</span> Possible Implementation<a href="#possible-implementation" class="self-link"></a></h2>
 <p><code class="sourceCode cpp">define_static_string</code> can be
 nearly implemented with the facilities in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, we just need
-<code class="sourceCode cpp">string_literal_of</code> to handle the
+<code class="sourceCode cpp">is_string_literal</code> to handle the
 different signature proposed in this paper.</p>
 <p><code class="sourceCode cpp">define_static_array</code> for
 structural types is similar, but for non-structural types requires
 compiler intrinsic:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> __array <span class="op">=</span> V<span class="op">.</span>data<span class="op">()</span>;</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> N, <span class="kw">class</span> T, <span class="kw">class</span> R<span class="op">&gt;</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> define_static_string_impl<span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    array<span class="op">&lt;</span>T, N<span class="op">+</span><span class="dv">1</span><span class="op">&gt;</span> arr;</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    ranges<span class="op">::</span>copy<span class="op">(</span>r, arr<span class="op">.</span>data<span class="op">())</span>;</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    arr<span class="op">[</span>N<span class="op">]</span> <span class="op">=</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span>; <span class="co">// null terminator</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> extract<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">*&gt;(</span>substitute<span class="op">(^^</span>__array, <span class="op">{</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>arr<span class="op">)}))</span>;</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> T <span class="op">=</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span> <span class="kw">or</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char8_t</span><span class="op">&gt;)</span>;</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">not</span> ranges<span class="op">::</span>forward_range<span class="op">&lt;</span>R<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> define_static_string<span class="op">(</span>ranges<span class="op">::</span>to<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> string_literal_of<span class="op">(</span>r<span class="op">)</span>; <span class="op">})</span> <span class="op">{</span></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>            <span class="co">// if it&#39;s an array, check if it&#39;s a string literal and adjust accordingly</span></span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>string_literal_of<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> define_static_string<span class="op">(</span>basic_string_view<span class="op">(</span>r<span class="op">))</span>;</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> impl <span class="op">=</span> extract<span class="op">&lt;</span><span class="kw">auto</span><span class="op">(*)(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">*&gt;(</span></span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>            substitute<span class="op">(^^</span>define_static_string_impl,</span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>                       <span class="op">{</span></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>                           meta<span class="op">::</span>reflect_value<span class="op">(</span>ranges<span class="op">::</span>distance<span class="op">(</span>r<span class="op">))</span>,</span>
-<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>                           <span class="op">^^</span>T,</span>
-<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>                           remove_reference<span class="op">(^^</span>R<span class="op">)</span></span>
-<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>                       <span class="op">}))</span>;</span>
-<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">(</span>r<span class="op">)</span>;</span>
-<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> __array <span class="op">=</span> V<span class="op">.</span>data<span class="op">()</span>;</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span> N, <span class="kw">class</span> T, <span class="kw">class</span> R<span class="op">&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> define_static_string_impl<span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    array<span class="op">&lt;</span>T, N<span class="op">+</span><span class="dv">1</span><span class="op">&gt;</span> arr;</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    ranges<span class="op">::</span>copy<span class="op">(</span>r, arr<span class="op">.</span>data<span class="op">())</span>;</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    arr<span class="op">[</span>N<span class="op">]</span> <span class="op">=</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span>; <span class="co">// null terminator</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> extract<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">*&gt;(</span>substitute<span class="op">(^^</span>__array, <span class="op">{</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>arr<span class="op">)}))</span>;</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> T <span class="op">=</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span> <span class="kw">or</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char8_t</span><span class="op">&gt;)</span>;</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">not</span> ranges<span class="op">::</span>forward_range<span class="op">&lt;</span>R<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> define_static_string<span class="op">(</span>ranges<span class="op">::</span>to<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&gt;(</span>r<span class="op">))</span>;</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span><span class="kw">requires</span> <span class="op">{</span> is_string_literal<span class="op">(</span>r<span class="op">)</span>; <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>            <span class="co">// if it&#39;s an array, check if it&#39;s a string literal and adjust accordingly</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>is_string_literal<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> define_static_string<span class="op">(</span>basic_string_view<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> impl <span class="op">=</span> extract<span class="op">&lt;</span><span class="kw">auto</span><span class="op">(*)(</span>R<span class="op">&amp;)</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">*&gt;(</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>            substitute<span class="op">(^^</span>define_static_string_impl,</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>                       <span class="op">{</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>                           meta<span class="op">::</span>reflect_value<span class="op">(</span>ranges<span class="op">::</span>distance<span class="op">(</span>r<span class="op">))</span>,</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>                           <span class="op">^^</span>T,</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>                           remove_reference<span class="op">(^^</span>R<span class="op">)</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>                       <span class="op">}))</span>;</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> impl<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p><a href="https://compiler-explorer.com/z/x5c3c7zKE">Demo</a>.</p>
@@ -871,13 +905,13 @@ to ensure this for us.</p>
 parameter<a href="#use-as-non-type-template-parameter" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>P<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">char</span> msg<span class="op">[]</span> <span class="op">=</span> <span class="st">&quot;strongly in favor&quot;</span>;  <span class="co">// just an idea..</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>msg<span class="op">&gt;</span> c1;                          <span class="co">// ok</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span><span class="st">&quot;nope&quot;</span><span class="op">&gt;</span> c2;                       <span class="co">// ill-formed</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>define_static_string<span class="op">(</span><span class="st">&quot;yay&quot;</span><span class="op">)&gt;</span> c3;  <span class="co">// ok</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">const</span> <span class="dt">char</span> <span class="op">*</span>P<span class="op">&gt;</span> <span class="kw">struct</span> C <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">char</span> msg<span class="op">[]</span> <span class="op">=</span> <span class="st">&quot;strongly in favor&quot;</span>;  <span class="co">// just an idea..</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>msg<span class="op">&gt;</span> c1;                          <span class="co">// ok</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span><span class="st">&quot;nope&quot;</span><span class="op">&gt;</span> c2;                       <span class="co">// ill-formed</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>define_static_string<span class="op">(</span><span class="st">&quot;yay&quot;</span><span class="op">)&gt;</span> c3;  <span class="co">// ok</span></span></code></pre></div>
 </blockquote>
 </div>
 <h3 data-number="2.3.2" id="pretty-printing"><span class="header-section-number">2.3.2</span> Pretty-printing<a href="#pretty-printing" class="self-link"></a></h3>
@@ -887,21 +921,21 @@ pretty printers.</p>
 <p>An example of such an interface might be built as follow:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span> <span class="kw">requires</span> is_value<span class="op">(</span>R<span class="op">)</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> render<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string;</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span> <span class="kw">requires</span> is_type<span class="op">(</span>R<span class="op">)</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> render<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string;</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span> <span class="kw">requires</span> is_variable<span class="op">(</span>R<span class="op">)</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> render<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string;</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> pretty_print<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string_view <span class="op">{</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> define_static_string<span class="op">(</span>render<span class="op">&lt;</span>R<span class="op">&gt;())</span>;</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span> <span class="kw">requires</span> is_value<span class="op">(</span>R<span class="op">)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> render<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string;</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span> <span class="kw">requires</span> is_type<span class="op">(</span>R<span class="op">)</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> render<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string;</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span> <span class="kw">requires</span> is_variable<span class="op">(</span>R<span class="op">)</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> render<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string;</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info R<span class="op">&gt;</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> pretty_print<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string_view <span class="op">{</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> define_static_string<span class="op">(</span>render<span class="op">&lt;</span>R<span class="op">&gt;())</span>;</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>This strategy <a href="https://github.com/bloomberg/clang-p2996/blob/149cca52811b59b22608f6f6e303f6589969c999/libcxx/include/experimental/meta#L2317-L2321">lies
@@ -915,9 +949,9 @@ and promoting that into static storage, in a condensed way so that the
 function</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> get_strings<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">{</span><span class="st">&quot;Jason&quot;</span>, <span class="st">&quot;Was&quot;</span>, <span class="st">&quot;Here&quot;</span><span class="op">}</span>;</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> get_strings<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">{</span><span class="st">&quot;Jason&quot;</span>, <span class="st">&quot;Was&quot;</span>, <span class="st">&quot;Here&quot;</span><span class="op">}</span>;</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Gets turned into an array of string views. We could do that fairly
@@ -925,39 +959,45 @@ straightforwardly, without even needing to take the function <code class="source
 template parameter:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> promote_strings<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> vs<span class="op">)</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">-&gt;</span> std<span class="op">::</span>span<span class="op">&lt;</span>std<span class="op">::</span>string_view <span class="kw">const</span><span class="op">&gt;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// promote the concatenated strings to static storage</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view promoted <span class="op">=</span> std<span class="op">::</span>define_static_string<span class="op">(</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>fold_left<span class="op">(</span>vs, std<span class="op">::</span>string<span class="op">()</span>, std<span class="op">::</span>plus<span class="op">()))</span>;</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now build up all our string views into promoted</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string_view<span class="op">&gt;</span> views;</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> offset <span class="op">=</span> <span class="dv">0</span>; std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s <span class="op">:</span> vs<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        views<span class="op">.</span>push_back<span class="op">(</span>promoted<span class="op">.</span>substr<span class="op">(</span>offset, s<span class="op">.</span>size<span class="op">()))</span>;</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        offset <span class="op">+=</span> s<span class="op">.</span>size<span class="op">()</span>;</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// promote our array of string_views</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>define_static_array<span class="op">(</span>views<span class="op">)</span>;</span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> views <span class="op">=</span> promote_strings<span class="op">(</span>get_strings<span class="op">())</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> promote_strings<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string<span class="op">&gt;</span> vs<span class="op">)</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">-&gt;</span> std<span class="op">::</span>span<span class="op">&lt;</span>std<span class="op">::</span>string_view <span class="kw">const</span><span class="op">&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// promote the concatenated strings to static storage</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view promoted <span class="op">=</span> std<span class="op">::</span>define_static_string<span class="op">(</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>fold_left<span class="op">(</span>vs, std<span class="op">::</span>string<span class="op">()</span>, std<span class="op">::</span>plus<span class="op">()))</span>;</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// now build up all our string views into promoted</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string_view<span class="op">&gt;</span> views;</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> offset <span class="op">=</span> <span class="dv">0</span>; std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;</span> s <span class="op">:</span> vs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        views<span class="op">.</span>push_back<span class="op">(</span>promoted<span class="op">.</span>substr<span class="op">(</span>offset, s<span class="op">.</span>size<span class="op">()))</span>;</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        offset <span class="op">+=</span> s<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// promote our array of string_views</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>define_static_array<span class="op">(</span>views<span class="op">)</span>;</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> views <span class="op">=</span> promote_strings<span class="op">(</span>get_strings<span class="op">())</span>;</span></code></pre></div>
 </blockquote>
 </div>
+<p>Or at least, this will work once
+<code class="sourceCode cpp">string_view</code> becomes structural.
+Until then, this can be worked around with a
+<code class="sourceCode cpp">structural_string_view</code> type that
+just has public members for the data and length with an implicit
+conversion to <code class="sourceCode cpp">string_view</code>.</p>
 <h3 data-number="2.3.4" id="with-expansion-statements"><span class="header-section-number">2.3.4</span> With Expansion Statements<a href="#with-expansion-statements" class="self-link"></a></h3>
 <p>Something like this (<span class="citation" data-cites="P1306R2">[<a href="https://wg21.link/p1306r2" role="doc-biblioref">P1306R2</a>]</span>) is not doable without
 non-transient constexpr allocation :</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>; <span class="op">}</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">:</span> f<span class="op">())</span> <span class="op">{</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// doesn&#39;t work</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>; <span class="op">}</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">:</span> f<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// doesn&#39;t work</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>But if we promote the contents of
@@ -965,11 +1005,11 @@ non-transient constexpr allocation :</p>
 then this would work fine:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">:</span> define_static_array<span class="op">(</span>f<span class="op">()))</span> <span class="op">{</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ok!</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">:</span> define_static_array<span class="op">(</span>f<span class="op">()))</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ok!</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <h2 data-number="2.4" id="related-papers-in-the-space"><span class="header-section-number">2.4</span> Related Papers in the Space<a href="#related-papers-in-the-space" class="self-link"></a></h2>
@@ -997,17 +1037,17 @@ that are usable as non-type template parameters, this paper likely
 becomes unnecessary. Or at least, fairly trivial:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> __S <span class="op">=</span> V<span class="op">.</span>c_str<span class="op">()</span>;</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> T <span class="op">=</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span> <span class="kw">or</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char8_t</span><span class="op">&gt;)</span>;</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> S <span class="op">=</span> ranges<span class="op">::</span>to<span class="op">&lt;</span>basic_string<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>r<span class="op">)</span>;</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> extract<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">*&gt;(</span>substitute<span class="op">(^^</span>__S, <span class="op">{</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>S<span class="op">)}))</span>;</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> __S <span class="op">=</span> V<span class="op">.</span>c_str<span class="op">()</span>;</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> T <span class="op">=</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char</span><span class="op">&gt;</span> <span class="kw">or</span> std<span class="op">::</span>same_as<span class="op">&lt;</span>T, <span class="dt">char8_t</span><span class="op">&gt;)</span>;</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> S <span class="op">=</span> ranges<span class="op">::</span>to<span class="op">&lt;</span>basic_string<span class="op">&lt;</span>T<span class="op">&gt;&gt;(</span>r<span class="op">)</span>;</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> extract<span class="op">&lt;</span>T <span class="kw">const</span><span class="op">*&gt;(</span>substitute<span class="op">(^^</span>__S, <span class="op">{</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>S<span class="op">)}))</span>;</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>The more interesting paper is actually <span class="citation" data-cites="P0424R2">[<a href="https://wg21.link/p0424r2" role="doc-biblioref">P0424R2</a>]</span>. If we bring that paper back,
@@ -1023,18 +1063,18 @@ mechanism for producing new string literals.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.string.literal], checking string literals</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval const char* string_literal_of(const char* p);</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval const char8_t* string_literal_of(const char8_t* p);</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.define.static], promoting to runtime storage</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ template &lt;ranges::input_range R&gt;</span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval const ranges::range_value_t&lt;R&gt;* define_static_string(R&amp;&amp; r);</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="va">+  template &lt;ranges::input_range R&gt;</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="va">+    consteval span&lt;const ranges::range_value_t&lt;R&gt;&gt; define_static_array(R&amp;&amp; r);</span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.string.literal], checking string literals</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_string_literal(const char* p);</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_string_literal(const char8_t* p);</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.define.static], promoting to runtime storage</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ template &lt;ranges::input_range R&gt;</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval const ranges::range_value_t&lt;R&gt;* define_static_string(R&amp;&amp; r);</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="va">+  template &lt;ranges::input_range R&gt;</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="va">+    consteval span&lt;const ranges::range_value_t&lt;R&gt;&gt; define_static_array(R&amp;&amp; r);</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1042,14 +1082,14 @@ mechanism for producing new string literals.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> string_literal_of<span class="op">(</span><span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> p<span class="op">)</span>;</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> string_literal_of<span class="op">(</span><span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> p<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> p<span class="op">)</span>;</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> p<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">p</code> points to a
-string literal <code class="sourceCode cpp"><em>V</em></code> or a
-subobject thereof, <code class="sourceCode cpp"><em>V</em></code>.
+string literal or a subobject thereof,
+<code class="sourceCode cpp"><span class="kw">true</span></code>.
 Otherwise,
-<code class="sourceCode cpp"><span class="kw">nullptr</span></code>.</p>
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 </div>
 </blockquote>
 </div>
@@ -1060,8 +1100,8 @@ Otherwise,
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">1</a></span>
 The functions in this clause are useful for promoting compile-time
 storage into runtime storage.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;*</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;*</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">2</a></span>
 Let <code class="sourceCode cpp"><em>CharT</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">3</a></span>
@@ -1072,7 +1112,7 @@ or
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">4</a></span>
 Let <code class="sourceCode cpp"><em>Str</em></code> be the variable
 template</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> Vs<span class="op">&gt;</span> <span class="kw">inline</span> <span class="kw">constexpr</span> T <em>Str</em><span class="op">[]</span> <span class="op">=</span> <span class="op">{</span>Vs<span class="op">...</span>, T<span class="op">{}}</span>; <span class="co">// exposition-only</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> Vs<span class="op">&gt;</span> <span class="kw">inline</span> <span class="kw">constexpr</span> T <em>Str</em><span class="op">[]</span> <span class="op">=</span> <span class="op">{</span>Vs<span class="op">...</span>, T<span class="op">{}}</span>; <span class="co">// exposition-only</span></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">5</a></span>
 Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
 elements of type <code class="sourceCode cpp"><em>CharT</em></code> in
@@ -1082,56 +1122,27 @@ elements of type <code class="sourceCode cpp"><em>CharT</em></code> in
 trailing null terminator of <code class="sourceCode cpp">r</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">6</a></span>
 <em>Returns</em>: <code class="sourceCode cpp"><em>Str</em><span class="op">&lt;</span><em>CharT</em>, <em>V</em><span class="op">...&gt;</span></code>.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">&gt;</span> <em>define-static-array-structural</em><span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span>; <span class="co">// exposition-only</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> define_static_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">7</a></span>
+Let <code class="sourceCode cpp"><em>T</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">8</a></span>
+<em>Mandates</em>: <code class="sourceCode cpp"><em>T</em></code> is a
+structural type ([temp.param]) and <code class="sourceCode cpp">constructible_from<span class="op">&lt;</span><em>T</em>, ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> and
+<code class="sourceCode cpp">copy_constructible<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">9</a></span>
 Let <code class="sourceCode cpp"><em>Arr</em></code> be the variable
 template</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> Vs<span class="op">&gt;</span> <span class="kw">inline</span> <span class="kw">constexpr</span> T <em>Arr</em><span class="op">[]</span> <span class="op">=</span> <span class="op">{</span>Vs<span class="op">...}</span>; <span class="co">// exposition-only</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">8</a></span>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> Vs<span class="op">&gt;</span> <span class="kw">inline</span> <span class="kw">constexpr</span> T <em>Arr</em><span class="op">[]</span> <span class="op">=</span> <span class="op">{</span>Vs<span class="op">...}</span>; <span class="co">// exposition-only</span></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">10</a></span>
 Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
 elements of type <code class="sourceCode cpp"><em>T</em></code>
 constructed from the elements of
 <code class="sourceCode cpp">r</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">9</a></span>
-<em>Returns</em>: <code class="sourceCode cpp">span<span class="op">(</span><em>Arr</em><span class="op">&lt;</span><em>T</em>, <em>V</em><span class="op">...&gt;)</span></code>.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">&gt;</span> <em>define-static-array-non-structural</em><span class="op">(</span>R<span class="op">&amp;</span> r<span class="op">)</span>; <span class="co">// exposition-only</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">10</a></span>
-Let <code class="sourceCode cpp">D</code> be <code class="sourceCode cpp">ranges<span class="op">::</span>distance<span class="op">(</span>r<span class="op">)</span></code>
-and <code class="sourceCode cpp">S</code> be a constexpr variable of
-array type with static storage duration, whose elements are of type
-<code class="sourceCode cpp"><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>,
-for which there exists some <code class="sourceCode cpp">k</code> ≥
-<code class="sourceCode cpp"><span class="dv">0</span></code> such that
-<code class="sourceCode cpp"><em>S</em><span class="op">[</span>k <span class="op">+</span> i<span class="op">]</span> <span class="op">==</span> r<span class="op">[</span>i<span class="op">]</span></code>
-for all 0 ≤ <code class="sourceCode cpp">i</code> &lt;
-<code class="sourceCode cpp"><em>D</em></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">11</a></span>
-<em>Returns</em> <code class="sourceCode cpp">span<span class="op">(</span>addressof<span class="op">(</span><em>S</em><span class="op">[</span><em>k</em><span class="op">])</span>, <em>D</em><span class="op">)</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">12</a></span>
-<em>Remarks</em>: It is unspecified whether calls to this function with
-the same range return the same <code class="sourceCode cpp">span</code>
-and whether or not calls to this function with overlapping ranges
-produce overlapping <code class="sourceCode cpp">span</code>s.</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> define_static_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">13</a></span>
-Let <code class="sourceCode cpp"><em>T</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">14</a></span>
-<em>Mandates</em>: <code class="sourceCode cpp">constructible_from<span class="op">&lt;</span><em>T</em>, ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code>
-is <code class="sourceCode cpp"><span class="kw">true</span></code> and
-<code class="sourceCode cpp">copy_constructible<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
-is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">15</a></span>
-<em>Effects</em>:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(15.1)</a></span>
-If <code class="sourceCode cpp"><em>T</em></code> is a structural type
-([temp.param]), equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>define-static-array-structural</em><span class="op">&lt;</span><em>T</em><span class="op">&gt;(</span>r<span class="op">)</span>;</code></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(15.2)</a></span>
-Otherwise, equivalent to <code class="sourceCode cpp"><span class="cf">return</span> <em>define-static-array-non-structural</em><span class="op">&lt;</span><em>T</em><span class="op">&gt;(</span>r<span class="op">)</span>;</code></li>
-</ul>
+<em>Returns</em>: <code class="sourceCode cpp">span<span class="op">(</span><em>Arr</em><span class="op">&lt;</span><em>T</em>, <em>V</em><span class="op">...&gt;)</span></code>.</p>
 </div>
 </blockquote>
 </div>
@@ -1139,7 +1150,7 @@ Otherwise, equivalent to <code class="sourceCode cpp"><span class="cf">return</s
 <p>Add to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>#define __cpp_lib_define_static 2024XX // freestanding, also in &lt;meta&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>#define __cpp_lib_define_static 2024XX // freestanding, also in &lt;meta&gt;</span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>

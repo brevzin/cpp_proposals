@@ -39,8 +39,8 @@ This paper proposes two new additions — `std::define_static_string` and `std::
 ::: std
 ```cpp
 namespace std {
-  consteval auto string_literal_of(char const* p) -> char const*;
-  consteval auto string_literal_of(char8_t const* p) -> char8_t const*;
+  consteval auto is_string_literal(char const* p) -> bool;
+  consteval auto is_string_literal(char8_t const* p) -> bool;
 
   template <ranges::input_range R> // only if the value_type is char or char8_t
   consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const*;
@@ -51,7 +51,7 @@ namespace std {
 ```
 :::
 
-`string_literal_of` takes a pointer to either `char const` or `char8_t const`. If it's a pointer to either a string literal `V` or a subobject thereof, these functions return `V`. Otherwise, they return `nullptr`.
+`is_string_literal` takes a pointer to either `char const` or `char8_t const`. If it's a pointer to either a string literal `V` or a subobject thereof, these functions return `true`. Otherwise, they return `false`. Note that we can't necessarily return a pointer to the start of the string literal because in the case of overlapping string literals — how do you know which pointer to return?
 
 `define_static_string` is limited to ranges over `char` or `char8_t` and returns a `char const*` or `char8_t const*`, respectively. They return a pointer instead of a `string_view` (or `u8string_view`) specifically to make it clear that they return something null terminated. If `define_static_string` is passed a string literal that is already null-terminated, it will not be doubly null terminated.
 
@@ -138,11 +138,32 @@ C<__arr_dup> c4;
 
 We think the value of *ensuring* template argument equivalence is more valuable than the potential size savings with overlap. So this paper ensures this.
 
-For `define_static_array`, if the underlying type `T` is not structural, this isn't actually feasible: how would we know how to return the same array? So we propose that if `T` is structural, that we ensure that equal invocations produce the _same_ `span` result, but if `T` is not structural we make no promises (in this case we don't have to worry about whether instantiations yield the same type because `T` isn't structural so instantiation is impossible).
+For `define_static_array`, if the underlying type `T` is not structural, this isn't actually feasible: how would we know how to return the same array? If `T` is structural, we can easily ensure that equal invocations produce the _same_ `span` result.
+
+But if `T` is not structural, we have a problem, because `T*` is, regardless. So we have to answer the question of what to do with:
+
+::: std
+```cpp
+template <auto V> struct C { };
+
+C<define_static_array(r).data()> c1;
+C<define_static_array(r).data()> c2;
+```
+:::
+
+Either:
+
+* this works, and it is unspecified whether `c1` and `c2` have the same type.
+* the call to `define_static_array` works, but the resulting pointer is not usable as a non-type template argument (in the same way that string literals are not).
+* the call to `define_static_array` mandates that the underlying type is structural.
+
+None of these options is particularly appealing. The last prevents some very motivating use-cases since neither `span` nor `string_view` are structural types yet, which means you cannot reify a `vector<string>` into a `span<string_view>`, but hopefully that can be resolved soon ([@P3380R0]). You can at least reify it into a `span<char const*>`?
+
+For now, this paper proposes the last option, as it's the simplest (and the relative cost will hopefully decrease over time). Allowing the call but rejecting use as non-type template parameters is appealing though.
 
 ## Possible Implementation
 
-`define_static_string` can be nearly implemented with the facilities in [@P2996R7], we just need `string_literal_of` to handle the different signature proposed in this paper.
+`define_static_string` can be nearly implemented with the facilities in [@P2996R7], we just need `is_string_literal` to handle the different signature proposed in this paper.
 
  `define_static_array` for structural types is similar, but for non-structural types requires compiler intrinsic:
 
@@ -167,9 +188,9 @@ consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const* {
     if constexpr (not ranges::forward_range<R>) {
         return define_static_string(ranges::to<std::vector>(r));
     } else {
-        if constexpr (requires { string_literal_of(r); }) {
+        if constexpr (requires { is_string_literal(r); }) {
             // if it's an array, check if it's a string literal and adjust accordingly
-            if (string_literal_of(r)) {
+            if (is_string_literal(r)) {
                 return define_static_string(basic_string_view(r));
             }
         }
@@ -273,6 +294,8 @@ constexpr auto views = promote_strings(get_strings());
 ```
 :::
 
+Or at least, this will work once `string_view` becomes structural. Until then, this can be worked around with a `structural_string_view` type that just has public members for the data and length with an implicit conversion to `string_view`.
+
 ### With Expansion Statements
 
 Something like this ([@P1306R2]) is not doable without non-transient constexpr allocation :
@@ -337,8 +360,8 @@ Add to [meta.syn]{.sref}:
 ```diff
 namespace std {
 + // [meta.string.literal], checking string literals
-+ consteval const char* string_literal_of(const char* p);
-+ consteval const char8_t* string_literal_of(const char8_t* p);
++ consteval bool is_string_literal(const char* p);
++ consteval bool is_string_literal(const char8_t* p);
 
 + // [meta.define.static], promoting to runtime storage
 + template <ranges::input_range R>
@@ -355,11 +378,11 @@ Add to the new clause [meta.string.literal]:
 ::: std
 ::: addu
 ```cpp
-consteval const char* string_literal_of(const char* p);
-consteval const char8_t* string_literal_of(const char8_t* p);
+consteval bool is_string_literal(const char* p);
+consteval bool is_string_literal(const char8_t* p);
 ```
 
-[1]{.pnum} *Returns*: If `p` points to a string literal `$V$` or a subobject thereof, `$V$`. Otherwise, `nullptr`.
+[1]{.pnum} *Returns*: If `p` points to a string literal or a subobject thereof, `true`. Otherwise, `false`.
 
 :::
 :::
@@ -391,9 +414,13 @@ template <class T, T... Vs> inline constexpr T $Str$[] = {Vs..., T{}}; // exposi
 [#]{.pnum} *Returns*: `$Str$<$CharT$, $V$...>`.
 
 ```cpp
-template <class T, ranges::input_range R>
-consteval span<const T> $define-static-array-structural$(R& r); // exposition-only
+template <ranges::input_range R>
+consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
 ```
+
+[#]{.pnum} Let `$T$` be `ranges::range_value_t<R>`.
+
+[#]{.pnum} *Mandates*: `$T$` is a structural type ([temp.param]) and `constructible_from<$T$, ranges::range_reference_t<R>>` is `true` and `copy_constructible<$T$>` is `true`.
 
 [#]{.pnum} Let `$Arr$` be the variable template
 
@@ -404,31 +431,6 @@ template <class T, T... Vs> inline constexpr T $Arr$[] = {Vs...}; // exposition-
 [#]{.pnum} Let `$V$` be the pack of elements of type `$T$` constructed from the elements of `r`.
 
 [#]{.pnum} *Returns*: `span($Arr$<$T$, $V$...>)`.
-
-```cpp
-template <class T, ranges::input_range R>
-consteval span<const T> $define-static-array-non-structural$(R& r); // exposition-only
-```
-
-[#]{.pnum} Let `D` be `ranges::distance(r)` and `S` be a constexpr variable of array type with static storage duration, whose elements are of type `const ranges::range_value_t<R>`, for which there exists some `k` &geq; `0` such that `$S$[k + i] == r[i]` for all 0 &leq; `i` < `$D$`.
-
-[#]{.pnum} *Returns* `span(addressof($S$[$k$]), $D$)`.
-
-[#]{.pnum} *Remarks*: It is unspecified whether calls to this function with the same range return the same `span` and whether or not calls to this function with overlapping ranges produce overlapping `span`s.
-
-```cpp
-template <ranges::input_range R>
-consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
-```
-
-[#]{.pnum} Let `$T$` be `ranges::range_value_t<R>`.
-
-[#]{.pnum} *Mandates*: `constructible_from<$T$, ranges::range_reference_t<R>>` is `true` and `copy_constructible<$T$>` is `true`.
-
-[#]{.pnum} *Effects*:
-
-* [#.#]{.pnum} If `$T$` is a structural type ([temp.param]), equivalent to `return $define-static-array-structural$<$T$>(r);`
-* [#.#]{.pnum} Otherwise, equivalent to `return $define-static-array-non-structural$<$T$>(r);`
 :::
 :::
 
