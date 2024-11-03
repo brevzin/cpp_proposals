@@ -30,6 +30,8 @@ Since [@P2996R7]:
 
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
+* removed `define_static_array` and `define_static_string`
+* clarified that `sizeof(std::meta::info) == `sizeof(void *)`
 * clarified that `data_member_options_t` is a non-structural consteval-only type
 * clarified that everything in `std::meta` is addressable
 * renaming `member_offsets` to `member_offset` and changing `member_offset` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
@@ -2478,14 +2480,6 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
     consteval auto define_class(info type_class, R&&) -> info;
 
-  // @[define_static_string and define_static_array](#define_static_string-define_static_array)@
-  consteval auto define_static_string(string_view str) -> const char *;
-  consteval auto define_static_string(u8string_view str) -> const char8_t *;
-
-  template <ranges::input_range R>
-  consteval auto define_static_array(R&& r) -> span<ranges::range_value_t<R> const>;
-
-
   // @[data layout](#data-layout-reflection)@
   struct member_offset {
     ptrdiff_t bytes;
@@ -2862,74 +2856,6 @@ This allows implementing [variant](#a-simple-variant-type) without having to fur
 
 If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
 
-### `define_static_string`, `define_static_array`
-::: std
-```c++
-namespace std::meta {
-  consteval auto define_static_string(string_view str) -> const char *;
-  consteval auto define_static_string(u8string_view str) -> const char8_t *;
-
-  template <ranges::input_range R>
-  consteval auto define_static_array(R&& r) -> span<ranges::range_value_t<R> const>;
-}
-```
-:::
-
-Given a `string_view` or `u8string_view`, `define_static_string` returns a pointer to an array of characters containing the contents of `str` followed by a null terminator. The array object has static storage duration, is not a subobject of a string literal object, and is usable in constant expressions; a pointer to such an object meets the requirements for use as a non-type template argument.
-
-::: std
-```cpp
-template <const char *P> struct C { };
-
-const char msg[] = "strongly in favor";  // just an idea..
-
-C<msg> c1;                          // ok
-C<"nope"> c2;                       // ill-formed
-C<define_static_string("yay")> c3;  // ok
-```
-:::
-
-In the absence of general support for non-transient constexpr allocation, such a facility is essential to building utilities like pretty printers.
-
-An example of such an interface might be built as follow:
-
-::: std
-```cpp
-template <std::meta::info R> requires is_value(R)
-  consteval auto render() -> std::string;
-
-template <std::meta::info R> requires is_type(R)
-  consteval auto render() -> std::string;
-
-template <std::meta::info R> requires is_variable(R)
-  consteval auto render() -> std::string;
-
-// ...
-
-template <std::meta::info R>
-consteval auto pretty_print() -> std::string_view {
-  return define_static_string(render<R>());
-}
-```
-:::
-
-This strategy [lies at the core](https://github.com/bloomberg/clang-p2996/blob/149cca52811b59b22608f6f6e303f6589969c999/libcxx/include/experimental/meta#L2317-L2321) of how the Clang/P2996 fork builds its example implementation of the `display_string_of` metafunction.
-
-`define_static_array` is a more general version of `define_static_string` that works for all types. The difference between the two is that `define_static_string` produces a null-terminated array, and thus returns just a pointer, while `define_static_array` produces an array that is the same size as the input range.
-
-Technically, `define_static_array` can be used to implement `define_static_string`:
-
-::: std
-```cpp
-consteval auto define_static_string(string_view str) -> char const* {
-  return define_static_array(views::concat(str, views::single('\0'))).data();
-}
-```
-:::
-
-But that's a fairly awkward implementation, and the string use-case is sufficiently common as to merit a more ergonomic solution.
-
-
 ### Data Layout Reflection
 ::: std
 ```c++
@@ -3300,7 +3226,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a base class specifier, or
 * a description of a declaration of a non-static data member.
 
-An expression convertible to a reflection is said to _represent_ the corresponding entity, alias, object, value, base class specifier, or description of a declaration of a non-static data member.
+An expression convertible to a reflection is said to _represent_ the corresponding entity, alias, object, value, base class specifier, or description of a declaration of a non-static data member. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 
 :::
 :::
@@ -3659,27 +3585,35 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Add a new paragraph prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
+Add new paragraphs prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
 
 ::: std
 ::: addu
 
-[20]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is:
+[20]{.pnum} An expression or conversion is _in substitution context_ if it results from the substitution of template parameters
 
-* [#.#]{.pnum} a `$constant-expression$`, or
+* [#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
+* [#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
+* [#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}).
+
+[#]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is
+
+* [#.#]{.pnum} a `$constant-expression$` that is not in substitution context,
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
-* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or a subexpression thereof, or
-* [#.#]{.pnum} an immediate invocation, unless it
-  * [#.#.#]{.pnum} results from the substitution of template parameters
-    * during template argument deduction ([temp.deduct]{.sref}),
-    * in a `$concept-id$` ([temp.names]{.sref}), or
-    * in a `$requires-expression$` ([expr.prim.req]{.sref}), or
-  * [#.#.#]{.pnum} is an initializer for a variable that is neither  `constexpr` ([dcl.constexpr]{.sref}) nor `constinit` ([dcl.constinit]{.sref}), or a subexpression thereof.
+* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
+* [#.#]{.pnum} an immediate invocation, unless it is
+  * [#.#.#]{.pnum} in substitution context, or
+  * [#.#.#]{.pnum} within the body of an immediate-escalating function that contains an immediate-escalating expression.
 
-[Plainly constant-evaluated expressions are evaluated exactly once, and that evaluation precedes any subsequent parsing ([lex.phases]{.sref}). As detailed below, evaluations of such expressions are allowed to produce injected declarations.]{.note}
+[A plainly constant-evaluated expression `$E$` is evaluated exactly once, may produce injected declarations (see below), and any such declarations are reachable at a point immediatelly following `$E$`.]{.note}
 
 ::: example
 ```cpp
+template <class> struct RV {};
+
+// instantiations of 'T::f(0)' are not plainly constant-evaluated
+template <class T> RV<T::f(0)> check(int);
+
 consteval bool cfn(int) { return true; }
 
 template <int V> requires (cfn(V))  // cfn(V) is not plainly constant-evaluated
@@ -3700,17 +3634,14 @@ const bool b2 = cfn(2);             // cfn(2) is not plainly constant-evaluated
 :::
 :::
 
-Modify the definition of _manifestly constant-evaluated_ to leverage that of _plainly constant-evaluated_:
+Add a note following the definition of _manifestly constant-evaluated_ to clarify the relationship with _plainly constant-evaluated_ expressions:
 
 ::: std
 
-[21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
+[#]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
 
-* [#.#]{.pnum} a [`$constant-expression$`]{.rm} [plainly constant-evaluated expression]{.addu}, or
-
-::: rm
+* [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
-:::
 * [#.#]{.pnum} an immediate invocation, or
 * [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
@@ -3726,16 +3657,14 @@ Add new paragraphs defining _evaluation context_, _injected declaration_, and _i
 ::: std
 ::: addu
 
-[22]{.pnum} The evaluation of an expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
+[#]{.pnum} The evaluation of an expression `$E$` can introduce an _injected declaration_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
 
 [Special rules concerning reachability apply to injected points ([module.reach]).]{.note13}
 
-[23]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
+[#]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of an expression `$E$` that is
 
 * [#.#]{.pnum} a manifestly constant-evaluated expression that is not plainly constant-evaluated, or
-* within the body of an immediate-escalating function `$F$`, unless
-  * [#.#.#]{.pnum} `$E$` is a plainly constant-evaluated expression or a subexpression thereof, or
-  * [#.#.#]{.pnum} `$F$` does not contain an immediate-escalating expression.
+* within the body of an immediate-escalating function `$F$`, unless `$E$` is a plainly constant-evaluated expression or a subexpression thereof.
 
 [An immediate invocation within an immediate-escalating function is similar to a trial evaluation of a variable initializer: if it fails to be a constant expression, the implementation may be forced to evaluate it again. The above rule is intended to only permit evaluations to produce declarations when such evaluations can be guaranteed to only happen once.]{.note}
 
@@ -4580,12 +4509,6 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
   consteval info define_class(info type_class, R&&);
 
-  // [meta.reflection.define_static], static array generation
-  consteval const char* define_static_string(string_view str);
-  consteval const char8_t* define_static_string(u8string_view str);
-  template<ranges::input_range R>
-    consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
-
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
   consteval bool type_is_null_pointer(info type);
@@ -4889,7 +4812,7 @@ consteval source_location source_location_of(info r);
 
 [#]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a description of a declaration of a non-static data member, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
 
-[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct. If multiple such declarations exist and one is a definition, a value corresponding to the definition is preferred.
+[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or base specifier that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct that is reachable from the evaluation construct. If there are multiple such declarations and one is a definition, a value corresponding to the definition is preferred.
 :::
 :::
 
@@ -5691,41 +5614,6 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default destructible, then it has a user-provided default destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
-
-:::
-:::
-
-### [meta.reflection.define_static] Static array generation  {-}
-
-::: std
-::: addu
-```cpp
-consteval const char* define_static_string(string_view str);
-consteval const char8_t* define_static_string(u8string_view str);
-```
-
-[#]{.pnum} Let `$S$` be a constexpr variable of array type with static storage duration, whose elements are of type `const char` or `const char8_t` respectively, for which there exists some `k` &geq; `0` such that:
-
-* [#.#]{.pnum} `$S$[k + i] == str[i]` for all 0 &leq; `i` < `str.size()`, and
-* [#.#]{.pnum} `$S$[k + str.size()] == '\0'`.
-
-[#]{.pnum} *Returns*: `&$S$[k]`.
-
-[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same variant of these functions is called with the same argument. [The returned object is distinct from any string literal]{.note}
-
-```cpp
-template<ranges::input_range R>
-    consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
-```
-
-[#]{.pnum} *Constraints*: `is_constructible_v<ranges::range_value_t<R>, ranges::range_reference_t<R>>` is `true`.
-
-[#]{.pnum} Let `D` be `ranges::distance(r)` and `S` be a constexpr variable of array type with static storage duration, whose elements are of type `const ranges::range_value_t<R>`, for which there exists some `k` &geq; `0` such that `$S$[k + i] == r[i]` for all 0 &leq; `i` < `$D$`.
-
-[#]{.pnum} *Returns*: `span(addressof($S$[$k$]), $D$)`
-
-[#]{.pnum} *Recommended Practice*: Implementations are encouraged to return the same object whenever the same the function is called with the same argument.
-
 
 :::
 :::
