@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-Since [@P3380R0], extended section on [normalization](#normalization) to talk about string literals and proposing properly handling string literals.
+Since [@P3380R0], extended section on [normalization](#normalization) to talk about string literals and proposing properly handling string literals. Additionally renaming the customization point from `operator template` to `to_meta_representation` and `from_meta_representation`.
 
 # Introduction
 
@@ -242,7 +242,7 @@ class vector {
 
 For our purposes it doesn't matter if `size_t` and `capacity_` are themselves `size_t` or `T*`, so I'm picking the simpler one to reason about.
 
-The template-argument-equivalence rule for pointers is that two pointers are equivalent if they have the same pointer value. That's not what we want for comparing two `std::vector<T>`s though, we want to compare the contents. In order for the default, subobject-wise equivalence to work in this case, we'd have to normalize the pointers to be _identical_. For `std::vector<T>` specifically, this is potentially feasible using a `std::meta::define_static_array` function that will be proposed as part of the reflection proposal ([@P2996R5], although it does not appear yet in that revision). But that's not going to help us with `std::map`, `std::list`, or any other container.
+The template-argument-equivalence rule for pointers is that two pointers are equivalent if they have the same pointer value. That's not what we want for comparing two `std::vector<T>`s though, we want to compare the contents. In order for the default, subobject-wise equivalence to work in this case, we'd have to normalize the pointers to be _identical_. For `std::vector<T>` specifically, this is potentially feasible using a `std::define_static_array` function ([@P3491R0]). But that's not going to help us with `std::map`, `std::list`, or any other container.
 
 For `std::vector<T>`, we really need to serialize a variable-length sequence of `T`s.
 
@@ -365,11 +365,15 @@ If we serialize the `string_view` as a `vector<char>`, the only way to deseriali
 
 And that will push you to having the `operator template` implementation for `string_view` be just be defaulted — the correct implementation.
 
+## A Note on Spelling
+
+The original design used an `operator template` function with a constructor. The original revision of this paper ([@P3380R0]) continued the same thing, with a tagged constructor instead. Because the constructor will basically always have to be tagged, and should only ever be invoked by the compiler anyway, this proposal now suggests using `to_meta_representation` and a `static` `from_meta_representation`.
+
 # Reflection Will Fix It
 
 One of the issues with the serialization problem that we had to deal with was: how exactly do you serialize? What representation do you return? And then how do you deserialize again? This was where we got stuck with types like `std::vector` (which needs variable-length representation) and even `std::tuple` (which has a simple answer for serialization but you don't want to just create a whole new tuple type for this). Faisal Vali had the insight that reflection provides a very easy answer for this question: you serialize into (and then deserialize from) a range of `std::meta::info`!
 
-Let's start with `SmallString` again. We wanted to serialize just the objects in `data[0:length]`:
+Let's start with `SmallString` again. We wanted to serialize just the objects in `data[0:length]` ()
 
 ::: std
 ```cpp
@@ -377,7 +381,7 @@ class SmallString {
     char data[32];
     int length;
 
-    consteval auto operator template() const -> std::vector<std::meta::info> {
+    consteval auto to_meta_representation() const -> std::vector<std::meta::info> {
         std::vector<std::meta::info> repr;
         for (int i = 0; i < length; ++i) {
             repr.push_back(std::meta::reflect_value(data[i]))
@@ -393,16 +397,16 @@ Here, we will return somewhere from 0 to 32 reflections of values of type `char`
 ::: std
 ```cpp
 class SmallString {
-    // a tagged constructor to make overload resolution
-    // easier to reason about
-    consteval SmallString(std::meta::from_template_t,
-                          std::vector<std::meta::info> repr)
-        : data() // zero out the data first
-        , length(repr.size())
+    static consteval auto from_meta_representation(std::vector<std::meta::info> repr)
+        -> SmallString
     {
+        // ensure that we zero out all the data
+        auto str = SmallString();
+        str.length = repr.size();
         for (int i = 0; i < length; ++i) {
-            data[i] = extract<char>(repr[i]);
+            str.data[i] = extract<char>(repr[i]);
         }
+        return str;
     }
 };
 ```
@@ -430,7 +434,7 @@ class vector {
         }
     };
 
-    consteval auto operator template() const -> Repr {
+    consteval auto to_meta_representation() const -> Repr {
         auto data = std::make_unique<std::meta::info const[]>(size_);
         for (size_t i = 0; i < size_; ++i) {
             data[i] = std::meta::reflect_value(begin_[i]);
@@ -441,14 +445,15 @@ class vector {
         };
     }
 
-    consteval vector(std::meta::from_template_t,
-                     Repr r)
+    static consteval auto to_meta_representation(Repr r) -> vector
     {
-        begin_ = std::allocator<T>::allocate(r.size());
-        size_ = capacity_ = r.size();
+        vector v;
+        v.begin_ = std::allocator<T>::allocate(r.size());
+        v.size_ = v.capacity_ = r.size();
         for (size_t i = 0; i < size_; ++i) {
-            ::new (begin_ + i) T(extract<T>(r.p[i]));
+            ::new (v.begin_ + i) T(extract<T>(r.p[i]));
         }
+        return v;
     }
 };
 ```
@@ -491,7 +496,7 @@ class Optional {
         }
     };
 
-    consteval auto operator template() -> Repr {
+    consteval auto to_meta_representation() -> Repr {
         if (engaged) {
             return Repr{.r=meta::reflect_value(value)};
         } else {
@@ -499,11 +504,11 @@ class Optional {
         }
     }
 
-    consteval Optional(meta::from_template_t, Repr repr)
-        : engaged(repr)
-    {
-        if (engaged) {
-            ::new (&value) T(extract<T>(repr.r));
+    static consteval auto from_meta_representation(Repr repr) -> Optional {
+        if (repr) {
+            return Optional(extract<T>(repr.r));
+        } else {
+            return Optional();
         }
     }
 };
@@ -521,7 +526,7 @@ class Tuple {
 
     // Note that here we're returning an array instead of a vector
     // just to demonstrate that we can
-    consteval auto operator template() -> array<meta::info, sizeof...(Ts)> {
+    consteval auto to_meta_representation() -> array<meta::info, sizeof...(Ts)> {
         array<meta::info, sizeof...(Ts)> repr;
         size_t idx = 0;
         template for (constexpr auto mem : nonstatic_data_members_of(^Tuple) {
@@ -537,14 +542,14 @@ class Tuple {
         return repr;
     }
 
-    consteval Tuple(meta::from_template_t tag,
-                    array<meta::info, sizeof...(Ts)> repr)
-        : Tuple(tag, std::make_index_sequence<sizeof...(Ts)>(), repr)
-    { }
+    static consteval auto from_meta_representation(array<meta::info, sizeof...(Ts)> repr)
+        -> Tuple
+    {
+        return Tuple(std::make_index_sequence<sizeof...(Ts)>(), repr)
+    }
 
     template <size_t... Is>
-    consteval Tuple(meta::from_template_t,
-                    index_sequence<Is...>,
+    consteval Tuple(index_sequence<Is...>,
                     array<meta::info, sizeof...(Ts)> repr)
         : elems(extract<Ts>(repr[Is]))...
     { }
@@ -562,17 +567,17 @@ template <typename... Ts>
 class Tuple {
     Ts... elems;
 
-    consteval auto operator template() = default;
-    consteval Tuple(meta::from_template_t, auto repr) = default;
+    consteval auto to_meta_representation() = default;
+    static consteval auto from_meta_representation(auto repr) = default;
 }
 ```
 :::
 
-I don't like this for three reasons. First, we have to default two different functions for what is effectively one operation that we're defaulting. Second, what actually does `operator template` return here? Third, while this makes the `optional`, `tuple`, and `variant` implementations a lot easier, it doesn't help for those types that actually want to do some normalization (like `SmallString`).
+I don't like this for three reasons. First, we have to default two different functions for what is effectively one operation that we're defaulting. Second, what actually does `to_meta_representation` return here? Third, while this makes the `optional`, `tuple`, and `variant` implementations a lot easier, it doesn't help for those types that actually want to do some normalization (like `SmallString`).
 
-But I think there's still a good solution for this problem that actually does solve all of these cases: allow `operator template` to return `void`!
+But I think there's still a good solution for this problem that actually does solve all of these cases: allow `to_meta_representation` to return `void`!
 
-That is: if `operator template` returns `void`, then we still invoke the function — it might do normalization — but we're sticking with default member-wise serialization, which means that we don't need a custom deserialization function. In effect, an `operator template` returning `void` would be the "opt in" that C++20 lacked for the case where you want member-wise equivalence but have private members. This approach makes the `optional`/`tuple`/etc. cases trivial:
+That is: if `to_meta_representation` returns `void`, then we still invoke the function — it might do normalization — but we're sticking with default member-wise serialization, which means that we don't need a custom deserialization function. In effect, an `to_meta_representation` returning `void` would be the "opt in" that C++20 lacked for the case where you want member-wise equivalence but have private members. This approach makes the `optional`/`tuple`/etc. cases trivial:
 
 ::: std
 ```cpp
@@ -581,14 +586,14 @@ class Optional {
     union { T value; };
     bool engaged;
 
-    consteval auto operator template() -> void { }
+    consteval auto to_meta_representation() -> void { }
 };
 
 template <typename... Ts>
 class Tuple {
     Ts... elems;
 
-    consteval auto operator template() -> void { }
+    consteval auto to_meta_representation() -> void { }
 }
 ```
 :::
@@ -601,7 +606,7 @@ class SmallString {
     char data[32];
     int length;
 
-    consteval auto operator template() -> void {
+    consteval auto to_meta_representation() -> void {
         std::fill(this->data + this->length, this->data + 32, '\0');
     }
 };
@@ -631,12 +636,12 @@ class Fun {
     std::vector<int> elems;
     int* best; // within elems
 
-    consteval auto operator template() -> void { }
+    consteval auto to_meta_representation() -> void { }
 };
 ```
 :::
 
-But... that's not quite right. The rules I laid out above say that after we invoke `operator template`, we normalize all of the members. Which, for `elems` is going to reallocate such that `best` no longer points within there. This should end up failing to compile because `best` will not be a valid pointer (for not pointing to persistent memory).
+But... that's not quite right. The rules I laid out above say that after we invoke `to_meta_representation`, we normalize all of the members. Which, for `elems` is going to reallocate such that `best` no longer points within there. This should end up failing to compile because `best` will not be a valid pointer (for not pointing to persistent memory).
 
 There are three ways I can think of to make this particular type work.
 
@@ -648,17 +653,21 @@ class Fun {
     std::vector<int> elems;
     int* best; // within elems
 
-    consteval auto operator template() -> std::vector<std::meta::info> {
+    consteval auto to_meta_representation() -> std::vector<std::meta::info> {
         return {
             std::meta::reflect_value(elems),
             std::meta::reflect_value(best - elems.data())
         }
     }
 
-    consteval Fun(std::meta::from_template_t, std::vector<std::meta::info> repr)
-        : elems(extract<std::vector<int*>>(repr[0]))
-        , best(extract<ptrdiff_t>(repr[1]) + elems.data())
-    { }
+    static consteval auto from_meta_representation(std::vector<std::meta::info> repr)
+        -> Fun
+    {
+        return {
+            .elems=extract<std::vector<int*>>(repr[0]),
+            .best=extract<ptrdiff_t>(repr[1]) + elems.data()
+        };
+    }
 };
 ```
 :::
@@ -673,9 +682,9 @@ class Fun {
     std::vector<int> elems;
     int* best; // within elems
 
-    consteval auto operator template() -> void {
+    consteval auto to_meta_representation() -> void {
         auto delta = best - elems.data();
-        elems.operator template(); // explicitly normalize
+        std::to_meta_representation(elems); // explicitly normalize
         best = elems.data() + delta;
     }
 };
@@ -697,39 +706,35 @@ class Fun {
         ptrdiff_t index;
     };
 
-    consteval auto operator template() -> Repr {
+    consteval auto to_meta_representation() -> Repr {
         return {
             .elems=elems,
             .index=best - elems.data()
         };
     }
 
-    consteval Fun(std::meta::from_template_t, Repr r)
-        : elems(std::move(r).elems)
-        , best(elems.data() + r.index)
-    { }
+    static consteval auto from_meta_representation(Repr r) -> Fun {
+        return {
+            .elems = std::move(r).elems,
+            .best = elems.data() + r.index
+        };
+    }
 };
 ```
 :::
 
 This seems like a much better approach than the explicit normalization one — but I'm still not sure it's actually worth pursuing. It doesn't add too much complexity to the design (once we can return two different kinds, is it really that big a deal to return three different kinds?), but we should really only go this route if this is a sufficiently common use-case. Which I'm not sure it is.
 
-## Alternate Spelling
-
-Following the principle that the way to spell the operator invoked in the expression `c[x]` is `operator[]`, an alternate spelling to the way to spell the operator invoked in the `$type-id$` `C<x>` could be `operator<>` (instead of `operator template`).
-
-Ultimately I prefer `operator template`, simply because of the added searchability of using words instead of punctuation, and this invocation will never appear in code, so there is no added value of terseness.
-
 ## Splitting
 
 There are two forms of this proposal:
 
-1. `T::operator template()` returns a range of reflections and `T` is constructible from that range,
-2. `T::operator template()` returns `void`.
+1. `T::to_meta_representation()` returns a range of reflections, `r`, and `T::from_meta_representation(r)` is a valid expression that returns a `T`.
+2. `T::to_meta_representation()` returns `void`.
 
 The first form is the full round-trip custom serialization/deserialization path that can support any type and is essential for containers. The second is a purely convenience form for simplicity, although one that covers a wide range of very common types (like `std::tuple`, `std::optional`, `std::variant`, `std::string_view`, `std::span`, etc.).
 
-However, the first form also depends on reflection [@P2996R5] and the latter does not. It is possible to adopt purely the `void`-returning form first with the understanding that we can later extend it to the reflection-range-returning form. This immediately gives us support for many useful types, and we can't use types like `std::vector<T>` or `std::string` as non-type template parameters yet anyway — not until we get non-transient constexpr allocation ([@P1974R0] [@P2670R1]).
+However, the first form also depends on reflection [@P2996R7] and the latter does not. It is possible to adopt purely the `void`-returning form first with the understanding that we can later extend it to the reflection-range-returning form. This immediately gives us support for many useful types, and we can't use types like `std::vector<T>` or `std::string` as non-type template parameters yet anyway — not until we get non-transient constexpr allocation ([@P1974R0] [@P2670R1]).
 
 So it's worth considering a reduced form of this proposal that is simply the `void`-returning form. This also has significantly less implementation complexity, since it's not a large extension over the existing rule.
 
@@ -739,14 +744,12 @@ This proposal extends class types as non-type parameters as follows. This isn't 
 
 ## Language
 
-First, as with [@P2484R0], I'm referring to `operator template` as a template representation function. A class type `T` can provide an `operator template` that must be `consteval`, with one of two forms:
+First, as with [@P2484R0], I'm referring to `to_meta_representation` as a template representation function. A class type `T` can provide an `to_meta_representation` that must be `consteval`, with one of two forms:
 
-1. It returns `void`, in which case every base class and non-static data member shall have structural type and none of them shall be `mutable`.
-2. It returns some value `R` such that:
+1. It is a possibly-mutable function that returns `void`, in which case every base class and non-static data member shall have structural type and none of them shall be `mutable`.
+2. It is a `const` function that returns some value `R` such that:
     a. `R.data()` is convertible to `std::meta::info const*`, `R.size()` is convertible to `size_t`, and `static_cast<std::meta::info const*>(R.data())[i]` shall be valid for all `0 <= i < static_cast<size_t>(R.size())`, and
-    b. `T(std::meta::from_template, R)` is a valid expression (where `std::meta::from_template` is a value of tag type `std::meta::from_template_t`).
-
-As with [@P2484R0], I think I still want this function to be non-user-invocable.
+    b. `T::from_meta_representation(R)` is a valid expression that yields a prvalue of type `T`.
 
 Second, we introduce the concept of template argument normalization and allow string literal template arguments:
 
@@ -758,7 +761,7 @@ A value `v` of structural type `T` is *template-argument-normalized* as follows:
 * [#]{.pnum} Otherwise, if `T` is an array type, every element of the array is template-argument-normalized.
 * [#]{.pnum} Otherwise (if `T` is a class type), then
   * [#.#]{.pnum} If `T` provides a template representation function that returns `void`, then that function is invoked on `v` and then every subobject of `v` is template-argument-normalized.
-  * [#.#]{.pnum} Otherwise, if `T` provides a template representation function that returns a reflection range, then the new value `T(std::meta::from_template, v.operator template())` is used in place of `v`.
+  * [#.#]{.pnum} Otherwise, if `T` provides a template representation function that returns a reflection range, then the new value `T::from_meta_representation(v.to_meta_representation())` is used in place of `v`.
   * [#.#]{.pnum} Otherwise (if `T` does not provide a template registration function), then every subobject of `v` is template-argument-normalized.
 :::
 
@@ -773,14 +776,14 @@ and [temp.arg.nontype]{.sref}/6.2:
 * [6.#]{.pnum} a string literal object ([lex.string]),
 :::
 
-* [6.#]{.pnum} the result of a typeid expression ([expr.typeid]),
+* [6.#]{.pnum} the result of a `typeid` expression ([expr.typeid]),
 * [6.#]{.pnum} a predefined `__func__` variable ([dcl.fct.def.general]), or
 * [6.#]{.pnum} a subobject ([intro.object]) of one of the above.
 :::
 
 Status quo so far is that *template-argument-normalization* is a no-op for all types.
 
-Third, we change the meaning of `std::meta::reflect_value` in [@P2996R5] to perform template-argument-normalization on its argument.
+Third, we change the meaning of `std::meta::reflect_value` in [@P2996R7] to perform template-argument-normalization on its argument.
 
 Fourth, we extend the definition of structural (here it's either the first bullet or both of the next two — the additional rules on template registration functions will be covered in their own section):
 
@@ -811,11 +814,9 @@ Sixth, ensure that when initializing a non-type template parameter of class type
 
 ## Library
 
-Add a new tag type, `std::meta::from_template_t` and value of it named `std::meta::from_template`.
-
 Add a new type trait for `std::is_structural`, which we will need to provide constrained template registration functions (a real use, as [@LWG3354] requested).
 
-Add a `consteval void operator template() { }` (that is, the default subobject-wise serialization with no normalization) to all of the following library types, suitably constrained:
+Add a `consteval void to_meta_representation() { }` (that is, the default subobject-wise serialization with no normalization) to all of the following library types, suitably constrained:
 
 * `std::tuple<Ts...>`
 * `std::optional<T>`
