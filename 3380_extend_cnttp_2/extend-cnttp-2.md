@@ -1,6 +1,6 @@
 ---
 title: "Extending support for class types as non-type template parameters"
-document: P3380R0
+document: P3380R1
 date: today
 audience: EWG
 author:
@@ -9,6 +9,10 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+Since [@P3380R0], extended section on [normalization](#normalization) to talk about string literals and proposing properly handling string literals.
 
 # Introduction
 
@@ -185,6 +189,39 @@ graph LR
 ```
 
 With such a normalization step, we can get `f()` and `g()` to be template-argument-equivalent in a way that avoids any ODR issues, since now their representations are actually identical.
+
+### String Literals
+
+Another highly motivating use-case for normalization is actually string literals. Currently, string literals are not usable as non-type template parameters. [@P0424R2] tried to address this issue, but was dropped in favor of [@P0732R2]. The latter, while a highly useful addition to the language, technically did not solve the former problem though.
+
+The problem with string literals is that template-argument equivalence for pointers is defined as two pointers having the same pointer value. Which isn't necessarily true for string literals in different translation units.
+
+But this is precisely a use-case for normalization! And the model [@P0424R2] implies basically gets us there, it just needs to be formalized. Basically: if `p` points to a string literal, or a subobject thereof, we can first normalize it by having it instead point to an external linkage array that is mangled with the contents of the string. That is, this:
+
+::: std
+```cpp
+template <auto V> struct C { };
+
+struct Wrapper { char const* p; };
+
+C<"hello"> c1;
+C<Wrapper{.p="hello"}> c2;
+```
+:::
+
+Can normalize (recursively) into:
+
+::: std
+```cpp
+template <char const* V> struct C { };
+
+inline constexpr char __hello[] = "hello";
+C<__hello> c1;
+C<Wrapper{.p=__hello}> c2;
+```
+:::
+
+As long as we ensure that the backing array has external storage such that the same contents lead to the same variable (which [@P3491R0] demonstrates a library implementation of), this will actually do the right thing. We end up with exactly what users expect, in the way that [@P0424R2] hoped to achieve.
 
 However, this still isn't sufficient...
 
@@ -711,17 +748,34 @@ First, as with [@P2484R0], I'm referring to `operator template` as a template re
 
 As with [@P2484R0], I think I still want this function to be non-user-invocable.
 
-Second, we introduce the concept of template argument normalization:
+Second, we introduce the concept of template argument normalization and allow string literal template arguments:
 
 ::: std
 A value `v` of structural type `T` is *template-argument-normalized* as follows:
 
-* [#]{.pnum} If `T` is a scalar type or an lvalue reference type, nothing is done.
+* [#]{.pnum} If `v` is a pointer or reference to a string literal or subobject thereof, it is instead changed to point or refer to an external linkage constexpr array that contains the same values as `v`, such that the same string literal in different translation units would normalize to point or refer into the same array.
+* [#]{.pnum} Otherwise, if `T` is a scalar type or an lvalue reference type, nothing is done.
 * [#]{.pnum} Otherwise, if `T` is an array type, every element of the array is template-argument-normalized.
 * [#]{.pnum} Otherwise (if `T` is a class type), then
   * [#.#]{.pnum} If `T` provides a template representation function that returns `void`, then that function is invoked on `v` and then every subobject of `v` is template-argument-normalized.
   * [#.#]{.pnum} Otherwise, if `T` provides a template representation function that returns a reflection range, then the new value `T(std::meta::from_template, v.operator template())` is used in place of `v`.
   * [#.#]{.pnum} Otherwise (if `T` does not provide a template registration function), then every subobject of `v` is template-argument-normalized.
+:::
+
+and [temp.arg.nontype]{.sref}/6.2:
+
+::: std
+[6]{.pnum} For a non-type template-parameter of reference or pointer type, or for each non-static data member of reference or pointer type in a non-type template-parameter of class type or subobject thereof, the reference or pointer value shall not refer or point to (respectively):
+
+* [6.#]{.pnum} a temporary object ([class.temporary]),
+
+::: rm
+* [6.#]{.pnum} a string literal object ([lex.string]),
+:::
+
+* [6.#]{.pnum} the result of a typeid expression ([expr.typeid]),
+* [6.#]{.pnum} a predefined `__func__` variable ([dcl.fct.def.general]), or
+* [6.#]{.pnum} a subobject ([intro.object]) of one of the above.
 :::
 
 Status quo so far is that *template-argument-normalization* is a no-op for all types.
@@ -782,3 +836,20 @@ Two values `p1` and `p2` of type `pair<T, U>` are template-argument-equivalent (
 # Acknowledgements
 
 Thanks to Richard Smith and Davis Herring for all the work in this space. Thanks to Jeff Snyder for originally seeing how to solve this problem (even if we didn't end up using his original solution). Thanks to Faisal Vali and Daveed Vandevoorde for working through a solution.
+
+---
+references:
+  - id: P3491R0
+    citation-label: P3491R0
+    title: "`define_static_string` and `define_static_array`"
+    author:
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2024
+        month: 11
+        day: 03
+    URL: https://wg21.link/p3491r0
+---
