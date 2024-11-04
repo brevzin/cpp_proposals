@@ -2737,7 +2737,13 @@ constexpr auto s_int_refl = define_aggregate(^S<int>, {
 When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
 This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_aggregate` for member functions.
 
-If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_aggregate` is not a constant expression.
+If `define_aggregate` is called multiple times with the same arguments, all calls after the first will have no effect. Calling `define_aggregate` for a type that was defined using other arguments, defined through other means, or is in the process of being defined, is not a constant expression.
+
+Revisions of this paper prior to P2996R8 named this function `define_class`. We find `define_aggregate` to be a better name for a few reasons:
+
+1. The capabilities of the function are quite limited, and are mostly good for constructing aggregate types.
+2. The new name provides good cause for forcing all data members to be public. Private data members created through such an interface are of very limited utility.
+3. The name `define_class` is left available for a future, more fully-featured API.
 
 ### Data Layout Reflection
 ::: std

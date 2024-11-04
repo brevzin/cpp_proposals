@@ -4502,11 +4502,25 @@ will <em>still</em> have a destructor provided - that simply does
 nothing. This allows implementing <a href="#a-simple-variant-type">variant</a> without having to further
 extend support in <code class="sourceCode cpp">define_aggregate</code>
 for member functions.</p>
-<p>If <code class="sourceCode cpp">type_class</code> is a reflection of
-a type that already has a definition, or which is in the process of
-being defined, the call to
-<code class="sourceCode cpp">define_aggregate</code> is not a constant
-expression.</p>
+<p>If <code class="sourceCode cpp">define_aggregate</code> is called
+multiple times with the same arguments, all calls after the first will
+have no effect. Calling
+<code class="sourceCode cpp">define_aggregate</code> for a type that was
+defined using other arguments, defined through other means, or is in the
+process of being defined, is not a constant expression.</p>
+<p>Revisions of this paper prior to P2996R8 named this function
+<code class="sourceCode cpp">define_class</code>. We find
+<code class="sourceCode cpp">define_aggregate</code> to be a better name
+for a few reasons:</p>
+<ol type="1">
+<li>The capabilities of the function are quite limited, and are mostly
+good for constructing aggregate types.</li>
+<li>The new name provides good cause for forcing all data members to be
+public. Private data members created through such an interface are of
+very limited utility.</li>
+<li>The name <code class="sourceCode cpp">define_class</code> is left
+available for a future, more fully-featured API.</li>
+</ol>
 <h3 data-number="4.4.19" id="data-layout-reflection"><span class="header-section-number">4.4.19</span> Data Layout Reflection<a href="#data-layout-reflection" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
