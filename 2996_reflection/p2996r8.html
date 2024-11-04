@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-03" />
+  <meta name="dcterms.date" content="2024-11-04" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-03</td>
+    <td>2024-11-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -727,9 +727,9 @@ implementations<span></span></a></li>
 <code class="sourceCode cpp">reflect_object</code>,
 <code class="sourceCode cpp">reflect_function</code><span></span></a></li>
 <li><a href="#extractt" id="toc-extractt"><span class="toc-section-number">4.4.17</span> <code class="sourceCode cpp">extract<span class="op">&lt;</span>T<span class="op">&gt;</span></code><span></span></a></li>
-<li><a href="#data_member_spec-define_class" id="toc-data_member_spec-define_class"><span class="toc-section-number">4.4.18</span>
+<li><a href="#data_member_spec-define_aggregate" id="toc-data_member_spec-define_aggregate"><span class="toc-section-number">4.4.18</span>
 <code class="sourceCode cpp">data_member_spec</code>,
-<code class="sourceCode cpp">define_class</code><span></span></a></li>
+<code class="sourceCode cpp">define_aggregate</code><span></span></a></li>
 <li><a href="#data-layout-reflection" id="toc-data-layout-reflection"><span class="toc-section-number">4.4.19</span> Data Layout
 Reflection<span></span></a></li>
 <li><a href="#other-type-traits" id="toc-other-type-traits"><span class="toc-section-number">4.4.20</span> Other Type
@@ -772,9 +772,9 @@ types<span></span></a></li>
 expressions<span></span></a></li>
 <li><a href="#expr.prim.id.splice-splice-specifiers" id="toc-expr.prim.id.splice-splice-specifiers">7.5.4.0*
 [expr.prim.id.splice] Splice specifiers<span></span></a></li>
-<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.5.1
+<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.4.1
 <span>[expr.prim.id.general]</span></span> General<span></span></a></li>
-<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.5.3
+<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.4.3
 <span>[expr.prim.id.qual]</span></span> Qualified
 names<span></span></a></li>
 <li><a href="#expr.prim.splice-expression-splicing" id="toc-expr.prim.splice-expression-splicing">7.5.8* [expr.prim.splice]
@@ -892,7 +892,7 @@ Value extraction<span></span></a></li>
 Reflection substitution<span></span></a></li>
 <li><a href="#meta.reflection.result-expression-result-reflection" id="toc-meta.reflection.result-expression-result-reflection">[meta.reflection.result]
 Expression result reflection<span></span></a></li>
-<li><a href="#meta.reflection.define_class-reflection-class-definition-generation" id="toc-meta.reflection.define_class-reflection-class-definition-generation">[meta.reflection.define_class]
+<li><a href="#meta.reflection.define_aggregate-reflection-class-definition-generation" id="toc-meta.reflection.define_aggregate-reflection-class-definition-generation">[meta.reflection.define_aggregate]
 Reflection class definition generation<span></span></a></li>
 <li><a href="#meta.reflection.unary-unary-type-traits" id="toc-meta.reflection.unary-unary-type-traits">[meta.reflection.unary]
 Unary type traits<span></span></a>
@@ -949,6 +949,8 @@ to <code class="sourceCode cpp"><span class="op">(</span>u8<span class="op">)</s
 <code class="sourceCode cpp">spaceship</code>, and
 <code class="sourceCode cpp">ampersand_and</code> -&gt;
 <code class="sourceCode cpp">ampersand_ampersand</code>)</li>
+<li>renamed <code class="sourceCode cpp">define_class</code> to
+<code class="sourceCode cpp">define_aggregate</code></li>
 <li>removed <code class="sourceCode cpp">define_static_array</code>,
 <code class="sourceCode cpp">define_static_string</code>, and
 <code class="sourceCode cpp">reflect_invoke</code></li>
@@ -1008,7 +1010,7 @@ Aliases”</a> section.</li>
 <code class="sourceCode cpp">has_complete_definition</code>.</li>
 <li>removed <code class="sourceCode cpp">subobjects_of</code> and
 <code class="sourceCode cpp">accessible_subobjects_of</code> (will be
-reintroduced by <span class="citation" data-cites="P3293R1">[<a href="https://wg21.link/p3293r1" role="doc-biblioref">P3293R1</a>]</span>).</li>
+reintroduced by <span class="citation" data-cites="P3293R1">[<a href="#ref-P3293R1" role="doc-biblioref"><strong>P3293R1?</strong></a>]</span>).</li>
 <li>specified constraints for
 <code class="sourceCode cpp">enumerators_of</code> in terms of
 <code class="sourceCode cpp">has_complete_definition</code>.</li>
@@ -1721,7 +1723,7 @@ parser would of course be more complex, this is just the beginning.</p>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span> <span class="kw">struct</span> Tuple <span class="op">{</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> storage;</span>
 <span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>storage, <span class="op">{</span>data_member_spec<span class="op">(^</span>Ts<span class="op">)...})))</span>;</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_aggregate<span class="op">(^</span>storage, <span class="op">{</span>data_member_spec<span class="op">(^</span>Ts<span class="op">)...})))</span>;</span>
 <span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  storage data;</span>
 <span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  Tuple<span class="op">():</span> data<span class="op">{}</span> <span class="op">{}</span></span>
@@ -1748,22 +1750,22 @@ parser would of course be more complex, this is just the beginning.</p>
 <span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="co">// Similarly for other value categories...</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>This example uses a “magic” <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_class</code>
+<p>This example uses a “magic” <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_aggregate</code>
 template along with member reflection through the
 <code class="sourceCode cpp">nonstatic_data_members_of</code>
 metafunction to implement a
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>-like
 type without the usual complex and costly template metaprogramming
 tricks that that involves when these facilities are not available.
-<code class="sourceCode cpp">define_class</code> takes a reflection for
-an incomplete class or union plus a vector of non-static data member
+<code class="sourceCode cpp">define_aggregate</code> takes a reflection
+for an incomplete class or union plus a vector of non-static data member
 descriptions, and completes the give class or union type to have the
 described members.</p>
 <p>On Compiler Explorer: <a href="https://godbolt.org/z/YK35d8MMx">EDG</a>, <a href="https://godbolt.org/z/cT116Wb31">Clang</a>.</p>
 <h2 data-number="3.9" id="a-simple-variant-type"><span class="header-section-number">3.9</span> A Simple Variant Type<a href="#a-simple-variant-type" class="self-link"></a></h2>
 <p>Similarly to how we can implement a tuple using
-<code class="sourceCode cpp">define_class</code> to create on the fly a
-type with one member for each
+<code class="sourceCode cpp">define_aggregate</code> to create on the
+fly a type with one member for each
 <code class="sourceCode cpp">Ts<span class="op">...</span></code>, we
 can implement a variant that simply defines a
 <code class="sourceCode cpp"><span class="kw">union</span></code>
@@ -1791,8 +1793,8 @@ deleted (because
 <code class="sourceCode cpp">std<span class="op">::</span>string</code>
 has a non-trivial destructor). This is a problem because we need to
 define this thing… somehow. However, for the purposes of
-<code class="sourceCode cpp">define_class</code>, there really is only
-one reasonable option to choose here:</p>
+<code class="sourceCode cpp">define_aggregate</code>, there really is
+only one reasonable option to choose here:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
@@ -1808,7 +1810,7 @@ one reasonable option to choose here:</p>
 <span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>If we make <a href="#data_member_spec-define_class"><code class="sourceCode cpp">define_class</code></a>
+<p>If we make <a href="#data_member_spec-define_aggregate"><code class="sourceCode cpp">define_aggregate</code></a>
 for a <code class="sourceCode cpp"><span class="kw">union</span></code>
 have this behavior, then we can implement a
 <code class="sourceCode cpp">variant</code> in a much more
@@ -1825,7 +1827,7 @@ demonstrate the idea:</p>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> Storage;</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Empty <span class="op">{</span> <span class="op">}</span>;</span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>Storage, <span class="op">{</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_aggregate<span class="op">(^</span>Storage, <span class="op">{</span></span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        data_member_spec<span class="op">(^</span>Empty, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;empty&quot;</span><span class="op">})</span>,</span>
 <span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>        data_member_spec<span class="op">(^</span>Ts<span class="op">)...</span></span>
 <span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">})))</span>;</span>
@@ -1927,7 +1929,7 @@ initialize members of a defined union using a splicer, as in:</p>
 </blockquote>
 </div>
 <p>Arguably, the answer should be yes - this would be consistent with
-how other accesses work. This is instead proposed in <span class="citation" data-cites="P3293R1">[<a href="https://wg21.link/p3293r1" role="doc-biblioref">P3293R1</a>]</span>.</p>
+how other accesses work. This is instead proposed in <span class="citation" data-cites="P3293R1">[<a href="#ref-P3293R1" role="doc-biblioref"><strong>P3293R1?</strong></a>]</span>.</p>
 <p>On Compiler Explorer: <a href="https://godbolt.org/z/Efz5vsjaa">EDG</a>, <a href="https://godbolt.org/z/3bvo97fqf">Clang</a>.</p>
 <h2 data-number="3.10" id="struct-to-struct-of-arrays"><span class="header-section-number">3.10</span> Struct to Struct of Arrays<a href="#struct-to-struct-of-arrays" class="self-link"></a></h2>
 <div class="std">
@@ -1947,7 +1949,7 @@ how other accesses work. This is instead proposed in <span class="citation" data
 <span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> mem_descr <span class="op">=</span> data_member_spec<span class="op">(</span>type_array, <span class="op">{.</span>name <span class="op">=</span> identifier_of<span class="op">(</span>member<span class="op">)})</span>;</span>
 <span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>mem_descr<span class="op">)</span>;</span>
 <span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>define_class<span class="op">(</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> define_aggregate<span class="op">(</span></span>
 <span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    substitute<span class="op">(^</span>struct_of_arrays_impl, <span class="op">{</span>type, N<span class="op">})</span>,</span>
 <span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    new_members<span class="op">)</span>;</span>
 <span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
@@ -1976,11 +1978,12 @@ how other accesses work. This is instead proposed in <span class="citation" data
 </div>
 <p>Again, the combination of
 <code class="sourceCode cpp">nonstatic_data_members_of</code> and
-<code class="sourceCode cpp">define_class</code> is put to good use.</p>
+<code class="sourceCode cpp">define_aggregate</code> is put to good
+use.</p>
 <p>On Compiler Explorer: <a href="https://godbolt.org/z/Whdvs3j1n">EDG</a>, <a href="https://godbolt.org/z/cY73aYKov">Clang</a>.</p>
 <h2 data-number="3.11" id="parsing-command-line-options-ii"><span class="header-section-number">3.11</span> Parsing Command-Line Options
 II<a href="#parsing-command-line-options-ii" class="self-link"></a></h2>
-<p>Now that we’ve seen a couple examples of using <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_class</code>
+<p>Now that we’ve seen a couple examples of using <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_aggregate</code>
 to create a type, we can create a more sophisticated command-line parser
 example.</p>
 <p>This is the opening example for <a href="https://docs.rs/clap/latest/clap/">clap</a> (Rust’s
@@ -2032,7 +2035,7 @@ example.</p>
 <span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> type_new <span class="op">=</span> template_arguments_of<span class="op">(</span>type_of<span class="op">(</span>member<span class="op">))[</span><span class="dv">0</span><span class="op">]</span>;</span>
 <span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>    new_members<span class="op">.</span>push_back<span class="op">(</span>data_member_spec<span class="op">(</span>type_new, <span class="op">{.</span>name<span class="op">=</span>identifier_of<span class="op">(</span>member<span class="op">)}))</span>;</span>
 <span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> define_class<span class="op">(</span>opts, new_members<span class="op">)</span>;</span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> define_aggregate<span class="op">(</span>opts, new_members<span class="op">)</span>;</span>
 <span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Clap <span class="op">{</span></span>
@@ -2341,7 +2344,7 @@ or</li>
 <p>We do not currently support splicing string literals, and the
 <code class="sourceCode cpp">pair</code> approach follows the similar
 pattern already shown with
-<code class="sourceCode cpp">define_class</code> (given a suitable
+<code class="sourceCode cpp">define_aggregate</code> (given a suitable
 <code class="sourceCode cpp">fixed_string</code> type):</p>
 <div class="std">
 <blockquote>
@@ -2361,7 +2364,7 @@ pattern already shown with
 <span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span>f<span class="op">(</span>tags<span class="op">)</span>, <span class="op">...)</span>;</span>
-<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_class<span class="op">(</span>type, nsdms<span class="op">)</span>;</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_aggregate<span class="op">(</span>type, nsdms<span class="op">)</span>;</span>
 <span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> R;</span>
@@ -2386,7 +2389,7 @@ parameters entirely by keeping everything in the value domain:</p>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">[</span>type, name<span class="op">]</span> <span class="op">:</span> members<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>        nsdms<span class="op">.</span>push_back<span class="op">(</span>data_member_spec<span class="op">(</span>type, <span class="op">{.</span>name<span class="op">=</span>name<span class="op">}))</span>;</span>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_class<span class="op">(</span>type, nsdms<span class="op">)</span>;</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_aggregate<span class="op">(</span>type, nsdms<span class="op">)</span>;</span>
 <span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> R;</span>
@@ -2426,7 +2429,7 @@ ways.</p>
 <span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>      <span class="op">++</span>k;</span>
 <span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Define &#39;Helper&lt;k&gt;&#39; and return its index.</span></span>
-<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>    define_class<span class="op">(</span>r, <span class="op">{})</span>;</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>    define_aggregate<span class="op">(</span>r, <span class="op">{})</span>;</span>
 <span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> k;</span>
 <span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
@@ -3142,7 +3145,7 @@ constant evaluation to happen at compile time, an implementation is not
 strictly required to take advantage of that possibility.</p>
 <p>Some of the proposed metafunctions, however, have side-effects that
 have an effect on the remainder of the program. For example, we provide
-a <code class="sourceCode cpp">define_class</code> metafunction that
+a <code class="sourceCode cpp">define_aggregate</code> metafunction that
 provides a definition for a given class. Clearly, we want the effect of
 calling that metafunction to be “prompt” in a lexical-order sense. For
 example:</p>
@@ -3152,7 +3155,7 @@ example:</p>
 <span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S;</span>
 <span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>S, <span class="op">{})))</span>;</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_aggregate<span class="op">(^</span>S, <span class="op">{})))</span>;</span>
 <span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>  S s;  <span class="co">// S should be defined at this point.</span></span>
 <span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
@@ -3765,15 +3768,15 @@ comprises […] the instantiation context of
 <code class="sourceCode cpp">members_of</code> to be (roughly) those
 reachable from the <em>evaluation context</em>. However, a second
 problem related to reachability is posed by
-<code class="sourceCode cpp">define_class</code>.</p>
+<code class="sourceCode cpp">define_aggregate</code>.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb75"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info make_defn<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info Cls, std<span class="op">::</span>meta<span class="op">::</span>info Mem<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Synthesizes:</span></span>
 <span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">//   struct Mem {};</span></span>
 <span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">//   struct Cls { Mem m; };</span></span>
-<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="co">/*P1*/</span> define_class<span class="op">(</span>Cls, <span class="op">{</span></span>
-<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a>    data_member_spec<span class="op">(</span><span class="co">/*P2*/</span> define_class<span class="op">(</span>Mem, <span class="op">{})</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;m&quot;</span><span class="op">})</span></span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="co">/*P1*/</span> define_aggregate<span class="op">(</span>Cls, <span class="op">{</span></span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a>    data_member_spec<span class="op">(</span><span class="co">/*P2*/</span> define_aggregate<span class="op">(</span>Mem, <span class="op">{})</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;m&quot;</span><span class="op">})</span></span>
 <span id="cb75-7"><a href="#cb75-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
 <span id="cb75-8"><a href="#cb75-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb75-9"><a href="#cb75-9" aria-hidden="true" tabindex="-1"></a></span>
@@ -3798,12 +3801,12 @@ those classes are reachable from those program points?</li>
 will the generated definitions be reachable)?</li>
 <li>How can we ensure that the definition of
 <code class="sourceCode cpp">M</code> is reachable during the evaluation
-of <code class="sourceCode cpp">define_class</code> on
+of <code class="sourceCode cpp">define_aggregate</code> on
 <code class="sourceCode cpp">C</code>?</li>
 </ol>
 <p>The prior discourse regarding
 <code class="sourceCode cpp">members_of</code> gives a straightforward
-answer to (1); the <code class="sourceCode cpp">define_class</code>
+answer to (1); the <code class="sourceCode cpp">define_aggregate</code>
 function is defined in terms of the <em>evaluation context</em>, which
 makes available all declarations reachable from
 <code class="sourceCode cpp"><em>P5</em></code>.</p>
@@ -3822,17 +3825,17 @@ which contains a data memer of type
 <code class="sourceCode cpp">M</code>, prior to the declaration of
 <code class="sourceCode cpp">M</code> itself. We propose that the point
 of declaration for all definitions generated by
-<code class="sourceCode cpp">define_class</code> immediately follows the
-end of the manifestly constant-evaluated expression that produces the
-definition: In this case, just prior to
+<code class="sourceCode cpp">define_aggregate</code> immediately follows
+the end of the manifestly constant-evaluated expression that produces
+the definition: In this case, just prior to
 <code class="sourceCode cpp"><em>P6</em></code>.</p>
 <p>This leaves one gap, and it is the question posed by (3): If the
 definition of <code class="sourceCode cpp">M</code>, generated by
-evaluation of <code class="sourceCode cpp">define_class<span class="op">(</span>Mem, <span class="op">{})</span></code>,
+evaluation of <code class="sourceCode cpp">define_aggregate<span class="op">(</span>Mem, <span class="op">{})</span></code>,
 is located just prior to
 <code class="sourceCode cpp"><em>P6</em></code>, then the definition is
 still not reachable from the evaluation context (such as we have defined
-it) during evaluation of <code class="sourceCode cpp">define_class<span class="op">(</span>Cls, <span class="op">...)</span></code>.</p>
+it) during evaluation of <code class="sourceCode cpp">define_aggregate<span class="op">(</span>Cls, <span class="op">...)</span></code>.</p>
 <p>Circling back to “reachability” as a mapping from program points to
 declarations, there are two clear paths forward: Either modify which
 declarations are reachable from a program point, or modify the set of
@@ -3895,8 +3898,9 @@ declaration</em>, the instantiation context consists of the
 <em>evaluation context</em> of the expression that is producing the
 declaration. In our example above, this ensures that the definition of
 <code class="sourceCode cpp"><em>M</em></code> is reachable not just
-from the invocation of <code class="sourceCode cpp">define_class</code>
-for <code class="sourceCode cpp">C</code>, but from within the actual
+from the invocation of
+<code class="sourceCode cpp">define_aggregate</code> for
+<code class="sourceCode cpp">C</code>, but from within the actual
 generated definition of
 <code class="sourceCode cpp"><em>C</em></code>.</p>
 <p>This machinery is “off in the weeds” of technicalities related to
@@ -4050,12 +4054,12 @@ be explained below.</p>
 <span id="cb76-127"><a href="#cb76-127" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_user_provided<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb76-128"><a href="#cb76-128" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_user_declared<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb76-129"><a href="#cb76-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb76-130"><a href="#cb76-130" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data_member_spec-define_class">define_class</a></span></span>
+<span id="cb76-130"><a href="#cb76-130" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data_member_spec-define_aggregate">define_aggregate</a></span></span>
 <span id="cb76-131"><a href="#cb76-131" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> data_member_options_t;</span>
 <span id="cb76-132"><a href="#cb76-132" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_spec<span class="op">(</span>info type_class,</span>
 <span id="cb76-133"><a href="#cb76-133" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb76-134"><a href="#cb76-134" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb76-135"><a href="#cb76-135" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb76-135"><a href="#cb76-135" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> define_aggregate<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb76-136"><a href="#cb76-136" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb76-137"><a href="#cb76-137" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data-layout-reflection">data layout</a></span></span>
 <span id="cb76-138"><a href="#cb76-138" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> member_offset <span class="op">{</span></span>
@@ -4414,9 +4418,9 @@ feel similar to splicers, but unlike splicers it does not require its
 operand to be a constant-expression itself. Also unlike splicers, it
 requires knowledge of the type associated with the entity represented by
 its operand.</p>
-<h3 data-number="4.4.18" id="data_member_spec-define_class"><span class="header-section-number">4.4.18</span>
+<h3 data-number="4.4.18" id="data_member_spec-define_aggregate"><span class="header-section-number">4.4.18</span>
 <code class="sourceCode cpp">data_member_spec</code>,
-<code class="sourceCode cpp">define_class</code><a href="#data_member_spec-define_class" class="self-link"></a></h3>
+<code class="sourceCode cpp">define_aggregate</code><a href="#data_member_spec-define_aggregate" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb94"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
@@ -4437,7 +4441,7 @@ its operand.</p>
 <span id="cb94-16"><a href="#cb94-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_spec<span class="op">(</span>info type,</span>
 <span id="cb94-17"><a href="#cb94-17" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb94-18"><a href="#cb94-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb94-19"><a href="#cb94-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_class<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb94-19"><a href="#cb94-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_aggregate<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb94-20"><a href="#cb94-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -4453,19 +4457,19 @@ is used to represent the name. If a
 <code class="sourceCode cpp">name</code> is provided, it must be a valid
 identifier when interpreted as a sequence of code-units. Otherwise, the
 name of the data member is unspecified.</p>
-<p><code class="sourceCode cpp">define_class</code> takes the reflection
-of an incomplete class/struct/union type and a range of reflections of
-data member descriptions and completes the given class type with data
-members as described (in the given order). The given reflection is
-returned. For now, only data member reflections are supported (via
-<code class="sourceCode cpp">data_member_spec</code>) but the API takes
-in a range of <code class="sourceCode cpp">info</code> anticipating
-expanding this in the near future.</p>
+<p><code class="sourceCode cpp">define_aggregate</code> takes the
+reflection of an incomplete class/struct/union type and a range of
+reflections of data member descriptions and completes the given class
+type with data members as described (in the given order). The given
+reflection is returned. For now, only data member reflections are
+supported (via <code class="sourceCode cpp">data_member_spec</code>) but
+the API takes in a range of <code class="sourceCode cpp">info</code>
+anticipating expanding this in the near future.</p>
 <p>For example:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb95"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U;</span>
-<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_class<span class="op">(^</span>U, <span class="op">{</span></span>
+<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_type<span class="op">(</span>define_aggregate<span class="op">(^</span>U, <span class="op">{</span></span>
 <span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span><span class="op">)</span>,</span>
 <span id="cb95-4"><a href="#cb95-4" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">char</span><span class="op">)</span>,</span>
 <span id="cb95-5"><a href="#cb95-5" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">double</span><span class="op">)</span>,</span>
@@ -4479,7 +4483,7 @@ expanding this in the near future.</p>
 <span id="cb95-13"><a href="#cb95-13" aria-hidden="true" tabindex="-1"></a><span class="co">// };</span></span>
 <span id="cb95-14"><a href="#cb95-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb95-15"><a href="#cb95-15" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">struct</span> S;</span>
-<span id="cb95-16"><a href="#cb95-16" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> s_int_refl <span class="op">=</span> define_class<span class="op">(^</span>S<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, <span class="op">{</span></span>
+<span id="cb95-16"><a href="#cb95-16" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> s_int_refl <span class="op">=</span> define_aggregate<span class="op">(^</span>S<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>, <span class="op">{</span></span>
 <span id="cb95-17"><a href="#cb95-17" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;i&quot;</span>, <span class="op">.</span>alignment<span class="op">=</span><span class="dv">64</span><span class="op">})</span>,</span>
 <span id="cb95-18"><a href="#cb95-18" aria-hidden="true" tabindex="-1"></a>  data_member_spec<span class="op">(^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">u8&quot;こんにち&quot;</span><span class="op">})</span>,</span>
 <span id="cb95-19"><a href="#cb95-19" aria-hidden="true" tabindex="-1"></a><span class="op">})</span>;</span>
@@ -4496,13 +4500,27 @@ expanding this in the near future.</p>
 one of the alternatives has a non-trivial destructor, the defined union
 will <em>still</em> have a destructor provided - that simply does
 nothing. This allows implementing <a href="#a-simple-variant-type">variant</a> without having to further
-extend support in <code class="sourceCode cpp">define_class</code> for
-member functions.</p>
-<p>If <code class="sourceCode cpp">type_class</code> is a reflection of
-a type that already has a definition, or which is in the process of
-being defined, the call to
-<code class="sourceCode cpp">define_class</code> is not a constant
-expression.</p>
+extend support in <code class="sourceCode cpp">define_aggregate</code>
+for member functions.</p>
+<p>If <code class="sourceCode cpp">define_aggregate</code> is called
+multiple times with the same arguments, all calls after the first will
+have no effect. Calling
+<code class="sourceCode cpp">define_aggregate</code> for a type that was
+defined using other arguments, defined through other means, or is in the
+process of being defined, is not a constant expression.</p>
+<p>Revisions of this paper prior to P2996R8 named this function
+<code class="sourceCode cpp">define_class</code>. We find
+<code class="sourceCode cpp">define_aggregate</code> to be a better name
+for a few reasons:</p>
+<ol type="1">
+<li>The capabilities of the function are quite limited, and are mostly
+good for constructing aggregate types.</li>
+<li>The new name provides good cause for forcing all data members to be
+public. Private data members created through such an interface are of
+very limited utility.</li>
+<li>The name <code class="sourceCode cpp">define_class</code> is left
+available for a future, more fully-featured API.</li>
+</ol>
 <h3 data-number="4.4.19" id="data-layout-reflection"><span class="header-section-number">4.4.19</span> Data Layout Reflection<a href="#data-layout-reflection" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
@@ -4954,7 +4972,7 @@ of it is the operand of a potentially-evaluated
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">15pre</a></span>
 If a class <code class="sourceCode cpp">C</code> is defined in a
-translation unit with a call to a specialization of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_class</code>,
+translation unit with a call to a specialization of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_aggregate</code>,
 every definition of that class shall be the result of a call to the same
 specialization; and for every reflection in the range of reflections
 describing its class members and unnamed bit-fields, every other such
@@ -5234,10 +5252,10 @@ value-dependent.</p>
 </div>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.5.1
+<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.4.1
 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>
 General<a href="#expr.prim.id.general-general" class="self-link"></a></h3>
-<p>Add a carve-out for reflection in <span>7.5.5.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
+<p>Add a carve-out for reflection in <span>7.5.4.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">4</a></span>
@@ -5265,7 +5283,7 @@ an unevaluated operand.</li>
 </ul>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.5.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
+<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.4.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
 Qualified names<a href="#expr.prim.id.qual-qualified-names" class="self-link"></a></h3>
 <p>Add a production to the grammar for
 <code class="sourceCode cpp"><em>nested-name-specifier</em></code> as
@@ -5362,7 +5380,7 @@ let <em>T</em> be the template <span class="rm" style="color: #bf0303"><del>nomi
 <h3 class="unnumbered" id="expr.prim.splice-expression-splicing">7.5.8*
 [expr.prim.splice] Expression splicing<a href="#expr.prim.splice-expression-splicing" class="self-link"></a></h3>
 <p>Add a new subsection of <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span> following
-<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
+<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
 <div class="std">
 <blockquote>
 <div class="addu">
@@ -5884,7 +5902,7 @@ in a <code class="sourceCode cpp"><em>concept-id</em></code> (<span>13.3
 <a href="https://wg21.link/temp.names">[temp.names]</a></span>), or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_97" id="pnum_97">(20.3)</a></span>
 in a <code class="sourceCode cpp"><em>requires-expression</em></code>
-(<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span>).</li>
+(<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span>).</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_98" id="pnum_98">21</a></span>
 An expression or conversion is <em>plainly constant-evaluated</em> if it
@@ -7168,7 +7186,7 @@ synopsis</strong></p>
 <span id="cb133-162"><a href="#cb133-162" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
 <span id="cb133-163"><a href="#cb133-163" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_function(T&amp; fn);</span>
 <span id="cb133-164"><a href="#cb133-164" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-165"><a href="#cb133-165" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.define_class], class definition generation</span>
+<span id="cb133-165"><a href="#cb133-165" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.define_aggregate], class definition generation</span>
 <span id="cb133-166"><a href="#cb133-166" aria-hidden="true" tabindex="-1"></a>  struct data_member_options_t {</span>
 <span id="cb133-167"><a href="#cb133-167" aria-hidden="true" tabindex="-1"></a>    struct name_type {</span>
 <span id="cb133-168"><a href="#cb133-168" aria-hidden="true" tabindex="-1"></a>      template&lt;class T&gt; requires constructible_from&lt;u8string, T&gt;</span>
@@ -7189,7 +7207,7 @@ synopsis</strong></p>
 <span id="cb133-183"><a href="#cb133-183" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options = {});</span>
 <span id="cb133-184"><a href="#cb133-184" aria-hidden="true" tabindex="-1"></a>  consteval bool is_data_member_spec(info r);</span>
 <span id="cb133-185"><a href="#cb133-185" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-186"><a href="#cb133-186" aria-hidden="true" tabindex="-1"></a>  consteval info define_class(info type_class, R&amp;&amp;);</span>
+<span id="cb133-186"><a href="#cb133-186" aria-hidden="true" tabindex="-1"></a>  consteval info define_aggregate(info type_class, R&amp;&amp;);</span>
 <span id="cb133-187"><a href="#cb133-187" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-188"><a href="#cb133-188" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.unary.cat], primary type categories</span>
 <span id="cb133-189"><a href="#cb133-189" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_void(info type);</span>
@@ -8735,8 +8753,8 @@ type.</p>
 <code class="sourceCode cpp"><span class="op">^</span>fn</code>, where
 <code class="sourceCode cpp">fn</code> is the function designated by
 <code class="sourceCode cpp">expr</code>.</p>
-<h3 class="unnumbered" id="meta.reflection.define_class-reflection-class-definition-generation">[meta.reflection.define_class]
-Reflection class definition generation<a href="#meta.reflection.define_class-reflection-class-definition-generation" class="self-link"></a></h3>
+<h3 class="unnumbered" id="meta.reflection.define_aggregate-reflection-class-definition-generation">[meta.reflection.define_aggregate]
+Reflection class definition generation<a href="#meta.reflection.define_aggregate-reflection-class-definition-generation" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
 <div class="addu">
@@ -8831,7 +8849,7 @@ optional characteristics designated by
 <code class="sourceCode cpp">options</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_365" id="pnum_365">3</a></span>
 <em>Remarks</em>: The returned reflection value is primarily useful in
-conjunction with <code class="sourceCode cpp">define_class</code>.
+conjunction with <code class="sourceCode cpp">define_aggregate</code>.
 Certain other functions in
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code>
 (e.g., <code class="sourceCode cpp">type_of</code>,
@@ -8846,7 +8864,7 @@ query the characteristics indicated by the arguments provided to
 declaration of a non-static data member. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb211"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb211-2"><a href="#cb211-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info define_class<span class="op">(</span>info class_type, R<span class="op">&amp;&amp;</span> mdescrs<span class="op">)</span>;</span></code></pre></div>
+<span id="cb211-2"><a href="#cb211-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info define_aggregate<span class="op">(</span>info class_type, R<span class="op">&amp;&amp;</span> mdescrs<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_367" id="pnum_367">5</a></span>
 <em>Constant When</em>: Letting
 <code class="sourceCode cpp"><em>C</em></code> be the class represented
@@ -8856,8 +8874,22 @@ by <code class="sourceCode cpp">class_type</code> and
 value in <code class="sourceCode cpp">mdescrs</code>,</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_368" id="pnum_368">(5.1)</a></span>
-<code class="sourceCode cpp"><em>C</em></code> is incomplete from every
-point in the evaluation context,</li>
+If <code class="sourceCode cpp"><em>C</em></code> is a complete type
+from some point in the evaluation context, then
+<ul>
+<li>the reachable definition of
+<code class="sourceCode cpp"><em>C</em></code> is an injected
+declaration produced by an evaluation of
+<code class="sourceCode cpp">define_aggregate</code>,</li>
+<li><code class="sourceCode cpp"><em>C</em></code> has as many data
+members as <code class="sourceCode cpp">mdescrs</code> has elements,
+and</li>
+<li>each <code class="sourceCode cpp"><em>K</em></code><sup>th</sup>
+reflection value in <code class="sourceCode cpp">mdescrs</code>
+describes a data member with all of the same properties as the
+<code class="sourceCode cpp"><em>K</em></code><sup>th</sup> data member
+of <code class="sourceCode cpp"><em>C</em></code>.</li>
+</ul></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_369" id="pnum_369">(5.2)</a></span>
 <code class="sourceCode cpp">is_data_member_spec<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> for
@@ -8912,8 +8944,8 @@ a class template <code class="sourceCode cpp"><em>T</em></code>, then
 <code class="sourceCode cpp"><em>D</em></code> is is an explicit
 specialization of <code class="sourceCode cpp"><em>T</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_377" id="pnum_377">(7.4)</a></span>
-<code class="sourceCode cpp"><em>D</em></code> contains a non-static
-data member corresponding to each reflection value
+<code class="sourceCode cpp"><em>D</em></code> contains a public
+non-static data member corresponding to each reflection value
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> in
 <code class="sourceCode cpp">mdescrs</code>. For every other
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub></code> in
@@ -9633,10 +9665,6 @@ constant-evaluation. <a href="https://wg21.link/p3068r1"><div class="csl-block">
 <div id="ref-P3096R1" class="csl-entry" role="doc-biblioentry">
 [P3096R1] Adam Lach, Walter Genovese. 2024-05-15. Function Parameter
 Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r1"><div class="csl-block">https://wg21.link/p3096r1</div></a>
-</div>
-<div id="ref-P3293R1" class="csl-entry" role="doc-biblioentry">
-[P3293R1] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
-2024-10-13. Splicing a base class subobject. <a href="https://wg21.link/p3293r1"><div class="csl-block">https://wg21.link/p3293r1</div></a>
 </div>
 <div id="ref-P3295R0" class="csl-entry" role="doc-biblioentry">
 [P3295R0] Ben Craig. 2024-05-21. Freestanding constexpr containers and
