@@ -772,9 +772,9 @@ types<span></span></a></li>
 expressions<span></span></a></li>
 <li><a href="#expr.prim.id.splice-splice-specifiers" id="toc-expr.prim.id.splice-splice-specifiers">7.5.4.0*
 [expr.prim.id.splice] Splice specifiers<span></span></a></li>
-<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.4.1
+<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.5.1
 <span>[expr.prim.id.general]</span></span> General<span></span></a></li>
-<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.4.3
+<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.5.3
 <span>[expr.prim.id.qual]</span></span> Qualified
 names<span></span></a></li>
 <li><a href="#expr.prim.splice-expression-splicing" id="toc-expr.prim.splice-expression-splicing">7.5.8* [expr.prim.splice]
@@ -969,6 +969,9 @@ addressable</li>
 instead of
 <code class="sourceCode cpp"><span class="dt">size_t</span></code>, to
 allow for future use with negative offsets</li>
+<li>renamed the type traits from all being named
+<code class="sourceCode cpp">type_meow</code> to a more bespoke naming
+scheme.</li>
 </ul>
 <p>Since <span class="citation" data-cites="P2996R6">[<a href="https://wg21.link/p2996r6" role="doc-biblioref">P2996R6</a>]</span>:</p>
 <ul>
@@ -1010,7 +1013,7 @@ Aliases”</a> section.</li>
 <code class="sourceCode cpp">has_complete_definition</code>.</li>
 <li>removed <code class="sourceCode cpp">subobjects_of</code> and
 <code class="sourceCode cpp">accessible_subobjects_of</code> (will be
-reintroduced by <span class="citation" data-cites="P3293R1">[<a href="#ref-P3293R1" role="doc-biblioref"><strong>P3293R1?</strong></a>]</span>).</li>
+reintroduced by <span class="citation" data-cites="P3293R1">[<a href="https://wg21.link/p3293r1" role="doc-biblioref">P3293R1</a>]</span>).</li>
 <li>specified constraints for
 <code class="sourceCode cpp">enumerators_of</code> in terms of
 <code class="sourceCode cpp">has_complete_definition</code>.</li>
@@ -1929,7 +1932,7 @@ initialize members of a defined union using a splicer, as in:</p>
 </blockquote>
 </div>
 <p>Arguably, the answer should be yes - this would be consistent with
-how other accesses work. This is instead proposed in <span class="citation" data-cites="P3293R1">[<a href="#ref-P3293R1" role="doc-biblioref"><strong>P3293R1?</strong></a>]</span>.</p>
+how other accesses work. This is instead proposed in <span class="citation" data-cites="P3293R1">[<a href="https://wg21.link/p3293r1" role="doc-biblioref">P3293R1</a>]</span>.</p>
 <p>On Compiler Explorer: <a href="https://godbolt.org/z/Efz5vsjaa">EDG</a>, <a href="https://godbolt.org/z/3bvo97fqf">Clang</a>.</p>
 <h2 data-number="3.10" id="struct-to-struct-of-arrays"><span class="header-section-number">3.10</span> Struct to Struct of Arrays<a href="#struct-to-struct-of-arrays" class="self-link"></a></h2>
 <div class="std">
@@ -2207,7 +2210,7 @@ Tuple<a href="#converting-a-struct-to-a-tuple" class="self-link"></a></h2>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> substitute<span class="op">(^</span>std<span class="op">::</span>tuple,</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                    nonstatic_data_members_of<span class="op">(</span>type<span class="op">)</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>                    <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>type_of<span class="op">)</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>                    <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>type_remove_cvref<span class="op">)</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>                    <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>remove_cvref<span class="op">)</span></span>
 <span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>                    <span class="op">|</span> std<span class="op">::</span>ranges<span class="op">::</span>to<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&gt;())</span>;</span>
 <span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
@@ -2322,7 +2325,7 @@ the above): <a href="https://godbolt.org/z/Moqf84nc1">EDG</a>, <a href="https://
 <span id="cb31-41"><a href="#cb31-41" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb31-42"><a href="#cb31-42" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Tuples<span class="op">&gt;</span></span>
 <span id="cb31-43"><a href="#cb31-43" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> my_tuple_cat<span class="op">(</span>Tuples<span class="op">&amp;&amp;...</span> tuples<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb31-44"><a href="#cb31-44" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">typename</span> <span class="op">[:</span> make_indexer<span class="op">({</span>type_tuple_size<span class="op">(</span>type_remove_cvref<span class="op">(^</span>Tuples<span class="op">))...})</span> <span class="op">:]</span> indexer;</span>
+<span id="cb31-44"><a href="#cb31-44" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">typename</span> <span class="op">[:</span> make_indexer<span class="op">({</span>tuple_size<span class="op">(</span>remove_cvref<span class="op">(^</span>Tuples<span class="op">))...})</span> <span class="op">:]</span> indexer;</span>
 <span id="cb31-45"><a href="#cb31-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> indexer<span class="op">(</span>std<span class="op">::</span>forward_as_tuple<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>Tuples<span class="op">&gt;(</span>tuples<span class="op">)...))</span>;</span>
 <span id="cb31-46"><a href="#cb31-46" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
@@ -3356,7 +3359,7 @@ implementation can just do it once.</p>
 <span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">^</span>tuple,</span>
 <span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>        nonstatic_data_members_of<span class="op">(</span>type<span class="op">)</span></span>
 <span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>meta<span class="op">::</span>type_of<span class="op">)</span></span>
-<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>meta<span class="op">::</span>type_remove_cvref<span class="op">)</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>meta<span class="op">::</span>remove_cvref<span class="op">)</span></span>
 <span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> ranges<span class="op">::</span>to<span class="op">&lt;</span>vector<span class="op">&gt;())</span>;</span>
 <span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 
@@ -3368,7 +3371,7 @@ implementation can just do it once.</p>
 <span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">^</span>tuple,</span>
 <span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>        nonstatic_data_members_of<span class="op">(</span>type<span class="op">)</span></span>
 <span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>meta<span class="op">::</span>type_of<span class="op">)</span></span>
-<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>meta<span class="op">::</span>type_remove_cvref<span class="op">)</span></span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">|</span> views<span class="op">::</span>transform<span class="op">(</span>meta<span class="op">::</span>remove_cvref<span class="op">)</span></span>
 <span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">)</span>;</span>
 <span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 
@@ -4149,7 +4152,7 @@ qualifiers):</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb79"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> type_doof<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> type_remove_cvref<span class="op">(</span>is_type<span class="op">(</span>r<span class="op">)</span> <span class="op">?</span> r <span class="op">:</span> type_of<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> remove_cvref<span class="op">(</span>is_type<span class="op">(</span>r<span class="op">)</span> <span class="op">?</span> r <span class="op">:</span> type_of<span class="op">(</span>r<span class="op">))</span>;</span>
 <span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb79-4"><a href="#cb79-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb79-5"><a href="#cb79-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#define typeof</span><span class="op">(</span>e<span class="op">)</span><span class="pp"> </span><span class="op">[:</span><span class="pp"> </span>type_doof<span class="op">(^</span>e<span class="op">)</span><span class="pp"> </span><span class="op">:]</span></span></code></pre></div>
@@ -4591,7 +4594,7 @@ base class subobject or non-static data member, except in bits.</li>
 <p>There is a question of whether all the type traits should be provided
 in
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code>.
-For instance, a few examples in this paper use <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_remove_cvref<span class="op">(</span>t<span class="op">)</span></code>
+For instance, a few examples in this paper use <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>remove_cvref<span class="op">(</span>t<span class="op">)</span></code>
 as if that exists. Technically, the functionality isn’t strictly
 necessary - since it can be provided indirectly:</p>
 <table>
@@ -4609,7 +4612,7 @@ necessary - since it can be provided indirectly:</p>
 <tr class="odd">
 <td><div>
 
-<div class="sourceCode" id="cb98"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>type_remove_cvref<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb98"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>remove_cvref<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
 
 </div></td>
 <td><div>
@@ -4621,7 +4624,7 @@ necessary - since it can be provided indirectly:</p>
 <tr class="even">
 <td><div>
 
-<div class="sourceCode" id="cb100"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>type_is_const<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb100"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>is_const_type<span class="op">(</span>type<span class="op">)</span></span></code></pre></div>
 
 </div></td>
 <td><div>
@@ -4718,9 +4721,9 @@ names.</p></li>
 </ol>
 <p>We don’t think the nested namespace approach (#1) is a good idea
 because of the loss of ADL and the more inconvenient call syntax.</p>
-<p>The current revision of this proposal uses the
+<p>Previous revisions of this proposal used the
 <code class="sourceCode cpp">type_</code> prefix (#2) uniformly. This
-has the downside that some type traits end up reading awkwardly
+had the downside that some type traits end up reading awkwardly
 (<code class="sourceCode cpp">type_is_pointer</code> as opposed to
 <code class="sourceCode cpp">is_pointer_type</code>) but several others
 do read much better
@@ -4775,6 +4778,13 @@ aren’t defined in the same places — those are the tuple traits
 (<code class="sourceCode cpp">tuple_size</code>/<code class="sourceCode cpp">tuple_element</code>)
 and the variant traits
 (<code class="sourceCode cpp">variant_size</code>/<code class="sourceCode cpp">variant_alternative</code>).</p>
+<p>Starting from R8, this paper uses option #3. That is: every type
+trait
+<code class="sourceCode cpp">std<span class="op">::</span>is_meow</code>
+is introduced as <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>is_meow_type</code>,
+while all other type traits
+<code class="sourceCode cpp">std<span class="op">::</span>meow</code>
+are introduced as <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>meow</code>.</p>
 <h2 data-number="4.5" id="odr-concerns"><span class="header-section-number">4.5</span> ODR Concerns<a href="#odr-concerns" class="self-link"></a></h2>
 <p>Static reflection invariably brings new ways to violate ODR.</p>
 <div class="sourceCode" id="cb102"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="co">// File &#39;cls.h&#39;</span></span>
@@ -5252,10 +5262,10 @@ value-dependent.</p>
 </div>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.4.1
+<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.5.1
 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>
 General<a href="#expr.prim.id.general-general" class="self-link"></a></h3>
-<p>Add a carve-out for reflection in <span>7.5.4.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
+<p>Add a carve-out for reflection in <span>7.5.5.1 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>/4:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">4</a></span>
@@ -5283,7 +5293,7 @@ an unevaluated operand.</li>
 </ul>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.4.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
+<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.5.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
 Qualified names<a href="#expr.prim.id.qual-qualified-names" class="self-link"></a></h3>
 <p>Add a production to the grammar for
 <code class="sourceCode cpp"><em>nested-name-specifier</em></code> as
@@ -5380,7 +5390,7 @@ let <em>T</em> be the template <span class="rm" style="color: #bf0303"><del>nomi
 <h3 class="unnumbered" id="expr.prim.splice-expression-splicing">7.5.8*
 [expr.prim.splice] Expression splicing<a href="#expr.prim.splice-expression-splicing" class="self-link"></a></h3>
 <p>Add a new subsection of <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span> following
-<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
+<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
 <div class="std">
 <blockquote>
 <div class="addu">
@@ -5902,7 +5912,7 @@ in a <code class="sourceCode cpp"><em>concept-id</em></code> (<span>13.3
 <a href="https://wg21.link/temp.names">[temp.names]</a></span>), or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_97" id="pnum_97">(20.3)</a></span>
 in a <code class="sourceCode cpp"><em>requires-expression</em></code>
-(<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span>).</li>
+(<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span>).</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_98" id="pnum_98">21</a></span>
 An expression or conversion is <em>plainly constant-evaluated</em> if it
@@ -7210,166 +7220,165 @@ synopsis</strong></p>
 <span id="cb133-186"><a href="#cb133-186" aria-hidden="true" tabindex="-1"></a>  consteval info define_aggregate(info type_class, R&amp;&amp;);</span>
 <span id="cb133-187"><a href="#cb133-187" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-188"><a href="#cb133-188" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.unary.cat], primary type categories</span>
-<span id="cb133-189"><a href="#cb133-189" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_void(info type);</span>
-<span id="cb133-190"><a href="#cb133-190" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_null_pointer(info type);</span>
-<span id="cb133-191"><a href="#cb133-191" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_integral(info type);</span>
-<span id="cb133-192"><a href="#cb133-192" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_floating_point(info type);</span>
-<span id="cb133-193"><a href="#cb133-193" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_array(info type);</span>
-<span id="cb133-194"><a href="#cb133-194" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_pointer(info type);</span>
-<span id="cb133-195"><a href="#cb133-195" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_lvalue_reference(info type);</span>
-<span id="cb133-196"><a href="#cb133-196" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_rvalue_reference(info type);</span>
-<span id="cb133-197"><a href="#cb133-197" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_member_object_pointer(info type);</span>
-<span id="cb133-198"><a href="#cb133-198" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_member_function_pointer(info type);</span>
-<span id="cb133-199"><a href="#cb133-199" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_enum(info type);</span>
-<span id="cb133-200"><a href="#cb133-200" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_union(info type);</span>
-<span id="cb133-201"><a href="#cb133-201" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_class(info type);</span>
-<span id="cb133-202"><a href="#cb133-202" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_function(info type);</span>
-<span id="cb133-203"><a href="#cb133-203" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_reflection(info type);</span>
+<span id="cb133-189"><a href="#cb133-189" aria-hidden="true" tabindex="-1"></a>  consteval bool is_void_type(info type);</span>
+<span id="cb133-190"><a href="#cb133-190" aria-hidden="true" tabindex="-1"></a>  consteval bool is_null_pointer_type(info type);</span>
+<span id="cb133-191"><a href="#cb133-191" aria-hidden="true" tabindex="-1"></a>  consteval bool is_integral_type(info type);</span>
+<span id="cb133-192"><a href="#cb133-192" aria-hidden="true" tabindex="-1"></a>  consteval bool is_floating_point_type(info type);</span>
+<span id="cb133-193"><a href="#cb133-193" aria-hidden="true" tabindex="-1"></a>  consteval bool is_array_type(info type);</span>
+<span id="cb133-194"><a href="#cb133-194" aria-hidden="true" tabindex="-1"></a>  consteval bool is_pointer_type(info type);</span>
+<span id="cb133-195"><a href="#cb133-195" aria-hidden="true" tabindex="-1"></a>  consteval bool is_lvalue_reference_type(info type);</span>
+<span id="cb133-196"><a href="#cb133-196" aria-hidden="true" tabindex="-1"></a>  consteval bool is_rvalue_reference_type(info type);</span>
+<span id="cb133-197"><a href="#cb133-197" aria-hidden="true" tabindex="-1"></a>  consteval bool is_member_object_pointer_type(info type);</span>
+<span id="cb133-198"><a href="#cb133-198" aria-hidden="true" tabindex="-1"></a>  consteval bool is_member_function_pointer_type(info type);</span>
+<span id="cb133-199"><a href="#cb133-199" aria-hidden="true" tabindex="-1"></a>  consteval bool is_enum_type(info type);</span>
+<span id="cb133-200"><a href="#cb133-200" aria-hidden="true" tabindex="-1"></a>  consteval bool is_union_type(info type);</span>
+<span id="cb133-201"><a href="#cb133-201" aria-hidden="true" tabindex="-1"></a>  consteval bool is_class_type(info type);</span>
+<span id="cb133-202"><a href="#cb133-202" aria-hidden="true" tabindex="-1"></a>  consteval bool is_function_type(info type);</span>
+<span id="cb133-203"><a href="#cb133-203" aria-hidden="true" tabindex="-1"></a>  consteval bool is_reflection_type(info type);</span>
 <span id="cb133-204"><a href="#cb133-204" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-205"><a href="#cb133-205" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.unary.comp], composite type categories</span>
-<span id="cb133-206"><a href="#cb133-206" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_reference(info type);</span>
-<span id="cb133-207"><a href="#cb133-207" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_arithmetic(info type);</span>
-<span id="cb133-208"><a href="#cb133-208" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_fundamental(info type);</span>
-<span id="cb133-209"><a href="#cb133-209" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_object(info type);</span>
-<span id="cb133-210"><a href="#cb133-210" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_scalar(info type);</span>
-<span id="cb133-211"><a href="#cb133-211" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_compound(info type);</span>
-<span id="cb133-212"><a href="#cb133-212" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_member_pointer(info type);</span>
+<span id="cb133-206"><a href="#cb133-206" aria-hidden="true" tabindex="-1"></a>  consteval bool is_reference_type(info type);</span>
+<span id="cb133-207"><a href="#cb133-207" aria-hidden="true" tabindex="-1"></a>  consteval bool is_arithmetic_type(info type);</span>
+<span id="cb133-208"><a href="#cb133-208" aria-hidden="true" tabindex="-1"></a>  consteval bool is_fundamental_type(info type);</span>
+<span id="cb133-209"><a href="#cb133-209" aria-hidden="true" tabindex="-1"></a>  consteval bool is_object_type(info type);</span>
+<span id="cb133-210"><a href="#cb133-210" aria-hidden="true" tabindex="-1"></a>  consteval bool is_scalar_type(info type);</span>
+<span id="cb133-211"><a href="#cb133-211" aria-hidden="true" tabindex="-1"></a>  consteval bool is_compound_type(info type);</span>
+<span id="cb133-212"><a href="#cb133-212" aria-hidden="true" tabindex="-1"></a>  consteval bool is_member_pointer_type(info type);</span>
 <span id="cb133-213"><a href="#cb133-213" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-214"><a href="#cb133-214" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection unary.prop], type properties</span>
-<span id="cb133-215"><a href="#cb133-215" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_const(info type);</span>
-<span id="cb133-216"><a href="#cb133-216" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_volatile(info type);</span>
-<span id="cb133-217"><a href="#cb133-217" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivial(info type);</span>
-<span id="cb133-218"><a href="#cb133-218" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_copyable(info type);</span>
-<span id="cb133-219"><a href="#cb133-219" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_standard_layout(info type);</span>
-<span id="cb133-220"><a href="#cb133-220" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_empty(info type);</span>
-<span id="cb133-221"><a href="#cb133-221" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_polymorphic(info type);</span>
-<span id="cb133-222"><a href="#cb133-222" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_abstract(info type);</span>
-<span id="cb133-223"><a href="#cb133-223" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_final(info type);</span>
-<span id="cb133-224"><a href="#cb133-224" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_aggregate(info type);</span>
-<span id="cb133-225"><a href="#cb133-225" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_signed(info type);</span>
-<span id="cb133-226"><a href="#cb133-226" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_unsigned(info type);</span>
-<span id="cb133-227"><a href="#cb133-227" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_bounded_array(info type);</span>
-<span id="cb133-228"><a href="#cb133-228" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_unbounded_array(info type);</span>
-<span id="cb133-229"><a href="#cb133-229" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_scoped_enum(info type);</span>
+<span id="cb133-215"><a href="#cb133-215" aria-hidden="true" tabindex="-1"></a>  consteval bool is_const_type(info type);</span>
+<span id="cb133-216"><a href="#cb133-216" aria-hidden="true" tabindex="-1"></a>  consteval bool is_volatile_type(info type);</span>
+<span id="cb133-217"><a href="#cb133-217" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivial_type(info type);</span>
+<span id="cb133-218"><a href="#cb133-218" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_copyable_type(info type);</span>
+<span id="cb133-219"><a href="#cb133-219" aria-hidden="true" tabindex="-1"></a>  consteval bool is_standard_layout_type(info type);</span>
+<span id="cb133-220"><a href="#cb133-220" aria-hidden="true" tabindex="-1"></a>  consteval bool is_empty_type(info type);</span>
+<span id="cb133-221"><a href="#cb133-221" aria-hidden="true" tabindex="-1"></a>  consteval bool is_polymorphic_type(info type);</span>
+<span id="cb133-222"><a href="#cb133-222" aria-hidden="true" tabindex="-1"></a>  consteval bool is_abstract_type(info type);</span>
+<span id="cb133-223"><a href="#cb133-223" aria-hidden="true" tabindex="-1"></a>  consteval bool is_final_type(info type);</span>
+<span id="cb133-224"><a href="#cb133-224" aria-hidden="true" tabindex="-1"></a>  consteval bool is_aggregate_type(info type);</span>
+<span id="cb133-225"><a href="#cb133-225" aria-hidden="true" tabindex="-1"></a>  consteval bool is_signed_type(info type);</span>
+<span id="cb133-226"><a href="#cb133-226" aria-hidden="true" tabindex="-1"></a>  consteval bool is_unsigned_type(info type);</span>
+<span id="cb133-227"><a href="#cb133-227" aria-hidden="true" tabindex="-1"></a>  consteval bool is_bounded_array_type(info type);</span>
+<span id="cb133-228"><a href="#cb133-228" aria-hidden="true" tabindex="-1"></a>  consteval bool is_unbounded_array_type(info type);</span>
+<span id="cb133-229"><a href="#cb133-229" aria-hidden="true" tabindex="-1"></a>  consteval bool is_scoped_enum_type(info type);</span>
 <span id="cb133-230"><a href="#cb133-230" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-231"><a href="#cb133-231" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-232"><a href="#cb133-232" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_constructible(info type, R&amp;&amp; type_args);</span>
-<span id="cb133-233"><a href="#cb133-233" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_default_constructible(info type);</span>
-<span id="cb133-234"><a href="#cb133-234" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_copy_constructible(info type);</span>
-<span id="cb133-235"><a href="#cb133-235" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_move_constructible(info type);</span>
+<span id="cb133-232"><a href="#cb133-232" aria-hidden="true" tabindex="-1"></a>    consteval bool is_constructible_type(info type, R&amp;&amp; type_args);</span>
+<span id="cb133-233"><a href="#cb133-233" aria-hidden="true" tabindex="-1"></a>  consteval bool is_default_constructible_type(info type);</span>
+<span id="cb133-234"><a href="#cb133-234" aria-hidden="true" tabindex="-1"></a>  consteval bool is_copy_constructible_type(info type);</span>
+<span id="cb133-235"><a href="#cb133-235" aria-hidden="true" tabindex="-1"></a>  consteval bool is_move_constructible_type(info type);</span>
 <span id="cb133-236"><a href="#cb133-236" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-237"><a href="#cb133-237" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_assignable(info type_dst, info type_src);</span>
-<span id="cb133-238"><a href="#cb133-238" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_copy_assignable(info type);</span>
-<span id="cb133-239"><a href="#cb133-239" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_move_assignable(info type);</span>
+<span id="cb133-237"><a href="#cb133-237" aria-hidden="true" tabindex="-1"></a>  consteval bool is_assignable_type(info type_dst, info type_src);</span>
+<span id="cb133-238"><a href="#cb133-238" aria-hidden="true" tabindex="-1"></a>  consteval bool is_copy_assignable_type(info type);</span>
+<span id="cb133-239"><a href="#cb133-239" aria-hidden="true" tabindex="-1"></a>  consteval bool is_move_assignable_type(info type);</span>
 <span id="cb133-240"><a href="#cb133-240" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-241"><a href="#cb133-241" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_swappable_with(info type_dst, info type_src);</span>
-<span id="cb133-242"><a href="#cb133-242" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_swappable(info type);</span>
+<span id="cb133-241"><a href="#cb133-241" aria-hidden="true" tabindex="-1"></a>  consteval bool is_swappable_with_type(info type_dst, info type_src);</span>
+<span id="cb133-242"><a href="#cb133-242" aria-hidden="true" tabindex="-1"></a>  consteval bool is_swappable_type(info type);</span>
 <span id="cb133-243"><a href="#cb133-243" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-244"><a href="#cb133-244" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_destructible(info type);</span>
+<span id="cb133-244"><a href="#cb133-244" aria-hidden="true" tabindex="-1"></a>  consteval bool is_destructible_type(info type);</span>
 <span id="cb133-245"><a href="#cb133-245" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-246"><a href="#cb133-246" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-247"><a href="#cb133-247" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_trivially_constructible(info type, R&amp;&amp; type_args);</span>
-<span id="cb133-248"><a href="#cb133-248" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_default_constructible(info type);</span>
-<span id="cb133-249"><a href="#cb133-249" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_copy_constructible(info type);</span>
-<span id="cb133-250"><a href="#cb133-250" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_move_constructible(info type);</span>
+<span id="cb133-247"><a href="#cb133-247" aria-hidden="true" tabindex="-1"></a>    consteval bool is_trivially_constructible_type(info type, R&amp;&amp; type_args);</span>
+<span id="cb133-248"><a href="#cb133-248" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_default_constructible_type(info type);</span>
+<span id="cb133-249"><a href="#cb133-249" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_copy_constructible_type(info type);</span>
+<span id="cb133-250"><a href="#cb133-250" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_move_constructible_type(info type);</span>
 <span id="cb133-251"><a href="#cb133-251" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-252"><a href="#cb133-252" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_assignable(info type_dst, info type_src);</span>
-<span id="cb133-253"><a href="#cb133-253" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_copy_assignable(info type);</span>
-<span id="cb133-254"><a href="#cb133-254" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_move_assignable(info type);</span>
-<span id="cb133-255"><a href="#cb133-255" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_trivially_destructible(info type);</span>
+<span id="cb133-252"><a href="#cb133-252" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_assignable_type(info type_dst, info type_src);</span>
+<span id="cb133-253"><a href="#cb133-253" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_copy_assignable_type(info type);</span>
+<span id="cb133-254"><a href="#cb133-254" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_move_assignable_type(info type);</span>
+<span id="cb133-255"><a href="#cb133-255" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_destructible_type(info type);</span>
 <span id="cb133-256"><a href="#cb133-256" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-257"><a href="#cb133-257" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-258"><a href="#cb133-258" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_nothrow_constructible(info type, R&amp;&amp; type_args);</span>
-<span id="cb133-259"><a href="#cb133-259" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_default_constructible(info type);</span>
-<span id="cb133-260"><a href="#cb133-260" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_copy_constructible(info type);</span>
-<span id="cb133-261"><a href="#cb133-261" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_move_constructible(info type);</span>
+<span id="cb133-258"><a href="#cb133-258" aria-hidden="true" tabindex="-1"></a>    consteval bool is_nothrow_constructible_type(info type, R&amp;&amp; type_args);</span>
+<span id="cb133-259"><a href="#cb133-259" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_default_constructible_type(info type);</span>
+<span id="cb133-260"><a href="#cb133-260" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_copy_constructible_type(info type);</span>
+<span id="cb133-261"><a href="#cb133-261" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_move_constructible_type(info type);</span>
 <span id="cb133-262"><a href="#cb133-262" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-263"><a href="#cb133-263" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_assignable(info type_dst, info type_src);</span>
-<span id="cb133-264"><a href="#cb133-264" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_copy_assignable(info type);</span>
-<span id="cb133-265"><a href="#cb133-265" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_move_assignable(info type);</span>
+<span id="cb133-263"><a href="#cb133-263" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_assignable_type(info type_dst, info type_src);</span>
+<span id="cb133-264"><a href="#cb133-264" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_copy_assignable_type(info type);</span>
+<span id="cb133-265"><a href="#cb133-265" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_move_assignable_type(info type);</span>
 <span id="cb133-266"><a href="#cb133-266" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-267"><a href="#cb133-267" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_swappable_with(info type_dst, info type_src);</span>
-<span id="cb133-268"><a href="#cb133-268" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_swappable(info type);</span>
+<span id="cb133-267"><a href="#cb133-267" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_swappable_with_type(info type_dst, info type_src);</span>
+<span id="cb133-268"><a href="#cb133-268" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_swappable_type(info type);</span>
 <span id="cb133-269"><a href="#cb133-269" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-270"><a href="#cb133-270" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_destructible(info type);</span>
+<span id="cb133-270"><a href="#cb133-270" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_destructible_type(info type);</span>
 <span id="cb133-271"><a href="#cb133-271" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-272"><a href="#cb133-272" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_implicit_lifetime(info type);</span>
+<span id="cb133-272"><a href="#cb133-272" aria-hidden="true" tabindex="-1"></a>  consteval bool is_implicit_lifetime_type(info type);</span>
 <span id="cb133-273"><a href="#cb133-273" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-274"><a href="#cb133-274" aria-hidden="true" tabindex="-1"></a>  consteval bool type_has_virtual_destructor(info type);</span>
+<span id="cb133-274"><a href="#cb133-274" aria-hidden="true" tabindex="-1"></a>  consteval bool has_virtual_destructor(info type);</span>
 <span id="cb133-275"><a href="#cb133-275" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-276"><a href="#cb133-276" aria-hidden="true" tabindex="-1"></a>  consteval bool type_has_unique_object_representations(info type);</span>
+<span id="cb133-276"><a href="#cb133-276" aria-hidden="true" tabindex="-1"></a>  consteval bool has_unique_object_representations(info type);</span>
 <span id="cb133-277"><a href="#cb133-277" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-278"><a href="#cb133-278" aria-hidden="true" tabindex="-1"></a>  consteval bool type_reference_constructs_from_temporary(info type_dst, info type_src);</span>
-<span id="cb133-279"><a href="#cb133-279" aria-hidden="true" tabindex="-1"></a>  consteval bool type_reference_converts_from_temporary(info type_dst, info type_src);</span>
+<span id="cb133-278"><a href="#cb133-278" aria-hidden="true" tabindex="-1"></a>  consteval bool reference_constructs_from_temporary(info type_dst, info type_src);</span>
+<span id="cb133-279"><a href="#cb133-279" aria-hidden="true" tabindex="-1"></a>  consteval bool reference_converts_from_temporary(info type_dst, info type_src);</span>
 <span id="cb133-280"><a href="#cb133-280" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb133-281"><a href="#cb133-281" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.unary.prop.query], type property queries</span>
-<span id="cb133-282"><a href="#cb133-282" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_alignment_of(info type);</span>
-<span id="cb133-283"><a href="#cb133-283" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_rank(info type);</span>
-<span id="cb133-284"><a href="#cb133-284" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_extent(info type, unsigned i = 0);</span>
-<span id="cb133-285"><a href="#cb133-285" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-286"><a href="#cb133-286" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.rel], type relations</span>
-<span id="cb133-287"><a href="#cb133-287" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_same(info type1, info type2);</span>
-<span id="cb133-288"><a href="#cb133-288" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_base_of(info type_base, info type_derived);</span>
-<span id="cb133-289"><a href="#cb133-289" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_convertible(info type_src, info type_dst);</span>
-<span id="cb133-290"><a href="#cb133-290" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_nothrow_convertible(info type_src, info type_dst);</span>
-<span id="cb133-291"><a href="#cb133-291" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_layout_compatible(info type1, info type2);</span>
-<span id="cb133-292"><a href="#cb133-292" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_pointer_interconvertible_base_of(info type_base, info type_derived);</span>
-<span id="cb133-293"><a href="#cb133-293" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-294"><a href="#cb133-294" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-295"><a href="#cb133-295" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_invocable(info type, R&amp;&amp; type_args);</span>
-<span id="cb133-296"><a href="#cb133-296" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-297"><a href="#cb133-297" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_invocable_r(info type_result, info type, R&amp;&amp; type_args);</span>
-<span id="cb133-298"><a href="#cb133-298" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-299"><a href="#cb133-299" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-300"><a href="#cb133-300" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_nothrow_invocable(info type, R&amp;&amp; type_args);</span>
-<span id="cb133-301"><a href="#cb133-301" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-302"><a href="#cb133-302" aria-hidden="true" tabindex="-1"></a>    consteval bool type_is_nothrow_invocable_r(info type_result, info type, R&amp;&amp; type_args);</span>
-<span id="cb133-303"><a href="#cb133-303" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-304"><a href="#cb133-304" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.cv], const-volatile modifications</span>
-<span id="cb133-305"><a href="#cb133-305" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_const(info type);</span>
-<span id="cb133-306"><a href="#cb133-306" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_volatile(info type);</span>
-<span id="cb133-307"><a href="#cb133-307" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_cv(info type);</span>
-<span id="cb133-308"><a href="#cb133-308" aria-hidden="true" tabindex="-1"></a>  consteval info type_add_const(info type);</span>
-<span id="cb133-309"><a href="#cb133-309" aria-hidden="true" tabindex="-1"></a>  consteval info type_add_volatile(info type);</span>
-<span id="cb133-310"><a href="#cb133-310" aria-hidden="true" tabindex="-1"></a>  consteval info type_add_cv(info type);</span>
-<span id="cb133-311"><a href="#cb133-311" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-312"><a href="#cb133-312" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.ref], reference modifications</span>
-<span id="cb133-313"><a href="#cb133-313" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_reference(info type);</span>
-<span id="cb133-314"><a href="#cb133-314" aria-hidden="true" tabindex="-1"></a>  consteval info type_add_lvalue_reference(info type);</span>
-<span id="cb133-315"><a href="#cb133-315" aria-hidden="true" tabindex="-1"></a>  consteval info type_add_rvalue_reference(info type);</span>
-<span id="cb133-316"><a href="#cb133-316" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-317"><a href="#cb133-317" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.sign], sign modifications</span>
-<span id="cb133-318"><a href="#cb133-318" aria-hidden="true" tabindex="-1"></a>  consteval info type_make_signed(info type);</span>
-<span id="cb133-319"><a href="#cb133-319" aria-hidden="true" tabindex="-1"></a>  consteval info type_make_unsigned(info type);</span>
-<span id="cb133-320"><a href="#cb133-320" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-321"><a href="#cb133-321" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.arr], array modifications</span>
-<span id="cb133-322"><a href="#cb133-322" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_extent(info type);</span>
-<span id="cb133-323"><a href="#cb133-323" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_all_extents(info type);</span>
-<span id="cb133-324"><a href="#cb133-324" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-325"><a href="#cb133-325" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.ptr], pointer modifications</span>
-<span id="cb133-326"><a href="#cb133-326" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_pointer(info type);</span>
-<span id="cb133-327"><a href="#cb133-327" aria-hidden="true" tabindex="-1"></a>  consteval info type_add_pointer(info type);</span>
-<span id="cb133-328"><a href="#cb133-328" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-329"><a href="#cb133-329" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.other], other transformations</span>
-<span id="cb133-330"><a href="#cb133-330" aria-hidden="true" tabindex="-1"></a>  consteval info type_remove_cvref(info type);</span>
-<span id="cb133-331"><a href="#cb133-331" aria-hidden="true" tabindex="-1"></a>  consteval info type_decay(info type);</span>
-<span id="cb133-332"><a href="#cb133-332" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-333"><a href="#cb133-333" aria-hidden="true" tabindex="-1"></a>    consteval info type_common_type(R&amp;&amp; type_args);</span>
-<span id="cb133-334"><a href="#cb133-334" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-335"><a href="#cb133-335" aria-hidden="true" tabindex="-1"></a>    consteval info type_common_reference(R&amp;&amp; type_args);</span>
-<span id="cb133-336"><a href="#cb133-336" aria-hidden="true" tabindex="-1"></a>  consteval info type_underlying_type(info type);</span>
-<span id="cb133-337"><a href="#cb133-337" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
-<span id="cb133-338"><a href="#cb133-338" aria-hidden="true" tabindex="-1"></a>    `consteval info type_invoke_result(info type, R&amp;&amp; type_args);</span>
-<span id="cb133-339"><a href="#cb133-339" aria-hidden="true" tabindex="-1"></a>  consteval info type_unwrap_reference(info type);</span>
-<span id="cb133-340"><a href="#cb133-340" aria-hidden="true" tabindex="-1"></a>  consteval info type_unwrap_ref_decay(info type);</span>
-<span id="cb133-341"><a href="#cb133-341" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-342"><a href="#cb133-342" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.tuple.variant], tuple and variant queries</span>
-<span id="cb133-343"><a href="#cb133-343" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_tuple_size(info type);</span>
-<span id="cb133-344"><a href="#cb133-344" aria-hidden="true" tabindex="-1"></a>  consteval info type_tuple_element(size_t index, info type);</span>
-<span id="cb133-345"><a href="#cb133-345" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-346"><a href="#cb133-346" aria-hidden="true" tabindex="-1"></a>  consteval size_t type_variant_size(info type);</span>
-<span id="cb133-347"><a href="#cb133-347" aria-hidden="true" tabindex="-1"></a>  consteval info type_variant_alternative(size_t index, info type);</span>
-<span id="cb133-348"><a href="#cb133-348" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb133-282"><a href="#cb133-282" aria-hidden="true" tabindex="-1"></a>  consteval size_t rank(info type);</span>
+<span id="cb133-283"><a href="#cb133-283" aria-hidden="true" tabindex="-1"></a>  consteval size_t extent(info type, unsigned i = 0);</span>
+<span id="cb133-284"><a href="#cb133-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-285"><a href="#cb133-285" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.rel], type relations</span>
+<span id="cb133-286"><a href="#cb133-286" aria-hidden="true" tabindex="-1"></a>  consteval bool is_same_type(info type1, info type2);</span>
+<span id="cb133-287"><a href="#cb133-287" aria-hidden="true" tabindex="-1"></a>  consteval bool is_base_of_type(info type_base, info type_derived);</span>
+<span id="cb133-288"><a href="#cb133-288" aria-hidden="true" tabindex="-1"></a>  consteval bool is_convertible_type(info type_src, info type_dst);</span>
+<span id="cb133-289"><a href="#cb133-289" aria-hidden="true" tabindex="-1"></a>  consteval bool is_nothrow_convertible_type(info type_src, info type_dst);</span>
+<span id="cb133-290"><a href="#cb133-290" aria-hidden="true" tabindex="-1"></a>  consteval bool is_layout_compatible_type(info type1, info type2);</span>
+<span id="cb133-291"><a href="#cb133-291" aria-hidden="true" tabindex="-1"></a>  consteval bool is_pointer_interconvertible_base_of_type(info type_base, info type_derived);</span>
+<span id="cb133-292"><a href="#cb133-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-293"><a href="#cb133-293" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-294"><a href="#cb133-294" aria-hidden="true" tabindex="-1"></a>    consteval bool is_invocable_type(info type, R&amp;&amp; type_args);</span>
+<span id="cb133-295"><a href="#cb133-295" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-296"><a href="#cb133-296" aria-hidden="true" tabindex="-1"></a>    consteval bool is_invocable_r_type(info type_result, info type, R&amp;&amp; type_args);</span>
+<span id="cb133-297"><a href="#cb133-297" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-298"><a href="#cb133-298" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-299"><a href="#cb133-299" aria-hidden="true" tabindex="-1"></a>    consteval bool is_nothrow_invocable_type(info type, R&amp;&amp; type_args);</span>
+<span id="cb133-300"><a href="#cb133-300" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-301"><a href="#cb133-301" aria-hidden="true" tabindex="-1"></a>    consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&amp;&amp; type_args);</span>
+<span id="cb133-302"><a href="#cb133-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-303"><a href="#cb133-303" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.cv], const-volatile modifications</span>
+<span id="cb133-304"><a href="#cb133-304" aria-hidden="true" tabindex="-1"></a>  consteval info remove_const(info type);</span>
+<span id="cb133-305"><a href="#cb133-305" aria-hidden="true" tabindex="-1"></a>  consteval info remove_volatile(info type);</span>
+<span id="cb133-306"><a href="#cb133-306" aria-hidden="true" tabindex="-1"></a>  consteval info remove_cv(info type);</span>
+<span id="cb133-307"><a href="#cb133-307" aria-hidden="true" tabindex="-1"></a>  consteval info add_const(info type);</span>
+<span id="cb133-308"><a href="#cb133-308" aria-hidden="true" tabindex="-1"></a>  consteval info add_volatile(info type);</span>
+<span id="cb133-309"><a href="#cb133-309" aria-hidden="true" tabindex="-1"></a>  consteval info add_cv(info type);</span>
+<span id="cb133-310"><a href="#cb133-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-311"><a href="#cb133-311" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.ref], reference modifications</span>
+<span id="cb133-312"><a href="#cb133-312" aria-hidden="true" tabindex="-1"></a>  consteval info remove_reference(info type);</span>
+<span id="cb133-313"><a href="#cb133-313" aria-hidden="true" tabindex="-1"></a>  consteval info add_lvalue_reference(info type);</span>
+<span id="cb133-314"><a href="#cb133-314" aria-hidden="true" tabindex="-1"></a>  consteval info add_rvalue_reference(info type);</span>
+<span id="cb133-315"><a href="#cb133-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-316"><a href="#cb133-316" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.sign], sign modifications</span>
+<span id="cb133-317"><a href="#cb133-317" aria-hidden="true" tabindex="-1"></a>  consteval info make_signed(info type);</span>
+<span id="cb133-318"><a href="#cb133-318" aria-hidden="true" tabindex="-1"></a>  consteval info make_unsigned(info type);</span>
+<span id="cb133-319"><a href="#cb133-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-320"><a href="#cb133-320" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.arr], array modifications</span>
+<span id="cb133-321"><a href="#cb133-321" aria-hidden="true" tabindex="-1"></a>  consteval info remove_extent(info type);</span>
+<span id="cb133-322"><a href="#cb133-322" aria-hidden="true" tabindex="-1"></a>  consteval info remove_all_extents(info type);</span>
+<span id="cb133-323"><a href="#cb133-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-324"><a href="#cb133-324" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.ptr], pointer modifications</span>
+<span id="cb133-325"><a href="#cb133-325" aria-hidden="true" tabindex="-1"></a>  consteval info remove_pointer(info type);</span>
+<span id="cb133-326"><a href="#cb133-326" aria-hidden="true" tabindex="-1"></a>  consteval info add_pointer(info type);</span>
+<span id="cb133-327"><a href="#cb133-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-328"><a href="#cb133-328" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.trans.other], other transformations</span>
+<span id="cb133-329"><a href="#cb133-329" aria-hidden="true" tabindex="-1"></a>  consteval info remove_cvref(info type);</span>
+<span id="cb133-330"><a href="#cb133-330" aria-hidden="true" tabindex="-1"></a>  consteval info decay(info type);</span>
+<span id="cb133-331"><a href="#cb133-331" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-332"><a href="#cb133-332" aria-hidden="true" tabindex="-1"></a>    consteval info common_type(R&amp;&amp; type_args);</span>
+<span id="cb133-333"><a href="#cb133-333" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-334"><a href="#cb133-334" aria-hidden="true" tabindex="-1"></a>    consteval info common_reference(R&amp;&amp; type_args);</span>
+<span id="cb133-335"><a href="#cb133-335" aria-hidden="true" tabindex="-1"></a>  consteval info type_underlying_type(info type);</span>
+<span id="cb133-336"><a href="#cb133-336" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
+<span id="cb133-337"><a href="#cb133-337" aria-hidden="true" tabindex="-1"></a>    `consteval info invoke_result(info type, R&amp;&amp; type_args);</span>
+<span id="cb133-338"><a href="#cb133-338" aria-hidden="true" tabindex="-1"></a>  consteval info unwrap_reference(info type);</span>
+<span id="cb133-339"><a href="#cb133-339" aria-hidden="true" tabindex="-1"></a>  consteval info unwrap_ref_decay(info type);</span>
+<span id="cb133-340"><a href="#cb133-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-341"><a href="#cb133-341" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.tuple.variant], tuple and variant queries</span>
+<span id="cb133-342"><a href="#cb133-342" aria-hidden="true" tabindex="-1"></a>  consteval size_t tuple_size(info type);</span>
+<span id="cb133-343"><a href="#cb133-343" aria-hidden="true" tabindex="-1"></a>  consteval info tuple_element(size_t index, info type);</span>
+<span id="cb133-344"><a href="#cb133-344" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb133-345"><a href="#cb133-345" aria-hidden="true" tabindex="-1"></a>  consteval size_t variant_size(info type);</span>
+<span id="cb133-346"><a href="#cb133-346" aria-hidden="true" tabindex="-1"></a>  consteval info variant_alternative(size_t index, info type);</span>
+<span id="cb133-347"><a href="#cb133-347" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_179" id="pnum_179">1</a></span>
 Each function, and each instantiation of each function template,
 specified in this header is a designated addressable function
@@ -9037,30 +9046,30 @@ Primary type categories<a href="#meta.reflection.unary.cat-primary-type-categori
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_388" id="pnum_388">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type</code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding unary type trait <code class="sourceCode cpp">std<span class="op">::</span><em>TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.2 <a href="https://wg21.link/meta.unary.cat">[meta.unary.cat]</a></span>.</p>
-<div class="sourceCode" id="cb213"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb213-1"><a href="#cb213-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_void<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-2"><a href="#cb213-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_null_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-3"><a href="#cb213-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_integral<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-4"><a href="#cb213-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_floating_point<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-5"><a href="#cb213-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_array<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-6"><a href="#cb213-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-7"><a href="#cb213-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_lvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-8"><a href="#cb213-8" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_rvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-9"><a href="#cb213-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_member_object_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-10"><a href="#cb213-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_member_function_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-11"><a href="#cb213-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_enum<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-12"><a href="#cb213-12" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_union<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-13"><a href="#cb213-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_class<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-14"><a href="#cb213-14" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_function<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb213-15"><a href="#cb213-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_reflection<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb213"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb213-1"><a href="#cb213-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_void_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-2"><a href="#cb213-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_null_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-3"><a href="#cb213-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_integral_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-4"><a href="#cb213-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_floating_point_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-5"><a href="#cb213-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_array_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-6"><a href="#cb213-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-7"><a href="#cb213-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_lvalue_reference_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-8"><a href="#cb213-8" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_rvalue_reference_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-9"><a href="#cb213-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_member_object_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-10"><a href="#cb213-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_member_function_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-11"><a href="#cb213-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_enum_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-12"><a href="#cb213-12" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_union_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-13"><a href="#cb213-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_class_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-14"><a href="#cb213-14" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_function_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb213-15"><a href="#cb213-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_reflection_type<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_389" id="pnum_389">2</a></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb214"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb214-1"><a href="#cb214-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
-<span id="cb214-2"><a href="#cb214-2" aria-hidden="true" tabindex="-1"></a>  consteval bool type_is_void(info type) {</span>
+<span id="cb214-2"><a href="#cb214-2" aria-hidden="true" tabindex="-1"></a>  consteval bool is_void_type(info type) {</span>
 <span id="cb214-3"><a href="#cb214-3" aria-hidden="true" tabindex="-1"></a>    // one example implementation</span>
 <span id="cb214-4"><a href="#cb214-4" aria-hidden="true" tabindex="-1"></a>    return extract&lt;bool&gt;(substitute(^is_void_v, {type}));</span>
 <span id="cb214-5"><a href="#cb214-5" aria-hidden="true" tabindex="-1"></a></span>
@@ -9085,17 +9094,17 @@ Composite type categories<a href="#meta.reflection.unary.comp-composite-type-cat
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_390" id="pnum_390">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type</code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>TRAIT</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding unary type trait <code class="sourceCode cpp">std<span class="op">::</span><em>TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.3 <a href="https://wg21.link/meta.unary.comp">[meta.unary.comp]</a></span>.</p>
-<div class="sourceCode" id="cb215"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb215-1"><a href="#cb215-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb215-2"><a href="#cb215-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_arithmetic<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb215-3"><a href="#cb215-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_fundamental<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb215-4"><a href="#cb215-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_object<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb215-5"><a href="#cb215-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_scalar<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb215-6"><a href="#cb215-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_compound<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb215-7"><a href="#cb215-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_member_pointer<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb215"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb215-1"><a href="#cb215-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_reference_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb215-2"><a href="#cb215-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_arithmetic_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb215-3"><a href="#cb215-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_fundamental_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb215-4"><a href="#cb215-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_object_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb215-5"><a href="#cb215-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_scalar_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb215-6"><a href="#cb215-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_compound_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb215-7"><a href="#cb215-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_member_pointer_type<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9107,18 +9116,22 @@ Type properties<a href="#meta.reflection.unary.prop-type-properties" class="self
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_391" id="pnum_391">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em>_type</code>
+or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em></code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em>_type<span class="op">(^</span>T<span class="op">)</span></code>
+or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>UNARY-TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_392" id="pnum_392">2</a></span>
 For any types or
 <code class="sourceCode cpp"><em>typedef-names</em></code>
 <code class="sourceCode cpp">T</code> and
-<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em></code>
+<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em>_type</code>
+or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TYPE</em></code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info, std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em><span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em>_type<span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
+or <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em><span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>BINARY-TRAIT</em>_v<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
 as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_393" id="pnum_393">3</a></span>
@@ -9129,75 +9142,75 @@ For any type or
 <code class="sourceCode cpp">U<span class="op">...</span></code>, and
 range <code class="sourceCode cpp">r</code> such that <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>vector<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">==</span> vector<span class="op">{^</span>U<span class="op">...}</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>, for
-each function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-TRAIT</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-TRAIT</em><span class="op">(^</span>T, r<span class="op">)</span></code>
+each function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-TRAIT</em>_type</code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-TRAIT</em>_type<span class="op">(^</span>T, r<span class="op">)</span></code>
 equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-TRAIT</em>_v<span class="op">&lt;</span>T, U<span class="op">...&gt;</span></code>
 as specified in <span>21.3.5.4 <a href="https://wg21.link/meta.unary.prop">[meta.unary.prop]</a></span>.</p>
-<div class="sourceCode" id="cb216"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_const<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-2"><a href="#cb216-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-3"><a href="#cb216-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivial<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-4"><a href="#cb216-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_copyable<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-5"><a href="#cb216-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_standard_layout<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-6"><a href="#cb216-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_empty<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-7"><a href="#cb216-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_polymorphic<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-8"><a href="#cb216-8" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_abstract<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-9"><a href="#cb216-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_final<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-10"><a href="#cb216-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_aggregate<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-11"><a href="#cb216-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_signed<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-12"><a href="#cb216-12" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_unsigned<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-13"><a href="#cb216-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_bounded_array<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-14"><a href="#cb216-14" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_unbounded_array<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-15"><a href="#cb216-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_scoped_enum<span class="op">(</span>info type<span class="op">)</span>;</span>
+<div class="sourceCode" id="cb216"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_const_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-2"><a href="#cb216-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_volatile_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-3"><a href="#cb216-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivial_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-4"><a href="#cb216-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copyable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-5"><a href="#cb216-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_standard_layout_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-6"><a href="#cb216-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_empty_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-7"><a href="#cb216-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_polymorphic_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-8"><a href="#cb216-8" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_abstract_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-9"><a href="#cb216-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_final_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-10"><a href="#cb216-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_aggregate_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-11"><a href="#cb216-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_signed_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-12"><a href="#cb216-12" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_unsigned_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-13"><a href="#cb216-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_bounded_array_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-14"><a href="#cb216-14" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_unbounded_array_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-15"><a href="#cb216-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_scoped_enum_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-16"><a href="#cb216-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb216-17"><a href="#cb216-17" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb216-18"><a href="#cb216-18" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_constructible<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb216-19"><a href="#cb216-19" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_default_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-20"><a href="#cb216-20" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_copy_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-21"><a href="#cb216-21" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_move_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-18"><a href="#cb216-18" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_constructible_type<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb216-19"><a href="#cb216-19" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_default_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-20"><a href="#cb216-20" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_copy_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-21"><a href="#cb216-21" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_move_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-22"><a href="#cb216-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-23"><a href="#cb216-23" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_assignable<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
-<span id="cb216-24"><a href="#cb216-24" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_copy_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-25"><a href="#cb216-25" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_move_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-23"><a href="#cb216-23" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_assignable_type<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
+<span id="cb216-24"><a href="#cb216-24" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_copy_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-25"><a href="#cb216-25" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_move_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-26"><a href="#cb216-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-27"><a href="#cb216-27" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_swappable_with<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
-<span id="cb216-28"><a href="#cb216-28" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_swappable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-27"><a href="#cb216-27" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_swappable_with_type<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
+<span id="cb216-28"><a href="#cb216-28" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_swappable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-29"><a href="#cb216-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-30"><a href="#cb216-30" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_destructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-30"><a href="#cb216-30" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_destructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-31"><a href="#cb216-31" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb216-32"><a href="#cb216-32" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb216-33"><a href="#cb216-33" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_constructible<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb216-34"><a href="#cb216-34" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_default_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-35"><a href="#cb216-35" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_copy_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-36"><a href="#cb216-36" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_move_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-33"><a href="#cb216-33" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_constructible_type<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb216-34"><a href="#cb216-34" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_default_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-35"><a href="#cb216-35" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copy_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-36"><a href="#cb216-36" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_move_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-37"><a href="#cb216-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-38"><a href="#cb216-38" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_assignable<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
-<span id="cb216-39"><a href="#cb216-39" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_copy_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-40"><a href="#cb216-40" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_move_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-41"><a href="#cb216-41" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_trivially_destructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-38"><a href="#cb216-38" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_assignable_type<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
+<span id="cb216-39"><a href="#cb216-39" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_copy_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-40"><a href="#cb216-40" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_move_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-41"><a href="#cb216-41" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_trivially_destructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-42"><a href="#cb216-42" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb216-43"><a href="#cb216-43" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb216-44"><a href="#cb216-44" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_constructible<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb216-45"><a href="#cb216-45" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_default_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-46"><a href="#cb216-46" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_copy_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-47"><a href="#cb216-47" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_move_constructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-44"><a href="#cb216-44" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_constructible_type<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb216-45"><a href="#cb216-45" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_default_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-46"><a href="#cb216-46" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_copy_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-47"><a href="#cb216-47" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_move_constructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-48"><a href="#cb216-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-49"><a href="#cb216-49" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_assignable<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
-<span id="cb216-50"><a href="#cb216-50" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_copy_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb216-51"><a href="#cb216-51" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_move_assignable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-49"><a href="#cb216-49" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_assignable_type<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
+<span id="cb216-50"><a href="#cb216-50" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_copy_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-51"><a href="#cb216-51" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_move_assignable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-52"><a href="#cb216-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-53"><a href="#cb216-53" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_swappable_with<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
-<span id="cb216-54"><a href="#cb216-54" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_swappable<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-53"><a href="#cb216-53" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_swappable_with_type<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
+<span id="cb216-54"><a href="#cb216-54" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_swappable_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-55"><a href="#cb216-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-56"><a href="#cb216-56" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_destructible<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-56"><a href="#cb216-56" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_destructible_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-57"><a href="#cb216-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-58"><a href="#cb216-58" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_implicit_lifetime<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-58"><a href="#cb216-58" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_implicit_lifetime_type<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-59"><a href="#cb216-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-60"><a href="#cb216-60" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_has_virtual_destructor<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-60"><a href="#cb216-60" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_virtual_destructor<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-61"><a href="#cb216-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-62"><a href="#cb216-62" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_has_unique_object_representations<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb216-62"><a href="#cb216-62" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_unique_object_representations<span class="op">(</span>info type<span class="op">)</span>;</span>
 <span id="cb216-63"><a href="#cb216-63" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb216-64"><a href="#cb216-64" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_reference_constructs_from_temporary<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
-<span id="cb216-65"><a href="#cb216-65" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_reference_converts_from_temporary<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span></code></pre></div>
+<span id="cb216-64"><a href="#cb216-64" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> reference_constructs_from_temporary<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span>
+<span id="cb216-65"><a href="#cb216-65" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> reference_converts_from_temporary<span class="op">(</span>info type_dst, info type_src<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9206,24 +9219,16 @@ Type property queries<a href="#meta.reflection.unary.prop.query-type-property-qu
 <div class="std">
 <blockquote>
 <div class="addu">
+<div class="sourceCode" id="cb217"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb217-1"><a href="#cb217-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> rank<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_394" id="pnum_394">1</a></span>
-For any type or
-<code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>PROP</em></code>
-defined in this clause with signature <code class="sourceCode cpp"><span class="dt">size_t</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>PROP</em><span class="op">(^</span>T<span class="op">)</span></code>
-equals the value of the corresponding type property <code class="sourceCode cpp">std<span class="op">::</span><em>PROP</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-as specified in <span>21.3.6 <a href="https://wg21.link/meta.unary.prop.query">[meta.unary.prop.query]</a></span>.</p>
+<em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>rank_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>,
+where <code class="sourceCode cpp">T</code> is the type represented by
+<code class="sourceCode cpp">type</code>.</p>
+<div class="sourceCode" id="cb218"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb218-1"><a href="#cb218-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> extent<span class="op">(</span>info type, <span class="dt">unsigned</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_395" id="pnum_395">2</a></span>
-For any type or
-<code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code> and unsigned integer value
-<code class="sourceCode cpp">I</code>, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_extent<span class="op">(^</span>T, I<span class="op">)</span></code>
-equals <code class="sourceCode cpp">std<span class="op">::</span>extent_v<span class="op">&lt;</span>T, I<span class="op">&gt;</span></code>
-([meta.unary.prop.query]).</p>
-<div class="sourceCode" id="cb217"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb217-1"><a href="#cb217-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_alignment_of<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb217-2"><a href="#cb217-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_rank<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb217-3"><a href="#cb217-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_extent<span class="op">(</span>info type, <span class="dt">unsigned</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">)</span>;</span></code></pre></div>
+<em>Effects</em>: Equivalent to <code class="sourceCode cpp"><span class="cf">return</span> std<span class="op">::</span>extent_v<span class="op">&lt;</span>T, i<span class="op">&gt;</span></code>,
+where <code class="sourceCode cpp">T</code> is the type represented by
+<code class="sourceCode cpp">type</code>.</p>
 </div>
 </blockquote>
 </div>
@@ -9239,9 +9244,9 @@ relationships between types at compile time.</p>
 For any types or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
 <code class="sourceCode cpp">T</code> and
-<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>REL</em></code>
+<code class="sourceCode cpp">U</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>REL</em>_type</code>
 defined in this clause with signature <code class="sourceCode cpp"><span class="dt">bool</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info, std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>REL</em><span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>REL</em>_type<span class="op">(^</span>T, <span class="op">^</span>U<span class="op">)</span></code>
 equals the value of the corresponding type relation <code class="sourceCode cpp">std<span class="op">::</span><em>REL</em>_v<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
 as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_398" id="pnum_398">3</a></span>
@@ -9252,8 +9257,8 @@ For any type or
 <code class="sourceCode cpp">U<span class="op">...</span></code>, and
 range <code class="sourceCode cpp">r</code> such that <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>vector<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">==</span> vector<span class="op">{^</span>U<span class="op">...}</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>, for
-each binary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL</em></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL</em><span class="op">(^</span>T, r<span class="op">)</span></code>
+each binary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL</em>_type</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL</em>_type<span class="op">(^</span>T, r<span class="op">)</span></code>
 equals the value of the corresponding type relation <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-REL</em>_v<span class="op">&lt;</span>T, U<span class="op">...&gt;</span></code>
 as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_399" id="pnum_399">4</a></span>
@@ -9265,26 +9270,26 @@ For any types or
 <code class="sourceCode cpp">U<span class="op">...</span></code>, and
 range <code class="sourceCode cpp">r</code> such that <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>vector<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">==</span> vector<span class="op">{^</span>U<span class="op">...}</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>, for
-each ternary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL-R</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-REL-R</em><span class="op">(^</span>R, <span class="op">^</span>T, r<span class="op">)</span></code>
+each ternary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL-R</em>_type</code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-REL-R</em><span class="op">(^</span>R, <span class="op">^</span>T, r<span class="op">)</span>_type</code>
 equals the value of the corresponding type relation <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-REL-R</em>_v<span class="op">&lt;</span>R, T, U<span class="op">...&gt;</span></code>
 as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a></span>.</p>
-<div class="sourceCode" id="cb218"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb218-1"><a href="#cb218-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_same<span class="op">(</span>info type1, info type2<span class="op">)</span>;</span>
-<span id="cb218-2"><a href="#cb218-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_base_of<span class="op">(</span>info type_base, info type_derived<span class="op">)</span>;</span>
-<span id="cb218-3"><a href="#cb218-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_convertible<span class="op">(</span>info type_src, info type_dst<span class="op">)</span>;</span>
-<span id="cb218-4"><a href="#cb218-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_convertible<span class="op">(</span>info type_src, info type_dst<span class="op">)</span>;</span>
-<span id="cb218-5"><a href="#cb218-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_layout_compatible<span class="op">(</span>info type1, info type2<span class="op">)</span>;</span>
-<span id="cb218-6"><a href="#cb218-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_pointer_interconvertible_base_of<span class="op">(</span>info type_base, info type_derived<span class="op">)</span>;</span>
-<span id="cb218-7"><a href="#cb218-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb218-8"><a href="#cb218-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb218-9"><a href="#cb218-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_invocable<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb218-10"><a href="#cb218-10" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb218-11"><a href="#cb218-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_invocable_r<span class="op">(</span>info type_result, info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb218-12"><a href="#cb218-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb218-13"><a href="#cb218-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb218-14"><a href="#cb218-14" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_invocable<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb218-15"><a href="#cb218-15" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb218-16"><a href="#cb218-16" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> type_is_nothrow_invocable_r<span class="op">(</span>info type_result, info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb219"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb219-1"><a href="#cb219-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_same_type<span class="op">(</span>info type1, info type2<span class="op">)</span>;</span>
+<span id="cb219-2"><a href="#cb219-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_base_of_type<span class="op">(</span>info type_base, info type_derived<span class="op">)</span>;</span>
+<span id="cb219-3"><a href="#cb219-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_convertible_type<span class="op">(</span>info type_src, info type_dst<span class="op">)</span>;</span>
+<span id="cb219-4"><a href="#cb219-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_convertible_type<span class="op">(</span>info type_src, info type_dst<span class="op">)</span>;</span>
+<span id="cb219-5"><a href="#cb219-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_layout_compatible_type<span class="op">(</span>info type1, info type2<span class="op">)</span>;</span>
+<span id="cb219-6"><a href="#cb219-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_pointer_interconvertible_base_of_type<span class="op">(</span>info type_base, info type_derived<span class="op">)</span>;</span>
+<span id="cb219-7"><a href="#cb219-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb219-8"><a href="#cb219-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb219-9"><a href="#cb219-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_invocable_type<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb219-10"><a href="#cb219-10" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb219-11"><a href="#cb219-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_invocable_r_type<span class="op">(</span>info type_result, info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb219-12"><a href="#cb219-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb219-13"><a href="#cb219-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb219-14"><a href="#cb219-14" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_invocable_type<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb219-15"><a href="#cb219-15" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb219-16"><a href="#cb219-16" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_invocable_r_type<span class="op">(</span>info type_result, info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_400" id="pnum_400">5</a></span>
 <span class="note"><span>[ <em>Note 1:</em> </span>If
 <code class="sourceCode cpp">t</code> is a reflection of the type
@@ -9293,7 +9298,7 @@ as specified in <span>21.3.7 <a href="https://wg21.link/meta.rel">[meta.rel]</a>
 type <code class="sourceCode cpp"><span class="dt">int</span></code>,
 then <code class="sourceCode cpp">t <span class="op">==</span> u</code>
 is <code class="sourceCode cpp"><span class="kw">false</span></code> but
-<code class="sourceCode cpp">type_is_same<span class="op">(</span>t, u<span class="op">)</span></code>
+<code class="sourceCode cpp">is_same_type<span class="op">(</span>t, u<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.
 <code class="sourceCode cpp">t <span class="op">==</span> dealias<span class="op">(</span>u<span class="op">)</span></code>
 is also
@@ -9322,16 +9327,16 @@ Const-volatile modifications<a href="#meta.reflection.trans.cv-const-volatile-mo
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_402" id="pnum_402">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.2 <a href="https://wg21.link/meta.trans.cv">[meta.trans.cv]</a></span>.</p>
-<div class="sourceCode" id="cb219"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb219-1"><a href="#cb219-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_const<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb219-2"><a href="#cb219-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb219-3"><a href="#cb219-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_cv<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb219-4"><a href="#cb219-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_add_const<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb219-5"><a href="#cb219-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_add_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb219-6"><a href="#cb219-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_add_cv<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb220"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb220-1"><a href="#cb220-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_const<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb220-2"><a href="#cb220-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb220-3"><a href="#cb220-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_cv<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb220-4"><a href="#cb220-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info add_const<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb220-5"><a href="#cb220-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info add_volatile<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb220-6"><a href="#cb220-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info add_cv<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9343,13 +9348,13 @@ Reference modifications<a href="#meta.reflection.trans.ref-reference-modificatio
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_403" id="pnum_403">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.3 <a href="https://wg21.link/meta.trans.ref">[meta.trans.ref]</a></span>.</p>
-<div class="sourceCode" id="cb220"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb220-1"><a href="#cb220-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb220-2"><a href="#cb220-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_add_lvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb220-3"><a href="#cb220-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_add_rvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb221"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb221-1"><a href="#cb221-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb221-2"><a href="#cb221-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info add_lvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb221-3"><a href="#cb221-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info add_rvalue_reference<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9361,12 +9366,12 @@ Sign modifications<a href="#meta.reflection.trans.sign-sign-modifications" class
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_404" id="pnum_404">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.4 <a href="https://wg21.link/meta.trans.sign">[meta.trans.sign]</a></span>.</p>
-<div class="sourceCode" id="cb221"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb221-1"><a href="#cb221-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_make_signed<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb221-2"><a href="#cb221-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_make_unsigned<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb222"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info make_signed<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb222-2"><a href="#cb222-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info make_unsigned<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9378,12 +9383,12 @@ Array modifications<a href="#meta.reflection.trans.arr-array-modifications" clas
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_405" id="pnum_405">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.5 <a href="https://wg21.link/meta.trans.arr">[meta.trans.arr]</a></span>.</p>
-<div class="sourceCode" id="cb222"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_extent<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb222-2"><a href="#cb222-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_all_extents<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb223"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb223-1"><a href="#cb223-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_extent<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb223-2"><a href="#cb223-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_all_extents<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9395,12 +9400,12 @@ Pointer modifications<a href="#meta.reflection.trans.ptr-pointer-modifications" 
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_406" id="pnum_406">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>MOD</em><span class="op">(^</span>T<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>MOD</em>_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as specified in <span>21.3.8.6 <a href="https://wg21.link/meta.trans.ptr">[meta.trans.ptr]</a></span>.</p>
-<div class="sourceCode" id="cb223"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb223-1"><a href="#cb223-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb223-2"><a href="#cb223-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_add_pointer<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb224"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb224-1"><a href="#cb224-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_pointer<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb224-2"><a href="#cb224-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info add_pointer<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9433,8 +9438,8 @@ For any pack of types or
 <code class="sourceCode cpp">T<span class="op">...</span></code> and
 range <code class="sourceCode cpp">r</code> such that <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>vector<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">==</span> vector<span class="op">{^</span>T<span class="op">...}</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>, for
-each unary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-MOD</em></code>
-defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>VARIADIC-MOD</em><span class="op">(</span>r<span class="op">)</span></code>
+each unary function template <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-MOD</em></code>
+defined in this clause, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>VARIADIC-MOD</em><span class="op">(</span>r<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC-MOD</em>_t<span class="op">&lt;</span>T<span class="op">...&gt;</span></code>
 as specified in <span>21.3.8.7 <a href="https://wg21.link/meta.trans.other">[meta.trans.other]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_409" id="pnum_409">3</a></span>
@@ -9445,32 +9450,32 @@ For any type or
 <code class="sourceCode cpp">U<span class="op">...</span></code>, and
 range <code class="sourceCode cpp">r</code> such that <code class="sourceCode cpp">ranges<span class="op">::</span>to<span class="op">&lt;</span>vector<span class="op">&gt;(</span>r<span class="op">)</span> <span class="op">==</span> vector<span class="op">{^</span>U<span class="op">...}</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_invoke_result<span class="op">(^</span>T, r<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>invoke_result<span class="op">(^</span>T, r<span class="op">)</span></code>
 returns the reflection of the corresponding type <code class="sourceCode cpp">std<span class="op">::</span>invoke_result_t<span class="op">&lt;</span>T, U<span class="op">...&gt;</span></code>
 (<span>21.3.8.7 <a href="https://wg21.link/meta.trans.other">[meta.trans.other]</a></span>).</p>
-<div class="sourceCode" id="cb224"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb224-1"><a href="#cb224-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_remove_cvref<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb224-2"><a href="#cb224-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_decay<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb224-3"><a href="#cb224-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb224-4"><a href="#cb224-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_common_type<span class="op">(</span>R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb224-5"><a href="#cb224-5" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb224-6"><a href="#cb224-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_common_reference<span class="op">(</span>R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb224-7"><a href="#cb224-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_underlying_type<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb224-8"><a href="#cb224-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb224-9"><a href="#cb224-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_invoke_result<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
-<span id="cb224-10"><a href="#cb224-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_unwrap_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb224-11"><a href="#cb224-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_unwrap_ref_decay<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb225"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb225-1"><a href="#cb225-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info remove_cvref<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb225-2"><a href="#cb225-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info decay<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb225-3"><a href="#cb225-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb225-4"><a href="#cb225-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info common_type<span class="op">(</span>R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb225-5"><a href="#cb225-5" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb225-6"><a href="#cb225-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info common_reference<span class="op">(</span>R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb225-7"><a href="#cb225-7" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info underlying_type<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb225-8"><a href="#cb225-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb225-9"><a href="#cb225-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info invoke_result<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
+<span id="cb225-10"><a href="#cb225-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info unwrap_reference<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb225-11"><a href="#cb225-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info unwrap_ref_decay<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_410" id="pnum_410">4</a></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb225"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb225-1"><a href="#cb225-1" aria-hidden="true" tabindex="-1"></a><span class="co">// example implementation</span></span>
-<span id="cb225-2"><a href="#cb225-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_unwrap_reference<span class="op">(</span>info type<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb225-3"><a href="#cb225-3" aria-hidden="true" tabindex="-1"></a>  type <span class="op">=</span> dealias<span class="op">(</span>type<span class="op">)</span>;</span>
-<span id="cb225-4"><a href="#cb225-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>has_template_arguments<span class="op">(</span>type<span class="op">)</span> <span class="op">&amp;&amp;</span> template_of<span class="op">(</span>type<span class="op">)</span> <span class="op">==</span> <span class="op">^</span>reference_wrapper<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb225-5"><a href="#cb225-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> type_add_lvalue_reference<span class="op">(</span>template_arguments_of<span class="op">(</span>type<span class="op">)[</span><span class="dv">0</span><span class="op">])</span>;</span>
-<span id="cb225-6"><a href="#cb225-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb225-7"><a href="#cb225-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> type;</span>
-<span id="cb225-8"><a href="#cb225-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb225-9"><a href="#cb225-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb226"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="co">// example implementation</span></span>
+<span id="cb226-2"><a href="#cb226-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info unwrap_reference<span class="op">(</span>info type<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb226-3"><a href="#cb226-3" aria-hidden="true" tabindex="-1"></a>  type <span class="op">=</span> dealias<span class="op">(</span>type<span class="op">)</span>;</span>
+<span id="cb226-4"><a href="#cb226-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>has_template_arguments<span class="op">(</span>type<span class="op">)</span> <span class="op">&amp;&amp;</span> template_of<span class="op">(</span>type<span class="op">)</span> <span class="op">==</span> <span class="op">^</span>reference_wrapper<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb226-5"><a href="#cb226-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> add_lvalue_reference<span class="op">(</span>template_arguments_of<span class="op">(</span>type<span class="op">)[</span><span class="dv">0</span><span class="op">])</span>;</span>
+<span id="cb226-6"><a href="#cb226-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb226-7"><a href="#cb226-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> type;</span>
+<span id="cb226-8"><a href="#cb226-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb226-9"><a href="#cb226-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -9484,25 +9489,25 @@ Tuple and Variant Queries<a href="#meta.reflection.tuple.variant-tuple-and-varia
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_411" id="pnum_411">1</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
-<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em></code>
+<code class="sourceCode cpp">T</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em></code>
 defined in this clause with the signature <code class="sourceCode cpp"><span class="dt">size_t</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>UNARY-TRAIT</em><span class="op">(^</span>T<span class="op">)</span></code>
 equals the value of the corresponding property <code class="sourceCode cpp">std<span class="op">::</span><em>UNARY-TRAIT</em>_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 as defined in <span>22.4 <a href="https://wg21.link/tuple">[tuple]</a></span> or <span>22.6 <a href="https://wg21.link/variant">[variant]</a></span>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_412" id="pnum_412">2</a></span>
 For any type or
 <code class="sourceCode cpp"><em>typedef-name</em></code>
 <code class="sourceCode cpp">T</code> and value
-<code class="sourceCode cpp">I</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em></code>
+<code class="sourceCode cpp">I</code>, for each function <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em></code>
 defined in this clause with the signature <code class="sourceCode cpp">info<span class="op">(</span><span class="dt">size_t</span>, std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>type_<em>BINARY-TRAIT</em><span class="op">(</span>I, <span class="op">^</span>T<span class="op">)</span></code>
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span><em>BINARY-TRAIT</em><span class="op">(</span>I, <span class="op">^</span>T<span class="op">)</span></code>
 returns a reflection representing the type <code class="sourceCode cpp">std<span class="op">::</span><em>BINARY-TRAIT</em>_t<span class="op">&lt;</span>I, T<span class="op">&gt;</span></code>
 as defined in <span>22.4 <a href="https://wg21.link/tuple">[tuple]</a></span> or <span>22.6 <a href="https://wg21.link/variant">[variant]</a></span>.</p>
-<div class="sourceCode" id="cb226"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_tuple_size<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb226-2"><a href="#cb226-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_tuple_element<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span>
-<span id="cb226-3"><a href="#cb226-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb226-4"><a href="#cb226-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> type_variant_size<span class="op">(</span>info type<span class="op">)</span>;</span>
-<span id="cb226-5"><a href="#cb226-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_variant_alternative<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb227"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> tuple_size<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb227-2"><a href="#cb227-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info tuple_element<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span>
+<span id="cb227-3"><a href="#cb227-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb227-4"><a href="#cb227-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> variant_size<span class="op">(</span>info type<span class="op">)</span>;</span>
+<span id="cb227-5"><a href="#cb227-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info variant_alternative<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9559,10 +9564,10 @@ makes sense to provide one?</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb227"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_coroutine 201902L</span>
-<span id="cb227-2"><a href="#cb227-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_destroying_delete 201806L</span>
-<span id="cb227-3"><a href="#cb227-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_three_way_comparison 201907L</span>
-<span id="cb227-4"><a href="#cb227-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection 2024XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb228"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb228-1"><a href="#cb228-1" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_coroutine 201902L</span>
+<span id="cb228-2"><a href="#cb228-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_destroying_delete 201806L</span>
+<span id="cb228-3"><a href="#cb228-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_three_way_comparison 201907L</span>
+<span id="cb228-4"><a href="#cb228-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection 2024XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9570,7 +9575,7 @@ makes sense to provide one?</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb228"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb228-1"><a href="#cb228-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection 2024XXL // also in &lt;meta&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb229"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb229-1"><a href="#cb229-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection 2024XXL // also in &lt;meta&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9665,6 +9670,10 @@ constant-evaluation. <a href="https://wg21.link/p3068r1"><div class="csl-block">
 <div id="ref-P3096R1" class="csl-entry" role="doc-biblioentry">
 [P3096R1] Adam Lach, Walter Genovese. 2024-05-15. Function Parameter
 Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r1"><div class="csl-block">https://wg21.link/p3096r1</div></a>
+</div>
+<div id="ref-P3293R1" class="csl-entry" role="doc-biblioentry">
+[P3293R1] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
+2024-10-13. Splicing a base class subobject. <a href="https://wg21.link/p3293r1"><div class="csl-block">https://wg21.link/p3293r1</div></a>
 </div>
 <div id="ref-P3295R0" class="csl-entry" role="doc-biblioentry">
 [P3295R0] Ben Craig. 2024-05-21. Freestanding constexpr containers and
