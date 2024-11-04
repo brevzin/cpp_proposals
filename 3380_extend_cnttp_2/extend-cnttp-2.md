@@ -423,7 +423,7 @@ class vector {
     size_t capacity_;
 
     struct Repr {
-        std::unique_ptr<std::meta::info const[]> p;
+        std::unique_ptr<std::meta::info[]> p;
         size_t n;
 
         consteval auto data() const -> std::meta::info const* {
@@ -435,7 +435,7 @@ class vector {
     };
 
     consteval auto to_meta_representation() const -> Repr {
-        auto data = std::make_unique<std::meta::info const[]>(size_);
+        auto data = std::make_unique<std::meta::info[]>(size_);
         for (size_t i = 0; i < size_; ++i) {
             data[i] = std::meta::reflect_value(begin_[i]);
         }

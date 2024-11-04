@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-03" />
+  <meta name="dcterms.date" content="2024-11-04" />
   <title>Extending support for class types as non-type template
 parameters</title>
   <style>
@@ -567,7 +567,7 @@ types as non-type template parameters</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-03</td>
+    <td>2024-11-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1116,7 +1116,7 @@ which truly requires variable length contents:</p>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> capacity_;</span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Repr <span class="op">{</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">[]&gt;</span> p;</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">[]&gt;</span> p;</span>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">size_t</span> n;</span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
@@ -1128,7 +1128,7 @@ which truly requires variable length contents:</p>
 <span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> Repr <span class="op">{</span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> data <span class="op">=</span> std<span class="op">::</span>make_unique<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">[]&gt;(</span>size_<span class="op">)</span>;</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> data <span class="op">=</span> std<span class="op">::</span>make_unique<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">[]&gt;(</span>size_<span class="op">)</span>;</span>
 <span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> size_; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>            data<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>begin_<span class="op">[</span>i<span class="op">])</span>;</span>
 <span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
