@@ -30,6 +30,7 @@ Since [@P2996R7]:
 
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
+* renamed `define_class` to `define_aggregate`
 * removed `define_static_array`, `define_static_string`, and `reflect_invoke`
 * clarified that `sizeof(std::meta::info) == `sizeof(void *)`
 * clarified that `data_member_options_t` is a non-structural consteval-only type
@@ -644,7 +645,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://go
 template<typename... Ts> struct Tuple {
   struct storage;
 
-  static_assert(is_type(define_class(^storage, {data_member_spec(^Ts)...})));
+  static_assert(is_type(define_aggregate(^storage, {data_member_spec(^Ts)...})));
   storage data;
 
   Tuple(): data{} {}
@@ -672,14 +673,14 @@ template<std::size_t I, typename... Ts>
 ```
 :::
 
-This example uses a "magic" `std::meta::define_class` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
-`define_class` takes a reflection for an incomplete class or union plus a vector of non-static data member descriptions, and completes the give class or union type to have the described members.
+This example uses a "magic" `std::meta::define_aggregate` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
+`define_aggregate` takes a reflection for an incomplete class or union plus a vector of non-static data member descriptions, and completes the give class or union type to have the described members.
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/YK35d8MMx), [Clang](https://godbolt.org/z/cT116Wb31).
 
 ## A Simple Variant Type
 
-Similarly to how we can implement a tuple using `define_class` to create on the fly a type with one member for each `Ts...`, we can implement a variant that simply defines a `union` instead of a `struct`.
+Similarly to how we can implement a tuple using `define_aggregate` to create on the fly a type with one member for each `Ts...`, we can implement a variant that simply defines a `union` instead of a `struct`.
 One difference here is how the destructor of a `union` is currently defined:
 
 ::: std
@@ -698,7 +699,7 @@ union U2 {
 
 `U1` has a trivial destructor, but `U2`'s destructor is defined as deleted (because `std::string` has a non-trivial destructor).
 This is a problem because we need to define this thing... somehow.
-However, for the purposes of `define_class`, there really is only one reasonable option to choose here:
+However, for the purposes of `define_aggregate`, there really is only one reasonable option to choose here:
 
 ::: std
 ```cpp
@@ -716,7 +717,7 @@ union U {
 ```
 :::
 
-If we make [`define_class`](#data_member_spec-define_class) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
+If we make [`define_aggregate`](#data_member_spec-define_aggregate) for a `union` have this behavior, then we can implement a `variant` in a much more straightforward way than in current implementations.
 This is not a complete implementation of `std::variant` (and cheats using libstdc++ internals, and also uses Boost.Mp11's `mp_with_index`) but should demonstrate the idea:
 
 ::: std
@@ -726,7 +727,7 @@ class Variant {
     union Storage;
     struct Empty { };
 
-    static_assert(is_type(define_class(^Storage, {
+    static_assert(is_type(define_aggregate(^Storage, {
         data_member_spec(^Empty, {.name="empty"}),
         data_member_spec(^Ts)...
     })));
@@ -852,7 +853,7 @@ consteval auto make_struct_of_arrays(std::meta::info type,
     auto mem_descr = data_member_spec(type_array, {.name = identifier_of(member)});
     new_members.push_back(mem_descr);
   }
-  return std::meta::define_class(
+  return define_aggregate(
     substitute(^struct_of_arrays_impl, {type, N}),
     new_members);
 }
@@ -882,14 +883,14 @@ using points = struct_of_arrays<point, 30>;
 ```
 :::
 
-Again, the combination of `nonstatic_data_members_of` and `define_class` is put to good use.
+Again, the combination of `nonstatic_data_members_of` and `define_aggregate` is put to good use.
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/Whdvs3j1n), [Clang](https://godbolt.org/z/cY73aYKov).
 
 
 ## Parsing Command-Line Options II
 
-Now that we've seen a couple examples of using `std::meta::define_class` to create a type, we can create a more sophisticated command-line parser example.
+Now that we've seen a couple examples of using `std::meta::define_aggregate` to create a type, we can create a more sophisticated command-line parser example.
 
 This is the opening example for [clap](https://docs.rs/clap/latest/clap/) (Rust's **C**ommand **L**ine **A**rgument **P**arser):
 
@@ -941,7 +942,7 @@ consteval auto spec_to_opts(std::meta::info opts,
     auto type_new = template_arguments_of(type_of(member))[0];
     new_members.push_back(data_member_spec(type_new, {.name=identifier_of(member)}));
   }
-  return define_class(opts, new_members);
+  return define_aggregate(opts, new_members);
 }
 
 struct Clap {
@@ -1227,7 +1228,7 @@ make_named_tuple<^int, std::meta::reflect_value("x"),
                  ^double, std::meta::reflect_value("y")>()
 ```
 
-We do not currently support splicing string literals, and the `pair` approach follows the similar pattern already shown with `define_class` (given a suitable `fixed_string` type):
+We do not currently support splicing string literals, and the `pair` approach follows the similar pattern already shown with `define_aggregate` (given a suitable `fixed_string` type):
 
 ::: std
 ```cpp
@@ -1247,7 +1248,7 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
 
     };
     (f(tags), ...);
-    return define_class(type, nsdms);
+    return define_aggregate(type, nsdms);
 }
 
 struct R;
@@ -1274,7 +1275,7 @@ consteval auto make_named_tuple(std::meta::info type,
     for (auto [type, name] : members) {
         nsdms.push_back(data_member_spec(type, {.name=name}));
     }
-    return define_class(type, nsdms);
+    return define_aggregate(type, nsdms);
 }
 
 struct R;
@@ -1312,7 +1313,7 @@ public:
       ++k;
 
     // Define 'Helper<k>' and return its index.
-    define_class(r, {});
+    define_aggregate(r, {});
     return k;
   }
 };
@@ -1815,7 +1816,7 @@ In C++23, "constant evaluation" produces pure values without observable side-eff
 In fact, while the language is designed to permit constant evaluation to happen at compile time, an implementation is not strictly required to take advantage of that possibility.
 
 Some of the proposed metafunctions, however, have side-effects that have an effect on the remainder of the program.
-For example, we provide a `define_class` metafunction that provides a definition for a given class.
+For example, we provide a `define_aggregate` metafunction that provides a definition for a given class.
 Clearly, we want the effect of calling that metafunction to be "prompt" in a lexical-order sense.
 For example:
 
@@ -1825,7 +1826,7 @@ For example:
 struct S;
 
 void g() {
-  static_assert(is_type(define_class(^S, {})));
+  static_assert(is_type(define_aggregate(^S, {})));
   S s;  // S should be defined at this point.
 }
 ```
@@ -2184,7 +2185,7 @@ If we naively define `nonstatic_data_members_of` to return members reachable fro
 :::
 :::
 
-This gives the tool needed to define the declarations returned by `members_of` to be (roughly) those reachable from the _evaluation context_. However, a second problem related to reachability is posed by `define_class`.
+This gives the tool needed to define the declarations returned by `members_of` to be (roughly) those reachable from the _evaluation context_. However, a second problem related to reachability is posed by `define_aggregate`.
 
 ::: std
 ```c++
@@ -2192,8 +2193,8 @@ consteval std::meta::info make_defn(std::meta::info Cls, std::meta::info Mem) {
   // Synthesizes:
   //   struct Mem {};
   //   struct Cls { Mem m; };
-  return /*P1*/ define_class(Cls, {
-    data_member_spec(/*P2*/ define_class(Mem, {}), {.name="m"})
+  return /*P1*/ define_aggregate(Cls, {
+    data_member_spec(/*P2*/ define_aggregate(Mem, {}), {.name="m"})
   });
 }
 
@@ -2209,13 +2210,13 @@ Although we want this code to be valid, we have several obstacles to navigate.
 
 1. How can definitions for `C` and `M` be defined from `$P1$` and `$P2$` when no declarations of those classes are reachable from those program points?
 2. Where are the points of declaration for the generated definitions of `C` and `M` (i.e., from what program points will the generated definitions be reachable)?
-3. How can we ensure that the definition of `M` is reachable during the evaluation of `define_class` on `C`?
+3. How can we ensure that the definition of `M` is reachable during the evaluation of `define_aggregate` on `C`?
 
-The prior discourse regarding `members_of` gives a straightforward answer to (1); the `define_class` function is defined in terms of the _evaluation context_, which makes available all declarations reachable from `$P5$`.
+The prior discourse regarding `members_of` gives a straightforward answer to (1); the `define_aggregate` function is defined in terms of the _evaluation context_, which makes available all declarations reachable from `$P5$`.
 
-An answer to (2) can be seen by considering the declarations at `$P3$`, `$P4$`, and `$P7$`: Since we want the declaration of `obj` to be well-formed, the generated definition of `C` must precede `$P7$`. On the other hand, placing the definition of `$C$` prior to `$P4$` would weirdly place the definition of the class `C`, which contains a data memer of type `M`, prior to the declaration of `M` itself. We propose that the point of declaration for all definitions generated by `define_class` immediately follows the end of the manifestly constant-evaluated expression that produces the definition: In this case, just prior to `$P6$`.
+An answer to (2) can be seen by considering the declarations at `$P3$`, `$P4$`, and `$P7$`: Since we want the declaration of `obj` to be well-formed, the generated definition of `C` must precede `$P7$`. On the other hand, placing the definition of `$C$` prior to `$P4$` would weirdly place the definition of the class `C`, which contains a data memer of type `M`, prior to the declaration of `M` itself. We propose that the point of declaration for all definitions generated by `define_aggregate` immediately follows the end of the manifestly constant-evaluated expression that produces the definition: In this case, just prior to `$P6$`.
 
-This leaves one gap, and it is the question posed by (3): If the definition of `M`, generated by evaluation of `define_class(Mem, {})`, is located just prior to `$P6$`, then the definition is still not reachable from the evaluation context (such as we have defined it) during evaluation of `define_class(Cls, ...)`.
+This leaves one gap, and it is the question posed by (3): If the definition of `M`, generated by evaluation of `define_aggregate(Mem, {})`, is located just prior to `$P6$`, then the definition is still not reachable from the evaluation context (such as we have defined it) during evaluation of `define_aggregate(Cls, ...)`.
 
 Circling back to "reachability" as a mapping from program points to declarations, there are two clear paths forward: Either modify which declarations are reachable from a program point, or modify the set of program points in the evaluation context. We choose the later approach, and attempt to provide some machinery that can be reused for future "generative reflection" proposals.
 
@@ -2232,7 +2233,7 @@ To bridge the world of program points to the world of sequenced evaluations, we 
 :::
 :::
 
-Lastly, we clarify that during the definition of an _injected declaration_, the instantiation context consists of the _evaluation context_ of the expression that is producing the declaration. In our example above, this ensures that the definition of `$M$` is reachable not just from the invocation of `define_class` for `C`, but from within the actual generated definition of `$C$`.
+Lastly, we clarify that during the definition of an _injected declaration_, the instantiation context consists of the _evaluation context_ of the expression that is producing the declaration. In our example above, this ensures that the definition of `$M$` is reachable not just from the invocation of `define_aggregate` for `C`, but from within the actual generated definition of `$C$`.
 
 This machinery is "off in the weeds" of technicalities related to modules, lookup, etc., but we believe (hope?) that it provides a sound basis upon which to build generative reflection within the framework provided by core language wording: not only for P2996, but for future papers as well.
 
@@ -2378,12 +2379,12 @@ namespace std::meta {
   consteval auto is_user_provided(info r) -> bool;
   consteval auto is_user_declared(info r) -> bool;
 
-  // @[define_class](#data_member_spec-define_class)@
+  // @[define_aggregate](#data_member_spec-define_aggregate)@
   struct data_member_options_t;
   consteval auto data_member_spec(info type_class,
                                   data_member_options_t options = {}) -> info;
   template <reflection_range R = initializer_list<info>>
-    consteval auto define_class(info type_class, R&&) -> info;
+    consteval auto define_aggregate(info type_class, R&&) -> info;
 
   // @[data layout](#data-layout-reflection)@
   struct member_offset {
@@ -2669,7 +2670,7 @@ For other reflection values `r`, `extrace<T>(r)` is ill-formed.
 The function template `extract` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity represented by its operand.
 
-### `data_member_spec`, `define_class`
+### `data_member_spec`, `define_aggregate`
 
 ::: std
 ```c++
@@ -2691,14 +2692,14 @@ namespace std::meta {
   consteval auto data_member_spec(info type,
                                   data_member_options_t options = {}) -> info;
   template <reflection_range R = initializer_list<info>>
-  consteval auto define_class(info type_class, R&&) -> info;
+  consteval auto define_aggregate(info type_class, R&&) -> info;
 }
 ```
 :::
 
 `data_member_spec` returns a reflection of a description of a declaration of a data member of given type. Optional alignment, bit-field-width, and name can be provided as well. An inner class `name_type`, which may be implicitly constructed from any of several "string-like" types (e.g., `string_view`, `u8string_view`, `char8_t[]`, `char_t[]`), is used to represent the name. If a `name` is provided, it must be a valid identifier when interpreted as a sequence of code-units. Otherwise, the name of the data member is unspecified.
 
-`define_class` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
+`define_aggregate` takes the reflection of an incomplete class/struct/union type and a range of reflections of data member descriptions and completes the given class type with data members as described (in the given order).
 The given reflection is returned. For now, only data member reflections are supported (via `data_member_spec`) but the API takes in a range of `info` anticipating expanding this in the near future.
 
 For example:
@@ -2706,7 +2707,7 @@ For example:
 ::: std
 ```c++
 union U;
-static_assert(is_type(define_class(^U, {
+static_assert(is_type(define_aggregate(^U, {
   data_member_spec(^int),
   data_member_spec(^char),
   data_member_spec(^double),
@@ -2720,7 +2721,7 @@ static_assert(is_type(define_class(^U, {
 // };
 
 template<typename T> struct S;
-constexpr auto s_int_refl = define_class(^S<int>, {
+constexpr auto s_int_refl = define_aggregate(^S<int>, {
   data_member_spec(^int, {.name="i", .alignment=64}),
   data_member_spec(^int, {.name=u8"こんにち"}),
 });
@@ -2734,9 +2735,9 @@ constexpr auto s_int_refl = define_class(^S<int>, {
 :::
 
 When defining a `union`, if one of the alternatives has a non-trivial destructor, the defined union will _still_ have a destructor provided - that simply does nothing.
-This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_class` for member functions.
+This allows implementing [variant](#a-simple-variant-type) without having to further extend support in `define_aggregate` for member functions.
 
-If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_class` is not a constant expression.
+If `type_class` is a reflection of a type that already has a definition, or which is in the process of being defined, the call to `define_aggregate` is not a constant expression.
 
 ### Data Layout Reflection
 ::: std
@@ -2984,7 +2985,7 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: addu
 
-[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to a specialization of `std::meta::define_class`, every definition of that class shall be the result of a call to the same specialization; and for every reflection in the range of reflections describing its class members and unnamed bit-fields, every other such call shall have a corresponding value, occupying the same position in its respective range, to which the reflection compares equal.
+[15pre]{.pnum} If a class `C` is defined in a translation unit with a call to a specialization of `std::meta::define_aggregate`, every definition of that class shall be the result of a call to the same specialization; and for every reflection in the range of reflections describing its class members and unnamed bit-fields, every other such call shall have a corresponding value, occupying the same position in its respective range, to which the reflection compares equal.
 
 :::
 
@@ -4363,7 +4364,7 @@ namespace std::meta {
   template<class T>
     consteval info reflect_function(T& fn);
 
-  // [meta.reflection.define_class], class definition generation
+  // [meta.reflection.define_aggregate], class definition generation
   struct data_member_options_t {
     struct name_type {
       template<class T> requires constructible_from<u8string, T>
@@ -4384,7 +4385,7 @@ namespace std::meta {
                                   data_member_options_t options = {});
   consteval bool is_data_member_spec(info r);
   template <reflection_range R = initializer_list<info>>
-  consteval info define_class(info type_class, R&&);
+  consteval info define_aggregate(info type_class, R&&);
 
   // [meta.reflection.unary.cat], primary type categories
   consteval bool type_is_void(info type);
@@ -5346,7 +5347,7 @@ template <typename T>
 
 [#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
 
-### [meta.reflection.define_class] Reflection class definition generation  {-}
+### [meta.reflection.define_aggregate] Reflection class definition generation  {-}
 
 ::: std
 ::: addu
@@ -5395,7 +5396,7 @@ consteval info data_member_spec(info type,
 
 [#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member declared with the type or `typedef-name` represented by `type`, and having the optional characteristics designated by `options`.
 
-[#]{.pnum} *Remarks*: The returned reflection value is primarily useful in conjunction with `define_class`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.
+[#]{.pnum} *Remarks*: The returned reflection value is primarily useful in conjunction with `define_aggregate`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.
 
 ```cpp
 consteval bool is_data_member_spec(info r);
@@ -5405,12 +5406,15 @@ consteval bool is_data_member_spec(info r);
 
 ```c++
   template <reflection_range R = initializer_list<info>>
-  consteval info define_class(info class_type, R&& mdescrs);
+  consteval info define_aggregate(info class_type, R&& mdescrs);
 ```
 
 [#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context,
+- [#.#]{.pnum} If `$C$` is a complete type from some point in the evaluation context, then
+  - the reachable definition of `$C$` is an injected declaration produced by an evaluation of `define_aggregate`,
+  - `$C$` has as many data members as `mdescrs` has elements, and
+  - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`.
 - [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`,
 - [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`, and
 - [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`.
@@ -5429,7 +5433,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
 - [#.#]{.pnum} The locus of `$D$` follows immediately after the manifestly constant-evaluated expression currently under evaluation.
 - [#.#]{.pnum} If `$C$` is a specialization of a class template `$T$`, then `$D$` is is an explicit specialization of `$T$`.
-- [#.#]{.pnum} `$D$` contains a non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.#]{.pnum} `$D$` contains a public non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type or `$typedef-name$` represented by `@$t$~$K$~@`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` are declared with the attribute `[[no_unique_address]]`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.width` contains a value are declared as bit-fields whose width is that value.
