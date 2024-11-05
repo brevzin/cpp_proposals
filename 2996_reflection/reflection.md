@@ -5424,7 +5424,8 @@ consteval bool is_data_member_spec(info r);
   - the reachable definition of `$C$` is an injected declaration produced by an evaluation of `define_aggregate`,
   - `$C$` has as many data members as `mdescrs` has elements, and
   - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`.
-- [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
+- [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`,
+- [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a complete type for every `@$r$~$K$~@` in `mdescrs`, and
 - [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`.
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
