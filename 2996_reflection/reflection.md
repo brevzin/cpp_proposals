@@ -5352,6 +5352,8 @@ template <typename T>
 [#]{.pnum} *Mandates*: `T` is a function type.
 
 [#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
+:::
+:::
 
 ### [meta.reflection.define_aggregate] Reflection class definition generation  {-}
 
