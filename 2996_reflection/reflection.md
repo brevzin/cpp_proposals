@@ -5450,8 +5450,8 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` is declared with a name determined as follows:
   - If `@$o$~$K$~@.name` does not contain a value, the non-static data member is declared without a name.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
-- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
-- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially destructible, then it has a user-provided destructor which has no effect.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then `$D$` has a user-provided default constructor which has no effect.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially destructible, then `$D$` has a user-provided destructor which has no effect.
 
 [#]{.pnum} *Returns*: `class_type`.
 
