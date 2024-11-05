@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-04" />
+  <meta name="dcterms.date" content="2024-11-05" />
   <title>Extending support for class types as non-type template
 parameters</title>
   <style>
@@ -567,7 +567,7 @@ types as non-type template parameters</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-04</td>
+    <td>2024-11-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1558,6 +1558,10 @@ is a valid expression that yields a prvalue of type
 <code class="sourceCode cpp">T</code>.</li>
 </ol></li>
 </ol>
+<p>We’ll say that <code class="sourceCode cpp">T</code> has an eligible
+template registration function if it provides
+<code class="sourceCode cpp">to_meta_representation</code> as a direct
+member of the one of the allowed forms.</p>
 <p>Either way, no non-static data member of
 <code class="sourceCode cpp">T</code> can be
 <code class="sourceCode cpp"><span class="kw">mutable</span></code>.</p>
@@ -1661,28 +1665,36 @@ an lvalue reference type, or</li>
 <span class="addu">an array type whose element type is structural,
 or</span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(7.3)</a></span>
-a literal class type with the following properties:
+a literal class <span class="addu"><code class="sourceCode cpp">C</code></span> type with the
+following properties:
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(7.3.0)</a></span>
-<span class="addu">the class has an eligible template representation
-function, or</span></li>
+<span class="addu"><code class="sourceCode cpp">C</code> has an eligible
+template representation function, or</span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(7.3.1)</a></span>
-all base classes and non-static data members are public and non-mutable
+all base classes and non-static data members <span class="addu">of
+<code class="sourceCode cpp">C</code></span> are public and non-mutable
 and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(7.3.2)</a></span>
-the types of all bases classes and non-static data members are
+the types of all bases classes and non-static data members <span class="addu">of <code class="sourceCode cpp">C</code></span> are
 structural types <span class="rm" style="color: #bf0303"><del>or
 (possibly multidimensional) array thereof</del></span>.</li>
 </ul></li>
 </ul>
 </blockquote>
 </div>
-<p>Fifth, we extend the definition of
-<em>template-argument-equivalent</em> (note that two values of type
+<p>Fifth, ensure that when initializing a non-type template parameter of
+class type, that we perform template-argument-normalization.</p>
+<p>Sixth, we extend the definition of
+<em>template-argument-equivalent</em>. Note that two values of type
 <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
 that represent values compare equal if those values are
-template-argument-equivalent, so this definition is properly
-recursive):</p>
+template-argument-equivalent, so this definition is properly recursive.
+Also note that normalization will have already happened, so we don’t
+need to talk about the
+<code class="sourceCode cpp"><span class="dt">void</span></code>-returning
+case of <code class="sourceCode cpp">to_meta_representation</code>
+here.</p>
 <div class="std">
 <blockquote>
 <p>Two values are <em>template-argument-equivalent</em> if they are of
@@ -1692,7 +1704,7 @@ the same type and […]</p>
 they are of class type <span class="addu"><code class="sourceCode cpp">T</code></span> and</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.11.1)</a></span>
-<span class="addu">If <code class="sourceCode cpp">T</code> has an
+<span class="addu">If <code class="sourceCode cpp">T</code> has a
 eligible template representation function that returns
 non-<code class="sourceCode cpp"><span class="dt">void</span></code>,
 then let <code class="sourceCode cpp">r1</code> and
@@ -1708,10 +1720,6 @@ subobjects and reference members are template-argument-equivalent.</li>
 </ul>
 </blockquote>
 </div>
-<p>Sixth, ensure that when initializing a non-type template parameter of
-class type, that we perform template-argument-normalization (so that the
-above rule on equivalence is only ever performed on normalized
-values).</p>
 <h2 data-number="4.2" id="library"><span class="header-section-number">4.2</span> Library<a href="#library" class="self-link"></a></h2>
 <p>Add a new type trait for <code class="sourceCode cpp">std<span class="op">::</span>is_structural</code>,
 which we will need to provide constrained template registration

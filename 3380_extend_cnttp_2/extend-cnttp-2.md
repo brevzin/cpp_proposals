@@ -751,6 +751,8 @@ First, as with [@P2484R0], I'm referring to `to_meta_representation` as a templa
     a. `R.data()` is convertible to `std::meta::info const*`, `R.size()` is convertible to `size_t`, and `static_cast<std::meta::info const*>(R.data())[i]` shall be valid for all `0 <= i < static_cast<size_t>(R.size())`, and
     b. `T::from_meta_representation(R)` is a valid expression that yields a prvalue of type `T`.
 
+We'll say that `T` has an eligible template registration function if it provides `to_meta_representation` as a direct member of the one of the allowed forms.
+
 Either way, no non-static data member of `T` can be `mutable`.
 
 Second, we introduce the concept of template argument normalization and allow string literal template arguments:
@@ -795,24 +797,26 @@ A *structural type* is one of the following:
 * [7.1]{.pnum} a scalar type, or
 * [7.2]{.pnum} an lvalue reference type, or
 * [7.2b]{.pnum} [an array type whose element type is structural, or]{.addu}
-* [7.3]{.pnum} a literal class type with the following properties:
-    * [7.3.0]{.pnum} [the class has an eligible template representation function, or]{.addu}
-    * [7.3.1]{.pnum} all base classes and non-static data members are public and non-mutable and
-    * [7.3.2]{.pnum} the types of all bases classes and non-static data members are structural types [or (possibly multidimensional) array thereof]{.rm}.
+* [7.3]{.pnum} a literal class [`C`]{.addu} type with the following properties:
+    * [7.3.0]{.pnum} [`C` has an eligible template representation function, or ]{.addu}
+    * [7.3.1]{.pnum} all base classes and non-static data members [of `C`]{.addu} are public and non-mutable and
+    * [7.3.2]{.pnum} the types of all bases classes and non-static data members [of `C`]{.addu} are structural types [or (possibly multidimensional) array thereof]{.rm}.
 :::
 
-Fifth, we extend the definition of *template-argument-equivalent* (note that two values of type `std::meta::info` that represent values compare equal if those values are template-argument-equivalent, so this definition is properly recursive):
+Fifth, ensure that when initializing a non-type template parameter of class type, that we perform template-argument-normalization.
+
+Sixth, we extend the definition of *template-argument-equivalent*. Note that two values of type `std::meta::info` that represent values compare equal if those values are template-argument-equivalent, so this definition is properly recursive. Also note that normalization will have already happened, so we don't need to talk about the `void`-returning case of `to_meta_representation` here.
 
 ::: std
 Two values are *template-argument-equivalent* if they are of the same type and [...]
 
 * [2.11]{.pnum} they are of class type [`T`]{.addu} and
 
-    * [2.11.1]{.pnum} [If `T` has an eligible template representation function that returns non-`void`, then let `r1` and `r2` be the results of invoking the template registration function on the two values. The values are considered template argument equivalent if `r1.size() == r2.size()` and, for each `i` such that `0 <= i < r1.size()`, `r1.data()[i] == r2.data()[i]`.]{.addu}
+    * [2.11.1]{.pnum} [If `T` has a eligible template representation function that returns non-`void`, then let `r1` and `r2` be the results of invoking the template registration function on the two values. The values are considered template argument equivalent if `r1.size() == r2.size()` and, for each `i` such that `0 <= i < r1.size()`, `r1.data()[i] == r2.data()[i]`.]{.addu}
     * [2.11.2]{.pnum} [Otherwise, if]{.addu} their corresponding direct subobjects and reference members are template-argument-equivalent.
 :::
 
-Sixth, ensure that when initializing a non-type template parameter of class type, that we perform template-argument-normalization (so that the above rule on equivalence is only ever performed on normalized values).
+
 
 ## Library
 
