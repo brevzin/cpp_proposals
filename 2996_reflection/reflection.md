@@ -5389,7 +5389,7 @@ consteval info data_member_spec(info type,
 ```
 [1]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `type` represents either a type `cv $T$`, or a `$typedef-name$` designating a type `cv $T$`;
+- [#.#]{.pnum} `type` represents either a type `cv $T$`, or a `$typedef-name$` designating a type `cv $T$`, where `$T$` is either an object type or a reference type;
 - [#.#]{.pnum} if `options.name.$contents$` contains a value `$NAME$` then either:
   - [#.#.#]{.pnum} `holds_alternative<u8string>($contents$)` is `true` and `get<u8string>($contents$)` contains a valid identifier when interpreted with UTF-8, or
   - [#.#.#]{.pnum} `holds_alternative<string>($contents$)` is `true` and `get<string>($contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
@@ -5421,8 +5421,7 @@ consteval bool is_data_member_spec(info r);
   - the reachable definition of `$C$` is an injected declaration produced by an evaluation of `define_aggregate`,
   - `$C$` has as many data members as `mdescrs` has elements, and
   - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`.
-- [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`,
-- [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a valid type for data members, for every `@$r$~$K$~@` in `mdescrs`, and
+- [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`, and
 - [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`.
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
