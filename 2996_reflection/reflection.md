@@ -5393,8 +5393,8 @@ consteval info data_member_spec(info type,
 
 - [#.#]{.pnum} `type` represents either a type `cv $T$`, or a `$typedef-name$` designating a type `cv $T$`, where `$T$` is either an object type or a reference type;
 - [#.#]{.pnum} if `options.name.$contents$` contains a value `$NAME$` then either:
-  - [#.#.#]{.pnum} `holds_alternative<u8string>($contents$)` is `true` and `get<u8string>($contents$)` contains a valid identifier when interpreted with UTF-8, or
-  - [#.#.#]{.pnum} `holds_alternative<string>($contents$)` is `true` and `get<string>($contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
+  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
 - [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of `$T$`; and
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
   - [#.#.#]{.pnum} `$T$` represents an integral or enumeration type,
