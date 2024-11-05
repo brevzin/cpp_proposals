@@ -4,6 +4,8 @@ document: P3491R0
 date: today
 audience: LEWG
 author:
+    - name: Wyatt Childers
+      email: <wcc@edg.com>
     - name: Peter Dimov
       email: <pdimov@gmail.com>
     - name: Dan Katz
