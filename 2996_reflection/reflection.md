@@ -4736,7 +4736,7 @@ consteval bool is_deleted(info r);
 consteval bool is_defaulted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a function that is defined as deleted ([dcl.fct.def.delete])or defined as defaulted ([dcl.fct.def.default]), respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is defined as deleted ([dcl.fct.def.delete]) or defined as defaulted ([dcl.fct.def.default]), respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_user_provided(info r);
@@ -5057,9 +5057,7 @@ consteval vector<info> members_of(info r);
 * a function whose constraints (if any) are satisfied,
 * a non-static data member,
 * a namespace, or
-* a namespace alias,
-
-and if its first declaration is within a definition of `$E$`.
+* a namespace alias.
 
 [Counterexamples of representable members include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
 
@@ -5182,7 +5180,7 @@ consteval size_t size_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member whose associated subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
 [The subobject corresponding to a non-static data member of reference type has the same size and alignment as the corresponding pointer type.]{.note}
 
