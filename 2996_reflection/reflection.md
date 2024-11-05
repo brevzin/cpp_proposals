@@ -2687,7 +2687,7 @@ namespace std::meta {
 
     optional<name_type> name;
     optional<int> alignment;
-    optional<int> width;
+    optional<int> bit_width;
     bool no_unique_address = false;
   };
   consteval auto data_member_spec(info type,
@@ -4387,7 +4387,7 @@ namespace std::meta {
 
     optional<name_type> name;
     optional<int> alignment;
-    optional<int> width;
+    optional<int> bit_width;
     bool no_unique_address = false;
   };
   consteval info data_member_spec(info type,
@@ -5391,10 +5391,10 @@ consteval info data_member_spec(info type,
 
 - [#.#]{.pnum} `type` represents either a type `cv $T$`, or a `$typedef-name$` designating a type `cv $T$`;
 - [#.#]{.pnum} if `options.name.$contents$` contains a value `$NAME$` then either:
-  - [#.#.#]{.pnum} `holds_alternative<u8string>($NAME$)` is `true` and `get<u8string>($NAME$)` contains a valid identifier when interpreted with UTF-8, or
-  - [#.#.#]{.pnum} `holds_alternative<string>($NAME$)` is `true` and `get<string>($NAME$)` contains a valid identifier when interpreted with the ordinary literal encoding;
+  - [#.#.#]{.pnum} `holds_alternative<u8string>($contents$)` is `true` and `get<u8string>($contents$)` contains a valid identifier when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>($contents$)` is `true` and `get<string>($contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
 - [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of `$T$`; and
-- [#.#]{.pnum} if `options.width` contains a value `$V$`, then
+- [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
   - [#.#.#]{.pnum} `$T$` represents an integral or enumeration type,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
@@ -5442,10 +5442,10 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.#]{.pnum} `$D$` contains a public non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type or `$typedef-name$` represented by `@$t$~$K$~@`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` are declared with the attribute `[[no_unique_address]]`.
-- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.width` contains a value are declared as bit-fields whose width is that value.
+- [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.bit_width` contains a value are declared as bit-fields whose width is that value.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value are declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
 - [#.#]{.pnum} Non-static data members corresponding to reflections `@$r$~$K$~@` are declared with names determined as follows:
-  - If `@$o$~$K$~@.width` contains the value zero, the non-static data member is declared without a name.
+  - If `@$o$~$K$~@.bit_width` contains the value zero, the non-static data member is declared without a name.
   - Otherwise, if `has_identifier(@$r$~$K$~@)` is `false`, the non-static data member is unnamed.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then it has a user-provided default constructor which has no effect.
