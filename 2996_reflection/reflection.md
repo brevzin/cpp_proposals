@@ -4373,7 +4373,7 @@ namespace std::meta {
   template<class T>
     consteval info reflect_function(T& fn);
 
-  // [meta.reflection.define_aggregate], class definition generation
+  // [meta.reflection.define.aggregate], class definition generation
   struct data_member_options_t {
     struct name_type {
       template<class T> requires constructible_from<u8string, T>
@@ -5355,7 +5355,7 @@ template <typename T>
 :::
 :::
 
-### [meta.reflection.define_aggregate] Reflection class definition generation  {-}
+### [meta.reflection.define.aggregate] Reflection class definition generation  {-}
 
 ::: std
 ::: addu
