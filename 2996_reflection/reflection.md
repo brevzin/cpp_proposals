@@ -4131,11 +4131,13 @@ Unless F is designated an *addressable function*, the behavior of a C++ program 
 
 ::: addu
 
-[7pre]{.pnum}
+[6a]{.pnum}
 Let F denote a standard library function, member function, or function template.
 If F does not designate an addressable function, it is unspecified if or how a reflection value designating the associated entity can be formed.
-[ E.g., `std::meta::members_of` might not produce reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
+[For example, `std::meta::members_of` might not produce reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
 
+[6b]{.pnum}
+Let `C` denote a standard library class or class template specialization. It is unspecified if or how a reflection value can be formed to any private member of `C`, or what the names of such members may be.
 :::
 
 [7]{.pnum} A translation unit shall not declare namespace std to be an inline namespace ([namespace.def]).
@@ -5426,7 +5428,7 @@ consteval bool is_data_member_spec(info r);
   - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`.
 - [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`,
 - [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a complete type for every `@$r$~$K$~@` in `mdescrs`, and
-- [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`.
+- [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@) && u8identifier_of(@$r$~$K$~@) != u8"_" && u8identifier_of(@$r$~$L$~@) != u8"_"` is `true`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`. [Every provided identifier that is not `"_"` needs to be unique.]{.note}
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
 
@@ -5442,13 +5444,13 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
 - [#.#]{.pnum} The locus of `$D$` follows immediately after the manifestly constant-evaluated expression currently under evaluation.
 - [#.#]{.pnum} If `$C$` is a specialization of a class template `$T$`, then `$D$` is is an explicit specialization of `$T$`.
-- [#.#]{.pnum} `$D$` contains a public non-static data member corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
-- [#.#]{.pnum} The non-static data member corresponding to each `@$r$~$K$~@` is declared with the type or `$typedef-name$` represented by `@$t$~$K$~@`.
+- [#.#]{.pnum} `$D$` contains a public non-static data member or unnamed bit-field corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared with the type or `$typedef-name$` represented by `@$t$~$K$~@`.
 - [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` is declared with the attribute `[[no_unique_address]]`.
-- [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.bit_width` contains a value is declared as a bit-field whose width is that value.
+- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.bit_width` contains a value is declared as a bit-field whose width is that value.
 - [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value is declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
-- [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` is declared with a name determined as follows:
-  - If `@$o$~$K$~@.name` does not contain a value, the non-static data member is declared without a name.
+- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to a reflection `@$r$~$K$~@` is declared with a name determined as follows:
+  - If `@$o$~$K$~@.name` does not contain a value, an unnamed bit-field is declared.
   - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then `$D$` has a user-provided default constructor which has no effect.
 - [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially destructible, then `$D$` has a user-provided destructor which has no effect.
