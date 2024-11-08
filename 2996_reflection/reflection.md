@@ -3017,17 +3017,17 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 
 ### [basic.lookup.qual.general]{.sref} General {-}
 
-FIXME. Have to handle splices in here, because they're not actually "component names". Now `$splice-namespace-qualifier$` is only a namespace too.
+FIXME. Have to handle splices in here, because they're not actually "component names". Now `$splice-namespace-specifier$` is only a namespace too.
 
-Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-namespace-qualifier$`:
+Extend [basic.lookup.qual.general]{.sref}/1-2 to cover `$splice-namespace-specifier$`:
 
 ::: std
-[1]{.pnum} Lookup of an *identifier* followed by a ​`::`​ scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-namespace-qualifier$`]{.addu} is followed by a ​`::`​, it shall designate a namespace, class, enumeration, or dependent type, and the ​::​ is never interpreted as a complete nested-name-specifier.
+[1]{.pnum} Lookup of an *identifier* followed by a `::` scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [or]{.rm} `$computed-type-specifier$`[, or `$splice-namespace-specifier$`]{.addu} is followed by a `::`, it shall designate a namespace, class, enumeration, or dependent type, and the `::` is never interpreted as a complete nested-name-specifier.
 
 [2]{.pnum} A member-qualified name is the (unique) component name ([expr.prim.id.unqual]), if any, of
 
 * [2.1]{.pnum} an *unqualified-id* or
-* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-namespace-qualifier$ ::`]{.addu}
+* [2.2]{.pnum} a `$nested-name-specifier$` of the form `$type-name$ ::` [or]{.rm}[,]{.addu} `$namespace-name$ ::`[, or `$splice-namespace-specifier$ ::`]{.addu}
 
 in the *id-expression* of a class member access expression ([expr.ref]). [...]
 :::
@@ -3041,7 +3041,7 @@ Add a bullet to paragraph 13:
 [13]{.pnum} A declaration `$D$` _names_ an entity `$E$` if
 
 * [13.1]{.pnum} `$D$` contains a _lambda-expression_ whose closure type is `$E$`,
-* [13.1+]{.pnum} [`$D$` contains an expression that represents either `$E$` or a `$typedef-name$` or `$namespace-alias$` that denotes `$E$`,]{.addu}
+* [13.1+]{.pnum} [`$D$` contains a reflection that represents either `$E$` or a `$typedef-name$` or `$namespace-alias$` that denotes `$E$`,]{.addu}
 * [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an *id-expression*, *type-specifier*, *nested-name-specifier*, *template-name*, or *concept-name denoting* `$E$`, or
 * [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an *id-expression* that refers to a set of overloads that contains `$E$`.
 
@@ -3080,16 +3080,20 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 ::: std
 ::: addu
 
-[*]{.pnum} A *consteval-only type* is one of the following:
+[12]{.pnum} A *consteval-only type* is one of the following:
 
-  - `std::meta::info`, or
-  - a pointer or reference to a consteval-only type, or
-  - an (possibly multi-dimensional) array of a consteval-only type, or
-  - a class type with a base class or non-static data member of consteval-only type, or
-  - a function type with a return type or parameter type of consteval-only type, or
-  - a pointer-to-member type to a class `C` of type `M` where either `C` or `M` is a consteval-only type.
+  - [#.#]{.pnum} `std::meta::info`, or
+  - [#.#]{.pnum} a pointer or reference to a consteval-only type,
+  - [#.#]{.pnum} an (possibly multi-dimensional) array of a consteval-only type,
+  - [#.#]{.pnum} a class type with a base class or non-static data member of consteval-only type,
+  - [#.#]{.pnum} a function type with a return type or parameter type of consteval-only type, or
+  - [#.#]{.pnum} a pointer-to-member type to a class `C` of type `M` where either `C` or `M` is a consteval-only type.
 
-An object of consteval-only type shall either end its lifetime during the evaluation of a manifestly constant-evaluated expression or conversion ([expr.const]{.sref}), or be a constexpr variable for which every expression that names the variable is within an immediate function context.
+[13]{.pnum} Every object of consteval-only type shall either be
+
+  - [#.#]{.pnum} the object associated with a constexpr variable or a subobject thereof,
+  - [#.#]{.pnum} a template parameter object ([temp.param]{.sref}) or a subobject thereof, or
+  - [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
 
 :::
 :::
@@ -3121,6 +3125,22 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 An expression convertible to a reflection is said to _represent_ the corresponding entity, alias, object, value, base class specifier, or description of a declaration of a non-static data member. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 
 :::
+:::
+
+### [conv.ptr]{.sref} Pointer conversions {-}
+
+Expand paragraph 2 to disallow conversions to `void *` from pointers of consteval-only types.
+
+::: std
+[2]{.pnum} A prvalue of type "pointer to `$cv$ T`", where `T` is an object type, can be converted to a prvalue of type "pointer to `$cv$ void`". The pointer value ([basic.compound]) is unchanged by this conversion. [If `T` is a consteval-only type ([basic.types.general]), a program that necessitates this conversion is ill-formed.]{.addu}
+
+:::
+
+Expand paragraph 3 to also disallow conversions from pointers of consteval-only type to pointers to base classes that are not of consteval-only type.
+
+::: std
+A prvalue `v` of type "pointer to `$cv$ D`", where `D` is a complete class type, can be converted to a prvalue of type "pointer to `$cv$ B`", where `B` is a base class ([class.derived]) of `D`. If `B` is an inaccessible ([class.access]) or ambiguous ([class.member.lookup]) base class of `D`, [or if `D` is of consteval-only type ([basic.types.general]) and `B` is not,]{.addu} a program that necessitates this conversion is ill-formed. If `v` is a null pointer value, the result is a null pointer value. Otherwise, if `B` is a virtual base class of `D` and `v` does not point to an object whose type is similar ([conv.qual]) to `D` and that is within its lifetime or within its period of construction or destruction ([class.dtor]), the behavior is undefined. Otherwise, the result is a pointer to the base class subobject of the derived class object.
+
 :::
 
 ### [expr.prim]{.sref} Primary expressions {-}
@@ -3189,21 +3209,21 @@ Add a production to the grammar for `$nested-name-specifier$` as follows:
       ::
       $type-name$ ::
       $namespace-name$ ::
-+     $splice-namespace-qualifier$ ::
++     $splice-namespace-specifier$ ::
       $computed-type-specifier$ ::
       $nested-name-specifier$ $identifier$ ::
       $nested-name-specifier$ template@~_opt_~@ $simple-template-id$ ::
 +
-+ $splice-namespace-qualifier$:
++ $splice-namespace-specifier$:
 +     $splice-specifier$
 ```
 :::
 
-Add a new paragraph restricting `$splice-namespace-qualifier$`, and renumber accordingly:
+Add a new paragraph restricting `$splice-namespace-specifier$`, and renumber accordingly:
 
 ::: std
 ::: addu
-[0]{.pnum} The `$splice-specifier$` of a `$splice-namespace-qualifier$` shall designate a namespace or namespace alias.
+[0]{.pnum} The `$splice-specifier$` of a `$splice-namespace-specifier$` shall designate a namespace or namespace alias.
 :::
 
 [1]{.pnum} The component names of a `$qualified-id$` are [...]
@@ -3225,7 +3245,7 @@ A declarative `$nested-name-specifier$` shall not have a `$decltype-specifier$` 
 Extend the next paragraph to also cover splices, and prefer the verb "designate" over "nominate":
 
 ::: std
-[4]{.pnum} The `$nested-name-specifier$` `​::`​ [nominates]{.rm} [designates]{.addu} the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-namespace-qualifier$` [nominates]{.rm} [designates]{.addu} the same namespace or namespace alias as the `$splice-namespace-qualifier$`.]{.addu} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
+[4]{.pnum} The `$nested-name-specifier$` `​::`​ [nominates]{.rm} [designates]{.addu} the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-namespace-specifier$` designates the same namespace or namespace alias as the `$splice-namespace-specifier$`.]{.addu} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
 
 ...
 
@@ -3463,7 +3483,7 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 * [*.#]{.pnum} If one operand is a null reflection value, then they compare equal if and only if the other operand is also a null reflection value.
 * [*.#]{.pnum} Otherwise, if one operand represents a `$template-id$` referring to a specialization of an alias template, then they compare equal if and only if the other operand represents the same `$template-id$` ([temp.type]).
-* [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or a `$typedef-name$`, then they compare equal if and only if the other operand represents a namespace alias or `$typedef-name$` sharing the same name, declared within the same enclosing scope, and aliasing the same underlying entity.
+* [*.#]{.pnum} Otherwise, if one operand represents a namespace alias or a `$typedef-name$`, then they compare equal if and only if the construct represented by the other operand represents the same kind of construct, shares the same name, is declared within the same enclosing scope, and aliases the same underlying entity.
 * [*.#]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a template-argument-equivalent value ([temp.type]{.sref}).
 * [*.#]{.pnum} Otherwise, if one operand represents an object, then they compare equal if and only if the other operand represents the same object.
 * [*.#]{.pnum} Otherwise, if one operand represents an entity, then they compare equal if and only if the other operand represents the same entity.
@@ -3476,6 +3496,17 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 
 
 ### [expr.const]{.sref} Constant Expressions {-}
+
+Modify (and clean up) the definition of _immediate-escalating_ to also apply to expressions of consteval-only type.
+
+::: std
+[18]{.pnum} A[n]{.rm} [potentially-evalauted]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it [is]{.rm} either
+
+* [#.#]{.pnum} [a potentially-evaluated]{.rm} [is an]{.addu} `$id-expression$` that denotes an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
+* [#.#]{.pnum} [is]{.addu} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
+* [[#.#]{.pnum} has consteval-only type ([basic.types.general]).]{.addu}
+
+:::
 
 Add new paragraphs prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/20), and renumber accordingly:
 
@@ -5428,7 +5459,7 @@ consteval bool is_data_member_spec(info r);
   - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`.
 - [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`,
 - [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a complete type for every `@$r$~$K$~@` in `mdescrs`, and
-- [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@) && u8identifier_of(@$r$~$K$~@) != u8"_" && u8identifier_of(@$r$~$L$~@) != u8"_"` is `true`, then `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)`. [Every provided identifier that is not `"_"` needs to be unique.]{.note}
+- [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)`, then either `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` or `u8identifier_of(@$r$~$K$~@) == u8"_"`. [Every provided identifier that is not `"_"` must be unique.]{.note}
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
 
