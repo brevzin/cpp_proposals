@@ -504,6 +504,28 @@ Change [basic.pre]{.sref} to consider annotations entities (similar to enumerato
 [3]{.pnum} An *entity* is a value, object, reference, structured binding, function, enumerator, [annotation,]{.addu} type, class member, bit-field, template, template specialization, namespace, or pack.
 :::
 
+Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection kinds:
+
+::: std
+[17 - 1]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
+
+* a value with structural type ([temp.param]),
+* an object with static storage duration,
+* a variable,
+* a structured binding,
+* a function,
+* an enumerator,
+* [an annotation,]{.addu}
+* a type,
+* a `$typedef-name$`,
+* a class member,
+* a bit-field,
+* a primary class template, function template, primary variable template, alias template, or concept,
+* a namespace or namespace alias,
+* a base class specifier, or
+* a description of a declaration of a non-static data member.
+:::
+
 Change [expr.prim.splice] to handle splicing a reflection of an annotation:
 
 ::: std
