@@ -164,14 +164,14 @@ And extend the example:
 +     return unique_ptr(i);
 + }
 +
-+ constexpr int very_fancy_id(int i) {
++ constexpr int overly_complicated() {
 +   return unique_ptr(121).deref(); // OK, make_unique(121) is consteval-only but it is not
 +                                   //     immediate-escalating because make_unique(121).deref()
 +                                   //     is a constant expression.
 +
 + }
 +
-+ static_assert(very_fancy_id(121) == 121);
++ static_assert(overly_complicated() == 121);
 ```
 :::
 :::
