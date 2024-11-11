@@ -16,7 +16,7 @@ This paper splits off part of [@P3032R2]. The goal of this paper is to allow thi
 
 ::: std
 ```cpp
-enum E { };
+enum E { a1, a2, a3 };
 
 constexpr int f2() {
     return enumerators_of(^E).size();
