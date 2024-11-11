@@ -165,9 +165,9 @@ And extend the example:
 + }
 +
 + constexpr int overly_complicated() {
-+   return unique_ptr(121).deref(); // OK, make_unique(121) is consteval-only but it is not
-+                                   //     immediate-escalating because make_unique(121).deref()
-+                                   //     is a constant expression.
++   return make_unique(121).deref(); // OK, make_unique(121) is consteval-only but it is not
++                                    //     immediate-escalating because make_unique(121).deref()
++                                    //     is a constant expression.
 +
 + }
 +
