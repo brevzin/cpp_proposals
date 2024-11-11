@@ -79,7 +79,7 @@ Here also, the call to `id(x)` internally isn't a constant expression, but `A(42
 
 # Proposal
 
-Change the rules around what constitutes an immediate-escalating expression such that we only consider a consteval call to "bubble up" if there isn't simply a larger expression that already.
+Change the rules around what constitutes an immediate-escalating expression such that we only consider a consteval call to "bubble up" if it isn't already enclosed in a constant expression.
 
 ## Implementation Experience
 
@@ -136,4 +136,53 @@ Replace that entirely with (note that *consteval-only* will be extended by [@P29
 * [#.#]{.pnum} it is not in an immediate function context, and
 * [#.#]{.pnum} it is a constant expression.
 :::
+:::
+
+And extend the example:
+
+::: std
+::: example9
+```diff
+  struct A {
+    int x;
+    int y = id(x);
+  };
+
+  template<class T>
+  constexpr int k(int) {          // k<int> is not an immediate function because A(42) is a
+    return A(42).y;               // constant expression and thus not immediate-escalating
+  }
+
++ struct unique_ptr {
++    int* p;
++    constexpr unique_ptr(int i) : p(new int(i)) { }
++    constexpr ~unique_ptr() { delete p; }
++    constexpr int deref() const { return *p; }
++ };
++
++ consteval unique_ptr make_unique(int i) {
++     return unique_ptr(i);
++ }
++
++ constexpr int very_fancy_id(int i) {
++   return unique_ptr(121).deref(); // OK, make_unique(121) is consteval-only but it is not
++                                   //     immediate-escalating because make_unique(121).deref()
++                                   //     is a constant expression.
++
++ }
++
++ static_assert(very_fancy_id(121) == 121);
+```
+:::
+:::
+
+## Feature-Test Macro
+
+Bump `__cpp_consteval` in [cpp.predefined]{.sref}:
+
+::: std
+```diff
+- __cpp_­consteval @[202211L]{.diffdel}@
++ __cpp_­consteval @[20XXXXL]{.diffins}@
+```
 :::

@@ -600,6 +600,8 @@ Exceptions<span></span></a></li>
 <li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.1</span> Implementation
 Experience<span></span></a></li>
 <li><a href="#wording" id="toc-wording"><span class="toc-section-number">2.2</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">2.3</span> Feature-Test
+Macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
 </ul>
@@ -694,7 +696,7 @@ an immediate function.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>Change the rules around what constitutes an immediate-escalating
 expression such that we only consider a consteval call to “bubble up” if
-there isn’t simply a larger expression that already.</p>
+it isn’t already enclosed in a constant expression.</p>
 <h2 data-number="2.1" id="implementation-experience"><span class="header-section-number">2.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Thanks to Jason Merrill for implementing this proposal, suggesting I
 split it off from <span class="citation" data-cites="P3032R2">[<a href="https://wg21.link/p3032r2" role="doc-biblioref">P3032R2</a>]</span>, and giving wording help.</p>
@@ -784,6 +786,57 @@ it is not in an immediate function context, and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(19.3)</a></span>
 it is a constant expression.</li>
 </ul>
+</div>
+</blockquote>
+</div>
+<p>And extend the example:</p>
+<div class="std">
+<blockquote>
+<div class="example9">
+<span>[ <em>Example 9:</em> </span>
+<div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>  struct A {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    int x;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    int y = id(x);</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  constexpr int k(int) {          // k&lt;int&gt; is not an immediate function because A(42) is a</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    return A(42).y;               // constant expression and thus not immediate-escalating</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct unique_ptr {</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="va">+    int* p;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr unique_ptr(int i) : p(new int(i)) { }</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr ~unique_ptr() { delete p; }</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr int deref() const { return *p; }</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ };</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval unique_ptr make_unique(int i) {</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="va">+     return unique_ptr(i);</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr int very_fancy_id(int i) {</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   return unique_ptr(121).deref(); // OK, make_unique(121) is consteval-only but it is not</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="va">+                                   //     immediate-escalating because make_unique(121).deref()</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="va">+                                   //     is a constant expression.</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="va">+ static_assert(very_fancy_id(121) == 121);</span></span></code></pre></div>
+</div>
+<span> — <em>end example</em> ]</span>
+</div>
+</blockquote>
+</div>
+<h2 data-number="2.3" id="feature-test-macro"><span class="header-section-number">2.3</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Bump <code class="sourceCode cpp">__cpp_consteval</code> in
+<span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202211L</span></span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
