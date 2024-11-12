@@ -3011,8 +3011,9 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 
 [3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
-- [3.1]{.pnum} [If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.]{.addu} If `T` is [a]{.rm} [any other]{.addu} fundamental type, its associated set of entities is empty.
-- [3.2]{.pnum} If `T` is a class type ...
+* [[#.#]{.pnum} If `T` is `std::meta::info`, its associated set of entities consists of the function `std::meta::is_type` together with an implementation-defined set of additional entities. [For example, an implementation might augment a function to the set of associated entities to allow a namespace of implementation-provided reflection operations to be found by argument-dependent lookup.]{.note}]{.addu}
+* [#.#]{.pnum} If `T` is [a]{.rm} [any other]{.addu} fundamental type, its associated set of entities is empty.
+* [#.#]{.pnum} If `T` is a class type ...
 
 :::
 
@@ -3111,10 +3112,13 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a bit-field,
 * a primary class template, function template, primary variable template, alias template, or concept,
 * a namespace or `$namespace-alias$`,
-* a `$base-specifier$`, or
-* a description of a declaration of a non-static data member.
+* a `$base-specifier$`,
+* a description of a declaration of a non-static data member, or
+* an implementation-defined construct not otherwise specified by this document.
 
 An expression convertible to a reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
+
+[Implementations are discouraged from representing any constructs described by this document that are not explicitly enumerated in the list above (e.g., partial template specializations, attributes, placeholder types, statements).]{.note}
 
 :::
 :::
@@ -3206,19 +3210,19 @@ void non_dependent() {
 
 ### [expr.prim.id.general]{.sref} General {-}
 
-Add a carve-out for reflection in [expr.prim.id.general]{.sref}/4:
+Add a carve-out for reflection in [expr.prim.id.general]{.sref}/4. Adjust the wording to reflect the fact that a `$reflect-expression$` operand is not formally an `$id-expression$`:
 
 ::: std
-[4]{.pnum} An `$id-expression$` that denotes a non-static data member or implicit object member function of a class can only be used:
+[4]{.pnum} [An `$id-expression$` that denotes a]{.rm} [A]{.addu} non-static data member or implicit object member function of a class can only be [used]{.rm} [denoted]{.addu}:
 
 * [4.#]{.pnum} as part of a class member access (after any implicit transformation (see above)) in which the object expression refers to the member's class or a class derived from that class, or
 
 ::: addu
-* [4.#]{.pnum} as an operand to the reflection operator ([expr.reflect]), or
+* [4.#]{.pnum} by the operand of a `$reflect-expression$` ([expr.reflect]), or
 :::
 
 * [4.#]{.pnum} to form a pointer to member ([expr.unary.op]), or
-* [4.#]{.pnum} if that id-expression denotes a non-static data member and it appears in an unevaluated operand.
+* [4.#]{.pnum} [if that]{.rm} [by an]{.addu} `$id-expression$` [denotes]{.rm} [denoting]{.addu} a non-static data member [and it appears]{.rm} in an unevaluated operand.
 :::
 
 ### [expr.prim.id.qual]{.sref} Qualified names {-}
@@ -3450,13 +3454,17 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` having the form `^ $unqualified-id$` or `^ $qualified-id$` performs name lookup for the operand following `^` and produces a result as follows:
 
-* [#.#]{.pnum} If lookup finds an overload set `$S$` such that the assignment of `$S$` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `$F$` from `$S$`, then the result is a reflection of `$F$`. If lookup finds any other overload set, the program is ill-formed.
+* [#.#]{.pnum} If the lookup finds an overload set `$S$` such that the assignment of `&$S$` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `$F$` from `$S$`, then the result is a reflection of `$F$`. If the lookup finds any other overload set, the program is ill-formed.
 
-* [#.#]{.pnum} Otherwise, if lookup finds a `$typedef-name$` or a `$namespace-alias$`, then the result is a reflection of the indicated name.
+* [#.#]{.pnum} Otherwise, if the lookup finds a `$typedef-name$` or a `$namespace-alias$`, then the result is a reflection of the indicated name.
 
-* [#.#]{.pnum} Otherwise, if lookup finds a non-type template parameter, the result is a reflection of the result computed by an `$id-expression$` naming the parameter.
+* [#.#]{.pnum} Otherwise, if the lookup finds a non-type template parameter, then the result is a reflection of the result computed by an `$id-expression$` naming the parameter.
 
-* [#.#]{.pnum} Otherwise, if lookup finds a variable, structured binding, function, enumerator, type, non-static member, template, or namespace, the result is a reflection of the denoted entity.
+* [#.#]{.pnum} Otherwise, if the lookup finds a variable, structured binding, function, enumerator, type, non-static member, template, or namespace, then the result is a reflection of the denoted entity.
+
+* [#.#]{.pnum} Otherwise, if the lookup finds an implementation-defined construct not otherwise specified by this document, then the implementation may produce a reflection of the denoted construct.
+
+* [#.#]{.pnum} Otherwise, the program is ill-formed.
 
 [#]{.pnum} A `$reflect-expression$` of the form `^ $type-id$` produces a reflection of the denoted type. A `$reflect-expression$` that could be validly interpreted as either `^ $unqualified-id$` or `^ $type-id$` is interpreted as `^ $unqualified-id$`, and a `$reflect-expression$` that could be validly interpreted as `^ $qualified-id$` or `^ $type-id$` is interpreted as `^ $qualified-id$`.
 
@@ -4424,7 +4432,7 @@ struct is_reflection;
 </td></tr>
 </table>
 
-### [meta.synop] Header `<meta>` synopsis {-}
+### [meta.reflection.synop] Header `<meta>` synopsis {-}
 
 Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
@@ -4783,6 +4791,8 @@ namespace std::meta {
 ```
 
 [1]{.pnum} Each function, and each instantiation of each function template, specified in this header is a designated addressable function ([namespace.std]).
+
+[2]{.pnum} Values of type `std::meta::info` may represent implementation-defined constructs not otherwise specified by this document ([basic.fundamental]{.sref}). The behavior of any function specified by this section is implementation-defined when a reflection representing such a construct is provided as an argument.
 :::
 :::
 
