@@ -4138,6 +4138,27 @@ Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 [1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-specifier$` that is either dependent or designates a type]{.addu}.
 :::
 
+### [temp.arg.nontype]{.sref} Template non-type arguments {-}
+
+[We don't think we have to change anything here, since if `E` is a `$splice-specifier$` that can be interpreted as a `$splice-expression$`, the requirements already fall out based on how paragraphs 1 and 3 are already worded]{.draftnote}
+
+::: std
+[1]{.pnum} If the type `T` of a *template-parameter* ([temp.param]) contains a placeholder type ([dcl.spec.auto]) or a placeholder for a deduced class type ([dcl.type.class.deduct]), the type of the parameter is the type deduced for the variable x in the invented
+declaration
+```cpp
+T x = $E$ ;
+```
+where `$E$` is the template argument provided for the parameter.
+
+[2]{.pnum} The value of a non-type *template-parameter* `P` of (possibly deduced) type `T` [...]
+
+[3]{.pnum} Otherwise, a temporary variable
+```cpp
+constexpr T v = $A$;
+```
+is introduced.
+:::
+
 ### [temp.arg.template]{.sref} Template template arguments {-}
 
 Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
