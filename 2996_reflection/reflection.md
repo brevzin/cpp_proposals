@@ -3172,8 +3172,31 @@ In all other cases, it is interpreted as a `$splice-expr-template-specifier$`.
 [#]{.pnum} The `typename` in a `$splice-type-specifier$` may only be omitted in a type-only context, or when the `$splice-specifier$` is preceded by `template`.
 
 ::: example
-```
-FIXME
+```cpp
+int var {};
+struct cls {};
+template<int> int t_var {};
+template<int> struct t_cls { };
+template <typename> concept always_true = requires { true; };
+
+template <auto Var, auto Cls, auto TVar, auto TCls, auto Concept>
+void dependent() {
+  { [:Var:] *var; }                        // ok: multiplication of 'var * var'.
+
+  { typename [:Cls:] *var; }               // ok: declaration of 'cls *var'
+  { template [:TVar:]<0> *var; }           // ok: multiplication of 't_var<0> * var'.
+  { template [:TCls:]<0> *var; }           // error: cannot splice type as expression.
+  { typename [:TCls:]<0> *var; }           // ok: declaration of 't_cls<0> *var'.
+  { template typename [:TCls:]<0> *var; }  // also ok.
+
+  { template [:Concept:] auto *var = 0; }  // ok: deduced placeholder type.
+};
+
+void non_dependent() {
+  dependent<^var, ^cls, ^t_var, ^t_cls, ^always_true>();
+
+  { template [:^^t_cls:]<0> *var; }        // ok in non-dependent context.
+};
 
 ```
 :::
