@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-10" />
+  <meta name="dcterms.date" content="2024-11-12" />
   <title>Immediate-Escalating Expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-10</td>
+    <td>2024-11-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -592,8 +592,8 @@ Expressions</h1>
 <ul>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
 <ul>
-<li><a href="#we-already-have-exceptions" id="toc-we-already-have-exceptions"><span class="toc-section-number">1.1</span> We Already Have
-Exceptions<span></span></a></li>
+<li><a href="#we-already-have-special-cases" id="toc-we-already-have-special-cases"><span class="toc-section-number">1.1</span> We Already Have Special
+Cases<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
 <ul>
@@ -603,7 +603,9 @@ Experience<span></span></a></li>
 <li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">2.3</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
+<li><a href="#acknowledgements" id="toc-acknowledgements"><span class="toc-section-number">3</span>
+Acknowledgements<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
@@ -641,7 +643,7 @@ ill-formed.</p>
 non-transient allocation issue anymore. So it’s kind of weird that this
 program is rejected. And examples like this have come up multiple times
 during reflection development.</p>
-<h2 data-number="1.1" id="we-already-have-exceptions"><span class="header-section-number">1.1</span> We Already Have Exceptions<a href="#we-already-have-exceptions" class="self-link"></a></h2>
+<h2 data-number="1.1" id="we-already-have-special-cases"><span class="header-section-number">1.1</span> We Already Have Special Cases<a href="#we-already-have-special-cases" class="self-link"></a></h2>
 <p>Notably, we already have two explicit cases in the wording where we
 have <code class="sourceCode cpp">E1</code> is a subexpression of
 <code class="sourceCode cpp">E2</code>, where
@@ -711,21 +713,23 @@ example</a> brought up during the implementation of <span class="citation" data-
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> s <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)(</span><span class="dv">2</span><span class="op">)</span> <span class="op">+</span> r;</span></code></pre></div>
 </blockquote>
 </div>
-<p>Under the original C++20 rules, <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>
+<p>Under the original C++20 rules, <code class="sourceCode cpp">f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>
 is ill-formed already. <span class="citation" data-cites="P2564R3">[<a href="https://wg21.link/p2564r3" role="doc-biblioref">P2564R3</a>]</span> allowed <code class="sourceCode cpp">f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>
 to become implicitly
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>,
 which allowed the initialization of
 <code class="sourceCode cpp">r</code> because we’re doing tentative
-constant evaluation. But the initialization of
-<code class="sourceCode cpp">s</code> was still-formed because <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>
+constant evaluation and the initializer is a constant expression. But
+the initialization of <code class="sourceCode cpp">s</code> was still
+ill-formed because <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>
 itself isn’t a constant expression (in the same way that <code class="sourceCode cpp">enumerators_of<span class="op">(^</span>E<span class="op">)</span></code>
-is not).</p>
+is not) and the full initializer is also not a constant expression.</p>
 <p>But with this proposal, because <code class="sourceCode cpp">f<span class="op">(</span><span class="dv">1</span><span class="op">)(</span><span class="dv">2</span><span class="op">)</span></code>
 is a constant expression — both initializations are valid.</p>
 <h2 data-number="2.2" id="wording"><span class="header-section-number">2.2</span> Wording<a href="#wording" class="self-link"></a></h2>
-<p>The wording around <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/17 currently
-reads:</p>
+<p>Replace the wording in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/17-18 (note
+that <em>consteval-only</em> will be extended by <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> to include consteval-only types
+and conversions to and from them):</p>
 <div class="std">
 <blockquote>
 <div class="rm" style="color: #bf0303">
@@ -749,44 +753,49 @@ subexpression of an immediate invocation.</li>
 </ul>
 
 </div>
-</blockquote>
-</div>
-<p>Replace that entirely with (note that <em>consteval-only</em> will be
-extended by <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> to include consteval-only
-types):</p>
-<div class="std">
-<blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">17</a></span>
-An expression is <em>consteval-only</em> if it is:</p>
+An expression is <em>consteval-only</em> if:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(17.1)</a></span>
-an <em>id-expression</em> naming an immediate function, or</li>
+it names ([basic.def.odr]) an immediate function or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(17.2)</a></span>
-an explicit or implicit call to an immediate function.</li>
+one of its immediate subexpressions ([intro.execution]) is
+consteval-only.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">18</a></span>
-An expression is <em>immediate-escalating</em> if it is a consteval-only
-expression unless:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(18.1)</a></span>
-it is initially in an immediate function context, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(18.2)</a></span>
-it either is a constant expression or is a subexpression of a constant
-expression.</li>
-</ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">19</a></span>
 An expression is an <em>immediate invocation</em> if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(19.1)</a></span>
-it either is consteval-only or has a subexpression that is
-consteval-only,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(19.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(18.1)</a></span>
+it is a constant expression,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(18.2)</a></span>
 it is not in an immediate function context, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(19.3)</a></span>
-it is a constant expression.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(18.3)</a></span>
+one of its immediate subexpressions is a consteval-only expression that
+is not a constant expression.</li>
 </ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">18+</a></span>
+An expression is <em>immediate-escalating</em> if it is a consteval-only
+expression that is not a subexpression of an immediate invocation.</p>
 </div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">19</a></span>
+An <em>immediate-escalating</em> function is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(19.1)</a></span>
+the call operator of a lambda that is not declared with the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(19.2)</a></span>
+a defaulted special member function that is not declared with the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(19.3)</a></span>
+a function that results from the instantiation of a templated entity
+defined with the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>specifier.</li>
+</ul>
+<p>An immediate-escalating expression shall appear only in an
+immediate-escalating function</p>
 </blockquote>
 </div>
 <p>And extend the example:</p>
@@ -819,7 +828,7 @@ it is a constant expression.</li>
 <span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr int overly_complicated() {</span></span>
 <span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   return make_unique(121).deref(); // OK, make_unique(121) is consteval-only but it is not</span></span>
 <span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     immediate-escalating because make_unique(121).deref()</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     is a constant expression.</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     is a constant expression and thus an immediate invocation.</span></span>
 <span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
 <span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
 <span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
@@ -840,7 +849,12 @@ it is a constant expression.</li>
 </div>
 </blockquote>
 </div>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">3</span>
+Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
+<p>Thanks to Jason Merrill for the implementation and help with the
+wording. Thanks to Dan Katz, Tim Song, and Daveed Vandevoorde for other
+discussions around the design and wording.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
 <div id="ref-P2564R3" class="csl-entry" role="doc-biblioentry">

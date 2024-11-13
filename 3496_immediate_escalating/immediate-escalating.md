@@ -33,7 +33,7 @@ Here, `enumerators_of` is a `consteval` function. `enumerators_of(^E)` is not a 
 
 However, the _larger_ expression `enumerators_of(^E).size()` _is_ a constant expression. The `vector` is gone, so there's no non-transient allocation issue anymore. So it's kind of weird that this program is rejected. And examples like this have come up multiple times during reflection development.
 
-## We Already Have Exceptions
+## We Already Have Special Cases
 
 Notably, we already have two explicit cases in the wording where we have `E1` is a subexpression of `E2`, where `E1` is not a constant expression but `E2` is, where we do not reject the overall program as not being constant.
 
@@ -96,13 +96,13 @@ int s = f(1)(2) + r;
 ```
 :::
 
-Under the original C++20 rules, `f(1)` is ill-formed already. [@P2564R3] allowed `f<int>` to become implicitly `consteval`, which allowed the initialization of `r` because we're doing tentative constant evaluation. But the initialization of `s` was still-formed because `f(1)` itself isn't a constant expression (in the same way that `enumerators_of(^E)` is not).
+Under the original C++20 rules, `f<int>` is ill-formed already. [@P2564R3] allowed `f<int>` to become implicitly `consteval`, which allowed the initialization of `r` because we're doing tentative constant evaluation and the initializer is a constant expression. But the initialization of `s` was still ill-formed because `f(1)` itself isn't a constant expression (in the same way that `enumerators_of(^E)` is not) and the full initializer is also not a constant expression.
 
 But with this proposal, because `f(1)(2)` is a constant expression — both initializations are valid.
 
 ## Wording
 
-The wording around [expr.const]{.sref}/17 currently reads:
+Replace the wording in [expr.const]{.sref}/17-18 (note that *consteval-only* will be extended by [@P2996R7] to include consteval-only types and conversions to and from them):
 
 ::: std
 ::: rm
@@ -114,28 +114,29 @@ An aggregate initialization is an immediate invocation if it evaluates a default
 * [#.#]{.pnum} a potentially-evaluated id-expression that denotes an immediate function that is not a subexpression of an immediate invocation, or
 * [#.#]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
 :::
-:::
 
-Replace that entirely with (note that *consteval-only* will be extended by [@P2996R7] to include consteval-only types):
-
-::: std
 ::: addu
-[17]{.pnum} An expression is *consteval-only* if it is:
+[17]{.pnum} An expression is *consteval-only* if:
 
-* [#.#]{.pnum} an *id-expression* naming an immediate function, or
-* [#.#]{.pnum} an explicit or implicit call to an immediate function.
+* [#.#]{.pnum} it names ([basic.def.odr]) an immediate function or
+* [#.#]{.pnum} one of its immediate subexpressions ([intro.execution]) is consteval-only.
 
-[18]{.pnum} An expression is *immediate-escalating* if it is a consteval-only expression unless:
+[18]{.pnum} An expression is an *immediate invocation* if:
 
-* [#.#]{.pnum} it is initially in an immediate function context, or
-* [#.#]{.pnum} it either is a constant expression or is a subexpression of a constant expression.
-
-[19]{.pnum} An expression is an *immediate invocation* if:
-
-* [#.#]{.pnum} it either is consteval-only or has a subexpression that is consteval-only,
+* [#.#]{.pnum} it is a constant expression,
 * [#.#]{.pnum} it is not in an immediate function context, and
-* [#.#]{.pnum} it is a constant expression.
+* [#.#]{.pnum} one of its immediate subexpressions is a consteval-only expression that is not a constant expression.
+
+[18+]{.pnum} An expression is *immediate-escalating* if it is a consteval-only expression that is not a subexpression of an immediate invocation.
 :::
+
+[19]{.pnum} An *immediate-escalating* function is
+
+* [#.#]{.pnum} the call operator of a lambda that is not declared with the `consteval` specifier,
+* [#.#]{.pnum} a defaulted special member function that is not declared with the `consteval` specifier, or
+* [#.#]{.pnum} a function that results from the instantiation of a templated entity defined with the `constexpr `specifier.
+
+An immediate-escalating expression shall appear only in an immediate-escalating function
 :::
 
 And extend the example:
@@ -167,7 +168,7 @@ And extend the example:
 + constexpr int overly_complicated() {
 +   return make_unique(121).deref(); // OK, make_unique(121) is consteval-only but it is not
 +                                    //     immediate-escalating because make_unique(121).deref()
-+                                    //     is a constant expression.
++                                    //     is a constant expression and thus an immediate invocation.
 +
 + }
 +
@@ -186,3 +187,7 @@ Bump `__cpp_consteval` in [cpp.predefined]{.sref}:
 + __cpp_­consteval @[20XXXXL]{.diffins}@
 ```
 :::
+
+# Acknowledgements
+
+Thanks to Jason Merrill for the implementation and help with the wording. Thanks to Dan Katz, Tim Song, and Daveed Vandevoorde for other discussions around the design and wording.
