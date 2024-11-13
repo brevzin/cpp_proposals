@@ -2918,20 +2918,47 @@ Education and training are important to help C++ users avoid such sharp edges, b
 
 ### [lex.phases]{.sref} Phases of translation {-}
 
+[In addition to changes necessary for this proposal, we are applying the "drive-by fix" of merging phases 7/8, in order to clarify that template instantiation is interleaved with translation.]{.ednote}
+
 Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
 ::: std
 
-[7]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token (5.6). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
-[ Plainly constant-evaluated expressions ([expr.const]) appearing outside template declarations are evaluated in lexical order.
-  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated exactly once.]{.addu}
-[...]
+[7-8]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token ([lex.token]{.sref}). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated [alongside any instantiation units (see below) that are produced]{.addu}. [During this process, non-dependent plainly constant-evaluated expressions ([expr.const]) are evaluated in lexical order. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a non-dependent plainly constant-evaluated expression `$X$` are considered in a context where `$X$` has been evaluated exactly once.]{.addu}
 
-[8]{.pnum} [...]
-All the required instantiations are performed to produce instantiation units.
-[ Plainly constant-evaluated expressions ([expr.const]) appearing in those instantiation units are evaluated in lexical order as part of the instantiation process.
-  Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression X are considered in a context where X has been evaluated exactly once.]{.addu}
-[...]
+  [The process of analyzing and translating the tokens can occasionally result in one token being replaced by a sequence of other tokens ([temp.names])]{.note3}
+
+  It is implementation-defined whether the sources for module-units and header units on which the current translation unit has an interface dependency ([module.unit]{.sref}, [module.import]{.sref}) are required to be available.
+
+  [Source files, translation units and translated translation units need not necessarily be stored as files, nor need there be any one-to-one correspondence between these entities and any external representation. The description is conceptual only, and does not specify any particular implementation.]{.note}
+
+  [While the tokens constituting translation units are being analyzed and translated, a collection of required instantiations is produced.]{.addu}
+
+  [Translated translation units and instantiation units are combined as follows:]{.rm}
+
+  [[Some or all of these can be supplied from a library.]{.note5}]{.rm}
+
+  [Each translated translation unit is examined to produce a list of required instantiations.]{.rm}
+
+  [This can include instantiations which have been explicitly requested ([temp.explicit]).]{.note5}
+
+  The definitions of the required templates are located. It is implementation-defined whether the source of the translation units containing these definitions is required to be available.
+
+  [[An implementation can choose to encode sufficient information into the translated translation unit so as to ensure the source is not required here.]{.note}]{.rm}
+
+  All required instantiations are perfomed to produce _instantiation units_.
+
+  [These are similar to translated translation units, but contain no references to uninstantiated templates and no template definitions.]{.note}
+
+  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]), and may be further constrained by other requirements in this document.]{.addu}
+
+  [[For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated from an earlier point ([temp.inst]).]{.note}]{.addu}
+
+  [During this process, plainly constant-evaluated expressions appearing in the same instantiation unit are evaluated in lexical order as part of the instantiation process. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression `$X$` in the same instantiation unit are considered in a context where `$X$` has been evaluated exactly once.]{.addu}
+
+  The program is ill-formed if any instantiation fails.
+
+  [8]{.pnum} All external entity references are resolved. [...]
 
 :::
 
@@ -3011,8 +3038,7 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 
 [3]{.pnum} ... Any `$typedef-name$`s and `$using-declaration$`s used to specify the types do not contribute to this set. The set of entities is determined in the following way:
 
-* [[#.#]{.pnum} If `T` is `std::meta::info`, its associated set of entities consists of the function `std::meta::is_type` together with an implementation-defined set of additional entities. [For example, an implementation might augment a function to the set of associated entities to allow a namespace of implementation-provided reflection operations to be found by argument-dependent lookup.]{.note}]{.addu}
-* [#.#]{.pnum} If `T` is [a]{.rm} [any other]{.addu} fundamental type, its associated set of entities is empty.
+* [[#.#]{.pnum} If `T` is `std::meta::info`, its associated set of entities is the singleton containing the function `std::meta::is_type`.]{.addu} If `T` is [a]{.rm} [any other]{.addu} fundamental type, its associated set of entities is empty.
 * [#.#]{.pnum} If `T` is a class type ...
 
 :::
@@ -3118,7 +3144,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 
 An expression convertible to a reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 
-[Implementations are discouraged from representing any constructs described by this document that are not explicitly enumerated in the list above (e.g., partial template specializations, attributes, placeholder types, statements).]{.note}
+[17 - 2]{.pnum} _Recommended practice_: Implementations are discouraged from representing any constructs described by this document that are not explicitly enumerated in the list above (e.g., partial template specializations, attributes, placeholder types, statements).
 
 :::
 :::
@@ -3555,44 +3581,26 @@ Add new paragraphs prior to the definition of _manifestly constant evaluated_ ([
 ::: std
 ::: addu
 
-[20]{.pnum} An expression or conversion is _in substitution context_ if it results from the substitution of template parameters
-
-* [#.#]{.pnum} during template argument deduction ([temp.deduct]{.sref}),
-* [#.#]{.pnum} in a `$concept-id$` ([temp.names]{.sref}), or
-* [#.#]{.pnum} in a `$requires-expression$` ([expr.prim.req]{.sref}).
-
 [#]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is
 
-* [#.#]{.pnum} a `$constant-expression$` that is not in substitution context,
-* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}),
-* [#.#]{.pnum} the initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable, or
-* [#.#]{.pnum} an immediate invocation, unless it is
-  * [#.#.#]{.pnum} in substitution context, or
-  * [#.#.#]{.pnum} within the body of an immediate-escalating function that contains an immediate-escalating expression.
+* [#.#]{.pnum} the `$constant-expression$` of a `$static_assert-declaration$` ([dcl.pre]{.sref}), or
+* [#.#]{.pnum} an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable.
 
-[A plainly constant-evaluated expression `$E$` is evaluated exactly once, may produce injected declarations (see below), and any such declarations are reachable at a point immediatelly following `$E$`.]{.note}
+[A plainly constant-evaluated expression `$E$` is evaluated exactly once, may produce injected declarations (see below), and any such declarations are reachable at a point immediately following `$E$` ([lex.phases]{.sref}).]{.note}
 
 ::: example
 ```cpp
-template <class> struct RV {};
+template <auto> struct RV {};
 
 // instantiations of 'T::f(0)' are not plainly constant-evaluated
 template <class T> RV<T::f(0)> check(int);
 
 consteval bool cfn(int) { return true; }
 
-template <int V> requires (cfn(V))  // cfn(V) is not plainly constant-evaluated
-consteval int g() {
-    if constexpr (cfn(V+1)) {       // cfn(V+1) is plainly constant-evaluated
-        return cfn(V+2);            // cfn(V+2) is plainly constant-evaluated
-    } else {
-        return 0;
-    }
-}
+constexpr bool b1 = cfn(1);  // 'cfn(1)' is plainly constant-evaluated.
+const bool b2 = cfn(2);      // 'cfn(2)' is not plainly constant-evaluated.
 
-constexpr bool b1 = !cfn(1);        // !cfn(1) is plainly constant-evaluated
-const bool b2 = cfn(2);             // cfn(2) is not plainly constant-evaluated
-
+static_assert(b1);           // 'b1' is plainly constant-evaluated.
 ```
 :::
 
@@ -4239,6 +4247,26 @@ Disallow `$splice-type-specifier$`s from appearing in `$typename-specifier$`s, s
 
 :::
 
+Add a new case to the list of IFNDR conditions related to template instantiation.
+
+::: std
+[6]{.pnum} The validity of a templated entity may be checked prior to any instantiation.
+
+[Knowing which names are type names allows the syntax of every template to be checked in this way.]{.note3}
+
+The program is ill-formed, no diagnostic required, if
+
+* [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail ([dcl.pre]), can be generated for a templated entity or a substatement of a constexpr if statement ([stmt.if]) within a templaetd entity and the innermost enclosing template is not instantiated, or
+* [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail, can be generated for a default `$template-argument$` and the default `$template-argument$` is not used in any instantiation, or
+* [#.#]{.pnum} no specialization of an alias template ([temp.alias]) is valid and no specialization of the alias template is named in the program, or
+* [[#.#]{.pnum} any non-dependent plainly constant-evaluated expression within a templated entity produces an injected declaration ([expr.const]), or]{.addu}
+* [#.#]{.pnum} any `$constraint-expression$` in the program, introduced or otherwise, has (in its normal form) an atomic constraint `$A$` where no satisfaction check of `$A$` could be well-formed and no satisfaction check of `$A$` is performed, or
+* [#.#]{.pnum} every valid specialization of a variadic template requires an empty template parameter pack, or
+* [#.#]{.pnum} a hypothetical instantiation of a templated entity immediately following its definition would be ill-formed due to a construct (other than a `$static_assert-declaration$` that fails) that does not depend on a template parameter, or
+* [#.#]{.pnum} the interpretation of such a construct in the hypothetical instantiation is different from the interpretation of the corresponding construct in any actual instantiation of the templated entity.
+
+:::
+
 ### [temp.dep.expr]{.sref} Type-dependent expressions {-}
 
 Add to the list of never-type-dependent expression forms in [temp.dep.expr]{.sref}/4:
@@ -4792,7 +4820,9 @@ namespace std::meta {
 
 [1]{.pnum} Each function, and each instantiation of each function template, specified in this header is a designated addressable function ([namespace.std]).
 
-[2]{.pnum} Values of type `std::meta::info` may represent implementation-defined constructs not otherwise specified by this document ([basic.fundamental]{.sref}). The behavior of any function specified by this section is implementation-defined when a reflection representing such a construct is provided as an argument.
+[2]{.pnum} The behavior of any function specified by this section is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
+
+[Values of type `std::meta::info` may represent implementation-defined constructs ([basic.fundamental]{.sref}).]{.note}
 :::
 :::
 
