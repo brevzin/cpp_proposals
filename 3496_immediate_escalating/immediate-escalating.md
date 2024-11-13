@@ -81,6 +81,25 @@ Here also, the call to `id(x)` internally isn't a constant expression, but `A(42
 
 Change the rules around what constitutes an immediate-escalating expression such that we only consider a consteval call to "bubble up" if it isn't already enclosed in a constant expression.
 
+Examining the original example in the context of the terms that this paper will introduce/adjust in the wording:
+
+::: std
+```cpp
+constexpr int f2() {
+    return enumerators_of(^E).size();
+}
+```
+:::
+
+In the expression `enumerators_of(^E).size()` (which is not in an immediate function context):
+
+* `enumerators_of` is a consteval-only expression (because it names an immediate function)
+* `^E` will also be a consteval-only expression (because it has consteval-only type)
+* the call expression `enumerators_of(^E)` is a consteval-only expression (because it has an immediate subexpression that is consteval-only). It is not an immediate invocation because it is not a constant expression.
+* the larger expression `enumerators_of(^E).size()` _is_ a constant expression, has a non-constant subexpression that is consteval-only, and is thus an immediate invocation. This makes `enumerators_of(^E)` no longer an immediate-escalating expression (which it is in the status quo).
+
+The intent of this proposal is that it is a DR against [@P2564R3].
+
 ## Implementation Experience
 
 Thanks to Jason Merrill for implementing this proposal, suggesting I split it off from [@P3032R2], and giving wording help.
