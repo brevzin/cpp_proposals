@@ -969,9 +969,13 @@ to <code class="sourceCode cpp"><span class="op">(</span>u8<span class="op">)</s
 <code class="sourceCode cpp">reflect_invoke</code></li>
 <li>clarified that <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span> <span class="op">==</span></code>sizeof(void
 *)`</li>
+<li>rename <code class="sourceCode cpp">data_member_options_t</code> to
+<code class="sourceCode cpp">data_member_options</code>, as per LEWG
+feedback</li>
 <li>clarified that
-<code class="sourceCode cpp">data_member_options_t</code> is a
-non-structural consteval-only type</li>
+<code class="sourceCode cpp">data_member_options</code> and
+<code class="sourceCode cpp">name_type</code> are non-structural
+consteval-only types</li>
 <li>clarified that everything in
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is
 addressable</li>
@@ -4076,9 +4080,9 @@ be explained below.</p>
 <span id="cb76-128"><a href="#cb76-128" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> is_user_declared<span class="op">(</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
 <span id="cb76-129"><a href="#cb76-129" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb76-130"><a href="#cb76-130" aria-hidden="true" tabindex="-1"></a>  <span class="co">// <a href="#data_member_spec-define_aggregate">define_aggregate</a></span></span>
-<span id="cb76-131"><a href="#cb76-131" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> data_member_options_t;</span>
+<span id="cb76-131"><a href="#cb76-131" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> data_member_options;</span>
 <span id="cb76-132"><a href="#cb76-132" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_spec<span class="op">(</span>info type_class,</span>
-<span id="cb76-133"><a href="#cb76-133" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb76-133"><a href="#cb76-133" aria-hidden="true" tabindex="-1"></a>                                  data_member_options options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb76-134"><a href="#cb76-134" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
 <span id="cb76-135"><a href="#cb76-135" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> define_aggregate<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb76-136"><a href="#cb76-136" aria-hidden="true" tabindex="-1"></a></span>
@@ -4445,7 +4449,7 @@ its operand.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb94"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> data_member_options_t <span class="op">{</span></span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> data_member_options <span class="op">{</span></span>
 <span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> name_type <span class="op">{</span></span>
 <span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>u8string, T<span class="op">&gt;</span></span>
 <span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> name_type<span class="op">(</span>T <span class="op">&amp;&amp;)</span>;</span>
@@ -4460,7 +4464,7 @@ its operand.</p>
 <span id="cb94-14"><a href="#cb94-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> no_unique_address <span class="op">=</span> <span class="kw">false</span>;</span>
 <span id="cb94-15"><a href="#cb94-15" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
 <span id="cb94-16"><a href="#cb94-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> data_member_spec<span class="op">(</span>info type,</span>
-<span id="cb94-17"><a href="#cb94-17" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb94-17"><a href="#cb94-17" aria-hidden="true" tabindex="-1"></a>                                  data_member_options options <span class="op">=</span> <span class="op">{})</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb94-18"><a href="#cb94-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
 <span id="cb94-19"><a href="#cb94-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> define_aggregate<span class="op">(</span>info type_class, R<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> info;</span>
 <span id="cb94-20"><a href="#cb94-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
@@ -7891,7 +7895,7 @@ synopsis</strong></p>
 <span id="cb137-163"><a href="#cb137-163" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_function(T&amp; fn);</span>
 <span id="cb137-164"><a href="#cb137-164" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb137-165"><a href="#cb137-165" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.define.aggregate], class definition generation</span>
-<span id="cb137-166"><a href="#cb137-166" aria-hidden="true" tabindex="-1"></a>  struct data_member_options_t {</span>
+<span id="cb137-166"><a href="#cb137-166" aria-hidden="true" tabindex="-1"></a>  struct data_member_options {</span>
 <span id="cb137-167"><a href="#cb137-167" aria-hidden="true" tabindex="-1"></a>    struct name_type {</span>
 <span id="cb137-168"><a href="#cb137-168" aria-hidden="true" tabindex="-1"></a>      template&lt;class T&gt; requires constructible_from&lt;u8string, T&gt;</span>
 <span id="cb137-169"><a href="#cb137-169" aria-hidden="true" tabindex="-1"></a>        consteval name_type(T &amp;&amp;);</span>
@@ -7908,7 +7912,7 @@ synopsis</strong></p>
 <span id="cb137-180"><a href="#cb137-180" aria-hidden="true" tabindex="-1"></a>    bool no_unique_address = false;</span>
 <span id="cb137-181"><a href="#cb137-181" aria-hidden="true" tabindex="-1"></a>  };</span>
 <span id="cb137-182"><a href="#cb137-182" aria-hidden="true" tabindex="-1"></a>  consteval info data_member_spec(info type,</span>
-<span id="cb137-183"><a href="#cb137-183" aria-hidden="true" tabindex="-1"></a>                                  data_member_options_t options = {});</span>
+<span id="cb137-183"><a href="#cb137-183" aria-hidden="true" tabindex="-1"></a>                                  data_member_options options = {});</span>
 <span id="cb137-184"><a href="#cb137-184" aria-hidden="true" tabindex="-1"></a>  consteval bool is_data_member_spec(info r);</span>
 <span id="cb137-185"><a href="#cb137-185" aria-hidden="true" tabindex="-1"></a>  template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span>
 <span id="cb137-186"><a href="#cb137-186" aria-hidden="true" tabindex="-1"></a>  consteval info define_aggregate(info type_class, R&amp;&amp;);</span>
@@ -8436,8 +8440,8 @@ class specifier, then
 Otherwise if <code class="sourceCode cpp">r</code> represents a
 description of a declaration of a non-static data member, then letting
 <code class="sourceCode cpp"><em>o</em></code> be a
-<code class="sourceCode cpp">data_member_options_t</code> value such
-that <code class="sourceCode cpp">data_member_spec<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">)</span>, <em>o</em><span class="op">)</span> <span class="op">==</span> <em>r</em></code>,
+<code class="sourceCode cpp">data_member_options</code> value such that
+<code class="sourceCode cpp">data_member_spec<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">)</span>, <em>o</em><span class="op">)</span> <span class="op">==</span> <em>r</em></code>,
 then <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp"><em>o</em><span class="op">.</span>name</code>
 contains a value.</li>
@@ -8482,8 +8486,8 @@ the type of the base class.</li>
 Otherwise (if <code class="sourceCode cpp">r</code> represents a
 description of a declaration of a non-static data member), then letting
 <code class="sourceCode cpp"><em>o</em></code> be a
-<code class="sourceCode cpp">data_member_options_t</code> value such
-that <code class="sourceCode cpp">data_member_spec<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">)</span>, <em>o</em><span class="op">)</span> <span class="op">==</span> <em>r</em></code>,
+<code class="sourceCode cpp">data_member_options</code> value such that
+<code class="sourceCode cpp">data_member_spec<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">)</span>, <em>o</em><span class="op">)</span> <span class="op">==</span> <em>r</em></code>,
 then the <code class="sourceCode cpp">string</code> or
 <code class="sourceCode cpp">u8string</code> contents of <code class="sourceCode cpp"><em>o</em><span class="op">.</span>name<span class="op">.</span><em>contents</em></code>
 encoded with <code class="sourceCode cpp"><em>E</em></code>.</li>
@@ -9478,16 +9482,17 @@ Reflection class definition generation<a href="#meta.reflection.define.aggregate
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_409" id="pnum_409">1</a></span>
-The class <code class="sourceCode cpp">data_member_options_t</code> is a
-consteval-only type ([basic.types.general]), and is not a structural
-type ([temp.param]).</p>
+The classes <code class="sourceCode cpp">data_member_options</code> and
+<code class="sourceCode cpp">name_type</code> are consteval-only types
+([basic.types.general]), and are not a structural types
+([temp.param]).</p>
 <div class="sourceCode" id="cb210"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb210-1"><a href="#cb210-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>u8string, T<span class="op">&gt;</span></span>
-<span id="cb210-2"><a href="#cb210-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options_t<span class="op">::</span>name_type<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
+<span id="cb210-2"><a href="#cb210-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options<span class="op">::</span>name_type<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_410" id="pnum_410">2</a></span>
 <em>Effects</em>: Initializes
 <code class="sourceCode cpp"><em>contents</em></code> with <code class="sourceCode cpp">u8string<span class="op">(</span>value<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb211"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>string, T<span class="op">&gt;</span></span>
-<span id="cb211-2"><a href="#cb211-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options_t<span class="op">::</span>name_type<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
+<span id="cb211-2"><a href="#cb211-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options<span class="op">::</span>name_type<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_411" id="pnum_411">3</a></span>
 <em>Effects</em>: Initializes
 <code class="sourceCode cpp"><em>contents</em></code> with <code class="sourceCode cpp">string<span class="op">(</span>value<span class="op">)</span></code>.</p>
@@ -9508,7 +9513,7 @@ literal (or <code class="sourceCode cpp">u8string_view</code>,
 <span> — <em>end note</em> ]</span>
 </div>
 <div class="sourceCode" id="cb213"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb213-1"><a href="#cb213-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info data_member_spec<span class="op">(</span>info type,</span>
-<span id="cb213-2"><a href="#cb213-2" aria-hidden="true" tabindex="-1"></a>                                data_member_options_t options <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
+<span id="cb213-2"><a href="#cb213-2" aria-hidden="true" tabindex="-1"></a>                                data_member_options options <span class="op">=</span> <span class="op">{})</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_412" id="pnum_412">1</a></span>
 <em>Constant When</em>:</p>
 <ul>
@@ -9646,9 +9651,8 @@ Let
 {<code class="sourceCode cpp"><span class="math inline"><em>t</em></span><sub>k</sub></code>}
 be a sequence of reflections and
 {<code class="sourceCode cpp"><span class="math inline"><em>o</em></span><sub>k</sub></code>}
-be a sequence of
-<code class="sourceCode cpp">data_member_options_t</code> values such
-that</p>
+be a sequence of <code class="sourceCode cpp">data_member_options</code>
+values such that</p>
 <div class="sourceCode" id="cb216"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a>data_member_spec(<span class="math inline"><em>t</em></span><sub><span class="math inline"><em>k</em></span></sub>, <span class="math inline"><em>o</em></span><sub><span class="math inline"><em>k</em></span></sub>) == <span class="math inline"><em>r</em></span><sub><span class="math inline"><em>k</em></span></sub></span></code></pre></div>
 <p>for every
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>k</em></span></sub></code> in

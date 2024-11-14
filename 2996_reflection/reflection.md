@@ -33,7 +33,8 @@ Since [@P2996R7]:
 * renamed `define_class` to `define_aggregate`
 * removed `define_static_array`, `define_static_string`, and `reflect_invoke`
 * clarified that `sizeof(std::meta::info) == `sizeof(void *)`
-* clarified that `data_member_options_t` is a non-structural consteval-only type
+* rename `data_member_options_t` to `data_member_options`, as per LEWG feedback
+* clarified that `data_member_options` and `name_type` are non-structural consteval-only types
 * clarified that everything in `std::meta` is addressable
 * renaming `member_offsets` to `member_offset` and changing `member_offset` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
 * renamed the type traits from all being named `type_meow` to a more bespoke naming scheme.
@@ -2382,9 +2383,9 @@ namespace std::meta {
   consteval auto is_user_declared(info r) -> bool;
 
   // @[define_aggregate](#data_member_spec-define_aggregate)@
-  struct data_member_options_t;
+  struct data_member_options;
   consteval auto data_member_spec(info type_class,
-                                  data_member_options_t options = {}) -> info;
+                                  data_member_options options = {}) -> info;
   template <reflection_range R = initializer_list<info>>
     consteval auto define_aggregate(info type_class, R&&) -> info;
 
@@ -2677,7 +2678,7 @@ Also unlike splicers, it requires knowledge of the type associated with the enti
 ::: std
 ```c++
 namespace std::meta {
-  struct data_member_options_t {
+  struct data_member_options {
     struct name_type {
       template <typename T> requires constructible_from<u8string, T>
         consteval name_type(T &&);
@@ -2692,7 +2693,7 @@ namespace std::meta {
     bool no_unique_address = false;
   };
   consteval auto data_member_spec(info type,
-                                  data_member_options_t options = {}) -> info;
+                                  data_member_options options = {}) -> info;
   template <reflection_range R = initializer_list<info>>
   consteval auto define_aggregate(info type_class, R&&) -> info;
 }
@@ -4640,7 +4641,7 @@ namespace std::meta {
     consteval info reflect_function(T& fn);
 
   // [meta.reflection.define.aggregate], class definition generation
-  struct data_member_options_t {
+  struct data_member_options {
     struct name_type {
       template<class T> requires constructible_from<u8string, T>
         consteval name_type(T &&);
@@ -4657,7 +4658,7 @@ namespace std::meta {
     bool no_unique_address = false;
   };
   consteval info data_member_spec(info type,
-                                  data_member_options_t options = {});
+                                  data_member_options options = {});
   consteval bool is_data_member_spec(info r);
   template <reflection_range R = initializer_list<info>>
   consteval info define_aggregate(info type_class, R&&);
@@ -4933,7 +4934,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or `$namespace-alias$`, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise if `r` represents a description of a declaration of a non-static data member, then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then `true` if `$o$.name` contains a value.
+* [#.#]{.pnum} Otherwise if `r` represents a description of a declaration of a non-static data member, then letting `$o$` be a `data_member_options` value such that `data_member_spec(type_of(r), $o$) == $r$`, then `true` if `$o$.name` contains a value.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
@@ -4951,7 +4952,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or `$namespace-alias$`, then the identifier introduced by the declaration of what is represented by `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
-* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options_t` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
+* [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -5630,18 +5631,18 @@ template <typename T>
 ::: std
 ::: addu
 
-[1]{.pnum} The class `data_member_options_t` is a consteval-only type ([basic.types.general]), and is not a structural type ([temp.param]).
+[1]{.pnum} The classes `data_member_options` and `name_type` are consteval-only types ([basic.types.general]), and are not a structural types ([temp.param]).
 
 ```cpp
 template <class T> requires constructible_from<u8string, T>
-consteval data_member_options_t::name_type(T&& value);
+consteval data_member_options::name_type(T&& value);
 ```
 
 [#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
-consteval data_member_options_t::name_type(T&& value);
+consteval data_member_options::name_type(T&& value);
 ```
 [#]{.pnum} *Effects*: Initializes `$contents$` with `string(value)`.
 
@@ -5657,7 +5658,7 @@ constexpr auto mem2 = data_member_spec(^int, {.name=u8"utf8_encoding"});
 
 ```cpp
 consteval info data_member_spec(info type,
-                                data_member_options_t options = {});
+                                data_member_options options = {});
 ```
 [1]{.pnum} *Constant When*:
 
@@ -5700,7 +5701,7 @@ consteval bool is_data_member_spec(info r);
 
 [`$C$` could be a class template specialization for which there is no reachable definition.]{.note}
 
-[#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options_t` values such that
+[#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that
 
     data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@
 
