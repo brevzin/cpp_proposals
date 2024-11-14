@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-13" />
+  <meta name="dcterms.date" content="2024-11-14" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-13</td>
+    <td>2024-11-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -6186,12 +6186,18 @@ declarations are reachable at a point immediately following
 <span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a><span class="co">// instantiations of &#39;T::f(0)&#39; are not plainly constant-evaluated</span></span>
 <span id="cb114-4"><a href="#cb114-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> RV<span class="op">&lt;</span>T<span class="op">::</span>f<span class="op">(</span><span class="dv">0</span><span class="op">)&gt;</span> check<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span>
 <span id="cb114-5"><a href="#cb114-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb114-6"><a href="#cb114-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> cfn<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">true</span>; <span class="op">}</span></span>
+<span id="cb114-6"><a href="#cb114-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> cfn<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">1</span>; <span class="op">}</span></span>
 <span id="cb114-7"><a href="#cb114-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb114-8"><a href="#cb114-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> b1 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;  <span class="co">// &#39;cfn(1)&#39; is plainly constant-evaluated.</span></span>
-<span id="cb114-9"><a href="#cb114-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">bool</span> b2 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;      <span class="co">// &#39;cfn(2)&#39; is not plainly constant-evaluated.</span></span>
-<span id="cb114-10"><a href="#cb114-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb114-11"><a href="#cb114-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>b1<span class="op">)</span>;           <span class="co">// &#39;b1&#39; is plainly constant-evaluated.</span></span></code></pre></div>
+<span id="cb114-8"><a href="#cb114-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> b1 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;            <span class="co">// &#39;cfn(1)&#39; is plainly constant-evaluated</span></span>
+<span id="cb114-9"><a href="#cb114-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constinit</span> <span class="dt">int</span> b2 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;            <span class="co">// &#39;cfn(2)&#39; is plainly constant-evaluated</span></span>
+<span id="cb114-10"><a href="#cb114-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="dt">int</span> b3 <span class="op">=</span> cfn<span class="op">(</span><span class="dv">3</span><span class="op">)</span>;                <span class="co">// &#39;cfn(3)&#39; is not plainly constant-evaluated</span></span>
+<span id="cb114-11"><a href="#cb114-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb114-12"><a href="#cb114-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>b1 <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span>;                <span class="co">// &#39;b1 &gt; 0&#39; is plainly constant-evaluated</span></span>
+<span id="cb114-13"><a href="#cb114-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb114-14"><a href="#cb114-14" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Cls <span class="op">{</span></span>
+<span id="cb114-15"><a href="#cb114-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> var <span class="op">=</span> cfn<span class="op">(</span><span class="dv">4</span><span class="op">)</span>;  <span class="co">// &#39;cfn(4)&#39; is plainly constant-evaluated</span></span>
+<span id="cb114-16"><a href="#cb114-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> arr<span class="op">[</span>cfn<span class="op">(</span><span class="dv">5</span><span class="op">)]</span>;                    <span class="co">// &#39;cfn(5)&#39; is not plainly constant-evaluated</span></span>
+<span id="cb114-17"><a href="#cb114-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>

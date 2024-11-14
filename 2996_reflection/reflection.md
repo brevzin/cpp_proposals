@@ -3595,12 +3595,18 @@ template <auto> struct RV {};
 // instantiations of 'T::f(0)' are not plainly constant-evaluated
 template <class T> RV<T::f(0)> check(int);
 
-consteval bool cfn(int) { return true; }
+consteval int cfn(int) { return 1; }
 
-constexpr bool b1 = cfn(1);  // 'cfn(1)' is plainly constant-evaluated.
-const bool b2 = cfn(2);      // 'cfn(2)' is not plainly constant-evaluated.
+constexpr int b1 = cfn(1);            // 'cfn(1)' is plainly constant-evaluated
+constinit int b2 = cfn(2);            // 'cfn(2)' is plainly constant-evaluated
+const int b3 = cfn(3);                // 'cfn(3)' is not plainly constant-evaluated
 
-static_assert(b1);           // 'b1' is plainly constant-evaluated.
+static_assert(b1 > 0);                // 'b1 > 0' is plainly constant-evaluated
+
+struct Cls {
+  static constexpr int var = cfn(4);  // 'cfn(4)' is plainly constant-evaluated
+  int arr[cfn(5)];                    // 'cfn(5)' is not plainly constant-evaluated
+};
 ```
 :::
 
