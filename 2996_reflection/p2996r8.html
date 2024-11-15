@@ -1215,7 +1215,7 @@ producing <em>reflection values</em> — <em>reflections</em> for short —
 of an opaque type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,</li>
 <li>a <em>reflection operator</em> (prefix
 <code class="sourceCode cpp"><span class="op">^</span></code>) that
-produces a reflection value for its operand construct,</li>
+computes a reflection value for its operand construct,</li>
 <li>a number of
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 <em>metafunctions</em> to work with reflections (including deriving
@@ -5413,10 +5413,10 @@ preceded by
 <span id="cb106-8"><a href="#cb106-8" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dependent<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb106-9"><a href="#cb106-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">[:</span>Var<span class="op">:]</span> <span class="op">*</span>var;                      <span class="co">// OK, multiplication of &#39;var * var&#39;</span></span>
 <span id="cb106-10"><a href="#cb106-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb106-11"><a href="#cb106-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>Cls<span class="op">:]</span> <span class="op">*</span>a;               <span class="co">// OK, declaration of &#39;cls *var&#39;</span></span>
+<span id="cb106-11"><a href="#cb106-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>Cls<span class="op">:]</span> <span class="op">*</span>a;               <span class="co">// OK, declaration of &#39;cls *a&#39;</span></span>
 <span id="cb106-12"><a href="#cb106-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>TVar<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var;         <span class="co">// OK, multiplication of &#39;t_var&lt;0&gt; * var&#39;</span></span>
 <span id="cb106-13"><a href="#cb106-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var;         <span class="co">// error: cannot splice type as expression</span></span>
-<span id="cb106-14"><a href="#cb106-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>b;           <span class="co">// OK, declaration of &#39;t_cls&lt;0&gt; *var&#39;</span></span>
+<span id="cb106-14"><a href="#cb106-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>b;           <span class="co">// OK, declaration of &#39;t_cls&lt;0&gt; *b&#39;</span></span>
 <span id="cb106-15"><a href="#cb106-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>c;  <span class="co">// OK</span></span>
 <span id="cb106-16"><a href="#cb106-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb106-17"><a href="#cb106-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>Concept<span class="op">:]</span> <span class="kw">auto</span> <span class="op">*</span>d <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// OK, deduced placeholder type</span></span>
@@ -5869,7 +5869,7 @@ reflection operator<a href="#expr.reflect-the-reflection-operator" class="self-l
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><strong>The Reflection Operator [expr.reflect]</strong></p>
+<p><strong>The reflection operator [expr.reflect]</strong></p>
 <p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The
 following grammar avoids use of
 <code class="sourceCode default"><em>id-expression</em></code>, even
@@ -5918,22 +5918,22 @@ syntactically form a
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">4</a></span>
 A <code class="sourceCode cpp"><em>reflect-expression</em></code> having
 the form <code class="sourceCode cpp"><span class="op">^</span> <span class="op">::</span></code>
-produces a reflection of the global namespace.</p>
+computes a reflection of the global namespace.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_91" id="pnum_91">5</a></span>
 A <code class="sourceCode cpp"><em>reflect-expression</em></code> having
 the form <code class="sourceCode cpp"><span class="op">^</span> <em>unqualified-id</em></code>
 or <code class="sourceCode cpp"><span class="op">^</span> <em>qualified-id</em></code>
 performs name lookup for the operand following
 <code class="sourceCode cpp"><span class="op">^</span></code> and
-produces a result as follows:</p>
+computes a result as follows:</p>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_92" id="pnum_92">(5.1)</a></span>
 If the lookup finds an overload set
-<code class="sourceCode cpp"><em>S</em></code> such that the assignment
-of
-<code class="sourceCode cpp"><span class="op">&amp;</span><em>S</em></code>
-to an invented variable of type <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">auto</span></code>
+<code class="sourceCode cpp"><em>S</em></code> such that the
+initialization of an invented variable of type <code class="sourceCode cpp"><span class="kw">const</span> <span class="kw">auto</span></code>
 (<span>9.2.9.7.2 <a href="https://wg21.link/dcl.type.auto.deduct">[dcl.type.auto.deduct]</a></span>)
+with
+<code class="sourceCode cpp"><span class="op">&amp;</span><em>S</em></code>
 would select a unique candidate function
 <code class="sourceCode cpp"><em>F</em></code> from
 <code class="sourceCode cpp"><em>S</em></code>, then the result is a
@@ -5956,7 +5956,7 @@ result is a reflection of the denoted entity.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_96" id="pnum_96">(5.5)</a></span>
 Otherwise, if the lookup finds an implementation-defined construct not
 otherwise specified by this document, then the implementation may
-produce a reflection of the denoted construct.</p></li>
+compute a reflection of the denoted construct.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_97" id="pnum_97">(5.6)</a></span>
 Otherwise, the program is ill-formed.</p></li>
 </ul>
@@ -5964,7 +5964,7 @@ Otherwise, the program is ill-formed.</p></li>
 A <code class="sourceCode cpp"><em>reflect-expression</em></code> of the
 form
 <code class="sourceCode cpp"><span class="op">^</span> <em>type-id</em></code>
-produces a reflection of the denoted type. A
+computes a reflection of the denoted type. A
 <code class="sourceCode cpp"><em>reflect-expression</em></code> that
 could be validly interpreted as either <code class="sourceCode cpp"><span class="op">^</span> <em>unqualified-id</em></code>
 or
@@ -5978,7 +5978,7 @@ is interpreted as <code class="sourceCode cpp"><span class="op">^</span> <em>qua
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_99" id="pnum_99">7</a></span>
 A <code class="sourceCode cpp"><em>reflect-expression</em></code> having
 the form <code class="sourceCode cpp"><span class="op">^</span> <em>pack-index-expression</em></code>
-produces a reflection of the result computed by the
+computes a reflection of the result computed by the
 <code class="sourceCode cpp"><em>pack-index-expression</em></code>.</p>
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
@@ -7708,7 +7708,7 @@ template. If F does not designate an addressable function, it is
 unspecified if or how a reflection value designating the associated
 entity can be formed. <span class="note"><span>[ <em>Note 1:</em>
 </span>For example, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>members_of</code>
-might not produce reflections of standard functions that an
+might not return reflections of standard functions that an
 implementation handles through an extra-linguistic mechanism.<span>
 — <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_241" id="pnum_241">6b</a></span>

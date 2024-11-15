@@ -143,7 +143,7 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
 
   - the representation of program elements via constant-expressions producing
      _reflection values_ — _reflections_ for short — of an opaque type `std::meta::info`,
-  - a _reflection operator_ (prefix `^`) that produces a reflection value for its operand construct,
+  - a _reflection operator_ (prefix `^`) that computes a reflection value for its operand construct,
   - a number of `consteval` _metafunctions_ to work with reflections (including deriving other reflections), and
   - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
@@ -3214,10 +3214,10 @@ template <auto Var, auto Cls, auto TVar, auto TCls, auto Concept>
 void dependent() {
   [:Var:] *var;                      // OK, multiplication of 'var * var'
 
-  typename [:Cls:] *a;               // OK, declaration of 'cls *var'
+  typename [:Cls:] *a;               // OK, declaration of 'cls *a'
   template [:TVar:]<0> *var;         // OK, multiplication of 't_var<0> * var'
   template [:TCls:]<0> *var;         // error: cannot splice type as expression
-  typename [:TCls:]<0> *b;           // OK, declaration of 't_cls<0> *var'
+  typename [:TCls:]<0> *b;           // OK, declaration of 't_cls<0> *b'
   template typename [:TCls:]<0> *c;  // OK
 
   template [:Concept:] auto *d = 0;  // OK, deduced placeholder type
@@ -3443,7 +3443,7 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
 ::: std
 ::: addu
-**The Reflection Operator   [expr.reflect]**
+**The reflection operator   [expr.reflect]**
 
 [The following grammar avoids use of `$id-expression$`, even though any operand to an `$id-expression$` can be an operand to a `$reflect-expression$`. The reason is that the operand of a `$reflect-expression$` is not necessarily an expression, as it could name a namespace, class template, type, etc.]{.ednote}
 
@@ -3481,11 +3481,11 @@ consteval void g(std::meta::info r, X<false> xv) {
 ```
 :::
 
-[#]{.pnum} A `$reflect-expression$` having the form `^ ::` produces a reflection of the global namespace.
+[#]{.pnum} A `$reflect-expression$` having the form `^ ::` computes a reflection of the global namespace.
 
-[#]{.pnum} A `$reflect-expression$` having the form `^ $unqualified-id$` or `^ $qualified-id$` performs name lookup for the operand following `^` and produces a result as follows:
+[#]{.pnum} A `$reflect-expression$` having the form `^ $unqualified-id$` or `^ $qualified-id$` performs name lookup for the operand following `^` and computes a result as follows:
 
-* [#.#]{.pnum} If the lookup finds an overload set `$S$` such that the assignment of `&$S$` to an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) would select a unique candidate function `$F$` from `$S$`, then the result is a reflection of `$F$`. If the lookup finds any other overload set, the program is ill-formed.
+* [#.#]{.pnum} If the lookup finds an overload set `$S$` such that the initialization of an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) with `&$S$` would select a unique candidate function `$F$` from `$S$`, then the result is a reflection of `$F$`. If the lookup finds any other overload set, the program is ill-formed.
 
 * [#.#]{.pnum} Otherwise, if the lookup finds a `$typedef-name$` or a `$namespace-alias$`, then the result is a reflection of the indicated name.
 
@@ -3493,13 +3493,13 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 * [#.#]{.pnum} Otherwise, if the lookup finds a variable, structured binding, function, enumerator, type, non-static member, template, or namespace, then the result is a reflection of the denoted entity.
 
-* [#.#]{.pnum} Otherwise, if the lookup finds an implementation-defined construct not otherwise specified by this document, then the implementation may produce a reflection of the denoted construct.
+* [#.#]{.pnum} Otherwise, if the lookup finds an implementation-defined construct not otherwise specified by this document, then the implementation may compute a reflection of the denoted construct.
 
 * [#.#]{.pnum} Otherwise, the program is ill-formed.
 
-[#]{.pnum} A `$reflect-expression$` of the form `^ $type-id$` produces a reflection of the denoted type. A `$reflect-expression$` that could be validly interpreted as either `^ $unqualified-id$` or `^ $type-id$` is interpreted as `^ $unqualified-id$`, and a `$reflect-expression$` that could be validly interpreted as `^ $qualified-id$` or `^ $type-id$` is interpreted as `^ $qualified-id$`.
+[#]{.pnum} A `$reflect-expression$` of the form `^ $type-id$` computes a reflection of the denoted type. A `$reflect-expression$` that could be validly interpreted as either `^ $unqualified-id$` or `^ $type-id$` is interpreted as `^ $unqualified-id$`, and a `$reflect-expression$` that could be validly interpreted as `^ $qualified-id$` or `^ $type-id$` is interpreted as `^ $qualified-id$`.
 
-[#]{.pnum} A `$reflect-expression$` having the form `^ $pack-index-expression$` produces a reflection of the result computed by the `$pack-index-expression$`.
+[#]{.pnum} A `$reflect-expression$` having the form `^ $pack-index-expression$` computes a reflection of the result computed by the `$pack-index-expression$`.
 
 ::: example
 ```cpp
@@ -4454,7 +4454,7 @@ Unless F is designated an *addressable function*, the behavior of a C++ program 
 [6a]{.pnum}
 Let F denote a standard library function, member function, or function template.
 If F does not designate an addressable function, it is unspecified if or how a reflection value designating the associated entity can be formed.
-[For example, `std::meta::members_of` might not produce reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
+[For example, `std::meta::members_of` might not return reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
 
 [6b]{.pnum}
 Let `C` denote a standard library class or class template specialization. It is unspecified if or how a reflection value can be formed to any private member of `C`, or what the names of such members may be.
