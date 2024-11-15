@@ -3204,29 +3204,29 @@ In all other cases, it is interpreted as a `$splice-expr-template-specifier$`.
 
 ::: example
 ```cpp
-int var {};
+int var;
 struct cls {};
-template<int> int t_var {};
+template<int> int t_var = 0;
 template<int> struct t_cls { };
 template <typename> concept always_true = requires { true; };
 
 template <auto Var, auto Cls, auto TVar, auto TCls, auto Concept>
 void dependent() {
-  { [:Var:] *var; }                        // ok: multiplication of 'var * var'.
+  [:Var:] *var;                      // ok: multiplication of 'var * var'.
 
-  { typename [:Cls:] *var; }               // ok: declaration of 'cls *var'
-  { template [:TVar:]<0> *var; }           // ok: multiplication of 't_var<0> * var'.
-  { template [:TCls:]<0> *var; }           // error: cannot splice type as expression.
-  { typename [:TCls:]<0> *var; }           // ok: declaration of 't_cls<0> *var'.
-  { template typename [:TCls:]<0> *var; }  // also ok.
+  typename [:Cls:] *a;               // ok: declaration of 'cls *var'
+  template [:TVar:]<0> *var;         // ok: multiplication of 't_var<0> * var'.
+  template [:TCls:]<0> *var;         // error: cannot splice type as expression.
+  typename [:TCls:]<0> *b;           // ok: declaration of 't_cls<0> *var'.
+  template typename [:TCls:]<0> *c;  // also ok.
 
-  { template [:Concept:] auto *var = 0; }  // ok: deduced placeholder type.
+  template [:Concept:] auto *d = 0;  // ok: deduced placeholder type.
 };
 
 void non_dependent() {
   dependent<^var, ^cls, ^t_var, ^t_cls, ^always_true>();
 
-  { template [:^^t_cls:]<0> *var; }        // ok in non-dependent context.
+  template [:^t_cls:]<0> *var;  // ok in non-dependent context.
 };
 
 ```
@@ -3273,7 +3273,7 @@ Add a new paragraph restricting `$splice-specifier$`, and renumber accordingly:
 
 ::: std
 ::: addu
-[0]{.pnum} A `$splice-specifier$` of a `$nested-name-specifier$` either is dependent or designates a type, `$typedef-name$`, namespace, or `$namespace-alias$`.
+[0]{.pnum} The `$splice-specifier$` of a `$nested-name-specifier$`, if any, shall either be dependent or designate a class, a `$typedef-name$` denoting a class, a namespace, or a `$namespace-alias$`.
 :::
 
 [1]{.pnum} The component names of a `$qualified-id$` are [...]
@@ -3314,16 +3314,16 @@ $splice-expression$:
    $splice-specifier$
 ```
 
-[#]{.pnum} The `$splice-specifier$` designates either
+[#]{.pnum} The `$splice-specifier$` shall designate either
 
 * [#.#]{.pnum} a value or object,
 * [#.#]{.pnum} a variable,
 * [#.#]{.pnum} a structured binding,
-* [#.#]{.pnum} a function,
+* [#.#]{.pnum} a function other than a constructor or destructor,
 * [#.#]{.pnum} an enumerator, or
 * [#.#]{.pnum} a non-static data member.
 
-The `$splice-specifier$` shall not designate an unnamed bit-field, a constructor, or a destructor.
+[Unnamed bit-fields are not class members ([class.bit]), and cannot be spliced.]{.note}
 
 [#]{.pnum} Let `$E$` be the construct designated by `$splice-specifier$`.
 
@@ -3360,7 +3360,9 @@ Add a production to `$postfix-expression$` for splices in member access expressi
 Modify paragraph 1 to account for splices in member access expressions. Prefer the word "possibly" to "optionally" since `template` cannot precede a `splice-expression`:
 
 ::: std
-[1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, [optionally]{.rm} [possibly]{.addu} followed by the keyword template, and then followed by an `$id-expression$` [or a splicer designating a class member]{.addu}, is a postfix expression. [If the keyword `template` is used, the following unqualified name is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `::`, the `$id-expression$` is a `$qualified-id$`.]{.note}
+[1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, [optionally]{.rm} [possibly]{.addu} followed by the keyword `template`, and then followed by an `$id-expression$` [or a splicer designating a class member]{.addu}, is a postfix expression.
+
+[If the keyword `template` is used, the following unqualified name is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `::`, the `$id-expression$` is a `$qualified-id$`.]{.note}
 
 :::
 
@@ -3442,6 +3444,8 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 ::: std
 ::: addu
 **The Reflection Operator   [expr.reflect]**
+
+[The following grammar avoids use of `$id-expression$`, even though any operand to an `$id-expression$` can be an operand to a `$reflect-expression$`. The reason is that the operand of a `$reflect-expression$` is not necessarily an expression, as it could name a namespace, class template, type, etc.]{.ednote}
 
 ```
 $reflect-expression$:
@@ -3550,17 +3554,32 @@ Add a new paragraph between [expr.eq]{.sref}/5 and /6:
 Modify paragraph 15 to disallow returning non-consteval-only pointers and references to consteval-only objects from constant expressions.
 
 ::: std
-[15]{.pnum} A _constant-expression_ is either a glvalue core constant expression that [\ ]{.addu}
+[15]{.pnum} A _constant expression_ is either a glvalue core constant expression that [\ ]{.addu}
 
 * [#.#]{.pnum} refers to an entity that is a permitted result of a constant expression[, and]{.addu}
 * [[#.#]{.pnum} is of consteval-only type if the entity designated by the expression is of consteval-only type,]{.addu}
 
+  ::: addu
+  ::: note
+  For example, given the function
+  ```cpp
+  consteval Base& fn(const Derived& derived) {
+    return derived;
+  }
+  ```
+
+  where `Derived` is a consteval-only type, if `Base` is not also a consteval-only type then `fn(derived)` is never a constant expression.
+  :::
+  :::
+
 or a prvalue core constant expression whose value satisfies the following constraints:
 
-* [#.#]{.pnum} if the value is an object of class type, each non-static data member of reference type refers to an entity that is a permitted result of a constant expression [and has consteval-only type if the entity has consteval-only type]{.addu},
+* [#.#]{.pnum} if the value is an object of class type, each non-static data member of reference type refers to an entity that is a permitted result of a constant expression [and has consteval-only type if that entity has consteval-only type]{.addu},
 * [#.#]{.pnum} if the value is an object of scalar type, it does not have an indeterminate or erroneous value ([basic.indet]),
-* [#.#]{.pnum} if the value is of pointer type, it is a pointer to an object of static storage duration, a pointer past the end of such an object ([expr.add]), a pointer to a non-immediate function, or a null pointer value,
-* [[#.#]{.pnum} if the value is a pointer to an object of consteval-only type, or a pointer past the end of such an object, then the prvalue is also of consteval-only type,]{.addu}
+* [#.#]{.pnum} if the value is of pointer type, [then:\ ]{.addu}
+  * [#.#.#]{.pnum} it is a pointer to an object of static storage duration[,]{.rm} [or]{.addu} a pointer past the end of such an object ([expr.add]), [such that if the type of that object is a consteval-only type then that pointer type is also a consteval-only type, or]{.addu}
+  * [#.#.#]{.pnum} [it is]{.addu} a pointer to a non-immediate function, or
+  * [#.#.#]{.pnum} [it is]{.addu} a null pointer value,
 * [#.#]{.pnum} if the value is of pointer-to-member-function type, it does not designate an immediate function, and
 * [#.#]{.pnum} if the value is an object of class or array type, each subobject satisfies these constraints for the value.
 
