@@ -1,6 +1,6 @@
 ---
 title: "`consteval` blocks"
-document: P3289R0
+document: P3289R1
 date: today
 audience: EWG
 author:
@@ -14,9 +14,13 @@ author:
 toc: true
 ---
 
+# Revision History
+
+Since [@P3289R0], updated wording to make a consteval block distinct from a `static_assert`.
+
 # Introduction
 
-Several proposals that produce side effects as part of constant evaluation are in flight.  That includes [@P2996R2] (“Reflection for C++26”) and [@P2758R2] (“Emitting messages at compile time”). Such a capability, in turn, quickly gives rise to the desire to evaluate such constant expressions in declarative contexts.
+Several proposals that produce side effects as part of constant evaluation are in flight.  That includes [@P2996R7] (“Reflection for C++26”) and [@P2758R3] (“Emitting messages at compile time”). Such a capability, in turn, quickly gives rise to the desire to evaluate such constant expressions in declarative contexts.
 
 Currently, this effect can be shoe-horned into `static_assert` declarations, but the result looks arcane. For example, P2996 contains the following code in an example:
 
@@ -118,7 +122,7 @@ The Lock3 implementation of reflection facilities based on [@P1240R2] (and other
 
 # Wording
 
-[The simplest way to do the wording is to add a `consteval` block as a _kind_ of `$static_assert-declaration$`. That's the minimal diff. However, it's kind of weird to say that a `consteval` block literally is a `static_assert` - even if we specify the former in terms of the latter. So we'd rather take a few more words to get somewhere that feels more sensible. Plus this change reduces a lot of duplication between `$empty-declaration$` and `$static_assert-declaration$`, which are treated the same in a lot of places anyway.]{.ednote}
+[The simplest way to do the wording is to add a `consteval` block as a _kind_ of `$static_assert-declaration$`. That's the minimal diff. However, it's kind of weird to say that a `consteval` block literally is a `static_assert` - plus we need to give specific evaluation guarantees to a `consteval` block ("plainly constant-evaluated"), so we'd rather take a few more words to get somewhere that feels more sensible. Plus this change reduces a lot of duplication between `$empty-declaration$` and `$static_assert-declaration$`, which are treated the same in a lot of places anyway.]{.ednote}
 
 Change [basic.def]{.sref}/2:
 
@@ -176,21 +180,17 @@ Change [dcl.pre]{.sref}:
 ```
 :::
 
-And then after [dcl.pre]{.sref}/13:
+And then after [dcl.pre]{.sref}/13 [This wording relies on terms introduced in [@P2996R7]]{.ednote}:
 
 ::: std
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
 
 ::: addu
-[*]{.pnum} The `$consteval-block-declaration$`
+[*]{.pnum} If a `$consteval-block-declaration$` is within a template definition, it has no effect. Otherwise, let `$E$` be
 ```cpp
-consteval $compound-statement$
+[]() -> void consteval $compound-statement$ ()
 ```
-is equivalent to
-```cpp
-static_assert(([]() -> void consteval $compound-statement$(), true));
-```
-[Such a `$static_assert-declaration$` never fails.]{.note}
+`$E$` is plainly constant-evaluated ([expr.const]), and its syntactic endpoint is the `}` of the `$compound-statement$`.
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.
