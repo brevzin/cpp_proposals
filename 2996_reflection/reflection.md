@@ -3212,21 +3212,21 @@ template <typename> concept always_true = requires { true; };
 
 template <auto Var, auto Cls, auto TVar, auto TCls, auto Concept>
 void dependent() {
-  [:Var:] *var;                      // ok: multiplication of 'var * var'.
+  [:Var:] *var;                      // OK, multiplication of 'var * var'
 
-  typename [:Cls:] *a;               // ok: declaration of 'cls *var'
-  template [:TVar:]<0> *var;         // ok: multiplication of 't_var<0> * var'.
-  template [:TCls:]<0> *var;         // error: cannot splice type as expression.
-  typename [:TCls:]<0> *b;           // ok: declaration of 't_cls<0> *var'.
-  template typename [:TCls:]<0> *c;  // also ok.
+  typename [:Cls:] *a;               // OK, declaration of 'cls *var'
+  template [:TVar:]<0> *var;         // OK, multiplication of 't_var<0> * var'
+  template [:TCls:]<0> *var;         // error: cannot splice type as expression
+  typename [:TCls:]<0> *b;           // OK, declaration of 't_cls<0> *var'
+  template typename [:TCls:]<0> *c;  // OK
 
-  template [:Concept:] auto *d = 0;  // ok: deduced placeholder type.
+  template [:Concept:] auto *d = 0;  // OK, deduced placeholder type
 };
 
 void non_dependent() {
   dependent<^var, ^cls, ^t_var, ^t_cls, ^always_true>();
 
-  template [:^t_cls:]<0> *var;  // ok in non-dependent context.
+  template [:^t_cls:]<0> *var;  // OK, non-dependent context
 };
 
 ```
@@ -3848,7 +3848,7 @@ Modify paragraph 1 to handle splicers:
 
 ::: std
 
-[1]{.pnum} [A `using-enum-declarator` of the form `$splice-type-specifier$` is considered in a type-only context, and designates the same construct designated by the splicer. Any other]{.addu} [A]{.rm} `$using-enum-declarator$` names the set of declarations found by type-only lookup ([basic.lookup.general]) for the `$using-enum-declarator$` ([basic.lookup.unqual], [basic.lookup.qual]). The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
+[1]{.pnum} [A `$using-enum-declarator$` of the form `$splice-type-specifier$` is a type-only context, and designates the same construct designated by the splicer. Any other]{.addu} [A]{.rm} `$using-enum-declarator$` names the set of declarations found by type-only lookup ([basic.lookup.general]) for the `$using-enum-declarator$` ([basic.lookup.unqual], [basic.lookup.qual]). The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
 :::
 
 ### [namespace.alias]{.sref} Namespace alias {-}
@@ -3893,7 +3893,7 @@ Add the following prior to the first paragraph of [namespace.udir]{.sref}, and r
 
 ::: std
 ::: addu
-[0]{.pnum} The `$splice-specifier$`, if any, designates a namespace or `$namespace-alias$`. Neither the `$nested-name-specifier$` nor the `$splice-specifier$` shall be dependent.
+[0]{.pnum} The `$splice-specifier$`, if any, designates a namespace or `$namespace-alias$`. The `$nested-name-specifier$` and the `$splice-specifier$` shall not be dependent.
 :::
 
 [1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope.
@@ -3984,7 +3984,7 @@ A class declaration where the `$class-name$` in the `$class-head-name$` is a `$s
 
 ### [class.name] Class names {-}
 
-Cover `$splice-type-specifier$s in paragraph 5.
+Cover `$splice-type-specifier$`s in paragraph 5.
 
 ::: std
 [5]{.pnum} A `$simple-template-id$` is only a `$class-name$` if its `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} a class template.
@@ -4157,15 +4157,15 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 
 ::: example2
 ```diff
-  template<class T> void f();
-  template<int I> void f();
+  template<class T> void f(); @[\ \ // #1]{.addu}@
+  template<int I> void f(); @[\ \ \  // #2]{.addu}@
 
   void g() {
-    f<int()>();       // int() is a type-id: call the first f()
+    f<int()>();       // int() is a type-id: call@[s (#1)]{.addu}@ @[`the first f()`]{.rm}@
 
 +   constexpr int x = 42;
-+   f<[:^int:]>();    // splice-specifier: calls the first f()
-+   f<[:^x:]>();      // splice-specifier: calls the second f()
++   f<[:^int:]>();    // splice-specifier: calls (#1)
++   f<[:^x:]>();      // splice-specifier: calls (#2)
   }
 ```
 :::
@@ -4271,6 +4271,42 @@ Disallow `$splice-type-specifier$`s from appearing in `$typename-specifier$`s, s
 ::: std
 [3]{.pnum} The component names of a `$typename-specifier$` are its `$identifier$` (if any) and those of its `$nested-name-specifier$` and `$simple-template-id$` (if any). [The `$simple-template-id$` shall not contain a splicer.]{.addu}
 
+:::
+
+Add a parargraph after the definition of _type-only context_ to define what it means for a  splicer to appear in a type-only context.
+
+::: std
+[4]{.pnum} A qualified or unqualified name is said to be in a `$type-only context$` if it is the terminal name of
+
+* [#.#]{.pnum} a `$typename-specifier$`, `$type-requirement$`, `$nested-name-specifier$`, `$elaborated-type-specifier$`, `$class-or-decltype$`, or
+* [#.#]{.pnum} [...]
+  * [4.4.6]{.pnum} `$parameter-declaration$` of a (non-type) `$template-parameter$`.
+
+[A splicer ([expr.prim.id.splice]) is said to be in a _type-only context_ if a hypothetical qualified name appearing in the same position would be in a type-only context.]{.addu}
+
+::: example5
+```cpp
+template<class T> T::R f();
+template<class T> void f(T::R);   // ill-formed, no diagnostic required: attempt to
+                                  // declare a `void` variable template
+
+template<class T> struct S {
+  using Ptr = PtrTraits<T>::Ptr;  // OK, in a $defining-type-id$
+  @[`using Alias = [:^int];          // OK, in a $defining-type-id$`]{.addu}@
+  T::R f(T::P p) {                // OK, class scope
+    return static_cast<T::R>(p);  // OK, $type-id$ of a `static_cast`
+  }
+  auto g() -> S<T*>::Ptr;         // OK, $trailing-return-type$
+  @[`auto h() -> [:^S:]<T*>;         // OK, $trailing-return-type$`]{.addu}@
+};
+template<typename T> void f() {
+  void (*pf)(T::X);               // variable `pf` of type `void*` initialized
+                                  // with `T::X`
+  void g(T::X);                   // error: `T::X` at block scope does not denote
+                                  // a type (attempt to declare a `void` variable)
+}
+```
+:::
 :::
 
 Add a new case to the list of IFNDR conditions related to template instantiation.
