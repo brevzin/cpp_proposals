@@ -3218,15 +3218,19 @@ void dependent() {
   template [:TVar:]<0> *var;         // OK, multiplication of 't_var<0> * var'
   template [:TCls:]<0> *var;         // error: cannot splice type as expression
   typename [:TCls:]<0> *b;           // OK, declaration of 't_cls<0> *b'
-  template typename [:TCls:]<0> *c;  // OK
+  typename template [:TCls:]<0> *c;  // OK
 
-  template [:Concept:] auto *d = 0;  // OK, deduced placeholder type
+  template [:Concept:] auto d = 0;   // OK, deduced placeholder type
+
+  [:Cls:]::k = 1;                    // OK
+  typename [:TCls:]<1>::type var;    // OK, 'typename' binds to 'type'.
 };
 
 void non_dependent() {
   dependent<^var, ^cls, ^t_var, ^t_cls, ^always_true>();
 
-  template [:^t_cls:]<0> *var;  // OK, non-dependent context
+  template [:^t_cls:]<0> *var1;  // OK, non-dependent context
+  [:^t_cls:]<0> *var2;           // error: interpreted as multiplication.
 };
 
 ```

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-15" />
+  <meta name="dcterms.date" content="2024-11-19" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-15</td>
+    <td>2024-11-19</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -5417,16 +5417,20 @@ preceded by
 <span id="cb106-12"><a href="#cb106-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>TVar<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var;         <span class="co">// OK, multiplication of &#39;t_var&lt;0&gt; * var&#39;</span></span>
 <span id="cb106-13"><a href="#cb106-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var;         <span class="co">// error: cannot splice type as expression</span></span>
 <span id="cb106-14"><a href="#cb106-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>b;           <span class="co">// OK, declaration of &#39;t_cls&lt;0&gt; *b&#39;</span></span>
-<span id="cb106-15"><a href="#cb106-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>c;  <span class="co">// OK</span></span>
+<span id="cb106-15"><a href="#cb106-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="kw">template</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>c;  <span class="co">// OK</span></span>
 <span id="cb106-16"><a href="#cb106-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb106-17"><a href="#cb106-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>Concept<span class="op">:]</span> <span class="kw">auto</span> <span class="op">*</span>d <span class="op">=</span> <span class="dv">0</span>;  <span class="co">// OK, deduced placeholder type</span></span>
-<span id="cb106-18"><a href="#cb106-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb106-19"><a href="#cb106-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb106-20"><a href="#cb106-20" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> non_dependent<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb106-21"><a href="#cb106-21" aria-hidden="true" tabindex="-1"></a>  dependent<span class="op">&lt;^</span>var, <span class="op">^</span>cls, <span class="op">^</span>t_var, <span class="op">^</span>t_cls, <span class="op">^</span>always_true<span class="op">&gt;()</span>;</span>
+<span id="cb106-17"><a href="#cb106-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>Concept<span class="op">:]</span> <span class="kw">auto</span> d <span class="op">=</span> <span class="dv">0</span>;   <span class="co">// OK, deduced placeholder type</span></span>
+<span id="cb106-18"><a href="#cb106-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb106-19"><a href="#cb106-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">[:</span>Cls<span class="op">:]::</span>k <span class="op">=</span> <span class="dv">1</span>;                    <span class="co">// OK</span></span>
+<span id="cb106-20"><a href="#cb106-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">1</span><span class="op">&gt;::</span>type var;    <span class="co">// OK, &#39;typename&#39; binds to &#39;type&#39;.</span></span>
+<span id="cb106-21"><a href="#cb106-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb106-22"><a href="#cb106-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb106-23"><a href="#cb106-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:^</span>t_cls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var;  <span class="co">// OK, non-dependent context</span></span>
-<span id="cb106-24"><a href="#cb106-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb106-23"><a href="#cb106-23" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> non_dependent<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb106-24"><a href="#cb106-24" aria-hidden="true" tabindex="-1"></a>  dependent<span class="op">&lt;^</span>var, <span class="op">^</span>cls, <span class="op">^</span>t_var, <span class="op">^</span>t_cls, <span class="op">^</span>always_true<span class="op">&gt;()</span>;</span>
+<span id="cb106-25"><a href="#cb106-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb106-26"><a href="#cb106-26" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:^</span>t_cls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var1;  <span class="co">// OK, non-dependent context</span></span>
+<span id="cb106-27"><a href="#cb106-27" aria-hidden="true" tabindex="-1"></a>  <span class="op">[:^</span>t_cls<span class="op">:]&lt;</span><span class="dv">0</span><span class="op">&gt;</span> <span class="op">*</span>var2;           <span class="co">// error: interpreted as multiplication.</span></span>
+<span id="cb106-28"><a href="#cb106-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
