@@ -5382,6 +5382,8 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 consteval vector<info> members_of(info r);
 ```
 
+FIXME: anonymous union members - we should return the union, not the union member.
+
 [#]{.pnum} *Constant When*: `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
 [#]{.pnum} A member of a class or namespace `$E$` is _members-of-representable_ if it is either
