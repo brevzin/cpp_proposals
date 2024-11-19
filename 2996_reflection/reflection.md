@@ -4078,7 +4078,7 @@ Extend `$simple-template-id$` and `$template-argument$` to leverage splicers.
       $simple-template-id$
       $operator-function-id < $template-argument-list$@~_opt_~@ >
       $literal-operator-id < $template-argument-list$@~_opt_~@ >
-  
+
   $template-name$:
       identifier
 
@@ -4439,7 +4439,7 @@ For convenience, we're going to add a new library element to [structure.specific
 * [#.2]{.pnum} *Mandates*: the conditions that, if not met, render the program ill-formed. [...]
 
 ::: addu
-* [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a core constant expression ([expr.const])
+* [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a core constant expression ([expr.const]).
 :::
 
 :::
@@ -4556,10 +4556,10 @@ namespace std::meta {
   consteval bool has_identifier(info r);
 
   consteval string_view identifier_of(info r);
-  consteval string_view u8identifier_of(info r);
+  consteval u8string_view u8identifier_of(info r);
 
   consteval string_view display_string_of(info r);
-  consteval string_view u8display_string_of(info r);
+  consteval u8string_view u8display_string_of(info r);
 
   consteval source_location source_location_of(info r);
 
@@ -4662,9 +4662,9 @@ namespace std::meta {
   consteval vector<info> enumerators_of(info type_enum);
 
   consteval vector<info> get_public_members(info type);
+  consteval vector<info> get_public_bases(info type);
   consteval vector<info> get_public_static_data_members(info type);
   consteval vector<info> get_public_nonstatic_data_members(info type);
-  consteval vector<info> get_public_bases(info type);
 
   // [meta.reflection.layout], reflection layout queries
   struct member_offset {
@@ -4886,7 +4886,7 @@ namespace std::meta {
 
 [1]{.pnum} Each function, and each instantiation of each function template, specified in this header is a designated addressable function ([namespace.std]).
 
-[2]{.pnum} The behavior of any function specified by this section is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
+[2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
 
 [Values of type `std::meta::info` may represent implementation-defined constructs ([basic.fundamental]{.sref}).]{.note}
 :::
@@ -4985,15 +4985,15 @@ consteval bool has_identifier(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents an unnamed entity, then `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function.
-* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template.
-* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then `true` when the `$typedef-name$` is an identifier.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then `true` when either `$C$` has a typdef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization.
-* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or `$namespace-alias$`, then `true`.
-* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise if `r` represents a description of a declaration of a non-static data member, then letting `$o$` be a `data_member_options` value such that `data_member_spec(type_of(r), $o$) == $r$`, then `true` if `$o$.name` contains a value.
+* [#.#]{.pnum} If `r` represents a class type `$C$`, then `true` when either `$C$` has a typedef name for linkage purposes ([dcl.typedef]) or the `$class-name$` introduced by the declaration of `$C$` is an identifier. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents an unnamed entity, then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a `$typedef-name$`, then `true` when the `$typedef-name$` is an identifier. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `true` if `r` does not represent a variable template specialization. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or `$namespace-alias$`, then `true`. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `true` if `has_identifier(type_of(r))`. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise if `r` represents a description of a declaration of a non-static data member, then letting `$o$` be a `data_member_options` value such that `data_member_spec(type_of(r), $o$) == $r$`, then `true` if `$o$.name` contains a value. Otherwise, `false`.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
@@ -5010,7 +5010,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, `$typedef-name$`, or `$namespace-alias$`, then the identifier introduced by the declaration of what is represented by `r`.
-* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then the identifier introduced by the declaration of the type of the base class.
+* [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `identifier_of(type_of(r))` or `u8identifier_of(type_of(r))`, respectively.
 * [#.#]{.pnum} Otherwise (if `r` represents a description of a declaration of a non-static data member), then letting `$o$` be a `data_member_options` value such that `data_member_spec(type_of(r), $o$) == $r$`, then the `string` or `u8string` contents of `$o$.name.$contents$` encoded with `$E$`.
 
 ```cpp
@@ -5066,7 +5066,7 @@ consteval bool is_deleted(info r);
 consteval bool is_defaulted(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a function that is defined as deleted ([dcl.fct.def.delete]) or defined as defaulted ([dcl.fct.def.default]), respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is a deleted function ([dcl.fct.def.delete]) or defined as defaulted ([dcl.fct.def.default]), respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_user_provided(info r);
@@ -5085,6 +5085,8 @@ consteval bool is_explicit(info r);
 ```cpp
 consteval bool is_noexcept(info r);
 ```
+
+FIXME: this needs to talk about potentially throwing, https://eel.is/c++draft/except.spec#1.sentence-2
 
 [#]{.pnum} *Returns*: `true` if `r` represents a `noexcept` function type or a function or member function that is declared `noexcept`. Otherwise, `false`. [If `r` represents a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
 
@@ -5152,7 +5154,7 @@ consteval bool has_complete_definition(info r);
 [#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition,
 the specialization is instantiated.
 
-[#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type `$E$`, such that no entities not already declared may be introduced within the scope of `$E$`. Otherwise `false`.
+[#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type, such that no entities not already declared may be introduced within the scope of the entity represented by `r`. Otherwise `false`.
 
 ```cpp
 consteval bool is_namespace(info r);
@@ -5174,7 +5176,7 @@ consteval bool is_type(info r);
 consteval bool is_type_alias(info r);
 consteval bool is_namespace_alias(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$` or `$namespace-alias$`, respectively [An instantiation of an alias template is a `$typedef-name$`]{.note}. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a `$typedef-name$` or `$namespace-alias$`, respectively [A specialization of an alias template is a `$typedef-name$`]{.note}. Otherwise, `false`.
 
 ```cpp
 consteval bool is_function(info r);
@@ -5201,7 +5203,7 @@ consteval bool is_move_assignment(info r);
 consteval bool is_destructor(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a function that is a special member function, a constructor, a default constructor, a copy constructor, a move constructor, an assignment operator, a copy assignment operator, a move assignment operator, or a prospective destructor, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is a special member function ([special]), a constructor, a default constructor, a copy constructor, a move constructor, an assignment operator, a copy assignment operator, a move assignment operator, or a destructor, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_template(info r);
@@ -5323,13 +5325,15 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or `$namespace-alias$` (other than `::`), `$typedef-name$`, or base class specifier.
 
+FIXME: "target scope" isn't right for `struct S { union { int i; }}`
+
 [#]{.pnum} *Returns*: A reflection of the class, function, or namespace that is the target scope ([basic.scope.scope]) of the first declaration of what is represented by `r`.
 
 ```cpp
 consteval info dealias(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` represents a `$typedef-name$` or `$namespace-alias$` _A_, then a reflection representing the entity named by _A_. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` represents a `$typedef-name$` or `$namespace-alias$`, then a reflection representing the entity named by what `r` represents. Otherwise, `r`.
 
 [#]{.pnum}
 
@@ -5349,16 +5353,18 @@ consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Constant When*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A reflection of the template of `r`, and the reflections of the template arguments of the specialization represented by `r`, respectively.
+[#]{.pnum} *Returns*: A reflection of the primary template of `r`, and the reflections of the template arguments of the specialization represented by `r`, respectively.
 
 [#]{.pnum}
 
 ::: example
 ```
 template <class T, class U=T> struct Pair { };
+template <class T> struct Pair<char, T> { };
 template <class T> using PairPtr = Pair<T*>;
 
 static_assert(template_of(^Pair<int>) == ^Pair);
+static_assert(template_of(^Pair<char, char>) == ^Pair);
 static_assert(template_arguments_of(^Pair<int>).size() == 2);
 
 static_assert(template_of(^PairPtr<int>) == ^PairPtr);
@@ -5376,7 +5382,7 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 consteval vector<info> members_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either a namespace or a class type that is complete from some point in the evaluation context.
+[#]{.pnum} *Constant When*: `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
 [#]{.pnum} A member of a class or namespace `$E$` is _members-of-representable_ if it is either
 
@@ -5384,18 +5390,18 @@ consteval vector<info> members_of(info r);
 * a `$typedef-name$`,
 * a primary class template, function template, primary variable template, alias template, or concept,
 * a variable or reference,
-* a function whose constraints (if any) are satisfied,
-* a non-static data member,
+* a function whose constraints (if any) are satisfied unless it is a prospective destructor that is not a selected destructor ([class.dtor]),
+* a non-static data member or unnamed bit-field,
 * a namespace, or
 * a `$namespace-alias$`.
 
-[Counterexamples of representable members include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
+[Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
 
-[#]{.pnum} A member `$M$` of a class or namespace is _members-of-visible_ from a point `$P$` if there exists a declaration `$D$` of `$M$` that is reachable from `$P$`, and either `$M$` is not TU-local or `$D$` is declared in the translation unit containing `$P$`.
+[#]{.pnum} A member `$M$` of a class or namespace is _members-of-reachable_ from a point `$P$` if there exists a declaration `$D$` of `$M$` that is reachable from `$P$`, and either `$M$` is not TU-local or `$D$` is declared in the translation unit containing `$P$`.
 
 [#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a definition reachable from the evaluation context, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-visible from a point in the evaluation context ([expr.const]).
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members.]{.note}
@@ -5450,6 +5456,16 @@ consteval vector<info> get_public_members(info type);
 [#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
+consteval vector<info> get_public_bases(info type);
+```
+
+[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+
+[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(type)` such that `is_public(e)` is `true`, in order.
+
+```cpp
 consteval vector<info> get_public_static_data_members(info type);
 ```
 
@@ -5469,15 +5485,6 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 
 [#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
-```cpp
-consteval vector<info> get_public_bases(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(type)` such that `is_public(e)` is `true`, in order.
 :::
 :::
 
