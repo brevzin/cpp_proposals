@@ -4822,6 +4822,7 @@ namespace std::meta {
   // [meta.reflection.rel], type relations
   consteval bool is_same_type(info type1, info type2);
   consteval bool is_base_of_type(info type_base, info type_derived);
+  consteval bool is_virtual_base_of_type(info type_base, info type_derived);
   consteval bool is_convertible_type(info type_src, info type_dst);
   consteval bool is_nothrow_convertible_type(info type_src, info type_dst);
   consteval bool is_layout_compatible_type(info type1, info type2);
@@ -5983,6 +5984,7 @@ consteval size_t extent(info type, unsigned i = 0);
 ```cpp
 consteval bool is_same_type(info type1, info type2);
 consteval bool is_base_of_type(info type_base, info type_derived);
+consteval bool is_virtual_base_of_type(info type_base, info type_derived);
 consteval bool is_convertible_type(info type_src, info type_dst);
 consteval bool is_nothrow_convertible_type(info type_src, info type_dst);
 consteval bool is_layout_compatible_type(info type1, info type2);
