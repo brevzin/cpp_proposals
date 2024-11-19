@@ -9091,8 +9091,6 @@ Reflection member queries<a href="#meta.reflection.member.queries-reflection-mem
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb188"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> members_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p>FIXME: anonymous union members - we should return the union, not the
-union member.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_326" id="pnum_326">1</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">r</code> is a
 reflection representing either a class type that is complete from some
@@ -9110,7 +9108,9 @@ template, alias template, or concept,</li>
 <li>a function whose constraints (if any) are satisfied unless it is a
 prospective destructor that is not a selected destructor
 ([class.dtor]),</li>
-<li>a non-static data member or unnamed bit-field,</li>
+<li>a non-static data member or unnamed bit-field, other than members of
+an anonymous union that is directly or indirectly
+members-of-representable,</li>
 <li>a namespace, or</li>
 <li>a <code class="sourceCode cpp"><em>namespace-alias</em></code>.</li>
 </ul>

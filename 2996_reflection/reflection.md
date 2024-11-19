@@ -5381,8 +5381,6 @@ static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
 consteval vector<info> members_of(info r);
 ```
 
-FIXME: anonymous union members - we should return the union, not the union member.
-
 [#]{.pnum} *Constant When*: `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
 [#]{.pnum} A member of a class or namespace `$E$` is _members-of-representable_ if it is either
@@ -5392,7 +5390,7 @@ FIXME: anonymous union members - we should return the union, not the union membe
 * a primary class template, function template, primary variable template, alias template, or concept,
 * a variable or reference,
 * a function whose constraints (if any) are satisfied unless it is a prospective destructor that is not a selected destructor ([class.dtor]),
-* a non-static data member or unnamed bit-field,
+* a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
 * a namespace, or
 * a `$namespace-alias$`.
 
