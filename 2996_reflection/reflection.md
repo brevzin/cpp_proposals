@@ -5086,9 +5086,7 @@ consteval bool is_explicit(info r);
 consteval bool is_noexcept(info r);
 ```
 
-FIXME: this needs to talk about potentially throwing, https://eel.is/c++draft/except.spec#1.sentence-2
-
-[#]{.pnum} *Returns*: `true` if `r` represents a `noexcept` function type or a function or member function that is declared `noexcept`. Otherwise, `false`. [If `r` represents a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
+[#]{.pnum} *Returns*: `true` if `r` represents a `noexcept` function type or a function or member function with a non-throwing exception specification ([except.spec]). Otherwise, `false`. [If `r` represents a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
 
 ```cpp
 consteval bool is_bit_field(info r);
