@@ -5151,7 +5151,7 @@ consteval bool is_complete_type(info r);
 consteval bool has_complete_definition(info r);
 ```
 
-[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition,
+[#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a specialization of a templated class with a reachable definition,
 the specialization is instantiated [If `r` represents a variable template specialization or a function template specialization, the specialization is not instantiated]{.note}.
 
 [#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type, such that no entities not already declared may be introduced within the scope of the entity represented by `r`. Otherwise `false`.
@@ -5410,7 +5410,7 @@ consteval vector<info> bases_of(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class specifiers, if any, of `C`.
 The base class specifiers are indexed in the order in which they appear in the *base-specifier-list* of `C`.
@@ -5421,7 +5421,7 @@ consteval vector<info> static_data_members_of(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_variable(e)` is `true`, in order.
 
@@ -5431,7 +5431,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_nonstatic_data_member(e)` is `true`, in order.
 
@@ -5449,7 +5449,7 @@ consteval vector<info> get_public_members(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_public(e)` is `true`, in order.
 
@@ -5459,7 +5459,7 @@ consteval vector<info> get_public_bases(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `bases_of(type)` such that `is_public(e)` is `true`, in order.
 
@@ -5469,7 +5469,7 @@ consteval vector<info> get_public_static_data_members(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `static_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
@@ -5479,7 +5479,7 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(type)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
@@ -5512,7 +5512,7 @@ consteval size_t size_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(r)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `dealias(r)` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
@@ -5524,7 +5524,7 @@ consteval size_t alignment_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, base class specifier, or description of a declaration of a non-static data member. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(r)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*:
 
@@ -5539,7 +5539,7 @@ consteval size_t bit_size_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, base class specifier, or description of a declaration of a non-static data member. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Effects*: If `dealias(r)` represents a specialization of a templated class with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field, an unnamed bit-field, or a description of a declaration of such a bit-field data member, then the width of the bit-field. Otherwise, `CHAR_BIT * size_of(r)`.
 :::
