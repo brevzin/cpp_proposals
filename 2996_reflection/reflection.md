@@ -4442,6 +4442,7 @@ For convenience, we're going to add a new library element to [structure.specific
 * [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a core constant expression ([expr.const]).
 :::
 
+[4]{.pnum} [...] Next, the semantics of the code sequence are determined by the *Constraints*, *Mandates*, [*Constant When*]{.addu} *Preconditions*, *Effects*, *Synchronization*, *Postconditions*, *Returns*, *Throws*, *Complexity*, *Remarks*, and *Error* conditions specified for the function invocations contained in the code sequence. [...]
 :::
 
 ### [namespace.std]{.sref} Namespace std {-}
@@ -5151,7 +5152,7 @@ consteval bool has_complete_definition(info r);
 ```
 
 [#]{.pnum} *Effects*: If `is_type(r)` is `true` and `dealias(r)` represents a class template specialization with a reachable definition,
-the specialization is instantiated.
+the specialization is instantiated [If `r` represents a variable template specialization or a function template specialization, the specialization is not instantiated]{.note}.
 
 [#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type, such that no entities not already declared may be introduced within the scope of the entity represented by `r`. Otherwise `false`.
 
@@ -5324,7 +5325,7 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or `$namespace-alias$` (other than `::`), `$typedef-name$`, or base class specifier.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing that anonymous union. Otherwise, a reflection of the class, function, or namespace that is the target scope ([basic.scope.scope]) of the first declaration of what is represented by `r`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union. Otherwise, a reflection of the class, function, or namespace that is the target scope ([basic.scope.scope]) of the first declaration of what is represented by `r`.
 
 ```cpp
 consteval info dealias(info r);
@@ -5401,7 +5402,7 @@ consteval vector<info> members_of(info r);
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from a point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
-[Base classes are not members.]{.note}
+[Base classes are not members. Implicitly-declared special members appear after any user-declared members.]{.note}
 
 ```cpp
 consteval vector<info> bases_of(info type);
@@ -5422,7 +5423,7 @@ consteval vector<info> static_data_members_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct static data members of the type represented by `dealias(type)`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_variable(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
@@ -5432,7 +5433,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct non-static data members of the type represented by `dealias(type)`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_nonstatic_data_member(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
@@ -5450,7 +5451,7 @@ consteval vector<info> get_public_members(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `members_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_bases(info type);
@@ -5460,7 +5461,7 @@ consteval vector<info> get_public_bases(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `bases_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_static_data_members(info type);
@@ -5470,7 +5471,7 @@ consteval vector<info> get_public_static_data_members(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `static_data_members_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `static_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
 ```cpp
 consteval vector<info> get_public_nonstatic_data_members(info type);
@@ -5480,7 +5481,7 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 
 [#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
 
 :::
 :::
@@ -5499,12 +5500,9 @@ constexpr ptrdiff_t member_offset::total_bits() const;
 consteval member_offset offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a non-static data member, unnamed bit-field, or base class specifier.
+[#]{.pnum} *Constant When*: `r` represents a non-static data member, unnamed bit-field, or base class specifier other than a virtual base class specifier of an abstract class.
 
-[#]{.pnum} Let `$V$` be a constant defined as follows:
-
-- [#.#]{.pnum} If `r` represents a virtual base class specifier of an abstract class, then `$V$` is an implementation-defined value.
-- [#.#]{.pnum} Otherwise, `$V$` is the offset in bits from the beginning of a complete object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
+[#]{.pnum} Let `$V$` be the offset in bits from the beginning of a complete object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
 [#]{.pnum} *Returns*: `{$V$ / CHAR_BIT, $V$ % CHAR_BIT}`.
 
@@ -5512,9 +5510,11 @@ consteval member_offset offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `r` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, or a description of a declaration of such a data member, then `sizeof($T$)`. Otherwise, if `dealias(r)` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
 
 [The subobject corresponding to a non-static data member of reference type has the same size and alignment as the corresponding pointer type.]{.note}
 
@@ -5522,11 +5522,13 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, base class specifier, or description of a declaration of a non-static data member. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+
+[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents a type, variable, or object, then the alignment requirement of the entity or object.
+* [#.#]{.pnum} If `dealias(r)` represents a type, variable, or object, then the alignment requirement of the entity or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a base class specifier, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
 * [#.#]{.pnum} Otherwise (when `r` represents a description of a declaration of a non-static data member), then the `$alignment-specifier$` of any data member declared having the properties described by `r`.
@@ -5535,9 +5537,11 @@ consteval size_t alignment_of(info r);
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection of a type, object, value, variable of non-reference type, non-static data member, base class specifier, or description of a declaration of a non-static data member. If `r` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, base class specifier, or description of a declaration of a non-static data member. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field, or a description of a declaration of such a bit-field data member, then the width of the bit-field. Otherwise, `CHAR_BIT * size_of(r)`.
+[#]{.pnum} *Effects*: If `dealias(r)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+
+[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field, an unnamed bit-field, or a description of a declaration of such a bit-field data member, then the width of the bit-field. Otherwise, `CHAR_BIT * size_of(r)`.
 :::
 :::
 
