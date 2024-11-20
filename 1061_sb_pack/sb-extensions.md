@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: P1061R9
+document: P1061R10
 date: today
 audience: CWG
 author:
@@ -12,6 +12,8 @@ toc: true
 ---
 
 # Revision History
+
+R10 removes the ability to use packs outside of templates.
 
 R9 has minor wording changes and updates the [implementation experience](#implementation-experience) section.
 
@@ -344,212 +346,19 @@ way, the pack `elems` needs an initial declaration. So any machinery that
 implementations need to track packs doesn't need to be enabled everywhere - only
 when a pack declaration has been seen.
 
+## Removing Packs outside of Templates
+
+The [@P1061R9] design relied upon introducing an _implicit template region_ when a structured binding pack was declared, which implicitly turns the rest of your function into a function template. That complexity, coupled with persistent opposition due to implementation complexity, led to Evolution rejecting [@P1061R9] at the Wrocław meeting.
+
+Since R10, this paper removes support for packs outside of templates, which removes the implementor objection and the design complexity. All of the complex examples from the original approach have been removed from this paper for brevity.
+
 ## Implementation Experience
 
-Jason Rice has implemented this in a
+Jason Rice has implemented the [@P1061R9] design in a
 [clang](https://github.com/ricejasonf/llvm-project/commits/ricejasonf/p1061). As
 far as we've been able to ascertain, it works great. It was initially done early in the process, before the concept of "implicit template region" was introduced in the wording — when he was updating the implementation to account for the new rules and to make sure that all the examples in the paper compiled, he noted that "Honestly, the implicit template region vastly simplified things, and much code was deleted."
 
-It is also [available on Compiler Explorer](https://godbolt.org/z/Tnz4e1dY9), including [the most complex example](https://godbolt.org/z/6ebbqb1Kh) in the paper.
-
-## Handling non-dependent packs in the wording
-
-The strategy the wording takes to handle is to introduce the concept of an "implicit template region." A structured binding pack declaration introduces an implicit template region (if it's not already a templated entity), so that all entities declared within that scope are templated. This is important for a bunch of examples that we'll shortly see. That implicit template region is instantiated at the end of the region.
-
-Example from Richard Smith:
-
-::: std
-```cpp
-template<int> struct X { using type = int; };
-template<typename T> void f() {
-  struct Y { int a, b; };
-  auto [...v] = Y();
-  X<sizeof...(v)>::type x; // need typename or no?
-}
-```
-:::
-
-Is `X<sizeof...(v)>` a dependent type or is the pack `v` expanded eagerly because we already know its size? In this case we say a `sizeof...(e)` expression is _value-dependent_ unless its referring to a structured binding pack whose initializer is not dependent. `Y()` isn't dependent, so `sizeof...(v)` isn't value dependent, so we don't need `typename` here.
-
-That rule likewise handles this case:
-
-::: std
-```cpp
-struct Z { int a, b; };
-template <typename T> void g() {
-  auto [...v] = Z();
-  X<sizeof...(v)>::type x; // typename unnecessary
-}
-```
-:::
-
-### The Issaquah Example
-
-Here is an interesting example, courtesy of Christof Meerwald:
-
-::: std
-```cpp
-struct C
-{
-  int i;
-  long l;
-};
-
-template<typename T>
-struct D {
-  template<int J>
-  static int f(int);
-};
-
-template<>
-struct D<long> {
-  static int f;
-};
-
-auto [ ... v ] = C{ 1, 0 };
-auto x = ( ... + (D<decltype(v)>::f<1>(2)) );
-```
-:::
-
-This example demonstrates the need for having `typename` and/or `template` to disambiguate, even if we're not in a template context. `v` still needs to behave like a regular function parameter pack in this context - it still needs to be depenent.
-
-### The Varna Example
-
-Here is an interesting example, also courtesy of Christof Meerwald:
-
-::: std
-```cpp
-struct C { int j; long l; };
-
-int g() {
-    auto [ ... i ] = C{ 1, 2L };
-    return ( [c = i] () {
-        if constexpr (sizeof(c) > sizeof(long)) {
-            static_assert(false); // error?
-        }
-
-        struct C {
-            // error, not templated?
-            int f() requires (sizeof(c) == sizeof(int)) { return 1; }
-
-            // error, not templated?
-            int f() requires (sizeof(c) != sizeof(int)) { return 2; }
-        };
-        return C{}.f();
-    } () + ...  + 0 );
-}
-
-// error?
-int v = g();
-```
-:::
-
-What happens here? Core's intent is that this example is valid - the first `static_assert` declaration does not fire, this declares two different types `C`, both of which are valid, and `v` is initialized with the value `3`.
-
-Here's an addendum from Jason Merrill, Jens Maurer, and John Spicer, slightly altered and somewhat gratuitously formatted hoping that it's possible to understand:
-
-::: std
-```cpp
-struct C { int j; long ; };
-
-int g() {
-    auto [ ... i ] = C{ 1, 2L };
-
-    if constexpr (sizeof...(i) == 0) {
-        static_assert(false); // #1
-    }
-
-    return (
-      // E1
-      []{
-          if constexpr (sizeof(int) == 0) {
-              static_assert(false); // #2
-          }
-          return 1;
-      }()
-      *
-      // E2
-      [c=i]{
-          if constexpr (sizeof(c) > sizeof(long)) {
-              static_assert(false); // #3
-          }
-
-          if constexpr (sizeof(int) == 0) {
-              static_assert(false); // #4
-          }
-
-          return 2;
-      }()
-    + ... + 0)
-}
-```
-:::
-
-The expression `E1` (that first immediately-invoked lambda) is completely non-dependent, no template packs, no structured binding packs, no packs of any kind. The expression `E2` is an abridged version of the previous example's lambda - it does depend on the structured binding pack `i`.
-
-The intent is that the `static_assert` declarations in `#1` and `#3` do not fire (since `i` is not an empty pack and neither `int` nor `long` has larger size than `long`), and this matches user expectation. The `static_assert` in `#2`, if written in a regular function, would immediately fire - since it's not guarded by any kind of template. So the questions are:
-
-1. Does `#2` still fire in this context, or does it become attached to the pack somehow?
-2. Does `#4` still fire in this context? It's still exactly as non-dependent as it was before, but now it's in a context that's at least somewhat dependent - since we're in a pack expansion over `...i`
-
-This brings up the question of what the boundary of dependence is.
-
-### More Templates
-
-The approach suggested by John Spicer is as follows. Consider this example (let `s@~i~@` just be some statements):
-
-::: std
-```cpp
-void foo() {
-    auto [...xs] = C();
-    s@~0~@;
-    s@~1~@;
-    s@~2~@;
-}
-```
-:::
-
-Those statements get treated roughly as if they appeared in this context:
-
-::: std
-```cpp
-void foo() {
-    auto [...xs] = C();
-    [&](auto... xs){
-        s@~0~@;
-        s@~1~@;
-        s@~2~@;
-    }(xs...);
-}
-```
-:::
-
-Of course, not exactly like that (we're not literally introducing a generic lambda, there's no added function scope, all of these statements are directly in `foo` so that `return`s work, etc.). But this is the model: a structured binding pack, if not already a templated entity, introduces an _implicit template region_.
-
-Importantly, it helps answer all of the questions in the previous examples: do the `static_assert`s fire in the [Varna example addendum](#the-varna-example)? No, none of them fire.
-
-## Namespace-scope packs
-
-In addition to non-dependent packs, this paper also seems like it would offer the ability to declare a pack at _namespace_ scope:
-
-::: bq
-```cpp
-struct Point { int x, y; };
-auto [... parts] = Point{1, 2};
-```
-:::
-
-Structured bindings in namespace scope are a little odd to begin with, since they currently cannot be declared `inline`. A structured binding pack at namespace scope adds that much more complexity.
-
-Now, EWG originally [voted to remove this restriction](https://github.com/cplusplus/papers/issues/294#issuecomment-1234578812) in a telecon - on the basis that it seemed like an artificial restriction and that the rules for how to use this feature should be uniform across all uses of structured bindings. However, during Core wording review of this paper in the Tokyo meeting, a lot of issues with this approach surfaced.
-
-Introducing a structured binding pack into a function makes the region of that function into a template. This has consequences, but those consequences are localized to _just_ the part of _that_ function that follows the structured binding declaration.
-
-Introducing a structured binding pack at namespace scope makes _your entire program_ into a template. With enormous downstream consequences. Because unlike a function where we have a clear end to the region (the end of the block scope), even closing the namespace isn't sufficient because the namespace could still be reopened again later! Code that you have in one header could *change lookup rules* if it is included after another header that happened to add a namespace-scope pack. Even if your header never referenced that pack. If you had any non-depenent `if constexpr` conditions, they suddenly become dependent, and those bodies suddenly can become discarded.
-
-Perhaps there is a way to divine some way to word this feature such that this doesn't happen, but that seems to be a very large amount of work necessary that far exceeds the potential utility thereof. It is not clear if anybody wants this, and it certainly does not seem worth delaying this paper further to attempt to add support for it.
-
-Thus, this paper proposes that structured binding packs be limited to block scope. This decision was confirmed with EWG at the [Tokyo meeting](https://github.com/cplusplus/papers/issues/294#issuecomment-2014848854).
+It is also [available on Compiler Explorer](https://godbolt.org/z/Tnz4e1dY9), including [the most complex example](https://godbolt.org/z/6ebbqb1Kh) in the the original paper.
 
 # Wording
 
@@ -584,38 +393,7 @@ Add a new grammar option for *simple-declaration* to [dcl.pre]{.sref} (note that
 Change [dcl.pre]{.sref}/6:
 
 ::: std
-[6]{.pnum} A *simple-declaration* with a `$structured-binding-declaration$` is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall inhabit a block scope.]{.addu}
-:::
-
-Extend [dcl.fct]{.sref}/5:
-
-::: std
-[5]{.pnum} The type of a function is determined using the following rules. The type of each parameter (including function parameter packs), is determined from its own _parameter-declaration_ ([dcl.decl]). After determining the type of each parameter, any parameter of type “array of T” or of function type T is adjusted to be “pointer to T”. After producing the list of parameter types, any top-level cv-qualifiers modifying a parameter type are deleted when forming the function type. The resulting list of transformed parameter types and the presence or absence of the ellipsis or a function parameter pack is the function's parameter-type-list.
-
-[Note 3: This transformation does not affect the types of the parameters. For example, `int(*)(const int p, decltype(p)*)` and `int(*)(int, const int*)` are identical types. — end note]
-
-::: example
-```diff
-  void f(char*);                  // #1
-  void f(char[]) {}               // defines #1
-  void f(const char*) {}          // OK, another overload
-  void f(char *const) {}          // error: redefines #1
-
-  void g(char(*)[2]);             // #2
-  void g(char[3][2]) {}           // defines #2
-  void g(char[3][3]) {}           // OK, another overload
-
-  void h(int x(const int));       // #3
-  void h(int (*)(int)) {}         // defines #3
-
-+ void k(int, int);               // #4
-+ void m() {
-+   struct C { int i, j; };
-+   auto [... elems] = C{};
-+   void k(decltype(elems)...);   // redeclares #4
-+ }
-```
-:::
+[6]{.pnum} A *simple-declaration* with a `$structured-binding-declaration$` is called a structured binding declaration ([dcl.struct.bind]). Each *decl-specifier* in the *decl-specifier-seq* shall be `static`, `thread_local`, `auto` ([dcl.spec.auto]), or a *cv*-qualifier. [The declaration shall contain at most one *sb-identifier* whose *identifier* is preceded by an ellipsis. If the declaration contains any such *sb-identifier*, it shall declare a templated entity ([temp.pre]).]{.addu}
 :::
 
 Change [dcl.struct.bind]{.sref} paragraph 1:
@@ -646,11 +424,14 @@ structured binding pack, then SB~_i_~ denotes v~_i_~. - _end note_ ]
 ```
 struct C { int x, y, z; };
 
-auto [a, b, c] = C(); // OK, SB@~0~@ is a, SB@~1~@ is b, and SB@~2~@ is c
-auto [d, ...e] = C(); // OK, SB@~0~@ is d, the pack e (v@~1~@) contains two structured bindings: SB@~1~@ and SB@~2~@
-auto [...f, g] = C(); // OK, the pack f (v@~0~@) contains two structured bindings: SB@~0~@ and SB@~1~@, and SB@~2~@ is g
-auto [h, i, j, ...k] = C(); // OK, the pack k is empty
-auto [l, m, n, o, ...p] = C(); // error: structured binding size is too small
+template <class T>
+void now_i_know_my() {
+  auto [a, b, c] = C(); // OK, SB@~0~@ is a, SB@~1~@ is b, and SB@~2~@ is c
+  auto [d, ...e] = C(); // OK, SB@~0~@ is d, the pack e (v@~1~@) contains two structured bindings: SB@~1~@ and SB@~2~@
+  auto [...f, g] = C(); // OK, the pack f (v@~0~@) contains two structured bindings: SB@~0~@ and SB@~1~@, and SB@~2~@ is g
+  auto [h, i, j, ...k] = C(); // OK, the pack k is empty
+  auto [l, m, n, o, ...p] = C(); // error: structured binding size is too small
+}
 ```
 :::
 :::
@@ -664,14 +445,22 @@ extend the example:
 
 ::: example
 ```diff
-auto f() -> int(&)[2];
-auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value
-auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f's return value
+  auto f() -> int(&)[2];
+  auto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value
+  auto& [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f's return value
 
 + auto g() -> int(&)[4];
-+ auto [a, ...b, c] = g();      // a names the first element of the array, b is a pack referring to the second and
-+                               // third elements, and c names the fourth element
-+ auto& [...e] = g();           // e is a pack referring to the four elements of the array
+
++ template <size_t N>
++ void h(int (&arr)[N]) {
++   auto [a, ...b, c] = arr;   // a names the first element of the array, b is a pack referring to the second and
++                              // third elements, and c names the fourth element
++   auto& [...e] = arr;        // e is a pack referring to the four elements of the array
++ }
++
++ void call_h() {
++   h(g());
++ }
 ```
 :::
 :::
@@ -688,52 +477,6 @@ Change [dcl.struct.bind]{.sref} paragraph 5 to define a structured binding size:
 [5]{.pnum} Otherwise, all of `E`'s non-static data members shall be direct members of `E` or of the same base class of `E`, well-formed when named as <code>e.name</code> in the context of the structured binding, `E` shall not have an anonymous union member, and the [number of elements in the <i>attributed-identifier-list</i> shall be]{.rm} [structured binding size of `E` is]{.addu} equal to the number of non-static data members of `E`. Designating the non-static data members of `E` as <code class="">m<sub>0</sub>, m<sub>1</sub>, m<sub>2</sub>, . . .</code> (in declaration order), each [<code class="">v<sub>i</i></code>]{.rm} [SB~_i_~]{.addu} is the name of an lvalue that refers to the member <code class="">m<sub>i</sub></code> of `E` and whose type is <i>cv</i> <code class="">T<sub>i</sub></code>, where <code class="">T<sub>i</sub></code> is the declared type of that member; the referenced type is <i>cv</i> <code class="">T<sub>i</sub></code>. The lvalue is a bit-field if that member is a bit-field.
 :::
 
-Change [temp.pre]{.sref}/8 to extend the notion of what is a templated entity, first introducing the term *implicit template region*:
-
-::: std
-::: addu
-[7a]{.pnum} An *implicit template region* is a subregion of a block scope. An implicit template region is a template definition. At the end of an implicit template region, it is immediately instantiated ([temp.pre]). A declaration of a structured binding pack ([dcl.struct.bind]) that is not a templated entity (see below) introduces an implicit template region that includes the declaration of the structured binding pack and ends at the end of the scope that the structured binding declaration inhabits.
-:::
-
-[8]{.pnum} An entity is *templated* if it is
-
-* [#.#]{.pnum} a template,
-* [#.#]{.pnum} an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,
-* [#.#]{.pnum} a member of a templated entity,
-* [#.#]{.pnum} an enumerator for an enumeration that is a templated entity, [or]{.rm}
-* [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity[.]{.rm} [, or]{.addu}
-
-::: addu
-* [#.#]{.pnum} an entity defined or created within an implicit template region.
-:::
-
-[A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.]{.note}
-
-::: addu
-::: example
-The following example assumes that `char` and `int` have different size.
-```cpp
-struct C { char j; int l; };
-
-int g() {
-    auto [ ... i ] = C{ 'x', 42 }; // #1
-    return ( [c = i] () {
-        // The local class L is a templated entity because
-        // it is defined within the implicit template region
-        // created at #1.
-        struct L {
-            int f() requires (sizeof(c) == 1) { return 1; }
-            int f() requires (sizeof(c) != 1) { return 2; }
-        };
-        return L{}.f();
-    } () + ...  + 0 );
-}
-
-int v = g(); // OK, v == 3
-```
-:::
-:::
-:::
 
 Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
 
@@ -743,8 +486,12 @@ Add a new clause to [temp.variadic]{.sref}, after paragraph 3:
 ::: example
 ```
 auto foo() -> int(&)[2];
-auto [...a] = foo();          // a is a structured binding pack containing 2 elements
-auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements
+
+template <class T>
+void g() {
+  auto [...a] = foo();          // a is a structured binding pack containing 2 elements
+  auto [b, c, ...d] = foo();    // d is a structured binding pack containing 0 elements
+}
 ```
 :::
 
@@ -820,12 +567,6 @@ sizeof ... ( identifier )
 fold-expression
 ```
 [unless the *identifier* is a structured binding pack whose initializer is not dependent.]{.addu}
-:::
-
-Add a new paragraph at the end of [temp.point]{.sref}:
-
-::: {.std .ins}
-[*]{.pnum} For an implicit template region, the point of instantiation immediately follows the namespace scope declaration or definition that encloses the region.
 :::
 
 ## Feature-Test Macro
