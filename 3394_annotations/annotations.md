@@ -419,8 +419,8 @@ Annotations follow appertainance rules like attributes, but shall not appear in 
 
 ```cpp
 struct [[=0]] S {};  // Okay: Appertains to S.
-[[=42]] int f();     // Okay: Appertains to f().
-int f[[=0]] f();     // Ditto.
+[[=42]] int f();     // Okay: Appertains to f.
+int f[[=0]] ();      // Ditto.
 int [[=24]] f();     // Error: Cannot appertain to int.
 [[=123]];            // Error: No applicable construct.
 ```
@@ -556,15 +556,16 @@ Extend the grammar in [dcl.attr.grammar]{.sref}:
   $attribute-using-prefix$:
     using $attribute-namespace$ :
 
-  $attribute-list$:
+- $attribute-list$:
 -   $attribute$@~opt~@
 -   $attribute-list$ , $attribute$@~opt~@
 -   $attribute$ ...
 -   $attribute-list$ , $attribute$ ...
++ $attribute-or-annotation-list$:
 +   $attribute-or-annotation$@~opt~@
 +   $attribute-or-annotation-list$ , $attribute-or-annotation$@~opt~@
 +   $attribute-or-annotation$ ...
-+   $attribute-list-or-annotation$ , $attribute-or-annotation$ ...
++   $attribute-or-annotation-list$ , $attribute-or-annotation$ ...
 
 + $attribute-or-annotation$:
 +   $attribute$
