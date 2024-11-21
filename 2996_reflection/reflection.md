@@ -39,6 +39,7 @@ Since [@P2996R7]:
 * renaming `member_offsets` to `member_offset` and changing `member_offset` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
 * renamed the type traits from all being named `type_meow` to a more bespoke naming scheme.
 * rewrote core wording for `$consteval-only type$` and for all splicers.
+* changing signature of `reflect_value` to take a `T const&` instead of a `T`.
 
 Since [@P2996R6]:
 
@@ -2301,7 +2302,7 @@ namespace std::meta {
 
   // @[reflect expression results](#reflect-expression-results)@
   template <typename T>
-    consteval auto reflect_value(T value) -> info;
+    consteval auto reflect_value(const T& value) -> info;
   template <typename T>
     consteval auto reflect_object(T& value) -> info;
   template <typename T>
@@ -2608,7 +2609,7 @@ If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will
 ::: std
 ```c++
 namespace std::meta {
-  template<typename T> consteval auto reflect_value(T expr) -> info;
+  template<typename T> consteval auto reflect_value(const T& expr) -> info;
   template<typename T> consteval auto reflect_object(T& expr) -> info;
   template<typename T> consteval auto reflect_function(T& expr) -> info;
 }
@@ -4442,7 +4443,7 @@ For convenience, we're going to add a new library element to [structure.specific
 * [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a core constant expression ([expr.const]).
 :::
 
-[4]{.pnum} [...] Next, the semantics of the code sequence are determined by the *Constraints*, *Mandates*, [*Constant When*]{.addu} *Preconditions*, *Effects*, *Synchronization*, *Postconditions*, *Returns*, *Throws*, *Complexity*, *Remarks*, and *Error* conditions specified for the function invocations contained in the code sequence. [...]
+[4]{.pnum} [...] Next, the semantics of the code sequence are determined by the *Constraints*, *Mandates*, [*Constant When*,]{.addu} *Preconditions*, *Effects*, *Synchronization*, *Postconditions*, *Returns*, *Throws*, *Complexity*, *Remarks*, and *Error* conditions specified for the function invocations contained in the code sequence. [...]
 :::
 
 ### [namespace.std]{.sref} Namespace std {-}
@@ -4694,7 +4695,7 @@ namespace std::meta {
 
   // [meta.reflection.result], expression result reflection
   template<class T>
-    consteval info reflect_value(T value);
+    consteval info reflect_value(const T& value);
   template<class T>
     consteval info reflect_object(T& object);
   template<class T>
@@ -5564,22 +5565,25 @@ template <class T>
 - [#.#]{.pnum} Otherwise, if `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, then when `T` is `F C::*`.
 - [#.#]{.pnum} Otherwise, `r` represents a function, static member function, or explicit object member function of function type `F` or `F noexcept`, then when `T` is `F*`.
 
-[#]{.pnum} *Returns*: a pointer value designating the entity represented by `r`.
+[#]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `T` is a pointer type, then a pointer value pointing to the entity represented by `r`.
+- [#.#]{.pnum} Otherwise, a pointer-to-member value designating the entity represented by `r`.
 
 ```cpp
 template <class T>
   consteval T $extract-val$(info r); // exposition only
 ```
 
-[#]{.pnum} Let `U` be the type of the value or enumerator that `r` represents.
+[#]{.pnum} Let `U` be the type of the value that `r` represents.
 
 [#]{.pnum} *Constant When*:
 
   - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
-  - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value `r` represents is convertible to `T`.
+  - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
 
-[#]{.pnum} *Returns*: the value or enumerator `$V$` represented by `r`, converted to `T`.
+[#]{.pnum} *Returns*: the value that `r` represents converted to `T`.
 
 ```cpp
 template <class T>
@@ -5611,9 +5615,9 @@ concept reflection_range =
 template <reflection_range R = initializer_list<info>>
 consteval bool can_substitute(info templ, R&& arguments);
 ```
-[1]{.pnum} *Constant When*: `templ` represents a template.
+[1]{.pnum} *Constant When*: `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or aliases represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or `$typedef-name$`s represented by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
@@ -5626,9 +5630,11 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or aliases represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or `$typedef-name$`s represented by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `^Z<Args...>`.
+
+[#]{.pnum} [`Z<Args..>` is not instantiated.]{.note}
 
 :::
 :::
@@ -5639,12 +5645,12 @@ consteval info substitute(info templ, R&& arguments);
 ::: addu
 ```cpp
 template <typename T>
-  consteval info reflect_value(T expr);
+  consteval info reflect_value(const T& expr);
 ```
 
-[#]{.pnum} *Mandates*: `T` is a structural type that is not a reference type.
+[#]{.pnum} *Mandates*: `T` is a structural type that is neither a reference type nor an array type.
 
-[#]{.pnum} *Constant When*: Any value computed by `expr` having pointer type, or every subobject of the value computed by `expr` having pointer or reference type, shall be the address of or refer to an object or entity that
+[#]{.pnum} *Constant When*: Any value computed by `expr` having pointer type, or every subobject of the value computed by `expr` having pointer or reference type, is the address of or refers to an object or entity that
 
   - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
   - [#.#]{.pnum} is not a temporary object ([class.temporary]),
