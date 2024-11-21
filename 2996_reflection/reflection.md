@@ -5308,7 +5308,7 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing
 
-* [#.#]{.pnum} either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
+* [#.#]{.pnum} either an object or variable, usable in constant expressions from some point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
 * [#.#]{.pnum} an enumerator, or
 * [#.#]{.pnum} a value.
 
@@ -5409,7 +5409,7 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} A member `$M$` of a class or namespace is _members-of-reachable_ from a point `$P$` if there exists a declaration `$D$` of `$M$` that is reachable from `$P$`, and either `$M$` is not TU-local or `$D$` is declared in the translation unit containing `$P$`.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from a point in the evaluation context ([expr.const]).
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from some point in the evaluation context ([expr.const]).
 If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members.]{.note}
@@ -5550,7 +5550,7 @@ template <class T>
 
 [#]{.pnum} [`T` is a reference type.]{.note}
 
-[#]{.pnum} *Constant When*: `r` represents a variable or object of type `U` that is usable in constant expressions from a point in the evaluation context and `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`.
+[#]{.pnum} *Constant When*: `r` represents a variable or object of type `U` that is usable in constant expressions from some point in the evaluation context and `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`.
 
 [#]{.pnum} *Returns*: the object represented by `object_of(r)`.
 
