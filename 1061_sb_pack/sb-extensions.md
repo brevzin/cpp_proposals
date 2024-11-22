@@ -1,6 +1,6 @@
 ---
 title: Structured Bindings can introduce a Pack
-document: D1061R10
+document: P1061R10
 date: today
 audience: CWG
 author:
@@ -527,7 +527,7 @@ Add a bullet to [temp.dep.expr]{.sref}/3:
 * [3.3]{.pnum} associated by name lookup with a variable declared with a type that contains a placeholder type ([dcl.spec.auto]) where the initializer is type-dependent,
 * [3.4]{.pnum} associated by name lookup with one or more declarations of member functions of a class that is the current instantiation declared with a return type that contains a placeholder type,
 * [3.5]{.pnum} associated by name lookup with a structured binding declaration ([dcl.struct.bind]) whose brace-or-equal-initializer is type-dependent,
-* [3.5b]{.pnum} [associated by name lookup with a pack, unless that pack is a non-type template parameter pack whose types are non-dependent,]{.addu}
+* [3.5b]{.pnum} [associated by name lookup with a pack,]{.addu}
 
   ::: addu
   ::: example
