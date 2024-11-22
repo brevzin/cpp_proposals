@@ -1,6 +1,6 @@
 ---
 title: "trivial `union`s (was `std::uninitialized<T>`)"
-document: P3074R4
+document: D3074R5
 date: today
 audience: EWG
 author:
@@ -459,7 +459,7 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 [2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is a non-union class and]{.addu}:
 
 * [2.1]{.pnum} any non-static data member with no default member initializer ([class.mem]) is of reference type,
-* [2.2]{.pnum} any [non-variant]{.rm} non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
+* [2.2]{.pnum} any non-variant non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
 * [2.3]{.pnum} [`X` is a union and all of its variant members are of const-qualified type (or possibly multi-dimensional array thereof),]{.rm}
 * [2.4]{.pnum} [`X` is a non-union class and all members of any anonymous union member are of const-qualified type (or possibly multi-dimensional array thereof)]{.rm},
 * [2.5]{.pnum} any potentially constructed subobject, except for a non-static data member with a brace-or-equal-initializer [or a variant member of a union where another non-static data member has a brace-or-equal-initializer]{.rm}, has class type `M` (or possibly multi-dimensional array thereof) and overload resolution ([over.match]) as applied to find `M`'s corresponding constructor either does not result in a usable candidate ([over.match.general]) [or, in the case of a variant member, selects a non-trivial function,]{.rm} or
@@ -471,22 +471,24 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 * [3.3]{.pnum} all the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial default constructors, and
 * [3.4]{.pnum} [either `X` is a union or ]{.addu} for all the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
 
-Otherwise, the default constructor is *non-trivial*. [If the default constructor of a union `X` is trivial and the first variant member of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member [It becomes the active member of the union]{.note}.]{.addu}
+Otherwise, the default constructor is *non-trivial*.
+
+[4]{.pnum} [If a default constructor of a union `X` is trivial and the first variant member, if any, of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member if it is not the active member of the union. [It is already the active member if `X` was value-initialized.]{.note}]{.addu} [An]{.rm} [Otherwise, an]{.addu} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
 :::
 
 Change [class.dtor]{.sref}/7-8:
 
 ::: std
-[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if [`X` is a non-union class and]{.addu}:
+[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if:
 
-* [7.1]{.pnum} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) and `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial,]{.rm}
+* [7.1]{.pnum} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) and `M` has a destructor that is deleted or is inaccessible from the defaulted destructor or, in the case of a variant member, [is non-trivial,]{.rm} [has a default member initializer,]{.addu}
 * [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
 
 [8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
 
 * [8.1]{.pnum} the destructor is not virtual,
 * [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
-* [8.3]{.pnum} [either `X` is a union with no default member initializer or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
+* [8.3]{.pnum} [either `X` is a union or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
 :::
 
 
