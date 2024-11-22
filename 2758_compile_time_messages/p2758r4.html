@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2024-11-22" />
+  <title>Emitting messages at compile time</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.csl-block{margin-left: 1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      .sourceCode { overflow: visible; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+text-align: justify;
+}
+@media screen and (max-width: 30em) {
+body {
+margin: 1.5em;
+}
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #C9FBC9;
+--diff-strongins: #acf2bd;
+--diff-del: #FFC8EB;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.std blockquote del { text-decoration: line-through;
+color: #000000; background-color: var(--diff-del);
+border: none; }
+code del { border: 1px solid #ECB3C7; }
+span.orange {
+background-color: #ffa500;
+}
+span.yellow {
+background-color: #ffff00;
+}</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Emitting messages at compile
+time</h1>
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P2758R4 <a href="https://wg21.link/P2758">[Latest]</a> <a href="https://wg21.link/P2758/status">[Status]</a></td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2024-11-22</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
+History<span></span></a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a>
+<ul>
+<li><a href="#general-compile-time-debugging" id="toc-general-compile-time-debugging"><span class="toc-section-number">2.1</span> General compile-time
+debugging<span></span></a></li>
+<li><a href="#prior-work" id="toc-prior-work"><span class="toc-section-number">2.2</span> Prior Work<span></span></a></li>
+</ul></li>
+<li><a href="#to-stdformat-or-not-to-stdformat" id="toc-to-stdformat-or-not-to-stdformat"><span class="toc-section-number">3</span> To
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+or not to
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>?<span></span></a></li>
+<li><a href="#improving-compile-time-diagnostics" id="toc-improving-compile-time-diagnostics"><span class="toc-section-number">4</span> Improving compile-time
+diagnostics<span></span></a>
+<ul>
+<li><a href="#predictability" id="toc-predictability"><span class="toc-section-number">4.1</span>
+Predictability<span></span></a></li>
+<li><a href="#predictability-of-errors" id="toc-predictability-of-errors"><span class="toc-section-number">4.2</span> Predictability of
+Errors<span></span></a></li>
+<li><a href="#error-handling-in-general" id="toc-error-handling-in-general"><span class="toc-section-number">4.3</span> Error-Handling in
+General<span></span></a></li>
+<li><a href="#errors-in-constraints" id="toc-errors-in-constraints"><span class="toc-section-number">4.4</span> Errors in
+Constraints<span></span></a></li>
+<li><a href="#warnings-and-tagging" id="toc-warnings-and-tagging"><span class="toc-section-number">4.5</span> Warnings and
+Tagging<span></span></a>
+<ul>
+<li><a href="#tag-restrictions" id="toc-tag-restrictions"><span class="toc-section-number">4.5.1</span> Tag
+Restrictions<span></span></a></li>
+<li><a href="#tagging-in-other-interfaces" id="toc-tagging-in-other-interfaces"><span class="toc-section-number">4.5.2</span> Tagging in other
+interfaces<span></span></a></li>
+</ul></li>
+</ul></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a></li>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">6</span> Wording<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
+Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>For R4: wording.</p>
+<p>For <span class="citation" data-cites="P2758R3">[<a href="https://wg21.link/p2758r3" role="doc-biblioref">P2758R3</a>]</span>: Clean-up the paper to account
+for other papers (<span class="citation" data-cites="P2741R3">[<a href="https://wg21.link/p2741r3" role="doc-biblioref">P2741R3</a>]</span> and <span class="citation" data-cites="P2738R1">[<a href="https://wg21.link/p2738r1" role="doc-biblioref">P2738R1</a>]</span>) being adopted. More discussion
+of tags, which are added to every API. Expanding wording.</p>
+<p>For <span class="citation" data-cites="P2758R2">[<a href="https://wg21.link/p2758r2" role="doc-biblioref">P2758R2</a>]</span>: clarify the section about <a href="#errors-in-constraints">SFINAE-friendliness</a>, reduced the API
+to just one error function, and adding a <a href="#warnings">warning
+API</a> as well.</p>
+<p>For <span class="citation" data-cites="P2758R1">[<a href="https://wg21.link/p2758r1" role="doc-biblioref">P2758R1</a>]</span>: <span class="citation" data-cites="P2758R0">[<a href="https://wg21.link/p2758r0" role="doc-biblioref">P2758R0</a>]</span> and <span class="citation" data-cites="P2741R0">[<a href="https://wg21.link/p2741r0" role="doc-biblioref">P2741R0</a>]</span> were published at the same time
+and had a lot of overlap. Since then, <span class="citation" data-cites="P2741R3">[<a href="https://wg21.link/p2741r3" role="doc-biblioref">P2741R3</a>]</span> was adopted. As such, this
+paper no longer needs to propose the same thing. That part of the paper
+has been removed. This revision now only adds library functions that
+emit messages at compile time.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
+Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>Currently, our ability to provide diagnostics to users is pretty
+limited. There are two ways that libraries can provide diagnostics to
+users right now.</p>
+<p>First, there is <code class="sourceCode cpp"><span class="kw">static_assert</span></code>. At
+the time of writing the initial revision of this paper, <code class="sourceCode cpp"><span class="kw">static_assert</span></code> was
+limited to only accepting a string literal. However, since then, <span class="citation" data-cites="P2741R3">[<a href="https://wg21.link/p2741r3" role="doc-biblioref">P2741R3</a>]</span> has been adopted for C++26,
+which allows uesr-generated messages. That is a fantastic
+improvement.</p>
+<p>The second way is via forced constant evaluation failures. Consider
+the example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;{} {:d}&quot;</span>, <span class="dv">5</span>, <span class="st">&quot;not a number&quot;</span><span class="op">)</span>;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>One of the cool things about
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+is that the format string is checked at compile time. The above is
+ill-formed: because <code class="sourceCode cpp">d</code> is not a valid
+format specifier for <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">char</span><span class="op">*</span></code>.
+What is the compiler error that you get here?</p>
+<ul>
+<li><p>MSVC</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;(6): error C7595: &#39;fmt::v9::basic_format_string&lt;char,int,const char (&amp;)[13]&gt;::basic_format_string&#39;: call to immediate function is not a constant expression</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>C:\data\libraries\installed\x64-windows\include\fmt\core.h(2839): note: failure was caused by call of undefined function or one not declared &#39;constexpr&#39;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>C:\data\libraries\installed\x64-windows\include\fmt\core.h(2839): note: see usage of &#39;fmt::v9::detail::error_handler::on_error&#39;</span></code></pre></div></li>
+<li><p>GCC</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format: In function &#39;std::string f()&#39;:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:23:   in &#39;constexpr&#39; expansion of &#39;std::basic_format_string&lt;char, int, const char (&amp;)[13]&gt;(&quot;{} {:d}&quot;)&#39;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:3634:19:   in &#39;constexpr&#39; expansion of &#39;__scanner.std::__format::_Checking_scanner&lt;char, int, char [13]&gt;::&lt;anonymous&gt;.std::__format::_Scanner&lt;char&gt;::_M_scan()&#39;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:3448:30:   in &#39;constexpr&#39; expansion of &#39;((std::__format::_Scanner&lt;char&gt;*)this)-&gt;std::__format::_Scanner&lt;char&gt;::_M_on_replacement_field()&#39;</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:3500:15:   in &#39;constexpr&#39; expansion of &#39;((std::__format::_Scanner&lt;char&gt;*)this)-&gt;std::__format::_Scanner&lt;char&gt;::_M_format_arg(__id)&#39;</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:3572:33:   in &#39;constexpr&#39; expansion of &#39;((std::__format::_Checking_scanner&lt;char, int, char [13]&gt;*)this)-&gt;std::__format::_Checking_scanner&lt;char, int, char [13]&gt;::_M_parse_format_spec&lt;int, char [13]&gt;(__id)&#39;</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:3589:36:   in &#39;constexpr&#39; expansion of &#39;((std::__format::_Checking_scanner&lt;char, int, char [13]&gt;*)this)-&gt;std::__format::_Checking_scanner&lt;char, int, char [13]&gt;::_M_parse_format_spec&lt;char [13]&gt;((__id - 1))&#39;</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:3586:40:   in &#39;constexpr&#39; expansion of &#39;__f.std::formatter&lt;char [13], char&gt;::parse(((std::__format::_Checking_scanner&lt;char, int, char [13]&gt;*)this)-&gt;std::__format::_Checking_scanner&lt;char, int, char [13]&gt;::&lt;anonymous&gt;.std::__format::_Scanner&lt;char&gt;::_M_pc)&#39;</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:1859:26:   in &#39;constexpr&#39; expansion of &#39;((std::formatter&lt;char [13], char&gt;*)this)-&gt;std::formatter&lt;char [13], char&gt;::_M_f.std::__format::__formatter_str&lt;char&gt;::parse((* &amp; __pc))&#39;</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:823:48: error: call to non-&#39;constexpr&#39; function &#39;void std::__format::__failed_to_parse_format_spec()&#39;</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  823 |         __format::__failed_to_parse_format_spec();</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20230108/include/c++/13.0.0/format:185:3: note: &#39;void std::__format::__failed_to_parse_format_spec()&#39; declared here</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  185 |   __failed_to_parse_format_spec()</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span></code></pre></div></li>
+<li><p>Clang (with libstdc++, libc++ doesn’t implement <code class="sourceCode cpp"><span class="op">&lt;</span>format<span class="op">&gt;</span></code>
+yet):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:24: error: call to consteval function &#39;std::basic_format_string&lt;char, int, const char (&amp;)[13]&gt;::basic_format_string&lt;char[8]&gt;&#39; is not a constant expression</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    return std::format(&quot;{} {:d}&quot;, 5, &quot;not a number&quot;);</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                       ^</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:823:2: note: non-constexpr function &#39;__failed_to_parse_format_spec&#39; cannot be used in a constant expression</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        __format::__failed_to_parse_format_spec();</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        ^</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:1859:21: note: in call to &#39;&amp;__f._M_f-&gt;parse(__scanner._Scanner::_M_pc)&#39;</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      { return _M_f.parse(__pc); }</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                    ^</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:3586:35: note: in call to &#39;&amp;__f-&gt;parse(__scanner._Scanner::_M_pc)&#39;</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>              this-&gt;_M_pc.advance_to(__f.parse(this-&gt;_M_pc));</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                                         ^</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:3589:6: note: in call to &#39;&amp;__scanner-&gt;_M_parse_format_spec(0)&#39;</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>            _M_parse_format_spec&lt;_Tail...&gt;(__id - 1);</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            ^</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:3572:3: note: in call to &#39;&amp;__scanner-&gt;_M_parse_format_spec(1)&#39;</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                _M_parse_format_spec&lt;_Args...&gt;(__id);</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                ^</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:3500:2: note: in call to &#39;&amp;__scanner-&gt;_M_format_arg(1)&#39;</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        _M_format_arg(__id);</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        ^</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:3448:7: note: in call to &#39;&amp;__scanner-&gt;_M_on_replacement_field()&#39;</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>                    _M_on_replacement_field();</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                    ^</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:3634:12: note: in call to &#39;&amp;__scanner-&gt;_M_scan()&#39;</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        __scanner._M_scan();</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>                  ^</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:24: note: in call to &#39;basic_format_string(&quot;{} {:d}&quot;)&#39;</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    return std::format(&quot;{} {:d}&quot;, 5, &quot;not a number&quot;);</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>                       ^</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-snapshot/lib/gcc/x86_64-linux-gnu/13.0.0/../../../../include/c++/13.0.0/format:185:3: note: declared here</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  __failed_to_parse_format_spec()</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>  ^</span></code></pre></div></li>
+<li><p>GCC, using <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>
+trunk instead of libstdc++:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h: In function &#39;std::string f()&#39;:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:23:   in &#39;constexpr&#39; expansion of &#39;fmt::v9::basic_format_string&lt;char, int, const char (&amp;)[13]&gt;(&quot;{} {:d}&quot;)&#39;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2847:40:   in &#39;constexpr&#39; expansion of &#39;fmt::v9::detail::parse_format_string&lt;true, char, format_string_checker&lt;char, int, char [13]&gt; &gt;(((fmt::v9::basic_format_string&lt;char, int, const char (&amp;)[13]&gt;*)this)-&gt;fmt::v9::basic_format_string&lt;char, int, const char (&amp;)[13]&gt;::str_, fmt::v9::detail::format_string_checker&lt;char, int, char [13]&gt;(fmt::v9::basic_string_view&lt;char&gt;(((const char*)s))))&#39;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2583:44:   in &#39;constexpr&#39; expansion of &#39;fmt::v9::detail::parse_replacement_field&lt;char, format_string_checker&lt;char, int, char [13]&gt;&amp;&gt;((p + -1), end, (* &amp; handler))&#39;</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2558:38:   in &#39;constexpr&#39; expansion of &#39;(&amp; handler)-&gt;fmt::v9::detail::format_string_checker&lt;char, int, char [13]&gt;::on_format_specs(adapter.fmt::v9::detail::parse_replacement_field&lt;char, format_string_checker&lt;char, int, char [13]&gt;&amp;&gt;(const char*, const char*, format_string_checker&lt;char, int, char [13]&gt;&amp;)::id_adapter::arg_id, (begin + 1), end)&#39;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2727:51:   in &#39;constexpr&#39; expansion of &#39;((fmt::v9::detail::format_string_checker&lt;char, int, char [13]&gt;*)this)-&gt;fmt::v9::detail::format_string_checker&lt;char, int, char [13]&gt;::parse_funcs_[id](((fmt::v9::detail::format_string_checker&lt;char, int, char [13]&gt;*)this)-&gt;fmt::v9::detail::format_string_checker&lt;char, int, char [13]&gt;::context_)&#39;</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2641:17:   in &#39;constexpr&#39; expansion of &#39;f.fmt::v9::formatter&lt;const char*, char, void&gt;::parse&lt;fmt::v9::detail::compile_parse_context&lt;char&gt; &gt;((* &amp; ctx))&#39;</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2784:35:   in &#39;constexpr&#39; expansion of &#39;fmt::v9::detail::parse_format_specs&lt;char&gt;((&amp; ctx)-&gt;fmt::v9::detail::compile_parse_context&lt;char&gt;::&lt;anonymous&gt;.fmt::v9::basic_format_parse_context&lt;char&gt;::begin(), (&amp; ctx)-&gt;fmt::v9::detail::compile_parse_context&lt;char&gt;::&lt;anonymous&gt;.fmt::v9::basic_format_parse_context&lt;char&gt;::end(), ((fmt::v9::formatter&lt;const char*, char, void&gt;*)this)-&gt;fmt::v9::formatter&lt;const char*, char, void&gt;::specs_, ctx.fmt::v9::detail::compile_parse_context&lt;char&gt;::&lt;anonymous&gt;, type)&#39;</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2468:37:   in &#39;constexpr&#39; expansion of &#39;parse_presentation_type.fmt::v9::detail::parse_format_specs&lt;char&gt;(const char*, const char*, dynamic_format_specs&lt;&gt;&amp;, fmt::v9::basic_format_parse_context&lt;char&gt;&amp;, type)::&lt;unnamed struct&gt;::operator()(fmt::v9::presentation_type::dec, ((int)integral_set))&#39;</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:2395:49: error: call to non-&#39;constexpr&#39; function &#39;void fmt::v9::detail::throw_format_error(const char*)&#39;</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a> 2395 |       if (!in(arg_type, set)) throw_format_error(&quot;invalid format specifier&quot;);</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>      |                               ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/libs/fmt/trunk/include/fmt/core.h:646:27: note: &#39;void fmt::v9::detail::throw_format_error(const char*)&#39; declared here</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  646 | FMT_NORETURN FMT_API void throw_format_error(const char* message);</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>      |                           ^~~~~~~~~~~~~~~~~~</span></code></pre></div></li>
+</ul>
+<p>All the compilers reject the code, which is good. MSVC gives you no
+information at all. Clang indicates that there’s something wrong with
+some format spec, but doesn’t show enough information to know what types
+are involved (is it the
+<code class="sourceCode cpp"><span class="dv">5</span></code> or the
+<code class="sourceCode cpp"><span class="st">&quot;not a number&quot;</span></code>?).
+GCC does the best in that you can actually tell that the problem
+argument is a <code class="sourceCode cpp"><span class="dt">char</span><span class="op">[</span><span class="dv">13</span><span class="op">]</span></code>
+(if you really carefully peruse the compile error), but otherwise all
+you know is that there’s <em>something</em> wrong with the format
+spec.</p>
+<p>This isn’t a standard library implementation problem - the error gcc
+gives when using <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>
+isn’t any better. If you carefully browse the message, you can see that
+it’s the <code class="sourceCode cpp"><span class="kw">const</span> <span class="dt">char</span><span class="op">*</span></code>
+specifier that’s the problem, but otherwise all you know is that it’s
+invalid.</p>
+<p>The problem here is that the only way to “fail” here is to do
+something that isn’t valid during constant evaluation time, like throw
+an exception or invoke an undefined function. And there’s only so much
+information you can provide that way. You can’t provide the format
+string, you can’t point to the offending character.</p>
+<p>Imagine how much easier this would be for the end-user to determine
+the problem and then fix if the compiler error you got was something
+like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>format(&quot;{} {:d}&quot;, int, const char*)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>             ^         ^</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>&#39;d&#39; is an invalid type specifier for arguments of type &#39;const char*&#39;</span></code></pre></div>
+</blockquote>
+</div>
+<p>That message might not be perfect, but it’s overwhelmingly better
+than anything that’s possible today. So we should at least make it
+possible tomorrow.</p>
+<h2 data-number="2.1" id="general-compile-time-debugging"><span class="header-section-number">2.1</span> General compile-time
+debugging<a href="#general-compile-time-debugging" class="self-link"></a></h2>
+<p>The above two sections were about the desire to emit a compile error,
+with a rich diagnostic message. But sometimes we don’t want to emit an
+<em>error</em>, we just want to emit <em>some information</em>.</p>
+<p>When it comes to runtime programming, there are several mechanisms we
+have for debugging code. For instance, you could use a debugger to step
+through it or you could litter your code with print statements. When it
+comes to <em>compile-time</em> programmer, neither option is available.
+But it would be incredibly useful to be able to litter our code with
+<em>compile-time</em> print statements. This was the initial selling
+point of Circle: want compile-time prints? That’s just
+<code class="sourceCode cpp"><span class="op">@</span>meta printf</code>.</p>
+<p>There’s simply no way I’m aware of today to emit messages at
+compile-time other than forcing a compile error, and even those (as
+hinted at above) are highly limited.</p>
+<h2 data-number="2.2" id="prior-work"><span class="header-section-number">2.2</span> Prior Work<a href="#prior-work" class="self-link"></a></h2>
+<p><span class="citation" data-cites="N4433">[<a href="https://wg21.link/n4433" role="doc-biblioref">N4433</a>]</span>
+previously proposed extending <code class="sourceCode cpp"><span class="kw">static_assert</span></code> to
+support arbitrary constant expressions. That paper was discussed in <a href="https://wiki.edg.com/bin/view/Wg21lenexa/N4433">Lenexa in
+2015</a>. The minutes indicate that that there was concern about simply
+being able to implement a useful
+<code class="sourceCode cpp">format</code> in
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+(<code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>
+was just v1.1.0 at the time). Nevertheless, the paper was well received,
+with a vote of 12-3-9-1-0 to continue work on the proposal. Today, we
+know we can implement a useful
+<code class="sourceCode cpp">format</code> in
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>.
+We already have it!</p>
+<p><span class="citation" data-cites="P0596R1">[<a href="https://wg21.link/p0596r1" role="doc-biblioref">P0596R1</a>]</span> previously proposed adding
+<code class="sourceCode cpp">std<span class="op">::</span>constexpr_trace</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_assert</code>
+facilities - the former as a useful compile-time print and the latter as
+a useful compile-time assertion to emit a useful message. That paper was
+discussed in <a href="https://wiki.edg.com/bin/view/Wg21belfast/SG7notesP0596R1">Belfast
+in 2019</a>, where these two facilities were very popular (16-8-1-0-0
+for compile-time print and 6-14-2-0-0 for compile-time assertion). The
+rest of the discussion was about broader compilation models that isn’t
+strictly related to these two.</p>
+<p>In short, the kind of facility I’m reviving here were already
+previously discussed and received <em>extremely favorably</em>. 15-1,
+24-0, and 20-0. It’s just that then the papers disappeared, so I’m
+bringing them back.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="to-stdformat-or-not-to-stdformat"><span class="header-section-number">3</span> To
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+or not to
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>?<a href="#to-stdformat-or-not-to-stdformat" class="self-link"></a></h1>
+<p>That is the question. Basically, when it comes to emitting some kind
+of text (via whichever mechanism - whether <code class="sourceCode cpp"><span class="kw">static_assert</span></code> or a
+compile-time print or a compile-time error), we have to decide whether
+or not to bake
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+into the API. The advantage of doing so would be ergonomics, the
+disadvantage would be that it’s a complex library to potential bake into
+the language - and some people might want these facilities in a context
+where they’re not using
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>,
+for hwatever reason.</p>
+<p>But there’s also a bigger issue: while I said above that we have a
+useful <code class="sourceCode cpp">format</code> in
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+that wasn’t <em>entirely</em> accurate. The parsing logic is completely
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+(to great effect), but the formatting logic currently is not. Neither
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+nor
+<code class="sourceCode cpp">fmt<span class="op">::</span>format</code>
+are declared
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+today. In order to be able to even consider the question of using
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+for generating compile-time strings, we have to first ask to what extent
+this is even feasible.</p>
+<p>Initially (as of R0 of this paper), I think there were currently two
+limitations (excluding just adding
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+everywhere and possibly dealing with some algorithms that happen to not
+be
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>-friendly):</p>
+<ol type="1">
+<li>formatting floating-point types is not possible right now (we made
+the integral part of <code class="sourceCode cpp">std<span class="op">::</span>to_chars<span class="op">()</span></code>
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="citation" data-cites="P2291R3">[<a href="https://wg21.link/p2291r3" role="doc-biblioref">P2291R3</a>]</span>, but not the floating
+point).</li>
+<li><code class="sourceCode cpp">fmt<span class="op">::</span>format</code>
+and
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+rely on type erasing user-defined types, which was not possible to do at
+compile time due to needing to cast back from <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code>.</li>
+</ol>
+<p>I am not in a position to say how hard the first of the two is (it’s
+probably pretty hard?), but the second has already been resolved with
+the adoption of <span class="citation" data-cites="P2738R1">[<a href="https://wg21.link/p2738r1" role="doc-biblioref">P2738R1</a>]</span> (and already implemented in at
+least gcc and clang). That’s probably not too much work to get the rest
+of format working - even if we ignore floating point entirely. Without
+compile-time type erasure, it’s still possible to write just a
+completely different consteval formatting API - but I doubt people would
+be too happy about having to redo all that work.</p>
+<p>We will eventually have <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code>,
+I’m just hoping that we can do so with as little overhead on the library
+implementation itself (in terms of lines of code) as possible.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="improving-compile-time-diagnostics"><span class="header-section-number">4</span> Improving compile-time
+diagnostics<a href="#improving-compile-time-diagnostics" class="self-link"></a></h1>
+<p>While in <code class="sourceCode cpp"><span class="kw">static_assert</span></code>, I’m
+not sure that we can adopt a <code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">()</span></code>-based
+API <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, for compile-time diagnostics, I
+think we should. In particular, the user-facing API should probably be
+something like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_print<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_warn<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_error<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>But we’ll probably still need a lower-level API as well. Something
+these facilities can be implemented on top of, that we might want to
+expose to users anyway in case they want to use something other than
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+for their formatting needs. Perhaps something like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_print_str<span class="op">(</span>string_view<span class="op">)</span>;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_warn_str<span class="op">(</span>string_view<span class="op">)</span>;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_error_str<span class="op">(</span>string_view<span class="op">)</span>;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>That is really the minimum necessary, and the nice
+<code class="sourceCode cpp">format</code> APIs can then trivially be
+implemented by invoking
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+and then passing in the resulting
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>.</p>
+<p>But in order to talk about what these APIs actually do and what their
+effects are, we need to talk about a fairly complex concept:
+predictability.</p>
+<h2 data-number="4.1" id="predictability"><span class="header-section-number">4.1</span> Predictability<a href="#predictability" class="self-link"></a></h2>
+<p><span class="citation" data-cites="P0596R1">[<a href="https://wg21.link/p0596r1" role="doc-biblioref">P0596R1</a>]</span> talks about predictability
+introducing this example:</p>
+<div class="quote">
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>__report_constexpr_value<span class="op">(</span><span class="st">&quot;in g()</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> f<span class="op">(</span>T<span class="op">(*)[</span>g<span class="op">&lt;</span>T<span class="op">&gt;()])</span>; <span class="co">// (1)</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> f<span class="op">(</span>T<span class="op">*)</span>;           <span class="co">// (2)</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> r <span class="op">=</span> f<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;(</span><span class="kw">nullptr</span><span class="op">)</span>;</span></code></pre></div>
+<p>When the compiler resolves the call to
+<code class="sourceCode cpp">f</code> in this example, it substitutes
+<code class="sourceCode cpp"><span class="dt">void</span></code> for
+<code class="sourceCode cpp">T</code> in both declarations (1) and (2).
+However, for declaration (1), it is unspecified whether <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;()</span></code>
+will be invoked: The compiler may decide to abandon the substitution as
+soon as it sees an attempt to create “an array of void” (in which case
+the call to <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span></code>
+is not evaluated), or it may decide to finish parsing the array
+declarator and evaluate the call to <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span></code>
+as part of that.</p>
+<p>We can think of a few realistic ways to address/mitigate this
+issue:</p>
+<ol type="1">
+<li>Make attempts to trigger side-effects in expressions that are
+“tentatively evaluated” (such as the ones happening during deduction)
+ill-formed with no diagnostic required (because we cannot really require
+compilers to re-architect their deduction system to ensure that the
+side-effect trigger is reached).</li>
+<li>Make attempts to trigger side-effects in expressions that are
+“tentatively evaluated” cause the expression to be non-constant. With
+our example that would mean that even a call <code class="sourceCode cpp">f<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="kw">nullptr</span><span class="op">)</span></code>
+would find (1) to be nonviable because <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span></code>
+doesn’t produce a constant in that context.</li>
+<li>Introduce a new special function to let the programmer control
+whether the side effect takes place anyway. E.g., <code class="sourceCode cpp">std<span class="op">::</span>is_tentatively_constant_evaluated<span class="op">()</span></code>.
+The specification work for this is probably nontrivial and it would
+leave it unspecified whether the call to <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span></code>
+is evaluated in our example.</li>
+</ol>
+<p>We propose to follow option 2. Option 3 remains a possible evolution
+path in that case, but we prefer to avoid the resulting subtleties if we
+can get away with it.</p>
+</div>
+<p>As well as:</p>
+<div class="quote">
+<p>There is another form of “tentative evaluation” that is worth noting.
+Consider:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>__report_constexpr_value<span class="op">(</span><span class="st">&quot;in g()</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">)</span>;</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">41</span>;</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> h<span class="op">(</span><span class="dt">int</span> p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> p <span class="op">==</span> <span class="dv">0</span> <span class="op">?</span> i <span class="op">:</span> <span class="dv">1</span>;</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> r <span class="op">=</span> g<span class="op">()+</span>h<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// Not manifestly constant-evaluated but</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                  <span class="co">// g() is typically tentatively evaluated.</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> s <span class="op">=</span> g<span class="op">()+</span><span class="dv">1</span>;    <span class="co">// To be discussed.</span></span></code></pre></div>
+<p>Here <code class="sourceCode cpp">g<span class="op">()+</span>h<span class="op">(</span><span class="dv">0</span><span class="op">)</span></code>
+is not a constant expression because
+<code class="sourceCode cpp">i</code> cannot be evaluated at compile
+time. However, the compiler performs a “trial evaluation” of that
+expression to discover that. In order to comply with the specification
+that <code class="sourceCode cpp">__report_constexpr_value</code> only
+produce the side effect if invoked as part of a “manifestly
+constant-evaluated expression”, two implementation strategies are
+natural:</p>
+<ol type="1">
+<li>“Buffer” the side effects during the trial evaluation and “commit”
+them only if that evaluation succeeds.</li>
+<li>Disable the side effects during the trial evaluation and repeat the
+evaluation with side effects enabled if the trial evaluation
+succeeds.</li>
+</ol>
+<p>The second option is only viable because “output” as a side effect
+cannot be observed by the trial evaluation. However, further on we will
+consider another class of side effects that can be observed within the
+same evaluation that triggers them, and thus we do not consider option 2
+a viable general implementation strategy.</p>
+<p>The first option is more generally applicable, but it may impose a
+significant toll on performance if the amount of side effects that have
+to be “buffered” for a later “commit” is significant.</p>
+<p>An alternative, therefore, might be to also consider the context of a
+non-constexpr variable initialization to be “tentatively evaluated” and
+deem side-effects to be non-constant in that case (i.e., the same as
+proposed for evaluations during deduction). In the example above, that
+means that <code class="sourceCode cpp">g<span class="op">()+</span><span class="dv">1</span></code>
+would not be a constant expression either (due to the potential side
+effect by <code class="sourceCode cpp">__report_constexpr_value</code>
+in an initializer that is allowed to be non-constant) and thus
+<code class="sourceCode cpp">s</code> would not be statically
+initialized.</p>
+</div>
+<p>Now, my guiding principle here is that if we take some code that
+currently works and does some constant evaluation, and add to that code
+a <code class="sourceCode cpp">constexpr_print</code> statement, the
+<em>only</em> change in behavior should be the addition of output during
+compile time. For instance:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_print<span class="op">(</span><span class="st">&quot;Called f({})</span><span class="sc">\n</span><span class="st">&quot;</span>, i<span class="op">)</span>;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>WIthout the <code class="sourceCode cpp">constepr_print</code>, this
+variable is constant-initialized. WIth it, it should be also. It would
+be easier to deal with the language if we didn’t have all of these weird
+rules. For instance, if you want constant initialize, use
+<code class="sourceCode cpp"><span class="kw">constinit</span></code>,
+if you don’t, there’s no tentative evaluation. But we can’t change that,
+so this is the language we have.</p>
+<p>I think buffer-then-commit is right approach. But also for the first
+example, that tentative evaluation in a manifestly constant evaluated
+context is <em>still</em> manifestly constant evaluated. It’s just
+unspecified whether the call happens. That is: in the first example, the
+call <code class="sourceCode cpp">f<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;(</span><span class="kw">nullptr</span><span class="op">)</span></code>
+may or may not print <code class="sourceCode cpp"><span class="st">&quot;in g()</span><span class="sc">\n</span><span class="st">&quot;</span></code>.
+It’s unspecified. It may make constexpr output not completely portable,
+but I don’t think any of the alternatives are palatable.</p>
+<h2 data-number="4.2" id="predictability-of-errors"><span class="header-section-number">4.2</span> Predictability of Errors<a href="#predictability-of-errors" class="self-link"></a></h2>
+<p>An interesting follow-on is what happens here:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>i <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;cannot invoke f with a negative number&quot;</span><span class="op">)</span>;</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> a <span class="op">=</span> f<span class="op">(-</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> b <span class="op">=</span> f<span class="op">(-</span><span class="dv">1</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Basically the question is: what are the actual semantics of
+<code class="sourceCode cpp">constexpr_error</code>?</p>
+<p>If we just say that evaluation (if manifestly constant-evaluated)
+causes the evaluation to not be a constant, then
+<code class="sourceCode cpp">a</code> is ill-formed but
+<code class="sourceCode cpp">b</code> would be (dynamically) initialized
+with <code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>.</p>
+<p>That seems undesirable: this is, after all, an error that we have the
+opportunity to catch. This is the only such case: all other manifestly
+constant evaluated contexts don’t have this kind of fall-back to
+runtime. So I think it’s not enough to say that constant evaluation
+fails, but rather that the entire program is ill-formed in this
+circumstance: both <code class="sourceCode cpp">a</code> and
+<code class="sourceCode cpp">b</code> are ill-formed.</p>
+<p>We also have to consider the predictability question for
+error-handling. Here’s that same example again:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>i <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;can&#39;t call g with a negative number&quot;</span><span class="op">)</span>;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">42</span>;</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> f<span class="op">(</span>T<span class="op">(*)[</span>g<span class="op">&lt;</span>T<span class="op">&gt;(-</span><span class="dv">1</span><span class="op">)])</span>; <span class="co">// (1)</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">int</span> f<span class="op">(</span>T<span class="op">*)</span>;             <span class="co">// (2)</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> r <span class="op">=</span> f<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;(</span><span class="kw">nullptr</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>If <code class="sourceCode cpp">g<span class="op">&lt;</span>T<span class="op">&gt;(-</span><span class="dv">1</span><span class="op">)</span></code>
+is called, then it’ll hit the
+<code class="sourceCode cpp">constexpr_error_str</code> call. But it
+might not be called. I think saying that if it’s called, then the
+program is ill-formed, is probably fine. If necessary, we can further
+tighten the rules for substitution and actually specify one way or
+another (actually specify that <code class="sourceCode cpp">g</code> is
+<em>not</em> invoked because by the time we lexically get there we know
+that this whole type is ill-formed, or specify that
+<code class="sourceCode cpp">g</code> <em>is</em> invoked because we
+atomically substitute one type at a time), but it’s probably not worth
+the effort.</p>
+<p>Additionally, we could take a leaf out of the book of speculative
+evaluation. I think of the tentative evaluation of <code class="sourceCode cpp">g<span class="op">&lt;</span>T<span class="op">&gt;(-</span><span class="dv">1</span><span class="op">)</span></code>
+is this second example <em>quite</em> differently from the tentative
+<em>constant</em> evaluation of <code class="sourceCode cpp">f<span class="op">(-</span><span class="dv">1</span><span class="op">)</span></code>
+in the first example. <code class="sourceCode cpp">f</code> is
+<em>always</em> evaluated, it’s just that we have this language hack
+that it ends up potentially being evaluated two different ways.
+<code class="sourceCode cpp">g</code> isn’t <em>necessarily</em>
+evaluated. So there is room to treat these different. If
+<code class="sourceCode cpp">g</code> is tentatively evaluated, then we
+buffer up our prints and errors - such that if it eventually <em>is</em>
+evaluated (that overload is selected), we then emit all the prints and
+errors. Otherwise, there is no output. That is, we specify <em>no</em>
+output if the function isn’t selected. Because the evaluation model is
+different here - that <code class="sourceCode cpp">f</code> is always
+constant-evaluated initially - I don’t think of these as inconsistent
+decisions.</p>
+<h2 data-number="4.3" id="error-handling-in-general"><span class="header-section-number">4.3</span> Error-Handling in General<a href="#error-handling-in-general" class="self-link"></a></h2>
+<p>Basically, in all contexts, you probably wouldn’t want to
+<em>just</em> <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code>.
+Well, in a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+function, that’s all you’d have to do. But in a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+function that might be evaluated at runtime, you probably still want to
+fail.</p>
+<p>But the question is, <em>how</em> do you want to fail? There are so
+many different ways of failing</p>
+<ul>
+<li>throw an exception (of which kind?)</li>
+<li>return some kind of error object (return code,
+<code class="sourceCode cpp">unexpected</code>,
+<code class="sourceCode cpp"><span class="kw">false</span></code>,
+etc.)</li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code></li>
+<li>etc.</li>
+</ul>
+<p>Which fallback depends entirely on the circumstance. For <code class="sourceCode cpp">formatter<span class="op">&lt;</span>T<span class="op">&gt;::</span>parse</code>,
+one of my motivating examples here, we have to throw a <code class="sourceCode cpp">std<span class="op">::</span>format_error</code>
+in this situation. The right pattern there would probably be:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error<span class="op">(</span><span class="st">&quot;Bad specifier {}&quot;</span>, <span class="op">*</span>it<span class="op">)</span>;</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> std<span class="op">::</span>format_error<span class="op">(</span>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;Bad specifier {}&quot;</span>, <span class="op">*</span>it<span class="op">))</span>;</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Which can be easily handled in its own API:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> format_parse_failure<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        constexpr_error<span class="op">(</span>fmt, args<span class="op">...)</span>;</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> format_error<span class="op">(</span>format<span class="op">(</span>fmt, args<span class="op">...))</span>;</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>So we should probably provide that as well (under whichever
+name).</p>
+<p>But that’s a format-specific solution. But a similar pattern works
+just fine for other error handling mechanisms, except for wanting to
+return an object (unless your return object happens to have a string
+part - since the two cases end up being very dfferent). I think that’s
+okay though - at least we have the utility.</p>
+<h2 data-number="4.4" id="errors-in-constraints"><span class="header-section-number">4.4</span> Errors in Constraints<a href="#errors-in-constraints" class="self-link"></a></h2>
+<p>Let’s take a look again at the example I showed <a href="#predictability">earlier</a>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>i <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;cannot invoke f with a negative number&quot;</span><span class="op">)</span>;</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>f<span class="op">(</span>I<span class="op">)</span> <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Here, <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;()</span></code>
+is obviously fine and <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dv">3</span><span class="op">&gt;()</span></code>
+will not satisfy the constraints as usual, nothing interesting to say
+about either call. But what about if we try <code class="sourceCode cpp">g<span class="op">&lt;-</span><span class="dv">1</span><span class="op">&gt;()</span></code>?
+Based on our currently language rules and what’s being proposed here,
+<code class="sourceCode cpp">f<span class="op">(-</span><span class="dv">1</span><span class="op">)</span></code>
+is not a constant expression, and the rule we have in <span>13.5.2.3 <a href="https://wg21.link/temp.constr.atomic">[temp.constr.atomic]</a></span>/3
+is:</p>
+<div class="quote">
+<p>If substitution results in an invalid type or expression, the
+constraint is not satisfied. Otherwise, the lvalue-to-rvalue conversion
+is performed if necessary, and E shall be a constant expression of type
+<code class="sourceCode cpp"><span class="dt">bool</span></code>.</p>
+</div>
+<p>That is, <code class="sourceCode cpp">g<span class="op">&lt;-</span><span class="dv">1</span><span class="op">&gt;()</span></code>
+is ill-formed, with our current rules. That would be the consistent
+choice.</p>
+<p>If we want an error to bubble up such that <code class="sourceCode cpp">g<span class="op">&lt;-</span><span class="dv">1</span><span class="op">&gt;()</span></code>
+would be SFINAE-friendly, that seems like an entirely different
+construct than <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>:
+that would be an exception - that the condition could catch and
+swallow.</p>
+<h2 data-number="4.5" id="warnings-and-tagging"><span class="header-section-number">4.5</span> Warnings and Tagging<a href="#warnings-and-tagging" class="self-link"></a></h2>
+<p>Consider the call:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;x={} and y=&quot;</span>, x, y<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The user probably intended to format both
+<code class="sourceCode cpp">x</code> and
+<code class="sourceCode cpp">y</code>, but actually forgot to write the
+<code class="sourceCode cpp"><span class="op">{}</span></code> for the
+second argument. Which means that this call has an extra argument that
+is not used by any of the formatters. This is, surprisingly to many
+people, not an error. This is by design - to handle use-cases like
+translation, where some of the arguments may not be used, which is an
+important use-case of <code class="sourceCode cpp">format</code>. (Note
+that the opposite case, not providing enough arguments, is a compile
+error).</p>
+<p>However, it is not a use-case that exists in every domain. For many
+users of <code class="sourceCode cpp">format</code>, the above (not
+consuming every format argument) is a bug.</p>
+<p>One approach that we could take is to allow the
+<code class="sourceCode cpp">format</code> library to flag potential
+misuses in a way that users can opt in to or opt out of. We even have a
+tool for that already: warnings! If the format library could issue a
+custom diagnostic, like:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>constexpr_warning<span class="op">(</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;format-too-many-args&quot;</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Format string consumed {} arguments but {} were provided.&quot;</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  current_arg, total<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Then the implementation could let users opt in with <code class="sourceCode cpp"><span class="op">-</span>Wformat<span class="op">-</span>too<span class="op">-</span>many<span class="op">-</span>args</code>
+(or maybe opt out with <code class="sourceCode cpp"><span class="op">-</span>Wno<span class="op">-</span>format<span class="op">-</span>too<span class="op">-</span>many<span class="op">-</span>args</code>,
+or maybe some other invocation).</p>
+<p>Moreover, even if <em>some</em> parts of your application do
+translation, many others might not. Perhaps rather than globally adding
+<code class="sourceCode cpp"><span class="op">-</span>Wno<span class="op">-</span>format<span class="op">-</span>too<span class="op">-</span>many<span class="op">-</span>args</code>,
+an implementation would allow a
+<code class="sourceCode cpp"><span class="pp">#pragma</span></code> to
+enable (or disable) this particular warning for the duration of a
+translation unit. Implementations already do this sort of thing, which
+is exactly what we want. All we need to do is allow a library author to
+provide a tag.</p>
+<p>There are probably many such examples in many libraries. Giving
+library authors the power to warn users (and users the power to choose
+their warning granularity) seems very useful.</p>
+<h3 data-number="4.5.1" id="tag-restrictions"><span class="header-section-number">4.5.1</span> Tag Restrictions<a href="#tag-restrictions" class="self-link"></a></h3>
+<p>During an <a href="https://github.com/sg16-unicode/sg16-meetings/tree/master?tab=readme-ov-file#april-10th-2024">SG-16
+telecon</a>, there was some discussion on what the requirements are of
+the tag we want to pass to <code class="sourceCode cpp">std<span class="op">::</span>constexpr_warning</code>.
+For instance, should this be a core language facility so that we can
+require a string literal?</p>
+<p>Unfortunately, I don’t think we can require a string literal - since
+that would prohibit future evolution to add the format API on top of
+<code class="sourceCode cpp">std<span class="op">::</span>constexpr_warning_str</code>
+and friends. Such an API would need to forward its argument down to the
+hypothetical core language feature, at which point we lose
+“string-literal-ness.” We should, however, strongly encourage users to
+only use string literal tags.</p>
+<p>But we do have to have requirements on the tag, since this is going
+to be something that we want to expose externally as described above -
+whether as a command-line flag or
+<code class="sourceCode cpp"><span class="pp">#pragma</span></code>. So
+no quotes, semicolons, or other characters with special meaning in
+command line shells.</p>
+<p>My opening bid is that (and I am obviously not a text guy): a tag is
+only allowed to contain: <code class="x">A-Z</code>,
+<code class="sourceCode cpp">a<span class="op">-</span>z</code>, <code class="x">0-9</code>, <code class="sourceCode cpp">_</code>, and <code class="x">-</code>. That’s a pretty limited set, but it’s probably
+sufficient for the use-case and should not cause problems on shells,
+etc.</p>
+<h3 data-number="4.5.2" id="tagging-in-other-interfaces"><span class="header-section-number">4.5.2</span> Tagging in other interfaces<a href="#tagging-in-other-interfaces" class="self-link"></a></h3>
+<p><span class="citation" data-cites="P2758R2">[<a href="https://wg21.link/p2758r2" role="doc-biblioref">P2758R2</a>]</span> only introduced a
+<code class="sourceCode cpp">tag</code> parameter for
+<code class="sourceCode cpp">warning</code> but not for
+<code class="sourceCode cpp">print</code> or
+<code class="sourceCode cpp">error</code>. SG-16 suggested that each of
+the interfaces should also accept a tag that could be used to either
+suppress diagnostics or elevate to an error. This revision adds those
+parameters as well (for <code class="sourceCode cpp">print</code>,
+optionally, for <code class="sourceCode cpp">warning</code> and
+<code class="sourceCode cpp">error</code>, mandatory).</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes the following:</p>
+<ol type="1">
+<li><p>Introduce a new compile-time diagnostic API that only has effect
+if manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str<span class="op">([</span>tag,<span class="op">]</span>, msg<span class="op">)</span></code>.</p></li>
+<li><p>Introduce a new compile-time error APIs, that only has effect if
+manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str<span class="op">(</span>tag, msg<span class="op">)</span></code>
+will both cause the program to be ill-formed additionally cause the
+expression to not be a constant expression, emitting the message under
+the provided tag (which can be used in an implementation-defined way to
+control whether the diagnostic is emitted). EWG took a poll in February
+2023 to encourage work on the ability to print multiple errors per
+constant evaluation but still result in a failed TU:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>SF</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>F</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>N</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>A</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>SA</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5</td>
+<td>10</td>
+<td>3</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>However, this design choice seems unmotivated and would require two
+differently-named error functions - first taking
+<code class="sourceCode cpp">string_view</code> now and then the full
+<code class="sourceCode cpp">format</code> API later. There is some
+precedent to this (e.g. Catch2 has
+<code class="sourceCode cpp">CHECK</code> and
+<code class="sourceCode cpp">REQUIRE</code> macros - the first of which
+cause a test to fail but continue running to print further diagnostics,
+while the second causes the test to fail and immediately halt
+execution), but in a constant evaluation context with the freedom to
+form arbitrary messages, I don’t think this distinction is especially
+useful. The <code class="sourceCode cpp">REQUIRE</code> functionality is
+critical, the <code class="sourceCode cpp">CHECK</code> one less
+so.</p></li>
+<li><p>Introduce a new compile time warning API that only has effect if
+manifestly constant evaluated: <code class="sourceCode cpp">std<span class="op">::</span>constexpr_warning_str<span class="op">(</span>tag, msg<span class="op">)</span></code>.
+This will emit a warning containing the provided message under the
+provided tag, which can be used in an implementation-defined way to
+control whether the diagnostic is emitted.</p></li>
+<li><p>Pursue <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format<span class="op">(</span>fmt_str, args<span class="op">...)</span></code>,
+which would then allow us to extend the above API with
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>-friendly
+alternatives.</p></li>
+</ol>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">6</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p>We don’t quite have <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code>
+yet (although with the addition of <span class="citation" data-cites="P2738R1">[<a href="https://wg21.link/p2738r1" role="doc-biblioref">P2738R1</a>]</span> we’re probably nearly the whole
+way there), so the wording here only includes (1) and (2) above - with
+the understanding that a separate paper will materialize to produce a
+<code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code>
+and then another separate paper will add <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code>
+(the nicer names, with the more user-friendly semantics).</p>
+<p>Add to [intro.compliance.general]:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span>
+[…] Furthermore, a conforming implementation shall not accept:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(2.4)</a></span>
+a preprocessing translation unit containing a
+<code class="sourceCode cpp"><span class="pp">#error</span></code>
+preprocessing directive ([cpp.error]) <span class="rm" style="color: #bf0303"><del>or</del></span> <span class="addu">,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.5)</a></span>
+a translation unit with a
+<code class="sourceCode cpp"><em>static_assert-declaration</em></code>
+that fails ([dcl.pre]) <span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">,
+or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.*)</a></span>
+<span class="addu">a translation unit which evaluated a call to <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
+([meta.const.msg]) during constant evaluation.</span></li>
+</ul>
+</blockquote>
+</div>
+<p>Add to <span>21.3.3 <a href="https://wg21.link/meta.type.synop">[meta.type.synop]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>// all freestanding</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  // [meta.const.eval], constant evaluation context</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_within_lifetime(const auto*) noexcept;</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.const.msg], emitting messages at compile time</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct <em>tag-string</em>; // exposition-only</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Add a new clause after <span>21.3.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span>
+named “Emitting messages at compile time”:</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span>
+The facilities in this subclause are used to emit messages at compile
+time.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span>
+A call to any of the functions defined in this subclause may produce a
+diagnostic message during constant evaluation. The text from a
+<code class="sourceCode cpp">string_view</code>,
+<code class="sourceCode cpp"><em>M</em></code>, is formed by the
+sequence of <code class="sourceCode cpp"><em>M</em><span class="op">.</span>size<span class="op">()</span></code>
+code units, starting at <code class="sourceCode cpp"><em>M</em><span class="op">.</span>data<span class="op">()</span></code>,
+of the ordinary literal encoding ([lex.charset]).</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>struct <em>tag-string</em> { // exposition-only</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>private:</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  string_view <em>str</em>;  // exposition-only</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>public:</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">3</a></span>
+<em>Constraints</em>: <code class="sourceCode cpp"><span class="kw">const</span> T<span class="op">&amp;</span></code>
+models <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span>
+<em>Effects</em>: Direct-non-list-initializes
+<code class="sourceCode cpp"><em>str</em></code> with
+<code class="sourceCode cpp">s</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
+<em>Remarks</em>: A call to this function is not a core constant
+expression unless every character in
+<code class="sourceCode cpp"><em>str</em></code> is either a
+<code class="sourceCode cpp"><em>nondigit</em></code>, a
+<code class="sourceCode cpp"><em>digit</em></code>, or a
+<code class="sourceCode cpp"><span class="op">-</span></code>.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">6</a></span>
+<em>Effects</em>: During constant evaluation, a diagnostic message is
+issued including the text of <code class="sourceCode cpp">msg</code>.
+Otherwise, no effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">7</a></span>
+<em>Recommended practice</em>: Implementations should include the text
+of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
+if provided, in the diagnostic.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">8</a></span>
+<em>Effects</em>: During constant evaluation, a diagnostic message is
+issued including the text of <code class="sourceCode cpp">msg</code>.
+Otherwise, no effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">9</a></span>
+<em>Recommended practice</em>: Implementations should issue a warning in
+such cases and provide a mechanism allowing users to either opt in or
+opt out of such warnings based on the value of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">10</a></span>
+<em>Effects</em>: During constant evaluation, the program is ill-formed,
+a diagnostic message is issued including the text of
+<code class="sourceCode cpp">msg</code>, and the evaluation of this call
+is not a <em>core constant expression</em> ([expr.const]). Otherwise, no
+effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">11</a></span>
+<em>Recommended practice</em>: Implementations should include the text
+of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
+in the diagnostic.</p>
+</div>
+</blockquote>
+</div>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span>
+References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-N4433" class="csl-entry" role="doc-biblioentry">
+[N4433] Michael Price. 2015-04-09. Flexible static_assert messages. <a href="https://wg21.link/n4433"><div class="csl-block">https://wg21.link/n4433</div></a>
+</div>
+<div id="ref-P0596R1" class="csl-entry" role="doc-biblioentry">
+[P0596R1] Daveed Vandevoorde. 2019-10-08. Side-effects in constant
+evaluation: Output and consteval variables. <a href="https://wg21.link/p0596r1"><div class="csl-block">https://wg21.link/p0596r1</div></a>
+</div>
+<div id="ref-P2291R3" class="csl-entry" role="doc-biblioentry">
+[P2291R3] Daniil Goncharov, Karaev Alexander. 2021-09-23. Add Constexpr
+Modifiers to Functions to_chars and from_chars for Integral Types in
+Header. <a href="https://wg21.link/p2291r3"><div class="csl-block">https://wg21.link/p2291r3</div></a>
+</div>
+<div id="ref-P2738R1" class="csl-entry" role="doc-biblioentry">
+[P2738R1] Corentin Jabot, David Ledger. 2023-02-13. constexpr cast from
+void*: towards constexpr type-erasure. <a href="https://wg21.link/p2738r1"><div class="csl-block">https://wg21.link/p2738r1</div></a>
+</div>
+<div id="ref-P2741R0" class="csl-entry" role="doc-biblioentry">
+[P2741R0] Corentin Jabot. 2022-12-09. user-generated static_assert
+messages. <a href="https://wg21.link/p2741r0"><div class="csl-block">https://wg21.link/p2741r0</div></a>
+</div>
+<div id="ref-P2741R3" class="csl-entry" role="doc-biblioentry">
+[P2741R3] Corentin Jabot. 2023-06-16. user-generated static_assert
+messages. <a href="https://wg21.link/p2741r3"><div class="csl-block">https://wg21.link/p2741r3</div></a>
+</div>
+<div id="ref-P2758R0" class="csl-entry" role="doc-biblioentry">
+[P2758R0] Barry Revzin. 2023-01-13. Emitting messages at compile time.
+<a href="https://wg21.link/p2758r0"><div class="csl-block">https://wg21.link/p2758r0</div></a>
+</div>
+<div id="ref-P2758R1" class="csl-entry" role="doc-biblioentry">
+[P2758R1] Barry Revzin. 2023-12-09. Emitting messages at compile time.
+<a href="https://wg21.link/p2758r1"><div class="csl-block">https://wg21.link/p2758r1</div></a>
+</div>
+<div id="ref-P2758R2" class="csl-entry" role="doc-biblioentry">
+[P2758R2] Barry Revzin. 2024-02-15. Emitting messages at compile time.
+<a href="https://wg21.link/p2758r2"><div class="csl-block">https://wg21.link/p2758r2</div></a>
+</div>
+<div id="ref-P2758R3" class="csl-entry" role="doc-biblioentry">
+[P2758R3] Barry Revzin. 2024-05-19. Emitting messages at compile time.
+<a href="https://wg21.link/p2758r3"><div class="csl-block">https://wg21.link/p2758r3</div></a>
+</div>
+</div>
+<section class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>A previous revision of the paper <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2758r2.html#improving-static_assert">explained
+why</a>: <code class="sourceCode cpp"><span class="kw">static_assert</span><span class="op">(</span>cond, <span class="st">&quot;T{} must be valid expression&quot;</span><span class="op">)</span></code>
+is a valid assertion today. Adopting the
+<code class="sourceCode cpp">format</code> API would break this
+assertion - were it to fire. However, given that this is a static
+assertion, perhaps there’s room to maneuver here.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</div>
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 ---
 title: "Emitting messages at compile time"
-document: P2758R3
+document: P2758R4
 date: today
 audience: EWG
 author:
@@ -12,7 +12,9 @@ tag: constexpr
 
 # Revision History
 
-For R3: Clean-up the paper to account for other papers ([@P2741R3] and [@P2738R1]) being adopted. More discussion of tags, which are added to every API. Expanding wording.
+For R4: wording.
+
+For [@P2758R3]: Clean-up the paper to account for other papers ([@P2741R3] and [@P2738R1]) being adopted. More discussion of tags, which are added to every API. Expanding wording.
 
 For [@P2758R2]: clarify the section about [SFINAE-friendliness](#errors-in-constraints), reduced the API to just one error function, and adding a [warning API](#warnings) as well.
 
@@ -525,7 +527,7 @@ Add a new clause after [meta.const.eval]{.sref} named "Emitting messages at comp
 [#]{.pnum} A call to any of the functions defined in this subclause may produce a diagnostic message during constant evaluation. The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
 
 ```
-struct $tag-string$ { // exposiion-only
+struct $tag-string$ { // exposition-only
 private:
   string_view $str$;  // exposition-only
 
