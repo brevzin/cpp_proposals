@@ -28,6 +28,7 @@ tag: reflection
 
 Since [@P2996R7]:
 
+* chaned reflection operator from `^` to `^^`
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
 * renamed `define_class` to `define_aggregate`
@@ -144,7 +145,7 @@ Specifically, we are mostly proposing a subset of features suggested in [@P1240R
 
   - the representation of program elements via constant-expressions producing
      _reflection values_ — _reflections_ for short — of an opaque type `std::meta::info`,
-  - a _reflection operator_ (prefix `^`) that computes a reflection value for its operand construct,
+  - a _reflection operator_ (prefix `^^`) that computes a reflection value for its operand construct,
   - a number of `consteval` _metafunctions_ to work with reflections (including deriving other reflections), and
   - constructs called _splicers_ to produce grammatical elements from reflections (e.g., `[: $refl$ :]`).
 
@@ -239,7 +240,7 @@ consteval auto expand(R range) {
   for (auto r : range) {
     args.push_back(reflect_value(r));
   }
-  return substitute(^__impl::replicator, args);
+  return substitute(^^__impl::replicator, args);
 }
 ```
 
@@ -253,7 +254,7 @@ Used like:
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
-  template for (constexpr auto e : std::meta::enumerators_of(^E)) {
+  template for (constexpr auto e : std::meta::enumerators_of(^^E)) {
     if (value == [:e:]) {
       return std::string(std::meta::identifier_of(e));
     }
@@ -269,7 +270,7 @@ template<typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
   std::string result = "<unnamed>";
-  [:expand(std::meta::enumerators_of(^E)):] >> [&]<auto e>{
+  [:expand(std::meta::enumerators_of(^^E)):] >> [&]<auto e>{
     if (value == [:e:]) {
       result = std::meta::identifier_of(e);
     }
@@ -296,9 +297,9 @@ Our first example is not meant to be compelling but to show how to go back and f
 
 ::: std
 ```c++
-constexpr auto r = ^int;
+constexpr auto r = ^^int;
 typename[:r:] x = 42;       // Same as: int x = 42;
-typename[:^char:] c = '*';  // Same as: char c = '*';
+typename[:^^char:] c = '*';  // Same as: char c = '*';
 ```
 :::
 
@@ -307,11 +308,11 @@ For example:
 
 ::: std
 ```c++
-using MyType = [:sizeof(int)<sizeof(long)? ^long : ^int:];  // Implicit "typename" prefix.
+using MyType = [:sizeof(int)<sizeof(long)? ^^long : ^^int:];  // Implicit "typename" prefix.
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/13anqE1Pa), [Clang](https://godbolt.org/z/zn4vnjqzb).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4hK564scs), [Clang](https://godbolt.org/z/49859r676).
 
 
 ## Selecting Members
@@ -323,8 +324,8 @@ Our second example enables selecting a member "by number" for a specific type:
 struct S { unsigned i:2, j:6; };
 
 consteval auto member_number(int n) {
-  if (n == 0) return ^S::i;
-  else if (n == 1) return ^S::j;
+  if (n == 0) return ^^S::i;
+  else if (n == 1) return ^^S::j;
 }
 
 int main() {
@@ -337,7 +338,7 @@ int main() {
 
 This example also illustrates that bit fields are not beyond the reach of this proposal.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/WEYae451z), [Clang](https://godbolt.org/z/dYGaMKEx5).
+On Compiler Explorer: [EDG](https://godbolt.org/z/cKaK4v8nr), [Clang](https://godbolt.org/z/Tb57jEn8a).
 
 Note that a "member access splice" like `s.[:member_number(1):]` is a more direct member access mechanism than the traditional syntax.
 It doesn't involve member name lookup, access checking, or --- if the spliced reflection value represents a member function --- overload resolution.
@@ -351,7 +352,7 @@ We could thus rewrite the above example as:
 struct S { unsigned i:2, j:6; };
 
 consteval auto member_number(int n) {
-  return std::meta::nonstatic_data_members_of(^S)[n];
+  return std::meta::nonstatic_data_members_of(^^S)[n];
 }
 
 int main() {
@@ -362,7 +363,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Wb1vx7jqb), [Clang](https://godbolt.org/z/TeGrhv7nz).
+On Compiler Explorer: [EDG](https://godbolt.org/z/7P3ax5K16), [Clang](https://godbolt.org/z/q158vdbaz).
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
@@ -374,7 +375,7 @@ With such a facility, we could conceivably access non-static data members "by st
 struct S { unsigned i:2, j:6; };
 
 consteval auto member_named(std::string_view name) {
-  for (std::meta::info field : nonstatic_data_members_of(^S)) {
+  for (std::meta::info field : nonstatic_data_members_of(^^S)) {
     if (has_identifier(field) && identifier_of(field) == name)
       return field;
   }
@@ -388,7 +389,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Yhh5hbcrn), [Clang](https://godbolt.org/z/MEPb78ece).
+On Compiler Explorer: [EDG](https://godbolt.org/z/hhd9vePW7), [Clang](https://godbolt.org/z/n6ssEWMc5).
 
 
 ## List of Types to List of Sizes
@@ -397,7 +398,7 @@ Here, `sizes` will be a `std::array<std::size_t, 3>` initialized with `{sizeof(i
 
 ::: std
 ```c++
-constexpr std::array types = {^int, ^float, ^double};
+constexpr std::array types = {^^int, ^^float, ^^double};
 constexpr std::array sizes = []{
   std::array<std::size_t, types.size()> r;
   std::views::transform(types, r.begin(), std::meta::size_of);
@@ -420,7 +421,7 @@ constexpr auto sizes = []<template<class...> class L, class... T>(L<T...>) {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4xz9Wsa8f), [Clang](https://godbolt.org/z/EPY93bTxv).
+On Compiler Explorer: [EDG](https://godbolt.org/z/83zK4erj7), [Clang](https://godbolt.org/z/raa87vMjf).
 
 ## Implementing `make_integer_sequence`
 
@@ -433,11 +434,11 @@ We can provide a better implementation of `make_integer_sequence` than a hand-ro
 
 template<typename T>
 consteval std::meta::info make_integer_seq_refl(T N) {
-  std::vector args{^T};
+  std::vector args{^^T};
   for (T k = 0; k < N; ++k) {
     args.push_back(std::meta::reflect_value(k));
   }
-  return substitute(^std::integer_sequence, args);
+  return substitute(^^std::integer_sequence, args);
 }
 
 template<typename T, T N>
@@ -445,7 +446,7 @@ template<typename T, T N>
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/bvPeqvaK5), [Clang](https://godbolt.org/z/ae3n8Phnn).
+On Compiler Explorer: [EDG](https://godbolt.org/z/G3TM9Tbad), [Clang](https://godbolt.org/z/57bcYqbv8).
 
 Note that the memoization implicit in the template substitution process still applies.
 So having multiple uses of, e.g., `make_integer_sequence<int, 20>` will only involve one evaluation of `make_integer_seq_refl<int>(20)`.
@@ -464,7 +465,7 @@ struct member_descriptor
 // returns std::array<member_descriptor, N>
 template <typename S>
 consteval auto get_layout() {
-  constexpr auto members = nonstatic_data_members_of(^S);
+  constexpr auto members = nonstatic_data_members_of(^^S);
   std::array<member_descriptor, members.size()> layout;
   for (int i = 0; i < members.size(); ++i) {
       layout[i] = {.offset=offset_of(members[i]).bytes, .size=size_of(members[i])};
@@ -489,7 +490,7 @@ where Xd would be std::array<member_descriptor, 3>{@{@
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/rbbWY99TM), [Clang](https://godbolt.org/z/v8e5boE1q).
+On Compiler Explorer: [EDG](https://godbolt.org/z/ss9hfaMKT), [Clang](https://godbolt.org/z/Te4KEob6W).
 
 ## Enum to String
 
@@ -500,7 +501,7 @@ One of the most commonly requested facilities is to convert an enum value to a s
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
-  template for (constexpr auto e : std::meta::enumerators_of(^E)) {
+  template for (constexpr auto e : std::meta::enumerators_of(^^E)) {
     if (value == [:e:]) {
       return std::string(std::meta::identifier_of(e));
     }
@@ -522,7 +523,7 @@ We can also do the reverse in pretty much the same way:
 template <typename E>
   requires std::is_enum_v<E>
 constexpr std::optional<E> string_to_enum(std::string_view name) {
-  template for (constexpr auto e : std::meta::enumerators_of(^E)) {
+  template for (constexpr auto e : std::meta::enumerators_of(^^E)) {
     if (name == std::meta::identifier_of(e)) {
       return [:e:];
     }
@@ -541,19 +542,19 @@ template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
   constexpr auto get_pairs = []{
-    return std::meta::enumerators_of(^E)
+    return std::meta::enumerators_of(^^E)
       | std::views::transform([](std::meta::info e){
           return std::pair<E, std::string>(std::meta::extract<E>(e), std::meta::identifier_of(e));
         })
   };
 
   constexpr auto get_name = [](E value) -> std::optional<std::string> {
-    if constexpr (enumerators_of(^E).size() <= 7) {
+    if constexpr (enumerators_of(^^E).size() <= 7) {
       // if there aren't many enumerators, use a vector with find_if()
       constexpr auto enumerators = get_pairs() | std::ranges::to<std::vector>();
       auto it = std::ranges::find_if(enumerators, [value](auto const& pr){
         return pr.first == value;
-      };
+      });
       if (it == enumerators.end()) {
         return std::nullopt;
       } else {
@@ -578,14 +579,14 @@ constexpr std::string enum_to_string(E value) {
 
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Y5va8MqzG), [Clang](https://godbolt.org/z/KW4437zrx).
+On Compiler Explorer: [EDG](https://godbolt.org/z/hf777PfGo), [Clang](https://godbolt.org/z/h5rTnWrKW).
 
 
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
 For example:
 
   - the "\<unnamed>" case could instead output a valid cast expression like "E(5)"
-  - a more sophisticated lookup algorithm could be selected at compile time depending on the length of `enumerators_of(^E)`
+  - a more sophisticated lookup algorithm could be selected at compile time depending on the length of `enumerators_of(^^E)`
   - a compact two-way persistent data structure could be generated to support both `enum_to_string` and `string_to_enum` with a minimal footprint
   - etc.
 
@@ -599,7 +600,7 @@ Our next example shows how a command-line option parser could work by automatica
 template<typename Opts>
 auto parse_options(std::span<std::string_view const> args) -> Opts {
   Opts opts;
-  template for (constexpr auto dm : nonstatic_data_members_of(^Opts)) {
+  template for (constexpr auto dm : nonstatic_data_members_of(^^Opts)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
         return arg.starts_with("--") && arg.substr(2) == identifier_of(dm);
@@ -616,7 +617,7 @@ auto parse_options(std::span<std::string_view const> args) -> Opts {
     using T = typename[:type_of(dm):];
     auto iss = std::ispanstream(it[1]);
     if (iss >> opts.[:dm:]; !iss) {
-      std::print(stderr, "Failed to parse option {} into a {}\n", *it, display_string_of(^T));
+      std::print(stderr, "Failed to parse option {} into a {}\n", *it, display_string_of(^^T));
       std::exit(EXIT_FAILURE);
     }
   }
@@ -637,7 +638,7 @@ int main(int argc, char *argv[]) {
 
 This example is based on a presentation by Matúš Chochlík.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://godbolt.org/z/c36K9z5Wz).
+On Compiler Explorer: [EDG](https://godbolt.org/z/jGfGv84oh), [Clang](https://godbolt.org/z/hfoP5P3sd).
 
 
 ## A Simple Tuple Type
@@ -649,7 +650,7 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/G4dh3jq8a), [Clang](https://go
 template<typename... Ts> struct Tuple {
   struct storage;
 
-  static_assert(is_type(define_aggregate(^storage, {data_member_spec(^Ts)...})));
+  static_assert(is_type(define_aggregate(^^storage, {data_member_spec(^^Ts)...})));
   storage data;
 
   Tuple(): data{} {}
@@ -661,7 +662,7 @@ template<typename... Ts>
 
 template<std::size_t I, typename... Ts>
   struct std::tuple_element<I, Tuple<Ts...>> {
-    static constexpr std::array types = {^Ts...};
+    static constexpr std::array types = {^^Ts...};
     using type = [: types[I] :];
   };
 
@@ -671,7 +672,7 @@ consteval std::meta::info get_nth_field(std::meta::info r, std::size_t n) {
 
 template<std::size_t I, typename... Ts>
   constexpr auto get(Tuple<Ts...> &t) noexcept -> std::tuple_element_t<I, Tuple<Ts...>>& {
-    return t.data.[:get_nth_field(^decltype(t.data), I):];
+    return t.data.[:get_nth_field(^^decltype(t.data), I):];
   }
 // Similarly for other value categories...
 ```
@@ -680,7 +681,7 @@ template<std::size_t I, typename... Ts>
 This example uses a "magic" `std::meta::define_aggregate` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_aggregate` takes a reflection for an incomplete class or union plus a vector of non-static data member descriptions, and completes the give class or union type to have the described members.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/YK35d8MMx), [Clang](https://godbolt.org/z/cT116Wb31).
+On Compiler Explorer: [EDG](https://godbolt.org/z/76EojjcEe), [Clang](https://godbolt.org/z/WvPzE677q).
 
 ## A Simple Variant Type
 
@@ -731,13 +732,13 @@ class Variant {
     union Storage;
     struct Empty { };
 
-    static_assert(is_type(define_aggregate(^Storage, {
-        data_member_spec(^Empty, {.name="empty"}),
-        data_member_spec(^Ts)...
+    static_assert(is_type(define_aggregate(^^Storage, {
+        data_member_spec(^^Empty, {.name="empty"}),
+        data_member_spec(^^Ts)...
     })));
 
     static consteval std::meta::info get_nth_field(std::size_t n) {
-        return nonstatic_data_members_of(^Storage)[n+1];
+        return nonstatic_data_members_of(^^Storage)[n+1];
     }
 
     Storage storage_;
@@ -836,7 +837,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R1].
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Efz5vsjaa), [Clang](https://godbolt.org/z/3bvo97fqf).
+On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://godbolt.org/z/P8qW3qfda).
 
 ## Struct to Struct of Arrays
 
@@ -853,17 +854,17 @@ consteval auto make_struct_of_arrays(std::meta::info type,
   std::vector<std::meta::info> old_members = nonstatic_data_members_of(type);
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
-    auto type_array = substitute(^std::array, {type_of(member), N });
+    auto type_array = substitute(^^std::array, {type_of(member), N });
     auto mem_descr = data_member_spec(type_array, {.name = identifier_of(member)});
     new_members.push_back(mem_descr);
   }
   return define_aggregate(
-    substitute(^struct_of_arrays_impl, {type, N}),
+    substitute(^^struct_of_arrays_impl, {type, N}),
     new_members);
 }
 
 template <typename T, size_t N>
-using struct_of_arrays = [: make_struct_of_arrays(^T, ^N) :];
+using struct_of_arrays = [: make_struct_of_arrays(^^T, ^^N) :];
 ```
 :::
 
@@ -889,7 +890,7 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_aggregate` is put to good use.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/Whdvs3j1n), [Clang](https://godbolt.org/z/cY73aYKov).
+On Compiler Explorer: [EDG](https://godbolt.org/z/5nsqY1vxz), [Clang](https://godbolt.org/z/veEq6ozes).
 
 
 ## Parsing Command-Line Options II
@@ -957,11 +958,11 @@ struct Clap {
     // check if cmdline contains --help, etc.
 
     struct Opts;
-    static_assert(is_type(spec_to_opts(^Opts, ^Spec)));
+    static_assert(is_type(spec_to_opts(^^Opts, ^^Spec)));
     Opts opts;
 
-    template for (constexpr auto [sm, om] : std::views::zip(nonstatic_data_members_of(^Spec),
-                                                            nonstatic_data_members_of(^Opts))) {
+    template for (constexpr auto [sm, om] : std::views::zip(nonstatic_data_members_of(^^Spec),
+                                                            nonstatic_data_members_of(^^Opts))) {
       auto const& cur = spec.[:sm:];
       constexpr auto type = type_of(om);
 
@@ -974,7 +975,7 @@ struct Clap {
 
       // no such argument
       if (it == cmdline.end()) {
-        if constexpr (has_template_arguments(type) and template_of(type) == ^std::optional) {
+        if constexpr (has_template_arguments(type) and template_of(type) == ^^std::optional) {
           // the type is optional, so the argument is too
           continue;
         } else if (cur.initializer) {
@@ -1004,7 +1005,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/MWfqvMeTx), [Clang](https://godbolt.org/z/e54E5nzd6).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/8415c584f).
 
 ## A Universal Formatter
 
@@ -1017,7 +1018,7 @@ struct universal_formatter {
 
   template <typename T>
   auto format(T const& t, auto& ctx) const {
-    auto out = std::format_to(ctx.out(), "{}@{@{", has_identifier(^T) ? identifier_of(^T)
+    auto out = std::format_to(ctx.out(), "{}@{@{", has_identifier(^^T) ? identifier_of(^^T)
                                                                       : "(unnamed-type)";);
 
     auto delim = [first=true]() mutable {
@@ -1028,12 +1029,12 @@ struct universal_formatter {
       first = false;
     };
 
-    template for (constexpr auto base : bases_of(^T)) {
+    template for (constexpr auto base : bases_of(^^T)) {
       delim();
       out = std::format_to(out, "{}", (typename [: type_of(base) :] const&)(t));
     }
 
-    template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
+    template for (constexpr auto mem : nonstatic_data_members_of(^^T)) {
       delim();
       std::string_view mem_label = has_identifier(mem) ? identifier_of(mem)
                                                        : "(unnamed-member)";
@@ -1062,7 +1063,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/MnGP186eT).
+On Compiler Explorer: [Clang](https://godbolt.org/z/drv1nbsf3).
 
 Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is to use a cast:
 
@@ -1079,7 +1080,7 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-  template for (constexpr auto mem : nonstatic_data_members_of(^T)) {
+  template for (constexpr auto mem : nonstatic_data_members_of(^^T)) {
       hash_append(algo, t.[:mem:]);
   }
 }
@@ -1094,7 +1095,7 @@ This approach requires allowing packs in structured bindings [@P1061R5], but can
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = nonstatic_data_members_of(^T);
+  constexpr auto members = nonstatic_data_members_of(^^T);
 
   constexpr auto indices = []{
     std::array<int, members.size()> indices;
@@ -1113,7 +1114,7 @@ An alternative approach is:
 ::: std
 ```cpp
 consteval auto type_struct_to_tuple(info type) -> info {
-  return substitute(^std::tuple,
+  return substitute(^^std::tuple,
                     nonstatic_data_members_of(type)
                     | std::views::transform(std::meta::type_of)
                     | std::views::transform(std::meta::remove_cvref)
@@ -1127,23 +1128,23 @@ constexpr auto struct_to_tuple_helper(From const& from) -> To {
 
 template<typename From>
 consteval auto get_struct_to_tuple_helper() {
-  using To = [: type_struct_to_tuple(^From): ];
+  using To = [: type_struct_to_tuple(^^From): ];
 
-  std::vector args = {^To, ^From};
-  for (auto mem : nonstatic_data_members_of(^From)) {
+  std::vector args = {^^To, ^^From};
+  for (auto mem : nonstatic_data_members_of(^^From)) {
     args.push_back(reflect_value(mem));
   }
 
   /*
   Alternatively, with Ranges:
   args.append_range(
-    nonstatic_data_members_of(^From)
+    nonstatic_data_members_of(^^From)
     | std::views::transform(std::meta::reflect_value)
     );
   */
 
   return extract<To(*)(From const&)>(
-    substitute(^struct_to_tuple_helper, args));
+    substitute(^^struct_to_tuple_helper, args));
 }
 
 template <typename From>
@@ -1162,11 +1163,11 @@ However, determining the instance of `struct_to_tuple_helper` that is needed is 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `extract`.
 Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
 
-On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/Moqf84nc1), [Clang](https://godbolt.org/z/1s7aj5r69).
+On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/1Tffn4vzn), [Clang](https://godbolt.org/z/r4hKv5voK).
 
 ## Implementing `tuple_cat`
 
-Courtesy of Tomasz Kaminski, [on compiler explorer](https://godbolt.org/z/EajGPdf9q):
+Courtesy of Tomasz Kaminski, [on compiler explorer](https://godbolt.org/z/M38b3a7z4):
 
 ::: std
 ```cpp
@@ -1208,12 +1209,12 @@ consteval auto make_indexer(std::vector<std::size_t> sizes)
         }
     }
 
-    return subst_by_value(^Indexer, args);
+    return subst_by_value(^^Indexer, args);
 }
 
 template<typename... Tuples>
 auto my_tuple_cat(Tuples&&... tuples) {
-    constexpr typename [: make_indexer({tuple_size(remove_cvref(^Tuples))...}) :] indexer;
+    constexpr typename [: make_indexer({tuple_size(remove_cvref(^^Tuples))...}) :] indexer;
     return indexer(std::forward_as_tuple(std::forward<Tuples>(tuples)...));
 }
 ```
@@ -1228,8 +1229,8 @@ Because you cannot just pass `"x"` into a non-type template parameter of the for
 1. Can introduce a `pair` type so that we can write `make_named_tuple<pair<int, "x">, pair<double, "y">>()`, or
 2. Can just do reflections all the way down so that we can write
 ```cpp
-make_named_tuple<^int, std::meta::reflect_value("x"),
-                 ^double, std::meta::reflect_value("y")>()
+make_named_tuple<^^int, std::meta::reflect_value("x"),
+                 ^^double, std::meta::reflect_value("y")>()
 ```
 
 We do not currently support splicing string literals, and the `pair` approach follows the similar pattern already shown with `define_aggregate` (given a suitable `fixed_string` type):
@@ -1247,7 +1248,7 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
     std::vector<std::meta::info> nsdms;
     auto f = [&]<class Tag>(Tag tag){
         nsdms.push_back(data_member_spec(
-            dealias(^typename Tag::type),
+            dealias(^^typename Tag::type),
             {.name=Tag::name()}));
 
     };
@@ -1256,10 +1257,10 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
 }
 
 struct R;
-static_assert(is_type(make_named_tuple(^R, pair<int, "x">{}, pair<double, "y">{})));
+static_assert(is_type(make_named_tuple(^^R, pair<int, "x">{}, pair<double, "y">{})));
 
-static_assert(type_of(nonstatic_data_members_of(^R)[0]) == ^int);
-static_assert(type_of(nonstatic_data_members_of(^R)[1]) == ^double);
+static_assert(type_of(nonstatic_data_members_of(^^R)[0]) == ^^int);
+static_assert(type_of(nonstatic_data_members_of(^^R)[1]) == ^^double);
 
 int main() {
     [[maybe_unused]] auto r = R{.x=1, .y=2.0};
@@ -1267,7 +1268,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/nMx4M9sdT), [Clang](https://godbolt.org/z/TK71ThhM5).
+On Compiler Explorer: [EDG](https://godbolt.org/z/64qTe4KG1), [Clang](https://godbolt.org/z/cTrfGhTfE).
 
 Alternatively, can side-step the question of non-type template parameters entirely by keeping everything in the value domain:
 
@@ -1283,10 +1284,10 @@ consteval auto make_named_tuple(std::meta::info type,
 }
 
 struct R;
-static_assert(is_type(make_named_tuple(^R, {{^int, "x"}, {^double, "y"}})));
+static_assert(is_type(make_named_tuple(^^R, {{^^int, "x"}, {^^double, "y"}})));
 
-static_assert(type_of(nonstatic_data_members_of(^R)[0]) == ^int);
-static_assert(type_of(nonstatic_data_members_of(^R)[1]) == ^double);
+static_assert(type_of(nonstatic_data_members_of(^^R)[0]) == ^^int);
+static_assert(type_of(nonstatic_data_members_of(^^R)[1]) == ^^double);
 
 int main() {
     [[maybe_unused]] auto r = R{.x=1, .y=2.0};
@@ -1294,7 +1295,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG and Clang](https://godbolt.org/z/dPcsaTEv6) (the EDG and Clang implementations differ only in Clang having the updated `data_member_spec` API that returns an `info`).
+On Compiler Explorer: [EDG and Clang](https://godbolt.org/z/4Ev89z4vj) (the EDG and Clang implementations differ only in Clang having the updated `data_member_spec` API that returns an `info`, and the updated name `define_aggregate`).
 
 
 ## Compile-Time Ticket Counter
@@ -1312,7 +1313,7 @@ public:
 
     // Search for the next incomplete 'Helper<k>'.
     std::meta::info r;
-    while (is_complete_type(r = substitute(^Helper,
+    while (is_complete_type(r = substitute(^^Helper,
                                            { std::meta::reflect_value(k) })))
       ++k;
 
@@ -1333,22 +1334,22 @@ static_assert(z == 2);
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/MEYd3771Y), [Clang](https://godbolt.org/z/K4KWEqevv).
+On Compiler Explorer: [EDG](https://godbolt.org/z/5qfcT7vbT), [Clang](https://godbolt.org/z/fdzb1h1o9).
 
 # Proposed Features
 
-## The Reflection Operator (`^`)
+## The Reflection Operator (`^^`)
 
 The reflection operator produces a reflection value from a grammatical construct (its operand):
 
 > | `$unary-expression$`:
 > |       ...
-> |       `^` `::`
-> |       `^` `$namespace-name$`
-> |       `^` `$type-id$`
-> |       `^` `$id-expression$`
+> |       `^^` `::`
+> |       `^^` `$namespace-name$`
+> |       `^^` `$type-id$`
+> |       `^^` `$id-expression$`
 
-The expression `^::` evaluates to a reflection of the global namespace. When the operand is a `$namespace-name$` or `$type-id$`, the resulting value is a reflection of the designated namespace or type.
+The expression `^^::` evaluates to a reflection of the global namespace. When the operand is a `$namespace-name$` or `$type-id$`, the resulting value is a reflection of the designated namespace or type.
 
 When the operand is an `$id-expression$`, the resulting value is a reflection of the designated entity found by lookup. This might be any of:
 
@@ -1360,7 +1361,7 @@ When the operand is an `$id-expression$`, the resulting value is a reflection of
 
 For all other operands, the expression is ill-formed. In a SFINAE context, a failure to substitute the operand of a reflection operator construct causes that construct to not evaluate to constant.
 
-Earlier revisions of this paper allowed for taking the reflection of any `$cast-expression$` that could be evaluated as a constant expression, as we believed that a constant expression could be internally "represented" by just capturing the value to which it evaluated. However, the possibility of side effects from constant evaluation (introduced by this very paper) renders this approach infeasible: even a constant expression would have to be evaluated every time it's spliced. It was ultimately decided to defer all support for expression reflection, but we intend to introduce it through a future paper using the syntax `^(expr)`.
+Earlier revisions of this paper allowed for taking the reflection of any `$cast-expression$` that could be evaluated as a constant expression, as we believed that a constant expression could be internally "represented" by just capturing the value to which it evaluated. However, the possibility of side effects from constant evaluation (introduced by this very paper) renders this approach infeasible: even a constant expression would have to be evaluated every time it's spliced. It was ultimately decided to defer all support for expression reflection, but we intend to introduce it through a future paper using the syntax `^^(expr)`.
 
 This paper does, however, support reflections of _values_ and of _objects_ (including subobjects). Such reflections arise naturally when iterating over template arguments.
 
@@ -1368,7 +1369,7 @@ This paper does, however, support reflections of _values_ and of _objects_ (incl
 template <int P1, const int &P2> void fn() {}
 
 static constexpr int p[2] = {1, 2};
-constexpr auto spec = ^fn<p[0], p[1]>;
+constexpr auto spec = ^^fn<p[0], p[1]>;
 
 static_assert(is_value(template_arguments_of(spec)[0]));
 static_assert(is_object(template_arguments_of(spec)[1]));
@@ -1378,7 +1379,7 @@ static_assert([:template_arguments_of(spec)[0]:] == 1);
 static_assert(&[:template_arguments_of(spec)[1]:] == &p[1]);
 ```
 
-Such reflections cannot generally be obtained using the `^`-operator, but the `std::meta::reflect_value` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::value_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
+Such reflections cannot generally be obtained using the `^^`-operator, but the `std::meta::reflect_value` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::value_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
 
 ### Syntax discussion
 
@@ -1393,6 +1394,8 @@ That is also not conflicting with the use of the caret as a unary operator becau
 Apple also uses the caret in [syntax "blocks"](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/WorkingwithBlocks/WorkingwithBlocks.html) and unfortunately we believe that does conflict with our proposed use of the caret.
 
 Since the syntax discussions in SG7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``{.op}, and `$`{.op}. While we have since discussed some alternatives (e.g., `@` for lifting, `\` and `/` for "raising" and "lowering"), we have grown quite fond of the existing syntax.
+
+In Wrocław 2024, SG7 and EWG voted to adopt `^^` as the new reflection operator (as proposed by [@P3381]). The R8 revision of this paper integrates that change.
 
 
 ## Splicers (`[:`...`:]`)
@@ -1412,7 +1415,7 @@ For example:
 
 ::: std
 ```c++
-typename[: ^:: :] x = 0;  // Error.
+typename[: ^^:: :] x = 0;  // Error.
 ```
 :::
 
@@ -1441,8 +1444,8 @@ struct C {
 
 void (C::*p1)(int) = &C::f;  // error: ambiguous
 
-constexpr auto f1 = members_of(^C, /* function templates named f */)[0];
-constexpr auto f2 = members_of(^C, /* functions named f */)[0];
+constexpr auto f1 = members_of(^^C, /* function templates named f */)[0];
+constexpr auto f2 = members_of(^^C, /* functions named f */)[0];
 void (C::*p2)(int) = &[:f1:]; // ok, refers to C::f<int> (#1)
 void (C::*p3)(int) = &[:f2:]; // ok, refers to C::f      (#2)
 ```
@@ -1497,7 +1500,7 @@ Iterating over the members of a class (e.g., using `std::meta::members_of`) allo
 
 ```cpp
 namespace A {}
-constexpr std::meta::info NS_A = ^A;
+constexpr std::meta::info NS_A = ^^A;
 
 namespace B {
   namespace [:NS_A:] {
@@ -1551,7 +1554,7 @@ We are resolving this ambiguity by simply disallowing a reflection of a concept,
 ```cpp
 struct S { int a; };
 
-constexpr S s = {.[:^S::a:] = 2};
+constexpr S s = {.[:^^S::a:] = 2};
 ```
 
 Although we would like for splices of class members to be usable as designators in an initializer-list, we lack implementation experience with the syntax and would first like to verify that there are no issues with dependent reflections. We are very likely to propose this as an extension in a future paper.
@@ -1569,7 +1572,7 @@ Construct the [struct-to-tuple](#converting-a-struct-to-a-tuple) example from ab
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = nonstatic_data_members_of(^T);
+  constexpr auto members = nonstatic_data_members_of(^^T);
 
   constexpr auto indices = []{
     std::array<int, members.size()> indices;
@@ -1586,7 +1589,7 @@ constexpr auto struct_to_tuple(T const& t) {
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = nonstatic_data_members_of(^T);
+  constexpr auto members = nonstatic_data_members_of(^^T);
   return std::make_tuple(t.[: ...members :]...);
 }
 ```
@@ -1620,7 +1623,7 @@ Which is enough for a tolerable implementation:
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = nonstatic_data_members_of(^T);
+  constexpr auto members = nonstatic_data_members_of(^^T);
   return with_size<members.size()>([&](auto... Is){
     return std::make_tuple(t.[: members[Is] :]...);
   });
@@ -1669,7 +1672,7 @@ The type `std::meta::info` can be defined as follows:
 ```c++
 namespace std {
   namespace meta {
-    using info = decltype(^::);
+    using info = decltype(^^::);
   }
 }
 ```
@@ -1693,7 +1696,7 @@ We for now restrict the space of reflectable values to those of structural type 
 1. The compiler must know how to mangle any reflectable value (i.e., when a reflection thereof is used as a template argument).
 2. The compiler must know how to compare any two reflectable values, ideally without interpreting user-defined comparison operators (i.e., to implement comparison between reflections).
 
-Values of structural types can already be used as template arguments (so implementations must already know how to mangle them), and the notion of _template-argument-equivalent_ values defined on the class of structural types helps guarantee that `&fn<^value1> == &fn<^value2>` if and only if `&fn<value1> == &fn<value2>`.
+Values of structural types can already be used as template arguments (so implementations must already know how to mangle them), and the notion of _template-argument-equivalent_ values defined on the class of structural types helps guarantee that `&fn<^^value1> == &fn<^^value2>` if and only if `&fn<value1> == &fn<value2>`.
 
 Notably absent at this time are reflections of expressions. For example, one might wish to walk over the subexpressions of a function call:
 
@@ -1702,10 +1705,10 @@ Notably absent at this time are reflections of expressions. For example, one mig
 template <typename T> void fn(T) {}
 
 void g() {
-  constexpr auto call = ^(fn(42));
+  constexpr auto call = ^^(fn(42));
   static_assert(
       template_arguments_of(function_of(call))[0] ==
-      ^int);
+      ^^int);
 }
 ```
 :::
@@ -1718,33 +1721,33 @@ The type `std::meta::info` is a _scalar_ type for which equality and inequality 
 
 ::: std
 ```c++
-static_assert(^int == ^int);
-static_assert(^int != ^const int);
-static_assert(^int != ^int &);
+static_assert(^^int == ^^int);
+static_assert(^^int != ^^const int);
+static_assert(^^int != ^^int &);
 
 using Alias = int;
-static_assert(^int != ^Alias);
-static_assert(^int == dealias(^Alias));
+static_assert(^^int != ^^Alias);
+static_assert(^^int == dealias(^^Alias));
 
 namespace AliasNS = ::std;
-static_assert(^::std != ^AliasNS);
-static_assert(^:: == parent_of(^::std));
+static_assert(^^::std != ^^AliasNS);
+static_assert(^^:: == parent_of(^^::std));
 ```
 :::
 
-When the `^` operator is followed by an _id-expression_, the resulting `std::meta::info` represents the entity named by the expression. Such reflections are equivalent only if they reflect the same entity.
+When the `^^` operator is followed by an _id-expression_, the resulting `std::meta::info` represents the entity named by the expression. Such reflections are equivalent only if they reflect the same entity.
 
 ::: std
 ```c++
 int x;
 struct S { static int y; };
-static_assert(^x == ^x);
-static_assert(^x != ^S::y);
-static_assert(^S::y == static_data_members_of(^S)[0]);
+static_assert(^^x == ^^x);
+static_assert(^^x != ^^S::y);
+static_assert(^^S::y == static_data_members_of(^^S)[0]);
 ```
 :::
 
-Special rules apply when comparing certain kinds of reflections. A reflection of an alias compares equal to another reflection if and only if they are both aliases, alias the same type, and share the same name and scope. In particular, these rules allow e.g., `fn<^std::string>` to refer to the same instantiation across translation units.
+Special rules apply when comparing certain kinds of reflections. A reflection of an alias compares equal to another reflection if and only if they are both aliases, alias the same type, and share the same name and scope. In particular, these rules allow e.g., `fn<^^std::string>` to refer to the same instantiation across translation units.
 
 ::: std
 ```c++
@@ -1752,12 +1755,12 @@ using Alias1 = int;
 using Alias2 = int;
 consteval std::meta::info fn() {
   using Alias1 = int;
-  return ^Alias;
+  return ^^Alias;
 }
-static_assert(^Alias1 == ^Alias1);
-static_assert(^Alias1 != ^int);
-static_assert(^Alias1 != ^Alias2);
-static_assert(^Alias1 != fn());
+static_assert(^^Alias1 == ^^Alias1);
+static_assert(^^Alias1 != ^^int);
+static_assert(^^Alias1 != ^^Alias2);
+static_assert(^^Alias1 != fn());
 }
 ```
 :::
@@ -1768,15 +1771,15 @@ A reflection of an object (including variables) does not compare equally to a re
 ```c++
 constexpr int i = 42, j = 42;
 
-constexpr std::meta::info r = ^i, s = ^i;
+constexpr std::meta::info r = ^^i, s = ^^i;
 static_assert(r == r && r == s);
 
-static_assert(^i != ^j);  // 'i' and 'j' are different entities.
-static_assert(value_of(^i) == value_of(^j));  // Two equivalent values.
-static_assert(^i != std::meta::reflect_object(i))  // A variable is distinct from the
-                                                   // object it designates.
-static_assert(^i != std::meta::reflect_value(42));  // A reflection of an object
-                                                    // is not the same as its value.
+static_assert(^^i != ^^j);  // 'i' and 'j' are different entities.
+static_assert(value_of(^^i) == value_of(^^j));  // Two equivalent values.
+static_assert(^^i != std::meta::reflect_object(i))  // A variable is distinct from the
+                                                    // object it designates.
+static_assert(^^i != std::meta::reflect_value(42));  // A reflection of an object
+                                                     // is not the same as its value.
 ```
 :::
 
@@ -1789,8 +1792,8 @@ The namespace `std::meta` is an associated type of `std::meta::info`, which allo
 ```c++
 #include <meta>
 struct S {};
-std::string name2 = std::meta::identifier_of(^S);  // Okay.
-std::string name1 = identifier_of(^S);             // Also okay.
+std::string name2 = std::meta::identifier_of(^^S);  // Okay.
+std::string name1 = identifier_of(^^S);             // Also okay.
 ```
 :::
 
@@ -1803,7 +1806,7 @@ For example:
 #include <meta>
 struct S {};
 static_assert(std::meta::info() == std::meta::info());
-static_assert(std::meta::info() != ^S);
+static_assert(std::meta::info() != ^^S);
 ```
 :::
 
@@ -1830,7 +1833,7 @@ For example:
 struct S;
 
 void g() {
-  static_assert(is_type(define_aggregate(^S, {})));
+  static_assert(is_type(define_aggregate(^^S, {})));
   S s;  // S should be defined at this point.
 }
 ```
@@ -1855,7 +1858,7 @@ Still, we are not aware of incompatibilities between our proposal and [@P2758R1]
 
 ### Error-Handling in Reflection
 
-Earlier revisions of this proposal suggested several possible approaches to handling errors in reflection metafunctions. This question arises naturally when considering, for instance, examples like `template_of(^int)`: the argument is a reflection of a type, but that type is not a specialization of a template, so there is no valid template that we can return.
+Earlier revisions of this proposal suggested several possible approaches to handling errors in reflection metafunctions. This question arises naturally when considering, for instance, examples like `template_of(^^int)`: the argument is a reflection of a type, but that type is not a specialization of a template, so there is no valid template that we can return.
 
 Some of the possibilities that we have considered include:
 
@@ -1864,7 +1867,7 @@ Some of the possibilities that we have considered include:
 3. Failing to be a constant expression
 4. Throwing an exception of type `E`, which requires a language extension for such exceptions to be catchable during `constexpr` evaluation
 
-We found that we disliked (1) since there is no satisfying value that can be returned for a call like `template_arguments_of(^int)`: We could return a `std::vector<std::meta::info>` having a single invalid reflection, but this makes for awkward error handling. The experience offered by (3) is at least consistent, but provides no immediate means for a user to "recover" from an error.
+We found that we disliked (1) since there is no satisfying value that can be returned for a call like `template_arguments_of(^^int)`: We could return a `std::vector<std::meta::info>` having a single invalid reflection, but this makes for awkward error handling. The experience offered by (3) is at least consistent, but provides no immediate means for a user to "recover" from an error.
 
 Either `std::expected` or constexpr exceptions would allow for a consistent and straightforward interface. Deciding between the two, we noticed that many of usual concerns about exceptions do not apply during translation:
 
@@ -1876,7 +1879,7 @@ An interesting example illustrates one reason for our preference for exceptions 
 ::: std
 ```cpp
 template <typename T>
-  requires (template_of(^T) == ^std::optional)
+  requires (template_of(^^T) == ^^std::optional)
 void foo();
 ```
 :::
@@ -1897,12 +1900,12 @@ There are a number of functions, both in the "core" reflection API that we inten
 
 For example:
 
-* `template_arguments_of(^std::tuple<int>)` is `{^int}`
-* `substitute(^std::tuple, {^int})` is `^std::tuple<int>`
+* `template_arguments_of(^^std::tuple<int>)` is `{^^int}`
+* `substitute(^^std::tuple, {^^int})` is `^^std::tuple<int>`
 
 This requires us to answer the question: how do we accept a range parameter and how do we provide a range return.
 
-For return, we intend on returning `std::vector<std::meta::info>` from all such APIs. This is by far the easiest for users to deal with. We definitely don't want to return a `std::span<std::meta::info const>`, since this requires keeping all the information in the compiler memory forever (unlike `std::vector` which could free its allocation). The only other option would be a custom container type which is optimized for compile-time by being able to produce elements lazily on demand - i.e. so that `nonstatic_data_members_of(^T)[3]` wouldn't have to populate _all_ the data members, just do enough work to be able to return the 4th one. But that adds a lot of complexity that's probably not worth the effort.
+For return, we intend on returning `std::vector<std::meta::info>` from all such APIs. This is by far the easiest for users to deal with. We definitely don't want to return a `std::span<std::meta::info const>`, since this requires keeping all the information in the compiler memory forever (unlike `std::vector` which could free its allocation). The only other option would be a custom container type which is optimized for compile-time by being able to produce elements lazily on demand - i.e. so that `nonstatic_data_members_of(^^T)[3]` wouldn't have to populate _all_ the data members, just do enough work to be able to return the 4th one. But that adds a lot of complexity that's probably not worth the effort.
 
 For parameters, there are basically three options:
 
@@ -1925,7 +1928,7 @@ namespace std::meta {
 ```
 :::
 
-This API is more user friendly than accepting `span<info const>` by virtue of simply accepting more kinds of ranges. The default template argument allows for braced-init-lists to still work. [Example](https://godbolt.org/z/7dxfGM5fj).
+This API is more user friendly than accepting `span<info const>` by virtue of simply accepting more kinds of ranges. The default template argument allows for braced-init-lists to still work. [Example](https://godbolt.org/z/P49MPhn4T).
 
 Specifically, if the user is doing anything with range adaptors, they will either end up with a non-contiguous or non-sized range, which will no longer be convertible to `span` - so they will have to manually convert their range to a `vector<info>` in order to pass it to the algorithm. Because the implementation wants contiguity anyway, that conversion to `vector` will happen either way - so it's just a matter of whether every call needs to do it manually or the implementation can just do it once.
 
@@ -1936,7 +1939,7 @@ For example, converting a struct to a tuple type:
 ```cpp
 consteval auto type_struct_to_tuple(info type) -> meta::info {
     return substitute(
-        ^tuple,
+        ^^tuple,
         nonstatic_data_members_of(type)
         | views::transform(meta::type_of)
         | views::transform(meta::remove_cvref)
@@ -1948,7 +1951,7 @@ consteval auto type_struct_to_tuple(info type) -> meta::info {
 ```cpp
 consteval auto type_struct_to_tuple(info type) -> meta::info {
     return substitute(
-        ^tuple,
+        ^^tuple,
         nonstatic_data_members_of(type)
         | views::transform(meta::type_of)
         | views::transform(meta::remove_cvref)
@@ -1989,8 +1992,8 @@ using A = int;
 
 In C++ today, `A` and `int` can be used interchangeably and there is no distinction between the two types.
 With reflection as proposed in this paper, that will no longer be the case.
-`^A` yields a reflection of an alias to `int`, while `^int` yields a reflection of `int`.
-`^A == ^int` evaluates to `false`, but there will be a way to strip aliases - so `dealias(^A) == ^int` evaluates to `true`.
+`^^A` yields a reflection of an alias to `int`, while `^^int` yields a reflection of `int`.
+`^^A == ^^int` evaluates to `false`, but there will be a way to strip aliases - so `dealias(^^A) == ^^int` evaluates to `true`.
 
 This opens up the question of how various other metafunctions handle aliases and it is worth going over a few examples:
 
@@ -2004,12 +2007,12 @@ template <class T> using C = std::unique_ptr<T>;
 
 This paper is proposing that:
 
-* `is_type(^A)` is `true`.
-   `^A` is an alias, but it's an alias to a type, and if this evaluated as `false` then everyone would have to `dealias` everything all the time.
-* `has_template_arguments(^B)` is `false` while `has_template_arguments(^C<int>)` is `true`.
+* `is_type(^^A)` is `true`.
+   `^^A` is an alias, but it's an alias to a type, and if this evaluated as `false` then everyone would have to `dealias` everything all the time.
+* `has_template_arguments(^^B)` is `false` while `has_template_arguments(^^C<int>)` is `true`.
   Even though `B` is an alias to a type that itself has template arguments (`unique_ptr<int>`), `B` itself is simply a type alias and does not.
   This reflects the actual usage.
-* Meanwhile, `template_arguments_of(^C<int>)` yields `{^int}` while `template_arguments_of(^std::unique_ptr<int>)` yields `{^int, ^std::default_deleter<int>}`.
+* Meanwhile, `template_arguments_of(^^C<int>)` yields `{^^int}` while `template_arguments_of(^^std::unique_ptr<int>)` yields `{^^int, ^^std::default_deleter<int>}`.
   This is because `C` has its own template arguments that can be reflected on.
 
 What about when querying the type of an entity?
@@ -2019,8 +2022,8 @@ What about when querying the type of an entity?
 std::string Str;
 const std::string &Ref = Str;
 
-constexpr std::meta::info StrTy = type_of(^Str);
-constexpr std::meta::info RefTy = type_of(^Ref);
+constexpr std::meta::info StrTy = type_of(^^Str);
+constexpr std::meta::info RefTy = type_of(^^Ref);
 ```
 :::
 
@@ -2028,7 +2031,7 @@ What are `StrTy` and `RefTy`? This question is more difficult. Two distinct issu
 
 1. Our experience using these facilities has consistently shown that if `StrTy` represents `std::string`, many uses of `StrTy` require writing `dealias(StrTy)` rather than using `StrTy` directly (because a reflection of a type aliases compares unequal with a reflection of the aliased type). Failure to do so often yields subtle bugs.
 
-2. While we would like for `RefTy` to represent `const std::string &`, it can only represent `const std::basic_string<char, std::allocator<char>> &`. Why? Because since `std::string` is only a "name" for `std::basic_string<char, std::allocator<char>>`, the language provides no semantic answer to what "`const std::string &`" _is_. It is only a source-level "grammatical" construct: A _type-id_. Reflecting type-ids is a brittle path, since it opens questions like whether a reflection of `const int` is the same as a reflection of `int const`. Furthermore, nothing currently requires an implementation to "remember" that the type of `Ref` was "spelled" with the alias `std::string` after parsing it, and we aren't confident that all major implementations do so today. Lastly, even if we _could_ form a reflection of `const std::string &`, our existing metafunction and type-trait "machinery" gives no means of unwrapping the cv-ref qualification to get `^std::string` without decaying all the way to `^std::basic_string<char, std::allocator<char>>`.
+2. While we would like for `RefTy` to represent `const std::string &`, it can only represent `const std::basic_string<char, std::allocator<char>> &`. Why? Because since `std::string` is only a "name" for `std::basic_string<char, std::allocator<char>>`, the language provides no semantic answer to what "`const std::string &`" _is_. It is only a source-level "grammatical" construct: A _type-id_. Reflecting type-ids is a brittle path, since it opens questions like whether a reflection of `const int` is the same as a reflection of `int const`. Furthermore, nothing currently requires an implementation to "remember" that the type of `Ref` was "spelled" with the alias `std::string` after parsing it, and we aren't confident that all major implementations do so today. Lastly, even if we _could_ form a reflection of `const std::string &`, our existing metafunction and type-trait "machinery" gives no means of unwrapping the cv-ref qualification to get `^^std::string` without decaying all the way to `^^std::basic_string<char, std::allocator<char>>`.
 
 In light of the above, our position is that `type_of` should never return aliases: That is, `StrTy` represents `std::basic_string<char, std::allocator<char>>`. We believe that it would be desirable to in the future introduce an `aliased_type_of` function capable of returning representations of both `std::string` and `const std::string &` for `Str` and `Ref` respectively - but this requires both discussions with implementers, and likely new wording technology for the Standard. To avoid jeopardizing the goal declared by the title of this paper, we are not proposing such a function at this time.
 
@@ -2077,7 +2080,7 @@ example would not work:
 #include <meta>
 int main() {
   int hello_world = 42;
-  std::cout << identifier_of(^hello_world) << "\n";  // Doesn't work if identifier_of produces a std::string.
+  std::cout << identifier_of(^^hello_world) << "\n";  // Doesn't work if identifier_of produces a std::string.
 }
 ```
 :::
@@ -2104,8 +2107,8 @@ namespace std::meta {
   struct source_text_info {
     ...
     template<typename T>
-      requires (^T == dealias(^std::string_view) || ^T == dealias(^std::u8string_view) ||
-                ^T == dealias(^std::string) || ^T == dealias(^std::u8string))
+      requires (^^T == dealias(^^std::string_view) || ^^T == dealias(^^std::u8string_view) ||
+                ^^T == dealias(^^std::string) || ^^T == dealias(^^std::u8string))
       consteval T as();
     ...
   };
@@ -2133,7 +2136,7 @@ Following much discussion with SG16, we propose #1: The query fails to evaluate 
 
 Earlier revisions of this proposal (and its predecessor, [@P1240R2]) included a metafunction called `name_of`, which we defined to return a `string_view` containing the "name" of the reflected entity. As the paper evolved, it became necessary to sharpen the specification of what this "name" contains. Subsequent revisions (beginning with P2996R2, presented in Tokyo) specified that `name_of` returns the unqualified name, whereas a new `qualified_name_of` would give the fully qualified name.
 
-Most would agree that `qualified_name_of(^size_t)` might reasonably return `"std::size_t"`, or that `qualified_name_of(^std::any::reset)` could return `"std::any::reset"`. But what about for local variables, or members of local classes? Should inline and anonymous namespaces be rendered as a part of the qualified name? Should we standardize the spelling of such scopes, or leave it implementation defined?
+Most would agree that `qualified_name_of(^^size_t)` might reasonably return `"std::size_t"`, or that `qualified_name_of(^^std::any::reset)` could return `"std::any::reset"`. But what about for local variables, or members of local classes? Should inline and anonymous namespaces be rendered as a part of the qualified name? Should we standardize the spelling of such scopes, or leave it implementation defined?
 
 The situation is possibly even less clear for unqualified names. Should cv-qualified types be rendered as `const int` or `int const`? Should the type for a function returning a pointer be rendered as `T *(*)()`, `T* (*)()`, or `T * (*)()`? Should such decisions be standardized, or left to implementations? But the real kicker is when one considers non-type template arguments, which can (and do) contain arbitrarily complex values of arbitrary structural types (along with any complete object, or subobject thereof, which has static storage duration).
 
@@ -2177,7 +2180,7 @@ consteval size_t count_fields(std::meta::info Ty) {
 }
 
 struct S { int i, j, k; }
-static_assert(/*P2*/ count_fields(^S) == 3);
+static_assert(/*P2*/ count_fields(^^S) == 3);
 ```
 :::
 
@@ -2204,7 +2207,7 @@ consteval std::meta::info make_defn(std::meta::info Cls, std::meta::info Mem) {
 
 /* P3*/ struct C;
 /* P4*/ struct M;
-static_assert(/*P5*/ is_type(make_defn(^C, ^M)) /*P6*/);
+static_assert(/*P5*/ is_type(make_defn(^^C, ^^M)) /*P6*/);
 
 /*P7*/ C obj;
 ```
@@ -2255,7 +2258,7 @@ Here is a synopsis for the proposed library API. The functions will be explained
 ::: std
 ```c++
 namespace std::meta {
-  using info = decltype(^::);
+  using info = decltype(^^::);
 
   template <typename R>
     concept reflection_range = /* @*see [above](#range-based-metafunctions)*@ */;
@@ -2457,7 +2460,7 @@ consteval auto type_doof(std::meta::info r) -> std::meta::info {
   return remove_cvref(is_type(r) ? r : type_of(r));
 }
 
-#define typeof(e) [: type_doof(^e) :]
+#define typeof(e) [: type_doof(^^e) :]
 ```
 :::
 
@@ -2471,9 +2474,9 @@ Otherwise, `dealias(r)` produces `r`.
 ```cpp
 using X = int;
 using Y = X;
-static_assert(dealias(^int) == ^int);
-static_assert(dealias(^X) == ^int);
-static_assert(dealias(^Y) == ^int);
+static_assert(dealias(^^int) == ^^int);
+static_assert(dealias(^^X) == ^^int);
+static_assert(dealias(^^Y) == ^^int);
 ```
 :::
 
@@ -2495,8 +2498,8 @@ If `r` is a reflection of a variable denoting an object with static storage dura
 int x;
 int &y = x;
 
-static_assert(^x != ^y);
-static_assert(object_of(^x) == object_of(^y));
+static_assert(^^x != ^^y);
+static_assert(object_of(^^x) == object_of(^^y));
 ```
 :::
 
@@ -2520,8 +2523,8 @@ For example:
 ::: std
 ```c++
 std::vector<int> v = {1, 2, 3};
-static_assert(template_of(type_of(^v)) == ^std::vector);
-static_assert(template_arguments_of(type_of(^v))[0] == ^int);
+static_assert(template_of(type_of(^^v)) == ^^std::vector);
+static_assert(template_arguments_of(type_of(^^v))[0] == ^^int);
 ```
 :::
 
@@ -2583,7 +2586,7 @@ For example:
 
 ::: std
 ```c++
-constexpr auto r = substitute(^std::vector, std::vector{^int});
+constexpr auto r = substitute(^^std::vector, std::vector{^^int});
 using T = [:r:]; // Ok, T is std::vector<int>
 ```
 :::
@@ -2596,7 +2599,7 @@ Note that the template is only substituted, not instantiated.  For example:
 ```c++
 template<typename T> struct S { typename T::X x; };
 
-constexpr auto r = substitute(^S, std::vector{^int});  // Okay.
+constexpr auto r = substitute(^^S, std::vector{^^int});  // Okay.
 typename[:r:] si;  // Error: T::X is invalid for T = int.
 ```
 :::
@@ -2621,8 +2624,8 @@ These metafunctions produce a reflection of the _result_ from evaluating the pro
 `reflect_value(expr)` produces a reflection of the value computed by an lvalue-to-rvalue conversion on `expr`. The type of the reflected value is the cv-unqualified (de-aliased) type of `expr`. The result needs to be a permitted result of a constant expression, and `T` cannot be of reference type.
 
 ```cpp
-static_assert(substitute(^std::array, {^int, std::meta::reflect_value(5)}) ==
-              ^std::array<int, 5>);
+static_assert(substitute(^^std::array, {^^int, std::meta::reflect_value(5)}) ==
+              ^^std::array<int, 5>);
 ```
 
 `reflect_object(expr)` produces a reflection of the object designated by `expr`. This is frequently used to obtain a reflection of a subobject, which might then be used as a template argument for a non-type template parameter of reference type.
@@ -2631,7 +2634,7 @@ static_assert(substitute(^std::array, {^int, std::meta::reflect_value(5)}) ==
 template <int &> void fn();
 
 int p[2];
-constexpr auto r = substitute(^fn, {std::meta::reflect_object(p[1])});
+constexpr auto r = substitute(^^fn, {std::meta::reflect_object(p[1])});
 ```
 
 `reflect_function(expr)` produces a reflection of the function designated by `expr`. It can be useful for reflecting on the properties of a function for which only a reference is available.
@@ -2640,7 +2643,7 @@ constexpr auto r = substitute(^fn, {std::meta::reflect_object(p[1])});
 consteval bool is_global_with_external_linkage(void(*fn)()) {
   std::meta::info rfn = std::meta::reflect_function(*fn);
 
-  return (has_external_linkage(rfn) && parent_of(rfn) == ^::);
+  return (has_external_linkage(rfn) && parent_of(rfn) == ^^::);
 }
 ```
 
@@ -2711,10 +2714,10 @@ For example:
 ::: std
 ```c++
 union U;
-static_assert(is_type(define_aggregate(^U, {
-  data_member_spec(^int),
-  data_member_spec(^char),
-  data_member_spec(^double),
+static_assert(is_type(define_aggregate(^^U, {
+  data_member_spec(^^int),
+  data_member_spec(^^char),
+  data_member_spec(^^double),
 })));
 
 // U is now defined to the equivalent of
@@ -2725,9 +2728,9 @@ static_assert(is_type(define_aggregate(^U, {
 // };
 
 template<typename T> struct S;
-constexpr auto s_int_refl = define_aggregate(^S<int>, {
-  data_member_spec(^int, {.name="i", .alignment=64}),
-  data_member_spec(^int, {.name=u8"こんにち"}),
+constexpr auto s_int_refl = define_aggregate(^^S<int>, {
+  data_member_spec(^^int, {.name="i", .alignment=64}),
+  data_member_spec(^^int, {.name=u8"こんにち"}),
 });
 
 // S<int> is now defined to the equivalent of
@@ -2789,20 +2792,20 @@ struct Msg {
     uint64_t d : 21;
 };
 
-static_assert(offset_of(^Msg::a) == member_offset{0, 0});
-static_assert(offset_of(^Msg::b) == member_offset{1, 2});
-static_assert(offset_of(^Msg::c) == member_offset{2, 2});
-static_assert(offset_of(^Msg::d) == member_offset{5, 3});
+static_assert(offset_of(^^Msg::a) == member_offset{0, 0});
+static_assert(offset_of(^^Msg::b) == member_offset{1, 2});
+static_assert(offset_of(^^Msg::c) == member_offset{2, 2});
+static_assert(offset_of(^^Msg::d) == member_offset{5, 3});
 
-static_assert(bit_size_of(^Msg::a) == 10);
-static_assert(bit_size_of(^Msg::b) == 8);
-static_assert(bit_size_of(^Msg::c) == 25);
-static_assert(bit_size_of(^Msg::d) == 21);
+static_assert(bit_size_of(^^Msg::a) == 10);
+static_assert(bit_size_of(^^Msg::b) == 8);
+static_assert(bit_size_of(^^Msg::c) == 25);
+static_assert(bit_size_of(^^Msg::d) == 21);
 
-static_assert(offset_of(^Msg::a).total_bits() == 0);
-static_assert(offset_of(^Msg::b).total_bits() == 10);
-static_assert(offset_of(^Msg::c).total_bits() == 18);
-static_assert(offset_of(^Msg::d).total_bits() == 43);
+static_assert(offset_of(^^Msg::a).total_bits() == 0);
+static_assert(offset_of(^^Msg::b).total_bits() == 10);
+static_assert(offset_of(^^Msg::c).total_bits() == 18);
+static_assert(offset_of(^^Msg::d).total_bits() == 43);
 
 ```
 :::
@@ -2822,7 +2825,7 @@ remove_cvref(type)
 
 ### Indirect
 ```cpp
-dealias(substitute(^std::remove_cvref_t, {type}))
+dealias(substitute(^^std::remove_cvref_t, {type}))
 ```
 
 ---
@@ -2832,11 +2835,11 @@ is_const_type(type)
 ```
 
 ```cpp
-extract<bool>(substitute(^std::is_const_v, {type}))
+extract<bool>(substitute(^^std::is_const_v, {type}))
 ```
 :::
 
-The indirect approach is a lot more typing, and you have to remember to `dealias` the result of the type traits as well (because `substitute(^std::remove_cvref_t, {^int const})` gives you a reflection of an alias to `int`, not a reflection of `int`), so it's both more tedious and more error prone.
+The indirect approach is a lot more typing, and you have to remember to `dealias` the result of the type traits as well (because `substitute(^^std::remove_cvref_t, {^^int const})` gives you a reflection of an alias to `int`, not a reflection of `int`), so it's both more tedious and more error prone.
 
 Having `std::meta::meow` for every trait `std::meow` is more straightforward and will likely be faster to compile, though means we will have a much larger library API. There are quite a few traits in [meta]{.sref} - but it should be easy enough to specify all of them.
 So we're doing it.
@@ -2894,7 +2897,7 @@ Static reflection invariably brings new ways to violate ODR.
 // File 'cls.h'
 struct Cls {
   void odr_violator() {
-    if constexpr (members_of(parent_of(^std::size_t)).size() % 2 == 0)
+    if constexpr (members_of(parent_of(^^std::size_t)).size() % 2 == 0)
       branch_1();
     else
       branch_2();
@@ -2904,7 +2907,7 @@ struct Cls {
 
 Two translation units including `cls.h` can generate different definitions of `Cls::odr_violator()` based on whether an odd or even number of declarations have been imported from `std`. Branching on the members of a namespace is dangerous because namespaces may be redeclared and reopened: the set of contained declarations can differ between program points.
 
-The creative programmer will find no difficulty coming up with other predicates which would be similarly dangerous if substituted into the same `if constexpr` condition: for instance, given a branch on `is_complete_type(^T)`, if one translation unit `#include`s a forward declaration of `T`, another `#include`s a complete definition of `T`, and they both afterwards `#include "cls.h"`, the result will be an ODR violation.
+The creative programmer will find no difficulty coming up with other predicates which would be similarly dangerous if substituted into the same `if constexpr` condition: for instance, given a branch on `is_complete_type(^^T)`, if one translation unit `#include`s a forward declaration of `T`, another `#include`s a complete definition of `T`, and they both afterwards `#include "cls.h"`, the result will be an ODR violation.
 
 Additional papers are already in flight proposing additional metafunctions that pose similar dangers. For instance, [@P3096R1] proposes the `parameters_of` metafunction. This feature is important for generating language bindings (e.g., Python, JavaScript), but since parameter names can differ between declarations, it would be dangerous for a member function defined in a header file to branch on the name of a parameter.
 
@@ -2914,7 +2917,7 @@ Education and training are important to help C++ users avoid such sharp edges, b
 
 # Proposed Wording
 
-[Throughout the wording, we say that a reflection (an object of type `std::meta::info`) *represents* some source construct, while splicing that reflection *designates* that source construct. For instance, `^int` represents the type `int` and `[: ^int :]` designates the type `int`.]{.ednote}
+[Throughout the wording, we say that a reflection (an object of type `std::meta::info`) *represents* some source construct, while splicing that reflection *designates* that source construct. For instance, `^^int` represents the type `int` and `[: ^^int :]` designates the type `int`.]{.ednote}
 
 ## Language
 
@@ -2989,10 +2992,10 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
          {        }        [        ]        (        )        @[`[:        :]`]{.addu}@
          <:       :>       <%       %>       ;        :        ...
          ?        ::       .       .*        ->       ->*      ~
-         !        +        -        *        /        %        ^        &        |
-         =        +=       -=       *=       /=       %=       ^=       &=       |=
-         ==       !=       <        >        <=       >=       <=>      &&       ||
-         <<       >>       <<=      >>=      ++       --       ,
+         !        +        -        *        /        %        ^        @[`^^`]{.addu}@       &
+         |        =        +=       -=       *=       /=       %=       ^=       &=
+         |=       ==       !=       <        >        <=       >=       <=>      &&
+         ||       <<       >>       <<=      >>=      ++       --       ,
          and      or       xor      not      bitand   bitor    compl
          and_eq   or_eq    xor_eq   not_eq
 ```
@@ -3228,10 +3231,10 @@ void dependent() {
 };
 
 void non_dependent() {
-  dependent<^var, ^cls, ^t_var, ^t_cls, ^always_true>();
+  dependent<^^var, ^^cls, ^^t_var, ^^t_cls, ^^always_true>();
 
-  template [:^t_cls:]<0> *var1;  // OK, non-dependent context
-  [:^t_cls:]<0> *var2;           // error: interpreted as multiplication.
+  template [:^^t_cls:]<0> *var1;  // OK, non-dependent context
+  [:^^t_cls:]<0> *var2;           // error: interpreted as multiplication.
 };
 
 ```
@@ -3454,14 +3457,14 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
 ```
 $reflect-expression$:
-   ^ ::
-   ^ $unqualified-id$
-   ^ $qualified-id$
-   ^ $type-id$
-   ^ $pack-index-expression$
+   ^^ ::
+   ^^ $unqualified-id$
+   ^^ $qualified-id$
+   ^^ $type-id$
+   ^^ $pack-index-expression$
 ```
 
-[#]{.pnum} The unary `^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
+[#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
 
 [#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`.
 
@@ -3469,26 +3472,26 @@ $reflect-expression$:
 
 ::: example
 ```
-static_assert(is_type(^int()));    // ^ applies to the type-id "int()"
+static_assert(is_type(^^int()));    // ^^ applies to the type-id "int()"
 
 template<bool> struct X {};
 bool operator<(std::meta::info, X<false>);
 consteval void g(std::meta::info r, X<false> xv) {
-  r == ^int && true;    // error: ^ applies to the type-id "int&&"
-  r == ^int & true;     // error: ^ applies to the type-id "int&"
-  r == (^int) && true;  // OK
-  r == ^int &&&& true;  // OK
-  ^X < xv;              // error: < starts template argument list
-  (^X) < xv;            // OK
+  r == ^^int && true;    // error: ^^ applies to the type-id "int&&"
+  r == ^^int & true;     // error: ^^ applies to the type-id "int&"
+  r == (^^int) && true;  // OK
+  r == ^^int &&&& true;  // OK
+  ^^X < xv;              // error: < starts template argument list
+  (^^X) < xv;            // OK
 }
 
 
 ```
 :::
 
-[#]{.pnum} A `$reflect-expression$` having the form `^ ::` computes a reflection of the global namespace.
+[#]{.pnum} A `$reflect-expression$` having the form `^^ ::` computes a reflection of the global namespace.
 
-[#]{.pnum} A `$reflect-expression$` having the form `^ $unqualified-id$` or `^ $qualified-id$` performs name lookup for the operand following `^` and computes a result as follows:
+[#]{.pnum} A `$reflect-expression$` having the form `^^ $unqualified-id$` or `^^ $qualified-id$` performs name lookup for the operand following `^^` and computes a result as follows:
 
 * [#.#]{.pnum} If the lookup finds an overload set `$S$` such that the initialization of an invented variable of type `const auto` ([dcl.type.auto.deduct]{.sref}) with `&$S$` would select a unique candidate function `$F$` from `$S$`, then the result is a reflection of `$F$`. If the lookup finds any other overload set, the program is ill-formed.
 
@@ -3502,20 +3505,20 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 * [#.#]{.pnum} Otherwise, the program is ill-formed.
 
-[#]{.pnum} A `$reflect-expression$` of the form `^ $type-id$` computes a reflection of the denoted type. A `$reflect-expression$` that could be validly interpreted as either `^ $unqualified-id$` or `^ $type-id$` is interpreted as `^ $unqualified-id$`, and a `$reflect-expression$` that could be validly interpreted as `^ $qualified-id$` or `^ $type-id$` is interpreted as `^ $qualified-id$`.
+[#]{.pnum} A `$reflect-expression$` of the form `^^ $type-id$` computes a reflection of the denoted type. A `$reflect-expression$` that could be validly interpreted as either `^^ $unqualified-id$` or `^^ $type-id$` is interpreted as `^^ $unqualified-id$`, and a `$reflect-expression$` that could be validly interpreted as `^^ $qualified-id$` or `^^ $type-id$` is interpreted as `^^ $qualified-id$`.
 
-[#]{.pnum} A `$reflect-expression$` having the form `^ $pack-index-expression$` computes a reflection of the result computed by the `$pack-index-expression$`.
+[#]{.pnum} A `$reflect-expression$` having the form `^^ $pack-index-expression$` computes a reflection of the result computed by the `$pack-index-expression$`.
 
 ::: example
 ```cpp
-template <typename T> void fn() requires (^T != ^int);
-template <typename T> void fn() requires (^T == ^int);
+template <typename T> void fn() requires (^^T != ^^int);
+template <typename T> void fn() requires (^^T == ^^int);
 template <typename T> void fn() requires (sizeof(T) == sizeof(int));
 
-constexpr auto R = ^fn<char>;     // OK
-constexpr auto S = ^fn<int>;      // error: cannot reflect an overload set
+constexpr auto R = ^^fn<char>;     // OK
+constexpr auto S = ^^fn<int>;      // error: cannot reflect an overload set
 
-constexpr auto r = ^std::vector;  // OK
+constexpr auto r = ^^std::vector;  // OK
 ```
 :::
 
@@ -4130,7 +4133,7 @@ template<class T> void f(T* p) {
   T::adjust<100>();                     // error: < means less than
   T::template adjust<100>();            // OK, < starts template argument list
 
-+ static constexpr auto r = ^T::adjust;
++ static constexpr auto r = ^^T::adjust;
 + T* p3 = [:r:]<200>();                 // error: < means less than
 + T* p4 = template [:r:]<200>();        // OK, < starts template argument list
 }
@@ -4169,8 +4172,8 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
     f<int()>();       // int() is a type-id: call@[s (#1)]{.addu}@ @[`the first f()`]{.rm}@
 
 +   constexpr int x = 42;
-+   f<[:^int:]>();    // splice-specifier: calls (#1)
-+   f<[:^x:]>();      // splice-specifier: calls (#2)
++   f<[:^^int:]>();    // splice-specifier: calls (#1)
++   f<[:^^x:]>();      // splice-specifier: calls (#2)
   }
 ```
 :::
@@ -4297,12 +4300,12 @@ template<class T> void f(T::R);   // ill-formed, no diagnostic required: attempt
 
 template<class T> struct S {
   using Ptr = PtrTraits<T>::Ptr;  // OK, in a $defining-type-id$
-  @[`using Alias = [:^int];          // OK, in a $defining-type-id$`]{.addu}@
+  @[`using Alias = [:^^int];          // OK, in a $defining-type-id$`]{.addu}@
   T::R f(T::P p) {                // OK, class scope
     return static_cast<T::R>(p);  // OK, $type-id$ of a `static_cast`
   }
   auto g() -> S<T*>::Ptr;         // OK, $trailing-return-type$
-  @[`auto h() -> [:^S:]<T*>;         // OK, $trailing-return-type$`]{.addu}@
+  @[`auto h() -> [:^^S:]<T*>;         // OK, $trailing-return-type$`]{.addu}@
 };
 template<typename T> void f() {
   void (*pf)(T::X);               // variable `pf` of type `void*` initialized
@@ -4390,7 +4393,7 @@ alignof ( type-id )
 noexcept ( expression )
 ```
 
-[A `$reflect-expression$` is value-dependent if the operand following `^` is a dependent name, names a dependent type, or contains a dependent `$pack-index-expression$`.]{.addu}
+[A `$reflect-expression$` is value-dependent if the operand following `^^` is a dependent name, names a dependent type, or contains a dependent `$pack-index-expression$`.]{.addu}
 :::
 
 
@@ -4543,7 +4546,7 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 #include <vector>
 
 namespace std::meta {
-  using info = decltype(^::);
+  using info = decltype(^^::);
 
   // [meta.reflection.operators], operator representations
   enum class operators {
@@ -5222,7 +5225,7 @@ consteval bool is_template(info r);
 ```
 [#]{.pnum} *Returns*: `true` if `r` represents a function template, class template, variable template, alias template, or concept. Otherwise, `false`.
 
-[#]{.pnum} [A template specialization is not a template. `is_template(^std::vector)` is `true` but `is_template(^std::vector<int>)` is `false`.]{.note}
+[#]{.pnum} [A template specialization is not a template. `is_template(^^std::vector)` is `true` but `is_template(^^std::vector<int>)` is `false`.]{.note}
 
 ```cpp
 consteval bool is_function_template(info r);
@@ -5295,10 +5298,10 @@ consteval info object_of(info r);
 int x;
 int& y = x;
 
-static_assert(^x != ^y);                       // OK, x and y are different variables so their
-                                               // reflections compare different
-static_assert(object_of(^x) == object_of(^y)); // OK, because y is a reference
-                                               // to x, their underlying objects are the same
+static_assert(^^x != ^^y);                       // OK, x and y are different variables so their
+                                                 // reflections compare different
+static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
+                                                 // to x, their underlying objects are the same
 ```
 :::
 
@@ -5323,11 +5326,11 @@ consteval info value_of(info r);
 constexpr int x = 0;
 constexpr int y = 0;
 
-static_assert(^x != ^y);                         // OK, x and y are different variables so their
+static_assert(^^x != ^^y);                         // OK, x and y are different variables so their
                                                  // reflections compare different
-static_assert(value_of(^x) == value_of(^y));     // OK, both value_of(^x) and value_of(^y) represent
+static_assert(value_of(^^x) == value_of(^^y));     // OK, both value_of(^^x) and value_of(^^y) represent
                                                  // the value 0
-static_assert(value_of(^x) == reflect_value(0)); // OK, likewise
+static_assert(value_of(^^x) == reflect_value(0)); // OK, likewise
 ```
 :::
 
@@ -5351,9 +5354,9 @@ consteval info dealias(info r);
 ```
 using X = int;
 using Y = X;
-static_assert(dealias(^int) == ^int);
-static_assert(dealias(^X) == ^int);
-static_assert(dealias(^Y) == ^int);
+static_assert(dealias(^^int) == ^^int);
+static_assert(dealias(^^X) == ^^int);
+static_assert(dealias(^^Y) == ^^int);
 ```
 :::
 
@@ -5373,12 +5376,12 @@ template <class T, class U=T> struct Pair { };
 template <class T> struct Pair<char, T> { };
 template <class T> using PairPtr = Pair<T*>;
 
-static_assert(template_of(^Pair<int>) == ^Pair);
-static_assert(template_of(^Pair<char, char>) == ^Pair);
-static_assert(template_arguments_of(^Pair<int>).size() == 2);
+static_assert(template_of(^^Pair<int>) == ^^Pair);
+static_assert(template_of(^^Pair<char, char>) == ^^Pair);
+static_assert(template_arguments_of(^^Pair<int>).size() == 2);
 
-static_assert(template_of(^PairPtr<int>) == ^PairPtr);
-static_assert(template_arguments_of(^PairPtr<int>).size() == 1);
+static_assert(template_of(^^PairPtr<int>) == ^^PairPtr);
+static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
 ```
 :::
 :::
@@ -5632,7 +5635,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, variables, or `$typedef-name$`s represented by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: `^Z<Args...>`.
+[#]{.pnum} *Returns*: `^^Z<Args...>`.
 
 [#]{.pnum} [`Z<Args..>` is not instantiated.]{.note}
 
@@ -5684,7 +5687,7 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is a function type.
 
-[#]{.pnum} *Returns*: `^fn`, where `fn` is the function designated by `expr`.
+[#]{.pnum} *Returns*: `^^fn`, where `fn` is the function designated by `expr`.
 :::
 :::
 
@@ -5712,8 +5715,8 @@ consteval data_member_options::name_type(T&& value);
 `name_type` provides a simple inner class that can be implicitly constructed from anything convertible to `string` or `u8string`. This allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc) equally well.
 
 ```cpp
-constexpr auto mem1 = data_member_spec(^int, {.name="ordinary_literal_encoding"});
-constexpr auto mem2 = data_member_spec(^int, {.name=u8"utf8_encoding"});
+constexpr auto mem1 = data_member_spec(^^int, {.name="ordinary_literal_encoding"});
+constexpr auto mem2 = data_member_spec(^^int, {.name=u8"utf8_encoding"});
 ```
 
 :::
@@ -5805,7 +5808,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.cat]{.sref}.
 
 ```cpp
 consteval bool is_void_type(info type);
@@ -5832,14 +5835,14 @@ consteval bool is_reflection_type(info type);
 namespace std::meta {
   consteval bool is_void_type(info type) {
     // one example implementation
-    return extract<bool>(substitute(^is_void_v, {type}));
+    return extract<bool>(substitute(^^is_void_v, {type}));
 
     // another example implementation
     type = dealias(type);
-    return type == ^void
-        || type == ^const void
-        || type == ^volatile void
-        || type == ^const volatile void;
+    return type == ^^void
+        || type == ^^const void
+        || type == ^^volatile void
+        || type == ^^const volatile void;
   }
 }
 ```
@@ -5851,7 +5854,7 @@ namespace std::meta {
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$TRAIT$_type` defined in this clause, `std::meta::$TRAIT$_type(^^T)` equals the value of the corresponding unary type trait `std::$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
 
 ```cpp
 consteval bool is_reference_type(info type);
@@ -5869,11 +5872,11 @@ consteval bool is_member_pointer_type(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$UNARY-TRAIT$_type` or `std::meta::$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::$UNARY-TRAIT$_type(^T)` or `std::meta::$UNARY-TRAIT$(^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$UNARY-TRAIT$_type` or `std::meta::$UNARY-TRAIT$` defined in this clause with signature `bool(std::meta::info)`, `std::meta::$UNARY-TRAIT$_type(^^T)` or `std::meta::$UNARY-TRAIT$(^^T)` equals the value of the corresponding type property `std::$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any types or `$typedef-names$` `T` and `U`, for each function `std::meta::$BINARY-TRAIT$_type` or `std::meta::$BINARY-TYPE$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$BINARY-TRAIT$_type(^T, ^U)` or `std::meta::$BINARY-TRAIT$(^T, ^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any types or `$typedef-names$` `T` and `U`, for each function `std::meta::$BINARY-TRAIT$_type` or `std::meta::$BINARY-TYPE$` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$BINARY-TRAIT$_type(^^T, ^^U)` or `std::meta::$BINARY-TRAIT$(^^T, ^^U)` equals the value of the corresponding type property `std::$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each function template `std::meta::$VARIADIC-TRAIT$_type` defined in this clause, `std::meta::$VARIADIC-TRAIT$_type(^T, r)` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^^U...}` is `true`, for each function template `std::meta::$VARIADIC-TRAIT$_type` defined in this clause, `std::meta::$VARIADIC-TRAIT$_type(^^T, r)` equals the value of the corresponding type property `std::$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
 
 ```cpp
 consteval bool is_const_type(info type);
@@ -5970,11 +5973,11 @@ consteval size_t extent(info type, unsigned i = 0);
 ::: addu
 [1]{.pnum} The consteval functions specified in this clause may be used to query relationships between types at compile time.
 
-[#]{.pnum} For any types or `$typedef-name$` `T` and `U`, for each function `std::meta::$REL$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$_type(^T, ^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types or `$typedef-name$` `T` and `U`, for each function `std::meta::$REL$_type` defined in this clause with signature `bool(std::meta::info, std::meta::info)`, `std::meta::$REL$_type(^^T, ^^U)` equals the value of the corresponding type relation `std::$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each binary function template `std::meta::$VARIADIC-REL$_type`, `std::meta::$VARIADIC-REL$_type(^T, r)` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^^U...}` is `true`, for each binary function template `std::meta::$VARIADIC-REL$_type`, `std::meta::$VARIADIC-REL$_type(^^T, r)` equals the value of the corresponding type relation `std::$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any types or `$typedef-names$` `T` and `R`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, for each ternary function template `std::meta::$VARIADIC-REL-R$_type` defined in this clause, `std::meta::$VARIADIC-REL-R$(^R, ^T, r)_type` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types or `$typedef-names$` `T` and `R`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^^U...}` is `true`, for each ternary function template `std::meta::$VARIADIC-REL-R$_type` defined in this clause, `std::meta::$VARIADIC-REL-R$(^^R, ^^T, r)_type` equals the value of the corresponding type relation `std::$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
 
 ```cpp
 consteval bool is_same_type(info type1, info type2);
@@ -6012,7 +6015,7 @@ consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&& type
 #### [meta.reflection.trans.cv], Const-volatile modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
 
 ```cpp
 consteval info remove_const(info type);
@@ -6029,7 +6032,7 @@ consteval info add_cv(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
 
 ```cpp
 consteval info remove_reference(info type);
@@ -6043,7 +6046,7 @@ consteval info add_rvalue_reference(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
 ```cpp
 consteval info make_signed(info type);
 consteval info make_unsigned(info type);
@@ -6055,7 +6058,7 @@ consteval info make_unsigned(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
 ```cpp
 consteval info remove_extent(info type);
 consteval info remove_all_extents(info type);
@@ -6066,7 +6069,7 @@ consteval info remove_all_extents(info type);
 #### [meta.reflection.trans.ptr], Pointer modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$MOD$` defined in this clause, `std::meta::$MOD$(^^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
 ```cpp
 consteval info remove_pointer(info type);
 consteval info add_pointer(info type);
@@ -6080,11 +6083,11 @@ consteval info add_pointer(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::type_$MOD$(^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::type_$MOD$` defined in this clause with signature `std::meta::info(std::meta::info)`, `std::meta::type_$MOD$(^^T)` returns the reflection of the corresponding type `std::$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any pack of types or `$typedef-names$` `T...` and range `r` such that `ranges::to<vector>(r) == vector{^T...}` is `true`, for each unary function template `std::meta::$VARIADIC-MOD$` defined in this clause, `std::meta::$VARIADIC-MOD$(r)` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
+[#]{.pnum} For any pack of types or `$typedef-names$` `T...` and range `r` such that `ranges::to<vector>(r) == vector{^^T...}` is `true`, for each unary function template `std::meta::$VARIADIC-MOD$` defined in this clause, `std::meta::$VARIADIC-MOD$(r)` returns the reflection of the corresponding type `std::$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^U...}` is `true`, `std::meta::invoke_result(^T, r)` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
+[#]{.pnum} For any type or `$typedef-name$` `T`, pack of types or `$typedef-names$` `U...`, and range `r` such that `ranges::to<vector>(r) == vector{^^U...}` is `true`, `std::meta::invoke_result(^^T, r)` returns the reflection of the corresponding type `std::invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
 
 ```cpp
 consteval info remove_cvref(info type);
@@ -6107,7 +6110,7 @@ consteval info unwrap_ref_decay(info type);
 // example implementation
 consteval info unwrap_reference(info type) {
   type = dealias(type);
-  if (has_template_arguments(type) && template_of(type) == ^reference_wrapper) {
+  if (has_template_arguments(type) && template_of(type) == ^^reference_wrapper) {
     return add_lvalue_reference(template_arguments_of(type)[0]);
   } else {
     return type;
@@ -6123,9 +6126,9 @@ consteval info unwrap_reference(info type) {
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$UNARY-TRAIT$` defined in this clause with the signature `size_t(std::meta::info)`, `std::meta::$UNARY-TRAIT$(^T)` equals the value of the corresponding property `std::$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+[1]{.pnum} For any type or `$typedef-name$` `T`, for each function `std::meta::$UNARY-TRAIT$` defined in this clause with the signature `size_t(std::meta::info)`, `std::meta::$UNARY-TRAIT$(^^T)` equals the value of the corresponding property `std::$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
-[2]{.pnum} For any type or `$typedef-name$` `T` and value `I`, for each function `std::meta::$BINARY-TRAIT$` defined in this clause with the signature `info(size_t, std::meta::info)`, `std::meta::$BINARY-TRAIT$(I, ^T)` returns a reflection representing the type `std::$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+[2]{.pnum} For any type or `$typedef-name$` `T` and value `I`, for each function `std::meta::$BINARY-TRAIT$` defined in this clause with the signature `info(size_t, std::meta::info)`, `std::meta::$BINARY-TRAIT$(I, ^^T)` returns a reflection representing the type `std::$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
 ```cpp
 consteval size_t tuple_size(info type);
