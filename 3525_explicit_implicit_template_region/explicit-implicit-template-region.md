@@ -11,7 +11,7 @@ toc: true
 
 # Introduction
 
-[@P1061R9] introduced the ability to declare packs inside of structured bindings and, further more, even proposed the ability to do so outside of any templated context:
+[@P1061R9] introduced the ability to declare packs inside of structured bindings and, furthermore, even proposed the ability to do so outside of any templated context:
 
 ::: std
 ```cpp
@@ -145,12 +145,12 @@ A *template block* introduces an explicit template region ([temp.pre]) encompass
 struct Point { int x, y; };
 
 int magnitude(Point p) {
-  auto [...bad] = p; // error: p is not a templated entity
-
   template {
     auto [...good] = p; // OK, within explicit template region
     return (good * good + ...);
   }
+
+  auto [...bad] = p; // error: p is not a templated entity
 }
 ```
 :::
