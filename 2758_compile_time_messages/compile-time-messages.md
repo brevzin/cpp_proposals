@@ -308,11 +308,13 @@ An interesting follow-on is what happens here:
 
 ::: std
 ```cpp
+constexpr int data[3] = {1, 4, 9};
+
 constexpr auto f(int i) -> int {
     if (i < 0) {
         std::constexpr_error_str("cannot invoke f with a negative number");
     }
-    return i;
+    return data[i];
 }
 
 constexpr int a = f(-1);
