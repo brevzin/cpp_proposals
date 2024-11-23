@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-22" />
+  <meta name="dcterms.date" content="2024-11-23" />
   <title>trivial unions (was std::uninitialized&lt;T&gt;)</title>
   <style>
       code{white-space: pre-wrap;}
@@ -567,7 +567,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-22</td>
+    <td>2024-11-23</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1490,22 +1490,25 @@ any potentially constructed subobject has class type
 array thereof) and <code class="sourceCode cpp">M</code> has a
 destructor that is deleted or is inaccessible from the defaulted
 destructor or, in the case of a variant member, <span class="rm" style="color: #bf0303"><del>is non-trivial,</del></span> <span class="addu">has a default member initializer,</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(7.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(7.*)</a></span>
+<span class="addu"><code class="sourceCode cpp">X</code> is a union with
+a user-provided default constructor,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(7.2)</a></span>
 or, for a virtual destructor, lookup of the non-array deallocation
 function results in an ambiguity or in a function that is deleted or
 inaccessible from the defaulted destructor.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">8</a></span>
 A destructor <span class="addu">for a class
 <code class="sourceCode cpp">X</code></span> is <em>trivial</em> if it
 is not user-provided and if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(8.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(8.1)</a></span>
 the destructor is not virtual,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(8.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(8.2)</a></span>
 all of the direct base classes of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> have trivial
 destructors, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(8.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(8.3)</a></span>
 <span class="addu">either <code class="sourceCode cpp">X</code> is a
 union or</span> for all of the non-static data members of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> that are of
 class type (or array thereof), each such class has a trivial
@@ -1521,12 +1524,12 @@ fix the library to account for the new functionality.</p>
 <p>Strike <span>24.3.14.1 <a href="https://wg21.link/inplace.vector.overview">[inplace.vector.overview]</a></span>/4:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">3</a></span>
 For any <code class="sourceCode cpp">N</code>, <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span>​<span class="op">::</span>​iterator</code>
 and <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span>​<span class="op">::</span>​const_iterator</code>
 meet the constexpr iterator requirements.</p>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">4</a></span>
 For any <code class="sourceCode default">N&gt;0</code>, if
 <code class="sourceCode default">is_trivial_v&lt;T&gt;</code> is
 <code class="sourceCode default">false</code>, then no

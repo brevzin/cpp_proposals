@@ -482,6 +482,7 @@ Change [class.dtor]{.sref}/7-8:
 [7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if:
 
 * [7.1]{.pnum} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) and `M` has a destructor that is deleted or is inaccessible from the defaulted destructor or, in the case of a variant member, [is non-trivial,]{.rm} [has a default member initializer,]{.addu}
+* [7.*]{.pnum} [`X` is a union with a user-provided default constructor,]{.addu}
 * [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
 
 [8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
