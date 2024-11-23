@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-22" />
+  <meta name="dcterms.date" content="2024-11-23" />
   <title>Explicit Implicit Template Regions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,7 +566,7 @@ Regions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-22</td>
+    <td>2024-11-23</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -591,7 +591,12 @@ Regions</h1>
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">2</span> Proposal<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">2.1</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">2.2</span> Feature-Test
+Macro<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
 </ul>
 </div>
@@ -670,8 +675,8 @@ instantiate the template in the source file, and so forth. Wrapping the
 contents in an immediately invoked, generic lambda is… better. It avoids
 many of the problems of the unnecessary template. But it introduces a
 new function scope, which interacts badly if the body of the function
-wants to <em>conditionally</em> return. For instance, if I want to write
-something like:</p>
+wants to <em>conditionally</em> return.</p>
+<p>For example:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> some_function<span class="op">(</span>Point p<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
@@ -697,6 +702,8 @@ something like:</p>
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>Alternatively, you could preemptively make your entire body <code class="sourceCode cpp"><span class="cf">return</span> <span class="op">[&amp;]&lt;</span><span class="kw">class</span><span class="op">=</span><span class="dt">void</span><span class="op">&gt;(){</span> <span class="op">...</span> <span class="op">}()</span>;</code>
+even if only a small part of it wants to introduce a pack.</p>
 <p>In general, I want to be able to write code that directly expresses
 user intent. Not come up with workarounds for not being able to do
 so.</p>
@@ -729,6 +736,132 @@ original design. It also provides a path forward to eventually removing
 the block, if so desired. It additionally provides a path forward to
 answering more complicated questions with other language features (like
 member packs <span class="citation" data-cites="P3115R0">[<a href="https://wg21.link/p3115r0" role="doc-biblioref">P3115R0</a>]</span>).</p>
+<h2 data-number="2.1" id="wording"><span class="header-section-number">2.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Extend <span>6.4.3 <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>
+to add
+<code class="sourceCode cpp"><span class="kw">template</span></code>
+blocks:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span>
+Each</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(1.1)</a></span>
+selection or iteration statement ([stmt.select], [stmt.iter]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(1.2)</a></span>
+substatement of such a statement,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(1.*)</a></span>
+<span class="addu">template block ([stmt.template]),</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(1.3)</a></span>
+<code class="sourceCode cpp"><em>handler</em></code> ([except.pre]),
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(1.4)</a></span>
+compound statement ([stmt.block]) that is not the
+<code class="sourceCode cpp"><em>compound-statement</em></code> of a
+<code class="sourceCode cpp"><em>handler</em></code></li>
+</ul>
+<p>introduces a <em>block scope</em> that includes that statement or
+handler.</p>
+</blockquote>
+</div>
+<p>Extend the grammar for statement in <span>8.1 <a href="https://wg21.link/stmt.pre">[stmt.pre]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>  <em>statement</em>:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <em>labeled-statement</em></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>expression-statement</em></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>compound-statement</em></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>attribute-specifier-seq</em><sub>opt</sub> <em>template-block</em></span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>selection-statement</em></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>iteration-statement</em></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>jump-statement</em></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <em>declaration-statement</em></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <em>attribute-specifier-seq</em><sub>opt</sub> <em>try-block</em></span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>And a corresponding new clause after <span>8.4 <a href="https://wg21.link/stmt.block">[stmt.block]</a></span>, call it
+[stmt.template]:</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><em>template-block</em>:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <em>compound-statement</em></span></code></pre></div>
+<p>A <em>template block</em> introduces an explicit template region
+([temp.pre]).</p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Point <span class="op">{</span> <span class="dt">int</span> x, y; <span class="op">}</span>;</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> magnitude<span class="op">(</span>Point p<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> <span class="op">[...</span>bad<span class="op">]</span> <span class="op">=</span> p; <span class="co">// error: p is not a templated entity</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">{</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>good<span class="op">]</span> <span class="op">=</span> p; <span class="co">// OK, within explicit template region</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span>good <span class="op">*</span> good <span class="op">+</span> <span class="op">...)</span>;</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+</div>
+</blockquote>
+</div>
+<p>Mark all entities within an an explicit template region as templated,
+in <span>13.1 <a href="https://wg21.link/temp.pre">[temp.pre]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">8</a></span>
+An entity is <em>templated</em> if it is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(8.1)</a></span>
+a template,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(8.2)</a></span>
+an entity defined ([basic.def]) or created ([class.temporary]) in a
+templated entity,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(8.3)</a></span>
+a member of a templated entity,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(8.4)</a></span>
+an enumerator for an enumeration that is a templated entity, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(8.5)</a></span>
+the closure type of a lambda-expression ([expr.prim.lambda.closure])
+appearing in the declaration of a templated entity<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">,
+or</span></li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(8.6)</a></span>
+an entity defined or created within an explicit template region
+([stmt.template]).</li>
+</ul>
+</div>
+<p><span class="note"><span>[ <em>Note 1:</em> </span>A local class, a
+local or block variable, or a friend function defined in a templated
+entity is a templated entity.<span> — <em>end
+note</em> ]</span></span></p>
+</blockquote>
+</div>
+<p>Which needs a point of instantiation at the end of <span>13.8.4.1 <a href="https://wg21.link/temp.point">[temp.point]</a></span>:</p>
+<div class="std ins">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">*</a></span>
+For an explicit template region, the point of instantiation immediately
+follows the closing brace of the
+<code class="sourceCode cpp"><em>compound-statement</em></code> of the
+<code class="sourceCode cpp"><em>template-block</em></code>.</p>
+</blockquote>
+</div>
+<h2 data-number="2.2" id="feature-test-macro"><span class="header-section-number">2.2</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Introduce a new
+<code class="sourceCode cpp">__cpp_template_block</code> to <span>15.11
+<a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_template_block 2025XXL</span></span></code></pre></div>
+</div>
+</blockquote>
+</div>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">

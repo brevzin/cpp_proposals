@@ -55,7 +55,9 @@ auto sum(Point p) -> int {
 ```
 :::
 
-Both of these options are bad. Turning the whole function into a template opens up to the potential of multiple instantiations, if you want to put the definition in a header you have to explicitly instantiate the template in the source file, and so forth. Wrapping the contents in an immediately invoked, generic lambda is... better. It avoids many of the problems of the unnecessary template. But it introduces a new function scope, which interacts badly if the body of the function wants to _conditionally_ return. For instance, if I want to write something like:
+Both of these options are bad. Turning the whole function into a template opens up to the potential of multiple instantiations, if you want to put the definition in a header you have to explicitly instantiate the template in the source file, and so forth. Wrapping the contents in an immediately invoked, generic lambda is... better. It avoids many of the problems of the unnecessary template. But it introduces a new function scope, which interacts badly if the body of the function wants to _conditionally_ return.
+
+For example:
 
 ::: std
 ```cpp
@@ -83,6 +85,8 @@ auto some_function(Point p) -> bool {
 ```
 :::
 
+Alternatively, you could preemptively make your entire body `return [&]<class=void>(){ ... }();` even if only a small part of it wants to introduce a pack.
+
 In general, I want to be able to write code that directly expresses user intent. Not come up with workarounds for not being able to do so.
 
 # Proposal
@@ -106,3 +110,97 @@ We still have to be explicit about being in a template, but we can do so in a si
 
 I believe this addresses all the implementor concerns with the original design. It also provides a path forward to eventually removing the block, if so desired. It additionally provides a path forward to answering more complicated questions with other language features (like member packs [@P3115R0]).
 
+## Wording
+
+Extend [basic.scope.block]{.sref} to add `template` blocks:
+
+::: std
+[1]{.pnum} Each
+
+* [1.1]{.pnum} selection or iteration statement ([stmt.select], [stmt.iter]),
+* [1.2]{.pnum} substatement of such a statement,
+* [1.*]{.pnum} [template block ([stmt.template]),]{.addu}
+* [1.3]{.pnum} `$handler$` ([except.pre]), or
+* [1.4]{.pnum} compound statement ([stmt.block]) that is not the `$compound-statement$` of a `$handler$`
+
+introduces a *block scope* that includes that statement or handler.
+:::
+
+Extend the grammar for statement in [stmt.pre]{.sref}:
+
+::: std
+```diff
+  $statement$:
+    $labeled-statement$
+    $attribute-specifier-seq$@~opt~@ $expression-statement$
+    $attribute-specifier-seq$@~opt~@ $compound-statement$
++   $attribute-specifier-seq$@~opt~@ $template-block$
+    $attribute-specifier-seq$@~opt~@ $selection-statement$
+    $attribute-specifier-seq$@~opt~@ $iteration-statement$
+    $attribute-specifier-seq$@~opt~@ $jump-statement$
+    $declaration-statement$
+    $attribute-specifier-seq$@~opt~@ $try-block$
+```
+:::
+
+And a corresponding new clause after [stmt.block]{.sref}, call it [stmt.template]:
+
+::: std
+::: addu
+```
+$template-block$:
+  $compound-statement$
+```
+
+A *template block* introduces an explicit template region ([temp.pre]).
+
+::: example
+```cpp
+struct Point { int x, y; };
+
+int magnitude(Point p) {
+  auto [...bad] = p; // error: p is not a templated entity
+
+  template {
+    auto [...good] = p; // OK, within explicit template region
+    return (good * good + ...);
+  }
+}
+```
+:::
+:::
+:::
+
+Mark all entities within an an explicit template region as templated, in [temp.pre]{.sref}:
+
+::: std
+[8]{.pnum} An entity is *templated* if it is
+
+* [#.#]{.pnum} a template,
+* [#.#]{.pnum} an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,
+* [#.#]{.pnum} a member of a templated entity,
+* [#.#]{.pnum} an enumerator for an enumeration that is a templated entity, [or]{.rm}
+* [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity[.]{.rm} [, or]{.addu}
+
+::: addu
+* [#.#]{.pnum} an entity defined or created within an explicit template region ([stmt.template]).
+:::
+
+[A local class, a local or block variable, or a friend function defined in a templated entity is a templated entity.]{.note}
+:::
+
+Which needs a point of instantiation at the end of [temp.point]{.sref}:
+
+::: {.std .ins}
+[*]{.pnum} For an explicit template region, the point of instantiation immediately follows the closing brace of the `$compound-statement$` of the `$template-block$`.
+:::
+
+## Feature-Test Macro
+
+Introduce a new `__cpp_template_block` to [cpp.predefined]{.sref}:
+
+::: std
+```diff
++ __cpp_template_block 2025XXL
+```
+:::
