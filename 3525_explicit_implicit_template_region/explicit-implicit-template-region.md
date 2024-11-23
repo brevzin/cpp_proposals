@@ -112,20 +112,6 @@ I believe this addresses all the implementor concerns with the original design. 
 
 ## Wording
 
-Extend [basic.scope.block]{.sref} to add `template` blocks:
-
-::: std
-[1]{.pnum} Each
-
-* [1.1]{.pnum} selection or iteration statement ([stmt.select], [stmt.iter]),
-* [1.2]{.pnum} substatement of such a statement,
-* [1.*]{.pnum} [template block ([stmt.template]),]{.addu}
-* [1.3]{.pnum} `$handler$` ([except.pre]), or
-* [1.4]{.pnum} compound statement ([stmt.block]) that is not the `$compound-statement$` of a `$handler$`
-
-introduces a *block scope* that includes that statement or handler.
-:::
-
 Extend the grammar for statement in [stmt.pre]{.sref}:
 
 ::: std
@@ -152,7 +138,7 @@ $template-block$:
   $compound-statement$
 ```
 
-A *template block* introduces an explicit template region ([temp.pre]).
+A *template block* introduces an explicit template region ([temp.pre]) encompassing the block scope introduced by the `$compound-statement$`.
 
 ::: example
 ```cpp
