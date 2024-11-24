@@ -1395,7 +1395,7 @@ Apple also uses the caret in [syntax "blocks"](https://developer.apple.com/libra
 
 Since the syntax discussions in SG7 landed on the use of the caret, new basic source characters have become available: `@`, `` ` ``{.op}, and `$`{.op}. While we have since discussed some alternatives (e.g., `@` for lifting, `\` and `/` for "raising" and "lowering"), we have grown quite fond of the existing syntax.
 
-In Wrocław 2024, SG7 and EWG voted to adopt `^^` as the new reflection operator (as proposed by [@P3381]). The R8 revision of this paper integrates that change.
+In Wrocław 2024, SG7 and EWG voted to adopt `^^` as the new reflection operator (as proposed by [@P3381R0]). The R8 revision of this paper integrates that change.
 
 
 ## Splicers (`[:`...`:]`)
