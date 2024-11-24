@@ -28,7 +28,7 @@ tag: reflection
 
 Since [@P2996R7]:
 
-* chaned reflection operator from `^` to `^^`
+* changed reflection operator from `^` to `^^` following adoption of [@P3381R0]
 * renamed `(u8)operator_symbol_of` to `(u8)symbol_of`
 * renamed some `operators` (`exclaim` -> `exclamation_mark`, `three_way_comparison` -> `spaceship`, and `ampersand_and` -> `ampersand_ampersand`)
 * renamed `define_class` to `define_aggregate`
