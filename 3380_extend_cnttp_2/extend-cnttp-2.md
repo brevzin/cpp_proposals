@@ -445,7 +445,7 @@ class vector {
         };
     }
 
-    static consteval auto to_meta_representation(Repr r) -> vector
+    static consteval auto from_meta_representation(Repr r) -> vector
     {
         vector v;
         v.begin_ = std::allocator<T>::allocate(r.size());
@@ -653,7 +653,7 @@ class vector {
         };
     }
 
-    static consteval auto to_meta_representation(Repr r) -> vector
+    static consteval auto from_meta_representation(Repr r) -> vector
     {
         vector v;
         v.begin_ = std::allocator<T>::allocate(r.size());
@@ -697,7 +697,7 @@ class vector {
 
 
     template <class S>
-    static consteval auto to_meta_representation(S deserializer)
+    static consteval auto from_meta_representation(S deserializer)
         -> vector
     {
         auto const size = deserializer.size();
