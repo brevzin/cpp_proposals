@@ -615,6 +615,273 @@ class SmallString {
 
 The `void`-returning case does at some complexity on top of the full serialization-deserialization design, but it makes the opt-in for a large amount of types a very sensible one-liner, so I think it's worth it.
 
+## Alternative Approach
+
+It's worth considering some alternative approaches to this problem. The (de)serialization part is, I think, fundamental — but the specific mechanism by which this is achieved can look quite different.
+
+For instance, `to_meta_representation` can take a serializer object that you can push values into. And then `from_meta_representation` can take a deserializer object that you can pop values from. An illustration of the difference would be:
+
+::: cmptable
+### Using a reflection range
+```cpp
+template <typename T>
+class vector {
+    T* begin_;
+    size_t size_;
+    size_t capacity_;
+
+    struct Repr {
+        std::unique_ptr<std::meta::info[]> p;
+        size_t n;
+
+        consteval auto data() const -> std::meta::info const* {
+            return p.get();
+        }
+        consteval auto size() const -> size_t {
+            return n;
+        }
+    };
+
+    consteval auto to_meta_representation() const -> Repr {
+        auto data = std::make_unique<std::meta::info[]>(size_);
+        for (size_t i = 0; i < size_; ++i) {
+            data[i] = std::meta::reflect_value(begin_[i]);
+        }
+        return Repr{
+            .p=std::move(data),
+            .n=size_,
+        };
+    }
+
+    static consteval auto to_meta_representation(Repr r) -> vector
+    {
+        vector v;
+        v.begin_ = std::allocator<T>::allocate(r.size());
+        v.size_ = v.capacity_ = r.size();
+        for (size_t i = 0; i < size_; ++i) {
+            ::new (v.begin_ + i) T(extract<T>(r.p[i]));
+        }
+        return v;
+    }
+};
+```
+
+### Using a (de)serializer object
+```cpp
+template <typename T>
+class vector {
+    T* begin_;
+    size_t size_;
+    size_t capacity_;
+
+
+
+
+
+
+
+
+
+
+
+
+    template <class S>
+    consteval auto to_meta_representation(S serializer) const -> void {
+        for (size_t i = 0; i < size_; ++i) {
+            serializer.push_value(begin_[i]);
+        }
+    }
+
+
+
+
+
+    template <class S>
+    static consteval auto to_meta_representation(S deserializer)
+        -> vector
+    {
+        auto const size = deserializer.size();
+
+        vector v;
+        v.begin_ = std::allocator<T>::allocate(size);
+        v.size_ = v.capacity_ = size;
+        for (size_t i = 0; i < size_; ++i) {
+            ::new (v.begin_ + i) T(deserializer.pop_value<T>());
+        }
+        return v;
+    }
+};
+```
+:::
+
+It looks fairly similar. We wouldn't have to create a custom `Repr` type in this context, at the cost of having to specify these serialization/deserialization types whose interface would be... kind of similar to `std::meta::info`.
+
+If we go this route though, what do we do for the simple case where we just want member-wise serialization? We cannot just do *nothing* — that would make it seem like we're actually serializing nothing. So we would have to do something like this:
+
+<table>
+<tr><th>Special-casing `void`</th><th>Using a (de)serializer object</th></tr>
+<tr><td>
+```cpp
+template <typename... Ts>
+class Tuple {
+    Ts... elems;
+
+    consteval auto to_meta_representation() -> void { }
+}
+```
+</td>
+<td>
+```cpp
+template <typename... Ts>
+class Tuple {
+    Ts... elems;
+
+    template <class S>
+    consteval auto to_meta_representation(S serializer) -> void {
+        // the tuple case is easy — we just want to push all the
+        // subobjects so we can add a dedicated API for this common
+        // case
+        serializer.push_subobjects(*this);
+    }
+
+    // and we could still avoid providing a from_meta_representation
+    // by stating the rule that by default deserializing does
+    // member-wise deserialization
+}
+```
+</td>
+</tr>
+<tr><td>
+```cpp
+template <typename T>
+class Optional {
+    union { T value; };
+    bool engaged;
+
+    consteval auto to_meta_representation() -> void { }
+};
+```
+</td>
+<td>
+```cpp
+template <typename T>
+class Optional {
+    union { T value; };
+    bool engaged;
+
+    template <class S>
+    consteval auto to_meta_representation(S serializer) -> void {
+        // The optional case is harder because... value might not
+        // be initialized in order to still maintain API convenience,
+        // we could say that a union with no active element simply
+        // serializes as an uninitialized value of that type?
+        // We'd certainly want this to somehow... work.
+        // Alternatively, the implementation could change the union to
+        // look more like this:
+        //      union { T value; Empty _; }
+        // and ensure that the Empty alternative is initialized.
+        serializer.push_subobjects(*this);
+    }
+
+    // likewise still no from_meta_representation necessary()
+};
+```
+</td></tr>
+<tr><td>
+```cpp
+class SmallString {
+    char data[32];
+    int length;
+
+    consteval auto to_meta_representation() -> void {
+        std::fill(this->data + this->length,
+                  this->data + 32,
+                  '\0');
+    }
+};
+```
+</td><td>
+```cpp
+class SmallString {
+    char data[32];
+    int length;
+
+    template <class S>
+    consteval auto to_meta_representation(S serializer) -> void {
+        // we could do either this (which requires this function be
+        // allowed to be mutable)
+        std::fill(this->data + this->length, this->data + 32, '\0');
+        serializer.push_subobjects(*this);
+
+        // or we mandate this function is const and simply make a copy
+        // first and mutate and serialize that one
+        auto tmp = *this;
+        std::fill(tmp.data + tmp.length, tmp.data + 32, '\0');
+        serializer.push_subobjects(tmp);
+
+        // or ensure that we serialize the correct number of objects
+        for (int i = 0; i < 32; ++i) {
+            serializer.push_value(i < length ? data[i] : '\0');
+        }
+        serializer.push_value(length);
+    }
+
+    // regardless of the above implementation choice, the serializer
+    // will have pushed 32 objects of type char and one of type int,
+    // so the default deserialization should be able to kick in
+};
+```
+</td></tr>
+</table>
+
+Alternatively (or, perhaps, additionally), `to_meta_representation` could be allowed to be defaulted — and `from_meta_representation` be allowed to be omitted.
+
+A hypothetical API for the serializer and deserializer types would be something along these lines:
+
+::: std
+```cpp
+struct Serializer {
+    consteval void push(meta::info r);
+    consteval size_t size() const;
+
+    template <class T>
+    consteval void push_value(T const& value) {
+        push(meta::reflect_value(value));
+    }
+
+    template <class T>
+    consteval void push_subobjects(T const& obj) {
+        template for (constexpr info M : subobjects_of(^^T)) {
+            push_value(obj.[:M:]);
+        }
+    }
+
+    template <input_range R>
+    consteval void push_range(R&& r) {
+        for (auto&& elem : r) {
+            push_value(elem);
+        }
+    }
+};
+
+struct Deserializer {
+    consteval size_t size() const;
+    consteval meta::info pop();
+
+    template <class T>
+    consteval T pop_value() {
+        return extract<T>(pop());
+    }
+};
+```
+:::
+
+With the rules that:
+
+* template-argument-equivalence is based on having equal values pushed into the serializer
+* deserialization attempts to invoke `from_meta_representation()`. If no such declaration is found, then we assume default subobject-wise deserialization — if the number of subobjects differs from the size of the deserializer, this is ill-formed.
+
+
 ## Interesting Edge Case
 
 I wanted to show an interesting edge case. While the idea presented here seems to solve all of the types I can reasonably think of — all the standard library types mentioned here, both the simple ones (`tuple`/`optional`/`variant`/etc) and the containers — I can come up with an example that seems a little awkward. Consider:

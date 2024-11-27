@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-05" />
+  <meta name="dcterms.date" content="2024-11-27" />
   <title>Extending support for class types as non-type template
 parameters</title>
   <style>
@@ -567,7 +567,7 @@ types as non-type template parameters</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-05</td>
+    <td>2024-11-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -613,9 +613,11 @@ Spelling<span></span></a></li>
 <li><a href="#reflection-will-fix-it" id="toc-reflection-will-fix-it"><span class="toc-section-number">3</span> Reflection Will Fix
 It<span></span></a>
 <ul>
-<li><a href="#interesting-edge-case" id="toc-interesting-edge-case"><span class="toc-section-number">3.1</span> Interesting Edge
+<li><a href="#alternative-approach" id="toc-alternative-approach"><span class="toc-section-number">3.1</span> Alternative
+Approach<span></span></a></li>
+<li><a href="#interesting-edge-case" id="toc-interesting-edge-case"><span class="toc-section-number">3.2</span> Interesting Edge
 Case<span></span></a></li>
-<li><a href="#splitting" id="toc-splitting"><span class="toc-section-number">3.2</span> Splitting<span></span></a></li>
+<li><a href="#splitting" id="toc-splitting"><span class="toc-section-number">3.3</span> Splitting<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
 <ul>
@@ -1357,7 +1359,302 @@ case does at some complexity on top of the full
 serialization-deserialization design, but it makes the opt-in for a
 large amount of types a very sensible one-liner, so I think it’s worth
 it.</p>
-<h2 data-number="3.1" id="interesting-edge-case"><span class="header-section-number">3.1</span> Interesting Edge Case<a href="#interesting-edge-case" class="self-link"></a></h2>
+<h2 data-number="3.1" id="alternative-approach"><span class="header-section-number">3.1</span> Alternative Approach<a href="#alternative-approach" class="self-link"></a></h2>
+<p>It’s worth considering some alternative approaches to this problem.
+The (de)serialization part is, I think, fundamental — but the specific
+mechanism by which this is achieved can look quite different.</p>
+<p>For instance,
+<code class="sourceCode cpp">to_meta_representation</code> can take a
+serializer object that you can push values into. And then
+<code class="sourceCode cpp">from_meta_representation</code> can take a
+deserializer object that you can pop values from. An illustration of the
+difference would be:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Using a reflection range</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Using a (de)serializer object</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    T<span class="op">*</span> begin_;</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> size_;</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> capacity_;</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Repr <span class="op">{</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>unique_ptr<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">[]&gt;</span> p;</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">size_t</span> n;</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> p<span class="op">.</span>get<span class="op">()</span>;</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> n;</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> Repr <span class="op">{</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> data <span class="op">=</span> std<span class="op">::</span>make_unique<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">[]&gt;(</span>size_<span class="op">)</span>;</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> size_; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>            data<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>begin_<span class="op">[</span>i<span class="op">])</span>;</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Repr<span class="op">{</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>p<span class="op">=</span>std<span class="op">::</span>move<span class="op">(</span>data<span class="op">)</span>,</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>n<span class="op">=</span>size_,</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>Repr r<span class="op">)</span> <span class="op">-&gt;</span> vector</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>        vector v;</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>begin_ <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;::</span>allocate<span class="op">(</span>r<span class="op">.</span>size<span class="op">())</span>;</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>size_ <span class="op">=</span> v<span class="op">.</span>capacity_ <span class="op">=</span> r<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> size_; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>            <span class="op">::</span><span class="kw">new</span> <span class="op">(</span>v<span class="op">.</span>begin_ <span class="op">+</span> i<span class="op">)</span> T<span class="op">(</span>extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>r<span class="op">.</span>p<span class="op">[</span>i<span class="op">]))</span>;</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v;</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    T<span class="op">*</span> begin_;</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> size_;</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> capacity_;</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> S<span class="op">&gt;</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>S serializer<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> size_; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>            serializer<span class="op">.</span>push_value<span class="op">(</span>begin_<span class="op">[</span>i<span class="op">])</span>;</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> S<span class="op">&gt;</span></span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>S deserializer<span class="op">)</span></span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> vector</span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> <span class="kw">const</span> size <span class="op">=</span> deserializer<span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>        vector v;</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>begin_ <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;::</span>allocate<span class="op">(</span>size<span class="op">)</span>;</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>size_ <span class="op">=</span> v<span class="op">.</span>capacity_ <span class="op">=</span> size;</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> size_; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>            <span class="op">::</span><span class="kw">new</span> <span class="op">(</span>v<span class="op">.</span>begin_ <span class="op">+</span> i<span class="op">)</span> T<span class="op">(</span>deserializer<span class="op">.</span>pop_value<span class="op">&lt;</span>T<span class="op">&gt;())</span>;</span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v;</span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<p>It looks fairly similar. We wouldn’t have to create a custom
+<code class="sourceCode cpp">Repr</code> type in this context, at the
+cost of having to specify these serialization/deserialization types
+whose interface would be… kind of similar to <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.</p>
+<p>If we go this route though, what do we do for the simple case where
+we just want member-wise serialization? We cannot just do
+<em>nothing</em> — that would make it seem like we’re actually
+serializing nothing. So we would have to do something like this:</p>
+<table>
+<tr>
+<th>
+Special-casing
+<code class="sourceCode cpp"><span class="dt">void</span></code>
+</th>
+<th>
+Using a (de)serializer object
+</th>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Tuple <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    Ts<span class="op">...</span> elems;</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</td>
+<td>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Tuple <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    Ts<span class="op">...</span> elems;</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> S<span class="op">&gt;</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>S serializer<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// the tuple case is easy — we just want to push all the</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// subobjects so we can add a dedicated API for this common</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// case</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>        serializer<span class="op">.</span>push_subobjects<span class="op">(*</span><span class="kw">this</span><span class="op">)</span>;</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// and we could still avoid providing a from_meta_representation</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// by stating the rule that by default deserializing does</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// member-wise deserialization</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Optional <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span> T value; <span class="op">}</span>;</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> engaged;</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Optional <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span> T value; <span class="op">}</span>;</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> engaged;</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> S<span class="op">&gt;</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>S serializer<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// The optional case is harder because... value might not</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// be initialized in order to still maintain API convenience,</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we could say that a union with no active element simply</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">// serializes as an uninitialized value of that type?</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">// We&#39;d certainly want this to somehow... work.</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Alternatively, the implementation could change the union to</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>        <span class="co">// look more like this:</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">//      union { T value; Empty _; }</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// and ensure that the Empty alternative is initialized.</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>        serializer<span class="op">.</span>push_subobjects<span class="op">(*</span><span class="kw">this</span><span class="op">)</span>;</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">// likewise still no from_meta_representation necessary()</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SmallString <span class="op">{</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> data<span class="op">[</span><span class="dv">32</span><span class="op">]</span>;</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> length;</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>fill<span class="op">(</span><span class="kw">this</span><span class="op">-&gt;</span>data <span class="op">+</span> <span class="kw">this</span><span class="op">-&gt;</span>length,</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>                  <span class="kw">this</span><span class="op">-&gt;</span>data <span class="op">+</span> <span class="dv">32</span>,</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>                  <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>;</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+<td>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SmallString <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> data<span class="op">[</span><span class="dv">32</span><span class="op">]</span>;</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> length;</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> S<span class="op">&gt;</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>S serializer<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// we could do either this (which requires this function be</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// allowed to be mutable)</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>fill<span class="op">(</span><span class="kw">this</span><span class="op">-&gt;</span>data <span class="op">+</span> <span class="kw">this</span><span class="op">-&gt;</span>length, <span class="kw">this</span><span class="op">-&gt;</span>data <span class="op">+</span> <span class="dv">32</span>, <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>;</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        serializer<span class="op">.</span>push_subobjects<span class="op">(*</span><span class="kw">this</span><span class="op">)</span>;</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">// or we mandate this function is const and simply make a copy</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">// first and mutate and serialize that one</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> tmp <span class="op">=</span> <span class="op">*</span><span class="kw">this</span>;</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>fill<span class="op">(</span>tmp<span class="op">.</span>data <span class="op">+</span> tmp<span class="op">.</span>length, tmp<span class="op">.</span>data <span class="op">+</span> <span class="dv">32</span>, <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>;</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>        serializer<span class="op">.</span>push_subobjects<span class="op">(</span>tmp<span class="op">)</span>;</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">// or ensure that we serialize the correct number of objects</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> <span class="dv">32</span>; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>            serializer<span class="op">.</span>push_value<span class="op">(</span>i <span class="op">&lt;</span> length <span class="op">?</span> data<span class="op">[</span>i<span class="op">]</span> <span class="op">:</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>;</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>        serializer<span class="op">.</span>push_value<span class="op">(</span>length<span class="op">)</span>;</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">// regardless of the above implementation choice, the serializer</span></span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">// will have pushed 32 objects of type char and one of type int,</span></span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">// so the default deserialization should be able to kick in</span></span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</td>
+</tr>
+</table>
+<p>Alternatively (or, perhaps, additionally),
+<code class="sourceCode cpp">to_meta_representation</code> could be
+allowed to be defaulted — and
+<code class="sourceCode cpp">from_meta_representation</code> be allowed
+to be omitted.</p>
+<p>A hypothetical API for the serializer and deserializer types would be
+something along these lines:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Serializer <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">void</span> push<span class="op">(</span>meta<span class="op">::</span>info r<span class="op">)</span>;</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">size_t</span> size<span class="op">()</span> <span class="kw">const</span>;</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">void</span> push_value<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>        push<span class="op">(</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>value<span class="op">))</span>;</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">void</span> push_subobjects<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> info M <span class="op">:</span> subobjects_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>            push_value<span class="op">(</span>obj<span class="op">.[:</span>M<span class="op">:])</span>;</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">void</span> push_range<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> elem <span class="op">:</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>            push_value<span class="op">(</span>elem<span class="op">)</span>;</span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Deserializer <span class="op">{</span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="dt">size_t</span> size<span class="op">()</span> <span class="kw">const</span>;</span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> meta<span class="op">::</span>info pop<span class="op">()</span>;</span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> T pop_value<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>pop<span class="op">())</span>;</span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>With the rules that:</p>
+<ul>
+<li>template-argument-equivalence is based on having equal values pushed
+into the serializer</li>
+<li>deserialization attempts to invoke <code class="sourceCode cpp">from_meta_representation<span class="op">()</span></code>.
+If no such declaration is found, then we assume default subobject-wise
+deserialization — if the number of subobjects differs from the size of
+the deserializer, this is ill-formed.</li>
+</ul>
+<h2 data-number="3.2" id="interesting-edge-case"><span class="header-section-number">3.2</span> Interesting Edge Case<a href="#interesting-edge-case" class="self-link"></a></h2>
 <p>I wanted to show an interesting edge case. While the idea presented
 here seems to solve all of the types I can reasonably think of — all the
 standard library types mentioned here, both the simple ones
@@ -1366,10 +1663,10 @@ and the containers — I can come up with an example that seems a little
 awkward. Consider:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Today, this type isn’t structural because it has private members. But
@@ -1377,12 +1674,12 @@ in this case we don’t need to do anything special, just member-wise
 equivalence, so it’s tempting to think that we can just do this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>But… that’s not quite right. The rules I laid out above say that
@@ -1400,26 +1697,26 @@ work.</p>
 serializing the index rather than the pointer:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>elems<span class="op">)</span>,</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>best <span class="op">-</span> elems<span class="op">.</span>data<span class="op">())</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> repr<span class="op">)</span></span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> Fun</span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>elems<span class="op">=</span>extract<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">*&gt;&gt;(</span>repr<span class="op">[</span><span class="dv">0</span><span class="op">])</span>,</span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>best<span class="op">=</span>extract<span class="op">&lt;</span><span class="dt">ptrdiff_t</span><span class="op">&gt;(</span>repr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">+</span> elems<span class="op">.</span>data<span class="op">()</span></span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>elems<span class="op">)</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>best <span class="op">-</span> elems<span class="op">.</span>data<span class="op">())</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> repr<span class="op">)</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> Fun</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>elems<span class="op">=</span>extract<span class="op">&lt;</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">*&gt;&gt;(</span>repr<span class="op">[</span><span class="dv">0</span><span class="op">])</span>,</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>best<span class="op">=</span>extract<span class="op">&lt;</span><span class="dt">ptrdiff_t</span><span class="op">&gt;(</span>repr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">+</span> elems<span class="op">.</span>data<span class="op">()</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>That works, but is annoying.</p>
@@ -1427,16 +1724,16 @@ serializing the index rather than the pointer:</p>
 allow this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> delta <span class="op">=</span> best <span class="op">-</span> elems<span class="op">.</span>data<span class="op">()</span>;</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>to_meta_representation<span class="op">(</span>elems<span class="op">)</span>; <span class="co">// explicitly normalize</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        best <span class="op">=</span> elems<span class="op">.</span>data<span class="op">()</span> <span class="op">+</span> delta;</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> delta <span class="op">=</span> best <span class="op">-</span> elems<span class="op">.</span>data<span class="op">()</span>;</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>to_meta_representation<span class="op">(</span>elems<span class="op">)</span>; <span class="co">// explicitly normalize</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>        best <span class="op">=</span> elems<span class="op">.</span>data<span class="op">()</span> <span class="op">+</span> delta;</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>That is, here we <em>explicitly</em> normalize
@@ -1453,29 +1750,29 @@ a strongly type language. So what if instead we allowed the original
 <span class="citation" data-cites="P2484R0">[<a href="https://wg21.link/p2484r0" role="doc-biblioref">P2484R0</a>]</span> design:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Repr <span class="op">{</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">ptrdiff_t</span> index;</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> Repr <span class="op">{</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>elems<span class="op">=</span>elems,</span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>index<span class="op">=</span>best <span class="op">-</span> elems<span class="op">.</span>data<span class="op">()</span></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>Repr r<span class="op">)</span> <span class="op">-&gt;</span> Fun <span class="op">{</span></span>
-<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>elems <span class="op">=</span> std<span class="op">::</span>move<span class="op">(</span>r<span class="op">).</span>elems,</span>
-<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>best <span class="op">=</span> elems<span class="op">.</span>data<span class="op">()</span> <span class="op">+</span> r<span class="op">.</span>index</span>
-<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fun <span class="op">{</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> best; <span class="co">// within elems</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Repr <span class="op">{</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elems;</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">ptrdiff_t</span> index;</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">()</span> <span class="op">-&gt;</span> Repr <span class="op">{</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>elems<span class="op">=</span>elems,</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>index<span class="op">=</span>best <span class="op">-</span> elems<span class="op">.</span>data<span class="op">()</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>Repr r<span class="op">)</span> <span class="op">-&gt;</span> Fun <span class="op">{</span></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">{</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>elems <span class="op">=</span> std<span class="op">::</span>move<span class="op">(</span>r<span class="op">).</span>elems,</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>            <span class="op">.</span>best <span class="op">=</span> elems<span class="op">.</span>data<span class="op">()</span> <span class="op">+</span> r<span class="op">.</span>index</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>This seems like a much better approach than the explicit
@@ -1484,7 +1781,7 @@ It doesn’t add too much complexity to the design (once we can return two
 different kinds, is it really that big a deal to return three different
 kinds?), but we should really only go this route if this is a
 sufficiently common use-case. Which I’m not sure it is.</p>
-<h2 data-number="3.2" id="splitting"><span class="header-section-number">3.2</span> Splitting<a href="#splitting" class="self-link"></a></h2>
+<h2 data-number="3.3" id="splitting"><span class="header-section-number">3.3</span> Splitting<a href="#splitting" class="self-link"></a></h2>
 <p>There are two forms of this proposal:</p>
 <ol type="1">
 <li><code class="sourceCode cpp">T<span class="op">::</span>to_meta_representation<span class="op">()</span></code>
