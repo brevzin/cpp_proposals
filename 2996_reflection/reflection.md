@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: D2996R9
+document: P2996R8
 date: today
 audience: CWG, LEWG
 author:
@@ -4451,11 +4451,6 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/5:
 
 :::
 :::
-
-### [temp.point]
-
-TODO: Need changes here.
-
 
 
 ### [cpp.cond]{.sref} Conditional inclusion {-}
