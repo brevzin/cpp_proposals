@@ -150,7 +150,7 @@ int magnitude(Point p) {
     return (good * good + ...);
   }
 
-  auto [...bad] = p; // error: p is not a templated entity
+  auto [...bad] = p; // error: bad is not a templated entity
 }
 ```
 :::
