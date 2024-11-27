@@ -3089,13 +3089,13 @@ Extend the definition of _TU-local_ values and objects to include reflections:
 
 [16]{.pnum} A value or object is _TU-local_ if
 
+* [[16.0]{.pnum} it is of TU-local type,]{.addu}
 * [16.1]{.pnum} it is, or is a pointer to, a TU-local function or the object associated with a TU-local variable, [or]{.rm}
 
 :::addu
-* [16.1a]{.pnum} it is of TU-local type,
-* [16.1b]{.pnum} it is a reflection representing
-  * [16.1b.#]{.pnum} a TU-local value or object, or
-  * [16.1b.#]{.pnum} a `$typedef-name$`, `$namespace-alias$`, or `$base-specifier$` introduced by an exposure, or
+* [16.1+]{.pnum} it is a reflection representing
+  * [16.1+.#]{.pnum} a TU-local value or object, or
+  * [16.1+.#]{.pnum} a `$typedef-name$`, `$namespace-alias$`, or `$base-specifier$` introduced by an exposure, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
@@ -3150,7 +3150,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a `$namespace-alias$`,
 * a namespace,
 * a `$base-specifier$`, or
-* a description of a declaration of a non-static data member.
+* a description of a declaration of a non-static data member ([meta.reflection.define.aggregate]).
 
 An expression convertible to a reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
 
@@ -3214,7 +3214,7 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 Add `$reflect-expression$`s to the list of unevaluated operands.
 
 ::: std
-[1]{.pnum} In some contexts, _unevaluated operands_ appear ([expr.prim.req], [expr.typeid], [expr.sizeof], [expr.unary.noexcept], [[expr.unary.reflect],]{.addu} [temp.pre], [temp.concept]). An unevaluated operand is not evaluated.
+[1]{.pnum} In some contexts, _unevaluated operands_ appear ([expr.prim.req], [expr.typeid], [expr.sizeof], [expr.unary.noexcept], [[expr.reflect],]{.addu} [temp.pre], [temp.concept]). An unevaluated operand is not evaluated.
 
 :::
 
@@ -3316,7 +3316,7 @@ Avoid transforming non-static data members into implicit member accesses when na
 
 * [#.#]{.pnum} `$E$` is potentially evaluated or `C` is `X` or a base class of `X`, and
 * [#.#]{.pnum} `$E$` is not the `$id-expression$` of a class member access expression ([expr.ref]{.sref}), and
-* [[#.#]{.pnum} `$E$` is not the `$id-expression$` of a `$reflect-expression$` ([expr.unary.reflect]), and]{.addu}
+* [[#.#]{.pnum} `$E$` is not the `$id-expression$` of a `$reflect-expression$` ([expr.reflect]), and]{.addu}
 * [#.#]{.pnum} if `$E$` is a `$qualified-id$`, `$E$` is not the un-parenthesized operand of the unary `&` operator ([expr.unary.op]{.sref}),
 
 the `$id-expression$` is transformed into a class member access expression using `(*this)` as the object expression.
@@ -3389,9 +3389,11 @@ $splice-expression$:
 
 * [#.#]{.pnum} If `$S$` is an object, a function, or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, the expression is an lvalue designating the object associated with `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
+* [#.#]{.pnum} Otherwise, if `$S$` is a variable, reference, or a structured binding, the expression is an lvalue referring to the object or function associated with `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, `$S$` shall be a value or an enumerator. The expression is a prvalue whose evaluation computes `$S$` and whose type is the same as `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, The expression is a prvalue whose evaluation computes `$S$` and whose type is the same as `$S$`.
+
+* [#.#]{.pnum} Otherwise, the program is ill-formed.
 
 [Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
 :::
@@ -3417,10 +3419,10 @@ Add a production to `$postfix-expression$` for splices in member access expressi
 
 ### [expr.ref]{.sref} Class member access {-}
 
-Modify paragraph 1 to account for splices in member access expressions. Prefer the word "possibly" to "optionally" since `template` cannot precede a `splice-expression`:
+Modify paragraph 1 to account for splices in member access expressions:
 
 ::: std
-[1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, [optionally]{.rm} [possibly]{.addu} followed by the keyword `template`, and then followed by an `$id-expression$` [or a splicer designating a class member]{.addu}, is a postfix expression.
+[1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, optionally followed by the keyword `template`, and then followed by an `$id-expression$` [or a `$splice-expression$`]{.addu}, is a postfix expression.
 
 [If the keyword `template` is used, the following unqualified name is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `::`, the `$id-expression$` is a `$qualified-id$`.]{.note}
 
@@ -3429,13 +3431,13 @@ Modify paragraph 1 to account for splices in member access expressions. Prefer t
 Modify paragraph 2 to account for splices in member access expressions:
 
 ::: std
-[2]{.pnum} [For the first option,]{.rm} [if]{.rm}[If]{.addu} the [dot is followed by an]{.addu} `$id-expression$` [names]{.rm} [ or splicer designating]{.addu} a static member or an enumerator, the first expression is a discarded-value expression ([expr.context]); if the `$id-expression$` [or splicer designates]{.addu} [names]{.rm} a non-static data member, the first expression shall be a glvalue. [For the second option (arrow), the first expression]{.rm} [A postfix expression followed by an arrow]{.addu} shall be a prvalue having pointer type. The expression `E1->E2` is converted to the equivalent form `(*(E1)).E2`; the remainder of [expr.ref] will address only [the first option (dot)]{.rm} [expressions containing a dot]{.addu}.
+[2]{.pnum} For [the first option, if the]{.rm} [a dot that is followed by an]{.addu} `$id-expression$` [names]{.rm} [ or `$splice-expression$` that designates]{.addu} a static member or an enumerator, the first expression is a discarded-value expression ([expr.context]); if the `$id-expression$` [or `$splice-expression$` designates]{.addu} [names]{.rm} a non-static data member, the first expression shall be a glvalue. [For the second option (arrow), the first expression]{.rm} [A postfix expression that is followed by an arrow]{.addu} shall be a prvalue having pointer type. The expression `E1->E2` is converted to the equivalent form `(*(E1)).E2`; the remainder of [expr.ref] will address only [the first option (dot)]{.rm} [the form using a dot]{.addu}.
 :::
 
 Modify paragraph 3 to account for splices in member access expressions:
 
 ::: std
-[3]{.pnum} The postfix expression before the dot is evaluated; the result of that evaluation, together with the `$id-expression$` [or splicer]{.addu}, determines the result of the entire postfix expression.
+[3]{.pnum} The postfix expression before the dot is evaluated; the result of that evaluation, together with the `$id-expression$` [or `$splice-expression$`]{.addu}, determines the result of the entire postfix expression.
 :::
 
 Modify paragraph 4 to account for splices in member access expressions:
@@ -3445,7 +3447,7 @@ Modify paragraph 4 to account for splices in member access expressions:
 
 :::
 
-Adjust the language in paragraphs 6-9 to account for splicers.
+Adjust the language in paragraphs 6-9 to account for splicers. Explicitly add a fallback to paragraph 7 that makes other cases ill-formed.
 
 ::: std
 
@@ -3454,13 +3456,15 @@ Adjust the language in paragraphs 6-9 to account for splicers.
 [7]{.pnum} If [the entity designated by]{.addu} `E2` is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. If `E2` [is]{.rm} [designates]{.addu} a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
 
 * [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a static data member and the type of `E2` is `T`, then `E1.E2` is an lvalue; [...]
-* [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", [...]. If [the entity designated by]{.addu} `E2` is declared to be a `mutable` member, then the type of `E1.E2` is "_vq12_ `T`". If [the entity designated by]{.addu} `E2` is not declared to be a `mutable` member, then the type of `E1.E2` is "_cq12_ _vq12_ `T`".
+* [#.#]{.pnum} [Otherwise, if]{.addu} [If]{.rm} `E2` [is]{.rm} [designates]{.addu} a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", [...]. If [the entity designated by]{.addu} `E2` is declared to be a `mutable` member, then the type of `E1.E2` is "_vq12_ `T`". If [the entity designated by]{.addu} `E2` is not declared to be a `mutable` member, then the type of `E1.E2` is "_cq12_ _vq12_ `T`".
 
-[...]
+* [#.#]{.pnum} [Otherwise, if]{.addu} [If]{.rm} `E2` is an overload set, [...]
 
-* [#.4]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a nested type, the expression `E1.E2` is ill-formed.
+* [#.#]{.pnum} [Otherwise, if]{.addu} [If]{.rm} `E2` [is]{.rm} [designates]{.addu} a nested type, the expression `E1.E2` is ill-formed.
 
-* [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a member enumerator and the type of `E2` is `T`, the expression `E1.E2` is a prvalue of type `T` whose value is the value of the enumerator.
+* [#.#]{.pnum} [Otherwise, if]{.addu} [If]{.rm} `E2` [is]{.rm} [designates]{.addu} a member enumerator and the type of `E2` is `T`, the expression `E1.E2` is a prvalue of type `T` whose value is the value of the enumerator.
+
+* [[#.#]{.pnum} Otherwise, the program is ill-formed.]{.addu}
 
 [8]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static member [`$M$`]{.addu}, the program is ill-formed if the class of which [`E2`]{.rm} [`$M$`]{.addu} is directly a member is an ambiguous base ([class.member.lookup]) of the naming class ([class.access.base]) of [`E2`]{.rm} [`$M$`]{.addu}.
 
@@ -3497,13 +3501,13 @@ Modify paragraphs 3 and 4 to permit forming a pointer-to-member with a splice.
 
 :::
 
-### 7.6.2.10* [expr.unary.reflect] The reflection operator {-}
+### 7.6.2.10* [expr.reflect] The reflection operator {-}
 
 Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 
 ::: std
 ::: addu
-**The reflection operator   [expr.unary.reflect]**
+**The reflection operator   [expr.reflect]**
 
 ```
 $reflect-expression$:
@@ -3539,7 +3543,9 @@ consteval void g(std::meta::info r, X<false> xv) {
 ```
 :::
 
-[#]{.pnum} A `$reflect-expression$` that could be validly interpreted as `^^ $template-name$` is never interpreted as `^^ $id-expression$`, and is interpreted as `^^ $type-id$` if and only if the operand is the injected-class-name of a class template ([temp.local]).
+[#]{.pnum} A `$reflect-expression$` that could be validly interpreted as `^^ $template-name$` is never interpreted as `^^ $id-expression$`, and is interpreted as `^^ $type-id$` if and only if the operand refers to the current instantiation ([temp.dep.type]).
+
+[#]{.pnum} A `$reflect-expression$` of the form `^^ ::` represents the global namespace. A `$reflect-expression$` of the form `^^ $qualified-namespace-specifier$` represents the denoted namespace or namespace alias.
 
 [#]{.pnum} A `$reflect-expression$` of the form `^^ $nested-name-specifier$@~_opt_~@ $template-name$` represents the primary class template, function template, primary variable template, or alias template denoted by `$template-name$`.
 
@@ -3550,15 +3556,17 @@ consteval void g(std::meta::info r, X<false> xv) {
 * [#.#]{.pnum} If `$type-id$` denotes a type alias that was introduced by the declaration of a type template parameter, the `$reflect-expression$` represents the type denoted by that type alias.
 * [#.#]{.pnum} Otherwise, the `$reflect-expression$` represents the type or type alias denoted by `$type-id$`.
 
-[#]{.pnum} The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}), and is interpreted as follows:
+[#]{.pnum} A `$reflect-expression$` of the form `^^ $id-expression$` is interpreted as follows:
 
-  * [#.#]{.pnum} If `$id-expression$` denotes an overload set `$S$` such that overload resolution for the expression `&$S$` determines a unique function `$F$`, the `$reflect-expression$` represents `$F$`.
+  * [#.#]{.pnum} If `$id-expression$` denotes an overload set `$S$` and overload resolution for the expression `&$S$` determines a unique function `$F$` ([over.over]{.sref}), the `$reflect-expression$` represents `$F$`.
 
-  * [#.#]{.pnum} Otherwise, if `$id-expression$` denotes a variable, structured binding, function, enumerator, or non-static data member, the `$reflect-expression$` represents that entity.
+  * [#.#]{.pnum} Otherwise, if `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member or member function, the `$reflect-expression$` represents that entity.
 
   * [#.#]{.pnum} Otherwise, the `$reflect-expression$` is ill-formed.
 
     [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
+
+  The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
 ::: example
 ```cpp
@@ -3566,10 +3574,10 @@ template <typename T> void fn() requires (^^T != ^^int);
 template <typename T> void fn() requires (^^T == ^^int);
 template <typename T> void fn() requires (sizeof(T) == sizeof(int));
 
-constexpr auto r1 = ^^fn<char>;     // OK
-constexpr auto r2 = ^^fn<int>;      // error: ambiguous
+constexpr auto x = ^^fn<char>;     // OK
+constexpr auto y = ^^fn<int>;      // error: ambiguous
 
-constexpr auto r3 = ^^std::vector;  // OK
+constexpr auto z = ^^std::vector;  // OK
 
 template <typename T>
 struct S {
@@ -3852,7 +3860,7 @@ Add a bullet to paragraph 9 of [dcl.fct]{.sref} to allow for reflections of abom
 * [#.#]{.pnum} the `$type-id$` of a `$template-argument$` for a `$type-parameter$` ([temp.arg.type])[.]{.rm}[, or]{.addu}
 
 ::: addu
-* [9.6]{.pnum} the operand of a `$reflect-expression$` ([expr.unary.reflect]).
+* [9.6]{.pnum} the operand of a `$reflect-expression$` ([expr.reflect]).
 :::
 
 :::
@@ -3863,7 +3871,7 @@ Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of de
 
 ::: std
 
-[2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator ([expr.unary.reflect])]{.addu}, is ill-formed.
+[2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of the reflection operator ([expr.reflect])]{.addu}, is ill-formed.
 :::
 
 ### [enum.udecl]{.sref} The `using enum` declaration {-}
