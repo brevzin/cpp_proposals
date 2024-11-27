@@ -872,6 +872,8 @@ expressions<span></span></a></li>
 <li><a href="#temp.dep.constexpr-value-dependent-expressions" id="toc-temp.dep.constexpr-value-dependent-expressions"><span>13.8.3.4
 <span>[temp.dep.constexpr]</span></span> Value-dependent
 expressions<span></span></a></li>
+<li><a href="#temp.point" id="toc-temp.point"><span class="toc-section-number">5.1.1</span>
+[temp.point]<span></span></a></li>
 <li><a href="#cpp.cond-conditional-inclusion" id="toc-cpp.cond-conditional-inclusion"><span>15.2
 <span>[cpp.cond]</span></span> Conditional
 inclusion<span></span></a></li>
@@ -5088,7 +5090,7 @@ A variable is named by an expression if the expression is an
 A structured binding is <span class="rm" style="color: #bf0303"><del>odr-used if it appears as a
 potentially-evaluated</del></span> <span class="addu">named by an</span>
 expression <span class="addu">if that expression is either an</span>
-<code class="sourceCode cpp"><em>id-expression</em></code> <span class="addu">or
+<code class="sourceCode cpp"><em>id-expression</em></code> <span class="addu">or a
 <code class="sourceCode cpp"><em>splice-expression</em></code> that
 designates that structured binding. A structured binding is odr-used if
 it is named by a potentially-evaluated expression.</span></li>
@@ -5141,11 +5143,12 @@ If <code class="sourceCode cpp">T</code> is <code class="sourceCode cpp">std<spa
 ([meta.reflection.synop]), its associated set of entities is the
 singleton containing the enumeration type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>operators</code>
 ([meta.reflection.operators]).</span></p>
-<p><span class="note"><span>[ <em>Note 1:</em> </span>The <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+<p><span class="addu"><span class="note"><span>[ <em>Note 1:</em>
+</span>The <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
 type is a typedef, so an explicit rule is needed to associate calls
 whose arguments are reflections with the namespace
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code>.<span>
-— <em>end note</em> ]</span></span></p></li>
+— <em>end note</em> ]</span></span></span></p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(3.2)</a></span>
 If <code class="sourceCode cpp">T</code> is <span class="rm" style="color: #bf0303"><del>a</del></span> <span class="addu">any
 other</span> fundamental type, its associated set of entities is
@@ -5235,7 +5238,7 @@ with a TU-local variable, <span class="rm" style="color: #bf0303"><del>or</del><
 <div class="addu">
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(16.1+)</a></span>
-it is a reflection representing
+it is a reflection representing either
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(16.1+.1)</a></span>
 a TU-local value or object, or</li>
@@ -5349,9 +5352,9 @@ shall be equal to <code class="sourceCode cpp"><span class="kw">sizeof</span><sp
 <span id="cb104-15"><a href="#cb104-15" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> NS <span class="op">{}</span>;</span>
 <span id="cb104-16"><a href="#cb104-16" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> NSAlias <span class="op">=</span> NS;</span>
 <span id="cb104-17"><a href="#cb104-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-18"><a href="#cb104-18" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;  <span class="co">// represents &#39;int&#39; value of &#39;42&#39;</span></span>
+<span id="cb104-18"><a href="#cb104-18" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;  <span class="co">// represents int value of 42</span></span>
 <span id="cb104-19"><a href="#cb104-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb104-20"><a href="#cb104-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r2 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_object<span class="op">(</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span>;  <span class="co">// represents &#39;int&#39; object</span></span>
+<span id="cb104-20"><a href="#cb104-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r2 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_object<span class="op">(</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span>;  <span class="co">// represents int object</span></span>
 <span id="cb104-21"><a href="#cb104-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb104-22"><a href="#cb104-22" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r3 <span class="op">=</span> <span class="op">^^</span>arr;      <span class="co">// represents a variable</span></span>
 <span id="cb104-23"><a href="#cb104-23" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r4 <span class="op">=</span> <span class="op">^^</span>a3;       <span class="co">// represents a structured binding</span></span>
@@ -5517,7 +5520,7 @@ template, alias template, or concept.</p>
 <span id="cb107-17"><a href="#cb107-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">[:</span>Concept<span class="op">:]</span> <span class="kw">auto</span> d <span class="op">=</span> <span class="dv">0</span>;   <span class="co">// OK, deduced placeholder type</span></span>
 <span id="cb107-18"><a href="#cb107-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb107-19"><a href="#cb107-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">[:</span>Cls<span class="op">:]::</span>k <span class="op">=</span> <span class="dv">1</span>;                    <span class="co">// OK</span></span>
-<span id="cb107-20"><a href="#cb107-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">1</span><span class="op">&gt;::</span>type var;    <span class="co">// OK, &#39;typename&#39; binds to &#39;type&#39;.</span></span>
+<span id="cb107-20"><a href="#cb107-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>TCls<span class="op">:]&lt;</span><span class="dv">1</span><span class="op">&gt;::</span>type e;      <span class="co">// OK, &#39;typename&#39; binds to &#39;type&#39;.</span></span>
 <span id="cb107-21"><a href="#cb107-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb107-22"><a href="#cb107-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb107-23"><a href="#cb107-23" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> non_dependent<span class="op">()</span> <span class="op">{</span></span>
@@ -5998,7 +6001,7 @@ syntactically form a
 <span id="cb113-8"><a href="#cb113-8" aria-hidden="true" tabindex="-1"></a>  r == (^^int) &amp;&amp; true;  // OK</span>
 <span id="cb113-9"><a href="#cb113-9" aria-hidden="true" tabindex="-1"></a>  r == ^^int &amp;&amp;&amp;&amp; true;  // error: &#39;int &amp;&amp;&amp;&amp;&#39; is not a valid type</span>
 <span id="cb113-10"><a href="#cb113-10" aria-hidden="true" tabindex="-1"></a>  ^^X &lt; xv;              // OK</span>
-<span id="cb113-11"><a href="#cb113-11" aria-hidden="true" tabindex="-1"></a>  (^^X) &lt; xv;             // OK</span>
+<span id="cb113-11"><a href="#cb113-11" aria-hidden="true" tabindex="-1"></a>  (^^X) &lt; xv;            // OK</span>
 <span id="cb113-12"><a href="#cb113-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
@@ -6069,8 +6072,8 @@ represents that entity.</p></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_95" id="pnum_95">(8.3)</a></span>
 Otherwise, the
 <code class="sourceCode cpp"><em>reflect-expression</em></code> is
-ill-formed.</p>
-<p><span class="note"><span>[ <em>Note 2:</em> </span>This includes
+ill-formed. <span class="note"><span>[ <em>Note 2:</em> </span>This
+includes
 <code class="sourceCode cpp"><em>pack-index-expression</em></code>s and
 non-type template parameters.<span> — <em>end
 note</em> ]</span></span></p></li>
@@ -6217,20 +6220,23 @@ refers to an <span class="rm" style="color: #bf0303"><del>entity</del></span> <s
 constant expression<span class="addu">, and</span></p></li>
 <li><p><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_110" id="pnum_110">(15.2)</a></span>
 if <code class="sourceCode cpp"><em>E</em></code> designates a function
-of consteval-only type (<span>6.8.1 <a href="https://wg21.link/basic.types.general">[basic.types.general]</a></span>),
+of consteval-only type (<span>6.8.1 <a href="https://wg21.link/basic.types.general">[basic.types.general]</a></span>)
 or an object whose complete object is of consteval-only type, then
 <code class="sourceCode cpp"><em>E</em></code> is also of consteval-only
 type,</span></p>
 <div class="addu">
-<div class="note">
-<p><span>[ <em>Note 1:</em> </span>For example, given the function</p>
-<div class="sourceCode" id="cb115"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> Base<span class="op">&amp;</span> fn<span class="op">(</span><span class="kw">const</span> Derived<span class="op">&amp;</span> derived<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> derived;</span>
-<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>where <code class="sourceCode cpp">Derived</code> is a consteval-only
-type, if <code class="sourceCode cpp">Base</code> is not also a
-consteval-only type then <code class="sourceCode cpp">fn<span class="op">(</span>derived<span class="op">)</span></code>
-is never a constant expression.<span> — <em>end note</em> ]</span></p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb115"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Base <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Derived <span class="op">:</span> Base <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>info r; <span class="op">}</span>;</span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-4"><a href="#cb115-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> Base<span class="op">&amp;</span> fn<span class="op">(</span><span class="kw">const</span> Derived<span class="op">&amp;</span> derived<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> derived; <span class="op">}</span></span>
+<span id="cb115-5"><a href="#cb115-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-6"><a href="#cb115-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> obj <span class="op">=</span> Derived<span class="op">{^^::}</span>; <span class="co">// OK</span></span>
+<span id="cb115-7"><a href="#cb115-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> d <span class="op">=</span> obj; <span class="co">// OK</span></span>
+<span id="cb115-8"><a href="#cb115-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> b <span class="op">=</span> fn<span class="op">(</span>obj<span class="op">)</span>; <span class="co">// error: not a constant expression</span></span>
+<span id="cb115-9"><a href="#cb115-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">// because Derived is a consteval-only type but Base is not. </span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
 </div>
 </div></li>
 </ul>
@@ -6278,20 +6284,19 @@ to also apply to expressions of consteval-only type.</p>
 A<span class="rm" style="color: #bf0303"><del>n</del></span> <span class="addu">potentially-evaluated</span> expression or conversion is
 <em>immediate-escalating</em> if it is <span class="rm" style="color: #bf0303"><del>not</del></span> <span class="addu">neither</span> initially in an immediate function context
 <span class="addu">nor a subexpression of an immediate
-invocation,</span> and it <span class="rm" style="color: #bf0303"><del>is</del></span></p>
+invocation,</span> and it is <span class="rm" style="color: #bf0303"><del>either</del></span></p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_120" id="pnum_120">(18.1)</a></span>
 <span class="rm" style="color: #bf0303"><del>a
-potentially-evaluated</del></span> <span class="addu">is an</span>
+potentially-evaluated</del></span> <span class="addu">an</span>
 <code class="sourceCode cpp"><em>id-expression</em></code> that denotes
 an immediate function<span class="addu">,</span> <span class="rm" style="color: #bf0303"><del>that is not a subexpression of an immediate
 invocation, or</del></span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_121" id="pnum_121">(18.2)</a></span>
-<span class="addu">is</span> an immediate invocation that is not a
-constant expression<span class="addu">, or</span> <span class="rm" style="color: #bf0303"><del>and is not a subexpression of an immediate
+an immediate invocation that is not a constant expression<span class="addu">, or</span> <span class="rm" style="color: #bf0303"><del>and is not a subexpression of an immediate
 invocation.</del></span></li>
 <li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_122" id="pnum_122">(18.3)</a></span>
-is of consteval-only type ([basic.types.general]).</span></li>
+of consteval-only type ([basic.types.general]).</span></li>
 </ul>
 </blockquote>
 </div>
@@ -6320,7 +6325,7 @@ an initializer of a
 (<span>9.2.7 <a href="https://wg21.link/dcl.constinit">[dcl.constinit]</a></span>)
 variable.</li>
 </ul>
-<p><span class="note"><span>[ <em>Note 2:</em> </span>The evaluation of
+<p><span class="note"><span>[ <em>Note 1:</em> </span>The evaluation of
 a plainly constant-evaluated expression
 <code class="sourceCode cpp"><em>E</em></code> can produce injected
 declarations (see below) and happens exactly once (<span>5.2 <a href="https://wg21.link/lex.phases">[lex.phases]</a></span>). Any such
@@ -6355,7 +6360,7 @@ the initializer for a variable that is usable in constant expressions or
 has constant initialization (<span>6.9.3.2 <a href="https://wg21.link/basic.start.static">[basic.start.static]</a></span>).</li>
 </ul>
 <div class="addu">
-<p><span class="note"><span>[ <em>Note 3:</em> </span>All plainly
+<p><span class="note"><span>[ <em>Note 2:</em> </span>All plainly
 constant-evaluated expressions are manifestly constant-evaluated, but
 some manifestly constant-evaluated expressions (e.g., template
 arguments) are not plainly constant-evaluated. Such expressions are
@@ -6392,7 +6397,7 @@ The program is ill-formed if an injected declaration is produced by the
 evaluation of a manifestly constant-evaluated expression that is not
 plainly constant-evaluated.</p>
 <div class="example">
-<span>[ <em>Example 1:</em> </span>
+<span>[ <em>Example 2:</em> </span>
 <div class="sourceCode" id="cb116"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> make_decl<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;      <span class="co">// calling &#39;make_decl(n)&#39; produces a declaration</span></span>
 <span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb116-3"><a href="#cb116-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> R<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>make_decl<span class="op">(</span>R<span class="op">))</span></span>
@@ -7728,6 +7733,8 @@ a dependent template template argument, or a dependent
 </div>
 </blockquote>
 </div>
+<h3 data-number="5.1.1" id="temp.point"><span class="header-section-number">5.1.1</span> [temp.point]<a href="#temp.point" class="self-link"></a></h3>
+<p>TODO: Need changes here.</p>
 <h3 class="unnumbered" id="cpp.cond-conditional-inclusion"><span>15.2 <a href="https://wg21.link/cpp.cond">[cpp.cond]</a></span> Conditional
 inclusion<a href="#cpp.cond-conditional-inclusion" class="self-link"></a></h3>
 <p>Extend paragraph 9 to clarify that

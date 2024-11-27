@@ -3018,7 +3018,7 @@ Modify the first sentence of paragraph 5 to cover splicing of variables:
 Modify paragraph 6 to cover splicing of structured bindings:
 
 ::: std
-- [6]{.pnum} A structured binding is [odr-used if it appears as a potentially-evaluated]{.rm} [named by an]{.addu} expression [if that expression is either an]{.addu} `$id-expression$` [or `$splice-expression$` that designates that structured binding. A structured binding is odr-used if it is named by a potentially-evaluated expression.]{.addu}
+- [6]{.pnum} A structured binding is [odr-used if it appears as a potentially-evaluated]{.rm} [named by an]{.addu} expression [if that expression is either an]{.addu} `$id-expression$` [or a `$splice-expression$` that designates that structured binding. A structured binding is odr-used if it is named by a potentially-evaluated expression.]{.addu}
 
 :::
 
@@ -3050,7 +3050,7 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 
 * [[#.#]{.pnum} If `T` is `std::meta::info` ([meta.reflection.synop]), its associated set of entities is the singleton containing the enumeration type `std::meta::operators` ([meta.reflection.operators]).]{.addu}
 
-  [The `std::meta::info` type is a typedef, so an explicit rule is needed to associate calls whose arguments are reflections with the namespace `std::meta`.]{.note}
+  [[The `std::meta::info` type is a typedef, so an explicit rule is needed to associate calls whose arguments are reflections with the namespace `std::meta`.]{.note}]{.addu}
 
 * [#.#]{.pnum} If `T` is [a]{.rm} [any other]{.addu} fundamental type, its associated set of entities is empty.
 * [#.#]{.pnum} If `T` is a class type ...
@@ -3093,7 +3093,7 @@ Extend the definition of _TU-local_ values and objects to include reflections:
 * [16.1]{.pnum} it is, or is a pointer to, a TU-local function or the object associated with a TU-local variable, [or]{.rm}
 
 :::addu
-* [16.1+]{.pnum} it is a reflection representing
+* [16.1+]{.pnum} it is a reflection representing either
   * [16.1+.#]{.pnum} a TU-local value or object, or
   * [16.1+.#]{.pnum} a `$typedef-name$`, `$namespace-alias$`, or `$base-specifier$` introduced by an exposure, or
 :::
@@ -3173,9 +3173,9 @@ template <auto> concept Concept = requires { true; };
 namespace NS {};
 namespace NSAlias = NS;
 
-constexpr auto r1 = std::meta::reflect_value(42);  // represents 'int' value of '42'
+constexpr auto r1 = std::meta::reflect_value(42);  // represents int value of 42
 
-constexpr auto r2 = std::meta::reflect_object(arr[1]);  // represents 'int' object
+constexpr auto r2 = std::meta::reflect_object(arr[1]);  // represents int object
 
 constexpr auto r3 = ^^arr;      // represents a variable
 constexpr auto r4 = ^^a3;       // represents a structured binding
@@ -3291,7 +3291,7 @@ void dependent() {
   template [:Concept:] auto d = 0;   // OK, deduced placeholder type
 
   [:Cls:]::k = 1;                    // OK
-  typename [:TCls:]<1>::type var;    // OK, 'typename' binds to 'type'.
+  typename [:TCls:]<1>::type e;      // OK, 'typename' binds to 'type'.
 };
 
 void non_dependent() {
@@ -3537,7 +3537,7 @@ consteval void g(std::meta::info r, X<false> xv) {
   r == (^^int) && true;  // OK
   r == ^^int &&&& true;  // error: 'int &&&&' is not a valid type
   ^^X < xv;              // OK
-  (^^X) < xv;             // OK
+  (^^X) < xv;            // OK
 }
 
 ```
@@ -3562,9 +3562,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} Otherwise, if `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member or member function, the `$reflect-expression$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, the `$reflect-expression$` is ill-formed.
-
-    [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
+  * [#.#]{.pnum} Otherwise, the `$reflect-expression$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
@@ -3630,18 +3628,22 @@ Modify paragraph 15 to disallow returning non-consteval-only pointers and refere
 [15]{.pnum} A _constant expression_ is either a glvalue core constant expression [`$E$`]{.addu} that [\ ]{.addu}
 
 * [#.#]{.pnum} refers to an [entity]{.rm} [object or function]{.addu} that is a permitted result of a constant expression[, and]{.addu}
-* [[#.#]{.pnum} if `$E$` designates a function of consteval-only type ([basic.types.general]{.sref}), or an object whose complete object is of consteval-only type, then `$E$` is also of consteval-only type,]{.addu}
+* [[#.#]{.pnum} if `$E$` designates a function of consteval-only type ([basic.types.general]{.sref}) or an object whose complete object is of consteval-only type, then `$E$` is also of consteval-only type,]{.addu}
 
   ::: addu
-  ::: note
-  For example, given the function
+  ::: example
   ```cpp
-  consteval const Base& fn(const Derived& derived) {
-    return derived;
-  }
+  struct Base { };
+  struct Derived : Base { std::meta::info r; };
+
+  consteval const Base& fn(const Derived& derived) { return derived; }
+
+  constexpr auto obj = Derived{^^::}; // OK
+  constexpr auto const& d = obj; // OK
+  constexpr auto const& b = fn(obj); // error: not a constant expression
+    // because Derived is a consteval-only type but Base is not. 
   ```
 
-  where `Derived` is a consteval-only type, if `Base` is not also a consteval-only type then `fn(derived)` is never a constant expression.
   :::
   :::
 
@@ -3661,11 +3663,11 @@ or a prvalue core constant expression whose value satisfies the following constr
 Modify (and clean up) the definition of _immediate-escalating_ to also apply to expressions of consteval-only type.
 
 ::: std
-[18]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it [is]{.rm}
+[18]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
 
-* [#.#]{.pnum} [a potentially-evaluated]{.rm} [is an]{.addu} `$id-expression$` that denotes an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
-* [#.#]{.pnum} [is]{.addu} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
-* [[#.#]{.pnum} is of consteval-only type ([basic.types.general]).]{.addu}
+* [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` that denotes an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
+* [#.#]{.pnum} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
+* [[#.#]{.pnum} of consteval-only type ([basic.types.general]).]{.addu}
 
 :::
 
@@ -4449,6 +4451,10 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/5:
 
 :::
 :::
+
+### [temp.point]
+
+TODO: Need changes here.
 
 
 
