@@ -2,7 +2,7 @@
 title: "Reflection for C++26"
 document: P2996R8
 date: today
-audience: CWG, LEWG
+audience: CWG, LEWG, LWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
@@ -2929,7 +2929,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
 ::: std
 
-[7-8]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token ([lex.token]{.sref}). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated [alongside any instantiation units (see below) that are produced]{.addu}. [During this process, non-dependent plainly constant-evaluated expressions ([expr.const]) are evaluated in lexical order. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a non-dependent plainly constant-evaluated expression `$X$` are considered in a context where `$X$` has been evaluated exactly once.]{.addu}
+[7-8]{.pnum} Whitespace characters separating tokens are no longer significant. Each preprocessing token is converted into a token ([lex.token]{.sref}). The resulting tokens constitute a translation unit and are syntactically and semantically analyzed and translated.
 
   [The process of analyzing and translating the tokens can occasionally result in one token being replaced by a sequence of other tokens ([temp.names])]{.note3}
 
@@ -2937,31 +2937,38 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [Source files, translation units and translated translation units need not necessarily be stored as files, nor need there be any one-to-one correspondence between these entities and any external representation. The description is conceptual only, and does not specify any particular implementation.]{.note}
 
-  [While the tokens constituting translation units are being analyzed and translated, a collection of required instantiations is produced.]{.addu}
-
   [Translated translation units and instantiation units are combined as follows:]{.rm}
 
   [[Some or all of these can be supplied from a library.]{.note5}]{.rm}
 
   [Each translated translation unit is examined to produce a list of required instantiations.]{.rm}
 
+  [While the tokens constituting translation units are being analyzed and translated, a collection of required instantiations is produced.]{.addu}
+
   [This can include instantiations which have been explicitly requested ([temp.explicit]).]{.note5}
+
+  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]{.sref}), and may be further constrainted by other requirements in this document. ]{.addu}
+
+  [[For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated from an earlier point ([temp.inst]).]{.note}]{.addu}
 
   The definitions of the required templates are located. It is implementation-defined whether the source of the translation units containing these definitions is required to be available.
 
   [[An implementation can choose to encode sufficient information into the translated translation unit so as to ensure the source is not required here.]{.note}]{.rm}
 
-  All required instantiations are perfomed to produce _instantiation units_.
+  [All required instantiations are perfomed to produce _instantiation units_.]{.rm}
 
-  [These are similar to translated translation units, but contain no references to uninstantiated templates and no template definitions.]{.note}
+  [[These are similar to translated translation units, but contain no references to uninstantiated templates and no template definitions.]{.note}]{.rm}
 
-  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]), and may be further constrained by other requirements in this document.]{.addu}
+  [Each instantiation results in new program constructs.]{.addu} The program is ill-formed if any instantiation fails.
 
-  [[For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated from an earlier point ([temp.inst]).]{.note}]{.addu}
+  [Instantiation confers a partition over the program constructs, and the tokens comprising the translation unit furthermore endow the partitioned constructs with a partial order. Two constructs are _instantiation-sequenced_ if the tokens by which they are described belong to the same translation unit and if either both constructs result from the same instantiation or if neither results from any instantiation. Given two instantiation-sequenced program constructs, whether one _semantically follows_ the other is determined as follows:]{.addu}
 
-  [During this process, plainly constant-evaluated expressions appearing in the same instantiation unit are evaluated in lexical order as part of the instantiation process. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs whose syntactic end point occurs lexically after the syntactic end point of a plainly constant-evaluated expression `$X$` in the same instantiation unit are considered in a context where `$X$` has been evaluated exactly once.]{.addu}
+  * [[7.8-1]{.pnum} If both constructs are within the `$member-specification$` of a class `C` ([class.mem.general]{.sref}) and one such construct (call it `$X$`) is in a complete-class context of `C` but the other (call it `$Y$`) is not, then `$X$` semantically follows `$Y$`.]{.addu}
+  * [[7-8.#]{.pnum} Otherwise, if the syntactic endpoint of the tokens that describe one such construct (call it `$X$`) occurs lexically after the syntactic endpoint of the tokens that describe the other (call it `$Y$`), then `$X$` semantically follows `$Y$`.]{.addu}
 
-  The program is ill-formed if any instantiation fails.
+  [During the analysis and translation of tokens and instantiations, certain expressions are evaluated. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs that semantically follow a plainly constant-evaluated expression `$P$` ([expr.const]{.sref}) are considered in a context where `$P$` has been evaluated exactly once. The order in which expressions are evaluated relative to the consideration of other program constructs may be further constrained by other requirements in this document.]{.addu}
+
+  [[For example, a declaration that follows lexically after all points from which a given instantiation can be perfomed will be considered in a context where all plainly constant-evaluated expressions resulting from the instantiation have been evaluated exactly once.]{.note}]{.addu}
 
   [8]{.pnum} All external entity references are resolved. [...]
 
@@ -3038,6 +3045,15 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 * if the definitions in different translation units do not satisfy the following requirements,
 
 the program is ill-formed; a diagnostic is required only if the definable item is attached to a named module and a prior definition is reachable at the point where a later definition occurs. [...]
+:::
+
+
+### [basic.lookup.general]{.sref} General {-}
+
+Adjust the definition of when a program point follows a declaration to account for the removal of instantiation units.
+
+::: std
+[2]{.pnum} A program point `$P$` is said to follow any declaration [with which it is instantiation-sequenced ([lex.phases]{.sref})]{.addu} [in the same translation unit]{.rm} whose locus ([basic.scope.pdecl]{.sref}) is before `$P$`.
 :::
 
 ### [basic.lookup.argdep]{.sref} Argument-dependent name lookup {-}
@@ -3641,7 +3657,7 @@ Modify paragraph 15 to disallow returning non-consteval-only pointers and refere
   constexpr auto obj = Derived{^^::}; // OK
   constexpr auto const& d = obj; // OK
   constexpr auto const& b = fn(obj); // error: not a constant expression
-    // because Derived is a consteval-only type but Base is not. 
+    // because Derived is a consteval-only type but Base is not.
   ```
 
   :::
@@ -3676,7 +3692,7 @@ Add new paragraphs prior to the definition of _manifestly constant evaluated_ ([
 ::: std
 ::: addu
 
-[#]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is not in a complete-class context ([class.mem.general]{.sref}) and is either
+[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is not in a complete-class context ([class.mem.general]{.sref}) and is either
 
 * [#.#]{.pnum} the `$constant-expression$` of a `$static_assert-declaration$` ([dcl.pre]{.sref}), or
 * [#.#]{.pnum} an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable.
@@ -3690,7 +3706,7 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 
 ::: std
 
-[#]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
+[21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
 
 * [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
@@ -3704,53 +3720,52 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 
 :::
 
-Add new paragraphs defining _evaluation context_, _injected declaration_, and _injected point_ after the example following the definition of _manifestly constant-evaluated_, and renumber accordingly:
+After the example following the definition of _manifestly constant-evaluated_, introduce new terms and rules for injecting declarations and renumber accordingly:
 
 ::: std
 ::: addu
 
-[#]{.pnum} The evaluation of an expression `$E$` can introduce _injected declarations_. For each such declaration `$D$`, the _injected point_ is a corresponding program point which follows the last non-injected point in the translation unit containing `$D$`. The evaluation of `$E$` is said to _produce_ the declaration `$D$`.
+[#]{.pnum} The evaluation of an expression can introduce one or more _injected declarations_. Each such declaration has an associated _injected point_ which follows the last non-injected program point in the translation unit containing that declaration. The evaluation is said to _produce_ the declaration.
 
-[Special rules concerning reachability apply to injected points ([module.reach]).]{.note13}
+[Special rules concerning reachability apply to injected points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} The program is ill-formed if an injected declaration is produced by the evaluation of a manifestly constant-evaluated expression that is not plainly constant-evaluated.
+[#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
+
+* [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
+* [#.#]{.pnum} the target scope of `$D$` is not the immediate scope of `$M$`.
 
 ::: example
 ```cpp
-consteval bool make_decl(int);      // calling 'make_decl(n)' produces a declaration
-
-template <int R> requires (make_decl(R))
-  bool tfn();
+consteval bool make_decl(int);      // calling 'make_decl(n)' produces an injected
+                                    // declaration in the global namespace
 
 constexpr bool b1 = !make_decl(1);  // OK, constexpr variable so this is plainly
                                     // constant evaluated
 
 bool b2 = !make_decl(2);            // error: initializer !make_decl(42) produced
-                                    // a declaration but is not plainly constant
-                                    // evaluated
+                                    // an injected declaration but is not plainly
+                                    // constant-evaluated
+
+template <int R> requires (make_decl(R))
+  bool tfn();
 
 constexpr bool b3 = tfn<3>();       // error: the invocation of make_decl(R) in the
-                                    // requires clause produced a declaration but is
-                                    // not plainly constant evaluated
+                                    // requires clause produces an injected
+                                    // declaration but is not plainly
+                                    // constant-evaluated
 
-consteval int *not_constant() {
-  make_decl(4);
-  return new int {};
+template <typename> struct S {
+  static constexpr bool b4 = make_decl(4);  // error: target scope of the injected
+                                            // declaration differs from the immediate
+                                            // scope of the expression
 }
-constexpr bool b4 = [] {
-  int *p = not_constant();          // error: not_constant() produces a declaration
-                                    // in an immediate-escalated function, but is
-                                    // not plainly constant-evaluated.
-  delete p;
-  return true;
-}();
 ```
 :::
 
-[24]{.pnum} The _evaluation context_ is a set of points within the program that determines which declarations are found by certain expressions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an evaluation `$E$` comprises the union of
+[#]{.pnum} The _evaluation context_ is a set of points within the program that determines the behavior of certain functions used for reflection. During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an evaluation `$E$` comprises the union of
 
-* [#.#]{.pnum} the instantiation context of `$M$` ([module.context]), and
-* [#.#]{.pnum} the injected points corresponding to any injected declarations ([expr.const]) produced by evaluations sequenced before `$E$` ([intro.execution]).
+- [#.#]{.pnum} the instantiation context of `$M$` ([module.context]{.sref}), and
+- [#.#]{.pnum} the injected points corresponding to any injected declarations produced by evaluations sequenced before `$E$` ([intro.execution]).
 
 :::
 :::
@@ -4355,28 +4370,6 @@ template<typename T> void f() {
 }
 ```
 :::
-:::
-
-Add a new case to the list of IFNDR conditions related to template instantiation.
-
-::: std
-[6]{.pnum} The validity of a templated entity may be checked prior to any instantiation.
-
-[Knowing which names are type names allows the syntax of every template to be checked in this way.]{.note3}
-
-The program is ill-formed, no diagnostic required, if
-
-* [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail ([dcl.pre]), can be generated for a templated entity or a substatement of a constexpr if statement ([stmt.if]) within a templaetd entity and the innermost enclosing template is not instantiated, or
-* [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail, can be generated for a default `$template-argument$` and the default `$template-argument$` is not used in any instantiation, or
-* [#.#]{.pnum} no specialization of an alias template ([temp.alias]) is valid and no specialization of the alias template is named in the program, or
-* [[#.#]{.pnum} any non-dependent plainly constant-evaluated expression within a templated entity produces an injected declaration ([expr.const]), or]{.addu}
-* [#.#]{.pnum} any `$constraint-expression$` in the program, introduced or otherwise, has (in its normal form) an atomic constraint `$A$` where no satisfaction check of `$A$` could be well-formed and no satisfaction check of `$A$` is performed, or
-* [#.#]{.pnum} every valid specialization of a variadic template requires an empty template parameter pack, or
-* [#.#]{.pnum} a hypothetical instantiation of a templated entity immediately following its definition would be ill-formed due to a construct (other than a `$static_assert-declaration$` that fails) that does not depend on a template parameter, or
-* [#.#]{.pnum} the interpretation of such a construct in the hypothetical instantiation[\ ]{.addu}
-  * [#.#.#]{.pnum} is different from the interpretation of the corresponding construct in any actual instantiation of the templated entity[.]{.rm}[, or]{.addu}
-  * [[#.#.#]{.pnum} requires an injected declaration produced from evaluating an expression that resulted from the substitution of template parameters.]{.addu}
-
 :::
 
 ### [temp.dep.expr]{.sref} Type-dependent expressions {-}
