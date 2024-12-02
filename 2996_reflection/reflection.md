@@ -2947,9 +2947,9 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [This can include instantiations which have been explicitly requested ([temp.explicit]).]{.note5}
 
-  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]{.sref}), and may be further constrainted by other requirements in this document. ]{.addu}
+  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]{.sref}).]{.addu}
 
-  [[For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated from an earlier point ([temp.inst]).]{.note}]{.addu}
+  [[Other requirements in this document can further constrain the  context from which an instantiation can be performed. For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated from an earlier point ([temp.inst]).]{.note}]{.addu}
 
   The definitions of the required templates are located. It is implementation-defined whether the source of the translation units containing these definitions is required to be available.
 
@@ -2966,9 +2966,9 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
   * [[7.8-1]{.pnum} If both constructs are within the `$member-specification$` of a class `C` ([class.mem.general]{.sref}) and one such construct (call it `$X$`) is in a complete-class context of `C` but the other (call it `$Y$`) is not, then `$X$` semantically follows `$Y$`.]{.addu}
   * [[7-8.#]{.pnum} Otherwise, if the syntactic endpoint of the tokens that describe one such construct (call it `$X$`) occurs lexically after the syntactic endpoint of the tokens that describe the other (call it `$Y$`), then `$X$` semantically follows `$Y$`.]{.addu}
 
-  [During the analysis and translation of tokens and instantiations, certain expressions are evaluated. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs that semantically follow a plainly constant-evaluated expression `$P$` ([expr.const]{.sref}) are considered in a context where `$P$` has been evaluated exactly once. The order in which expressions are evaluated relative to the consideration of other program constructs may be further constrained by other requirements in this document.]{.addu}
+  [During the analysis and translation of tokens and instantiations, certain expressions are evaluated. Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs that semantically follow a plainly constant-evaluated expression `$P$` ([expr.const]{.sref}) are considered in a context where `$P$` has been evaluated exactly once.]{.addu}
 
-  [[For example, a declaration that follows lexically after all points from which a given instantiation can be perfomed will be considered in a context where all plainly constant-evaluated expressions resulting from the instantiation have been evaluated exactly once.]{.note}]{.addu}
+  [[Other requirements in this document can further constrain the contexts from which expressions are evaluated. For example, a declaration that lexically follows all points from which a given instantiation can be perfomed will be considered in a context where all plainly constant-evaluated expressions resulting from the instantiation have been evaluated exactly once.]{.note}]{.addu}
 
   [8]{.pnum} All external entity references are resolved. [...]
 
@@ -3047,6 +3047,14 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 the program is ill-formed; a diagnostic is required only if the definable item is attached to a named module and a prior definition is reachable at the point where a later definition occurs. [...]
 :::
 
+Clarify that default template-arguments in splicers also factor into ODR.
+
+::: std
+- [15.10]{.pnum} In each such definition, the overloaded operators referred to, the implicit calls to conversion functions, constructors, operator new functions and operator delete functions, shall refer to the same function.
+- [15.11]{.pnum} In each such definition, a default argument used by an (implicit or explicit) function call or a default template argument used by an (implicit or explicit) `$template-id$`[,]{.addu} [or]{.rm} `$simple-template-id$`[, or `$splice-specialization-specifier$`]{.addu} is treated as if its token sequence were present in the definition of `$D$`; that is, the default argument or default template argument is subject to the requirements described in this paragraph (recursively).
+
+:::
+
 
 ### [basic.lookup.general]{.sref} General {-}
 
@@ -3078,7 +3086,7 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 Extend paragraph 1 to cover `$splice-specifier$`s:
 
 ::: std
-[1]{.pnum} Lookup of an *identifier* followed by a `::` scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [`$splice-specifier$`,]{.addu} or `$computed-type-specifier$` is followed by a `::`, it shall designate a namespace, class, enumeration, [dependent `$splice-specifier$`,]{.addu} or dependent type, and the `::` is never interpreted as a complete nested-name-specifier.
+[1]{.pnum} Lookup of an *identifier* followed by a `::` scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [`$splice-specifier$`, `$splice-specialization-specifier$`,]{.addu} or `$computed-type-specifier$` is followed by a `::`, it shall [either be a dependent `$splice-specifier$` or `$splice-specialization-specifier$` or it shall]{.addu} designate a namespace, class, enumeration, or dependent type, and the `::` is never interpreted as a complete nested-name-specifier.
 
 :::
 
@@ -3254,37 +3262,23 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
 
 ### 7.5.4.0* [expr.prim.id.splice] Splice specifiers {-}
 
-Add a new vocabulary of nonterminals for various forms of splicers:
+Add a new vocabulary of nonterminals for splice specifiers:
 
 ::: std
 ::: addu
+**Splicers   [expr.prim.id.splice]**
+
 ```
 $splice-specifier$:
   [: $constant-expression$ :]
 
-$splice-expr-template-specifier$:
-	template $splice-specifier$
-
-$splice-type-specifier$:
-	typename@~_opt_~@ template@~_opt_~@ $splice-specifier$
+$splice-specialization-specifier$:
+  $splice-specifier$ < $template-argument-list$@~_opt_~@ >
 ```
-
-The term _splicer_ generically refers to a `$splice-specifier$`, a `$splice-expr-template-specifier$`, or a `$splice-type-specifier$`.
 
 [1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression ([expr.const]) contextually convertible to `std::meta::info`. A `$splice-specifier$` _designates_ the construct represented by the converted `$constant-expression$`, and is dependent if the converted `$constant-expression$` is value-dependent.
 
-[#]{.pnum} The form `template $splice-specifier$` is interpreted as a `$splice-type-specifier$` when
-
-* [#.#]{.pnum} it is preceded by `typename`,
-* [#.#]{.pnum} it is within a type-only context,
-* [#.#]{.pnum} it is followed by `auto` or `decltype(auto)`, or
-* [#.#]{.pnum} the `$splice-specifier$` is not dependent and designates a primary class template or alias template.
-
-In all other cases, it is interpreted as a `$splice-expr-template-specifier$`.
-
-[#]{.pnum} The `typename` in a `$splice-type-specifier$` may only be omitted in a type-only context, or when the `$splice-specifier$` is preceded by `template`.
-
-[#]{.pnum} A `$splice-expr-template-specifier$` or `$splice-type-specifier$` designates the construct designated by the `$splice-specifier$`. A `$splice-expr-template-specifier$` designates either a function template a primary variable template, or a concept. A `$splice-type-specifier$` designates either a type, `$typedef-name$`, primary class template, alias template, or concept.
+[2]{.pnum} The `$splice-specifier$` of a `$splice-specialization-specifier$` shall designate a template.
 
 ::: example
 ```cpp
@@ -3349,21 +3343,12 @@ Add a production to the grammar for `$nested-name-specifier$` as follows:
       ::
       $type-name$ ::
       $namespace-name$ ::
-+     $splice-specifier$ ::
       $computed-type-specifier$ ::
++     $splice-specifier$ ::
++     template $splice-specialization-specifier$ ::
       $nested-name-specifier$ $identifier$ ::
       $nested-name-specifier$ template@~_opt_~@ $simple-template-id$ ::
 ```
-:::
-
-Add a new paragraph restricting `$splice-specifier$`, and renumber accordingly:
-
-::: std
-::: addu
-[0]{.pnum} The `$splice-specifier$` of a `$nested-name-specifier$`, if any, shall designate a class, an enumeration, a `$typedef-name$` denoting a class or enumeration, a namespace, or a `$namespace-alias$`.
-:::
-
-[1]{.pnum} The component names of a `$qualified-id$` are [...]
 :::
 
 Clarify that a splice cannot appear in a declarative `$nested-name-specifier$`:
@@ -3376,15 +3361,23 @@ Clarify that a splice cannot appear in a declarative `$nested-name-specifier$`:
 * a `$qualified-id$` that is the `$id-expression$` of a `$declarator-id$`, or
 * a declarative `$nested-name-specifier$`.
 
-A declarative `$nested-name-specifier$` shall not have a `$computed-type-specifier$` [or a `$splice-specifier$`]{.addu}. A declaration that uses a declarative `$nested-name-specifier$` shall be a friend declaration or inhabit a scope that contains the entity being redeclared or specialized.
+A declarative `$nested-name-specifier$` shall not have a `$computed-type-specifier$`[, a `$splice-specifier$`, or a `$splice-specialization-specifier$`]{.addu}. A declaration that uses a declarative `$nested-name-specifier$` shall be a friend declaration or inhabit a scope that contains the entity being redeclared or specialized.
 :::
 
-Extend the next paragraph to also cover splices, and prefer the verb "designate" over "nominate":
+Break the next paragraph into a bulleted list, extend it to also cover splices, and prefer the verb "designate" over "nominate":
 
 ::: std
-[3]{.pnum} The `$nested-name-specifier$` `::` [nominates]{.rm} [designates]{.addu} the global namespace. A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the type denoted by the `$computed-type-specifier$`, which shall be a class or enumeration type. [A `$nested-name-specifier$` with a `$splice-specifier$` that designates a class, an enumeration, or a namespace designates that entity. A `$nested-name-specifier$` with a `$splice-specifier$` that designates a `$typedef-name$` or a `$namespace-alias$` designates the entity nominated by that name.]{.addu} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
+[3]{.pnum} [The entity designated by a `$nested-name-specifier$` is determined as follows:]{.addu}
 
-...
+  - [#.#]{.pnum} The `$nested-name-specifier$` `::` [nominates]{.rm} [designates]{.addu} the global namespace.[\ ]{.addu}
+  - [#.#]{.pnum} A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the [same]{.addu} type [denoted]{.rm} [designated]{.addu} by the `$computed-type-specifier$`, which shall be a class or enumeration type.[\ ]{.addu}
+  - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `$splice-specifier$ ::`, the `$splice-specifier$` shall designate a class or enumeration type, a type alias denoting such a type, a namespace, or a namespace alias. If the `$splice-specifier$` designates a type alias or a namespace alias, the `$nested-names-specifier$` designates the type or namespace denoted by that entity. Otherwise, the `$nested-name-specifier$` designates the same entity as the `$splice-specifier$`.]{.addu}
+  - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `template $splice-specialization-specifier$ ::`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template `$T$`. Letting `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`, `$S$` shall either be a class template specialization or an alias template specialization that denotes a class or enumeration type. The `$nested-name-specifier$` designates `$S$` if `$T$` is a class template or the type denoted by `$S$` if `$T$` is an alias template.]{.addu}
+  - [#.#]{.pnum} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
+    - [#.#.#]{.pnum} If `$A$` is the template argument list ([temp.arg]{.sref}) of the corresponding `$template-head$` `$H$` ([temp.mem]{.sref}), `$N$` nominates the primary template of `$T$`; `$H$` shall be equivalent to the `$template-head$` of `$T$` ([temp.over.link]{.sref}).
+    - [#.#.#]{.pnum} Otherwise, `$N$` nominates the partial specialization ([temp.spec.partial]{.sref}) of `$T$` whose template argument list is equivalent to `$A$` ([temp.over.link]{.sref}); the program is ill-formed if no such partial specialization exists.
+  
+  - [#.#]{.pnum} Any other `$nested-name-specifier$` [nominates]{.rm} [designates]{.addu} the [same]{.addu} entity [denoted]{.rm} [designated]{.addu} by its `$type-name$`, `$namespace-name$`, `$identifier$`, or `$simple-template-id$`. If the `$nested-name-specifier$` is not declarative, the entity shall not be a template.
 
 :::
 
@@ -3399,19 +3392,55 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 ```
 $splice-expression$:
    $splice-specifier$
+   template $splice-specialization-specifier$
 ```
 
-[#]{.pnum} Let `$S$` be the construct designated by `$splice-specifier$`.
+[#]{.pnum} A sequence of tokens immediately followed by `::` or preceded by `typename` is never interpreted as a `$splice-expression$`.
+
+::: example
+```cpp
+struct S { static constexpr int a = 1; };
+template <typename> struct TCls { static constexpr int b = 2; };
+
+constexpr int c = [:^^S:]::a;                   // [:^^S:] is not an expression
+
+constexpr int d = template [:^^TCls:]<int>::b;  // template [:^^TCls:]<int> is not
+                                                // an expression
+
+template <auto V> constexpr int e = [:V:];   // splice-expression
+constexpr int f = template [:^^e:]<^^S::a>;  // splice-expression
+```
+
+:::
+
+[#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
 * [#.#]{.pnum} If `$S$` is an object, a function, or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a variable, reference, or a structured binding, the expression is an lvalue referring to the object or function associated with `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
+* [#.#]{.pnum} Otherwise, if `$S$` is a variable, a reference, or a structured binding, the expression is an lvalue referring to the object or function `$X$` associated with `$S$`. The expression has the same type as `$S$` and is a bit-field if and only if `$X$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, The expression is a prvalue whose evaluation computes `$S$` and whose type is the same as `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as `$S$`.
 
-* [#.#]{.pnum} Otherwise, the program is ill-formed.
+* [#.#]{.pnum} Otherwise, the expression is ill-formed.
+
+[#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template and let `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
+
+* [#.#]{.pnum} If `$T$` is a primary variable template or function template, the expression is an lvalue referring to the same object or function associated with `$S$`. The expression has the same type as `$S$`.
+
+* [#.#]{.pnum} Otherwise, if `$T$` is a concept, the expression is a prvalue that computes the same boolean value as the `$concept-id$` formed by `$S$`.
+
+* [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
 [Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
+
+[#]{.pnum} A `$splice-expression$` that designates a non-static data member or implicit object member function of a class can only be used:
+
+* [#.#]{.pnum} as part of a class member access in which the object expression refers to the member's class or a class derived from that class,
+* [#.#]{.pnum} to form a pointer to member ([expr.unary.op]{.sref}), or
+* [#.#]{.pnum} if that `$splice-expression$` denotes a non-static data member and it appears in an unevaluated operand.
+
+[The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
+
 :::
 :::
 
@@ -3426,10 +3455,8 @@ Add a production to `$postfix-expression$` for splices in member access expressi
     ...
     $postfix-expression$ . $template$@~_opt_~@ $id-expression$
 +   $postfix-expression$ . $splice-expression$
-+   $postfix-expression$ . $splice-expr-template-specifier$
     $postfix-expression$ -> $template$@~_opt_~@ $id-expression$
 +   $postfix-expression$ -> $splice-expression$
-+   $postfix-expression$ -> $splice-expr-template-specifier$
 ```
 :::
 
@@ -3732,7 +3759,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 [#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
 
 * [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
-* [#.#]{.pnum} the target scope of `$D$` is not the immediate scope of `$M$`.
+* [#.#]{.pnum} the target scope of `$D$` is not instantiation-sequenced with `$M$` ([lex.phases]).
 
 ::: example
 ```cpp
@@ -3770,15 +3797,6 @@ template <typename> struct S {
 :::
 :::
 
-### [dcl.typedef]{.sref} The `typedef` specifier {-}
-
-Account for `$splice-type-specifier$`s in paragraph 3.
-
-::: std
-[3]{.pnum} A `$simple-template-id$` is only a `$typedef-name$` if its `$template-name$` [or `$splice-type-specifier$` designates]{.addu} [names]{.rm} an alias template or a template `$template-parameter$`.
-
-:::
-
 ### [dcl.type.simple]{.sref} Simple type specifiers {-}
 
 Extend the grammar for `$computed-type-specifier$` as follows:
@@ -3792,25 +3810,15 @@ Extend the grammar for `$computed-type-specifier$` as follows:
 ```
 :::
 
-Add a restriction to paragrpah 2 disallowing splicers from appearing after nested name specifiers.
+Indicate that a splicer can be a placeholder for a deduced class type.
 
 ::: std
-[2]{.pnum} The component names of a `$simple-type-specifier$` are those of its `$nested-name-specifier$`, `$type-name$`, `$simple-template-id$`, `$template-name$`, and/or `$type-constraint$` (if it is a `$placeholder-type-specifier$`). The component name of a `$type-name$` is the first name in it. [The `$simple-template-id$` in a `$type-specifier$` of the form `$nested-name-specifier$ template $simple-template-id$` shall not contain a splicer.]{.addu}
+[3]{.pnum} A `$placeholder-type-specifier$` is a placeholder for a type to be deduced ([dcl.spec.auto]). A `$type-specifier$` [of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`]{.rm} is a placeholder for a deduced class type ([dcl.type.class.deduct]) [if it either\ ]{.addu}
 
-:::
+- [[#.#]{.pnum} is of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`, or]{.addu}
+- [[#.#]{.pnum} is of the form `typename@~_opt_~@ $splice-specifier$` and the `$splice-specifier$` designates a class template or alias template.]{.addu}
 
-Indicate that a `$splice-type-specifier$` can be a placeholder for a deduced class type.
-
-::: std
-[3]{.pnum} A `$placeholder-type-specifier$` is a placeholder for a type to be deduced ([dcl.spec.auto]). A `$type-specifier$` [of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`]{.rm} is a placeholder for a deduced class type ([dcl.type.class.deduct]) [if it]{.addu}
-
-:::addu
-* is of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`, or
-* consists of a `$splice-type-specifier$` that designates a class template or alias template.
-
-:::
-
-The `$nested-name-specifier$`, if any, shall be non-dependent and the `$template-name$` [or `$splice-type-specifier$`]{.addu} shall [name]{.rm} [designate]{.addu} a deducible template. A _deducible template_ is either a class template or is an alias template whose `$defining-type-id$` is of the form
+The `$nested-name-specifier$`, if any, shall be non-dependent and the `$template-name$` [or `$splice-specifier$`]{.addu} shall [name]{.rm} [designate]{.addu} a deducible template. A _deducible template_ is either a class template or is an alias template whose `$defining-type-id$` is of the form
 
 ```cpp
 typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ template@~_opt_~@ $simple-template-id$
@@ -3832,8 +3840,51 @@ Add a row to [tab:dcl.type.simple] to cover the `$splice-type-specifier$` produc
 |`$pack-index-specifier$`|the type as defined in [dcl.type.pack.index]|
 |`$placeholder-type-specifier$`|the type as defined in [dcl.spec.auto]|
 |`$template-name$`|the type as defined in [dcl.type.class.deduct]|
-|[`$splice-type-specifier$`]{.addu}|[the type as defined in [dcl.type.class.deduct]]{.addu}|
+|[`$splice-type-specifier$`]{.addu}|[the type as defined in [dcl.type.splice]]{.addu}|
 |`...`|...|
+:::
+
+
+### [dcl.type.splice] Type splicing {-}
+
+Add a new subsection of ([dcl.type]{.sref}) following ([dcl.type.class.deduct]{.sref}).
+
+::: std
+::: addu
+**Type Splicing   [expr.prim.splice]**
+
+```
+$splice-type-specifier$:
+   typename@~_opt_~@ $splice-specifier$
+   typename@~_opt_~@ $splice-specialization-specifier$
+```
+
+[#]{.pnum} A sequence of tokens immediately followed by `::` is never interpreted as a `$splice-type-specifier$`. A `$splice-specifier$` or `$splice-specialization-specifier$` not preceded by `typename` is only interpreted as a `$splice-type-specifier$` within a type-only context ([temp.res.general]{.sref}).
+
+::: example
+```cpp
+struct S { using type = int; };
+template <auto R> struct TCls {
+  typename [:R:]::type member;  // typename applies to the qualified name
+};
+
+int fn() {
+  [:^^S::type:] *var;           // error: [:^^S::type:] is an expression
+  typename [:^^S::type:] *var;  // OK, declares variable with type int*
+}
+
+using alias = [:^^S::type:];    // OK, type-only context
+```
+:::
+
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a type alias, a primary class template, an alias template, or a concept. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
+
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template. Let `$T$` be that template and let `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
+
+  - [#.#]{.pnum} If `$T$` is a primary class template, the `$splice-type-specifier$` designates `$S$`.
+  - [#.#]{.pnum} Otherwise if `$T$` is an alias template, the `$splice-type-specifier$` designates the type denoted by `$S$`.
+
+:::
 :::
 
 ### [dcl.init.general]{.sref} Initializers (General) {-}
@@ -4009,16 +4060,17 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 [4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
 
-### [module.global.frag] Global module fragment {-}
+### [module.global.frag]{.sref} Global module fragment {-}
 
-Extend the caveat in paragraph 3.7 to also apply to `$splice-type-specifier$`s.
+Specify in paragraph 3 that it is unspecified whether spliced types are replaced by their designated types, and renumber accordingly.
 
 ::: std
 In this determination, it is unspecified
 
-* [3.6]{.pnum} whether a reference to an `$alias-declaration$`, `typedef` declaration, `$using-declaration$`, or `$namespace-alias-definition$` is replaced by the declarations they name prior to this determination,
-* [#.#]{.pnum} whether a `$simple-template-id$` that does not denote a dependent type and whose `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} an alias template is replaced by its denoted type prior to this determination,
-* [#.#]{.pnum} ...
+- [3.6]{.pnum} whether a reference to an `$alias-declaration$`, `typedef` declaration, `$using-declaration$`, or `$namespace-alias-definition$` is replaced by the declarations they name prior to this determination,
+- [#.#]{.pnum} whether a `$simple-template-id$` that does not denote a dependent type and whose `$template-name$` names an alias template is replaced by its denoted type prior to this determination,
+- [#.#]{.pnum} whether a `$decltype-specifier$` [or `$splice-type-specifier$`]{.addu} that does not [denote]{.rm} [designate]{.addu} a dependent type is replaced by its [denoted]{.rm} [designated]{.addu} type prior to this determination,
+- [#.#]{.pnum} whether a non-value-dependent constant expression is replaced by the result of constant evaluation prior to this determination.
 
 :::
 
@@ -4032,26 +4084,6 @@ Modify the definition of reachability to account for injected declarations:
 * [#.#]{.pnum} [`$P$` is not an injected point and]{.addu} `$D$` appears prior to `$P$` in the same translation unit, [or]{.rm}
 * [#.#]{.pnum} [`$D$` is an injected declaration for which `$P$` is the corresponding injected point, or]{.addu}
 * [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]), appears in a translation unit that is reachable from `$P$`, and does not appear within a _private-module-framgent_.
-:::
-
-### [class.pre] Preamble {-}
-
-Disallow splicers from appearing in a declaration of a `$class-name$` in paragraph 1.
-
-::: std
-...
-
-A class declaration where the `$class-name$` in the `$class-head-name$` is a `$simple-template-id$` shall be an explicit specialization ([temp.expl.spec]) or a partial specialization ([temp.spec.partial]). [The `$simple-template-id$` shall not contain a splicer.]{.addu} A `$class-specifier$` whose `$class-head$` omits the `$class-head-name$` defines an _unnamed class_.
-
-:::
-
-### [class.name] Class names {-}
-
-Cover `$splice-type-specifier$`s in paragraph 5.
-
-::: std
-[5]{.pnum} A `$simple-template-id$` is only a `$class-name$` if its `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} a class template.
-
 :::
 
 ### [class.mem.general]{.sref} General {-}
@@ -4124,57 +4156,36 @@ Add a paragraph after paragraph 3 to restrict the type splicers that form `$type
 
 ### [temp.names]{.sref} Names of template specializations {-}
 
-Extend `$simple-template-id$` and `$template-argument$` to leverage splicers.
+Define the term `$splice-template-argument$`, and add it as a production for `$template-argument$`.
 
 ::: std
 ```diff
-  $simple-template-id$:
-      $template-name$ < $template-argument-list$@~_opt_~@ >
-+     $splice-expr-template-specifier$ < $template-argument-list$@~_opt_~@ >
-+     $splice-type-specifier$ < $template-argument-list$@~_opt_~@ >
-
-  $template-id$:
-      $simple-template-id$
-      $operator-function-id$ < $template-argument-list$@~_opt_~@ >
-      $literal-operator-id$ < $template-argument-list$@~_opt_~@ >
-
-  $template-name$:
-      identifier
-
-  $template-argument-list$:
-      $template-argument$ ...@~_opt_~@
-      $template-argument-list$ , $template-argument$ ...@~_opt_~@
-
   $template-argument$:
       $constant-expression$
       $type-id$
       $id-expression$
       $braced-init-list$
++     $splice-template-argument$
+
++ $splice-template-argument$:
 +     $splice-specifier$
 ```
-:::
-
-Extend paragraph 2 to cover `$simple-template-id$`s and `$template-id$`s that have no component name.
-
-::: std
-[2]{.pnum} The component name of a [`$simple-template-id$`, `$template-id$`, or]{.rm} `$template-name$` is its `$identifier$` [the first name in it]{.rm}. [The component names of a `$simple-template-id$` are those of its `$template-name$` (if any). The component names of a `$template-id$` are those of its `$simple-template-id$`, `$operator-function-id$`, or `$literal-operator-id$`.]{.addu}
-
 :::
 
 Extend and re-format paragraph 3 of [temp.names]{.sref}:
 
 ::: std
 
-[3]{.pnum} A `<` is interpreted as the delimiter of a `$template-argument-list$` if it follows [either]{.addu}
+[3]{.pnum} A `<` is interpreted as the delimiter of a `$template-argument-list$` if it follows
 
-* [[#.#]{.pnum} a `$splice-expr-template-specifier$` or `$splice-type-specifier$`, or]{.addu}
+* [[#.#]{.pnum} a `$splice-specifier$` that either appears in a type-only context or is preceded by `template` or `typename`, or]{.addu}
 * [#.#]{.pnum} a name that is not a `$conversion-function-id$` and
   * [#.#.#]{.pnum} that follows the keyword template or a ~ after a nested-name-specifier or in a class member access expression, or
   * [#.#.#]{.pnum}  for which name lookup finds the injected-class-name of a class template or finds any declaration of a template, or
   * [#.#.#]{.pnum} that is an unqualified name for which name lookup either finds one or more functions or finds nothing, or
   * [#.#.#]{.pnum} that is a terminal name in a using-declarator ([namespace.udecl]), in a declarator-id ([dcl.meaning]), or in a type-only context other than a nested-name-specifier ([temp.res]).
 
-[If the name is an identifier, it is then interpreted as a *template-name*. The keyword template is used to indicate that a dependent qualified name ([temp.dep.type]) denotes a template where an expression might appear.]{.note}
+[If the name is an identifier, it is then interpreted as a *template-name*. The keyword template is used to indicate that a dependent qualified name ([temp.dep.type]{.sref}) denotes a template where an expression might appear.]{.note}
 
 ::: example
 ```diff
@@ -4196,27 +4207,59 @@ template<class T> void f(T* p) {
 :::
 :::
 
-Extend paragraph 8 to also cover `$simple-template-id$`s containing `$splice-expr-template-specifier$`s.
+Clarify that the `>` disambiguation in paragraph 4 also applies to the parsing of `$splice-specialization-specifier$`s:
 
 ::: std
-[8]{.pnum} When the `$template-name$` [or splicer]{.addu} of a `$simple-template-id$` [names]{.rm} [designates]{.addu} a constrained non-function template or a constrained template `$template-parameter$`, and all `$template-arguments$` in the `$simple-template-id$` are non-dependent ([temp.dep.temp]), the associated contraints ([temp.constr.decl]) of the constrained template shall be satisfied ([temp.constr.constr]).
+[4]{.pnum} When parsing a `$template-argument-list$`, the first non-nested `>`^111^ is taken as the ending delimiter rather than a greater-than operator. Similarly, the first non-nested `>>` is treated as two consecutive but distinct `>` tokens, the first of which is taken as the end of the `$template-argument-list$` and completes the `$template-id$` [or `$splice-specialization-specifier$`]{.addu}.
+
+[The second `>` token produced by this replacement rule can terminate an enclosing `$template-id$` [or `$splice-specialization-specifier$`]{.addu} construct or it can be part of a different construct (e.g., a cast).]{.note}
 
 :::
 
-Change paragraph 9 to allow splicing into a *concept-id*:
+Extend the definition of a _valid_ `$template-id$` to also cover `$splice-specialization-specifier$`s:
 
 ::: std
-[9]{.pnum} A _concept-id_ is a `$simple-template-id$` where [either]{.addu} the `$template-name$` is a `$concept-name$` [or the `$splice-expr-template-specifier$` designates a concept]{.addu}. A concept-id is a prvalue of type `bool`, and does not name a template specialization. A concept-id evaluates to `true` if the concept's normalized `$constraint-expression$` ([temp.constr.decl]) is satisfied ([temp.constr.constr]) by the specified template arguments and `false` otherwise.
+[7]{.pnum} A `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is _valid_ if
+
+* [#.#]{.pnum} there are at most as many arguments as there are parameters or a parameter is a template parameter pack ([temp.variadic]{.sref}),
+* [#.#]{.pnum} there is an argument for each non-deducible non-pack parameter that does not have a default `$template-argument$`,
+* [#.#]{.pnum} each `$template-argument$` matches the corresponding `$template-parameter$` ([temp.arg]{.sref}),
+* [#.#]{.pnum} substitution of each template argument into the following template parameters (if any) succeeds, and
+* [#.#]{.pnum} if the `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is non-dependent, the associated constraints are satisfied as specified in the next paragraph.
+
+A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} shall be valid unless it names a function template specialization ([temp.deduct]{.sref}).
+
+:::
+
+Extend paragraph 8 to require constraints to also be satisfied by `$splice-specialization-specifier$`s:
+
+::: std
+[8]{.pnum} When the `$template-name$` of a `$simple-template-id$` [or the `$splice-specifier$` of a `$splice-specialization-specifier$` designates]{.addu} [names]{.rm} a constrained non-function template or a constrained template `$template-parameter$`, and all `$template-arguments$` in the `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} are non-dependent ([temp.dep.temp]{.sref}), the associated constraints ([temp.constr.decl]{.sref}) of the constrained template shall be satisfied ([temp.constr.constr]{.sref}).
+
+:::
+
+Modify footnote 111 to account for `$splice-specialization-specifier$`s:
+
+::: std
+[111)]{.pnum} A `>` that encloses the `$type-id$` of a `dynamic_cast`, `static_cast`, `reinterpret_cast` or `const_cast`, or which encloses the `$template-argument$`s of a subsequent `$template-id$` [or `$splice-specialization-specifier$`]{.addu}, is considered nested for the purpose of this description.
+
 :::
 
 
 ### [temp.arg.general]{.sref} General {-}
 
-Adjust paragraph 3 of [temp.arg.general] to not apply to splice template arguments:
+Modify paragraph 1; there are now _four_ forms of `$template-argument$`.
+
+::: std
+[1]{.pnum} There are [three]{.rm} [four]{.addu} forms of `$template-argument$`, [three of which]{.addu} correspond[ing]{.rm} to the three forms of `$template-parameter$`: type, non-type and template. [The fourth argument form, splice template argument, is considered to match the form of any template parameter.]{.addu} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`.
+
+:::
+
+Clarify ambiguity between `$splice-expression$`s and `$splice-template-argument$`s in paragraph 3:
 
 ::: std
 
-[3]{.pnum} In a `$template-argument$` [that is not a `$splice-specifier$`]{.addu}, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`.
+[3]{.pnum} [A `$template-argument$` of the form `$splice-specifier$` is interpreted as a `$splice-template-argument$`.]{.addu} [In a]{.rm} [For any other]{.addu} `$template-argument$`, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`.
 
 ::: example2
 ```diff
@@ -4227,11 +4270,18 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
     f<int()>();       // int() is a type-id: call@[s (#1)]{.addu}@ @[`the first f()`]{.rm}@
 
 +   constexpr int x = 42;
-+   f<[:^^int:]>();    // splice-specifier: calls (#1)
-+   f<[:^^x:]>();      // splice-specifier: calls (#2)
++   f<[:^^int:]>();    // splice-template-argument: calls (#1)
++   f<[:^^x:]>();      // splice-template-argument: calls (#2)
   }
 ```
 :::
+
+:::
+
+Clarify in paragraph 9 that default template arguments also apply to `$splice-specialization-specifier$`s:
+
+::: std
+[9]{.pnum} When a `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} does not [name]{.rm} [designate]{.addu} a function, a default `$template-argument$` is implicitly instantiated when the value of that default argument is needed.
 
 :::
 
@@ -4240,7 +4290,7 @@ Adjust paragraph 3 of [temp.arg.general] to not apply to splice template argumen
 Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 
 ::: std
-[1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-specifier$` that is either dependent or designates a type]{.addu}.
+[1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$` whose `$splice-specifier$` designates a type]{.addu}.
 :::
 
 ### [temp.arg.nontype]{.sref} Template non-type arguments {-}
@@ -4269,25 +4319,24 @@ is introduced.
 Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
 ::: std
-[1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be [the name of]{.rm} a class template or an alias template, expressed as [an]{.addu} `$id-expression$` [or a (possibly dependent) splicer]{.addu}. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
+[1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be [the name of]{.rm} a class template or an alias template, expressed as [an]{.addu} `$id-expression$` [or a `$splice-template-argument$`]{.addu}. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
 :::
 
 ### [temp.type]{.sref} Type equivalence {-}
 
-Extend `$template-id$` equivalence as defined by paragraph 1 to cover splicers.
+Extend paragraph 1 to also define the "sameness" of `$splice-specialization-specifier$`s:
 
 ::: std
-[1]{.pnum} Two `$template-id$`s are the same if
+[1]{.pnum} Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} are the same if
 
-* their `$template-name$`s, [`$splice-expr-template-specifier$`s, `$splice-type-specifier$`s, ]{.addu} `$operator-function-id$`s, or `$literal-operator-id$`s refer to the same template, and
-* their corresponding type `$template-argument$`s are the same type, and
-* the template parameter values determined by their corresponding non-type template arguments ([temp.arg.nontype]) are template-argument-equivalent (see below), and
-* their corresponding template `$template-argument$`s refer to the same template.
+* [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} refer to the same template, and
+* [#.#]{.pnum} their corresponding type `$template-argument$`s are the same type, and
+* [#.#]{.pnum} the template parameter values determined by their corresponding non-type template arguments ([temp.arg.nontype]{.sref}) are template-argument-equivalent (see below), and
+* [#.#]{.pnum} their corresponding template `$template-argument$`s refer to the same template.
 
-Two `$template-id$`s that are the same refer to the same class, function, or variable.
+Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} that are the same refer to the same class, function, or variable.
 
 :::
-
 
 Extend *template-argument-equivalent* to handle `std::meta::info`:
 
@@ -4311,11 +4360,19 @@ Extend paragraph 1 to clarify that `$splice-type-specifier$`s can also leverage 
 
 :::
 
-Notwithstanding the above, extend paragraph 3 to clarify that `$splice-type-specifier$`s cannot themselves appear in deduction guides.
+### [temp.mem]{.sref} Member templates {-}
+
+Clarify in Note 1 that a specialization of a conversion function template can be formed through a `$splice-expression$`.
 
 ::: std
-[3]{.pnum} The same restrictions apply to the `$parameter-declaration-clause$` of a deduction guide as in a function declaration ([dcl.fct]), except that a generic parameter type placeholder ([dcl.spec.auto]) shall not appear in the `$parameter-declaration-clause$` of a deduction guide. The `$simple-template-id$` shall name a class template specialization [and shall contain a `$template-name$`]{.addu}. The `$template-name$` shall be the same `$identifier$` as the `$template-name$` of the `$simple-template-id$`. A `$deduction-guide$` shall inhabit the scope to which the corresponding class template belongs and, for a member class template, have the same access. Two deduction guide declarations for the same class template shall not have equivalent `$parameter-declaration-clauses$` if either is reachable from the other.
+::: note
+A specialization of a conversion function template is referenced in the same way as a non-template conversion function that converts to the same type ([class.conv.fct]{.sref}).
 
+...
+
+[An expression designating a particular specialization of a conversion function template can only be formed with a `$splice-expression$`.]{.addu} There is no [analogous]{.addu} syntax to form a `$template-id$` ([temp.names]{.sref}) [for such a function]{.addu} by providing an explicit template argument list ([temp.arg.explicit]{.sref}).
+
+:::
 :::
 
 ### [temp.alias]{.sref} Alias templates {-}
@@ -4328,13 +4385,6 @@ Extend paragraph 2 to enable reflection of alias template specializations.
 :::
 
 ### [temp.res.general]{.sref} General {-}
-
-Disallow `$splice-type-specifier$`s from appearing in `$typename-specifier$`s, since splicers can't follow `$nested-name-specifier$`s.
-
-::: std
-[3]{.pnum} The component names of a `$typename-specifier$` are its `$identifier$` (if any) and those of its `$nested-name-specifier$` and `$simple-template-id$` (if any). [The `$simple-template-id$` shall not contain a splicer.]{.addu}
-
-:::
 
 Add a parargraph after the definition of _type-only context_ to define what it means for a  splicer to appear in a type-only context.
 
@@ -4372,6 +4422,39 @@ template<typename T> void f() {
 :::
 :::
 
+### [temp.dep.type]{.sref} Dependent types {-}
+
+Account for dependent `$splice-specifier$`s in paragraph 7.
+
+::: std
+[7]{.pnum} An initializer is dependent if any constituent expression ([intro.execution]{.sref}) of the initializer is type-dependent. A placeholder type ([dcl.spec.auto.general]{.sref}) is dependent if it designates a type deduced from a dependent initializer [or if it has a `$type-constraint$` that contains a dependent `$splice-specifier$`]{.addu}.
+
+:::
+
+Apply a drive-by fix to paragraph 8 to account for placeholders for deduced class types whose template is dependent, while extending the definition to apply to `$splice-specifier$`s.
+
+::: std
+[8]{.pnum} A placeholder for a deduced class type ([dcl.type.class.deduct]{.sref}) is dependent if
+
+* [#.#]{.pnum} it has a dependent initializer, [or]{.rm}
+* [[#.#]{.pnum} it has a dependent `$template-name$` or a dependent `$splice-specifier$`, or]{.addu}
+* [#.#]{.pnum} it refers to an alias template that is a member of the current instantiation and whose `$defining-type-id$` is dependent after class template argument deduction ([over.match.class.deduct]{.sref}) and substitution ([temp.alias]{.sref}).
+
+:::
+
+Account for dependent `$splice-type-specifier$`s in paragraph 10:
+
+::: std
+[10]{.pnum} A type is dependent if it Is
+
+* [#.#]{.pnum} a template parameter,
+* [#.#]{.pnum} ...
+* [#.12]{.pnum} a `$pack-index-specifier$`, [or]{.rm}
+* [#.#]{.pnum} denoted by `decltype($expression$)`, where `$expression$` is type-dependent[.]{.rm}[, or]{.addu}
+* [[#.#]{.pnum} denoted by a `$splice-type-specifier$` in which either the `$splice-specifier$` is dependent or any of the template arguments is a dependent type or an expression that is type-dependent or value-dependent or is a pack expansion.]{.addu}
+
+:::
+
 ### [temp.dep.expr]{.sref} Type-dependent expressions {-}
 
 Add to the list of never-type-dependent expression forms in [temp.dep.expr]{.sref}/4:
@@ -4399,15 +4482,13 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 ::: std
 ::: addu
 
-[9]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `$splice-expr-template-specifier$ < $template-argument-list$@~_opt_~@ >` is type-dependent if
+[9]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$ < $template-argument-list$@~_opt_~@ >` is type-dependent if
 
-* [#.#]{.pnum} the `$splice-specifier$` or `$splice-expr-template-specifier$` is dependent, or
+* [#.#]{.pnum} the `$splice-specifier$` is dependent, or
 * [#.#]{.pnum} the optional `$template-argument-list$` contains a dependent type argument, a value-dependent non-type argument, a dependent template template argument, or a dependent `$splice-specifier$`.
 
 :::
 :::
-
-
 
 ### [temp.dep.constexpr]{.sref} Value-dependent expressions {-}
 
@@ -4437,14 +4518,49 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/5:
 ::: std
 ::: addu
 
-[6]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `$splice-expr-template-specifier$ < $template-argument-list$@~_opt_~@ >` is value-dependent if
+[6]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specifier$ < $template-argument-list$@~_opt_~@ >` is value-dependent if
 
-* [#.#]{.pnum} the `$splice-specifier$` or `$splice-expr-template-specifier$` is dependent, or
+* [#.#]{.pnum} the `$splice-specifier$` is dependent, or
 * [#.#]{.pnum} the optional `$template-argument-list$` contains a dependent type argument, a value-dependent non-type argument, a dependent template template argument, or a dependent `$splice-specifier$`.
 
 :::
 :::
 
+### [temp.expl.spec]{.sref} Explicit specialization {-}
+
+Modify paragraph 9 to allow `$splice-specialization-specifier$`s to be used like incompletedly-defined classes.
+
+::: std
+[9]{.pnum} A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} that [names]{.rm} [designates]{.addu} a class template explicit specialization that has been declared but not defined can be used exactly like the names of other incompletely-defined classes ([basic.types]{.sref}).
+
+:::
+
+### [temp.deduct.general]{.sref} General {-}
+
+Cover `$splice-specialization-specifier$`s in paragraph 2:
+
+::: std
+[2]{.pnum} When an explicit template argument list is specified, if the given `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is not valid ([temp.names]{.sref}), type deduction fails. Otherwise, the specified template argument values are substituted for the corresponding template parameters as specified below.
+
+:::
+
+### [temp.deduct.call]{.sref} Deducing template arguments from a function call {-}
+
+Modify paragraph 4.3 to treat parameter types of function templates that are specified using `$splice-specialization-specifier$`s the same as parameter types that are specified using `$simple-template-id$`s.
+
+::: std
+- [4.3]{.pnum} If `P` is a class and `P` has the form `$simple-template-id$` [or `typename@~_opt_~@ $splice-specialization-specifier$`]{.addu}, then the transformed `A` can be a dervied class `D` of the deduced `A`. Likewise, if `P` is a pointer to a class of the form `$simple-template-id$` [or `typename@~_opt_~@ $splice-specialization-specifier$`]{.addu}, the transformed `A` can be a pointer to a derived class `D` pointed to by the deduced `A`. However, if there is a class `C` that is a (direct or indirect) base class of `D` and derived (directly or indirectly) from a class `B` and that would be a valid deduced `A`, the deduced `A` cannot be `B1` or pointer to `B`, respectively.
+
+:::
+
+### [temp.deduct.type]{.sref} Deducing template arguments from a type {-}
+
+Modify paragraph 20 to clarify that the construct enclosing a template argument might also be a `$splice-specialization-specifier$`.
+
+::: std
+[20]{.pnum} If `P` has a form that contains `<i>`, and if the type of `i` differs from the type of the corresponding template parameter of the template named by the enclosing `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu}, deduction fails. If `P` has a form that contains `[i]`, and if the type of `i` is not an integral type, deduction fails.^123^ If `P` has a form that includes `noexcept(i)` and the type of `i` is not `bool`, deduction fails.
+
+:::
 
 ### [cpp.cond]{.sref} Conditional inclusion {-}
 
