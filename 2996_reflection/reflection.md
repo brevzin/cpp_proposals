@@ -3010,12 +3010,6 @@ Change the grammar for `$operator-or-punctuator$` in paragraph 1 of [lex.operato
 
 ### [basic.def.odr]{.sref} One-definition rule {-}
 
-Modify paragraph 4.1 to cover splicing of functions:
-
-::: std
-- [4.1]{.pnum} A function is named by an expression or conversion if it is the selected member of an overload set ([basic.lookup]{.sref}, [over.match]{.sref}, [over.over]{.sref}) in an overload resolution performed as part of forming that expression or conversion, [or if it is designated by a `$splice-expression$` ([expr.prim.splice]),]{.addu} unless it is a pure virtual function and either the expression is not an `$id-expression$` naming the function with an explicitly qualified name or the expression forms a pointer to member ([expr.unary.op]{.sref}).
-:::
-
 Modify the first sentence of paragraph 5 to cover splicing of variables:
 
 ::: std
@@ -3058,6 +3052,13 @@ Clarify in bullet 15.11 that default template-arguments in `$splice-specializati
 
 ### [basic.lookup.general]{.sref} General {-}
 
+Modify paragraph 1 to cross-reference to the new definition of "overload set" given in [over.pre], rather than define it here.
+
+::: std
+[1]{.pnum} [...] If the declarations found by name lookup all denote functions or function templates, the declarations [are said to]{.rm} form an [_overload set_]{.rm} [overload set ([over.pre]{.sref})]{.addu}. Otherwise, [...]
+
+:::
+
 Adjust the definition in p2 of when a program point follows a declaration to account for the removal of instantiation units.
 
 ::: std
@@ -3086,8 +3087,50 @@ Modify the first bullet of paragraph 3 of [basic.lookup.argdep]{.sref} as follow
 Extend paragraph 1 to cover `$splice-specifier$`s:
 
 ::: std
-[1]{.pnum} Lookup of an *identifier* followed by a `::` scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [`$splice-scope-specifier$`,]{.addu} or `$computed-type-specifier$` is followed by a `::`, it shall [either be a dependent `$splice-scope-specifier$` or it shall]{.addu} designate a namespace, class, enumeration, or dependent type, and the `::` is never interpreted as a complete nested-name-specifier.
+[1]{.pnum} Lookup of an *identifier* followed by a `::` scope resolution operator considers only namespaces, types, and templates whose specializations are types. If a name, `$template-id$`, [`$splice-scope-specifier$`,]{.addu} or `$computed-type-specifier$` is followed by a `::`, it shall [either be a dependent `$splice-scope-specifier$` ([temp.dep.splice]) or it shall]{.addu} designate a namespace, class, enumeration, or dependent type, and the `::` is never interpreted as a complete nested-name-specifier.
 
+:::
+
+### 6.5+ [basic.splice] Splice specifiers {-}
+
+Add a new subsection after [basic.lookup]{.sref}, and renumber accordingly:
+
+::: std
+::: addu
+**Splice specifiers   [basic.splice]**
+
+```
+$splice-specifier$:
+  [: $constant-expression$ :]
+
+$splice-specialization-specifier$:
+  $splice-specifier$ < $template-argument-list$@~_opt_~@ >
+```
+
+[1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression ([expr.const]) contextually convertible to `std::meta::info`. A `$splice-specifier$` _designates_ the construct represented by the converted `$constant-expression$`.
+
+  [A `$splice-specifier$` is dependent if the converted `$constant-expression$` is value-dependent ([temp.dep.splice]).]{.note}
+
+[#]{.pnum} The `$splice-specifier$` of a non-dependent `$splice-specialization-specifier$` shall designate a template.
+
+[#]{.pnum} [A `<` following a `$splice-specifier$` is interpreted as the delimiter of a `$template-argument-list$` when the `$splice-specifier$` is preceded by `typename` or `template`, or when it appears in a type-only context ([temp.names]{.sref}).]{.note}
+
+::: example
+```cpp
+constexpr int v = 1;
+template <int V> struct TCls {
+  static constexpr int s = V + 1;
+};
+
+using alias = [:^^TCls:]<[:^^v:]>;
+  // OK, a splice-specialization-specifier with a splice-specifier
+  // as a template argument
+
+static_assert(alias::s == 2);
+```
+:::
+
+:::
 :::
 
 ### [basic.link]{.sref} Program and Linkage {-}
@@ -3233,6 +3276,15 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 :::
 :::
 
+### [basic.lval]{.sref} Value category {-}
+
+Apply a drive-by fix to bullet 1.1 clarifying that a glvalue can also determine the identity of a non-static data member.
+
+::: std
+* [1.1]{.pnum} A _glvalue_ is an expression whose evaluation determines the identity of an object[,]{.addu} [or]{.rm} function[, or non-static data member]{.addu}.
+
+:::
+
 ### [expr.context]{.sref} Context dependence {-}
 
 Add `$reflect-expression$`s to the list of unevaluated operands in paragraph 1.
@@ -3258,46 +3310,6 @@ Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
      $requires-expression$
 +    $splice-expression$
 ```
-:::
-
-### 7.5.4.0* [expr.prim.id.splice] Splice specifiers {-}
-
-Add a new section for "splice specifiers":
-
-::: std
-::: addu
-**Splice specifiers   [expr.prim.id.splice]**
-
-```
-$splice-specifier$:
-  [: $constant-expression$ :]
-
-$splice-specialization-specifier$:
-  $splice-specifier$ < $template-argument-list$@~_opt_~@ >
-```
-
-[1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression ([expr.const]) contextually convertible to `std::meta::info`. A `$splice-specifier$` _designates_ the construct represented by the converted `$constant-expression$`, and is dependent if the converted `$constant-expression$` is value-dependent.
-
-[#]{.pnum} The `$splice-specifier$` of a non-dependent `$splice-specialization-specifier$` shall designate a template.
-
-[#]{.pnum} [A `<` following a `$splice-specifier$` is interpreted as the delimiter of a `$template-argument-list$` when the `$splice-specifier$` is preceded by `typename` or `template`, or when it appears in a type-only context ([temp.names]{.sref}).]{.note}
-
-::: example
-```cpp
-constexpr int v = 1;
-template <int V> struct TCls {
-  static constexpr int s = V + 1;
-};
-
-using alias = [:^^TCls:]<[:^^v:]>;
-  // OK, a splice-specialization-specifier with a splice-specifier
-  // as a template argument
-
-static_assert(alias::s == 2);
-```
-:::
-
-:::
 :::
 
 ### [expr.prim.id.general]{.sref} General {-}
@@ -3341,7 +3353,7 @@ Add a paragraph after paragraph 1 specifying the rules for parsing a `$splice-sc
 
 ::: std
 ::: addu
-[1+]{.pnum} A sequence of tokens that is not followed by `::` is never interpreted as a `$splice-scope-specifier$`. The `template` may only be omitted from the form `template@~_opt_~@ $splice-specialization-specifier$ ::` when the `$splice-specialization-specifier$` is preceded by `typename`.
+[1+]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` that is not followed by `::` is never interpreted as part of a `$splice-scope-specifier$`. The `template` may only be omitted from the form `template@~_opt_~@ $splice-specialization-specifier$ ::` when the `$splice-specialization-specifier$` is preceded by `typename`.
 
 ::: example
 ```cpp
@@ -3407,7 +3419,7 @@ $splice-expression$:
    template $splice-specialization-specifier$
 ```
 
-[#]{.pnum} A sequence of tokens immediately followed by `::` or preceded by `typename` is never interpreted as a `$splice-expression$`.
+[#]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` immediately followed by `::` or preceded by `typename` is never interpreted as part of a `$splice-expression$`.
 
 ::: example
 ```cpp
@@ -3429,7 +3441,9 @@ constexpr int f = template [:^^e:]<^^S::a>;  // splice-expression
 
 * [#.#]{.pnum} If `$S$` is an object, a function, or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a variable, a reference, or a structured binding, the expression is an lvalue referring to the object or function `$X$` associated with `$S$`. The expression has the same type as `$S$` and is a bit-field if and only if `$X$` is a bit-field.
+* [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
+
+  [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]{.sref}).]{.note}
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as `$S$`.
 
@@ -3452,6 +3466,8 @@ constexpr int f = template [:^^e:]<^^S::a>;  // splice-expression
 * [#.#]{.pnum} if that `$splice-expression$` denotes a non-static data member and it appears in an unevaluated operand.
 
 [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
+
+[#]{.pnum} For a `$splice-expression$` that designates a function or function template, overload resolution is performed ([over.match]{.sref}, [temp.over]{.sref}) from an initial set of candidate functions containing only that entity designated by the `$splice-expression$`. The best viable function selected by overload resolution is considered to be designated in a manner exempt from access rules.
 
 :::
 :::
@@ -3864,7 +3880,7 @@ Add a new subsection of ([dcl.type]{.sref}) following ([dcl.type.class.deduct]{.
 
 ::: std
 ::: addu
-**Type Splicing   [expr.prim.splice]**
+**Type Splicing   [dcl.type.splice]**
 
 ```
 $splice-type-specifier$:
@@ -3872,7 +3888,7 @@ $splice-type-specifier$:
    typename@~_opt_~@ $splice-specialization-specifier$
 ```
 
-[#]{.pnum} A sequence of tokens immediately followed by `::` is never interpreted as a `$splice-type-specifier$`. A `$splice-specifier$` or `$splice-specialization-specifier$` not preceded by `typename` is only interpreted as a `$splice-type-specifier$` within a type-only context ([temp.res.general]{.sref}).
+[#]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` immediately followed by `::` is never interpreted as part of a `$splice-type-specifier$`. A `$splice-specifier$` or `$splice-specialization-specifier$` not preceded by `typename` is only interpreted as a `$splice-type-specifier$` within a type-only context ([temp.res.general]{.sref}).
 
 ::: example
 ```cpp
@@ -4107,6 +4123,62 @@ Extend paragraph 5, and modify note 3, to clarify the existence of subobjects co
 [5]{.pnum} A data member or member function may be declared `static` in its _member-declaration_, in which case it is a _static member_ (see [class.static]{.sref}) (a _static data member_ ([class.static.data]{.sref}) or _static member function_ ([class.static.mfct]{.sref}), respectively) of the class. Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non.static]{.sref}), respectively). [For each non-static data member of reference type, there is a unique member subobject whose size and alignment is the same as if the data member were declared with the corresponding pointer type.]{.addu}
 
 [[A non-static data member of non-reference type is a member subobject of a class object.]{.rm} [An object of class type has a member subobject corresponding to each non-static data member of its class.]{.addu}]{.note3}
+
+:::
+
+### [over.pre] Preamble {-}
+
+Move the definition "overload set" from [basic.lookup]{.sref} to paragraph 2, rewrite the preamble to better describe overload resolution, and add a note explaining the expressions that form overload sets.
+
+::: std
+[2]{.pnum} [An _overload set_ is a set of declarations that each denote a function or function template.]{.addu} [When a function is named in a call, which function declaration is being referenced and the validity of the call are determined]{.rm} [The process of _overload resolution_ determines the identity of a function and its validity in a context]{.addu} by comparing the types of the arguments at [the]{.rm} [a]{.addu} point of use with the types of the parameters in [the]{.rm} [candidate functions derived from]{.addu} [declarations in]{.rm} the [initial]{.addu} overload set. [This function selection process is called _overload resolution_ and]{.rm} [Overload resolution]{.addu} is defined in [over.match].
+
+  [[Overload sets are formed by `$id-expression$`s naming functions and function templates and by `$splice-expression$`s that designate entities of the same kinds.]{.note}]{.addu}
+
+:::
+
+### [over.match.general]{.sref} General {-}
+
+Modify paragraphs 3 and 4 to clarify that access rules do not apply in all contexts.
+
+::: std
+[3]{.pnum} If a best viable function exists and is unique, overload resolution succeeds and produces it as the result. Otherwise overload resolution fails and the invocation is ill-formed. When overload resolution succeeds, and the best viable function is [not]{.rm} [neither designated in a manner exempt from access rules nor]{.addu} accessible in the context in which it is used, the program is ill-formed.
+
+[4]{.pnum} Overload resolution results in a _usable candidate_ if overload resolution succeeds and the selected candidate is either not a function ([over.built]{.sref}), or is a function that is not deleted and is [either designated in a manner exempt from access rules or is]{.addu} accessible from the context in which overload resolution was performed.
+
+:::
+
+### [over.call.func]{.sref} Call to named function {-}
+
+Modify paragraph 1 to clarify that this section will also apply to splices of function templates.
+
+::: std
+[1]{.pnum} Of interest in [over.call.func] are [only]{.rm} those function calls in which the `$posfix-expression$` ultimately contains an `$id-expression$` that denotes one or more functions [or a `$splice-expression$` that designates a function template]{.addu}. Such a `$postfix-expression$`, perhaps nested arbitrarily deep in parentheses, has one of the following forms:
+
+```diff
+  $postfix-expression$:
+     $postfix-expression$ . $id-expression$
++    $postfix-expression$ . $splice-expression$
+     $postfix-expression$ -> $id-expression$
++    $postfix-expression$ -> $splice-expression$
+     $primary-expression$
+```
+
+These represent two syntactic subcategories of function calls: qualified function calls and unqualified function calls.
+
+:::
+
+Modify paragraph 2 to account for overload resolution of `$splice-expression$`s designating member function templates.
+
+::: std
+[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ The [set of]{.addu} function declarations [constituting the candidate functions is]{.addu} found by name lookup ([class.member.lookup]{.sref}) [if the `.` is followed by an `$id-expression$` and is otherwise the singleton containing the function template designated by the `$splice-expression$`]{.addu} [constitute the set of candidate functions]{.rm}. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]{.sref}).
+
+:::
+
+Modify paragraph 3 to account for overload resolution of `$splice-expression$`s designating non-member function templates.
+
+::: std
+[3]{.pnum} In unqualified function calls, the function is named by a `$primary-expression$`. [If that `$primary-expression$` is a `$splice-expression$`, then the set of function declarations constituting the candidate functions is the singleton containing the function template designated by that `$splice-expression$`. For all other cases, the]{.addu} [The]{.rm} function declarations found by name lookup ([basic.lookup]{.sref}) constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if the `$primary-expression$` is [a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
 
 :::
 
@@ -4408,7 +4480,7 @@ Extend paragraph 4 to define what it means for a `$splice-specifier$` to appear 
 * [#.#]{.pnum} [...]
   * [4.4.6]{.pnum} `$parameter-declaration$` of a (non-type) `$template-parameter$`.
 
-[A `$splice-specifier$` or `$splice-specialization-specifier$` ([expr.prim.id.splice]) is said to be in a _type-only context_ if a hypothetical qualified name appearing in the same position would be in a type-only context.]{.addu}
+[A `$splice-specifier$` or `$splice-specialization-specifier$` ([basic.splice]) is said to be in a _type-only context_ if a hypothetical qualified name appearing in the same position would be in a type-only context.]{.addu}
 
 ::: example5
 ```cpp
@@ -4440,7 +4512,7 @@ template<typename T> void f() {
 Account for dependent `$splice-specifier$`s in paragraph 7.
 
 ::: std
-[7]{.pnum} An initializer is dependent if any constituent expression ([intro.execution]{.sref}) of the initializer is type-dependent. A placeholder type ([dcl.spec.auto.general]{.sref}) is dependent if it designates a type deduced from a dependent initializer [or if its `$type-constraint$` (if any) contains a dependent `$splice-specifier$`]{.addu}.
+[7]{.pnum} An initializer is dependent if any constituent expression ([intro.execution]{.sref}) of the initializer is type-dependent. A placeholder type ([dcl.spec.auto.general]{.sref}) is dependent if it designates a type deduced from a dependent initializer [or if its `$type-constraint$` (if any) contains a dependent `$splice-specifier$` ([temp.dep.splice])]{.addu}.
 
 :::
 
@@ -4539,6 +4611,45 @@ Add a new paragraph after [temp.dep.constexpr]{.sref}/5:
 
 :::
 :::
+
+### 13.8.3.4+ [temp.dep.splice] Dependent splice specifiers {-}
+
+
+Add a new subsection of [temp.dep]{.sref} following [temp.dep.constexpr]{.sref}, and renumber accordingly.
+
+::: std
+::: addu
+**Dependent splice specifiers   [temp.dep.splice]**
+
+[1]{.pnum} A `$splice-specifier$` is dependent if its converted `$constant-expression$` is value-dependent. A `$splice-specialization-specifier$` or `$splice-scope-specifier$` is dependent if its `$splice-specifier$` is dependent.
+
+[2]{.pnum}
+
+:::example
+```cpp
+template <auto T, auto NS, auto C, auto V>
+void fn() {
+  using a = [:T:]<0>;  // [:T:] and [:T:]<V> are dependent
+
+  static_assert(template [:C:]<typename [:NS:]::template TCls<0>>);
+    // [:C:] and [:NS:] are dependent
+}
+
+namespace NS {
+template <auto V> struct TCls {};
+template <typename> concept Concept = requires { requires true; };
+}
+
+int main() {
+  static constexpr int v = 1;
+  fn<^^NS::TCls, ^^NS, ^^NS::Concept, ^^v>();
+}
+```
+
+:::
+:::
+:::
+
 
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
