@@ -1099,8 +1099,8 @@ namespace std::meta {
             return std::meta::structural_cast<T>(rs);
         }
 
-        // Equivalent to views::generate([this]{ return pop_value<T>(); })
-        // except that we don't have a views::generate yet.
+        // Equivalent to views::generate_n([this]{ return pop_value<T>(); }, size())
+        // except that we don't have a views::generate_n yet.
         // But the point is to be an input-only range of T
         template <class T>
         consteval auto into_range() -> unspecified;
