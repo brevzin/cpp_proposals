@@ -715,8 +715,11 @@ class Tuple {
 :::
 
 
-And, furthermore, if `to_meta_representation` ends up serializing the correct number of reflections of the appropriate type, then `from_meta_representation` can really be implicitly defaulted too. That would make our set of examples look like this:
+And, furthermore, if `to_meta_representation` ends up serializing the correct number of reflections of the appropriate type, then `from_meta_representation` can really be implicitly defaulted too.
 
+## Proposed Usage Examples
+
+Putting everything together, here is the proposed usage of this facility for opting `Optional`, `Tuple`, `SmallString`, and `Vector` to be structural types:
 
 ::: std
 ```cpp

@@ -613,9 +613,11 @@ Spelling<span></span></a></li>
 <li><a href="#reflection-will-fix-it" id="toc-reflection-will-fix-it"><span class="toc-section-number">3</span> Reflection Will Fix
 It<span></span></a>
 <ul>
-<li><a href="#template-argument-equivalence" id="toc-template-argument-equivalence"><span class="toc-section-number">3.1</span> Template-Argument
+<li><a href="#proposed-usage-examples" id="toc-proposed-usage-examples"><span class="toc-section-number">3.1</span> Proposed Usage
+Examples<span></span></a></li>
+<li><a href="#template-argument-equivalence" id="toc-template-argument-equivalence"><span class="toc-section-number">3.2</span> Template-Argument
 Equivalence<span></span></a></li>
-<li><a href="#normalization-1" id="toc-normalization-1"><span class="toc-section-number">3.2</span>
+<li><a href="#normalization-1" id="toc-normalization-1"><span class="toc-section-number">3.3</span>
 Normalization<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
@@ -1456,8 +1458,13 @@ maybe we should just be able to say that explicitly:</p>
 <code class="sourceCode cpp">to_meta_representation</code> ends up
 serializing the correct number of reflections of the appropriate type,
 then <code class="sourceCode cpp">from_meta_representation</code> can
-really be implicitly defaulted too. That would make our set of examples
-look like this:</p>
+really be implicitly defaulted too.</p>
+<h2 data-number="3.1" id="proposed-usage-examples"><span class="header-section-number">3.1</span> Proposed Usage Examples<a href="#proposed-usage-examples" class="self-link"></a></h2>
+<p>Putting everything together, here is the proposed usage of this
+facility for opting <code class="sourceCode cpp">Optional</code>,
+<code class="sourceCode cpp">Tuple</code>,
+<code class="sourceCode cpp">SmallString</code>, and
+<code class="sourceCode cpp">Vector</code> to be structural types:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
@@ -1527,7 +1534,7 @@ and <code class="sourceCode cpp">Tuple</code> simply have to default a
 single function. <code class="sourceCode cpp">Vector</code> and
 <code class="sourceCode cpp">SmallString</code> have a single-line
 serializer and a fairly short deserializer.</p>
-<h2 data-number="3.1" id="template-argument-equivalence"><span class="header-section-number">3.1</span> Template-Argument Equivalence<a href="#template-argument-equivalence" class="self-link"></a></h2>
+<h2 data-number="3.2" id="template-argument-equivalence"><span class="header-section-number">3.2</span> Template-Argument Equivalence<a href="#template-argument-equivalence" class="self-link"></a></h2>
 <p>For template-argument equivalence, we can say that two values of
 class type <code class="sourceCode cpp">C</code> that has a direct
 <code class="sourceCode cpp">to_meta_representation</code> member are
@@ -1554,7 +1561,7 @@ template-argument-equivalent if:</p>
 <p>That is, two values are template-argument-equivalent if they
 serialize equal reflections (which would recursively check
 template-argument-equivalence, as necessary).</p>
-<h2 data-number="3.2" id="normalization-1"><span class="header-section-number">3.2</span> Normalization<a href="#normalization-1" class="self-link"></a></h2>
+<h2 data-number="3.3" id="normalization-1"><span class="header-section-number">3.3</span> Normalization<a href="#normalization-1" class="self-link"></a></h2>
 <p>The current rule for constructing the template parameter object is
 that we just initialize a new object of type
 <code class="sourceCode cpp"><span class="kw">const</span> C</code>. But
