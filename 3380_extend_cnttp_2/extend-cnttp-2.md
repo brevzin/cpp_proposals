@@ -377,25 +377,35 @@ The original design used an `operator template` function with a constructor. The
 
 One of the issues with the serialization problem that we had to deal with was: how exactly do you serialize? What representation do you return? And then how do you deserialize again? This was where we got stuck with types like `std::vector` (which needs variable-length representation) and even `std::tuple` (which has a simple answer for serialization but you don't want to just create a whole new tuple type for this). Faisal Vali had the insight that reflection provides a very easy answer for this question: you serialize into (and then deserialize from) a range of `std::meta::info`!
 
-At least, that's what [@P3380R0] did. A refinement of this is, rather than having the serialization function return a range of `std::meta::info`, we can accept a `Serializer` that can push a `meta::info` a `Deserializer` which can pop one. The proposed API for these types (whose actual type is `$unspecified$`):
+At least, that's what [@P3380R0] did. A refinement of this is, rather than having the serialization function return a range of `std::meta::info`, we can accept a `Serializer` that can push a `meta::info` a `Deserializer` which can pop one. The proposed API for these types is:
 
 
 <table>
 <tr><th>Serialize</th><th>Deserialize</th></tr>
 <tr><td>
 ```cpp
-struct $Serializer$ {
-    consteval auto push(std::meta::info r) -> void;
-    consteval auto size() const -> size_t;
+namespace std::meta {
+
+class serializer {
+    vector<info> $output$; // exposition-only
+
+public:
+    consteval auto push(info r) -> void {
+        $output$.push_back(r);
+    }
+
+    consteval auto size() const -> size_t {
+        return $output$.size();
+    }
 
     template <class T>
     consteval auto push_value(T const& value) -> void {
-        push(std::meta::reflect_value(value));
+        push(reflect_value(value));
     }
 
     template <class T>
     consteval auto push_object(T const& object) -> void {
-        push(std::meta::reflect_object(object));
+        push(reflect_object(object));
     }
 
     template <class T>
@@ -409,19 +419,37 @@ struct $Serializer$ {
         }
     }
 
-    template <std::ranges::input_range R>
+    template <ranges::input_range R>
     consteval auto push_range(R&& r) -> void {
         for (auto&& elem : r) {
             push_value(elem);
         }
     }
 };
+
+}
 ```
 </td><td>
 ```cpp
-struct $Deserializer$ {
-    consteval auto pop() -> std::meta::info;
-    consteval auto size() const -> size_t;
+namespace std::meta {
+
+class deserializer {
+    vector<info> $input$; // exposition-only
+
+public:
+    explicit consteval deserializer(serializer const& s)
+        : $input$(s.$output$)
+    { }
+
+    consteval auto pop() -> info {
+        auto r = $input$.back();
+        $input$.pop_back();
+        return r;
+    }
+
+    consteval auto size() const -> size_t {
+        return $input$.size();
+    }
 
     template <class T>
     consteval auto pop_value() -> T {
@@ -430,21 +458,24 @@ struct $Deserializer$ {
 
     template <class T>
     consteval auto pop_from_subobjects() -> T {
-        std::vector<std::meta::info> rs;
-        for (std::meta::info _ : subobjects_of(^^T)) {
+        std::vector<info> rs;
+        for (info _ : subobjects_of(^^T)) {
             rs.push_back(pop());
         }
 
         // proposed in this paper
-        return std::meta::structural_cast<T>(rs);
+        return structural_cast<T>(rs);
     }
 
-    // Equivalent to views::generate([this]{ return pop_value<T>(); })
-    // except that we don't have a views::generate yet.
-    // But the point is to be an input-only range of T
+    // Equivalent to:
+    //      views::generate_n([this]{ return pop_value<T>(); }, size())
+    // except that we don't have a views::generate_n yet.
+    // But the point is to be an input-only range of T.
     template <class T>
     consteval auto into_range() -> $unspecified$;
 };
+
+}
 ```
 </td></tr>
 </table>
@@ -461,22 +492,20 @@ class SmallString {
     char data[32];
     int length;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
         for (int i = 0; i < length; ++i) {
-            serializer.push(std::meta::reflect_value(data[i]))
+            s.push(std::meta::reflect_value(data[i]))
         }
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> SmallString
     {
-        // ensure that we zero out all the data
         auto str = SmallString();
-        str.length = deserializer.size();
+        str.length = ds.size();
+        std::ranges::fill(str.data, '\0'); // ensure we zero the data first
         for (int i = 0; i < length; ++i) {
-            str.data[i] = extract<char>(deserializer.pop());
+            str.data[i] = extract<char>(ds.pop());
         }
         return str;
     }
@@ -492,22 +521,20 @@ class SmallString {
     char data[32];
     int length;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
         for (int i = 0; i < length; ++i) {
-            serializer.push_value(data[i]);
+            s.push_value(data[i]);
         }
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> SmallString
     {
-        // ensure that we zero out all the data
         auto str = SmallString();
-        str.length = deserializer.size();
+        str.length = ds.size();
+        std::ranges::fill(str.data, '\0'); // ensure we zero the data first
         for (int i = 0; i < length; ++i) {
-            str.data[i] = deserializer.template pop_value<char>();
+            str.data[i] = ds.template pop_value<char>();
         }
         return str;
     }
@@ -523,19 +550,17 @@ class SmallString {
     char data[32];
     int length;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
-        serializer.push_range(*this);
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+        s.push_range(*this);
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> SmallString
     {
-        // ensure that we zero out all the data
         auto str = SmallString();
-        str.length = deserializer.size();
-        std::ranges::copy(deserializer.template into_range<char>(), str.data);
+        str.length = ds.size();
+        std::ranges::fill(str.data, '\0'); // ensure we zero the data first
+        std::ranges::copy(ds.template into_range<char>(), str.data);
         return str;
     }
 };
@@ -552,21 +577,20 @@ class vector {
     size_t size_;
     size_t capacity_;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
-        serializer.push_range(*this);
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+        s.push_range(*this);
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> vector
     {
         vector v;
-        v.begin_ = std::allocator<T>::allocate(deserializer.size());
-        v.size_ = v.capacity_ = deserializer.size();
+        v.begin_ = std::allocator<T>::allocate(ds.size());
+        v.capacity_ = ds.size();
         std::ranges::uninitialized_copy(
-            deserializer.template into_range<T>(),
+            ds.template into_range<T>(),
             v.begin_);
+        v.size_ = v.capacity_;
         return v;
     }
 };
@@ -586,19 +610,17 @@ class Optional {
     union { T value; };
     bool engaged;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
         if (engaged) {
-            serializer.push_value(value);
+            s.push_value(value);
         }
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Optional
     {
-        if (deserializer.size()) {
-            return Optional(deserializer.template pop_value<T>());
+        if (ds.size()) {
+            return Optional(ds.template pop_value<T>());
         } else {
             return Optional();
         }
@@ -616,31 +638,29 @@ class Tuple {
     // let's assume this syntax works (because the details are not important here)
     Ts... elems;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
         template for (constexpr auto mem : nonstatic_data_members_of(^^Tuple) {
             // references and pointers have different rules for
             // template-argument-equivalence, and thus we need to
             // capture those differences... differently
             if (is_reference_type(type_of(mem))) {
-                serializer.push_object(this->[:mem:]);
+                s.push_object(this->[:mem:]);
             } else {
-                serializer.push_value(this->[:mem:]);
+                s.push_value(this->[:mem:]);
             }
         }
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Tuple
     {
-        return Tuple(std::make_index_sequence<sizeof...(Ts)>(), deserializer)
+        return Tuple(std::make_index_sequence<sizeof...(Ts)>(), ds)
     }
 
     template <size_t... Is, class D>
     consteval Tuple(index_sequence<Is...>,
-                    D& deserializer)
-        : elems(deserializer.template pop_value<Ts>())...
+                    std::meta::deserializer& ds)
+        : elems(ds.template pop_value<Ts>())...
     { }
 }
 ```
@@ -659,16 +679,14 @@ class Optional {
     union { T value; };
     bool engaged;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
-        serializer.push_subobjects(*this);
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+        s.push_subobjects(*this);
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Optional
     {
-        return deserializer.template pop_from_subobjects<Optional>();
+        return ds.template pop_from_subobjects<Optional>();
     }
 };
 
@@ -676,16 +694,14 @@ template <typename... Ts>
 class Tuple {
     Ts... elems;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
-        serializer.push_subobjects(*this);
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+        s.push_subobjects(*this);
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Tuple
     {
-        return deserializer.template pop_from_subobjects<Tuple>();
+        return ds.template pop_from_subobjects<Tuple>();
     }
 }
 ```
@@ -700,22 +716,21 @@ class Optional {
     union { T value; };
     bool engaged;
 
-    consteval auto to_meta_representation(auto& s) const = default;
-    static consteval auto from_meta_representation(auto& d) = default;
+    auto to_meta_representation(std::meta::serializer&) const = default;
+    static auto from_meta_representation(std::meta::deserializer&) = default;
 };
 
 template <typename... Ts>
 class Tuple {
     Ts... elems;
 
-    consteval auto to_meta_representation(auto& s) const = default;
-    static consteval auto from_meta_representation(auto& d) = default;
+    auto to_meta_representation(std::meta::serializer&) const = default;
+    static auto from_meta_representation(std::meta::deserializer&) = default;
 }
 ```
 :::
 
 
-And, furthermore, if `to_meta_representation` ends up serializing the correct number of reflections of the appropriate type, then `from_meta_representation` can really be implicitly defaulted too.
 
 ## Proposed Usage Examples
 
@@ -728,32 +743,33 @@ class Optional {
     union { T value; };
     bool engaged;
 
-    consteval auto to_meta_representation(auto& s) const = default;
+    auto to_meta_representation(std::meta::serializer&) const = default;
+    static auto from_meta_representation(std::meta::deserializer&) = default;
 };
 
 template <typename... Ts>
 class Tuple {
     Ts... elems;
 
-    consteval auto to_meta_representation(auto& s) const = default;
+    auto to_meta_representation(std::meta::serializer&) const = default;
+    static auto from_meta_representation(std::meta::deserializer&) = default;
 }
 
 class SmallString {
     char data[32];
     int length;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
-        serializer.push_range(*this);
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+        s.push_range(*this);
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> SmallString
     {
         auto str = SmallString();
-        str.length = deserializer.size();
-        std::ranges::copy(deserializer.template into_range<char>(), str.data);
+        str.length = ds.size();
+        std::ranges::fill(str.data, '\0');
+        std::ranges::copy(ds.template into_range<char>(), str.data);
         return str;
     }
 };
@@ -764,28 +780,27 @@ class Vector {
     size_t size_;
     size_t capacity_;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
-        serializer.push_range(*this);
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+        s.push_range(*this);
     }
 
-    template <class D>
-    static consteval auto from_meta_representation(D& deserializer)
+    static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Vector
     {
         Vector v;
-        v.begin_ = std::allocator<T>::allocate(deserializer.size());
-        v.size_ = v.capacity_ = deserializer.size();
+        v.begin_ = std::allocator<T>::allocate(ds.size());
+        v.capacity_ = ds.size();
         std::ranges::uninitialized_copy(
-            deserializer.template into_range<T>(),
+            ds.template into_range<T>(),
             v.begin_);
+        v.size_ = v.capacity_;
         return v;
     }
 };
 ```
 :::
 
-That seems pretty clean. All of these implementations are about as minimal as you could get. `Optional` and `Tuple` simply have to default a single function. `Vector` and `SmallString` have a single-line serializer and a fairly short deserializer.
+That seems pretty clean. All of these implementations are about as minimal as you could get. `Optional` and `Tuple` simply have to default two functions. `Vector` and `SmallString` have a single-line serializer and a fairly short deserializer.
 
 ## Template-Argument Equivalence
 
@@ -794,17 +809,7 @@ For template-argument equivalence, we can say that two values of class type `C` 
 ::: std
 ```cpp
 consteval auto template_argument_equivalent(C const& a, C const& b) -> bool {
-    struct Serializer {
-        std::vector<std::meta::info> $output$;
-
-        consteval auto push(std::meta::info r) -> void {
-            $output$.push_back(r);
-        }
-
-        // ... rest of API ...
-    };
-
-    Serializer sa, sb;
+    std::meta::serializer sa, sb;
     a.to_meta_representation(sa);
     b.to_meta_representation(sb);
     return sa.$output$ == sb.$output$;
@@ -830,16 +835,16 @@ We would do a round-trip:
 ```cpp
 const C $object$ = []{
     auto c = C($init$);
-    auto $serializer$ = $make-serializer$();
-    c.to_meta_representation($serializer$);
+    auto s = std::meta::serializer();
+    c.to_meta_representation(s);
 
-    auto $deserializer$ = $make-deserializer-from$($serializer$);
-    return C::from_meta_representation($deserializer$);
+    auto ds = std::meta::deserializer(s);
+    return C::from_meta_representation(ds);
 }();
 ```
 :::
 
-The actual types of the (de)serializer objects are implementation-defined, the only thing that matters is that they conform to the interface above. Note that, as a sanity check, the implementation could do a _second_ serialization round after the round-trip, do ensure that both the original and new values produce the same serialization.
+Note that, as a sanity check, the implementation could do a _second_ serialization round after the round-trip, do ensure that both the original and new values produce the same serialization.
 
 We will also have to adjust `std::meta::reflect_value()` to also do this normalization. Which means:
 
@@ -851,15 +856,16 @@ struct Fraction {
 
     auto operator==(Fraction const&) const -> bool = default;
 
-    template <class S>
-    consteval auto to_meta_representation(S& serializer) const -> void {
+    consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
         // serialize in lowest terms
         auto g = std::gcd(numerator, denominator);
-        serializer.push_back(numerator / g);
-        serializer.push_back(denominator / g);
+        s.push_back(numerator / g);
+        s.push_back(denominator / g);
     }
 
-    // implicitly-defaulted from_meta_representation does the right thing
+    // defaulted from_meta_representation does the right thing
+    // (even though our to_meta_representation is custom)
+    auto from_meta_representation(std::meta::deserializer&) = default;
 };
 
 // round-tripping through reflect_value and extract normalizes
@@ -877,8 +883,7 @@ First, as with [@P2484R0], I'm referring to `to_meta_representation` as a templa
 
 ::: std
 ```cpp
-template <class S>
-consteval auto to_meta_representation(S&) const -> void;
+consteval auto to_meta_representation(std::meta::serializer&) const -> void;
 ```
 :::
 
@@ -886,23 +891,21 @@ This function can also be declared as defaulted, in which case every base class 
 
 We'll say that `T` has an eligible template registration function if it provides `to_meta_representation` as a direct member of the allowed form (possibly-defaulted).
 
-A class type `T` can also provide a `from_meta_representation` that must be of the form:
+If a class type `T` provides a `to_meta_representation`, it must also then provide a `from_meta_representation`, that must be of the form:
 
 ::: std
 ```cpp
-template <class D>
-consteval auto from_meta_representation(D&) -> T;
+consteval auto from_meta_representation(std::meta::deserializer&) -> T;
 ```
 :::
 
-If this function is not provided, it is implicitly defaulted. The defaulted version of the function is:
+This function can also be declared as defaulted. The default implementation is:
 
 ::: std
 ```cpp
-template <class D>
-consteval auto from_meta_representation(D& deserializer) -> T {
-    assert(deserializer.size() == subobjects_of(^^T).size());
-    return deserializer.template pop_from_subobjects<T>();
+consteval auto from_meta_representation(std::meta::deserializer& ds) -> T {
+    assert(ds.size() == subobjects_of(^^T).size());
+    return ds.template pop_from_subobjects<T>();
 }
 ```
 :::
@@ -913,17 +916,17 @@ Second, we introduce the concept of template argument normalization (status quo 
 ::: addu
 A value `v` of structural type `T` is *template-argument-normalized* as follows:
 
-* [#]{.pnum} If `v` is a pointer (or reference) to a string literal or subobject thereof, then let `v` be `S + O`, where `S` is that string literal and `O` is some non-negative offset. Then `v` is normalized to `define_static_string(S) + O` ([@P3491R0]).
+* [#]{.pnum} If `v` is a pointer (or reference) to a string literal or subobject thereof, then let `v` be `S + O` (or `S[O]`, for a reference), where `S` is that string literal and `O` is some non-negative offset. Then `v` is normalized to `define_static_string(S) + O` (or `define_static_string(S)[O]`, for a reference). See [@P3491R0].
 * [#]{.pnum} Otherwise, if `T` is a scalar type or an lvalue reference type, nothing is done.
 * [#]{.pnum} Otherwise, if `T` is an array type, every element of the array is template-argument-normalized.
 * [#]{.pnum} Otherwise (if `T` is a class type), then
   * [#.#]{.pnum} If `T` has an eligible template representation function, then `v` is normalized via:
     ```cpp
     consteval auto $NORMALIZE$(T const& v) -> T {
-        auto $s$ = std::meta::make_serializer();
+        auto $s$ = std::meta::serializer();
         v.to_meta_representation($s$);
-        auto $d$ = std::meta::make_deserializer_from($s$);
-        return T::from_meta_representation($d$);
+        auto $ds$ = std::meta::deserializer($s$);
+        return T::from_meta_representation($ds$);
     }
     ```
   * [#.#]{.pnum} Otherwise, every subobject of `v` is template-argument-normalized.
@@ -982,7 +985,7 @@ Two values are *template-argument-equivalent* if they are of the same type and [
 
 
       ```cpp
-      std::meta::$serializer$ s1, s2;
+      std::meta::serializer s1, s2;
       v1.to_meta_representation(s1);
       v2.to_meta_representation(s2);
       ```
@@ -997,12 +1000,12 @@ Two values are *template-argument-equivalent* if they are of the same type and [
 
 Add a new type trait for `std::is_structural`, which we will need to provide constrained template registration functions (a real use, as [@LWG3354] requested).
 
-Add a defaulted `to_meta_representation` (that is, the default subobject-wise serialization with no normalization):
+Add a defaulted `to_meta_representation` and `from_meta_representation` (that is, the default subobject-wise serialization with no normalization):
 
 ::: std
 ```cpp
-template<class S>
-  consteval void to_meta_representation(S&) = default;
+void to_meta_representation(std::meta::serializer&) = default;
+static auto from_meta_representation(std::meta::deserializer&) = default;
 ```
 :::
 
@@ -1033,12 +1036,12 @@ template<reflection_range R = initializer_list<info>>
 ```
 :::
 
-And introduce unspecified serializer and deserializer types:
+And introduce the serializer and deserializer types:
 
 ::: std
 ```cpp
 namespace std::meta {
-    class $serializer$ // exposition-only
+    class serializer
     {
         vector<info> $output$; // exposition-only
 
@@ -1079,10 +1082,24 @@ namespace std::meta {
         }
     };
 
-    struct $deserializer$  // exposition-only
+    class deserializer
     {
-        consteval auto pop() -> std::meta::info;
-        consteval auto size() const -> size_t;
+        vector<info> $input$; // exposition-only
+
+    public:
+        explicit consteval deserializer(const serializer& s)
+            : $input$(s.$output$)
+        { }
+
+        consteval auto pop() -> std::meta::info {
+            info r = $input$.back();
+            $input$.pop_back();
+            return r;
+        }
+
+        consteval auto size() const -> size_t {
+            return $input$.size();
+        }
 
         template <class T>
         consteval auto pop_value() -> T {
@@ -1100,22 +1117,20 @@ namespace std::meta {
             return std::meta::structural_cast<T>(rs);
         }
 
-        // Equivalent to views::generate_n([this]{ return pop_value<T>(); }, size())
+        // Equivalent to:
+        //      views::generate_n([this]{ return pop_value<T>(); }, size())
         // except that we don't have a views::generate_n yet.
         // But the point is to be an input-only range of T
         template <class T>
-        consteval auto into_range() -> unspecified;
+        consteval auto into_range() -> $unspecified$;
     };
-
-    consteval auto make_serializer() -> $serializer$;
-    consteval auto make_deserializer_from($serializer$) -> $deserializer$;
 }
 ```
 :::
 
 # Acknowledgements
 
-Thanks to Richard Smith and Davis Herring for all the work in this space. Thanks to Jeff Snyder for originally seeing how to solve this problem (even if we didn't end up using his original solution). Thanks to Faisal Vali and Daveed Vandevoorde for working through a solution.
+Thanks to Richard Smith and Davis Herring for all the work in this space. Thanks to Jeff Snyder for originally seeing how to solve this problem (even if we didn't end up using his original solution). Thanks to Faisal Vali, Daveed Vandevoorde, and Peter Dimov for working through a solution.
 
 ---
 references:
