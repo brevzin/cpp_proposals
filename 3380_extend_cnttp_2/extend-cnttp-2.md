@@ -795,9 +795,10 @@ For template-argument equivalence, we can say that two values of class type `C` 
 ```cpp
 consteval auto template_argument_equivalent(C const& a, C const& b) -> bool {
     struct Serializer {
-        std::vector<std::meta::info> v;
+        std::vector<std::meta::info> $output$;
+
         consteval auto push(std::meta::info r) -> void {
-            v.push_back(r);
+            $output$.push_back(r);
         }
 
         // ... rest of API ...
@@ -806,7 +807,7 @@ consteval auto template_argument_equivalent(C const& a, C const& b) -> bool {
     Serializer sa, sb;
     a.to_meta_representation(sa);
     b.to_meta_representation(sb);
-    return sa.v == sb.v;
+    return sa.$output$ == sb.$output$;
 }
 ```
 :::
@@ -832,13 +833,13 @@ const C $object$ = []{
     auto $serializer$ = $make-serializer$();
     c.to_meta_representation($serializer$);
 
-    auto $deserializer$ = $make-deserializer$($serializer$);
+    auto $deserializer$ = $make-deserializer-from$($serializer$);
     return C::from_meta_representation($deserializer$);
 }();
 ```
 :::
 
-The actual types of the (de)serializer objects are implementation-defined, the only thing that matters is that they conform to the interface above.
+The actual types of the (de)serializer objects are implementation-defined, the only thing that matters is that they conform to the interface above. Note that, as a sanity check, the implementation could do a _second_ serialization round after the round-trip, do ensure that both the original and new values produce the same serialization.
 
 We will also have to adjust `std::meta::reflect_value()` to also do this normalization. Which means:
 

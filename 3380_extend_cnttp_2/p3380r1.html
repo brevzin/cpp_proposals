@@ -1543,19 +1543,20 @@ template-argument-equivalent if:</p>
 <blockquote>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> template_argument_equivalent<span class="op">(</span>C <span class="kw">const</span><span class="op">&amp;</span> a, C <span class="kw">const</span><span class="op">&amp;</span> b<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Serializer <span class="op">{</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> v;</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>            v<span class="op">.</span>push_back<span class="op">(</span>r<span class="op">)</span>;</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ... rest of API ...</span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    Serializer sa, sb;</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>to_meta_representation<span class="op">(</span>sa<span class="op">)</span>;</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    b<span class="op">.</span>to_meta_representation<span class="op">(</span>sb<span class="op">)</span>;</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sa<span class="op">.</span>v <span class="op">==</span> sb<span class="op">.</span>v;</span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> <em>output</em>;</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>            <em>output</em><span class="op">.</span>push_back<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ... rest of API ...</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    Serializer sa, sb;</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>to_meta_representation<span class="op">(</span>sa<span class="op">)</span>;</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    b<span class="op">.</span>to_meta_representation<span class="op">(</span>sb<span class="op">)</span>;</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sa<span class="op">.</span><em>output</em> <span class="op">==</span> sb<span class="op">.</span><em>output</em>;</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>That is, two values are template-argument-equivalent if they
@@ -1581,14 +1582,17 @@ of performing the equivalent of:</p>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>serializer</em> <span class="op">=</span> <em>make-serializer</em><span class="op">()</span>;</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    c<span class="op">.</span>to_meta_representation<span class="op">(</span><em>serializer</em><span class="op">)</span>;</span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>deserializer</em> <span class="op">=</span> <em>make-deserializer</em><span class="op">(</span><em>serializer</em><span class="op">)</span>;</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>deserializer</em> <span class="op">=</span> <em>make-deserializer-from</em><span class="op">(</span><em>serializer</em><span class="op">)</span>;</span>
 <span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> C<span class="op">::</span>from_meta_representation<span class="op">(</span><em>deserializer</em><span class="op">)</span>;</span>
 <span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The actual types of the (de)serializer objects are
 implementation-defined, the only thing that matters is that they conform
-to the interface above.</p>
+to the interface above. Note that, as a sanity check, the implementation
+could do a <em>second</em> serialization round after the round-trip, do
+ensure that both the original and new values produce the same
+serialization.</p>
 <p>We will also have to adjust <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">()</span></code>
 to also do this normalization. Which means:</p>
 <div class="std">
