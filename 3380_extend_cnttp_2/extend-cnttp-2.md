@@ -741,7 +741,6 @@ class SmallString {
 
     template <class S>
     consteval auto to_meta_representation(S& serializer) const -> void {
-        // might as well provide a range-based operation
         serializer.push_range(*this);
     }
 
@@ -749,7 +748,6 @@ class SmallString {
     static consteval auto from_meta_representation(D& deserializer)
         -> SmallString
     {
-        // ensure that we zero out all the data
         auto str = SmallString();
         str.length = deserializer.size();
         std::ranges::copy(deserializer.template into_range<char>(), str.data);
@@ -772,7 +770,7 @@ class Vector {
     static consteval auto from_meta_representation(D& deserializer)
         -> Vector
     {
-        vector v;
+        Vector v;
         v.begin_ = std::allocator<T>::allocate(deserializer.size());
         v.size_ = v.capacity_ = deserializer.size();
         std::ranges::uninitialized_copy(
