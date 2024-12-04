@@ -534,7 +534,7 @@ class SmallString {
         str.length = ds.size();
         std::ranges::fill(str.data, '\0'); // ensure we zero the data first
         for (int i = 0; i < length; ++i) {
-            str.data[i] = ds.template pop_value<char>();
+            str.data[i] = ds.pop_value<char>();
         }
         return str;
     }
@@ -560,7 +560,7 @@ class SmallString {
         auto str = SmallString();
         str.length = ds.size();
         std::ranges::fill(str.data, '\0'); // ensure we zero the data first
-        std::ranges::copy(ds.template into_range<char>(), str.data);
+        std::ranges::copy(ds.into_range<char>(), str.data);
         return str;
     }
 };
@@ -588,7 +588,7 @@ class vector {
         v.begin_ = std::allocator<T>::allocate(ds.size());
         v.capacity_ = ds.size();
         std::ranges::uninitialized_copy(
-            ds.template into_range<T>(),
+            ds.into_range<T>(),
             v.begin_);
         v.size_ = v.capacity_;
         return v;
@@ -620,7 +620,7 @@ class Optional {
         -> Optional
     {
         if (ds.size()) {
-            return Optional(ds.template pop_value<T>());
+            return Optional(ds.pop_value<T>());
         } else {
             return Optional();
         }
@@ -660,9 +660,9 @@ class Tuple {
     template <size_t... Is, class D>
     consteval Tuple(index_sequence<Is...>,
                     std::meta::deserializer& ds)
-        : elems(ds.template pop_value<Ts>())...
+        : elems(ds.pop_value<Ts>())...
     { }
-}
+};
 ```
 :::
 
@@ -686,7 +686,7 @@ class Optional {
     static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Optional
     {
-        return ds.template pop_from_subobjects<Optional>();
+        return ds.pop_from_subobjects<Optional>();
     }
 };
 
@@ -701,9 +701,9 @@ class Tuple {
     static consteval auto from_meta_representation(std::meta::deserializer& ds)
         -> Tuple
     {
-        return ds.template pop_from_subobjects<Tuple>();
+        return ds.pop_from_subobjects<Tuple>();
     }
-}
+};
 ```
 :::
 
@@ -726,7 +726,7 @@ class Tuple {
 
     auto to_meta_representation(std::meta::serializer&) const = default;
     static auto from_meta_representation(std::meta::deserializer&) = default;
-}
+};
 ```
 :::
 
@@ -753,7 +753,7 @@ class Tuple {
 
     auto to_meta_representation(std::meta::serializer&) const = default;
     static auto from_meta_representation(std::meta::deserializer&) = default;
-}
+};
 
 class SmallString {
     char data[32];
@@ -769,7 +769,7 @@ class SmallString {
         auto str = SmallString();
         str.length = ds.size();
         std::ranges::fill(str.data, '\0');
-        std::ranges::copy(ds.template into_range<char>(), str.data);
+        std::ranges::copy(ds.into_range<char>(), str.data);
         return str;
     }
 };
@@ -791,7 +791,7 @@ class Vector {
         v.begin_ = std::allocator<T>::allocate(ds.size());
         v.capacity_ = ds.size();
         std::ranges::uninitialized_copy(
-            ds.template into_range<T>(),
+            ds.into_range<T>(),
             v.begin_);
         v.size_ = v.capacity_;
         return v;
@@ -873,29 +873,77 @@ static_assert(extract<Fraction>(reflect_value(Fraction{2, 4})) == Fraction{1, 2}
 ```
 :::
 
+## Allowing Templates
+
+The examples here all show regular functions for the template serialization and deserialization functions:
+
+::: std
+```cpp
+template <typename T>
+class Vector {
+    consteval auto to_meta_representation(std::meta::serializer&) const -> void;
+    static consteval auto from_meta_representation(std::meta::deserializer&) -> Vector;
+};
+```
+:::
+
+But it's nice to also allow these to be declared as templates. Especially in the context of defaulting:
+
+::: std
+```cpp
+template <typename... Ts>
+class Tuple {
+    Ts... elems;
+
+    auto to_meta_representation(auto&) const = default;
+    static auto from_meta_representation(auto&) = default;
+};
+```
+:::
+
+The reason for this is that it allows library code that doesn't otherwise do any reflection stuff to avoid having to `#include <meta>`. The implementation can figure it out.
+
 # Proposal
 
 This proposal extends class types as non-type parameters as follows. This isn't exactly Core wording, but does contain something akin to wording because I think that might be a clearer way to express the idea.
 
 ## Language
 
-First, as with [@P2484R0], I'm referring to `to_meta_representation` as a template representation function. A class type `T` can provide a `to_meta_representation` that must be of the form:
+The language proposal is divided into several parts.
+
+### Template Serialization and Deserialization Functions
+
+A class type `T` can provide a template serialization function, `to_meta_representation`, that must be of the forms:
 
 ::: std
 ```cpp
+// non-static const member function
 consteval auto to_meta_representation(std::meta::serializer&) const -> void;
+
+// non-static const function template template
+consteval auto to_meta_representation(auto&) const -> void;
 ```
 :::
 
-This function can also be declared as defaulted, in which case every base class and non-static data member shall have structural type. Either way, no non-static data member of `T` can be `mutable`.
-
-We'll say that `T` has an eligible template registration function if it provides `to_meta_representation` as a direct member of the allowed form (possibly-defaulted).
-
-If a class type `T` provides a `to_meta_representation`, it must also then provide a `from_meta_representation`, that must be of the form:
+This function can also be declared as defaulted, in which case every base class and non-static data member shall have structural type. The default implementation is:
 
 ::: std
 ```cpp
-consteval auto from_meta_representation(std::meta::deserializer&) -> T;
+consteval auto to_meta_representation(std::meta::serializer& s) const -> void {
+    s.push_subobjects(*this);
+}
+```
+:::
+
+If a class type `T` provides a template serialization function `to_meta_representation`, it must also then provide a template deserialization function `from_meta_representation`, that must be of the forms:
+
+::: std
+```cpp
+// static member function
+static consteval auto from_meta_representation(std::meta::deserializer&) -> T;
+
+// static member function template
+static consteval auto from_meta_representation(auto&) -> T;
 ```
 :::
 
@@ -903,14 +951,48 @@ This function can also be declared as defaulted. The default implementation is:
 
 ::: std
 ```cpp
-consteval auto from_meta_representation(std::meta::deserializer& ds) -> T {
+static consteval auto from_meta_representation(std::meta::deserializer& ds) -> T {
     assert(ds.size() == subobjects_of(^^T).size());
-    return ds.template pop_from_subobjects<T>();
+    return ds.pop_from_subobjects<T>();
 }
 ```
 :::
 
-Second, we introduce the concept of template argument normalization (status quo so far is that *template-argument-normalization* is a no-op for all types) and allow string literal template arguments:
+We'll say that `T` has an eligible template serialization function if it provides `to_meta_representation` as a direct member of the allowed forms (possibly-defaulted), and that `T` has an eligible template deserialization function if it provides `from_meta_representation` as a direct static member of the allowed forms (possibly-defaulted).
+
+### Extend the definition of structural
+
+We extend the definition of structural (here it's either the first bullet or both of the next two — the additional rules on template registration functions will be covered in their own section):
+
+::: std
+::: addu
+[a]{.pnum} A class type `C` is an *explicitly structural class type* if:
+
+  * [a.1]{.pnum} `C` has an eligible template serialization function,
+  * [a.2]{.pnum} `C` has an eligible template deserialization function, and
+  * [a.3]{.pnum} no direct or indirect non-static data member of `C` is mutable.
+
+[b]{.pnum} A class type `C` is an *implicitly structural class type* if:
+
+  * [b.1]{.pnum} all base classes and non-static data member of `C` are public and non-mutable,
+  * [b.2]{.pnum} the types of all base classes and non-static data members of `C` are structural types (see below),
+  * [b.3]{.pnum} `C` does not have an eligible template serialization function, and
+  * [b.4]{.pnum} `C` does not have an eligible template deserialization function.
+:::
+
+[7]{.pnum} A *structural type* is one of the following:
+
+* [7.1]{.pnum} a scalar type, or
+* [7.2]{.pnum} an lvalue reference type, or
+* [7.2b]{.pnum} [an array type whose element type is structural, or]{.addu}
+* [7.3]{.pnum} a literal class type [with the following properties:]{.rm} [that is either an explicitly structural class type or an implicitly structural class type.]{.addu}
+    * [7.3.1]{.pnum} [all base classes and non-static data members are public and non-mutable and]{.rm}
+    * [7.3.2]{.pnum} [the types of all bases classes and non-static data members are structural types or (possibly multidimensional) array thereof.]{.rm}
+:::
+
+### Template Argument Normalization
+
+We introduce the concept of template argument normalization (status quo so far is that *template-argument-normalization* is a no-op for all types) and allow string literal template arguments:
 
 ::: std
 ::: addu
@@ -920,7 +1002,7 @@ A value `v` of structural type `T` is *template-argument-normalized* as follows:
 * [#]{.pnum} Otherwise, if `T` is a scalar type or an lvalue reference type, nothing is done.
 * [#]{.pnum} Otherwise, if `T` is an array type, every element of the array is template-argument-normalized.
 * [#]{.pnum} Otherwise (if `T` is a class type), then
-  * [#.#]{.pnum} If `T` has an eligible template representation function, then `v` is normalized via:
+  * [#.#]{.pnum} If `T` is an explicitly structural class type, then `v` is normalized via:
     ```cpp
     consteval auto $NORMALIZE$(T const& v) -> T {
         auto $s$ = std::meta::serializer();
@@ -929,7 +1011,7 @@ A value `v` of structural type `T` is *template-argument-normalized* as follows:
         return T::from_meta_representation($ds$);
     }
     ```
-  * [#.#]{.pnum} Otherwise, every subobject of `v` is template-argument-normalized.
+  * [#.#]{.pnum} Otherwise (if `T` is an implicitly structural class type), every subobject of `v` is template-argument-normalized.
 :::
 :::
 
@@ -949,34 +1031,33 @@ and [temp.arg.nontype]{.sref}/6.2:
 * [6.#]{.pnum} a subobject ([intro.object]) of one of the above.
 :::
 
-Third, we change the meaning of `std::meta::reflect_value` in [@P2996R7] to perform template-argument-normalization on its argument.
-
-Fourth, we extend the definition of structural (here it's either the first bullet or both of the next two — the additional rules on template registration functions will be covered in their own section):
+Ensure that when initializing a non-type template parameter that we perform template-argument-normalization. That's in [temp.arg.nontype]{.sref}:
 
 ::: std
-A *structural type* is one of the following:
+[4]{.pnum} If `T` is a class type, a template parameter object ([temp.param]) exists that is constructed so as to be template-argument-equivalent to `v` [after it is template-argument-normalized]{.addu}; P denotes that template parameter object. [...]
 
-* [7.1]{.pnum} a scalar type, or
-* [7.2]{.pnum} an lvalue reference type, or
-* [7.2b]{.pnum} [an array type whose element type is structural, or]{.addu}
-* [7.3]{.pnum} a literal class [`C`]{.addu} type with the following properties:
-    * [7.3.0]{.pnum} [`C` has an eligible template representation function, or ]{.addu}
-    * [7.3.1]{.pnum} all base classes and non-static data members [of `C`]{.addu} are public and non-mutable and
-    * [7.3.2]{.pnum} the types of all bases classes and non-static data members [of `C`]{.addu} are structural types [or (possibly multidimensional) array thereof]{.rm}.
+[5]{.pnum} Otherwise, the value of `P` is that of `v` [after it is template-argument-normalized]{.addu}.
 :::
 
-Fifth, ensure that when initializing a non-type template parameter of class type, that we perform template-argument-normalization. That's in [temp.arg.nontype]{.sref}:
+### Update `std::meta::reflect_value()`
+
+Third, we change the meaning of `std::meta::reflect_value` in [@P2996R7] to perform template-argument-normalization on its argument:
 
 ::: std
-[4]{.pnum} If `T` is a class type, a template parameter object ([temp.param]) exists that is constructed so as to be template-argument-equivalent to `v` [after it undergoes template-argument-normalization]{.addu}; P denotes that template parameter object. [...]
+```cpp
+template <typename T>
+  consteval info reflect_value(const T& expr);
+```
 
-[5]{.pnum} Otherwise, the value of `P` is that of `v` [after it undergoes template-argument-normalization]{.addu}.
+[3]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr` [after being template-argument-normalized]{.addu}. The type of the represented value is the cv-unqualified version of `T`.
 :::
 
-Sixth, we extend the definition of *template-argument-equivalent*. Note that two values of type `std::meta::info` that represent values compare equal if those values are template-argument-equivalent, so this definition is properly recursive. Also note that normalization will have already happened.
+### Template-Argument-Equivalence
+
+Note that two values of type `std::meta::info` that represent values compare equal if those values are template-argument-equivalent, so this definition is properly recursive. Also note that normalization will have already happened. This is in [temp.type]{.sref}
 
 ::: std
-Two values are *template-argument-equivalent* if they are of the same type and [...]
+[2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and [...]
 
 * [2.11]{.pnum} they are of class type [`T`]{.addu} and
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-12-03" />
+  <meta name="dcterms.date" content="2024-12-04" />
   <title>Extending support for class types as non-type template
 parameters</title>
   <style>
@@ -567,7 +567,7 @@ types as non-type template parameters</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-12-03</td>
+    <td>2024-12-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -619,10 +619,23 @@ Examples<span></span></a></li>
 Equivalence<span></span></a></li>
 <li><a href="#normalization-1" id="toc-normalization-1"><span class="toc-section-number">3.3</span>
 Normalization<span></span></a></li>
+<li><a href="#allowing-templates" id="toc-allowing-templates"><span class="toc-section-number">3.4</span> Allowing
+Templates<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
 <ul>
-<li><a href="#language" id="toc-language"><span class="toc-section-number">4.1</span> Language<span></span></a></li>
+<li><a href="#language" id="toc-language"><span class="toc-section-number">4.1</span> Language<span></span></a>
+<ul>
+<li><a href="#template-serialization-and-deserialization-functions" id="toc-template-serialization-and-deserialization-functions"><span class="toc-section-number">4.1.1</span> Template Serialization and
+Deserialization Functions<span></span></a></li>
+<li><a href="#extend-the-definition-of-structural" id="toc-extend-the-definition-of-structural"><span class="toc-section-number">4.1.2</span> Extend the definition of
+structural<span></span></a></li>
+<li><a href="#template-argument-normalization" id="toc-template-argument-normalization"><span class="toc-section-number">4.1.3</span> Template Argument
+Normalization<span></span></a></li>
+<li><a href="#update-stdmetareflect_value" id="toc-update-stdmetareflect_value"><span class="toc-section-number">4.1.4</span> Update <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">()</span></code><span></span></a></li>
+<li><a href="#template-argument-equivalence-1" id="toc-template-argument-equivalence-1"><span class="toc-section-number">4.1.5</span>
+Template-Argument-Equivalence<span></span></a></li>
+</ul></li>
 <li><a href="#library" id="toc-library"><span class="toc-section-number">4.2</span> Library<span></span></a></li>
 </ul></li>
 <li><a href="#acknowledgements" id="toc-acknowledgements"><span class="toc-section-number">5</span>
@@ -1254,7 +1267,7 @@ simpler:</p>
 <span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        str<span class="op">.</span>length <span class="op">=</span> ds<span class="op">.</span>size<span class="op">()</span>;</span>
 <span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>fill<span class="op">(</span>str<span class="op">.</span>data, <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>; <span class="co">// ensure we zero the data first</span></span>
 <span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span>; i <span class="op">&lt;</span> length; <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            str<span class="op">.</span>data<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> ds<span class="op">.</span><span class="kw">template</span> pop_value<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;()</span>;</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            str<span class="op">.</span>data<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> ds<span class="op">.</span>pop_value<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;()</span>;</span>
 <span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
 <span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> str;</span>
 <span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
@@ -1278,7 +1291,7 @@ simpler:</p>
 <span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> str <span class="op">=</span> SmallString<span class="op">()</span>;</span>
 <span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        str<span class="op">.</span>length <span class="op">=</span> ds<span class="op">.</span>size<span class="op">()</span>;</span>
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>fill<span class="op">(</span>str<span class="op">.</span>data, <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>; <span class="co">// ensure we zero the data first</span></span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>ds<span class="op">.</span><span class="kw">template</span> into_range<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;()</span>, str<span class="op">.</span>data<span class="op">)</span>;</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>ds<span class="op">.</span>into_range<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;()</span>, str<span class="op">.</span>data<span class="op">)</span>;</span>
 <span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> str;</span>
 <span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
@@ -1306,7 +1319,7 @@ to the range-based API:</p>
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>begin_ <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;::</span>allocate<span class="op">(</span>ds<span class="op">.</span>size<span class="op">())</span>;</span>
 <span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>capacity_ <span class="op">=</span> ds<span class="op">.</span>size<span class="op">()</span>;</span>
 <span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>uninitialized_copy<span class="op">(</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>            ds<span class="op">.</span><span class="kw">template</span> into_range<span class="op">&lt;</span>T<span class="op">&gt;()</span>,</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>            ds<span class="op">.</span>into_range<span class="op">&lt;</span>T<span class="op">&gt;()</span>,</span>
 <span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>            v<span class="op">.</span>begin_<span class="op">)</span>;</span>
 <span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>size_ <span class="op">=</span> v<span class="op">.</span>capacity_;</span>
 <span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v;</span>
@@ -1347,7 +1360,7 @@ serialize the value:</p>
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> Optional</span>
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
 <span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ds<span class="op">.</span>size<span class="op">())</span> <span class="op">{</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> Optional<span class="op">(</span>ds<span class="op">.</span><span class="kw">template</span> pop_value<span class="op">&lt;</span>T<span class="op">&gt;())</span>;</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> Optional<span class="op">(</span>ds<span class="op">.</span>pop_value<span class="op">&lt;</span>T<span class="op">&gt;())</span>;</span>
 <span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
 <span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> Optional<span class="op">()</span>;</span>
 <span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
@@ -1386,9 +1399,9 @@ a <code class="sourceCode cpp">Tuple</code> is pretty tedious:</p>
 <span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">size_t</span><span class="op">...</span> Is, <span class="kw">class</span> D<span class="op">&gt;</span></span>
 <span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> Tuple<span class="op">(</span>index_sequence<span class="op">&lt;</span>Is<span class="op">...&gt;</span>,</span>
 <span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>                    std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;</span> ds<span class="op">)</span></span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> elems<span class="op">(</span>ds<span class="op">.</span><span class="kw">template</span> pop_value<span class="op">&lt;</span>Ts<span class="op">&gt;())...</span></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> elems<span class="op">(</span>ds<span class="op">.</span>pop_value<span class="op">&lt;</span>Ts<span class="op">&gt;())...</span></span>
 <span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Cool. This is… a lot. Not only is it a lot of decidedly non-trivial
@@ -1427,7 +1440,7 @@ that I showed above in the implementation of
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;</span> ds<span class="op">)</span></span>
 <span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> Optional</span>
 <span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ds<span class="op">.</span><span class="kw">template</span> pop_from_subobjects<span class="op">&lt;</span>Optional<span class="op">&gt;()</span>;</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ds<span class="op">.</span>pop_from_subobjects<span class="op">&lt;</span>Optional<span class="op">&gt;()</span>;</span>
 <span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
@@ -1442,9 +1455,9 @@ that I showed above in the implementation of
 <span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;</span> ds<span class="op">)</span></span>
 <span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> Tuple</span>
 <span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ds<span class="op">.</span><span class="kw">template</span> pop_from_subobjects<span class="op">&lt;</span>Tuple<span class="op">&gt;()</span>;</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ds<span class="op">.</span>pop_from_subobjects<span class="op">&lt;</span>Tuple<span class="op">&gt;()</span>;</span>
 <span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>But… doing subobject-wise serialization is the default, right? So
@@ -1466,7 +1479,7 @@ maybe we should just be able to say that explicitly:</p>
 <span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <h2 data-number="3.1" id="proposed-usage-examples"><span class="header-section-number">3.1</span> Proposed Usage Examples<a href="#proposed-usage-examples" class="self-link"></a></h2>
@@ -1492,7 +1505,7 @@ facility for opting <code class="sourceCode cpp">Optional</code>,
 <span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
 <span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SmallString <span class="op">{</span></span>
 <span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> data<span class="op">[</span><span class="dv">32</span><span class="op">]</span>;</span>
@@ -1508,7 +1521,7 @@ facility for opting <code class="sourceCode cpp">Optional</code>,
 <span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> str <span class="op">=</span> SmallString<span class="op">()</span>;</span>
 <span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>        str<span class="op">.</span>length <span class="op">=</span> ds<span class="op">.</span>size<span class="op">()</span>;</span>
 <span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>fill<span class="op">(</span>str<span class="op">.</span>data, <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">)</span>;</span>
-<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>ds<span class="op">.</span><span class="kw">template</span> into_range<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;()</span>, str<span class="op">.</span>data<span class="op">)</span>;</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>copy<span class="op">(</span>ds<span class="op">.</span>into_range<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;()</span>, str<span class="op">.</span>data<span class="op">)</span>;</span>
 <span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> str;</span>
 <span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
@@ -1530,7 +1543,7 @@ facility for opting <code class="sourceCode cpp">Optional</code>,
 <span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>begin_ <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;::</span>allocate<span class="op">(</span>ds<span class="op">.</span>size<span class="op">())</span>;</span>
 <span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>capacity_ <span class="op">=</span> ds<span class="op">.</span>size<span class="op">()</span>;</span>
 <span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>ranges<span class="op">::</span>uninitialized_copy<span class="op">(</span></span>
-<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>            ds<span class="op">.</span><span class="kw">template</span> into_range<span class="op">&lt;</span>T<span class="op">&gt;()</span>,</span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>            ds<span class="op">.</span>into_range<span class="op">&lt;</span>T<span class="op">&gt;()</span>,</span>
 <span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a>            v<span class="op">.</span>begin_<span class="op">)</span>;</span>
 <span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>        v<span class="op">.</span>size_ <span class="op">=</span> v<span class="op">.</span>capacity_;</span>
 <span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v;</span>
@@ -1616,55 +1629,172 @@ to also do this normalization. Which means:</p>
 <span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span>Fraction<span class="op">&gt;(</span>reflect_value<span class="op">(</span>Fraction<span class="op">{</span><span class="dv">2</span>, <span class="dv">4</span><span class="op">}))</span> <span class="op">==</span> Fraction<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span>;</span></code></pre></div>
 </blockquote>
 </div>
+<h2 data-number="3.4" id="allowing-templates"><span class="header-section-number">3.4</span> Allowing Templates<a href="#allowing-templates" class="self-link"></a></h2>
+<p>The examples here all show regular functions for the template
+serialization and deserialization functions:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">-&gt;</span> Vector;</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>But it’s nice to also allow these to be declared as templates.
+Especially in the context of defaulting:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Tuple <span class="op">{</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    Ts<span class="op">...</span> elems;</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> to_meta_representation<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The reason for this is that it allows library code that doesn’t
+otherwise do any reflection stuff to avoid having to <code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;meta&gt;</span></code>.
+The implementation can figure it out.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This proposal extends class types as non-type parameters as follows.
 This isn’t exactly Core wording, but does contain something akin to
 wording because I think that might be a clearer way to express the
 idea.</p>
 <h2 data-number="4.1" id="language"><span class="header-section-number">4.1</span> Language<a href="#language" class="self-link"></a></h2>
-<p>First, as with <span class="citation" data-cites="P2484R0">[<a href="https://wg21.link/p2484r0" role="doc-biblioref">P2484R0</a>]</span>, I’m referring to
-<code class="sourceCode cpp">to_meta_representation</code> as a template
-representation function. A class type
-<code class="sourceCode cpp">T</code> can provide a
-<code class="sourceCode cpp">to_meta_representation</code> that must be
-of the form:</p>
+<p>The language proposal is divided into several parts.</p>
+<h3 data-number="4.1.1" id="template-serialization-and-deserialization-functions"><span class="header-section-number">4.1.1</span> Template Serialization and
+Deserialization Functions<a href="#template-serialization-and-deserialization-functions" class="self-link"></a></h3>
+<p>A class type <code class="sourceCode cpp">T</code> can provide a
+template serialization function,
+<code class="sourceCode cpp">to_meta_representation</code>, that must be
+of the forms:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">// non-static const member function</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co">// non-static const function template template</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>This function can also be declared as defaulted, in which case every
-base class and non-static data member shall have structural type. Either
-way, no non-static data member of <code class="sourceCode cpp">T</code>
-can be
-<code class="sourceCode cpp"><span class="kw">mutable</span></code>.</p>
-<p>We’ll say that <code class="sourceCode cpp">T</code> has an eligible
-template registration function if it provides
-<code class="sourceCode cpp">to_meta_representation</code> as a direct
-member of the allowed form (possibly-defaulted).</p>
-<p>If a class type <code class="sourceCode cpp">T</code> provides a
-<code class="sourceCode cpp">to_meta_representation</code>, it must also
-then provide a
-<code class="sourceCode cpp">from_meta_representation</code>, that must
-be of the form:</p>
+base class and non-static data member shall have structural type. The
+default implementation is:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">-&gt;</span> T;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;</span> s<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span>push_subobjects<span class="op">(*</span><span class="kw">this</span><span class="op">)</span>;</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>If a class type <code class="sourceCode cpp">T</code> provides a
+template serialization function
+<code class="sourceCode cpp">to_meta_representation</code>, it must also
+then provide a template deserialization function
+<code class="sourceCode cpp">from_meta_representation</code>, that must
+be of the forms:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">// static member function</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">-&gt;</span> T;</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co">// static member function template</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> T;</span></code></pre></div>
 </blockquote>
 </div>
 <p>This function can also be declared as defaulted. The default
 implementation is:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;</span> ds<span class="op">)</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>ds<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> subobjects_of<span class="op">(^^</span>T<span class="op">).</span>size<span class="op">())</span>;</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ds<span class="op">.</span><span class="kw">template</span> pop_from_subobjects<span class="op">&lt;</span>T<span class="op">&gt;()</span>;</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="kw">consteval</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;</span> ds<span class="op">)</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>ds<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> subobjects_of<span class="op">(^^</span>T<span class="op">).</span>size<span class="op">())</span>;</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ds<span class="op">.</span>pop_from_subobjects<span class="op">&lt;</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>Second, we introduce the concept of template argument normalization
-(status quo so far is that <em>template-argument-normalization</em> is a
-no-op for all types) and allow string literal template arguments:</p>
+<p>We’ll say that <code class="sourceCode cpp">T</code> has an eligible
+template serialization function if it provides
+<code class="sourceCode cpp">to_meta_representation</code> as a direct
+member of the allowed forms (possibly-defaulted), and that
+<code class="sourceCode cpp">T</code> has an eligible template
+deserialization function if it provides
+<code class="sourceCode cpp">from_meta_representation</code> as a direct
+static member of the allowed forms (possibly-defaulted).</p>
+<h3 data-number="4.1.2" id="extend-the-definition-of-structural"><span class="header-section-number">4.1.2</span> Extend the definition of
+structural<a href="#extend-the-definition-of-structural" class="self-link"></a></h3>
+<p>We extend the definition of structural (here it’s either the first
+bullet or both of the next two — the additional rules on template
+registration functions will be covered in their own section):</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">a</a></span>
+A class type <code class="sourceCode cpp">C</code> is an <em>explicitly
+structural class type</em> if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(a.1)</a></span>
+<code class="sourceCode cpp">C</code> has an eligible template
+serialization function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(a.2)</a></span>
+<code class="sourceCode cpp">C</code> has an eligible template
+deserialization function, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(a.3)</a></span>
+no direct or indirect non-static data member of
+<code class="sourceCode cpp">C</code> is mutable.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">b</a></span>
+A class type <code class="sourceCode cpp">C</code> is an <em>implicitly
+structural class type</em> if:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(b.1)</a></span>
+all base classes and non-static data member of
+<code class="sourceCode cpp">C</code> are public and non-mutable,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(b.2)</a></span>
+the types of all base classes and non-static data members of
+<code class="sourceCode cpp">C</code> are structural types (see
+below),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(b.3)</a></span>
+<code class="sourceCode cpp">C</code> does not have an eligible template
+serialization function, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(b.4)</a></span>
+<code class="sourceCode cpp">C</code> does not have an eligible template
+deserialization function.</li>
+</ul>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">7</a></span>
+A <em>structural type</em> is one of the following:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(7.1)</a></span>
+a scalar type, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(7.2)</a></span>
+an lvalue reference type, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(7.2b)</a></span>
+<span class="addu">an array type whose element type is structural,
+or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(7.3)</a></span>
+a literal class type <span class="rm" style="color: #bf0303"><del>with
+the following properties:</del></span> <span class="addu">that is either
+an explicitly structural class type or an implicitly structural class
+type.</span>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(7.3.1)</a></span>
+<span class="rm" style="color: #bf0303"><del>all base classes and
+non-static data members are public and non-mutable and</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(7.3.2)</a></span>
+<span class="rm" style="color: #bf0303"><del>the types of all bases
+classes and non-static data members are structural types or (possibly
+multidimensional) array thereof.</del></span></li>
+</ul></li>
+</ul>
+</blockquote>
+</div>
+<h3 data-number="4.1.3" id="template-argument-normalization"><span class="header-section-number">4.1.3</span> Template Argument
+Normalization<a href="#template-argument-normalization" class="self-link"></a></h3>
+<p>We introduce the concept of template argument normalization (status
+quo so far is that <em>template-argument-normalization</em> is a no-op
+for all types) and allow string literal template arguments:</p>
 <div class="std">
 <blockquote>
 <div class="addu">
@@ -1672,7 +1802,7 @@ no-op for all types) and allow string literal template arguments:</p>
 <code class="sourceCode cpp">T</code> is
 <em>template-argument-normalized</em> as follows:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">1</a></span>
 If <code class="sourceCode cpp">v</code> is a pointer (or reference) to
 a string literal or subobject thereof, then let
 <code class="sourceCode cpp">v</code> be
@@ -1684,28 +1814,30 @@ non-negative offset. Then <code class="sourceCode cpp">v</code> is
 normalized to <code class="sourceCode cpp">define_static_string<span class="op">(</span>S<span class="op">)</span> <span class="op">+</span> O</code>
 (or <code class="sourceCode cpp">define_static_string<span class="op">(</span>S<span class="op">)[</span>O<span class="op">]</span></code>,
 for a reference). See <span class="citation" data-cites="P3491R0">[<a href="https://wg21.link/p3491r0" role="doc-biblioref">P3491R0</a>]</span>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">2</a></span>
 Otherwise, if <code class="sourceCode cpp">T</code> is a scalar type or
 an lvalue reference type, nothing is done.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">3</a></span>
 Otherwise, if <code class="sourceCode cpp">T</code> is an array type,
 every element of the array is template-argument-normalized.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">4</a></span>
 Otherwise (if <code class="sourceCode cpp">T</code> is a class type),
 then
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(4.1)</a></span>
-If <code class="sourceCode cpp">T</code> has an eligible template
-representation function, then <code class="sourceCode cpp">v</code> is
-normalized via:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> <em>NORMALIZE</em><span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>s</em> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">()</span>;</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    v<span class="op">.</span>to_meta_representation<span class="op">(</span><em>s</em><span class="op">)</span>;</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>ds</em> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">(</span><em>s</em><span class="op">)</span>;</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> T<span class="op">::</span>from_meta_representation<span class="op">(</span><em>ds</em><span class="op">)</span>;</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(4.2)</a></span>
-Otherwise, every subobject of <code class="sourceCode cpp">v</code> is
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(4.1)</a></span>
+If <code class="sourceCode cpp">T</code> is an explicitly structural
+class type, then <code class="sourceCode cpp">v</code> is normalized
+via:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> <em>NORMALIZE</em><span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>s</em> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">()</span>;</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    v<span class="op">.</span>to_meta_representation<span class="op">(</span><em>s</em><span class="op">)</span>;</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <em>ds</em> <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">(</span><em>s</em><span class="op">)</span>;</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> T<span class="op">::</span>from_meta_representation<span class="op">(</span><em>ds</em><span class="op">)</span>;</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(4.2)</a></span>
+Otherwise (if <code class="sourceCode cpp">T</code> is an implicitly
+structural class type), every subobject of
+<code class="sourceCode cpp">v</code> is
 template-argument-normalized.</p></li>
 </ul></li>
 </ul>
@@ -1715,107 +1847,88 @@ template-argument-normalized.</p></li>
 <p>and <span>13.4.3 <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a></span>/6.2:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">6</a></span>
 For a non-type template-parameter of reference or pointer type, or for
 each non-static data member of reference or pointer type in a non-type
 template-parameter of class type or subobject thereof, the reference or
 pointer value shall not refer or point to (respectively):</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(6.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(6.1)</a></span>
 a temporary object ([class.temporary]),</li>
 </ul>
 <div class="rm" style="color: #bf0303">
 
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(6.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(6.2)</a></span>
 a string literal object ([lex.string]),</li>
 </ul>
 
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(6.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(6.3)</a></span>
 the result of a
 <code class="sourceCode cpp"><span class="kw">typeid</span></code>
 expression ([expr.typeid]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(6.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(6.4)</a></span>
 a predefined
 <code class="sourceCode cpp"><span class="ot">__func__</span></code>
 variable ([dcl.fct.def.general]), or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(6.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(6.5)</a></span>
 a subobject ([intro.object]) of one of the above.</li>
 </ul>
 </blockquote>
 </div>
-<p>Third, we change the meaning of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_value</code>
-in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> to perform
-template-argument-normalization on its argument.</p>
-<p>Fourth, we extend the definition of structural (here it’s either the
-first bullet or both of the next two — the additional rules on template
-registration functions will be covered in their own section):</p>
+<p>Ensure that when initializing a non-type template parameter that we
+perform template-argument-normalization. That’s in <span>13.4.3 <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p>A <em>structural type</em> is one of the following:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(7.1)</a></span>
-a scalar type, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(7.2)</a></span>
-an lvalue reference type, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(7.2b)</a></span>
-<span class="addu">an array type whose element type is structural,
-or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(7.3)</a></span>
-a literal class <span class="addu"><code class="sourceCode cpp">C</code></span> type with the
-following properties:
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(7.3.0)</a></span>
-<span class="addu"><code class="sourceCode cpp">C</code> has an eligible
-template representation function, or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(7.3.1)</a></span>
-all base classes and non-static data members <span class="addu">of
-<code class="sourceCode cpp">C</code></span> are public and non-mutable
-and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(7.3.2)</a></span>
-the types of all bases classes and non-static data members <span class="addu">of <code class="sourceCode cpp">C</code></span> are
-structural types <span class="rm" style="color: #bf0303"><del>or
-(possibly multidimensional) array thereof</del></span>.</li>
-</ul></li>
-</ul>
-</blockquote>
-</div>
-<p>Fifth, ensure that when initializing a non-type template parameter of
-class type, that we perform template-argument-normalization. That’s in
-<span>13.4.3 <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a></span>:</p>
-<div class="std">
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">4</a></span>
 If <code class="sourceCode cpp">T</code> is a class type, a template
 parameter object ([temp.param]) exists that is constructed so as to be
 template-argument-equivalent to <code class="sourceCode cpp">v</code>
-<span class="addu">after it undergoes
-template-argument-normalization</span>; P denotes that template
-parameter object. […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">5</a></span>
+<span class="addu">after it is template-argument-normalized</span>; P
+denotes that template parameter object. […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">5</a></span>
 Otherwise, the value of <code class="sourceCode cpp">P</code> is that of
-<code class="sourceCode cpp">v</code> <span class="addu">after it
-undergoes template-argument-normalization</span>.</p>
+<code class="sourceCode cpp">v</code> <span class="addu">after it is
+template-argument-normalized</span>.</p>
 </blockquote>
 </div>
-<p>Sixth, we extend the definition of
-<em>template-argument-equivalent</em>. Note that two values of type
-<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
-that represent values compare equal if those values are
-template-argument-equivalent, so this definition is properly recursive.
-Also note that normalization will have already happened.</p>
+<h3 data-number="4.1.4" id="update-stdmetareflect_value"><span class="header-section-number">4.1.4</span> Update <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">()</span></code><a href="#update-stdmetareflect_value" class="self-link"></a></h3>
+<p>Third, we change the meaning of <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_value</code>
+in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> to perform
+template-argument-normalization on its argument:</p>
 <div class="std">
 <blockquote>
-<p>Two values are <em>template-argument-equivalent</em> if they are of
-the same type and […]</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_value<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">3</a></span>
+<em>Returns</em>: A reflection of the value computed by an
+lvalue-to-rvalue conversion applied to
+<code class="sourceCode cpp">expr</code> <span class="addu">after being
+template-argument-normalized</span>. The type of the represented value
+is the cv-unqualified version of
+<code class="sourceCode cpp">T</code>.</p>
+</blockquote>
+</div>
+<h3 data-number="4.1.5" id="template-argument-equivalence-1"><span class="header-section-number">4.1.5</span>
+Template-Argument-Equivalence<a href="#template-argument-equivalence-1" class="self-link"></a></h3>
+<p>Note that two values of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+that represent values compare equal if those values are
+template-argument-equivalent, so this definition is properly recursive.
+Also note that normalization will have already happened. This is in
+<span>13.6 <a href="https://wg21.link/temp.type">[temp.type]</a></span></p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">2</a></span>
+Two values are <em>template-argument-equivalent</em> if they are of the
+same type and […]</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.11)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(2.11)</a></span>
 they are of class type <span class="addu"><code class="sourceCode cpp">T</code></span> and</p>
 <div class="addu">
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.11.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(2.11.1)</a></span>
 If <code class="sourceCode cpp">T</code> has a eligible template
 representation function, then the values
 <code class="sourceCode cpp">v1</code> and
@@ -1824,13 +1937,13 @@ if <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="
 is <code class="sourceCode cpp"><span class="kw">true</span></code>,
 with <code class="sourceCode cpp">s1</code> and
 <code class="sourceCode cpp">s2</code> populated as follows:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>serializer s1, s2;</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>v1<span class="op">.</span>to_meta_representation<span class="op">(</span>s1<span class="op">)</span>;</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>v2<span class="op">.</span>to_meta_representation<span class="op">(</span>s2<span class="op">)</span>;</span></code></pre></div></li>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>serializer s1, s2;</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>v1<span class="op">.</span>to_meta_representation<span class="op">(</span>s1<span class="op">)</span>;</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>v2<span class="op">.</span>to_meta_representation<span class="op">(</span>s2<span class="op">)</span>;</span></code></pre></div></li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(2.11.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(2.11.2)</a></span>
 <span class="addu">Otherwise, if</span> their corresponding direct
 subobjects and reference members are template-argument-equivalent.</li>
 </ul></li>
@@ -1847,8 +1960,8 @@ functions (a real use, as <span class="citation" data-cites="LWG3354">[<a href="
 the default subobject-wise serialization with no normalization):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> to_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>serializer<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="kw">auto</span> from_meta_representation<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>deserializer<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>to all of the following library types, suitably constrained:</p>
@@ -1866,7 +1979,7 @@ the default subobject-wise serialization with no normalization):</p>
 now:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">4</a></span>
 <code class="sourceCode cpp">pair<span class="op">&lt;</span>T, U<span class="op">&gt;</span></code>
 is a structural type ([temp.param]) if
 <code class="sourceCode cpp">T</code> and
@@ -1888,98 +2001,98 @@ that produces a new value of type <code class="sourceCode cpp">T</code>
 given reflections of all the subobjects:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T structural_cast<span class="op">(</span>R<span class="op">&amp;&amp;)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T structural_cast<span class="op">(</span>R<span class="op">&amp;&amp;)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>And introduce the serializer and deserializer types:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> serializer</span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <em>output</em>; <span class="co">// exposition-only</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>            <em>output</em><span class="op">.</span>push_back<span class="op">(</span>r<span class="op">)</span>;</span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <em>output</em><span class="op">.</span>size<span class="op">()</span>;</span>
-<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_value<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>            push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>value<span class="op">))</span>;</span>
-<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_object<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> object<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>            push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_object<span class="op">(</span>object<span class="op">))</span>;</span>
-<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_subobjects<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>            <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> M <span class="op">:</span> subobjects_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>is_reference_type<span class="op">(</span>type_of<span class="op">(</span>M<span class="op">)))</span> <span class="op">{</span></span>
-<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>                    push_object<span class="op">(</span>obj<span class="op">.[:</span>M<span class="op">:])</span>;</span>
-<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>                    push_value<span class="op">(</span>obj<span class="op">.[:</span>M<span class="op">:])</span>;</span>
-<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
-<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_range<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> elem <span class="op">:</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>                push_value<span class="op">(</span>elem<span class="op">)</span>;</span>
-<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> deserializer</span>
-<span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a>        vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <em>input</em>; <span class="co">// exposition-only</span></span>
-<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span><span class="op">:</span></span>
-<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>        <span class="kw">explicit</span> <span class="kw">consteval</span> deserializer<span class="op">(</span><span class="kw">const</span> serializer<span class="op">&amp;</span> s<span class="op">)</span></span>
-<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>            <span class="op">:</span> <em>input</em><span class="op">(</span>s<span class="op">.</span><em>output</em><span class="op">)</span></span>
-<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> pop<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
-<span id="cb32-53"><a href="#cb32-53" aria-hidden="true" tabindex="-1"></a>            info r <span class="op">=</span> <em>input</em><span class="op">.</span>back<span class="op">()</span>;</span>
-<span id="cb32-54"><a href="#cb32-54" aria-hidden="true" tabindex="-1"></a>            <em>input</em><span class="op">.</span>pop_back<span class="op">()</span>;</span>
-<span id="cb32-55"><a href="#cb32-55" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> r;</span>
-<span id="cb32-56"><a href="#cb32-56" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-57"><a href="#cb32-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-58"><a href="#cb32-58" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
-<span id="cb32-59"><a href="#cb32-59" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <em>input</em><span class="op">.</span>size<span class="op">()</span>;</span>
-<span id="cb32-60"><a href="#cb32-60" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-61"><a href="#cb32-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-62"><a href="#cb32-62" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-63"><a href="#cb32-63" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> pop_value<span class="op">()</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
-<span id="cb32-64"><a href="#cb32-64" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>pop<span class="op">())</span>;</span>
-<span id="cb32-65"><a href="#cb32-65" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-66"><a href="#cb32-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-67"><a href="#cb32-67" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-68"><a href="#cb32-68" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> pop_from_subobjects<span class="op">()</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
-<span id="cb32-69"><a href="#cb32-69" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> rs;</span>
-<span id="cb32-70"><a href="#cb32-70" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info _ <span class="op">:</span> subobjects_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb32-71"><a href="#cb32-71" aria-hidden="true" tabindex="-1"></a>                rs<span class="op">.</span>push_back<span class="op">(</span>pop<span class="op">())</span>;</span>
-<span id="cb32-72"><a href="#cb32-72" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb32-73"><a href="#cb32-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-74"><a href="#cb32-74" aria-hidden="true" tabindex="-1"></a>            <span class="co">// proposed in this paper</span></span>
-<span id="cb32-75"><a href="#cb32-75" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>structural_cast<span class="op">&lt;</span>T<span class="op">&gt;(</span>rs<span class="op">)</span>;</span>
-<span id="cb32-76"><a href="#cb32-76" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb32-77"><a href="#cb32-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-78"><a href="#cb32-78" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Equivalent to:</span></span>
-<span id="cb32-79"><a href="#cb32-79" aria-hidden="true" tabindex="-1"></a>        <span class="co">//      views::generate_n([this]{ return pop_value&lt;T&gt;(); }, size())</span></span>
-<span id="cb32-80"><a href="#cb32-80" aria-hidden="true" tabindex="-1"></a>        <span class="co">// except that we don&#39;t have a views::generate_n yet.</span></span>
-<span id="cb32-81"><a href="#cb32-81" aria-hidden="true" tabindex="-1"></a>        <span class="co">// But the point is to be an input-only range of T</span></span>
-<span id="cb32-82"><a href="#cb32-82" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-83"><a href="#cb32-83" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> into_range<span class="op">()</span> <span class="op">-&gt;</span> <em>unspecified</em>;</span>
-<span id="cb32-84"><a href="#cb32-84" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb32-85"><a href="#cb32-85" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> serializer</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>        vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <em>output</em>; <span class="co">// exposition-only</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>            <em>output</em><span class="op">.</span>push_back<span class="op">(</span>r<span class="op">)</span>;</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <em>output</em><span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_value<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> value<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>            push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>value<span class="op">))</span>;</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_object<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> object<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>            push<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_object<span class="op">(</span>object<span class="op">))</span>;</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_subobjects<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> obj<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>            <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> M <span class="op">:</span> subobjects_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>is_reference_type<span class="op">(</span>type_of<span class="op">(</span>M<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a>                    push_object<span class="op">(</span>obj<span class="op">.[:</span>M<span class="op">:])</span>;</span>
+<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a>                    push_value<span class="op">(</span>obj<span class="op">.[:</span>M<span class="op">:])</span>;</span>
+<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb36-32"><a href="#cb36-32" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb36-33"><a href="#cb36-33" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-34"><a href="#cb36-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-35"><a href="#cb36-35" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span>std<span class="op">::</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb36-36"><a href="#cb36-36" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> push_range<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb36-37"><a href="#cb36-37" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> elem <span class="op">:</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-38"><a href="#cb36-38" aria-hidden="true" tabindex="-1"></a>                push_value<span class="op">(</span>elem<span class="op">)</span>;</span>
+<span id="cb36-39"><a href="#cb36-39" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb36-40"><a href="#cb36-40" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-41"><a href="#cb36-41" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb36-42"><a href="#cb36-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-43"><a href="#cb36-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> deserializer</span>
+<span id="cb36-44"><a href="#cb36-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb36-45"><a href="#cb36-45" aria-hidden="true" tabindex="-1"></a>        vector<span class="op">&lt;</span>info<span class="op">&gt;</span> <em>input</em>; <span class="co">// exposition-only</span></span>
+<span id="cb36-46"><a href="#cb36-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-47"><a href="#cb36-47" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb36-48"><a href="#cb36-48" aria-hidden="true" tabindex="-1"></a>        <span class="kw">explicit</span> <span class="kw">consteval</span> deserializer<span class="op">(</span><span class="kw">const</span> serializer<span class="op">&amp;</span> s<span class="op">)</span></span>
+<span id="cb36-49"><a href="#cb36-49" aria-hidden="true" tabindex="-1"></a>            <span class="op">:</span> <em>input</em><span class="op">(</span>s<span class="op">.</span><em>output</em><span class="op">)</span></span>
+<span id="cb36-50"><a href="#cb36-50" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb36-51"><a href="#cb36-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-52"><a href="#cb36-52" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> pop<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb36-53"><a href="#cb36-53" aria-hidden="true" tabindex="-1"></a>            info r <span class="op">=</span> <em>input</em><span class="op">.</span>back<span class="op">()</span>;</span>
+<span id="cb36-54"><a href="#cb36-54" aria-hidden="true" tabindex="-1"></a>            <em>input</em><span class="op">.</span>pop_back<span class="op">()</span>;</span>
+<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> r;</span>
+<span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-58"><a href="#cb36-58" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> size<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">size_t</span> <span class="op">{</span></span>
+<span id="cb36-59"><a href="#cb36-59" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <em>input</em><span class="op">.</span>size<span class="op">()</span>;</span>
+<span id="cb36-60"><a href="#cb36-60" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-61"><a href="#cb36-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-62"><a href="#cb36-62" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-63"><a href="#cb36-63" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> pop_value<span class="op">()</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
+<span id="cb36-64"><a href="#cb36-64" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> extract<span class="op">&lt;</span>T<span class="op">&gt;(</span>pop<span class="op">())</span>;</span>
+<span id="cb36-65"><a href="#cb36-65" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-66"><a href="#cb36-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-67"><a href="#cb36-67" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-68"><a href="#cb36-68" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> pop_from_subobjects<span class="op">()</span> <span class="op">-&gt;</span> T <span class="op">{</span></span>
+<span id="cb36-69"><a href="#cb36-69" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> rs;</span>
+<span id="cb36-70"><a href="#cb36-70" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info _ <span class="op">:</span> subobjects_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb36-71"><a href="#cb36-71" aria-hidden="true" tabindex="-1"></a>                rs<span class="op">.</span>push_back<span class="op">(</span>pop<span class="op">())</span>;</span>
+<span id="cb36-72"><a href="#cb36-72" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb36-73"><a href="#cb36-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-74"><a href="#cb36-74" aria-hidden="true" tabindex="-1"></a>            <span class="co">// proposed in this paper</span></span>
+<span id="cb36-75"><a href="#cb36-75" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>meta<span class="op">::</span>structural_cast<span class="op">&lt;</span>T<span class="op">&gt;(</span>rs<span class="op">)</span>;</span>
+<span id="cb36-76"><a href="#cb36-76" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-77"><a href="#cb36-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-78"><a href="#cb36-78" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Equivalent to:</span></span>
+<span id="cb36-79"><a href="#cb36-79" aria-hidden="true" tabindex="-1"></a>        <span class="co">//      views::generate_n([this]{ return pop_value&lt;T&gt;(); }, size())</span></span>
+<span id="cb36-80"><a href="#cb36-80" aria-hidden="true" tabindex="-1"></a>        <span class="co">// except that we don&#39;t have a views::generate_n yet.</span></span>
+<span id="cb36-81"><a href="#cb36-81" aria-hidden="true" tabindex="-1"></a>        <span class="co">// But the point is to be an input-only range of T</span></span>
+<span id="cb36-82"><a href="#cb36-82" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-83"><a href="#cb36-83" aria-hidden="true" tabindex="-1"></a>        <span class="kw">consteval</span> <span class="kw">auto</span> into_range<span class="op">()</span> <span class="op">-&gt;</span> <em>unspecified</em>;</span>
+<span id="cb36-84"><a href="#cb36-84" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb36-85"><a href="#cb36-85" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span>
