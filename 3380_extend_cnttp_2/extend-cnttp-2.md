@@ -1062,7 +1062,7 @@ Note that two values of type `std::meta::info` that represent values compare equ
 * [2.11]{.pnum} they are of class type [`T`]{.addu} and
 
     <div class="addu">
-    * [2.11.1]{.pnum} If `T` has a eligible template representation function, then the values `v1` and `v2` are template-argument-equivalent if `std::ranges::equal(s1.$output$, s2.$output$)` is `true`, with `s1` and `s2` populated as follows:
+    * [2.11.1]{.pnum} If `T` is an explicitly structural class type, then the values `v1` and `v2` are template-argument-equivalent if `std::ranges::equal(s1.$output$, s2.$output$)` is `true`, with `s1` and `s2` populated as follows:
 
 
       ```cpp
@@ -1072,7 +1072,7 @@ Note that two values of type `std::meta::info` that represent values compare equ
       ```
   </div>
 
-    * [2.11.2]{.pnum} [Otherwise, if]{.addu} their corresponding direct subobjects and reference members are template-argument-equivalent.
+    * [2.11.2]{.pnum} [Otherwise (if `T` is an implicitly structural class type), if]{.addu} their corresponding direct subobjects and reference members are template-argument-equivalent.
 :::
 
 
