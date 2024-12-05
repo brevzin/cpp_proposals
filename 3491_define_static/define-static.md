@@ -1,5 +1,5 @@
 ---
-title: "`define_static_string` and `define_static_array`"
+title: "`define_static_{string,object,array}`"
 document: P3491R0
 date: today
 audience: LEWG
@@ -25,7 +25,7 @@ These functions were originally proposed as part of [@P2996R7], but are being sp
 There are situations where it is useful to take a string (or array) from compile time and promote it to static storage for use at runtime. We currently have neither:
 
 * non-transient constexpr allocation (see [@P1974R0], [@P2670R1]), nor
-* generalized support for class types as non-type template parameters (see [@P2484R0], [@P3380R0])
+* generalized support for class types as non-type template parameters (see [@P2484R0], [@P3380R1])
 
 If we had non-transient constexpr allocation, we could just directly declare a static constexpr variable. And if we could use these container types like `std::string` and `std::vector<T>` as non-type template parameter types, then we would use those directly too.
 
@@ -37,7 +37,7 @@ So having facilities to solve these problems until the general language solution
 
 # Proposal
 
-This paper proposes two new additions — `std::define_static_string` and `std::define_static_array`, as well as a helper function for dealing with string literals:
+This paper proposes three new additions — `std::define_static_string`, `std::define_static_object`, and `std::define_static_array`, as well as a helper function for dealing with string literals:
 
 ::: std
 ```cpp
@@ -47,6 +47,9 @@ namespace std {
 
   template <ranges::input_range R> // only if the value_type is char or char8_t
   consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const*;
+
+  template <class T>
+  consteval auto define_static_object(T&& v) -> remove_reference_t<T> const*;
 
   template <ranges::input_range R>
   consteval auto define_static_array(R&& r) -> span<ranges::range_value_t<R> const>;
@@ -58,7 +61,9 @@ namespace std {
 
 `define_static_string` is limited to ranges over `char` or `char8_t` and returns a `char const*` or `char8_t const*`, respectively. They return a pointer instead of a `string_view` (or `u8string_view`) specifically to make it clear that they return something null terminated. If `define_static_string` is passed a string literal that is already null-terminated, it will not be doubly null terminated.
 
-`define_static_array` exists to handle the general case for other types, and now has to return a `span` so the caller would have any idea how long the result is. This function requires that the underlying type `T` be copyable, but does not mandate structural.
+`define_static_array` exists to handle the general case for other types, and now has to return a `span` so the caller would have any idea how long the result is. This function requires that the underlying type `T` be structural.
+
+`define_static_object` is a special case of `define_static_array` for handling a single object. Technically, `define_static_object(v)` can also be achieved via `define_static_array(views::single(v)).data()`, but it's has its own use as we'll show.
 
 Technically, `define_static_array` can be used to implement `define_static_string`:
 
@@ -72,7 +77,7 @@ consteval auto define_static_string(string_view str) -> char const* {
 
 But that's a fairly awkward implementation, and the string use-case is sufficiently common as to merit a more ergonomic solution.
 
-## To Overlap or Not To Overlap
+## The Overlapping Question
 
 Consider the existence of `template <char const*> struct C;` and the following two translation units:
 
@@ -116,32 +121,74 @@ C<__arr_holdup + 3> c4;
 
 This means whether `c2` and `c4` have the same type is unspecified. They could have the same type if the implementation chooses to not overlap (or no overlap is possible). Or they could have different types.
 
-They would have the same type if the implementation produced a distinct array for each value, more like this (as suggested by [@P0424R2]):
+However, that's not the right way to think about overlapping.
+
+A more accurate way to present the ability to support overlapping arrays from `define_static_string` would be that the two TUs would merge more like this:
 
 <table>
 <tr><th>TU #1</th><th>TU #2</th></tr>
+<tr><td colspan="2">
+```cpp
+// all our static strings merged
+inline constexpr char const __arr_dedup[] = "dedup";
+inline constexpr char const __arr_holdup[] = "holdup";
+
+// this behaves like an array for all purposes, including that
+// __arr_dup[-1] is not a valid constant expression (because out of bounds)
+// but the implementation is allowed to have &__arr_dup[0] == &__arr_dedup[2]
+inline constexpr char const __arr_dup[] = "dup";
+```
+</td>
+</tr>
 <tr><td>
 ```cpp
-inline char const __arr_dedup[] = "dedup";
-inline char const __arr_dup[] = "dup";
+// C<define_static_string("dedup")>
 C<__arr_dedup> c1;
+
+// C<define_static_string("dup")>
 C<__arr_dup> c2;
 ```
 </td>
 <td>
 ```cpp
-inline char const __arr_holdup[] = "holdup";
-inline char const __arr_dup[] = "dup";
+// C<define_static_string("holdup")>
 C<__arr_holdup> c3;
+
+// C<define_static_string("dup")>
 C<__arr_dup> c4;
 ```
 </td>
 </tr>
 </table>
 
-We think the value of *ensuring* template argument equivalence is more valuable than the potential size savings with overlap. So this paper ensures this.
+At this point, the usual template-argument-equivalence rules apply, so `c4` and `c2` would definitely have the same type, because their template arguments point to the same array. As desired.
 
-For `define_static_array`, if the underlying type `T` is not structural, this isn't actually feasible: how would we know how to return the same array? If `T` is structural, we can easily ensure that equal invocations produce the _same_ `span` result.
+The one thing we really have to ensure with this route, as pointed out by Tomasz Kamiński, is that comparison between distinct non-unique objects needs to be unspecified. This is so that you cannot ensure overlap. In other words:
+
+::: std
+```cpp
+constexpr char const* a = define_static_string("dedup");
+constexpr char const* b = define_static_string("dup");
+
+static_assert(b == b);                               // ok, #1
+static_assert(b + 1 == b + 1);                       // ok, #2
+static_assert(a != b);                               // ok, #3
+static_assert(a + 2 != b);                           // error: unspecified
+static_assert(string_view(a + 2) == string_view(b)); // ok, #4
+```
+:::
+
+Now, it had better be the case that `b == b` and `b + 1 == b + 1` are both valid checks. It would be fairly strange otherwise. Similarly, the goal is to not be able to observe whether `a + 2 == b`. It could be `true` at runtime. Or not. We have no idea at compile-time yet, so it'd be better to just not even allow an answer.
+
+The interesting one is `a != b`. We could say that the comparison is unspecified (because they're pointers into distinct non-unique objects). But in this case, regardless of whether `a` and `b` overlap, `a != b` is _definitely_ going to be `true` at runtime. So we should only make unspecified the case that we actually cannot specify. After all, it would be strange if `a == b` were unspecified but `a[0] == b[0]` was `false`.
+
+Note that, regardless, the `string_view` comparison is valid, since that is comparing the contents.
+
+This does present an interesting situation where `a == b` could be invalid but `is_same_v<C<a>, C<b>>` would be valid.
+
+## The Structural Question
+
+For `define_static_string`, we have it easy because we know that `char` and `char8_t` are both structural types. But for `define_static_array`, we get an arbitrary `T`. How can we produce overlapping arrays in this case? If `T` is structural, we can easily ensure that equal invocations produce the _same_ `span` result.
 
 But if `T` is not structural, we have a problem, because `T*` is, regardless. So we have to answer the question of what to do with:
 
@@ -160,7 +207,7 @@ Either:
 * the call to `define_static_array` works, but the resulting pointer is not usable as a non-type template argument (in the same way that string literals are not).
 * the call to `define_static_array` mandates that the underlying type is structural.
 
-None of these options is particularly appealing. The last prevents some very motivating use-cases since neither `span` nor `string_view` are structural types yet, which means you cannot reify a `vector<string>` into a `span<string_view>`, but hopefully that can be resolved soon ([@P3380R0]). You can at least reify it into a `span<char const*>`?
+None of these options is particularly appealing. The last prevents some very motivating use-cases since neither `span` nor `string_view` are structural types yet, which means you cannot reify a `vector<string>` into a `span<string_view>`, but hopefully that can be resolved soon ([@P3380R1]). You can at least reify it into a `span<char const*>`?
 
 For now, this paper proposes the last option, as it's the simplest (and the relative cost will hopefully decrease over time). Allowing the call but rejecting use as non-type template parameters is appealing though.
 
@@ -168,7 +215,7 @@ For now, this paper proposes the last option, as it's the simplest (and the rela
 
 `define_static_string` can be nearly implemented with the facilities in [@P2996R7], we just need `is_string_literal` to handle the different signature proposed in this paper.
 
- `define_static_array` for structural types is similar, but for non-structural types requires compiler intrinsic:
+ `define_static_array` for is similar:
 
 ::: std
 ```cpp
@@ -213,7 +260,7 @@ consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const* {
 
 [Demo](https://compiler-explorer.com/z/x5c3c7zKE).
 
-Note that this implementation gives the guarantee we talked about in the [previous section](#to-overlap-or-not-to-overlap). Two invocations of `define_static_string` with the same contents will both end up returning a pointer into the same specialization of the (extern linkage) variable template `__array<V>`. We rely on the mangling of `V` (and `std::array` is a structural type if `T` is, which `char` and `char8_t` are) to ensure this for us.
+Note that this implementation gives the guarantee we talked about in the [previous section](#the-overlapping-question). Two invocations of `define_static_string` with the same contents will both end up returning a pointer into the same specialization of the (extern linkage) variable template `__array<V>`. We rely on the mangling of `V` (and `std::array` is a structural type if `T` is, which `char` and `char8_t` are) to ensure this for us. This won't ever produce overlapping arrays, would need implementation help for that, but it is a viable solution for all use-cases.
 
 ## Examples
 
@@ -327,12 +374,43 @@ consteval void g() {
 ```
 :::
 
+### Implementing `source_location`
+
+One interesting use of a specific `define_static_object` (for the single object case), courtesy of Richard Smith, is to implement the single-pointer optimization for `std::source_location` without compiler support:
+
+::: std
+```cpp
+class source_location {
+    struct impl {
+        char const* filename;
+        int line;
+    };
+    impl const* p_;
+
+public:
+    static consteval auto current(char const* file = __builtin_FILE(),
+                                  int line = __builtin_LINE()) noexcept
+        -> source_location
+    {
+        // first, we canonicalize the file
+        impl data = {.filename = define_static_string(file), .line = line};
+
+        // then we canonicalize the data
+        impl const* p = define_static_object(data);
+
+        // and now we have an external linkage object mangled with this location
+        return source_location{p};
+    }
+};
+```
+:::
+
 ## Related Papers in the Space
 
 A number of other papers have been brought up as being related to this problem, so let's just enumerate them.
 
 * [@P3094R5] proposed `std::basic_fixed_string<char, N>`. It exists to solve the problem that `C<"hello">` needs support right now. Nothing in this paper would make `C<"hello">` work, although it might affect the way that you would implement the type that makes it work.
-* [@P3380R0] proposes to extend non-type template parameter support, which could eventually make `std::string` usable as a non-type template parameter. But without non-transient constexpr allocation, this doesn't obviate the need for this paper.
+* [@P3380R1] proposes to extend non-type template parameter support, which could eventually make `std::string` usable as a non-type template parameter. But without non-transient constexpr allocation, this doesn't obviate the need for this paper. Note that that paper depends on this paper for how to normalize string literals, making string literals usable as non-type template arguemnts.
 * [@P1974R0] and [@P2670R1] propose approaches to tackle the non-transient allocation problem.
 
 Given non-transient allocation _and_ a `std::string` and `std::vector` that are usable as non-type template parameters, this paper likely becomes unnecessary. Or at least, fairly trivial:
@@ -353,9 +431,46 @@ consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const* {
 ```
 :::
 
-The more interesting paper is actually [@P0424R2]. If we bring that paper back, then extend the normalization model described in [@P3380R0] so that string literals are normalized to external linkage arrays as demonstrated in this paper, then it's possible that [@P3094R5] becomes obsolete instead — since then you could _just_ take `char const*` template parameters and `define_static_string` would become a mechanism for producing new string literals.
 
 # Wording
+
+Change [intro.object]{.sref}:
+
+::: std
+[9]{.pnum} An object is a *potentially non-unique object* if it is
+
+* [9.1]{.pnum} a string literal object ([lex.string]),
+* [9.2]{.pnum} the backing array of an initializer list ([dcl.init.ref]),
+* [9.3]{.pnum} [the result of a call to `std::define_string` or `std::define_array`]{.addu}, or
+* [9.4]{.pnum} a subobject thereof.
+:::
+
+Change [expr.eq]{.sref}/3:
+
+::: std
+[3]{.pnum} If at least one of the operands is a pointer, pointer conversions, function pointer conversions, and qualification conversions are performed on both operands to bring them to their composite pointer type.
+Comparing pointers is defined as follows:
+
+* [3.1]{.pnum} If one pointer represents the address of a complete object, and another pointer represents the address one past the last element of a different complete object, the result of the comparison is unspecified.
+
+<div class="addu">
+* [3.1b]{.pnum} Otherwise, if the pointers point into distinct potentially non-unique objects ([intro.object]) with the same contents, the result of the comparison is unspecified.
+
+::: example
+```cpp
+constexpr char const* a = std::define_static_string("other");
+constexpr char const* b = std::define_static_string("another");
+
+static_assert(a != b);     // OK
+static_assert(a == b + 2); // error: unspecified
+static_assert(b == b);     // OK
+```
+:::
+</div>
+
+* [3.2]{.pnum} Otherwise, if the pointers are both null, both point to the same function, or both represent the same address, they compare equal.
+* [3.3]{.pnum} Otherwise, the pointers compare unequal.
+:::
 
 Add to [meta.syn]{.sref}:
 
@@ -369,7 +484,10 @@ namespace std {
 + // [meta.define.static], promoting to runtime storage
 + template <ranges::input_range R>
 +   consteval const ranges::range_value_t<R>* define_static_string(R&& r);
-
++
++ template <class T>
++   consteval const remove_reference_t<T>* define_static_object(T&& r);
++
 +  template <ranges::input_range R>
 +    consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
 }
@@ -406,15 +524,24 @@ consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 
 [#]{.pnum} *Mandates*: `$CharT$` is either `char` or `char8_t`.
 
-[#]{.pnum} Let `$Str$` be the variable template
+[#]{.pnum} Let `$V$.` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
+
+[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $CharT$[sizeof...(V)+1]` initialized with `{V..., $CharT$()}`.
+
+[#]{.pnum} *Returns*: `$P$`.
 
 ```cpp
-template <class T, T... Vs> inline constexpr T $Str$[] = {Vs..., T{}}; // exposition-only
+template <class T>
+consteval const remove_reference_t<T>* define_static_object(T&& t);
 ```
 
-[#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
+[#]{.pnum} Let `U` be `remove_cvref_t<T>`.
 
-[#]{.pnum} *Returns*: `$Str$<$CharT$, $V$...>`.
+[#]{.pnum} *Mandates*: `U` is a structural type ([temp.param]) and `constructible_from<U, T>` is `true`.
+
+[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const U` initialized with `t`.
+
+[#]{.pnum} *Returns*: `std::addressof($P$)`.
 
 ```cpp
 template <ranges::input_range R>
@@ -425,15 +552,11 @@ consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
 
 [#]{.pnum} *Mandates*: `$T$` is a structural type ([temp.param]) and `constructible_from<$T$, ranges::range_reference_t<R>>` is `true` and `copy_constructible<$T$>` is `true`.
 
-[#]{.pnum} Let `$Arr$` be the variable template
-
-```cpp
-template <class T, T... Vs> inline constexpr T $Arr$[] = {Vs...}; // exposition-only
-```
-
 [#]{.pnum} Let `$V$` be the pack of elements of type `$T$` constructed from the elements of `r`.
 
-[#]{.pnum} *Returns*: `span($Arr$<$T$, $V$...>)`.
+[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $T$[sizeof...(V)]` initialized with `{V...}`.
+
+[#]{.pnum} *Returns*: `span<const $T$>($P$)`.
 :::
 :::
 
@@ -448,3 +571,17 @@ Add to [version.syn]{.sref}:
 ```
 :::
 :::
+
+---
+references:
+  - id: P3380R1
+    citation-label: P3380R1
+    title: "Extending support for class types as non-type template parameters"
+    author:
+      - family: Barry Revzin
+    issued:
+      - year: 2024
+        month: 12
+        day: 4
+    URL: https://wg21.link/p3380r1
+---
