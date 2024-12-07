@@ -2389,7 +2389,7 @@ namespace std::meta {
   // @[define_aggregate](#data_member_spec-define_aggregate)@
   struct data_member_options;
   consteval auto data_member_spec(info type_class,
-                                  data_member_options options = {}) -> info;
+                                  data_member_options options) -> info;
   template <reflection_range R = initializer_list<info>>
     consteval auto define_aggregate(info type_class, R&&) -> info;
 
@@ -2697,7 +2697,7 @@ namespace std::meta {
     bool no_unique_address = false;
   };
   consteval auto data_member_spec(info type,
-                                  data_member_options options = {}) -> info;
+                                  data_member_options options) -> info;
   template <reflection_range R = initializer_list<info>>
   consteval auto define_aggregate(info type_class, R&&) -> info;
 }
@@ -3400,7 +3400,7 @@ Break the next paragraph into a bulleted list, extend it to also cover splices, 
   - [#.#]{.pnum} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
     - [#.#.#]{.pnum} If `$A$` is the template argument list ([temp.arg]{.sref}) of the corresponding `$template-head$` `$H$` ([temp.mem]{.sref}), `$N$` nominates the primary template of `$T$`; `$H$` shall be equivalent to the `$template-head$` of `$T$` ([temp.over.link]{.sref}).
     - [#.#.#]{.pnum} Otherwise, `$N$` nominates the partial specialization ([temp.spec.partial]{.sref}) of `$T$` whose template argument list is equivalent to `$A$` ([temp.over.link]{.sref}); the program is ill-formed if no such partial specialization exists.
-  
+
   - [#.#]{.pnum} Any other `$nested-name-specifier$` [nominates]{.rm} [designates]{.addu} the [same]{.addu} entity [denoted]{.rm} [designated]{.addu} by its `$type-name$`, `$namespace-name$`, `$identifier$`, or `$simple-template-id$`. If the `$nested-name-specifier$` is not declarative, the entity shall not be a template.
 
 :::
@@ -4980,24 +4980,9 @@ namespace std::meta {
     consteval info reflect_function(T& fn);
 
   // [meta.reflection.define.aggregate], class definition generation
-  struct data_member_options {
-    struct name_type {
-      template<class T> requires constructible_from<u8string, T>
-        consteval name_type(T &&);
-
-      template<class T> requires constructible_from<string, T>
-        consteval name_type(T &&);
-
-      variant<u8string, string> $contents$;    // $exposition only$
-    };
-
-    optional<name_type> name;
-    optional<int> alignment;
-    optional<int> bit_width;
-    bool no_unique_address = false;
-  };
+  struct data_member_options;
   consteval info data_member_spec(info type,
-                                  data_member_options options = {});
+                                  data_member_options options);
   consteval bool is_data_member_spec(info r);
   template <reflection_range R = initializer_list<info>>
   consteval info define_aggregate(info type_class, R&&);
@@ -5974,6 +5959,25 @@ template <typename T>
 [1]{.pnum} The classes `data_member_options` and `name_type` are consteval-only types ([basic.types.general]), and are not a structural types ([temp.param]).
 
 ```cpp
+struct data_member_options {
+  struct name_type {
+    template<class T> requires constructible_from<u8string, T>
+      consteval name_type(T &&);
+
+    template<class T> requires constructible_from<string, T>
+      consteval name_type(T &&);
+
+    variant<u8string, string> $contents$;    // $exposition only$
+  };
+
+  optional<name_type> name;
+  optional<int> alignment;
+  optional<int> bit_width;
+  bool no_unique_address = false;
+};
+```
+
+```cpp
 template <class T> requires constructible_from<u8string, T>
 consteval data_member_options::name_type(T&& value);
 ```
@@ -5998,25 +6002,25 @@ constexpr auto mem2 = data_member_spec(^^int, {.name=u8"utf8_encoding"});
 
 ```cpp
 consteval info data_member_spec(info type,
-                                data_member_options options = {});
+                                data_member_options options);
 ```
-[1]{.pnum} *Constant When*:
+[#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `type` represents either a type `cv $T$`, or a `$typedef-name$` designating a type `cv $T$`, where `$T$` is either an object type or a reference type;
+- [#.#]{.pnum} `dealias(type)` represents a type `cv $T$` where `$T$` is either an object type or a reference type;
 - [#.#]{.pnum} if `options.name` contains a value, then:
   - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier when interpreted with UTF-8, or
   - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
-- [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_field` contains a value;
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than the alignment requirement of `$T$`; and
+- [#.#]{.pnum} otherwise, if `options.name` does not contain a value, then `options.bit_width` contains a value;
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`; and
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
-  - [#.#.#]{.pnum} `$T$` represents an integral or enumeration type,
+  - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$ == 0` then `options.name` does not contain a value.
 
 [#]{.pnum} *Returns*: A reflection of a description of a declaration of a non-static data member declared with the type or `typedef-name` represented by `type`, and having the optional characteristics designated by `options`.
 
-[#]{.pnum} *Remarks*: The returned reflection value is primarily useful in conjunction with `define_aggregate`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.
+[#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.]{.note}
 
 ```cpp
 consteval bool is_data_member_spec(info r);
