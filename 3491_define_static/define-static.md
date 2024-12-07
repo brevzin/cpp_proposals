@@ -530,6 +530,8 @@ consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 
 [#]{.pnum} *Returns*: `$P$`.
 
+[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
+
 ```cpp
 template <class T>
 consteval const remove_reference_t<T>* define_static_object(T&& t);
@@ -557,6 +559,8 @@ consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
 [#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $T$[sizeof...(V)]` initialized with `{V...}`.
 
 [#]{.pnum} *Returns*: `span<const $T$>($P$)`.
+
+[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
 :::
 :::
 

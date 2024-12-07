@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-12-04" />
+  <meta name="dcterms.date" content="2024-12-07" />
   <title>define_static_{string,object,array}</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-12-04</td>
+    <td>2024-12-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1299,42 +1299,52 @@ parameter object ([temp.param]) of type <code class="sourceCode cpp"><span class
 initialized with <code class="sourceCode cpp"><span class="op">{</span>V<span class="op">...</span>, <em>CharT</em><span class="op">()}</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">6</a></span>
 <em>Returns</em>: <code class="sourceCode cpp"><em>P</em></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">7</a></span>
+<span class="note"><span>[ <em>Note 1:</em>
+</span><code class="sourceCode cpp"><em>P</em></code> is a potentially
+non-unique object ([intro.object])<span> — <em>end
+note</em> ]</span></span></p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;*</span> define_static_object<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">7</a></span>
-Let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">8</a></span>
+Let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">9</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">U</code> is a structural
 type ([temp.param]) and <code class="sourceCode cpp">constructible_from<span class="op">&lt;</span>U, T<span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">10</a></span>
 Let <code class="sourceCode cpp"><em>P</em></code> be the template
 parameter object ([temp.param]) of type
 <code class="sourceCode cpp"><span class="kw">const</span> U</code>
 initialized with <code class="sourceCode cpp">t</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">11</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">std<span class="op">::</span>addressof<span class="op">(</span><em>P</em><span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> define_static_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">11</a></span>
-Let <code class="sourceCode cpp"><em>T</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">12</a></span>
+Let <code class="sourceCode cpp"><em>T</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">13</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp"><em>T</em></code> is a
 structural type ([temp.param]) and <code class="sourceCode cpp">constructible_from<span class="op">&lt;</span><em>T</em>, ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> and
 <code class="sourceCode cpp">copy_constructible<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">14</a></span>
 Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
 elements of type <code class="sourceCode cpp"><em>T</em></code>
 constructed from the elements of
 <code class="sourceCode cpp">r</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">14</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">15</a></span>
 Let <code class="sourceCode cpp"><em>P</em></code> be the template
 parameter object ([temp.param]) of type <code class="sourceCode cpp"><span class="kw">const</span> <em>T</em><span class="op">[</span><span class="kw">sizeof</span><span class="op">...(</span>V<span class="op">)]</span></code>
 initialized with <code class="sourceCode cpp"><span class="op">{</span>V<span class="op">...}</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">15</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">16</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="kw">const</span> <em>T</em><span class="op">&gt;(</span><em>P</em><span class="op">)</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">17</a></span>
+<span class="note"><span>[ <em>Note 2:</em>
+</span><code class="sourceCode cpp"><em>P</em></code> is a potentially
+non-unique object ([intro.object])<span> — <em>end
+note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
