@@ -855,6 +855,9 @@ fragment<span></span></a></li>
 <span>[module.reach]</span></span> Reachability<span></span></a></li>
 <li><a href="#class.mem.general-general" id="toc-class.mem.general-general"><span>11.4.1
 <span>[class.mem.general]</span></span> General<span></span></a></li>
+<li><a href="#class.derived.general-general" id="toc-class.derived.general-general"><span>11.7.1
+<span>[class.derived.general]</span></span>
+General<span></span></a></li>
 <li><a href="#class.access.general-general" id="toc-class.access.general-general"><span>11.8.1
 <span>[class.access.general]</span></span> General<span></span></a></li>
 <li><a href="#over.pre-preamble" id="toc-over.pre-preamble"><span>12.1
@@ -3942,11 +3945,11 @@ are <em>sequenced after</em> the production of the injected
 declarations.</p>
 <p>To bridge the world of program points to the world of sequenced
 evaluations, we introduce a notion dual to “injected declarations”: For
-every injected declaration, there is a corresponding <em>injected
+every injected declaration, there is a corresponding <em>synthesized
 point</em>. Injected points have a special property: the <em>only</em>
-declaration reachable from an injected point is its corresponding
+declaration reachable from a synthesized point is its corresponding
 injected declaration. Jumping back to our above example, joining the
-injected point of the injected declaration of
+synthesized point of the injected declaration of
 <code class="sourceCode cpp">M</code> to our evaluation context gives
 exactly what is needed for <code class="sourceCode cpp">M</code> to be
 usable during the definition of <code class="sourceCode cpp">C</code>.
@@ -3974,7 +3977,7 @@ the instantiation context of
 <code class="sourceCode cpp"><em>M</em></code> ([module.context]),
 and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(22.2)</a></span>
-the injected points corresponding to any injected declarations
+the synthesized points corresponding to any injected declarations
 ([expr.const]) produced by evaluations sequenced before the next
 evaluation of <code class="sourceCode cpp"><em>E</em></code>.</li>
 </ul>
@@ -5040,14 +5043,13 @@ describe the other (call it
 <code class="sourceCode cpp"><em>Y</em></code>.</span></li>
 </ul>
 <p><span class="addu">During the analysis and translation of tokens and
-instantiations, certain expressions are evaluated. Diagnosable rules
-(<span>4.1.1 <a href="https://wg21.link/intro.compliance.general">[intro.compliance.general]</a></span>)
+instantiations, certain expressions are evaluated (<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>).
+Diagnosable rules (<span>4.1.1 <a href="https://wg21.link/intro.compliance.general">[intro.compliance.general]</a></span>)
 that apply to constructs that semantically follow a plainly
 constant-evaluated expression
-<code class="sourceCode cpp"><em>P</em></code> (<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>) are
-considered in a context where
-<code class="sourceCode cpp"><em>P</em></code> has been evaluated
-exactly once.</span></p>
+<code class="sourceCode cpp"><em>P</em></code> are considered in a
+context where <code class="sourceCode cpp"><em>P</em></code> has been
+evaluated exactly once.</span></p>
 <p><span class="addu"><span class="note"><span>[ <em>Note 9:</em>
 </span>Other requirements in this document can further constrain the
 contexts from which expressions are evaluated. For example, a
@@ -5177,8 +5179,8 @@ denoted by the name (if any) that is introduced by a declaration of
 introduced by a declaration specifying
 <span><code class="sourceCode default"><em>E</em></code></span>.</del></span></p>
 <p><span class="addu"><span class="note"><span>[ <em>Note 1:</em>
-</span>A type alias and a namespace alias are examples of entities whose
-underlying entity is distinct from itself.<span> — <em>end
+</span>Type aliases and namespace aliases are examples of entities whose
+underlying entities are distinct from themselves.<span> — <em>end
 note</em> ]</span></span></span></p>
 </blockquote>
 </div>
@@ -5360,8 +5362,7 @@ ODR.</p>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(15.11+)</a></span>
 In each such definition, corresponding
 <code class="sourceCode cpp"><em>reflect-expression</em></code>s
-([expr.reflect]) that are not value-dependent shall represent the same
-program constructs.</li>
+([expr.reflect]) compute equivalent values (<span>7.6.10 <a href="https://wg21.link/expr.eq">[expr.eq]</a></span>).</li>
 </ul>
 </div>
 </blockquote>
@@ -5605,7 +5606,7 @@ explicitly TU-local.</p>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(15.1)</a></span>
 a type, function, variable, or template that […]</li>
 <li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">(15.1+)</a></span>
-a type alias or a namespace alias,</span></li>
+a type alias or a namespace alias,</span> TODO</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(15.2)</a></span>
 […]</li>
 </ul>
@@ -5987,12 +5988,7 @@ which shall be a class or enumeration type.<span class="addu"> </span></li>
 For a <code class="sourceCode cpp"><em>nested-name-specifier</em></code>
 of the form <code class="sourceCode cpp"><em>splice-specifier</em> <span class="op">::</span></code>,
 the <code class="sourceCode cpp"><em>splice-specifier</em></code> shall
-designate a class or enumeration type, a type alias denoting such a
-type, a namespace, or a namespace alias. If the
-<code class="sourceCode cpp"><em>splice-specifier</em></code> designates
-a type alias or a namespace alias, the
-<code class="sourceCode cpp"><em>nested-names-specifier</em></code>
-designates the type or namespace denoted by that entity. Otherwise, the
+designate a class or enumeration type or a namespace. The
 <code class="sourceCode cpp"><em>nested-name-specifier</em></code>
 designates the same entity as the
 <code class="sourceCode cpp"><em>splice-specifier</em></code>.</span></li>
@@ -6030,14 +6026,14 @@ If <code class="sourceCode cpp"><em>A</em></code> is the template
 argument list (<span>13.4 <a href="https://wg21.link/temp.arg">[temp.arg]</a></span>) of the
 corresponding <code class="sourceCode cpp"><em>template-head</em></code>
 <code class="sourceCode cpp"><em>H</em></code> (<span>13.7.3 <a href="https://wg21.link/temp.mem">[temp.mem]</a></span>),
-<code class="sourceCode cpp"><em>N</em></code> nominates the primary
-template of <code class="sourceCode cpp"><em>T</em></code>;
+<code class="sourceCode cpp"><em>N</em></code> <span class="rm" style="color: #bf0303"><del>nominates</del></span> <span class="addu">designates</span> the primary template of
+<code class="sourceCode cpp"><em>T</em></code>;
 <code class="sourceCode cpp"><em>H</em></code> shall be equivalent to
 the <code class="sourceCode cpp"><em>template-head</em></code> of
 <code class="sourceCode cpp"><em>T</em></code> (<span>13.7.7.2 <a href="https://wg21.link/temp.over.link">[temp.over.link]</a></span>).</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">(3.5.2)</a></span>
-Otherwise, <code class="sourceCode cpp"><em>N</em></code> nominates the
-partial specialization (<span>13.7.6 <a href="https://wg21.link/temp.spec.partial">[temp.spec.partial]</a></span>)
+Otherwise, <code class="sourceCode cpp"><em>N</em></code> <span class="rm" style="color: #bf0303"><del>nominates</del></span> <span class="addu">designates</span> the partial specialization (<span>13.7.6
+<a href="https://wg21.link/temp.spec.partial">[temp.spec.partial]</a></span>)
 of <code class="sourceCode cpp"><em>T</em></code> whose template
 argument list is equivalent to
 <code class="sourceCode cpp"><em>A</em></code> (<span>13.7.7.2 <a href="https://wg21.link/temp.over.link">[temp.over.link]</a></span>);
@@ -6045,8 +6041,7 @@ the program is ill-formed if no such partial specialization exists.</li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">(3.6)</a></span>
 Any other
-<code class="sourceCode cpp"><em>nested-name-specifier</em></code> <span class="rm" style="color: #bf0303"><del>nominates</del></span> <span class="addu">designates</span> the <span class="addu">same</span> entity
-<span class="rm" style="color: #bf0303"><del>denoted</del></span> <span class="addu">designated</span> by its
+<code class="sourceCode cpp"><em>nested-name-specifier</em></code> <span class="rm" style="color: #bf0303"><del>nominates</del></span> <span class="addu">designates</span> the entity <span class="rm" style="color: #bf0303"><del>denoted</del></span> <span class="addu">designated</span> by its
 <code class="sourceCode cpp"><em>type-name</em></code>,
 <code class="sourceCode cpp"><em>namespace-name</em></code>,
 <code class="sourceCode cpp"><em>identifier</em></code>, or
@@ -6087,7 +6082,9 @@ never interpreted as part of a
 <span id="cb111-7"><a href="#cb111-7" aria-hidden="true" tabindex="-1"></a>                                                <span class="co">// an expression</span></span>
 <span id="cb111-8"><a href="#cb111-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb111-9"><a href="#cb111-9" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> e <span class="op">=</span> <span class="op">[:</span>V<span class="op">:]</span>;   <span class="co">// splice-expression</span></span>
-<span id="cb111-10"><a href="#cb111-10" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f <span class="op">=</span> <span class="kw">template</span> <span class="op">[:^^</span>e<span class="op">:]&lt;^^</span>S<span class="op">::</span>a<span class="op">&gt;</span>;  <span class="co">// splice-expression</span></span></code></pre></div>
+<span id="cb111-10"><a href="#cb111-10" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f <span class="op">=</span> <span class="kw">template</span> <span class="op">[:^^</span>e<span class="op">:]&lt;^^</span>S<span class="op">::</span>a<span class="op">&gt;</span>;  <span class="co">// splice-expression</span></span>
+<span id="cb111-11"><a href="#cb111-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb111-12"><a href="#cb111-12" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g <span class="op">=</span> <span class="kw">typename</span> <span class="op">[:^^</span><span class="dt">int</span><span class="op">:](</span><span class="dv">42</span><span class="op">)</span>;  <span class="co">// [:^^int:] is not an expression</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">2</a></span>
@@ -6186,11 +6183,10 @@ For a <code class="sourceCode cpp"><em>splice-expression</em></code>
 that designates a function or function template, overload resolution is
 performed (<span>12.2 <a href="https://wg21.link/over.match">[over.match]</a></span>,
 <span>13.10.4 <a href="https://wg21.link/temp.over">[temp.over]</a></span>) from an
-initial set of candidate functions containing only that entity
-designated by the
-<code class="sourceCode cpp"><em>splice-expression</em></code>. The best
-viable function selected by overload resolution is considered to be
-designated in a manner exempt from access rules.</p>
+initial set of candidate functions containing only the entity designated
+by the <code class="sourceCode cpp"><em>splice-expression</em></code>.
+The best viable function selected by overload resolution is
+<em>designated in a manner exempt from access rules</em>.</p>
 </div>
 </blockquote>
 </div>
@@ -6300,12 +6296,12 @@ If <code class="sourceCode cpp">E2</code> <span class="rm" style="color: #bf0303
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is a
 bit-field. […]</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_109" id="pnum_109">7</a></span>
-If <span class="addu">the entity designated by</span>
-<code class="sourceCode cpp">E2</code> is declared to have type
+If <code class="sourceCode cpp">E2</code> <span class="addu">designates
+an entity</span> <span class="rm" style="color: #bf0303"><del>is</del></span> declared to have type
 “reference to <code class="sourceCode cpp">T</code>”, then
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
-lvalue of type <code class="sourceCode cpp">T</code>. If
-<code class="sourceCode cpp">E2</code> <span class="rm" style="color: #bf0303"><del>is</del></span> <span class="addu">designates</span> a static data member,
+lvalue of type <code class="sourceCode cpp">T</code>. <span class="rm" style="color: #bf0303"><del>If</del></span> <span class="addu">In that
+case, if</span> <code class="sourceCode cpp">E2</code> <span class="rm" style="color: #bf0303"><del>is</del></span> <span class="addu">designates</span> a static data member,
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code>
 designates the object or function to which the reference is bound,
 otherwise
@@ -6488,7 +6484,7 @@ is never interpreted as <code class="sourceCode cpp"><span class="op">^^</span> 
 and is interpreted as
 <code class="sourceCode cpp"><span class="op">^^</span> <em>type-id</em></code>
 if and only if the operand refers to the current instantiation
-([temp.dep.type]).</p>
+(<span>13.8.3.2 <a href="https://wg21.link/temp.dep.type">[temp.dep.type]</a></span>).</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_126" id="pnum_126">4</a></span>
 A <code class="sourceCode cpp"><em>reflect-expression</em></code> of the
 form <code class="sourceCode cpp"><span class="op">^^</span> <span class="op">::</span></code>
@@ -6720,9 +6716,9 @@ following constraints:</p>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_152" id="pnum_152">(15.3)</a></span>
 if the value is an object of class type, each non-static data member of
 reference type refers to an <span class="rm" style="color: #bf0303"><del>entity</del></span> <span class="addu">object or function</span> that is a permitted result of a
-constant expression, and if the <span class="addu">object or function is
+constant expression, <span class="addu">and if the object or function is
 of consteval-only type, or is the subobject of such an object, then so
-is the value</span>,</li>
+is the value,</span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_153" id="pnum_153">(15.4)</a></span>
 if the value is an object of scalar type, it does not have an
 indeterminate or erroneous value (<span>6.7.4 <a href="https://wg21.link/basic.indet">[basic.indet]</a></span>),</li>
@@ -6853,12 +6849,12 @@ injecting declarations and renumber accordingly:</p>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_173" id="pnum_173">22</a></span>
 The evaluation of an expression can introduce one or more <em>injected
-declarations</em>. Each such declaration has an associated <em>injected
-point</em> which follows the last non-injected program point in the
-translation unit containing that declaration. The evaluation is said to
-<em>produce</em> the declaration.</p>
+declarations</em>. Each such declaration has an associated
+<em>synthesized point</em> which follows the last non-synthesized
+program point in the translation unit containing that declaration. The
+evaluation is said to <em>produce</em> the declaration.</p>
 <p><span class="note13"><span>[ <em>Note 13:</em> </span>Special rules
-concerning reachability apply to injected points (<span>10.7 <a href="https://wg21.link/module.reach">[module.reach]</a></span>).<span>
+concerning reachability apply to synthesized points (<span>10.7 <a href="https://wg21.link/module.reach">[module.reach]</a></span>).<span>
 — <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_174" id="pnum_174">23</a></span>
 The program is ill-formed if the evaluation of a manifestly
@@ -6934,8 +6930,9 @@ unsequenced with
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_180" id="pnum_180">24</a></span>
 The <em>evaluation context</em> is a set of points within the program
-that determines the behavior of certain functions used for reflection.
-During the evaluation of a manifestly constant-evaluated expression
+that determines the behavior of certain functions used for reflection
+([meta.reflection]). During the evaluation of a manifestly
+constant-evaluated expression
 <code class="sourceCode cpp"><em>M</em></code>, the evaluation context
 of an evaluation <code class="sourceCode cpp"><em>E</em></code>
 comprises the union of</p>
@@ -6945,8 +6942,8 @@ the instantiation context of
 <code class="sourceCode cpp"><em>M</em></code> (<span>10.6 <a href="https://wg21.link/module.context">[module.context]</a></span>),
 and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_182" id="pnum_182">(24.2)</a></span>
-the injected points corresponding to any injected declarations produced
-by evaluations sequenced before
+the synthesized points corresponding to any injected declarations
+produced by evaluations sequenced before
 <code class="sourceCode cpp"><em>E</em></code> (<span>6.9.1 <a href="https://wg21.link/intro.execution">[intro.execution]</a></span>).</li>
 </ul>
 </div>
@@ -7206,8 +7203,8 @@ For a <code class="sourceCode cpp"><em>splice-type-specifier</em></code>
 of the form
 <code class="sourceCode cpp">typename<sub><em>opt</em></sub> <em>splice-specifier</em></code>,
 the <code class="sourceCode cpp"><em>splice-specifier</em></code> shall
-designate a type, a type alias, a primary class template, an alias
-template, or a concept. The
+designate a type, a primary class template, an alias template, or a
+concept. The
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code>
 designates the same entity as the
 <code class="sourceCode cpp"><em>splice-specifier</em></code>.</p>
@@ -7277,8 +7274,9 @@ To <em>zero-initialize</em> an object or reference of type
 the object is initialized to a null reflection value;</span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_198" id="pnum_198">(6.1)</a></span>
 if <code class="sourceCode cpp">T</code> is <span class="rm" style="color: #bf0303"><del>a</del></span> <span class="addu">any
-other</span> scalar type ([basic.types.general]), the object is
-initialized to the value obtained by converting the integer literal
+other</span> scalar type (<span>6.8.1 <a href="https://wg21.link/basic.types.general">[basic.types.general]</a></span>),
+the object is initialized to the value obtained by converting the
+integer literal
 <code class="sourceCode cpp"><span class="dv">0</span></code> (zero) to
 <code class="sourceCode cpp">T</code>;</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_199" id="pnum_199">(6.2)</a></span>
@@ -7398,8 +7396,8 @@ follows:</p>
 <span class="addu">A
 <code class="sourceCode cpp"><em>using-enum-declarator</em></code> of
 the form
-<code class="sourceCode cpp"><em>splice-type-specifier</em></code> is a
-type-only context, and designates the same construct designated by the
+<code class="sourceCode cpp"><em>splice-type-specifier</em></code>
+designates the same construct designated by the
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code>. Any
 other</span> <span class="rm" style="color: #bf0303"><del>A</del></span>
 <code class="sourceCode cpp"><em>using-enum-declarator</em></code> names
@@ -7664,7 +7662,7 @@ A declaration <code class="sourceCode cpp"><em>D</em></code> is
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_231" id="pnum_231">(3.1)</a></span>
 <span class="addu"><code class="sourceCode cpp"><em>P</em></code> is not
-an injected point and</span>
+a synthesized point and</span>
 <code class="sourceCode cpp"><em>D</em></code> appears prior to
 <code class="sourceCode cpp"><em>P</em></code> in the same translation
 unit, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
@@ -7672,7 +7670,7 @@ unit, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
 <span class="addu"><code class="sourceCode cpp"><em>D</em></code> is an
 injected declaration for which
 <code class="sourceCode cpp"><em>P</em></code> is the corresponding
-injected point, or</span></li>
+synthesized point, or</span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_233" id="pnum_233">(3.3)</a></span>
 <code class="sourceCode cpp"><em>D</em></code> is not discarded
 (<span>10.4 <a href="https://wg21.link/module.global.frag">[module.global.frag]</a></span>),
@@ -7782,6 +7780,32 @@ note</em> ]</span></p>
 </div>
 </blockquote>
 </div>
+<h3 class="unnumbered" id="class.derived.general-general"><span>11.7.1
+<a href="https://wg21.link/class.derived.general">[class.derived.general]</a></span>
+General<a href="#class.derived.general-general" class="self-link"></a></h3>
+<p>Introduce the term “direct base class relationship” to paragraph
+2.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_246" id="pnum_246">2</a></span>
+The component names of a
+<code class="sourceCode cpp"><em>class-or-decltype</em></code> are those
+of its
+<code class="sourceCode cpp"><em>nested-name-specifier</em></code>,
+<code class="sourceCode cpp"><em>type-name</em></code>, and/or
+<code class="sourceCode cpp"><em>simple-template-id</em></code>. A
+<code class="sourceCode cpp"><em>class-or-decltype</em></code> shall
+denote a (possily cv-qualified) class type that is not an incompletely
+defined class (<span>11.4 <a href="https://wg21.link/class.mem">[class.mem]</a></span>); any
+cv-qualifiers are ignored. The class denoted by the
+<code class="sourceCode cpp"><em>class-or-decltype</em></code> of a
+<code class="sourceCode cpp"><em>base-specifier</em></code> is called a
+<em>direct base class</em> for the class being defined<span class="addu">; each such
+<code class="sourceCode cpp"><em>base-specifier</em></code> introduces a
+<em>direct base class relationship</em> between the class being defined
+and the direct base class</span>. The lookup for the component name of
+the <code class="sourceCode cpp"><em>type-name</em></code> or
+<code class="sourceCode cpp"><em>simple-template-id</em></code> is
+type-only (<span>6.5 <a href="https://wg21.link/basic.lookup">[basic.lookup]</a></span>).
+[…]</p>
 <h3 class="unnumbered" id="class.access.general-general"><span>11.8.1 <a href="https://wg21.link/class.access.general">[class.access.general]</a></span>
 General<a href="#class.access.general-general" class="self-link"></a></h3>
 <p>Prefer “type alias” rather than
@@ -7808,7 +7832,7 @@ resolution, and add a note explaining the expressions that form overload
 sets.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_246" id="pnum_246">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_247" id="pnum_247">2</a></span>
 <span class="addu">An <em>overload set</em> is a set of declarations
 that each denote a function or function template. Using these
 declarations as a starting point, the process of <em>overload
@@ -7837,14 +7861,14 @@ General<a href="#over.match.general-general" class="self-link"></a></h3>
 in all contexts.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_247" id="pnum_247">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_248" id="pnum_248">3</a></span>
 If a best viable function exists and is unique, overload resolution
 succeeds and produces it as the result. Otherwise overload resolution
 fails and the invocation is ill-formed. When overload resolution
 succeeds, and the best viable function is <span class="rm" style="color: #bf0303"><del>not</del></span> <span class="addu">neither
 designated in a manner exempt from access rules nor</span> accessible in
 the context in which it is used, the program is ill-formed.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_248" id="pnum_248">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_249" id="pnum_249">4</a></span>
 Overload resolution results in a <em>usable candidate</em> if overload
 resolution succeeds and the selected candidate is either not a function
 (<span>12.5 <a href="https://wg21.link/over.built">[over.built]</a></span>), or is a
@@ -7859,14 +7883,14 @@ to named function<a href="#over.call.func-call-to-named-function" class="self-li
 splices of function templates.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_249" id="pnum_249">1</a></span>
-Of interest in [over.call.func] are <span class="rm" style="color: #bf0303"><del>only</del></span> those function calls in
-which the <code class="sourceCode cpp"><em>posfix-expression</em></code>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_250" id="pnum_250">1</a></span>
+Of interest in [over.call.func] are only those function calls in which
+the <code class="sourceCode cpp"><em>posfix-expression</em></code>
 ultimately contains an
-<code class="sourceCode cpp"><em>id-expression</em></code> that denotes
-one or more functions <span class="addu">or a
-<code class="sourceCode cpp"><em>splice-expression</em></code> that
-designates a function template</span>. Such a
+<code class="sourceCode cpp"><em>id-expression</em></code> <span class="addu">or
+<code class="sourceCode cpp"><em>splice-expression</em></code></span>
+that denotes one or more functions <span class="addu">or function
+templates</span>. Such a
 <code class="sourceCode cpp"><em>postfix-expression</em></code>, perhaps
 nested arbitrarily deep in parentheses, has one of the following
 forms:</p>
@@ -7887,7 +7911,7 @@ qualified function calls and unqualified function calls.</p>
 designating member function templates.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_250" id="pnum_250">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_251" id="pnum_251">2</a></span>
 In qualified function calls, the function is <span class="rm" style="color: #bf0303"><del>named</del></span> <span class="addu">designated</span> by an
 <code class="sourceCode cpp"><em>id-expression</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-expression</em></code></span>
@@ -7906,14 +7930,15 @@ the left operand of the
 <code class="sourceCode cpp"><span class="op">.</span></code> operator
 has type “<em>cv</em> <code class="sourceCode cpp">T</code>” where
 <code class="sourceCode cpp">T</code> denotes a class.<sup>102</sup> The
-<span class="addu">set of</span> function declarations <span class="addu">constituting the candidate functions is</span> found by
-name lookup (<span>6.5.2 <a href="https://wg21.link/class.member.lookup">[class.member.lookup]</a></span>)
+<span class="addu">set of</span> function <span class="addu">or function
+template</span> declarations <span class="addu">constituting the
+candidate functions is</span> found by name lookup (<span>6.5.2 <a href="https://wg21.link/class.member.lookup">[class.member.lookup]</a></span>)
 <span class="addu">if the
 <code class="sourceCode cpp"><span class="op">.</span></code> is
 followed by an
 <code class="sourceCode cpp"><em>id-expression</em></code> and is
-otherwise the singleton containing the function template designated by
-the
+otherwise the singleton containing the function or function template
+designated by the
 <code class="sourceCode cpp"><em>splice-expression</em></code></span>
 <span class="rm" style="color: #bf0303"><del>constitute the set of
 candidate functions</del></span>. The argument list is the
@@ -7929,13 +7954,14 @@ in the normalized member function call as the implied object argument
 designating non-member function templates.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_251" id="pnum_251">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_252" id="pnum_252">3</a></span>
 In unqualified function calls, the function is named by a
 <code class="sourceCode cpp"><em>primary-expression</em></code>. <span class="addu">If that
 <code class="sourceCode cpp"><em>primary-expression</em></code> is a
 <code class="sourceCode cpp"><em>splice-expression</em></code>, then the
-set of function declarations constituting the candidate functions is the
-singleton containing the function template designated by that
+set of function or function template declarations constituting the
+candidate functions is the singleton containing the function or function
+template designated by that
 <code class="sourceCode cpp"><em>splice-expression</em></code>. For all
 other cases, the</span> <span class="rm" style="color: #bf0303"><del>The</del></span> function declarations found
 by name lookup (<span>6.5 <a href="https://wg21.link/basic.lookup">[basic.lookup]</a></span>)
@@ -7968,7 +7994,7 @@ Class template argument deduction<a href="#over.match.class.deduct-class-templat
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code>s.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_252" id="pnum_252">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_253" id="pnum_253">1</a></span>
 When resolving a placeholder for a deduced class type (<span>9.2.9.8 <a href="https://wg21.link/dcl.type.class.deduct">[dcl.type.class.deduct]</a></span>)
 where the <code class="sourceCode cpp"><em>template-name</em></code>
 <span class="addu">or
@@ -7978,7 +8004,7 @@ where the <code class="sourceCode cpp"><em>template-name</em></code>
 templates, called the guides of <code class="sourceCode cpp">C</code>,
 is formed comprising:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_253" id="pnum_253">(1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_254" id="pnum_254">(1.1)</a></span>
 …</li>
 </ul>
 </blockquote>
@@ -7987,7 +8013,7 @@ is formed comprising:</p>
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code>s.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_254" id="pnum_254">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_255" id="pnum_255">3</a></span>
 When resolving a placeholder for a deduced class type (<span>9.2.9.3 <a href="https://wg21.link/dcl.type.simple">[dcl.type.simple]</a></span>)
 where the <code class="sourceCode cpp"><em>template-name</em></code>
 <span class="addu">or
@@ -8008,7 +8034,7 @@ operators<a href="#over.built-built-in-operators" class="self-link"></a></h3>
 to <span>12.5 <a href="https://wg21.link/over.built">[over.built]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_255" id="pnum_255">16</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_256" id="pnum_256">16</a></span>
 For every <code class="sourceCode cpp">T</code>, where
 <code class="sourceCode cpp">T</code> is a pointer-to-member type<span class="addu">, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,</span>
 or <code class="sourceCode cpp">std<span class="op">::</span>nullptr_t</code>,
@@ -8038,7 +8064,7 @@ parameters<a href="#temp.param-template-parameters" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_256" id="pnum_256">3+</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_257" id="pnum_257">3+</a></span>
 A non-dependent
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code> only
 forms a <code class="sourceCode cpp"><em>type-constraint</em></code>
@@ -8074,32 +8100,32 @@ and add it as a production for
 <p>Extend and re-format paragraph 3 of <span>13.3 <a href="https://wg21.link/temp.names">[temp.names]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_257" id="pnum_257">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_258" id="pnum_258">3</a></span>
 A <code class="sourceCode cpp"><span class="op">&lt;</span></code> is
 interpreted as the delimiter of a
 <code class="sourceCode cpp"><em>template-argument-list</em></code> if
 it follows</p>
 <ul>
-<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_258" id="pnum_258">(3.1)</a></span>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_259" id="pnum_259">(3.1)</a></span>
 a <code class="sourceCode cpp"><em>splice-specifier</em></code> that
 either appears in a type-only context or is preceded by
 <code class="sourceCode cpp"><span class="kw">template</span></code> or
 <code class="sourceCode cpp"><span class="kw">typename</span></code>,
 or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_259" id="pnum_259">(3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_260" id="pnum_260">(3.2)</a></span>
 a name that is not a
 <code class="sourceCode cpp"><em>conversion-function-id</em></code> and
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_260" id="pnum_260">(3.2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_261" id="pnum_261">(3.2.1)</a></span>
 that follows the keyword template or a ~ after a nested-name-specifier
 or in a class member access expression, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_261" id="pnum_261">(3.2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_262" id="pnum_262">(3.2.2)</a></span>
 for which name lookup finds the injected-class-name of a class template
 or finds any declaration of a template, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_262" id="pnum_262">(3.2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_263" id="pnum_263">(3.2.3)</a></span>
 that is an unqualified name for which name lookup either finds one or
 more functions or finds nothing, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_263" id="pnum_263">(3.2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_264" id="pnum_264">(3.2.4)</a></span>
 that is a terminal name in a using-declarator ([namespace.udecl]), in a
 declarator-id ([dcl.meaning]), or in a type-only context other than a
 nested-name-specifier ([temp.res]).</li>
@@ -8139,7 +8165,7 @@ disambiguation in paragraph 4 also applies to the parsing of
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_264" id="pnum_264">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_265" id="pnum_265">4</a></span>
 When parsing a
 <code class="sourceCode cpp"><em>template-argument-list</em></code>, the
 first non-nested
@@ -8168,27 +8194,27 @@ cast).<span> — <em>end note</em> ]</span></span></p>
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_265" id="pnum_265">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_266" id="pnum_266">7</a></span>
 A <code class="sourceCode cpp"><em>template-id</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code></span>
 is <em>valid</em> if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_266" id="pnum_266">(7.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_267" id="pnum_267">(7.1)</a></span>
 there are at most as many arguments as there are parameters or a
 parameter is a template parameter pack (<span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_267" id="pnum_267">(7.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_268" id="pnum_268">(7.2)</a></span>
 there is an argument for each non-deducible non-pack parameter that does
 not have a default
 <code class="sourceCode cpp"><em>template-argument</em></code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_268" id="pnum_268">(7.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_269" id="pnum_269">(7.3)</a></span>
 each <code class="sourceCode cpp"><em>template-argument</em></code>
 matches the corresponding
 <code class="sourceCode cpp"><em>template-parameter</em></code>
 (<span>13.4 <a href="https://wg21.link/temp.arg">[temp.arg]</a></span>),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_269" id="pnum_269">(7.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_270" id="pnum_270">(7.4)</a></span>
 substitution of each template argument into the following template
 parameters (if any) succeeds, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_270" id="pnum_270">(7.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_271" id="pnum_271">(7.5)</a></span>
 if the <code class="sourceCode cpp"><em>template-id</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code></span>
 is non-dependent, the associated constraints are satisfied as specified
@@ -8205,7 +8231,7 @@ shall be valid unless it names a function template specialization
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_271" id="pnum_271">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_272" id="pnum_272">8</a></span>
 When the <code class="sourceCode cpp"><em>template-name</em></code> of a
 <code class="sourceCode cpp"><em>simple-template-id</em></code> <span class="addu">or the
 <code class="sourceCode cpp"><em>splice-specifier</em></code> of a
@@ -8225,7 +8251,7 @@ of the constrained template shall be satisfied (<span>13.5.2 <a href="https://wg
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_272" id="pnum_272">111)</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_273" id="pnum_273">111)</a></span>
 A <code class="sourceCode cpp"><span class="op">&gt;</span></code> that
 encloses the <code class="sourceCode cpp"><em>type-id</em></code> of a
 <code class="sourceCode cpp"><span class="kw">dynamic_cast</span></code>,
@@ -8247,7 +8273,7 @@ General<a href="#temp.arg.general-general" class="self-link"></a></h3>
 <code class="sourceCode cpp"><em>template-argument</em></code>.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_273" id="pnum_273">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_274" id="pnum_274">1</a></span>
 There are <span class="rm" style="color: #bf0303"><del>three</del></span> <span class="addu">four</span> forms of
 <code class="sourceCode cpp"><em>template-argument</em></code>, <span class="addu">three of which</span> correspond<span class="rm" style="color: #bf0303"><del>ing</del></span> to the three forms of
 <code class="sourceCode cpp"><em>template-parameter</em></code>: type,
@@ -8268,7 +8294,7 @@ declared by the template in its
 in paragraph 3:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_274" id="pnum_274">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_275" id="pnum_275">3</a></span>
 <span class="addu">A
 <code class="sourceCode cpp"><em>template-argument</em></code> of the
 form <code class="sourceCode cpp"><em>splice-specifier</em></code> is
@@ -8303,7 +8329,7 @@ form of the corresponding
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_275" id="pnum_275">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_276" id="pnum_276">9</a></span>
 When a <code class="sourceCode cpp"><em>simple-template-id</em></code>
 <span class="addu">or
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code></span>
@@ -8320,7 +8346,7 @@ Template type arguments<a href="#temp.arg.type-template-type-arguments" class="s
 cover splice template arguments:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_276" id="pnum_276">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_277" id="pnum_277">1</a></span>
 A <code class="sourceCode cpp"><em>template-argument</em></code> for a
 <code class="sourceCode cpp"><em>template-parameter</em></code> which is
 a type shall <span class="addu">either</span> be a
@@ -8342,7 +8368,7 @@ requirements already fall out based on how paragraphs 1 and 3 are
 already worded ]</span></p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_277" id="pnum_277">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_278" id="pnum_278">1</a></span>
 If the type <code class="sourceCode cpp">T</code> of a
 <em>template-parameter</em> ([temp.param]) contains a placeholder type
 ([dcl.spec.auto]) or a placeholder for a deduced class type
@@ -8351,11 +8377,11 @@ for the variable x in the invented declaration</p>
 <div class="sourceCode" id="cb136"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>T x <span class="op">=</span> <em>E</em> ;</span></code></pre></div>
 <p>where <code class="sourceCode cpp"><em>E</em></code> is the template
 argument provided for the parameter.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_278" id="pnum_278">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_279" id="pnum_279">2</a></span>
 The value of a non-type <em>template-parameter</em>
 <code class="sourceCode cpp">P</code> of (possibly deduced) type
 <code class="sourceCode cpp">T</code> […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_279" id="pnum_279">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_280" id="pnum_280">3</a></span>
 Otherwise, a temporary variable</p>
 <div class="sourceCode" id="cb137"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> T v <span class="op">=</span> <em>A</em>;</span></code></pre></div>
 <p>is introduced.</p>
@@ -8367,7 +8393,7 @@ Template template arguments<a href="#temp.arg.template-template-template-argumen
 to cover splice template arguments:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_280" id="pnum_280">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_281" id="pnum_281">1</a></span>
 A <code class="sourceCode cpp"><em>template-argument</em></code> for a
 template <code class="sourceCode cpp"><em>template-parameter</em></code>
 shall be <span class="rm" style="color: #bf0303"><del>the name
@@ -8387,27 +8413,27 @@ equivalence<a href="#temp.type-type-equivalence" class="self-link"></a></h3>
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_281" id="pnum_281">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_282" id="pnum_282">1</a></span>
 Two <code class="sourceCode cpp"><em>template-id</em></code>s <span class="addu">or
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>s</span>
 are the same if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_282" id="pnum_282">(1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_283" id="pnum_283">(1.1)</a></span>
 their <code class="sourceCode cpp"><em>template-name</em></code>s,
 <code class="sourceCode cpp"><em>operator-function-id</em></code>s,
 <span class="rm" style="color: #bf0303"><del>or</del></span>
 <code class="sourceCode cpp"><em>literal-operator-id</em></code>s<span class="addu">, or
 <code class="sourceCode cpp"><em>splice-specifier</em></code>s</span>
 refer to the same template, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_283" id="pnum_283">(1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_284" id="pnum_284">(1.2)</a></span>
 their corresponding type
 <code class="sourceCode cpp"><em>template-argument</em></code>s are the
 same type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_284" id="pnum_284">(1.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_285" id="pnum_285">(1.3)</a></span>
 the template parameter values determined by their corresponding non-type
 template arguments (<span>13.4.3 <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a></span>)
 are template-argument-equivalent (see below), and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_285" id="pnum_285">(1.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_286" id="pnum_286">(1.4)</a></span>
 their corresponding template
 <code class="sourceCode cpp"><em>template-argument</em></code>s refer to
 the same template.</li>
@@ -8421,23 +8447,23 @@ that are the same refer to the same class, function, or variable.</p>
 <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_286" id="pnum_286">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_287" id="pnum_287">2</a></span>
 Two values are <em>template-argument-equivalent</em> if they are of the
 same type and</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_287" id="pnum_287">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_288" id="pnum_288">(2.1)</a></span>
 they are of integral type and their values are the same, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_288" id="pnum_288">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_289" id="pnum_289">(2.2)</a></span>
 they are of floating-point type and their values are identical, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_289" id="pnum_289">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_290" id="pnum_290">(2.3)</a></span>
 they are of type <code class="sourceCode cpp">std<span class="op">::</span>nullptr_t</code>,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_290" id="pnum_290">(2.*)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_291" id="pnum_291">(2.*)</a></span>
 <span class="addu">they are of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
 and their values are the same, or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_291" id="pnum_291">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_292" id="pnum_292">(2.4)</a></span>
 they are of enumeration type and their values are the same, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_292" id="pnum_292">(2.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_293" id="pnum_293">(2.5)</a></span>
 […]</li>
 </ul>
 </blockquote>
@@ -8449,7 +8475,7 @@ Deduction guides<a href="#temp.deduct.guide-deduction-guides" class="self-link">
 also leverage deduction guides.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_293" id="pnum_293">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_294" id="pnum_294">1</a></span>
 Deduction guides are used when a
 <code class="sourceCode cpp"><em>template-name</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code></span>
@@ -8488,7 +8514,7 @@ templates<a href="#temp.alias-alias-templates" class="self-link"></a></h3>
 specializations.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_294" id="pnum_294">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_295" id="pnum_295">2</a></span>
 <span class="rm" style="color: #bf0303"><del>When a</del></span> <span class="addu">A</span>
 <code class="sourceCode cpp"><em>template-id</em></code> <span class="addu">that</span> refers to the specialization of an alias
 template<span class="rm" style="color: #bf0303"><del>, it is equivalent
@@ -8506,24 +8532,31 @@ alias template.</p>
 General<a href="#temp.res.general-general" class="self-link"></a></h3>
 <p>Extend paragraph 4 to define what it means for a
 <code class="sourceCode cpp"><em>splice-specifier</em></code> to appear
-in a type-only context.</p>
+in a type-only context. Also
+<code class="sourceCode cpp"><em>using-enum-declarator</em></code>s to
+the list of type-only contexts, as it allows the
+<code class="sourceCode cpp"><span class="kw">typename</span></code> to
+be elided from a
+<code class="sourceCode cpp"><em>splice-type-specifier</em></code> in
+non-dependent contexts.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_295" id="pnum_295">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_296" id="pnum_296">4</a></span>
 A qualified or unqualified name is said to be in a
 <code class="sourceCode cpp"><em>type-only context</em></code> if it is
 the terminal name of</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_296" id="pnum_296">(4.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_297" id="pnum_297">(4.1)</a></span>
 a <code class="sourceCode cpp"><em>typename-specifier</em></code>,
 <code class="sourceCode cpp"><em>type-requirement</em></code>,
 <code class="sourceCode cpp"><em>nested-name-specifier</em></code>,
 <code class="sourceCode cpp"><em>elaborated-type-specifier</em></code>,
-<code class="sourceCode cpp"><em>class-or-decltype</em></code>, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_297" id="pnum_297">(4.2)</a></span>
+<code class="sourceCode cpp"><em>class-or-decltype</em></code>, <span class="addu"><code class="sourceCode cpp"><em>using-enum-declarator</em></code></span>
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_298" id="pnum_298">(4.2)</a></span>
 […]
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_298" id="pnum_298">(4.4.6)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_299" id="pnum_299">(4.4.6)</a></span>
 <code class="sourceCode cpp"><em>parameter-declaration</em></code> of a
 (non-type)
 <code class="sourceCode cpp"><em>template-parameter</em></code>.</li>
@@ -8568,7 +8601,7 @@ Dependent types<a href="#temp.dep.type-dependent-types" class="self-link"></a></
 paragraph 7.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_299" id="pnum_299">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_300" id="pnum_300">7</a></span>
 An initializer is dependent if any constituent expression (<span>6.9.1
 <a href="https://wg21.link/intro.execution">[intro.execution]</a></span>)
 of the initializer is type-dependent. A placeholder type
@@ -8587,18 +8620,18 @@ definition to apply to
 <code class="sourceCode cpp"><em>splice-specifier</em></code>s.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_300" id="pnum_300">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_301" id="pnum_301">8</a></span>
 A placeholder for a deduced class type (<span>9.2.9.8 <a href="https://wg21.link/dcl.type.class.deduct">[dcl.type.class.deduct]</a></span>)
 is dependent if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_301" id="pnum_301">(8.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_302" id="pnum_302">(8.1)</a></span>
 it has a dependent initializer, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
-<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_302" id="pnum_302">(8.2)</a></span>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_303" id="pnum_303">(8.2)</a></span>
 it has a dependent
 <code class="sourceCode cpp"><em>template-name</em></code> or a
 dependent <code class="sourceCode cpp"><em>splice-specifier</em></code>,
 or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_303" id="pnum_303">(8.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_304" id="pnum_304">(8.3)</a></span>
 it refers to an alias template that is a member of the current
 instantiation and whose
 <code class="sourceCode cpp"><em>defining-type-id</em></code> is
@@ -8612,28 +8645,28 @@ and substitution (<span>13.7.8 <a href="https://wg21.link/temp.alias">[temp.alia
 paragraph 10:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_304" id="pnum_304">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_305" id="pnum_305">10</a></span>
 A type is dependent if it is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_305" id="pnum_305">(10.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_306" id="pnum_306">(10.1)</a></span>
 a template parameter,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_306" id="pnum_306">(10.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_307" id="pnum_307">(10.2)</a></span>
 …</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_307" id="pnum_307">(10.11)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_308" id="pnum_308">(10.11)</a></span>
 denoted by a
 <code class="sourceCode cpp"><em>simple-template-id</em></code> in which
 either the template name is a template parameter or any of the template
 arguments is a dependent type or an expression that is type-dependent or
 value-dependent or is a pack expansion,<sup>121</sup></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_308" id="pnum_308">(10.12)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_309" id="pnum_309">(10.12)</a></span>
 a <code class="sourceCode cpp"><em>pack-index-specifier</em></code>,
 <span class="rm" style="color: #bf0303"><del>or</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_309" id="pnum_309">(10.13)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_310" id="pnum_310">(10.13)</a></span>
 denoted by <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span><em>expression</em><span class="op">)</span></code>,
 where <code class="sourceCode cpp"><em>expression</em></code> is
 type-dependent<span class="rm" style="color: #bf0303"><del>.</del></span><span class="addu">,
 or</span></li>
-<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_310" id="pnum_310">(10.14)</a></span>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_311" id="pnum_311">(10.14)</a></span>
 denoted by a
 <code class="sourceCode cpp"><em>splice-type-specifier</em></code> in
 which either the
@@ -8671,16 +8704,16 @@ Type-dependent expressions<a href="#temp.dep.expr-type-dependent-expressions" cl
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_311" id="pnum_311">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_312" id="pnum_312">9</a></span>
 A <code class="sourceCode cpp"><em>primary-expression</em></code> of the
 form <code class="sourceCode cpp"><em>splice-specifier</em></code> or
 <code class="sourceCode cpp"><span class="kw">template</span> <em>splice-specifier</em> <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code>
 is type-dependent if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_312" id="pnum_312">(9.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_313" id="pnum_313">(9.1)</a></span>
 the <code class="sourceCode cpp"><em>splice-specifier</em></code> is
 dependent, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_313" id="pnum_313">(9.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_314" id="pnum_314">(9.2)</a></span>
 the optional
 <code class="sourceCode cpp"><em>template-argument-list</em></code>
 contains a dependent type argument, a value-dependent non-type argument,
@@ -8696,10 +8729,10 @@ Value-dependent expressions<a href="#temp.dep.constexpr-value-dependent-expressi
 (before the note):</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_314" id="pnum_314">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_315" id="pnum_315">2</a></span>
 An <em>id-expression</em> is value-dependent if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_315" id="pnum_315">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_316" id="pnum_316">(2.1)</a></span>
 […]</li>
 </ul>
 <p>Expressions of the following form are value-dependent if the
@@ -8727,21 +8760,21 @@ or a value-dependent or type-dependent
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_316" id="pnum_316">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_317" id="pnum_317">6</a></span>
 A <code class="sourceCode cpp"><em>primary-expression</em></code> of the
 form <code class="sourceCode cpp"><em>splice-specifier</em></code> or
 <code class="sourceCode cpp"><span class="kw">template</span> <em>splice-specifier</em> <span class="op">&lt;</span> <em>template-argument-list</em><sub><em>opt</em></sub> <span class="op">&gt;</span></code>
 is value-dependent if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_317" id="pnum_317">(6.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_318" id="pnum_318">(6.1)</a></span>
 the <code class="sourceCode cpp"><em>splice-specifier</em></code> is
 dependent, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_318" id="pnum_318">(6.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_319" id="pnum_319">(6.2)</a></span>
 the optional
 <code class="sourceCode cpp"><em>template-argument-list</em></code>
 contains a dependent type argument, a value-dependent non-type argument,
 a dependent template template argument, or a dependent
-<code class="sourceCode cpp"><em>splice-specifier</em></code>.</li>
+<code class="sourceCode cpp"><em>splice-template-argument</em></code>.</li>
 </ul>
 </div>
 </blockquote>
@@ -8755,7 +8788,7 @@ and renumber accordingly.</p>
 <blockquote>
 <div class="addu">
 <p><strong>Dependent splice specifiers [temp.dep.splice]</strong></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_319" id="pnum_319">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_320" id="pnum_320">1</a></span>
 A <code class="sourceCode cpp"><em>splice-specifier</em></code> is
 dependent if its converted
 <code class="sourceCode cpp"><em>constant-expression</em></code> is
@@ -8763,9 +8796,9 @@ value-dependent. A
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>
 or <code class="sourceCode cpp"><em>splice-scope-specifier</em></code>
 is dependent if its
-<code class="sourceCode cpp"><em>splice-specifier</em></code> is
+<code class="sourceCode cpp"><em>splice-template-argument</em></code> is
 dependent.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_320" id="pnum_320">2</a></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_321" id="pnum_321">2</a></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb141"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> T, <span class="kw">auto</span> NS, <span class="kw">auto</span> C, <span class="kw">auto</span> V<span class="op">&gt;</span></span>
@@ -8797,7 +8830,7 @@ Explicit specialization<a href="#temp.expl.spec-explicit-specialization" class="
 to be used like incompletely-defined classes.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_321" id="pnum_321">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_322" id="pnum_322">9</a></span>
 A <code class="sourceCode cpp"><em>simple-template-id</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code></span>
 that <span class="rm" style="color: #bf0303"><del>names</del></span>
@@ -8815,7 +8848,7 @@ General<a href="#temp.deduct.general-general" class="self-link"></a></h3>
 in paragraph 2:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_322" id="pnum_322">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_323" id="pnum_323">2</a></span>
 When an explicit template argument list is specified, if the given
 <code class="sourceCode cpp"><em>template-id</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code></span>
@@ -8836,12 +8869,12 @@ the same as parameter types that are specified using
 <div class="std">
 <blockquote>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_323" id="pnum_323">(4.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_324" id="pnum_324">(4.3)</a></span>
 If <code class="sourceCode cpp">P</code> is a class and
 <code class="sourceCode cpp">P</code> has the form
 <code class="sourceCode cpp"><em>simple-template-id</em></code> <span class="addu">or <code class="sourceCode cpp">typename<sub><em>opt</em></sub> <em>splice-specialization-specifier</em></code></span>,
 then the transformed <code class="sourceCode cpp">A</code> can be a
-dervied class <code class="sourceCode cpp">D</code> of the deduced
+derived class <code class="sourceCode cpp">D</code> of the deduced
 <code class="sourceCode cpp">A</code>. Likewise, if
 <code class="sourceCode cpp">P</code> is a pointer to a class of the
 form <code class="sourceCode cpp"><em>simple-template-id</em></code>
@@ -8868,7 +8901,7 @@ template argument might also be a
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_324" id="pnum_324">20</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_325" id="pnum_325">20</a></span>
 If <code class="sourceCode cpp">P</code> has a form that contains <code class="sourceCode cpp"><span class="op">&lt;</span>i<span class="op">&gt;</span></code>,
 and if the type of <code class="sourceCode cpp">i</code> differs from
 the type of the corresponding template parameter of the template named
@@ -8893,7 +8926,7 @@ appear in preprocessor directives, while also applying a “drive-by fix”
 to disallow lambdas in the same context.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_325" id="pnum_325">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_326" id="pnum_326">9</a></span>
 Preprocessing directives of the forms</p>
 <div class="sourceCode" id="cb142"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a>     <span class="pp"># if      <em>constant-expression</em> <em>new-line</em> <em>group</em><sub><em>opt</em></sub></span></span>
 <span id="cb142-2"><a href="#cb142-2" aria-hidden="true" tabindex="-1"></a>     <span class="pp"># elif    <em>constant-expression</em> <em>new-line</em> <em>group</em><sub><em>opt</em></sub></span></span></code></pre></div>
@@ -8911,24 +8944,24 @@ Detailed specifications<a href="#structure.specifications-detailed-specification
 <span>16.3.2.4 <a href="https://wg21.link/structure.specifications">[structure.specifications]</a></span>/3:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_326" id="pnum_326">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_327" id="pnum_327">3</a></span>
 Descriptions of function semantics contain the following elements (as
 appropriate):</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_327" id="pnum_327">(3.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_328" id="pnum_328">(3.1)</a></span>
 <em>Constraints</em>: […]</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_328" id="pnum_328">(3.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_329" id="pnum_329">(3.2)</a></span>
 <em>Mandates</em>: the conditions that, if not met, render the program
 ill-formed. […]</p></li>
 </ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_329" id="pnum_329">(3.2+1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_330" id="pnum_330">(3.2+1)</a></span>
 <em>Constant When</em>: the conditions that are required for a call to
 this function to be a core constant expression ([expr.const]).</li>
 </ul>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_330" id="pnum_330">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_331" id="pnum_331">4</a></span>
 […] Next, the semantics of the code sequence are determined by the
 <em>Constraints</em>, <em>Mandates</em>, <span class="addu"><em>Constant
 When</em>,</span> <em>Preconditions</em>, <em>Effects</em>,
@@ -8944,7 +8977,7 @@ Namespace std<a href="#namespace.std-namespace-std" class="self-link"></a></h3>
 <p>Insert before paragraph 7:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_331" id="pnum_331">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_332" id="pnum_332">6</a></span>
 Let F denote a standard library function ([global.functions]), a
 standard library static member function, or an instantiation of a
 standard library function template. Unless F is designated an
@@ -8952,7 +8985,7 @@ standard library function template. Unless F is designated an
 unspecified (possibly ill-formed) if it explicitly or implicitly
 attempts to form a pointer to F. […]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_332" id="pnum_332">6a</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_333" id="pnum_333">6a</a></span>
 Let F denote a standard library function, member function, or function
 template. If F does not designate an addressable function, it is
 unspecified if or how a reflection value designating the associated
@@ -8961,14 +8994,14 @@ entity can be formed. <span class="note"><span>[ <em>Note 1:</em>
 might not return reflections of standard functions that an
 implementation handles through an extra-linguistic mechanism.<span>
 — <em>end note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_333" id="pnum_333">6b</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_334" id="pnum_334">6b</a></span>
 Let <code class="sourceCode cpp">C</code> denote a standard library
 class or class template specialization. It is unspecified if or how a
 reflection value can be formed to any private member of
 <code class="sourceCode cpp">C</code>, or what the names of such members
 may be.</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_334" id="pnum_334">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_335" id="pnum_335">7</a></span>
 A translation unit shall not declare namespace std to be an inline
 namespace ([namespace.def]).</p>
 </blockquote>
@@ -9400,11 +9433,11 @@ synopsis</strong></p>
 <span id="cb146-331"><a href="#cb146-331" aria-hidden="true" tabindex="-1"></a>  consteval size_t variant_size(info type);</span>
 <span id="cb146-332"><a href="#cb146-332" aria-hidden="true" tabindex="-1"></a>  consteval info variant_alternative(size_t index, info type);</span>
 <span id="cb146-333"><a href="#cb146-333" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_335" id="pnum_335">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_336" id="pnum_336">1</a></span>
 Each function, and each instantiation of each function template,
 specified in this header is a designated addressable function
 ([namespace.std]).</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_336" id="pnum_336">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_337" id="pnum_337">2</a></span>
 The behavior of any function specified in namespace
 <code class="sourceCode cpp">std<span class="op">::</span>meta</code> is
 implementation-defined when a reflection of a construct not otherwise
@@ -9446,7 +9479,7 @@ Operator representations<a href="#meta.reflection.operators-operator-representat
 <span id="cb148-2"><a href="#cb148-2" aria-hidden="true" tabindex="-1"></a>  <em>see below</em>;</span>
 <span id="cb148-3"><a href="#cb148-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb148-4"><a href="#cb148-4" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> <span class="kw">enum</span> operators;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_337" id="pnum_337">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_338" id="pnum_338">1</a></span>
 This enum class specifies constants used to identify operators that can
 be overloaded, with the meanings listed in Table 1. The values of the
 constants are distinct.</p>
@@ -9699,10 +9732,10 @@ Table 1: Enum class <code class="sourceCode cpp">operators</code>
 </tbody>
 </table>
 <div class="sourceCode" id="cb149"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> operators operator_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_338" id="pnum_338">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_339" id="pnum_339">2</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">r</code> represents
 an operator function or operator function template.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_339" id="pnum_339">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_340" id="pnum_340">3</a></span>
 <em>Returns</em>: The value of the enumerator from
 <code class="sourceCode cpp">operators</code> whose corresponding
 <code class="sourceCode cpp"><em>operator-function-id</em></code> is the
@@ -9710,11 +9743,11 @@ unqualified name of the entity represented by
 <code class="sourceCode cpp">r</code>.</p>
 <div class="sourceCode" id="cb150"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view symbol_of<span class="op">(</span>operators op<span class="op">)</span>;</span>
 <span id="cb150-2"><a href="#cb150-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8symbol_of<span class="op">(</span>operators op<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_340" id="pnum_340">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_341" id="pnum_341">4</a></span>
 <em>Constant When</em>: The value of
 <code class="sourceCode cpp">op</code> corresponds to one of the
 enumerators in <code class="sourceCode cpp">operators</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_341" id="pnum_341">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_342" id="pnum_342">5</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">string_view</code> or
 <code class="sourceCode cpp">u8string_view</code> containing the
 characters of the operator symbol name corresponding to
@@ -9729,14 +9762,14 @@ Reflection names and locations<a href="#meta.reflection.names-reflection-names-a
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb151"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb151-1"><a href="#cb151-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_identifier<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_342" id="pnum_342">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_343" id="pnum_343">1</a></span>
 <em>Returns</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_343" id="pnum_343">(1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_344" id="pnum_344">(1.1)</a></span>
 If <code class="sourceCode cpp">r</code> is an unnamed entity other than
 a class that has a typedef name for linkage purposes (<span>9.2.4 <a href="https://wg21.link/dcl.typedef">[dcl.typedef]</a></span>), then
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_344" id="pnum_344">(1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_345" id="pnum_345">(1.2)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents a class
 type <code class="sourceCode cpp"><em>C</em></code>, then
 <code class="sourceCode cpp"><span class="kw">true</span></code> when
@@ -9745,14 +9778,14 @@ either the <code class="sourceCode cpp"><em>class-name</em></code> of
 <code class="sourceCode cpp"><em>C</em></code> has a typedef name for
 linkage purposes. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_345" id="pnum_345">(1.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_346" id="pnum_346">(1.3)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents a
 function, then
 <code class="sourceCode cpp"><span class="kw">true</span></code> if the
 function is not a function template specialization, constructor,
 destructor, operator function, or conversion function. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_346" id="pnum_346">(1.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_347" id="pnum_347">(1.4)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents a
 function template, then
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
@@ -9760,30 +9793,27 @@ function template, then
 template, operator function template, or conversion function template.
 Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_347" id="pnum_347">(1.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_348" id="pnum_348">(1.5)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents variable
 or a type alias, then <code class="sourceCode cpp"><span class="op">!</span>has_template_arguments<span class="op">(</span>r<span class="op">)</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_348" id="pnum_348">(1.6)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_349" id="pnum_349">(1.6)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents a
 structured binding, enumerator, non-static data member, template,
 namespace, or namespace alias, then
 <code class="sourceCode cpp"><span class="kw">true</span></code>.
 Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_349" id="pnum_349">(1.7)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_350" id="pnum_350">(1.7)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents a direct
 base class relationship, then <code class="sourceCode cpp">has_identifier<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_350" id="pnum_350">(1.8)</a></span>
-Otherwise if <code class="sourceCode cpp">r</code> represents a data
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_351" id="pnum_351">(1.8)</a></span>
+Otherwise, <code class="sourceCode cpp">r</code> represents a data
 member description (<code class="sourceCode cpp"><em>T</em></code>,
 <code class="sourceCode cpp"><em>N</em></code>,
 <code class="sourceCode cpp"><em>A</em></code>,
 <code class="sourceCode cpp"><em>W</em></code>,
-<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>),
-then <code class="sourceCode cpp"><em>N</em> <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_351" id="pnum_351">(1.9)</a></span>
-Otherwise,
-<code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>);
+<code class="sourceCode cpp"><em>N</em> <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span></code>.</li>
 </ul>
 <div class="sourceCode" id="cb152"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb152-1"><a href="#cb152-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span>
 <span id="cb152-2"><a href="#cb152-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
