@@ -5043,7 +5043,7 @@ describe the other (call it
 <code class="sourceCode cpp"><em>Y</em></code>.</span></li>
 </ul>
 <p><span class="addu">During the analysis and translation of tokens and
-instantiations, certain expressions are evaluated (<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>).
+instantiations, certain expressions are evaluated ([expr.const]).
 Diagnosable rules (<span>4.1.1 <a href="https://wg21.link/intro.compliance.general">[intro.compliance.general]</a></span>)
 that apply to constructs that semantically follow a plainly
 constant-evaluated expression
@@ -6084,7 +6084,8 @@ never interpreted as part of a
 <span id="cb111-9"><a href="#cb111-9" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="dt">int</span> e <span class="op">=</span> <span class="op">[:</span>V<span class="op">:]</span>;   <span class="co">// splice-expression</span></span>
 <span id="cb111-10"><a href="#cb111-10" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f <span class="op">=</span> <span class="kw">template</span> <span class="op">[:^^</span>e<span class="op">:]&lt;^^</span>S<span class="op">::</span>a<span class="op">&gt;</span>;  <span class="co">// splice-expression</span></span>
 <span id="cb111-11"><a href="#cb111-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb111-12"><a href="#cb111-12" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g <span class="op">=</span> <span class="kw">typename</span> <span class="op">[:^^</span><span class="dt">int</span><span class="op">:](</span><span class="dv">42</span><span class="op">)</span>;  <span class="co">// [:^^int:] is not an expression</span></span></code></pre></div>
+<span id="cb111-12"><a href="#cb111-12" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g <span class="op">=</span> <span class="kw">typename</span> <span class="op">[:^^</span><span class="dt">int</span><span class="op">:](</span><span class="dv">42</span><span class="op">)</span>;</span>
+<span id="cb111-13"><a href="#cb111-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// [:^^int:] forms part of a type, not a splice-expression</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">2</a></span>
@@ -6297,8 +6298,8 @@ If <code class="sourceCode cpp">E2</code> <span class="rm" style="color: #bf0303
 bit-field. […]</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_109" id="pnum_109">7</a></span>
 If <code class="sourceCode cpp">E2</code> <span class="addu">designates
-an entity</span> <span class="rm" style="color: #bf0303"><del>is</del></span> declared to have type
-“reference to <code class="sourceCode cpp">T</code>”, then
+an entity that</span> is declared to have type “reference to
+<code class="sourceCode cpp">T</code>”, then
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
 lvalue of type <code class="sourceCode cpp">T</code>. <span class="rm" style="color: #bf0303"><del>If</del></span> <span class="addu">In that
 case, if</span> <code class="sourceCode cpp">E2</code> <span class="rm" style="color: #bf0303"><del>is</del></span> <span class="addu">designates</span> a static data member,
@@ -6484,7 +6485,7 @@ is never interpreted as <code class="sourceCode cpp"><span class="op">^^</span> 
 and is interpreted as
 <code class="sourceCode cpp"><span class="op">^^</span> <em>type-id</em></code>
 if and only if the operand refers to the current instantiation
-(<span>13.8.3.2 <a href="https://wg21.link/temp.dep.type">[temp.dep.type]</a></span>).</p>
+([temp.dep.type]).</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_126" id="pnum_126">4</a></span>
 A <code class="sourceCode cpp"><em>reflect-expression</em></code> of the
 form <code class="sourceCode cpp"><span class="op">^^</span> <span class="op">::</span></code>

@@ -2966,7 +2966,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
   * [[7.8-1]{.pnum} If both constructs are within the `$member-specification$` of a class `C` ([class.mem.general]{.sref}) and one such construct (call it `$X$`) is in a complete-class context of `C` but the other (call it `$Y$`) is not, then `$X$` semantically follows `$Y$`.]{.addu}
   * [[7-8.#]{.pnum} Otherwise, if the syntactic endpoint of the tokens that describe one such construct (call it `$X$`) occurs lexically after the syntactic endpoint of the tokens that describe the other (call it `$Y$`), then `$X$` semantically follows `$Y$`.]{.addu}
 
-  [During the analysis and translation of tokens and instantiations, certain expressions are evaluated ([expr.const]{.sref}). Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs that semantically follow a plainly constant-evaluated expression `$P$` are considered in a context where `$P$` has been evaluated exactly once.]{.addu}
+  [During the analysis and translation of tokens and instantiations, certain expressions are evaluated ([expr.const]). Diagnosable rules ([intro.compliance.general]{.sref}) that apply to constructs that semantically follow a plainly constant-evaluated expression `$P$` are considered in a context where `$P$` has been evaluated exactly once.]{.addu}
 
   [[Other requirements in this document can further constrain the contexts from which expressions are evaluated. For example, a declaration that lexically follows all points from which a given instantiation can be perfomed will be considered in a context where all plainly constant-evaluated expressions resulting from that instantiation have been evaluated exactly once.]{.note}]{.addu}
 
@@ -3542,7 +3542,8 @@ constexpr int d = template [:^^TCls:]<int>::b;  // template [:^^TCls:]<int> is n
 template <auto V> constexpr int e = [:V:];   // splice-expression
 constexpr int f = template [:^^e:]<^^S::a>;  // splice-expression
 
-auto g = typename [:^^int:](42);  // [:^^int:] is not an expression
+auto g = typename [:^^int:](42);
+  // [:^^int:] forms part of a type, not a splice-expression
 ```
 
 :::
@@ -3634,7 +3635,7 @@ Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Exp
 
 [6]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a bit-field, `E1.E2` is a bit-field. [...]
 
-[7]{.pnum} If `E2` [designates an entity]{.addu} [is]{.rm} declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. [If]{.rm} [In that case, if]{.addu} `E2` [is]{.rm} [designates]{.addu} a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
+[7]{.pnum} If `E2` [designates an entity that]{.addu} is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. [If]{.rm} [In that case, if]{.addu} `E2` [is]{.rm} [designates]{.addu} a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
 
 * [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a static data member and the type of `E2` is `T`, then `E1.E2` is an lvalue; [...]
 * [#.#]{.pnum} [Otherwise, if]{.addu} [If]{.rm} `E2` [is]{.rm} [designates]{.addu} a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", [...]. If [the entity designated by]{.addu} `E2` is declared to be a `mutable` member, then the type of `E1.E2` is "_vq12_ `T`". If [the entity designated by]{.addu} `E2` is not declared to be a `mutable` member, then the type of `E1.E2` is "_cq12_ _vq12_ `T`".
@@ -3724,7 +3725,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 ```
 :::
 
-[#]{.pnum} A `$reflect-expression$` that could be validly interpreted as `^^ $template-name$` is never interpreted as `^^ $id-expression$`, and is interpreted as `^^ $type-id$` if and only if the operand refers to the current instantiation ([temp.dep.type]{.sref}).
+[#]{.pnum} A `$reflect-expression$` that could be validly interpreted as `^^ $template-name$` is never interpreted as `^^ $id-expression$`, and is interpreted as `^^ $type-id$` if and only if the operand refers to the current instantiation ([temp.dep.type]).
 
 [#]{.pnum} A `$reflect-expression$` of the form `^^ ::` represents the global namespace. A `$reflect-expression$` of the form `^^ $qualified-namespace-specifier$`
 is interpreted as follows:
