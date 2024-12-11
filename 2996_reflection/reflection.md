@@ -847,24 +847,27 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://go
 #include <array>
 
 template <typename T, size_t N>
-constexpr auto struct_of_arrays_impl = [] consteval {
+struct struct_of_arrays_impl {
   struct impl;
 
-  std::vector<std::meta::info> old_members = nonstatic_data_members_of(^^T);
-  std::vector<std::meta::info> new_members = {};
-  for (std::meta::info member : old_members) {
-    auto array_type = substitute(^^std::array, {
-        type_of(member),
-        std::meta::reflect_value(N),
-    });
-    auto mem_descr = data_member_spec(array_type, {.name = identifier_of(member)});
-    new_members.push_back(mem_descr);
+  consteval {
+    std::vector<std::meta::info> old_members = nonstatic_data_members_of(^^T);
+    std::vector<std::meta::info> new_members = {};
+    for (std::meta::info member : old_members) {
+        auto array_type = substitute(^^std::array, {
+            type_of(member),
+            std::meta::reflect_value(N),
+        });
+        auto mem_descr = data_member_spec(array_type, {.name = identifier_of(member)});
+        new_members.push_back(mem_descr);
+    }
+
+    define_aggregate(^^impl, new_members);
   }
-  return std::meta::define_aggregate(^^impl, new_members);
-}();
+};
 
 template <typename T, size_t N>
-using struct_of_arrays = [: struct_of_arrays_impl<T, N> :];
+using struct_of_arrays = struct_of_arrays_impl<T, N>::impl;
 ```
 :::
 
@@ -3078,10 +3081,10 @@ Since namespace aliases are now entities, but their declarations are not definit
 
 ### [basic.def.odr]{.sref} One-definition rule {-}
 
-Add `$splice-expression$`s to the set of potential results of an expression in paragarph 3.
+Add `$splice-expression$`s to the set of potential results of an expression in paragraph 3.
 
 ::: std
-[3]{.pnum} An expression or conversion is _potentially evaluated_ unless it is an unevaluated operand ([expr.context]{.sref}), a subexpression thereof, or a conversion in an initialization or conversion sequence in such a context. The set of _potential results_ of an expression `$E$` is defined as follows:
+[3]{.pnum} An expression or conversion is _potentially evaluated_ unless it is an unevaluated operand ([expr.context]), a subexpression thereof, or a conversion in an initialization or conversion sequence in such a context. The set of _potential results_ of an expression `$E$` is defined as follows:
 
 - [#.#]{.pnum} If `$E$` is an `$id-expression$` ([expr.prim.id]{.sref}) [or a `$splice-expression$` ([expr.prim.splice])]{.addu}, the set contains only `$E$`.
 - [#.#]{.pnum} [...]
@@ -3093,11 +3096,11 @@ Add `$splice-expression$`s to the set of potential results of an expression in p
 Break bullet 4.1 into sub-bullets, modify it to cover splicing of functions, and replace [basic.lookup] with [over.pre] since the canonical definition of "overload set" is relocated there by this proposal:
 
 ::: std
-- [4.1]{.pnum} A function is named by an expression or conversion if it is the selected member of an overload set ([[basic.pre]]{.rm} [[over.pre]]{.addu}, [over.match], [over.over]) in an overload resolution performed as part of forming that expression or conversion, unless it is a pure virtual function and [either]{.rm} the expression[\ ]{.addu}
+- [4.1]{.pnum} A function is named by an expression or conversion [`$E$`]{.addu} if it is the selected member of an overload set ([[basic.lookup]]{.rm} [[over.pre]]{.addu}, [over.match], [over.over]) in an overload resolution performed as part of forming that expression or conversion, unless it is a pure virtual function and [either the expression]{.rm}[\ ]{.addu}
 
-  - [#.#.#]{.pnum} is not an `$id-expression$` naming the function with an explicitly qualified name[,]{.addu}
-  - [[#.#.#]{.pnum} is not a `$splice-expression$`,]{.addu} or
-  - [#.#.#]{.pnum} [the expression]{.rm} forms a pointer to member ([expr.unary.op]).
+  - [#.#.#]{.pnum} [`$E$`]{.addu} is not an `$id-expression$` naming the function with an explicitly qualified name[,]{.addu}
+  - [[#.#.#]{.pnum} [`$E$`]{.addu} is not a `$splice-expression$`,]{.addu} or
+  - [#.#.#]{.pnum} [the expression]{.rm} [`$E$`]{.addu} forms a pointer to member ([expr.unary.op]).
 
 :::
 
@@ -3656,7 +3659,7 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} as part of a class member access in which the object expression refers to the member's class or a class derived from that class,
 * [#.#]{.pnum} to form a pointer to member ([expr.unary.op]{.sref}), or
-* [#.#]{.pnum} if that `$splice-expression$` denotes a non-static data member and it appears in an unevaluated operand.
+* [#.#]{.pnum} if that `$splice-expression$` designates a non-static data member and it appears in an unevaluated operand.
 
 [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
@@ -3829,7 +3832,9 @@ is interpreted as follows:
 
   * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$` and overload resolution for the expression `&$S$` determines a unique function `$F$` ([over.over]{.sref}), the `$reflect-expression$` represents `$F$`.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable or structured binding not captured by an enclosing `$lambda-expression$`, an enumerator, or a non-static data member or member function, the `$reflect-expression$` represents that entity.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, the `$reflect-expression$` is ill-formed.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member or member function, the `$reflect-expression$` represents that entity.
 
   * [#.#]{.pnum} Otherwise, the `$reflect-expression$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
 
@@ -4129,7 +4134,7 @@ Add a bullet after bullet 1.3 to apply to `$splice-expression$`s:
 [...]
 
 - [1.3]{.pnum} otherwise, if `$E$` is an unparenthesized `$id-expression$` or an unparenthesized class member access ([expr.ref]), `decltype($E$)` is the type of the entity named by `$E$`. If there is no such entity, the program is ill-formed;
-- [[1.3+]{.pnum} otherwise, if `$E$` is an unparenthesized `$splice-expression$`, `decltype($E$)` is the type of the entity, object, or value named by `$E$`;]{.addu}
+- [[1.3+]{.pnum} otherwise, if `$E$` is an unparenthesized `$splice-expression$`, `decltype($E$)` is the type of the entity, object, or value designated by the `$splice-specifier$` of `$E$`;]{.addu}
 
 [...]
 
@@ -4582,7 +4587,7 @@ as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of funct
 Remove the explicit references to `$id-expression$`s from paragraph 1 to allow taking the address of an overload set specified by a `$splice-expression$`:
 
 ::: std
-[1]{.pnum} An [`$id-expression$` whose terminal name]{.rm} [expression that]{.addu} refers to an overload set `$S$` and that appears without arguments is resolved to a function, a pointer to function, or a pointer to member function for a specific function that is chosen from a set of functions selected from `$S$` determined based on the target type required in the context (if any), as described below. [...]
+[1]{.pnum} An [`$id-expression$` whose terminal name refers]{.rm} [expression that designates]{.addu} to an overload set `$S$` and that appears without arguments is resolved to a function, a pointer to function, or a pointer to member function for a specific function that is chosen from a set of functions selected from `$S$` determined based on the target type required in the context (if any), as described below. [...]
 
 The [`$id-expression$`]{.rm} [expression]{.addu} can be preceded by the `&` operator.
 
