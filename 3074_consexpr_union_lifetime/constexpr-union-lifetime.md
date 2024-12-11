@@ -401,6 +401,80 @@ over `trivial union`:
 
 So this paper proposes the more favorable design.
 
+## Just to Double Check
+
+During Core review in Wrocław, there was a desire to make it clear that this proposal can change code that was previously ill-formed to instead become undefined behavior:
+
+::: std
+```cpp
+union U {
+    std::string s;
+};
+
+auto f() -> std::string {
+    U u;
+    return u.s;
+}
+```
+:::
+
+Status quo is that this program is ill-formed because `U`'s constructor and destructor are defined as deleted. With this proposal, they become trivial — constructing `u` is valid but `u.s` is uninitialized, which is then returned.
+
+In practice, I don't think this is a huge issue since users can simply "fix" the issue of the deleted constructor and destructor by adding `U() { }` and `~U() { }` — and now we're back to the exact same problem anyway.
+
+## Constructor/Destructor Intention Matching
+
+Consider:
+
+::: std
+```cpp
+union U1 {
+    std::string s = "this";
+};
+
+union U2 {
+    U2() : s("or that") { }
+    std::string s;
+};
+```
+:::
+
+In [@P3074R4], `U1` and `U2` would both have a non-trivial default destructor but still have a trivial destructor. Core in Wrocław suggested that the constructor and destructor should really match. That is, if a `union` has a variant with a non-trivial destructor and that union has non-trivial default constructor (either by having a user-provided default constructor or by having a default member initializer), then we should retain the original rule and keep the deleted destructor. That is, both of the above unions (regardless of how they achieve having a non-trivial default constructor), would still have a deleted destructor.
+
+This requires some additional typing in some cases, for instance:
+
+<table>
+<tr><th>Deleted Destructor</th><th>Non-Trivial Destructor</th><th>Trivial Destructor</th></tr>
+<tr><td>
+```cpp
+union A {
+  string s;
+  A* next = nullptr;
+};
+```
+</td><td>
+```cpp
+union B {
+  ~B() { }
+  string s;
+  B* next = nullptr;
+};
+```
+</td><td>
+```cpp
+struct C {
+  C() : next(nullptr) { }
+  union {
+    string s;
+    C* next;
+  };
+};
+```
+</td></tr>
+</table>
+
+The suggested rule is that `A`'s destructor would be deleted, due to the non-trivial default constructor (unlike in R4). That could be resolved by simply providing a destructor, as in `B`, but this destructor would be non-trivial. The real solution would be to wrap everything in a struct - `C` would be trivially destructible.
+
 # Proposal
 
 This paper proposes to just [make it work](#just-make-it-work). That is:
