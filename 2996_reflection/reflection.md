@@ -846,25 +846,25 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://go
 #include <meta>
 #include <array>
 
-template <typename T, std::size_t N>
-struct struct_of_arrays_impl;
+template <typename T, size_t N>
+constexpr auto struct_of_arrays_impl = [] consteval {
+  struct impl;
 
-consteval auto make_struct_of_arrays(std::meta::info type,
-                                     std::meta::info N) -> std::meta::info {
-  std::vector<std::meta::info> old_members = nonstatic_data_members_of(type);
+  std::vector<std::meta::info> old_members = nonstatic_data_members_of(^^T);
   std::vector<std::meta::info> new_members = {};
   for (std::meta::info member : old_members) {
-    auto type_array = substitute(^^std::array, {type_of(member), N });
-    auto mem_descr = data_member_spec(type_array, {.name = identifier_of(member)});
+    auto array_type = substitute(^^std::array, {
+        type_of(member),
+        std::meta::reflect_value(N),
+    });
+    auto mem_descr = data_member_spec(array_type, {.name = identifier_of(member)});
     new_members.push_back(mem_descr);
   }
-  return define_aggregate(
-    substitute(^^struct_of_arrays_impl, {type, N}),
-    new_members);
-}
+  return std::meta::define_aggregate(^^impl, new_members);
+}();
 
 template <typename T, size_t N>
-using struct_of_arrays = [: make_struct_of_arrays(^^T, ^^N) :];
+using struct_of_arrays = [: struct_of_arrays_impl<T, N> :];
 ```
 :::
 
@@ -890,7 +890,7 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_aggregate` is put to good use.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/5nsqY1vxz), [Clang](https://godbolt.org/z/veEq6ozes).
+On Compiler Explorer: [EDG](https://godbolt.org/z/jWrPGhn5s), [Clang](https://godbolt.org/z/7PcYrY7eq).
 
 
 ## Parsing Command-Line Options II
@@ -2921,6 +2921,17 @@ Education and training are important to help C++ users avoid such sharp edges, b
 
 ## Language
 
+### [intro.defs]{.sref} Terms and definitions {-}
+
+Add `$splice-specifier$` to the list of template argument forms in definition 3.5.
+
+::: std
+**[3.5]{.pnum} argument**
+
+⟨template instantiation⟩ `$constant-expression$`, `$type-id$`, [or]{.rm} `$id-expression$`[, or `$splice-specifier$`]{.addu} in the comma-separated list bounded by the angle brackets
+
+:::
+
 ### [lex.phases]{.sref} Phases of translation {-}
 
 [In addition to changes necessary for this proposal, we are applying the "drive-by fix" of merging phases 7/8, in order to clarify that template instantiation is interleaved with translation. In so doing, we replace the notion of "instantiation units" with a partial ordering among all program constructs in a translation unit.]{.ednote}
@@ -3066,6 +3077,29 @@ Since namespace aliases are now entities, but their declarations are not definit
 :::
 
 ### [basic.def.odr]{.sref} One-definition rule {-}
+
+Add `$splice-expression$`s to the set of potential results of an expression in paragarph 3.
+
+::: std
+[3]{.pnum} An expression or conversion is _potentially evaluated_ unless it is an unevaluated operand ([expr.context]{.sref}), a subexpression thereof, or a conversion in an initialization or conversion sequence in such a context. The set of _potential results_ of an expression `$E$` is defined as follows:
+
+- [#.#]{.pnum} If `$E$` is an `$id-expression$` ([expr.prim.id]{.sref}) [or a `$splice-expression$` ([expr.prim.splice])]{.addu}, the set contains only `$E$`.
+- [#.#]{.pnum} [...]
+
+[This set is a (possibly-empty) set of `$id-expression$`s [and `$splice-expression$`s]{.addu}, each of which is either `$E$` or a subexpression of `$E$`.]{.note}
+
+:::
+
+Break bullet 4.1 into sub-bullets, modify it to cover splicing of functions, and replace [basic.lookup] with [over.pre] since the canonical definition of "overload set" is relocated there by this proposal:
+
+::: std
+- [4.1]{.pnum} A function is named by an expression or conversion if it is the selected member of an overload set ([[basic.pre]]{.rm} [[over.pre]]{.addu}, [over.match], [over.over]) in an overload resolution performed as part of forming that expression or conversion, unless it is a pure virtual function and [either]{.rm} the expression[\ ]{.addu}
+
+  - [#.#.#]{.pnum} is not an `$id-expression$` naming the function with an explicitly qualified name[,]{.addu}
+  - [[#.#.#]{.pnum} is not a `$splice-expression$`,]{.addu} or
+  - [#.#.#]{.pnum} [the expression]{.rm} forms a pointer to member ([expr.unary.op]).
+
+:::
 
 Modify the first sentence of paragraph 5 to cover splicing of variables:
 
@@ -3232,7 +3266,7 @@ static_assert(alias::s == 2);
 
 ### [basic.link]{.sref} Program and Linkage {-}
 
-Add a bullet to paragraph 13:
+Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing bullets:
 
 ::: std
 
@@ -3240,8 +3274,8 @@ Add a bullet to paragraph 13:
 
 * [13.1]{.pnum} `$D$` contains a `$lambda-expression$` whose closure type is `$E$`,
 * [13.1+]{.pnum} [`$D$` contains a `$reflect-expression$` or a manifestly constant-evaluated expression of type `std::meta::info` that represents `$E$`,]{.addu}
-* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$`, or
-* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` that refers to a set of overloads that contains `$E$`.
+* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$` [or a `$splice-expression$` designating `$E$`]{.addu}, or
+* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` [or `$splice-expression$`]{.addu} that refers to a set of overloads that contains `$E$`.
 
 :::
 
@@ -3393,6 +3427,13 @@ Apply a drive-by fix to bullet 1.1 clarifying that a glvalue can also determine 
 
 :::
 
+Account for move-eligible `$splice-expression$`s in bullet 4.1 of Note 3.
+
+::: std
+* [4.1]{.pnum} a move-eligible `$id-expression$` [or `$splice-expression$`]{.addu} ([expr.prim.id.unqual]),
+
+:::
+
 ### [expr.context]{.sref} Context dependence {-}
 
 Add `$reflect-expression$`s to the list of unevaluated operands in paragraph 1.
@@ -3402,9 +3443,21 @@ Add `$reflect-expression$`s to the list of unevaluated operands in paragraph 1.
 
 :::
 
+Add `$splice-expression$` to the list of expressions in paragraph 2.
+
+::: std
+[2]{.pnum} In some contexts, an expression only appears for its side effects. Such an expression is called a _discarded-value expression_. The array-to-pointer and function-to-pointer standard conversions are not applied. The lvalue-to-rvalue conversion is applied if and only if the expression is a glvalue of volatile-qualified type and it is one of the following:
+
+- [#.#]{.pnum} `( $expression$ )`, where `$expression$` is one of these expressions,
+- [#.#]{.pnum} `$id-expression$` ([expr.prim.id]),
+- [[#.2+]{.pnum} `$splice-expression$` ([expr.prim.splice]),]{.addu}
+- [#.3]{.pnum} [...]
+
+:::
+
 ### [expr.prim]{.sref} Primary expressions {-}
 
-Change the grammar for `$primary-expression$` in [expr.prim]{.sref} as follows:
+Add `$splice-expression$` to the grammar for `$primary-expression$`:
 
 ::: std
 ```diff
@@ -3433,6 +3486,18 @@ Modify paragraph 2 to avoid transforming non-static members into implicit member
 * [#.#]{.pnum} if `$E$` is a `$qualified-id$`, `$E$` is not the un-parenthesized operand of the unary `&` operator ([expr.unary.op]{.sref}),
 
 the `$id-expression$` is transformed into a class member access expression using `(*this)` as the object expression.
+
+:::
+
+### [expr.prim.id.unqual]{.sref} Unqualified names {-}
+
+Modify paragraph 4 to allow `$splice-expression$`s to be move-eligible:
+
+::: std
+[4]{.pnum} An _implicitly movable entity_ is a variable of automatic storage duration that is either a non-volatile object or an rvalue reference to a non-volatile object type. In the following contexts, [an]{.rm} [a (possibly parenthesized)]{.addu} `$id-expression$` [or `$splice-expression$` ([expr.prim.splice]) `$E$`]{.addu} is _move-eligible_:
+
+- [#.#]{.pnum} If [the `$id-expression$` (possibly parenthesized)]{.rm} [`$E$`]{.addu} is an operand of a `return` ([stmt.return]) or `co_return` ([stmt.return.coroutine]) statement, and names an implicitly movable entity declared in the body or `$parameter-declaration-clause$` of the innermost enclosing function or `$lambda-expression$`, or
+- [#.#]{.pnum} if [the `$id-expression$` (possibly parenthesized)]{.rm} [`$E$`]{.addu} is the operand of a `$throw-expression$` ([expr.throw]) and names an implicitly movable entity that belongs to a scope that does not contain the `$compound-statement$` of the innermost `$lambda-expression$`, `$try-block$`, or `$function-try-block$` (if any) whose `$compound-statement$` or `$ctor-initializer$` contains the `$throw-expression$`.
 
 :::
 
@@ -3513,6 +3578,23 @@ Break the next paragraph into a bulleted list, extend it to also cover splices, 
 
 :::
 
+### [expr.prim.lambda.capture]{.sref} Captures {-}
+
+Modify bullet 7.1 as follows:
+
+::: std
+- [7.1]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} that names a local entity potentially references that entity; an `$id-expression$` that names one or more non-static class members and does not form a pointer to member ([expr.unary.op]) potentially references `*this`.
+
+:::
+
+Modify paragraph 11 (and note 7 which follows):
+
+::: std
+- [11]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} within the `$compound-statement$` of a `$lambda-expression$` that is an odr-use of an entity captured by copy is transformed into an access to the corresponding unnamed data member of the closure type.
+
+  [An `$id-expression$` [or `$splice-expression$`]{.addu} that is not an odr-use refers to the original entity, never to a member of the closure type. However, such an `$id-expression$` can still cause the implicit capture of the entity.]{.note7}
+:::
+
 ### 7.5.8* [expr.prim.splice] Expression splicing {-}
 
 Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
@@ -3550,7 +3632,7 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} If `$S$` is an object, a function, or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
+* [#.#]{.pnum} If `$S$` is an object, a function, a function template, or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
 
@@ -3747,7 +3829,7 @@ is interpreted as follows:
 
   * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$` and overload resolution for the expression `&$S$` determines a unique function `$F$` ([over.over]{.sref}), the `$reflect-expression$` represents `$F$`.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member or member function, the `$reflect-expression$` represents that entity.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable or structured binding not captured by an enclosing `$lambda-expression$`, an enumerator, or a non-static data member or member function, the `$reflect-expression$` represents that entity.
 
   * [#.#]{.pnum} Otherwise, the `$reflect-expression$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
 
@@ -3809,6 +3891,13 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
+Modify paragraph 10 to mention `$splice-expression$`s:
+
+::: std
+[10]{.pnum} During the evaluation of an expression `$E$` as a core constant expression, all `$id-expression$`s[, `$splice-expression$`s,]{.addu} and uses of `*this` that refer to an object or reference whose lifetime did not begin with the evaluation of `$E$` are treated as referring to a specific instance of taht object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. [...]
+
+:::
+
 Modify paragraph 15 to disallow returning non-consteval-only pointers and references to consteval-only objects from constant expressions.
 
 ::: std
@@ -3852,7 +3941,7 @@ Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 t
 ::: std
 [18]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
 
-* [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` that denotes an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
+* [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
 * [#.#]{.pnum} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
 * [[#.#]{.pnum} of consteval-only type ([basic.types.general]{.sref}).]{.addu}
 
@@ -4030,6 +4119,24 @@ Add a row to [tab:dcl.type.simple] to cover the `$splice-type-specifier$` produc
 |`...`|...|
 :::
 
+### [dcl.type.decltype]{.sref} Decltype specifiers {-}
+
+Add a bullet after bullet 1.3 to apply to `$splice-expression$`s:
+
+::: std
+[1]{.pnum} For an expression `$E$`, the type denoted by `decltype($E$)` is defined as follows:
+
+[...]
+
+- [1.3]{.pnum} otherwise, if `$E$` is an unparenthesized `$id-expression$` or an unparenthesized class member access ([expr.ref]), `decltype($E$)` is the type of the entity named by `$E$`. If there is no such entity, the program is ill-formed;
+- [[1.3+]{.pnum} otherwise, if `$E$` is an unparenthesized `$splice-expression$`, `decltype($E$)` is the type of the entity, object, or value named by `$E$`;]{.addu}
+
+[...]
+
+
+The operand of the `decltype` specifier is an unevaluated operand.
+
+:::
 
 ### [dcl.type.splice] Type splicing {-}
 
@@ -4081,6 +4188,19 @@ Use "denoted by" instead of "named by" in paragraph 9 to be more clear about the
 [9]{.pnum} A function type with a `$cv-qualifier-seq$` or a `$ref-qualifier$` (including a type [named]{.rm} [denoted]{.addu} by `$typedef-name$` ([dcl.typedef]{.sref}, [temp.param]{.sref})) shall appear only as:
 
 * [#.#]{.pnum} [...]
+
+:::
+
+### [dcl.fct.default]{.sref} Default arguments {-}
+
+Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments.
+
+::: std
+[9]{.pnum} A default argument is evaluated each time the function is called with no argument for the corresponding parameter.
+
+[...]
+
+A non-static member shall not appear in a default argument unless it appears as the `$id-expression$` of a class member access expression ([expr.ref]) [or `$reflect-expression$` ([expr.reflect])]{.addu} or unless it is used to form a pointer to member ([expr.unary.op]).
 
 :::
 
@@ -4288,6 +4408,16 @@ Prefer "type alias" to "`$typedef-name$`" in paragraph 2.
 
 ### [module.global.frag]{.sref} Global module fragment {-}
 
+Extend bullet 3.1 to include `$splice-specifier$`s that designate `$D$`. Separately account for `$splice-specifier$`s that might have a `$splice-specialization-specifier$` designating a specialization.
+
+::: std
+[3]{.pnum} A declaration `$D$` is _decl-reachable_ from a declaration `$S$` in the same translation unit if
+
+- [#.#]{.pnum} `$D$` does not declare a function or function template and `$S$` contains an `$id-expression$`, `$namespace-name$`, `$type-name$`, `$template-name$`, or `$concept-name$` naming `$D$` [or a `$splice-specifier$` or `$splice-expression$` designating `$D$`]{.addu}, or
+- [#.#]{.pnum} [...]
+
+:::
+
 Specify in paragraph 3 that it is unspecified whether spliced types are replaced by their designated types, and renumber accordingly. Add an additional bullet further clarifying that it is unspecified whether any splice specifier is replaced.
 
 ::: std
@@ -4447,6 +4577,17 @@ as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of funct
 
 :::
 
+### [over.over]{.sref} Address of an overload set
+
+Remove the explicit references to `$id-expression$`s from paragraph 1 to allow taking the address of an overload set specified by a `$splice-expression$`:
+
+::: std
+[1]{.pnum} An [`$id-expression$` whose terminal name]{.rm} [expression that]{.addu} refers to an overload set `$S$` and that appears without arguments is resolved to a function, a pointer to function, or a pointer to member function for a specific function that is chosen from a set of functions selected from `$S$` determined based on the target type required in the context (if any), as described below. [...]
+
+The [`$id-expression$`]{.rm} [expression]{.addu} can be preceded by the `&` operator.
+
+:::
+
 ### [over.built]{.sref} Built-in operators {-}
 
 Add built-in operator candidates for `std::meta::info` to [over.built]{.sref}:
@@ -4461,10 +4602,19 @@ bool operator!=(T, T);
 
 ### [temp.param]{.sref} Template parameters {-}
 
-Extend the grammar for `$type-constraint$` to include `$splice-type-specifier$`.
+Extend `$type-parameter$` to permit `$splice-specifier$`s as default template arguments for template template parameters. Also extend the grammar for `$type-constraint$` to include `$splice-type-specifier$`.
 
 ::: std
 ```diff
+  $type-parameter$:
+      $type-parameter-key$ ...@~_opt_~@ $identifier$@~_opt_~@
+      $type-parameter-key$ $identifier$@~_opt_~@ = $type-id$
+      $type-constraint$ ...@~_opt_~@ $identifier$@~_opt_~@
+      $type-constraint$ $identifier$@~_opt_~@ = $type-id$
+      $template-head$ $type-parameter-key$ ...@~_opt_~@ $identifier$@~_opt_~@
+      $template-head$ $type-parameter-key$ $identifier$@~_opt_~@ = $id-expression$
++     $template-head$ $type-parameter-key$ $identifier$@~_opt_~@ = $splice-template-argument$
+
   $type-constraint$:
       $nested-name-specifier$@~_opt_~@ $concept-name$
       $nested-name-specifier$@~_opt_~@ $concept-name$ < $template-argument-list$@~_opt_~@>
@@ -4646,6 +4796,15 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
 ::: std
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be [the name of]{.rm} a class template or an alias template, expressed as [an]{.addu} `$id-expression$` [or a `$splice-template-argument$`]{.addu}. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
+:::
+
+### [temp.constr.normal]{.sref} Constraint normalization {-}
+
+Include a reference to `$splice-expression$`s in Note 1.
+
+::: std
+[Normalization of `$constraint-expression$`s is performed when determining the associated constraints ([temp.constr.constr]) of a declaration and when evaluating the value of an `$id-expression$` [or `$splice-expression$`]{.addu} that names a concept specialization ([expr.prim.id] [, [expr.prim.splice]]{.addu})]{.note1}
+
 :::
 
 ### [temp.type]{.sref} Type equivalence {-}
