@@ -5412,6 +5412,18 @@ static_assert(size_of(^^X<int>) == sizeof(int)); // instantiates X<int>
 :::
 :::
 
+[3]{.pnum} Any function in namespace `std::meta` that whose return type is `string_view` or `u8string_view` returns an object `$V$` such that `$V$.data()[$V$.size()] == '\0'`.
+
+::: example
+```cpp
+struct C { };
+
+constexpr string_view sv = identifier_of(^^C);
+static_assert(sv == "C");
+static_assert(sv.data()[0] == 'C');
+static_assert(sv.data()[1] == '\0');
+```
+:::
 :::
 :::
 
@@ -5494,7 +5506,7 @@ consteval u8string_view u8symbol_of(operators op);
 
 [#]{.pnum} *Constant When*: The value of `op` corresponds to one of the enumerators in `operators`.
 
-[#]{.pnum} *Returns*: A `string_view` or `u8string_view` containing the characters of the operator symbol name corresponding to `op`, respectively encoded with the ordinary literal encoding or with UTF-8.
+[#]{.pnum} *Returns*: `string_view` or `u8string_view` containing the characters of the operator symbol name corresponding to `op`, respectively encoded with the ordinary literal encoding or with UTF-8.
 :::
 :::
 
