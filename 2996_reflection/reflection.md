@@ -2931,6 +2931,7 @@ Starting from R8, this paper uses option #3. That is: every type trait `std::is_
 
 Static reflection invariably brings new ways to violate ODR.
 
+::: std
 ```cpp
 // File 'cls.h'
 struct Cls {
@@ -2942,12 +2943,13 @@ struct Cls {
   }
 };
 ```
+:::
 
 Two translation units including `cls.h` can generate different definitions of `Cls::odr_violator()` based on whether an odd or even number of declarations have been imported from `std`. Branching on the members of a namespace is dangerous because namespaces may be redeclared and reopened: the set of contained declarations can differ between program points.
 
 The creative programmer will find no difficulty coming up with other predicates which would be similarly dangerous if substituted into the same `if constexpr` condition: for instance, given a branch on `is_complete_type(^^T)`, if one translation unit `#include`s a forward declaration of `T`, another `#include`s a complete definition of `T`, and they both afterwards `#include "cls.h"`, the result will be an ODR violation.
 
-Additional papers are already in flight proposing additional metafunctions that pose similar dangers. For instance, [@P3096R1] proposes the `parameters_of` metafunction. This feature is important for generating language bindings (e.g., Python, JavaScript), but since parameter names can differ between declarations, it would be dangerous for a member function defined in a header file to branch on the name of a parameter.
+Additional papers are already in flight proposing additional metafunctions that pose similar dangers. For instance, [@P3096R2] proposes the `parameters_of` metafunction. This feature is important for generating language bindings (e.g., Python, JavaScript), but since parameter names can differ between declarations, it would be dangerous for a member function defined in a header file to branch on the name of a parameter.
 
 These cases are not difficult to identify: Given an entity `E` and two program points `P1` and `P2` from which a reflection of `E` may be optained, it is unsafe to branch runtime code generation on any property of `E` (e.g., namespace members, parameter names, completeness of a class) that can be modified between `P1` and `P2`. Worth noting as well, these sharp edges are not unique (or new) to reflection: It is already possible to build an ODR trap based on the completeness of a class using C++23.
 

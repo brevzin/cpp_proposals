@@ -4938,6 +4938,8 @@ while all other type traits
 are introduced as <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>meow</code>.</p>
 <h2 data-number="4.5" id="odr-concerns"><span class="header-section-number">4.5</span> ODR Concerns<a href="#odr-concerns" class="self-link"></a></h2>
 <p>Static reflection invariably brings new ways to violate ODR.</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb104"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="co">// File &#39;cls.h&#39;</span></span>
 <span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Cls <span class="op">{</span></span>
 <span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> odr_violator<span class="op">()</span> <span class="op">{</span></span>
@@ -4947,6 +4949,8 @@ are introduced as <code class="sourceCode cpp">std<span class="op">::</span>meta
 <span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a>      branch_2<span class="op">()</span>;</span>
 <span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
 <p>Two translation units including
 <code class="sourceCode cpp">cls<span class="op">.</span>h</code> can
 generate different definitions of <code class="sourceCode cpp">Cls<span class="op">::</span>odr_violator<span class="op">()</span></code>
@@ -4967,7 +4971,7 @@ complete definition of <code class="sourceCode cpp">T</code>, and they
 both afterwards <code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&quot;cls.h&quot;</span></code>,
 the result will be an ODR violation.</p>
 <p>Additional papers are already in flight proposing additional
-metafunctions that pose similar dangers. For instance, <span class="citation" data-cites="P3096R1">[<a href="https://wg21.link/p3096r1" role="doc-biblioref">P3096R1</a>]</span> proposes the
+metafunctions that pose similar dangers. For instance, <span class="citation" data-cites="P3096R2">[<a href="https://wg21.link/p3096r2" role="doc-biblioref">P3096R2</a>]</span> proposes the
 <code class="sourceCode cpp">parameters_of</code> metafunction. This
 feature is important for generating language bindings (e.g., Python,
 JavaScript), but since parameter names can differ between declarations,
@@ -12248,9 +12252,9 @@ C++26. <a href="https://wg21.link/p2996r7"><div class="csl-block">https://wg21.l
 [P3068R1] Hana Dusíková. 2024-03-30. Allowing exception throwing in
 constant-evaluation. <a href="https://wg21.link/p3068r1"><div class="csl-block">https://wg21.link/p3068r1</div></a>
 </div>
-<div id="ref-P3096R1" class="csl-entry" role="doc-biblioentry">
-[P3096R1] Adam Lach, Walter Genovese. 2024-05-15. Function Parameter
-Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r1"><div class="csl-block">https://wg21.link/p3096r1</div></a>
+<div id="ref-P3096R2" class="csl-entry" role="doc-biblioentry">
+[P3096R2] Adam Lach, Walter Genovese. 2024-07-16. Function Parameter
+Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r2"><div class="csl-block">https://wg21.link/p3096r2</div></a>
 </div>
 <div id="ref-P3293R1" class="csl-entry" role="doc-biblioentry">
 [P3293R1] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
