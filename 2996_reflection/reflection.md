@@ -3093,6 +3093,8 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [Each instantiation results in new program constructs.]{.addu} The program is ill-formed if any instantiation fails.
 
+  [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
+
   [Instantiation confers a partition over the program constructs, and the tokens comprising the translation unit furthermore endow the partitioned constructs with a partial order. Two constructs are _semantically sequenced_ if the tokens by which they are described belong to the same translation unit and if either both constructs result from the same instantiation or if neither results from any instantiation. Given two semantically sequenced program constructs, whether one _semantically follows_ the other is determined as follows:]{.addu}
 
   * [[7.8-1]{.pnum} If both constructs are within the `$member-specification$` of a class `C` ([class.mem.general]{.sref}) and one such construct (call it `$X$`) is in a complete-class context of `C` but the other (call it `$Y$`) is not, then `$X$` semantically follows `$Y$`.]{.addu}
@@ -5211,6 +5213,27 @@ int main() {
   fn<^^NS::TCls, ^^NS, ^^NS::Concept, ^^v>();
 }
 ```
+
+:::
+:::
+:::
+
+### [temp.spec.general]{.sref} General {-}
+
+Add a note after paragraph 1 enumerating other constructs that are subject to instantiation.
+
+::: std
+[1]{.pnum} The act of instantiating a function, a variable, a class, a member of a class template, or a member template is referred to as _template instantiation_.
+
+::: addu
+::: note
+The following constructs are also separately subject to instantiation:
+
+* [#.#]{.pnum} Default arguments in template specializations and members of class templates,
+* [#.#]{.pnum} Default template arguments,
+* [#.#]{.pnum} Default member initializers in template specializations,
+* [#.#]{.pnum} `$noexcept-specifier$`s of template specializations and members of class templates, and
+* [#.#]{.pnum} `$type-constraint$`s and `$requires-clause$`s of template specializations and member functions.
 
 :::
 :::
