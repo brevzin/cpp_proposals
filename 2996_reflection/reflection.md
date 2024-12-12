@@ -893,6 +893,41 @@ using points = struct_of_arrays<point, 30>;
 
 Again, the combination of `nonstatic_data_members_of` and `define_aggregate` is put to good use.
 
+This example also illustrates some requirements that we have on `define_aggregate`. In particular, that function is said to produce an "injected declaration" and the target scope of the declaration must be "semantically sequenced" with the evaluation that produced it. Which means that the following similar structure is ill-formed:
+
+::: std
+```cpp
+template <class T, size_t N>
+struct struct_of_arrays_impl;
+
+template <typename T, size_t N>
+using struct_of_arrays = [: []{
+  // ... same logic ..
+
+  // error: the target scope of this declaration is a
+  // different instantiation from the one we are currently in.
+  define_aggregate(^^struct_of_arrays_impl<T, N>, new_members);
+}() :];
+```
+:::
+
+That could be fixed if we reorganize it like this:
+
+::: std
+```cpp
+template <typename T, size_t N>
+using struct_of_arrays = [: []{
+  // ... same logic ..
+
+  // OK, same instantiation
+  struct impl;
+  define_aggregate(^^impl, new_members);
+}() :];
+```
+:::
+
+But now `struct_of_arrays<point, 30>` has no linkage, whereas we wanted it to have external linkage. Hence the structure in the example above where we are instead defining a nested class in a class template — so that we have a type with external linkage but don't run afoul of the semantically sequenced rule.
+
 On Compiler Explorer: [EDG](https://godbolt.org/z/jWrPGhn5s), [Clang](https://godbolt.org/z/7PcYrY7eq).
 
 
