@@ -3545,6 +3545,10 @@ constexpr int v2 = template [:^^TCls:]<2>::s;
 
 constexpr typename [:^^TCls:]<3>::type v3 = 3;
   // OK, typename binds to the qualified name
+
+constexpr [:^^TCls:]<3>::type v4 = 4;
+  // error: [:^^TCls:]< is parsed as a splice-expression followed
+  // by a comparison operator
 ```
 
 :::
@@ -3609,6 +3613,7 @@ Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
 ```
 $splice-expression$:
    $splice-specifier$
+   template $splice-specifier$
    template $splice-specialization-specifier$
 ```
 
@@ -3635,7 +3640,9 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} If `$S$` is an object, a function, a function template, or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
+* [#]{.pnum} If `$S$` is a function, overload resolution ([over.match], [temp.over]) is performed from an initial set of candidate functions containing only that function. The expression is an lvalue referring to the selected function and has the same type as that function.
+
+* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
 
@@ -3645,9 +3652,13 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
+[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. Overload resolution is performed from an initial set of candidate functions containing only that function template. The expression is an lvalue referring to the selected function and has the same type as that function.
+
 [#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template and let `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
 
-* [#.#]{.pnum} If `$T$` is a primary variable template or function template, the expression is an lvalue referring to the same object or function associated with `$S$`. The expression has the same type as `$S$`.
+* [#.#]{.pnum} If `$T$` is a function template, overload resolution is performed from an initial set of candidate functions containing only the function associated with `$S$`. The expression is an lvalue referring to the selected function and has the same type as that function.
+
+* [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, the expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
 
 * [#.#]{.pnum} Otherwise, if `$T$` is a concept, the expression is a prvalue that computes the same boolean value as the `$concept-id$` formed by `$S$`.
 
@@ -3663,7 +3674,7 @@ auto g = typename [:^^int:](42);
 
 [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
-[#]{.pnum} For a `$splice-expression$` that designates a function or function template, overload resolution is performed ([over.match]{.sref}, [temp.over]{.sref}) from an initial set of candidate functions containing only the entity designated by the `$splice-expression$`. The best viable function selected by overload resolution is _designated in a manner exempt from access rules_.
+[#]{.pnum} While performing overload resolution to determine the entity referred to by a `$splice-expression$`, the best viable function is _designated in a manner exempt from access rules_.
 
 :::
 :::
@@ -3846,10 +3857,10 @@ template <typename T> void fn() requires (^^T != ^^int);
 template <typename T> void fn() requires (^^T == ^^int);
 template <typename T> void fn() requires (sizeof(T) == sizeof(int));
 
-constexpr auto x = ^^fn<char>;     // OK
-constexpr auto y = ^^fn<int>;      // error: ambiguous
+constexpr auto a = ^^fn<char>;     // OK
+constexpr auto b = ^^fn<int>;      // error: ambiguous
 
-constexpr auto z = ^^std::vector;  // OK
+constexpr auto c = ^^std::vector;  // OK
 
 template <typename T>
 struct S {
@@ -3858,6 +3869,11 @@ struct S {
 }
 static_assert(S<int>::r == ^^int);
 static_assert(S<int>::type != ^^int);
+
+typedef struct X {} Y;
+typedef struct Z {} Z;
+constexpr auto e = ^^Y;  // OK, represents the type alias Y
+constexpr auto f = ^^Z;  // OK, represents the type Z (not the type alias)
 ```
 :::
 
