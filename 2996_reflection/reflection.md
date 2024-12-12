@@ -2313,7 +2313,7 @@ static_assert(is_complete_type(^^S));
 
 The above example observes the effects of the failed substitution of `#1` by way of the completeness of `S`. Such tricks can be used to observe implementation details, like the order in which overloads are checked, that may be unportable (and which implementations might desire to change over time).
 
-Our proposed solution, specified in [expr.const]/23.2, is to make it ill-formed to produce an injected declaration _from_ a manifestly constant-evaluated expression within an instantiation to _outside of_ that instantiation, or visa versa. Because that expression in the example above (`define_aggregate(^^S, {})`) is within the instantiation of the requires clause of `TCls<void>::sfn`, and the target scope of the injected declaration is outside of that same instantiaton, the example becomes ill-formed (diagnostic required). Note that this does not prevent writing `consteval` function templates that wrap `define_aggregate`:
+Our proposed solution, specified in [expr.const]/23.2, is to make it ill-formed to produce an injected declaration from a manifestly constant-evaluated expression _inside of_ an instantiation to _outside of_ that instantiation, or visa versa. Because that expression in the example above (`define_aggregate(^^S, {})`) is within the instantiation of the requires clause of `TCls<void>::sfn`, and the target scope of the injected declaration is outside of that same instantiaton, the example becomes ill-formed (diagnostic required). Note that this does not prevent writing `consteval` function templates that wrap `define_aggregate`:
 
 ```cpp
 template <std::meta::info R> consteval bool tfn() {
@@ -2358,11 +2358,11 @@ static_assert(TCls<void>::sfn());
 
 Athough the instantiation of `TCls1<void>` in the requires-clause of `#1` causes an injected declaration to be produced, it is not discernibly a side-effect of the failed substitution: Observing the side effect will first require one to write (some moral  equivalent of) `TCLs1<void>::Incomplete`, the act of which would otherwise itself trigger the same side-effect.
 
-Although this rule constrains the manner with which `define_aggregate` can be used, we are not aware of any motivating use cases for P2996 that are harmed. Worth mentioning, however: the rule has more dire implications for other code injection papers being considered by WG21, most notably P3294 ("_Code Injection With Token Sequences_"). With this rule as it is, it becomes impossible for e.g., the instantiation of a class template specialization `TCls<Foo>` to produce an injected declaration of `std::formatter<TCls<Foo>>` (since the target scope would be the global namespace).
+Although this rule constrains the manner with which `define_aggregate` can be used, we are not aware of any motivating use cases for P2996 that are harmed. Worth mentioning, however: the rule has more dire implications for other code injection papers being considered by WG21, most notably [@P3294R2] ("_Code Injection With Token Sequences_"). With this rule as it is, it becomes impossible for e.g., the instantiation of a class template specialization `TCls<Foo>` to produce an injected declaration of `std::formatter<TCls<Foo>>` (since the target scope would be the global namespace).
 
-In this context, we do believe that relaxations of the rule can be considered: For instance, we ought to be able to say that the instantiation of `std::formatter<TCls<Foo>>` is sequenced strictly after the instantiation of `TCls<Foo>`, and observations such as these might make it possible to permit such injections without making it "discernible" whether they resulted from failed substitutions. The key to such an approach would be to define a partial order over the instantiations of a program, and to extend the _semantically sequenced_ relation introduced by P2996 ([lex.phases]/7) to apply to constructs _across_ instantiations when the relative order of their respective instantiations is defined.
+In this context, we do believe that relaxations of the rule can be considered: For instance, we ought to be able to say that the instantiation of `std::formatter<TCls<Foo>>` is sequenced strictly after the instantiation of `TCls<Foo>`, and observations such as these might make it possible to permit such injections without making it "discernible" whether they resulted from failed substitutions. The key to such an approach would be to define a partial order over the instantiations of a program, and to extend the _semantically sequenced_ relation introduced by this proposal ([lex.phases]/7) to apply to constructs _across_ instantiations when the relative order of their respective instantiations is defined.
 
-All of that said, these relaxations are not needed for the code injection introduced by P2996, and we do not seek to introduce them at this time.
+All of that said, these relaxations are not needed for the code injection introduced by this proposal, and we do not seek to introduce them at this time.
 
 ### Freestanding implementations
 
@@ -3197,6 +3197,39 @@ Since namespace aliases are now entities, but their declarations are not definit
 
 [...]
 
+:::
+
+Also modify the example that follows:
+
+::: example
+All but one of the following are definitions:
+```diff
+  int a;                          // defines a
+  extern const int c = 1;         // defines c
+  int f(int x) { return x+a; }    // defines f and defines x
+  struct S { int a; int b; };     // defines S, S::a, and S::b
+  struct X {                      // defines X
+    int x;                        // defines non-static data member x
+    static int y;                 // declares static data member y
+    X() : x(0) { }                // defines a constructor of X
+  };
+  int X::y = 1;                   // defines X::y
+  enum { up, down };              // defines up and down
+  namespace N {int d; }           // defines N and N::d
+- namespace N1 = N;               // defines N1
+  X anX;                          // defines anX
+```
+whereas these are just declarations:
+```diff
+  extern int a;                   // declares a
+  extern const int c;             // declares c
+  int f(int);                     // declares f
+  struct S;                       // declares S
+  typedef int Int;                // declares Int
++ namesapce N1 = N;               // declares N1
+  extern X anotherX;              // declares anotherX
+  using N::d;                     // declares d
+```
 :::
 
 ### [basic.def.odr]{.sref} One-definition rule {-}
