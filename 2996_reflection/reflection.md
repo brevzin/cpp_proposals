@@ -41,6 +41,7 @@ Since [@P2996R7]:
 * renamed the type traits from all being named `type_meow` to a more bespoke naming scheme.
 * rewrote core wording for `$consteval-only type$` and for all splicers.
 * changing signature of `reflect_value` to take a `T const&` instead of a `T`.
+* added an informal section explaining restrictions on injected declarations
 
 Since [@P2996R6]:
 
@@ -2282,6 +2283,86 @@ Lastly, we clarify that during the definition of an _injected declaration_, the 
 
 This machinery is "off in the weeds" of technicalities related to modules, lookup, etc., but we believe (hope?) that it provides a sound basis upon which to build generative reflection within the framework provided by core language wording: not only for P2996, but for future papers as well.
 
+
+### Restrictions on injected declarations
+
+The advancement of this proposal through WG21 has naturally led to increased scrutiny of the mechanisms here proposed. One such area is the possibility of leveraging injected declarations to observe failed template substitutions. Consider the following example:
+
+```cpp
+struct S;
+
+template <typename> struct TCls {
+  static consteval bool sfn()  // #1
+      requires ([] {
+        consteval {
+          define_aggregate(^^S, {});
+        }
+      }(), false) {
+    return false;  // never selected
+  }
+
+  static consteval bool sfn()  // #2
+      requires (true) {
+    return true;   // always selected
+  }
+};
+
+static_assert(TCls<void>::sfn());
+static_assert(is_complete_type(^^S));
+```
+
+The above example observes the effects of the failed substitution of `#1` by way of the completeness of `S`. Such tricks can be used to observe implementation details, like the order in which overloads are checked, that may be unportable (and which implementations might desire to change over time).
+
+Our proposed solution, specified in [expr.const]/23.2, is to make it ill-formed to produce an injected declaration _from_ a manifestly constant-evaluated expression within an instantiation to _outside of_ that instantiation, or visa versa. Because that expression in the example above (`define_aggregate(^^S, {})`) is within the instantiation of the requires clause of `TCls<void>::sfn`, and the target scope of the injected declaration is outside of that same instantiaton, the example becomes ill-formed (diagnostic required). Note that this does not prevent writing `consteval` function templates that wrap `define_aggregate`:
+
+```cpp
+template <std::meta::info R> consteval bool tfn() {
+  define_aggregate(R, {});
+  return true;
+}
+
+struct S;
+constexpr bool b = tfn<^^S>();
+  // OK, both manifestly constant-evaluated expression tfn<^^S>() and target scope of
+  // injected declaration for 'S' are in the global namespace
+```
+
+Nor does this rule prevent a class template from producing a declaration whose target scope is the same specialization.
+
+```cpp
+template <typename> struct TCls1 {
+  struct Incomplete;
+
+  consteval {
+    define_aggregate(^^Incomplete, {});
+      // OK, Incomplete is in the same instantiation as the define_aggregate call
+  }
+
+  static constexpr bool b = false;
+};
+
+template <typename T> struct TCls2 {
+  static consteval bool sfn()  // #1
+      requires (TCls1<T>::b) {
+    return false;  // never selected
+  }
+
+  static consteval bool sfn()  // #2
+      requires (true) {
+    return true;   // always selected
+  }
+};
+
+static_assert(TCls<void>::sfn());
+```
+
+Athough the instantiation of `TCls1<void>` in the requires-clause of `#1` causes an injected declaration to be produced, it is not discernibly a side-effect of the failed substitution: Observing the side effect will first require one to write (some moral  equivalent of) `TCLs1<void>::Incomplete`, the act of which would otherwise itself trigger the same side-effect.
+
+Although this rule constrains the manner with which `define_aggregate` can be used, we are not aware of any motivating use cases for P2996 that are harmed. Worth mentioning, however: the rule has more dire implications for other code injection papers being considered by WG21, most notably P3294 ("_Code Injection With Token Sequences_"). With this rule as it is, it becomes impossible for e.g., the instantiation of a class template specialization `TCls<Foo>` to produce an injected declaration of `std::formatter<TCls<Foo>>` (since the target scope would be the global namespace).
+
+In this context, we do believe that relaxations of the rule can be considered: For instance, we ought to be able to say that the instantiation of `std::formatter<TCls<Foo>>` is sequenced strictly after the instantiation of `TCls<Foo>`, and observations such as these might make it possible to permit such injections without making it "discernible" whether they resulted from failed substitutions. The key to such an approach would be to define a partial order over the instantiations of a program, and to extend the _semantically sequenced_ relation introduced by P2996 ([lex.phases]/7) to apply to constructs _across_ instantiations when the relative order of their respective instantiations is defined.
+
+All of that said, these relaxations are not needed for the code injection introduced by P2996, and we do not seek to introduce them at this time.
 
 ### Freestanding implementations
 
