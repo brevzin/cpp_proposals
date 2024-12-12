@@ -3081,7 +3081,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]{.sref}).]{.addu}
 
-  [[Other requirements in this document can further constrain the  context from which an instantiation can be performed. For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated from an earlier point ([temp.inst]).]{.note}]{.addu}
+  [[Other requirements in this document can further constrain the  context from which an instantiation can be performed. For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated at an earlier point ([temp.inst]).]{.note}]{.addu}
 
   The definitions of the required templates are located. It is implementation-defined whether the source of the translation units containing these definitions is required to be available.
 
@@ -3244,6 +3244,18 @@ Add `$splice-expression$`s to the set of potential results of an expression in p
 
 [This set is a (possibly-empty) set of `$id-expression$`s [and `$splice-expression$`s]{.addu}, each of which is either `$E$` or a subexpression of `$E$`.]{.note}
 
+::: example
+In the following example, the set of potential results of the initializer of `n` contains the first `S::x` subexpression, but not the second `S::x` subexpression. [The set of potential results of the initializer of `o` contains the `[:^^S::x:]` subexpression.]{.addu}
+
+```diff
+  struct S { static const int x = 0; };
+  const int &f(const int &r);
+  int n = b ? (1, S::x)           // S::x is not odr-used here
+            : f(S::x);            // S::x is odr-used here, so a definition is required
++ int o = ([:^^S::x:]);
+```
+
+:::
 :::
 
 Break bullet 4.1 into sub-bullets, modify it to cover splicing of functions, and replace [basic.lookup] with [over.pre] since the canonical definition of "overload set" is relocated there by this proposal:
@@ -4740,17 +4752,17 @@ These represent two syntactic subcategories of function calls: qualified functio
 
 :::
 
-Modify paragraph 2 to account for overload resolution of `$splice-expression$`s designating member function templates.
+Modify paragraph 2 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ The [set of]{.addu} function [or function template]{.addu} declarations [constituting the candidate functions is]{.addu} found by name lookup ([class.member.lookup]{.sref}) [if the `.` is followed by an `$id-expression$` and is otherwise the singleton containing the function or function template designated by the `$splice-expression$`]{.addu} [constitute the set of candidate functions]{.rm}. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]{.sref}).
+[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ The function [and function template]{.addu} declarations [either]{.addu} found by name lookup [if the dot is followed by an `$id-expression$`, or as specified by [expr.prim.splice] if the dot is followed by a `$splice-expression$`, undergo the adjustments described in [over.match.funcs.general] and thereafter]{.addu} constitute the set of candidate functions. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]{.sref}).
 
 :::
 
-Modify paragraph 3 to account for overload resolution of `$splice-expression$`s designating non-member function templates.
+Modify paragraph 3 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[3]{.pnum} In unqualified function calls, the function is named by a `$primary-expression$`. [If that `$primary-expression$` is a `$splice-expression$`, then the set of function or function template declarations constituting the candidate functions is the singleton containing the function or function template designated by that `$splice-expression$`. For all other cases, the]{.addu} [The]{.rm} function declarations found by name lookup ([basic.lookup]{.sref}) constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if the `$primary-expression$` is [a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
+[3]{.pnum} In unqualified function calls, the function is named by a `$primary-expression$`. The function [and function template]{.addu} declarations [either]{.addu} found by name lookup[, or as specified by [expr.prim.splice] if the `$primary-expression$` is a (possibly parenthesized) `$splice-expression$`, undergo the adjustments described in [over.match.funcs.general] and thereafter]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if the `$primary-expression$` is [a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
 
 :::
 
@@ -5088,15 +5100,17 @@ Extend paragraph 4 to define what it means for a `$splice-specifier$` to appear 
 template<class T> T::R f();
 template<class T> void f(T::R);   // ill-formed, no diagnostic required: attempt to
                                   // declare a `void` variable template
+@[`enum class Enum { A, B, C };`]{.addu}@
 
 template<class T> struct S {
   using Ptr = PtrTraits<T>::Ptr;  // OK, in a $defining-type-id$
-  @[`using Alias = [:^^int];          // OK, in a $defining-type-id$`]{.addu}@
+  @[`using Alias = [:^^int];         // OK, in a $defining-type-id$`]{.addu}@
   T::R f(T::P p) {                // OK, class scope
     return static_cast<T::R>(p);  // OK, $type-id$ of a `static_cast`
   }
   auto g() -> S<T*>::Ptr;         // OK, $trailing-return-type$
-  @[`auto h() -> [:^^S:]<T*>;         // OK, $trailing-return-type$`]{.addu}@
+  @[`auto h() -> [:^^S:]<T*>;        // OK, $trailing-return-type$`]{.addu}@
+  @[`using enum [:^^Enum:];          // OK, $using-enum-declarator$`]{.addu}@
 };
 template<typename T> void f() {
   void (*pf)(T::X);               // variable `pf` of type `void*` initialized
