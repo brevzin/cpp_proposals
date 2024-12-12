@@ -4005,7 +4005,7 @@ Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 t
 
 :::
 
-Add a new paragraphs prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
+Add a new paragraphs prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
 
 ::: std
 ::: addu
@@ -4056,41 +4056,68 @@ Furthermore, the program is ill-formed, no diagnostic required, if
 
 * [#.#]{.pnum} an evaluation `$E$@~_1_~@` produces an injected declaration `$D$` during the evaluation of a manifestly constant-evaluated expression `$M$`,
 * [#.#]{.pnum} a second evaluation `$E$@~_2_~@` computes a reflection of `$D$` during the same evaluation of `$M$`, and
-* [#.#]{.pnum} `$E$@~_1_~@` is unsequenced with `$E$@~_2_~@` ([intro.execution]).
+* [#.#]{.pnum} `$E$@~_1_~@` and `$E$@~_2_~@` are either unsequenced or indeterminately sequenced ([intro.execution]).
 
 ::: example
 ```cpp
-consteval bool make_decl(int);      // calling 'make_decl(n)' produces an injected
-                                    // declaration in the global namespace
+consteval bool complete_type(std::meta::info r) {
+  std::meta::define_aggregate(r, {});
+  return true;
+}
 
-constexpr bool b1 = !make_decl(1);  // OK, constexpr variable so this is plainly
-                                    // constant evaluated
+struct S1;
+constexpr bool b1 = !complete_type(^^S1);
+  // OK, constexpr variable so this is plainly constant-evaluated
 
-bool b2 = !make_decl(2);
-  // error: initializer !make_decl(42) produced an injected declaration but is
+struct S2;
+bool b2 = !complete_type(^^S2);
+  // error: initializer !complete_type(^^S2) produced an injected declaration but is
   // not plainly constant-evaluated
 
-template <int R> requires (make_decl(R))
-  bool tfn();
+template <typename>
+    requires ([] {
+      struct S3;
+      return complete_type(^^S3);
+    }())
+bool tfn1();
 
-constexpr bool b3 = tfn<3>();
-  // error: the invocation of make_decl(R) in the requires clause produces an
-  // injected declaration but is not plainly constant-evaluated
+constexpr bool b3 = tfn1<void>();
+  // error: the requires-clause produces an injected declaration but is not
+  // plainly constant-evaluated
 
-template <typename> struct T {
-  static constexpr bool b4 = make_decl(4);
-    // error: target scope of the injected declaration is not
-    // instantatiation-sequenced with the expression
+template <std::meta::info R> consteval bool tfn2() {
+  return complete_type(R);
 }
 
-struct S;
-consteval int complete_decl() {
-  std::meta::define_aggregate(^^S, {});
-  return 1;
+struct S4;
+constexpr bool b4 = tfn2<^^S4>();
+  // OK, manifestly constant-evaluated expression tfn2<^^S4>() is semantically sequenced
+  // with S4
+
+template <std::meta::info R> struct T1 {
+  static constexpr bool b5 = complete_type(R);
 }
 
-constexpr unsigned v = complete_decl() + std::meta::size_of(^^S);
-  // ill-formed, no diagnostic required
+struct S5;
+T1<^^S5> t1;  // error: target scope of the injected declaration is not semantically
+  // sequenced with the manifestly constant-evaluated expression that produced it
+
+template <typename> struct T2 {
+  struct S6;
+  static void sfn() requires ([]{
+    constexpr bool b = complete_type(^^S6);
+    return b;
+  }) { }
+};
+
+constexpr bool b6 = T2<void>::sfn();
+  // error: target scope of the injected declaration (T2<void>) is not semantically
+  // sequenced with the manifestly constant-evaluated expression that produces it
+  // (requires-clause is separately instantiated from the enclosing specialization)
+
+struct S7;
+constexpr unsigned v = complete_decl() + std::meta::size_of(^^S7);
+  // ill-formed, no diagnostic required: operands of + are indeterminately sequenced
 ```
 :::
 
