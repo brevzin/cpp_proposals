@@ -41,6 +41,7 @@ Since [@P2996R7]:
 * renamed the type traits from all being named `type_meow` to a more bespoke naming scheme.
 * rewrote core wording for `$consteval-only type$` and for all splicers.
 * changing signature of `reflect_value` to take a `T const&` instead of a `T`.
+* added an informal section explaining restrictions on injected declarations
 
 Since [@P2996R6]:
 
@@ -2283,6 +2284,86 @@ Lastly, we clarify that during the definition of an _injected declaration_, the 
 This machinery is "off in the weeds" of technicalities related to modules, lookup, etc., but we believe (hope?) that it provides a sound basis upon which to build generative reflection within the framework provided by core language wording: not only for P2996, but for future papers as well.
 
 
+### Restrictions on injected declarations
+
+The advancement of this proposal through WG21 has naturally led to increased scrutiny of the mechanisms here proposed. One such area is the possibility of leveraging injected declarations to observe failed template substitutions. Consider the following example:
+
+```cpp
+struct S;
+
+template <typename> struct TCls {
+  static consteval bool sfn()  // #1
+      requires ([] {
+        consteval {
+          define_aggregate(^^S, {});
+        }
+      }(), false) {
+    return false;  // never selected
+  }
+
+  static consteval bool sfn()  // #2
+      requires (true) {
+    return true;   // always selected
+  }
+};
+
+static_assert(TCls<void>::sfn());
+static_assert(is_complete_type(^^S));
+```
+
+The above example observes the effects of the failed substitution of `#1` by way of the completeness of `S`. Such tricks can be used to observe implementation details, like the order in which overloads are checked, that may be unportable (and which implementations might desire to change over time).
+
+Our proposed solution, specified in [expr.const]/23.2, is to make it ill-formed to produce an injected declaration from a manifestly constant-evaluated expression _inside of_ an instantiation to _outside of_ that instantiation, or visa versa. Because that expression in the example above (`define_aggregate(^^S, {})`) is within the instantiation of the requires clause of `TCls<void>::sfn`, and the target scope of the injected declaration is outside of that same instantiaton, the example becomes ill-formed (diagnostic required). Note that this does not prevent writing `consteval` function templates that wrap `define_aggregate`:
+
+```cpp
+template <std::meta::info R> consteval bool tfn() {
+  define_aggregate(R, {});
+  return true;
+}
+
+struct S;
+constexpr bool b = tfn<^^S>();
+  // OK, both manifestly constant-evaluated expression tfn<^^S>() and target scope of
+  // injected declaration for 'S' are in the global namespace
+```
+
+Nor does this rule prevent a class template from producing a declaration whose target scope is the same specialization.
+
+```cpp
+template <typename> struct TCls1 {
+  struct Incomplete;
+
+  consteval {
+    define_aggregate(^^Incomplete, {});
+      // OK, Incomplete is in the same instantiation as the define_aggregate call
+  }
+
+  static constexpr bool b = false;
+};
+
+template <typename T> struct TCls2 {
+  static consteval bool sfn()  // #1
+      requires (TCls1<T>::b) {
+    return false;  // never selected
+  }
+
+  static consteval bool sfn()  // #2
+      requires (true) {
+    return true;   // always selected
+  }
+};
+
+static_assert(TCls<void>::sfn());
+```
+
+Athough the instantiation of `TCls1<void>` in the requires-clause of `#1` causes an injected declaration to be produced, it is not discernibly a side-effect of the failed substitution: Observing the side effect will first require one to write (some moral  equivalent of) `TCLs1<void>::Incomplete`, the act of which would otherwise itself trigger the same side-effect.
+
+Although this rule constrains the manner with which `define_aggregate` can be used, we are not aware of any motivating use cases for P2996 that are harmed. Worth mentioning, however: the rule has more dire implications for other code injection papers being considered by WG21, most notably [@P3294R2] ("_Code Injection With Token Sequences_"). With this rule as it is, it becomes impossible for e.g., the instantiation of a class template specialization `TCls<Foo>` to produce an injected declaration of `std::formatter<TCls<Foo>>` (since the target scope would be the global namespace).
+
+In this context, we do believe that relaxations of the rule can be considered: For instance, we ought to be able to say that the instantiation of `std::formatter<TCls<Foo>>` is sequenced strictly after the instantiation of `TCls<Foo>`, and observations such as these might make it possible to permit such injections without making it "discernible" whether they resulted from failed substitutions. The key to such an approach would be to define a partial order over the instantiations of a program, and to extend the _semantically sequenced_ relation introduced by this proposal ([lex.phases]/7) to apply to constructs _across_ instantiations when the relative order of their respective instantiations is defined.
+
+All of that said, these relaxations are not needed for the code injection introduced by this proposal, and we do not seek to introduce them at this time.
+
 ### Freestanding implementations
 
 Several important metafunctions, such as `std::meta::nonstatic_data_members_of`, return a `std::vector` value.
@@ -3012,6 +3093,8 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [Each instantiation results in new program constructs.]{.addu} The program is ill-formed if any instantiation fails.
 
+  [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
+
   [Instantiation confers a partition over the program constructs, and the tokens comprising the translation unit furthermore endow the partitioned constructs with a partial order. Two constructs are _semantically sequenced_ if the tokens by which they are described belong to the same translation unit and if either both constructs result from the same instantiation or if neither results from any instantiation. Given two semantically sequenced program constructs, whether one _semantically follows_ the other is determined as follows:]{.addu}
 
   * [[7.8-1]{.pnum} If both constructs are within the `$member-specification$` of a class `C` ([class.mem.general]{.sref}) and one such construct (call it `$X$`) is in a complete-class context of `C` but the other (call it `$Y$`) is not, then `$X$` semantically follows `$Y$`.]{.addu}
@@ -3114,6 +3197,39 @@ Since namespace aliases are now entities, but their declarations are not definit
 
 [...]
 
+:::
+
+Also modify the example that follows:
+
+::: example
+All but one of the following are definitions:
+```diff
+  int a;                          // defines a
+  extern const int c = 1;         // defines c
+  int f(int x) { return x+a; }    // defines f and defines x
+  struct S { int a; int b; };     // defines S, S::a, and S::b
+  struct X {                      // defines X
+    int x;                        // defines non-static data member x
+    static int y;                 // declares static data member y
+    X() : x(0) { }                // defines a constructor of X
+  };
+  int X::y = 1;                   // defines X::y
+  enum { up, down };              // defines up and down
+  namespace N {int d; }           // defines N and N::d
+- namespace N1 = N;               // defines N1
+  X anX;                          // defines anX
+```
+whereas these are just declarations:
+```diff
+  extern int a;                   // declares a
+  extern const int c;             // declares c
+  int f(int);                     // declares f
+  struct S;                       // declares S
+  typedef int Int;                // declares Int
++ namesapce N1 = N;               // declares N1
+  extern X anotherX;              // declares anotherX
+  using N::d;                     // declares d
+```
 :::
 
 ### [basic.def.odr]{.sref} One-definition rule {-}
@@ -4005,7 +4121,7 @@ Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 t
 
 :::
 
-Add a new paragraphs prior to the definition of _manifestly constant evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
+Add a new paragraphs prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
 
 ::: std
 ::: addu
@@ -4056,41 +4172,68 @@ Furthermore, the program is ill-formed, no diagnostic required, if
 
 * [#.#]{.pnum} an evaluation `$E$@~_1_~@` produces an injected declaration `$D$` during the evaluation of a manifestly constant-evaluated expression `$M$`,
 * [#.#]{.pnum} a second evaluation `$E$@~_2_~@` computes a reflection of `$D$` during the same evaluation of `$M$`, and
-* [#.#]{.pnum} `$E$@~_1_~@` is unsequenced with `$E$@~_2_~@` ([intro.execution]).
+* [#.#]{.pnum} `$E$@~_1_~@` and `$E$@~_2_~@` are either unsequenced or indeterminately sequenced ([intro.execution]).
 
 ::: example
 ```cpp
-consteval bool make_decl(int);      // calling 'make_decl(n)' produces an injected
-                                    // declaration in the global namespace
+consteval bool complete_type(std::meta::info r) {
+  std::meta::define_aggregate(r, {});
+  return true;
+}
 
-constexpr bool b1 = !make_decl(1);  // OK, constexpr variable so this is plainly
-                                    // constant evaluated
+struct S1;
+constexpr bool b1 = !complete_type(^^S1);
+  // OK, constexpr variable so this is plainly constant-evaluated
 
-bool b2 = !make_decl(2);
-  // error: initializer !make_decl(42) produced an injected declaration but is
+struct S2;
+bool b2 = !complete_type(^^S2);
+  // error: initializer !complete_type(^^S2) produced an injected declaration but is
   // not plainly constant-evaluated
 
-template <int R> requires (make_decl(R))
-  bool tfn();
+template <typename>
+    requires ([] {
+      struct S3;
+      return complete_type(^^S3);
+    }())
+bool tfn1();
 
-constexpr bool b3 = tfn<3>();
-  // error: the invocation of make_decl(R) in the requires clause produces an
-  // injected declaration but is not plainly constant-evaluated
+constexpr bool b3 = tfn1<void>();
+  // error: the requires-clause produces an injected declaration but is not
+  // plainly constant-evaluated
 
-template <typename> struct T {
-  static constexpr bool b4 = make_decl(4);
-    // error: target scope of the injected declaration is not
-    // instantatiation-sequenced with the expression
+template <std::meta::info R> consteval bool tfn2() {
+  return complete_type(R);
 }
 
-struct S;
-consteval int complete_decl() {
-  std::meta::define_aggregate(^^S, {});
-  return 1;
+struct S4;
+constexpr bool b4 = tfn2<^^S4>();
+  // OK, manifestly constant-evaluated expression tfn2<^^S4>() is semantically sequenced
+  // with S4
+
+template <std::meta::info R> struct T1 {
+  static constexpr bool b5 = complete_type(R);
 }
 
-constexpr unsigned v = complete_decl() + std::meta::size_of(^^S);
-  // ill-formed, no diagnostic required
+struct S5;
+T1<^^S5> t1;  // error: target scope of the injected declaration is not semantically
+  // sequenced with the manifestly constant-evaluated expression that produced it
+
+template <typename> struct T2 {
+  struct S6;
+  static void sfn() requires ([]{
+    constexpr bool b = complete_type(^^S6);
+    return b;
+  }) { }
+};
+
+constexpr bool b6 = T2<void>::sfn();
+  // error: target scope of the injected declaration (T2<void>) is not semantically
+  // sequenced with the manifestly constant-evaluated expression that produces it
+  // (requires-clause is separately instantiated from the enclosing specialization)
+
+struct S7;
+constexpr unsigned v = complete_decl() + std::meta::size_of(^^S7);
+  // ill-formed, no diagnostic required: operands of + are indeterminately sequenced
 ```
 :::
 
@@ -5103,6 +5246,27 @@ int main() {
   fn<^^NS::TCls, ^^NS, ^^NS::Concept, ^^v>();
 }
 ```
+
+:::
+:::
+:::
+
+### [temp.spec.general]{.sref} General {-}
+
+Add a note after paragraph 1 enumerating other constructs that are subject to instantiation.
+
+::: std
+[1]{.pnum} The act of instantiating a function, a variable, a class, a member of a class template, or a member template is referred to as _template instantiation_.
+
+::: addu
+::: note
+The following constructs are also separately subject to instantiation:
+
+* [#.#]{.pnum} Default arguments in template specializations and members of class templates,
+* [#.#]{.pnum} Default template arguments,
+* [#.#]{.pnum} Default member initializers in template specializations,
+* [#.#]{.pnum} `$noexcept-specifier$`s of template specializations and members of class templates, and
+* [#.#]{.pnum} `$type-constraint$`s and `$requires-clause$`s of template specializations and member functions.
 
 :::
 :::
