@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R8
+document: D2996R8
 date: today
 audience: CWG, LEWG, LWG
 author:
@@ -41,7 +41,7 @@ Since [@P2996R7]:
 * renamed the type traits from all being named `type_meow` to a more bespoke naming scheme.
 * rewrote core wording for `$consteval-only type$` and for all splicers.
 * changing signature of `reflect_value` to take a `T const&` instead of a `T`.
-* added an informal section explaining restrictions on injected declarations
+* added an [informal section](#restrictions-on-injected-declarations) explaining restrictions on injected declarations
 
 Since [@P2996R6]:
 
