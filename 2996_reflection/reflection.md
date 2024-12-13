@@ -42,6 +42,7 @@ Since [@P2996R7]:
 * rewrote core wording for `$consteval-only type$` and for all splicers.
 * changing signature of `reflect_value` to take a `T const&` instead of a `T`.
 * added an [informal section](#restrictions-on-injected-declarations) explaining restrictions on injected declarations
+* removed `is_trivial_type`, since the corresponding type trait was deprecated.
 
 Since [@P2996R6]:
 
@@ -5652,7 +5653,6 @@ namespace std::meta {
   // [meta.reflection unary.prop], type properties
   consteval bool is_const_type(info type);
   consteval bool is_volatile_type(info type);
-  consteval bool is_trivial_type(info type);
   consteval bool is_trivially_copyable_type(info type);
   consteval bool is_standard_layout_type(info type);
   consteval bool is_empty_type(info type);
@@ -6812,7 +6812,6 @@ consteval bool is_member_pointer_type(info type);
 ```cpp
 consteval bool is_const_type(info type);
 consteval bool is_volatile_type(info type);
-consteval bool is_trivial_type(info type);
 consteval bool is_trivially_copyable_type(info type);
 consteval bool is_standard_layout_type(info type);
 consteval bool is_empty_type(info type);
