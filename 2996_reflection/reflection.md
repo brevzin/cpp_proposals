@@ -3252,7 +3252,7 @@ In the following example, the set of potential results of the initializer of `n`
   const int &f(const int &r);
   int n = b ? (1, S::x)           // S::x is not odr-used here
             : f(S::x);            // S::x is odr-used here, so a definition is required
-+ int o = ([:^^S::x:]);
++ int o = [:^^S::x:];
 ```
 
 :::
