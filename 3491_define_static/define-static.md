@@ -77,6 +77,8 @@ consteval auto define_static_string(string_view str) -> char const* {
 
 But that's a fairly awkward implementation, and the string use-case is sufficiently common as to merit a more ergonomic solution.
 
+There are two design questions that we have to address: whether objects can overlap and whether `define_static_array` needs to mandate structural.
+
 ## The Overlapping Question
 
 Consider the existence of `template <char const*> struct C;` and the following two translation units:
