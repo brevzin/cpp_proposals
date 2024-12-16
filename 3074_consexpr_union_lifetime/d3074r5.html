@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-12-08" />
+  <meta name="dcterms.date" content="2024-12-16" />
   <title>trivial unions (was std::uninitialized&lt;T&gt;)</title>
   <style>
       code{white-space: pre-wrap;}
@@ -567,7 +567,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-12-08</td>
+    <td>2024-12-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -632,27 +632,11 @@ Macro<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p><span class="citation" data-cites="P3074R0">[<a href="https://wg21.link/p3074r0" role="doc-biblioref">P3074R0</a>]</span> originally proposed the
-function <code class="sourceCode cpp">std<span class="op">::</span>start_lifetime<span class="op">(</span>p<span class="op">)</span></code>.
-This revision adds a new section discussing the <a href="#the-uninitialized-storage-problem">uninitialized storage
-problem</a>, which motivates a change in design to instead propose <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
-<p><span class="citation" data-cites="P3074R1">[<a href="https://wg21.link/p3074r1" role="doc-biblioref">P3074R1</a>]</span> changed to propose <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-and was discussed in an EWG telecon. There, the suggestion was made to
-make this a language feature, which this revision discusses and argues
-against. Also re-spelled <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-to be a union instead of a class containing an anonymous union.</p>
-<p><span class="citation" data-cites="P3074R2">[<a href="https://wg21.link/p3074r2" role="doc-biblioref">P3074R2</a>]</span> still argued for <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.
-This revision changes to instead proposing a language change to unions
-to solve the problems presented.</p>
-<p><span class="citation" data-cites="P3074R3">[<a href="https://wg21.link/p3074r3" role="doc-biblioref">P3074R3</a>]</span> presented two options: a
-specifically annotated <code class="sourceCode cpp">trivial <span class="kw">union</span></code> and
-simply changing the existing
-<code class="sourceCode cpp"><span class="kw">union</span></code> rules
-to always be trivial (“just make it work”), on the basis that
-<code class="sourceCode cpp"><span class="kw">union</span></code> is a
-sharp knife anyway so might as well make it be as useful as possible. In
-<a href="https://github.com/cplusplus/papers/issues/1734#issuecomment-2195769496">St. Louis</a>,
-EWG expressed a clear preference for “just make it work”:</p>
+<p>Since <span class="citation" data-cites="P3074R4">[<a href="https://wg21.link/p3074r4" role="doc-biblioref">P3074R4</a>]</span>, wording changes and adjusted
+the rule for when a <a href="#constructordestructor-intention-matching">union’s destructor is
+deleted</a></p>
+<p>Since <span class="citation" data-cites="P3074R3">[<a href="https://wg21.link/p3074r3" role="doc-biblioref">P3074R3</a>]</span>, in <a href="https://github.com/cplusplus/papers/issues/1734#issuecomment-2195769496">St. Louis</a>,
+EWG had expressed a clear preference for “just make it work”:</p>
 <table>
 <thead>
 <tr class="header">
@@ -714,7 +698,19 @@ EWG expressed a clear preference for “just make it work”:</p>
 </tr>
 </tbody>
 </table>
-<p>This revision simply proposed to make it work and adds <a href="#implementation-experience">implementation experience</a></p>
+<p>So proposing to make it work and adding <a href="#implementation-experience">implementation experience</a>.</p>
+<p>Since <span class="citation" data-cites="P3074R2">[<a href="https://wg21.link/p3074r2" role="doc-biblioref">P3074R2</a>]</span>, changed to instead propose a
+language change to unions (with two options) to solve the problems
+presented</p>
+<p>Since <span class="citation" data-cites="P3074R1">[<a href="https://wg21.link/p3074r1" role="doc-biblioref">P3074R1</a>]</span>, the <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+design was designed in an EWG telecon and the suggestion was made to
+make this a language feature. Added a section to argue against and
+re-spelled <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+to be a union instead of a class containing an anonymous union.</p>
+<p>Since <span class="citation" data-cites="P3074R0">[<a href="https://wg21.link/p3074r0" role="doc-biblioref">P3074R0</a>]</span>, originally proposed the
+function <code class="sourceCode cpp">std<span class="op">::</span>start_lifetime<span class="op">(</span>p<span class="op">)</span></code>.
+R1 adds a new section discussing the <a href="#the-uninitialized-storage-problem">uninitialized storage
+problem</a>, which motivates a change in design to instead propose <code class="sourceCode cpp">std<span class="op">::</span>uninitialized<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Consider the following example:</p>
@@ -1379,67 +1375,49 @@ Intention Matching<a href="#constructordestructor-intention-matching" class="sel
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U2 <span class="op">{</span></span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    U2<span class="op">()</span> <span class="op">:</span> s<span class="op">(</span><span class="st">&quot;or that&quot;</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string s;</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U3 <span class="op">{</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  string s;</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  U3<span class="op">*</span> next <span class="op">=</span> <span class="kw">nullptr</span>;</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U4 <span class="op">{</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  string s;</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i;</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>In <span class="citation" data-cites="P3074R4">[<a href="https://wg21.link/p3074r4" role="doc-biblioref">P3074R4</a>]</span>,
-<code class="sourceCode cpp">U1</code> and
-<code class="sourceCode cpp">U2</code> would both have a non-trivial
-default destructor but still have a trivial destructor. Core in Wrocław
-suggested that the constructor and destructor should really match. That
-is, if a
+<p>Now, <code class="sourceCode cpp">U4</code> is the simple case. Our
+constructor is doing no initialization, so it’s reasonable that the
+corresponding destructor also does nothing. But for the other three,
+constructing one of these unions actually does something. So what should
+the destructor look like?</p>
+<p>Core in Wrocław suggested that the constructor and destructor should
+really match. That is, if a
 <code class="sourceCode cpp"><span class="kw">union</span></code> has a
 variant with a non-trivial destructor and that union has non-trivial
 default constructor (either by having a user-provided default
 constructor or by having a default member initializer), then we should
-retain the original rule and keep the deleted destructor. That is, both
-of the above unions (regardless of how they achieve having a non-trivial
-default constructor), would still have a deleted destructor.</p>
-<p>This requires some additional typing in some cases, for instance:</p>
-<table>
-<tr>
-<th>
-Deleted Destructor
-</th>
-<th>
-Non-Trivial Destructor
-</th>
-<th>
-Trivial Destructor
-</th>
-</tr>
-<tr>
-<td>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> A <span class="op">{</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  string s;</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  A<span class="op">*</span> next <span class="op">=</span> <span class="kw">nullptr</span>;</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
-</td>
-<td>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> B <span class="op">{</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">~</span>B<span class="op">()</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  string s;</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  B<span class="op">*</span> next <span class="op">=</span> <span class="kw">nullptr</span>;</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
-</td>
-<td>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  C<span class="op">()</span> <span class="op">:</span> next<span class="op">(</span><span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">union</span> <span class="op">{</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    string s;</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    C<span class="op">*</span> next;</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
-</td>
-</tr>
-</table>
-<p>The suggested rule is that <code class="sourceCode cpp">A</code>’s
-destructor would be deleted, due to the non-trivial default constructor
-(unlike in R4). That could be resolved by simply providing a destructor,
-as in <code class="sourceCode cpp">B</code>, but this destructor would
-be non-trivial. The real solution would be to wrap everything in a
-struct - <code class="sourceCode cpp">C</code> would be trivially
-destructible.</p>
+retain the original rule and keep the deleted destructor.</p>
+<p>A good principle to follow, I think, is that this code:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// for some union U</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    U u;</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Should either not compile (because the destructor is deleted — or
+more boringly because <code class="sourceCode cpp">U</code> isn’t
+default constructible) or be fine (because either we know the
+initialization is okay and thus the destructor can be trivial, or we
+forced the user to take care of it).</p>
+<p>Thus the rule: the defaulted destructor for a union is defined as
+deleted if either there is a user-provided default constructor or there
+is a variant member with a default member initializer and that variant
+member has a destructor that is either inaccessible or deleted.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes to just <a href="#just-make-it-work">make it
 work</a>. That is:</p>
@@ -1447,27 +1425,36 @@ work</a>. That is:</p>
 <li>The default constructor, absent default member initializers, is
 always trivial. If the first alternative is an implicit-lifetime time,
 it begins its lifetime and becomes the active alternative.</li>
-<li>The destructor is always trivial.</li>
+<li>The defaulted destructor is deleted if either (a) the union has a
+user-provided default constructor or (b) there exists a variant
+alternative that has a default member initializer and that member’s
+destructor is either deleted or inaccessible. Otherwise, the destructor
+is trivial.</li>
 </ul>
 <p>All other special members remain unchanged. The behavior for a few
 examples looks like this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor (does not start lifetime of s)</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted default constructor and destructor)</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U1 <span class="op">{</span> string s; <span class="op">}</span>;</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">// non-trivial default constructor</span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted destructor</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted destructor)</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U2 <span class="op">{</span> string s <span class="op">=</span> <span class="st">&quot;hello&quot;</span>; <span class="op">}</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">// starts lifetime of s</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted default constructor and destructor)</span></span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U3 <span class="op">{</span> string s<span class="op">[</span><span class="dv">10</span><span class="op">]</span>; <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor (does not start lifetime of s)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted default constructor and destructor)</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U1 <span class="op">{</span> string s; <span class="op">}</span>;</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">// non-trivial default constructor</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">// deleted destructor</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted destructor)</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U2 <span class="op">{</span> string s <span class="op">=</span> <span class="st">&quot;hello&quot;</span>; <span class="op">}</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial default constructor</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co">// starts lifetime of s</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted default constructor and destructor)</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U3 <span class="op">{</span> string s<span class="op">[</span><span class="dv">10</span><span class="op">]</span>; <span class="op">}</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="co">// non-trivial default constructor (initializes next)</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="co">// trivial destructor</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="co">// (status quo: deleted destructor)</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U4 <span class="op">{</span> string s; U4<span class="op">*</span> next <span class="op">=</span> <span class="kw">nullptr</span>; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Note that just making work will change some code from ill-formed to
@@ -1487,14 +1474,14 @@ is ill-formed because <code class="sourceCode cpp">s</code> has not
 began its lifetime):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f1<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span> <span class="dt">int</span> s<span class="op">[</span><span class="dv">4</span><span class="op">]</span>; <span class="op">}</span>;</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>s<span class="op">[</span><span class="dv">0</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>s<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>s<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)</span>;</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> s<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> s<span class="op">[</span><span class="dv">2</span><span class="op">]</span>;</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f1<span class="op">()</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f1<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span> <span class="dt">int</span> s<span class="op">[</span><span class="dv">4</span><span class="op">]</span>; <span class="op">}</span>;</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>s<span class="op">[</span><span class="dv">0</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>s<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>s<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> s<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">+</span> s<span class="op">[</span><span class="dv">2</span><span class="op">]</span>;</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f1<span class="op">()</span> <span class="op">==</span> <span class="dv">6</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>I was able to compile Clang with this update successfully, which
@@ -1589,30 +1576,48 @@ A defaulted destructor for a class <code class="sourceCode cpp">X</code>
 is defined as deleted if:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(7.1)</a></span>
-any potentially constructed subobject has class type
+<span class="addu"><code class="sourceCode cpp">X</code> is a non-union
+class and</span> any potentially constructed subobject has class type
 <code class="sourceCode cpp">M</code> (or possibly multi-dimensional
-array thereof) and <code class="sourceCode cpp">M</code> has a
+array thereof) <span class="rm" style="color: #bf0303"><del>and</del></span> <span class="addu">where</span> <code class="sourceCode cpp">M</code> has a
 destructor that is deleted or is inaccessible from the defaulted
-destructor or, in the case of a variant member, <span class="rm" style="color: #bf0303"><del>is non-trivial,</del></span> <span class="addu">has a default member initializer,</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(7.*)</a></span>
-<span class="addu"><code class="sourceCode cpp">X</code> is a union with
-a user-provided default constructor,</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(7.2)</a></span>
+destructor <span class="rm" style="color: #bf0303"><del>or, in the case
+of a variant member, is non-trivial</del></span>,</li>
+</ul>
+<div class="addu">
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(7.x)</a></span>
+<code class="sourceCode cpp">X</code> is a union and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(7.x.1)</a></span>
+<code class="sourceCode cpp">X</code> has a user-provided default
+constructor, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(7.x.2)</a></span>
+<code class="sourceCode cpp">X</code> has a variant member
+<code class="sourceCode cpp">M</code> where
+<code class="sourceCode cpp">M</code> has a default member initializer
+and <code class="sourceCode cpp">M</code> has a destructor that is
+deleted or inaccessible from the defaulted destructor,</li>
+</ul></li>
+</ul>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(7.2)</a></span>
 or, for a virtual destructor, lookup of the non-array deallocation
 function results in an ambiguity or in a function that is deleted or
 inaccessible from the defaulted destructor.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">8</a></span>
 A destructor <span class="addu">for a class
 <code class="sourceCode cpp">X</code></span> is <em>trivial</em> if it
 is not user-provided and if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(8.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(8.1)</a></span>
 the destructor is not virtual,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(8.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(8.2)</a></span>
 all of the direct base classes of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> have trivial
 destructors, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(8.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(8.3)</a></span>
 <span class="addu">either <code class="sourceCode cpp">X</code> is a
 union or</span> for all of the non-static data members of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> that are of
 class type (or array thereof), each such class has a trivial
@@ -1628,12 +1633,12 @@ fix the library to account for the new functionality.</p>
 <p>Strike <span>24.3.14.1 <a href="https://wg21.link/inplace.vector.overview">[inplace.vector.overview]</a></span>/4:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">3</a></span>
 For any <code class="sourceCode cpp">N</code>, <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span>​<span class="op">::</span>​iterator</code>
 and <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span>​<span class="op">::</span>​const_iterator</code>
 meet the constexpr iterator requirements.</p>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">4</a></span>
 For any <code class="sourceCode default">N&gt;0</code>, if
 <code class="sourceCode default">is_trivial_v&lt;T&gt;</code> is
 <code class="sourceCode default">false</code>, then no
@@ -1646,7 +1651,7 @@ member functions are usable in constant expressions.</p>
 <p>Add a new macro to <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <div class="std ins">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>__cpp_trivial_union 2024XXL</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>__cpp_trivial_union 2024XXL</span></code></pre></div>
 </blockquote>
 </div>
 <p>And update the macro for
@@ -1654,8 +1659,8 @@ member functions are usable in constant expressions.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_inplace_vector 202406L // also in &lt;inplace_vector&gt;</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_inplace_vector 2024XXL // also in &lt;inplace_vector&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_inplace_vector 202406L // also in &lt;inplace_vector&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_inplace_vector 2024XXL // also in &lt;inplace_vector&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>

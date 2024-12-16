@@ -12,13 +12,9 @@ tag: constexpr
 
 # Revision History
 
-[@P3074R0] originally proposed the function `std::start_lifetime(p)`. This revision adds a new section discussing the [uninitialized storage problem](#the-uninitialized-storage-problem), which motivates a change in design to instead propose `std::uninitialized<T>`.
+Since [@P3074R4], wording changes and adjusted the rule for when a [union's destructor is deleted](#constructordestructor-intention-matching)
 
-[@P3074R1] changed to propose `std::uninitialized<T>` and was discussed in an EWG telecon. There, the suggestion was made to make this a language feature, which this revision discusses and argues against. Also re-spelled `std::uninitialized<T>` to be a union instead of a class containing an anonymous union.
-
-[@P3074R2] still argued for `std::uninitialized<T>`. This revision changes to instead proposing a language change to unions to solve the problems presented.
-
-[@P3074R3] presented two options: a specifically annotated `trivial union` and simply changing the existing `union` rules to always be trivial ("just make it work"), on the basis that `union` is a sharp knife anyway so might as well make it be as useful as possible. In [St. Louis](https://github.com/cplusplus/papers/issues/1734#issuecomment-2195769496), EWG expressed a clear preference for "just make it work":
+Since [@P3074R3], in [St. Louis](https://github.com/cplusplus/papers/issues/1734#issuecomment-2195769496), EWG had expressed a clear preference for "just make it work":
 
 |SF|F|N|A|SA|
 |-|-|-|-|-|
@@ -30,7 +26,13 @@ over `trivial union`:
 |-|-|-|-|-|
 |0|3|13|4|1|
 
-This revision simply proposed to make it work and adds [implementation experience]
+So proposing to make it work and adding [implementation experience](#implementation-experience).
+
+Since [@P3074R2], changed to instead propose a language change to unions (with two options) to solve the problems presented
+
+Since [@P3074R1], the `std::uninitialized<T>` design was designed in an EWG telecon and the suggestion was made to make this a language feature. Added a section to argue against and re-spelled `std::uninitialized<T>` to be a union instead of a class containing an anonymous union.
+
+Since [@P3074R0], originally proposed the function `std::start_lifetime(p)`. R1 adds a new section discussing the [uninitialized storage problem](#the-uninitialized-storage-problem), which motivates a change in design to instead propose `std::uninitialized<T>`.
 
 # Introduction
 
@@ -436,51 +438,45 @@ union U2 {
     U2() : s("or that") { }
     std::string s;
 };
+
+union U3 {
+  string s;
+  U3* next = nullptr;
+};
+
+union U4 {
+  string s;
+  int i;
+};
 ```
 :::
 
-In [@P3074R4], `U1` and `U2` would both have a non-trivial default destructor but still have a trivial destructor. Core in Wrocław suggested that the constructor and destructor should really match. That is, if a `union` has a variant with a non-trivial destructor and that union has non-trivial default constructor (either by having a user-provided default constructor or by having a default member initializer), then we should retain the original rule and keep the deleted destructor. That is, both of the above unions (regardless of how they achieve having a non-trivial default constructor), would still have a deleted destructor.
+Now, `U4` is the simple case. Our constructor is doing no initialization, so it's reasonable that the corresponding destructor also does nothing. But for the other three, constructing one of these unions actually does something. So what should the destructor look like?
 
-This requires some additional typing in some cases, for instance:
+Core in Wrocław suggested that the constructor and destructor should really match. That is, if a `union` has a variant with a non-trivial destructor and that union has non-trivial default constructor (either by having a user-provided default constructor or by having a default member initializer), then we should retain the original rule and keep the deleted destructor.
 
-<table>
-<tr><th>Deleted Destructor</th><th>Non-Trivial Destructor</th><th>Trivial Destructor</th></tr>
-<tr><td>
-```cpp
-union A {
-  string s;
-  A* next = nullptr;
-};
-```
-</td><td>
-```cpp
-union B {
-  ~B() { }
-  string s;
-  B* next = nullptr;
-};
-```
-</td><td>
-```cpp
-struct C {
-  C() : next(nullptr) { }
-  union {
-    string s;
-    C* next;
-  };
-};
-```
-</td></tr>
-</table>
+A good principle to follow, I think, is that this code:
 
-The suggested rule is that `A`'s destructor would be deleted, due to the non-trivial default constructor (unlike in R4). That could be resolved by simply providing a destructor, as in `B`, but this destructor would be non-trivial. The real solution would be to wrap everything in a struct - `C` would be trivially destructible.
+::: std
+```cpp
+{
+    // for some union U
+    U u;
+}
+```
+:::
+
+Should either not compile (because the destructor is deleted — or more boringly because `U` isn't default constructible) or be fine (because either we know the initialization is okay and thus the destructor can be trivial, or we forced the user to take care of it).
+
+Thus the rule: the defaulted destructor for a union is defined as deleted if either there is a user-provided default constructor or there is a variant member with a default member initializer and that variant member has a destructor that is either inaccessible or deleted.
+
 
 # Proposal
 
 This paper proposes to just [make it work](#just-make-it-work). That is:
 
 * The default constructor, absent default member initializers, is always trivial. If the first alternative is an implicit-lifetime time, it begins its lifetime and becomes the active alternative.
-* The destructor is always trivial.
+* The defaulted destructor is deleted if either (a) the union has a user-provided default constructor or (b) there exists a variant alternative that has a default member initializer and that member's destructor is either deleted or inaccessible. Otherwise, the destructor is trivial.
 
 All other special members remain unchanged. The behavior for a few examples looks like this:
 
@@ -501,6 +497,11 @@ union U2 { string s = "hello"; }
 // trivial destructor
 // (status quo: deleted default constructor and destructor)
 union U3 { string s[10]; }
+
+// non-trivial default constructor (initializes next)
+// trivial destructor
+// (status quo: deleted destructor)
+union U4 { string s; U4* next = nullptr; };
 ```
 :::
 
@@ -555,8 +556,15 @@ Change [class.dtor]{.sref}/7-8:
 ::: std
 [7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if:
 
-* [7.1]{.pnum} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) and `M` has a destructor that is deleted or is inaccessible from the defaulted destructor or, in the case of a variant member, [is non-trivial,]{.rm} [has a default member initializer,]{.addu}
-* [7.*]{.pnum} [`X` is a union with a user-provided default constructor,]{.addu}
+* [7.1]{.pnum} [`X` is a non-union class and]{.addu} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) [and]{.rm} [where]{.addu} `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial]{.rm},
+
+::: addu
+* [7.x]{.pnum} `X` is a union and either:
+
+    * [#.x.#]{.pnum} `X` has a user-provided default constructor, or
+    * [#.x.#]{.pnum} `X` has a variant member `M` where `M` has a default member initializer and `M` has a destructor that is deleted or inaccessible from the defaulted destructor,
+:::
+
 * [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
 
 [8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
