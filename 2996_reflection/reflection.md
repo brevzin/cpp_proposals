@@ -3760,12 +3760,60 @@ Modify bullet 7.1 as follows:
 
 :::
 
+And extend the example following paragraph 7 with uses of expression splices:
+
+::: std
+::: example4
+```cpp
+void f(int, const int (&)[2] = {});       // #1
+void f(const int &, const int (&)[1]);    // #2
+
+void test() {
+  const int x = 17;
+  auto g = [](auto a) {
+    f(x);                    // OK, calls #1, does not capture x
+@[\ ]{.addu}@
+@[\ \ \ \ `constexpr auto r = ^^x;  // OK, unevaluated operand does not capture x`]{.addu}@
+@[\ \ \ \ `f([:r:]);                // OK, calls #1, also does not capture x`]{.addu}@
+  }
+
+  auto g1 = [=](auto a) {
+    f(x);                   // OK, calls #1, captures x
+@[\ \ \ \ `f([:^^x:]);             // OK, calls #1, also captures x`]{.addu}@
+  }
+}
+```
+
+:::
+:::
+
 Modify paragraph 11 (and note 7 which follows):
 
 ::: std
 - [11]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} within the `$compound-statement$` of a `$lambda-expression$` that is an odr-use of an entity captured by copy is transformed into an access to the corresponding unnamed data member of the closure type.
 
   [An `$id-expression$` [or `$splice-expression$`]{.addu} that is not an odr-use refers to the original entity, never to a member of the closure type. However, such an `$id-expression$` can still cause the implicit capture of the entity.]{.note7}
+:::
+
+And extend the example following paragraph 11 with uses of expression splices:
+
+::: std
+::: example8
+```cpp
+void f(const int *);
+void g() {
+  const int N = 10;
+  [=] {
+    int arr[N];      // OK, not an odr-use, refers to variable with automatic storage duration
+    f(&N);           // OK, causes N to be captured; &N points to
+                     // the corresponding member of the closure type
+@[\ ]{.addu}@
+@[\ \ \ \ `f(&[:^^N:])      // OK, also causes N to be captured`]{.addu}@
+  }
+}
+```
+
+:::
 :::
 
 ### 7.5.8* [expr.prim.splice] Expression splicing {-}
@@ -4335,7 +4383,7 @@ Add a row to [tab:dcl.type.simple] to cover the `$splice-type-specifier$` produc
 
 ### [dcl.type.decltype]{.sref} Decltype specifiers {-}
 
-Add a bullet after bullet 1.3 to apply to `$splice-expression$`s:
+Add a bullet after bullet 1.3 to apply to `$splice-expression$`s, and extend the example that follows the paragraph:
 
 ::: std
 [1]{.pnum} For an expression `$E$`, the type denoted by `decltype($E$)` is defined as follows:
@@ -4349,6 +4397,27 @@ Add a bullet after bullet 1.3 to apply to `$splice-expression$`s:
 
 
 The operand of the `decltype` specifier is an unevaluated operand.
+
+::: example
+```cpp
+const int && foo();
+int i;
+struct A {double x; };
+const A* a = new A();
+decltype(foo()) x1 = 17;       // type is const int&&
+decltype(i) x2;                // type is int
+decltype(a->x) x3;             // type is double
+decltype((a->x)) x4 = x3;      // type is const double&
+@[`decltype([:^^x1:]) x5 = 18;    // type is const int&&`]{.addu}@
+
+void f() {
+  [](auto ...pack) {
+    decltype(pack...[0]) @[x5]{.rm} [x6]{.addu}@;    // type is int
+    decltype((pack...[0])) @[x6]{.rm} [x7]{.addu}@;  // type is int&
+  }
+}
+```
+:::
 
 :::
 
@@ -4396,18 +4465,43 @@ using alias = [:^^S::type:];    // OK, type-only context
 
 ### [dcl.fct]{.sref} Functions {-}
 
-Use "denoted by" instead of "named by" in paragraph 9 to be more clear about the entity being referred to.
+Use "denoted by" instead of "named by" in paragraph 9 to be more clear about the entity being referred to, and add a bullet to allow for reflections of abominable function types:
 
 ::: std
-[9]{.pnum} A function type with a `$cv-qualifier-seq$` or a `$ref-qualifier$` (including a type [named]{.rm} [denoted]{.addu} by `$typedef-name$` ([dcl.typedef]{.sref}, [temp.param]{.sref})) shall appear only as:
+[9]{.pnum} A function type with a `$cv-qualifier-seq$` or a `$ref-qualifier$` (including a type [named]{.rm} [denoted]{.addu} by `$typedef-name$` ([dcl.typedef], [temp.param])) shall appear only as:
 
-* [#.#]{.pnum} [...]
+* [#.#]{.pnum} the function type for a non-static member function,
+* [#.#]{.pnum} the function type to which a pointer to member refers,
+* [#.#]{.pnum} the top-level function type of a function typedef declaration or `$alias-declaration$`,
+* [#.#]{.pnum} the `$type-id$` in the default argument of a `$type-parameter$` ([temp.param]),
+* [#.#]{.pnum} the `$type-id$` of a `$template-argument$` for a `$type-parameter$` ([temp.arg.type])[.]{.rm}[, or]{.addu}
 
+::: addu
+* [9.6]{.pnum} the operand of a `$reflect-expression$` ([expr.reflect]).
+:::
+
+:::
+
+Extend the example that follows to demonstrate taking the reflection of an abominable function type:
+
+::: std
+::: example4
+```cpp
+typedef int FIC(int) const;
+FIC f;                                          // error: does not declare a member function
+struct S {
+  FIC f;                                        // OK
+};
+FIC S::*pm = &S::f;                             // OK
+@[`constexpr std::meta::info r = ^^void(int) &;    // OK`]{.addu}@
+
+```
+:::
 :::
 
 ### [dcl.fct.default]{.sref} Default arguments {-}
 
-Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments.
+Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments, and extend example 8 which follows.
 
 ::: std
 [9]{.pnum} A default argument is evaluated each time the function is called with no argument for the corresponding parameter.
@@ -4416,6 +4510,19 @@ Modify paragraph 9 to allow reflections of non-static data members to appear in 
 
 A non-static member shall not appear in a default argument unless it appears as the `$id-expression$` of a class member access expression ([expr.ref]) [or `$reflect-expression$` ([expr.reflect])]{.addu} or unless it is used to form a pointer to member ([expr.unary.op]).
 
+::: example8
+```cpp
+int b;
+class X {
+  int a;
+  int mem1(int i = a);    // error: non-static member `a` used as default argument
+  int mem2(int i = b);    // OK; use `X::b`
+  @[`consteval void mem3(std::meta::info r = ^^a) {};    // OK`]{.addu}@
+  static int b;
+}
+```
+
+:::
 :::
 
 ### [dcl.init.general]{.sref} Initializers (General) {-}
@@ -4443,25 +4550,6 @@ Change paragraphs 6-8 of [dcl.init.general]{.sref} [No changes are necessary for
 If a program calls for the default-initialization of an object of a const-qualified type `T`, `T` shall be [`std::meta::info` or]{.addu} a const-default-constructible [class]{.rm} type, or array thereof.
 
 [9]{.pnum} To value-initialize an object of type T means: [...]
-:::
-
-### [dcl.fct]{.sref} Functions {-}
-
-Add a bullet to paragraph 9 of [dcl.fct]{.sref} to allow for reflections of abominable function types:
-
-::: std
-[9]{.pnum} A function type with a `$cv-qualifier-seq$` or a `$ref-qualifier$` (including a type named by `$typedef-name$` ([dcl.typedef], [temp.param])) shall appear only as:
-
-* [#.#]{.pnum} the function type for a non-static member function,
-* [#.#]{.pnum} the function type to which a pointer to member refers,
-* [#.#]{.pnum} the top-level function type of a function typedef declaration or `$alias-declaration$`,
-* [#.#]{.pnum} the `$type-id$` in the default argument of a `$type-parameter$` ([temp.param]),
-* [#.#]{.pnum} the `$type-id$` of a `$template-argument$` for a `$type-parameter$` ([temp.arg.type])[.]{.rm}[, or]{.addu}
-
-::: addu
-* [9.6]{.pnum} the operand of a `$reflect-expression$` ([expr.reflect]).
-:::
-
 :::
 
 ### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
