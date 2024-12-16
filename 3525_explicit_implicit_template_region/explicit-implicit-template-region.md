@@ -190,3 +190,18 @@ Introduce a new `__cpp_template_block` to [cpp.predefined]{.sref}:
 + __cpp_template_block 2025XXL
 ```
 :::
+
+---
+references:
+  - id: P1061R10
+    citation-label: P1061R10
+    title: "Structured Bindings can introduce a Pack"
+    author:
+      - family: Barry Revzin
+      - family: Jonathan Wakely
+    issued:
+      - year: 2024
+        month: 11
+        day: 22
+    URL: https://wg21.link/p1061r10
+---
