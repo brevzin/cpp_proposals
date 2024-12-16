@@ -135,7 +135,7 @@ And a corresponding new clause after [stmt.block]{.sref}, call it [stmt.template
 ::: addu
 ```
 $template-block$:
-  $compound-statement$
+  template $compound-statement$
 ```
 
 A *template block* introduces an explicit template region ([temp.pre]) encompassing the block scope introduced by the `$compound-statement$`.
