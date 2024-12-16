@@ -5453,9 +5453,6 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 
 ```
 #include <initializer_list>
-#include <ranges>
-#include <string_view>
-#include <vector>
 
 namespace std::meta {
   using info = decltype(^^::);
