@@ -3808,7 +3808,7 @@ void g() {
     f(&N);           // OK, causes N to be captured; &N points to
                      // the corresponding member of the closure type
 @[\ ]{.addu}@
-@[\ \ \ \ `f(&[:^^N:])`]{.addu}@      // OK, also causes N to be captured
+@[\ \ \ \ `f(&[:^^N:])      // OK, also causes N to be captured`]{.addu}@
   }
 }
 ```
@@ -4517,7 +4517,7 @@ class X {
   int a;
   int mem1(int i = a);    // error: non-static member `a` used as default argument
   int mem2(int i = b);    // OK; use `X::b`
-  @[`consteval void mem3(int i = ^^a) {};    // OK`]{.addu}@
+  @[`consteval void mem3(std::meta::info r = ^^a) {};    // OK`]{.addu}@
   static int b;
 }
 ```
