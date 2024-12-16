@@ -4082,7 +4082,7 @@ struct S {
   using type = T;
 }
 static_assert(S<int>::r == ^^int);
-static_assert(S<int>::type != ^^int);
+static_assert(^^S<int>::type != ^^int);
 
 typedef struct X {} Y;
 typedef struct Z {} Z;
