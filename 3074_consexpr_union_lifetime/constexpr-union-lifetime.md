@@ -562,7 +562,7 @@ Change [class.dtor]{.sref}/7-8:
 * [7.x]{.pnum} `X` is a union and either:
 
     * [#.x.#]{.pnum} `X` has a user-provided default constructor, or
-    * [#.x.#]{.pnum} `X` has a variant member `M` where `M` has a default member initializer and `M` has a destructor that is deleted or inaccessible from the defaulted destructor,
+    * [#.x.#]{.pnum} `X` has a variant member `M` where `M` has a default member initializer and `M` has a destructor that is deleted, inaccessible from the defaulted destructor, or non-trivial,
 :::
 
 * [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
