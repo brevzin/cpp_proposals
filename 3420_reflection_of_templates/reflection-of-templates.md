@@ -1,6 +1,6 @@
 ---
 title: "Reflection of Templates"
-document: P3240R0
+document: P3420R0
 date: today
 audience: EWG
 author:
@@ -14,8 +14,6 @@ toc: true
 tag: reflection
 hackmd: true
 ---
-
-<div style="min-width: 120%; text-align: justify; hyphens: auto; " />
 
 # Motivation
 
